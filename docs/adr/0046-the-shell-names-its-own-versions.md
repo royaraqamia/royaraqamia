@@ -33,7 +33,7 @@ a habit.
 
 **Every version is its own release.** The tag is `android-1.0.3` (the `android-`
 prefix reads against the web train's `web-`), the asset is
-`royaraqamia-shell-1.0.3.apk`, and the release carries the version in its title.
+`royaraqamia-1.0.3.apk`, and the release carries the version in its title.
 The newest one is marked Latest, so the releases page leads with the APK. The
 `--clobber` path still exists in the workflow, but only for the one case that
 justifies it: an asset a run created and died before any manifest named it.

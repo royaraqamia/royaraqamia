@@ -353,7 +353,7 @@ bump could be required to move the counter and then never publish it. In order:
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
    `public/android/latest.json`.
 4. **The release** — `android-1.0.3`, one release per version, holding
-   `royaraqamia-shell-1.0.3.apk`. The tag in a published URL belongs to one version and is never repointed
+   `royaraqamia-1.0.3.apk`. The tag in a published URL belongs to one version and is never repointed
    at other bytes. A release that already exists is a re-run: identical content is reused, different
    content fails when a _committed_ manifest names that asset, and is replaced only when none ever has.
 5. **The re-download** — the asset is fetched back and hashed against the manifest before anything is
@@ -409,13 +409,17 @@ The local path still exists, and is the right one for a dry run or an emergency:
 ```powershell
 npm run android:shell-version -- --bump        # in the pull request that changes the shell
 npm run android:publish                        # add --dry-run to see everything and touch nothing
-gh release upload shell <staged>\royaraqamia-shell-<code>.apk
-git add public/android/latest.json; git commit -m "chore(android): publish shell <code>"
+gh release create android-1.0.4 <staged>\royaraqamia-1.0.4.apk `
+  --title "Android shell 1.0.4 (20004)" --latest --target main
+git add public/android/latest.json; git commit -m "chore(android): publish shell 1.0.4 (20004)"
 ```
 
+`android:publish` prints those commands with the values already in them, so the numbers above are what
+it would say for that version rather than something to retype.
+
 The asset name is load-bearing: the published URL ends in it, `android:publish` stages a copy under
-exactly that name, and `gh release upload` without `--clobber` refuses a name that already exists — which
-is the immutability guarantee, in the one command where a person could otherwise undo it.
+exactly that name, and the upload refuses a name that already exists — which is the immutability
+guarantee, in the one command where a person could otherwise undo it.
 
 **What remains is not code.** The APK on any device today predates this, so the first update still has to
 be installed by hand (or by a store) — after that the loop closes itself. And declaring

@@ -324,7 +324,7 @@ describe('where the next publish goes', () => {
     'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk';
 
   it('names the asset and the release after the version', () => {
-    expect(shellAssetName('1.0.3')).toBe('royaraqamia-shell-1.0.3.apk');
+    expect(shellAssetName('1.0.3')).toBe('royaraqamia-1.0.3.apk');
     expect(shellReleaseTag('1.0.3')).toBe('android-1.0.3');
     expect(shellReleaseTitle('1.0.3', 20003)).toBe('Android shell 1.0.3 (20003)');
     expect(() => shellAssetName('20003')).toThrow(/major\.minor\.patch/);
@@ -334,18 +334,18 @@ describe('where the next publish goes', () => {
 
   it('keeps the host and the repository, and moves the tag and the asset on', () => {
     expect(nextApkUrl(LEGACY, '1.0.3')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-shell-1.0.3.apk'
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-1.0.3.apk'
     );
     // And once a versioned URL is published, the next one is derived from it just
     // the same — the old tag is not carried over, the version name decides.
     const current =
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-shell-1.0.3.apk';
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-1.0.3.apk';
     expect(nextApkUrl(current, '1.0.4')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.4/royaraqamia-shell-1.0.4.apk'
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.4/royaraqamia-1.0.4.apk'
     );
     // The migration's own spelling: the old channel tag is ignored too.
     expect(nextApkUrl(LEGACY, '1.0.2')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.2/royaraqamia-shell-1.0.2.apk'
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.2/royaraqamia-1.0.2.apk'
     );
   });
 
@@ -361,7 +361,7 @@ describe('where the next publish goes', () => {
     const published = JSON.parse(readFileSync(resolve(REPO, 'public/android/latest.json'), 'utf8'));
     const version = shellVersionNameFor(published.versionCode + 1);
     expect(nextApkUrl(published.apkUrl, version)).toBe(
-      `https://github.com/royaraqamia/royaraqamia/releases/download/android-${version}/royaraqamia-shell-${version}.apk`
+      `https://github.com/royaraqamia/royaraqamia/releases/download/android-${version}/royaraqamia-${version}.apk`
     );
   });
 

@@ -199,6 +199,21 @@ describe('what counts as a shell change', () => {
   });
 });
 
+describe('generated Android files', () => {
+  it('never carry a path from the machine that generated them', () => {
+    // `cap sync` rewrites this file, and in a worktree whose `node_modules` is a
+    // junction it writes absolute paths — which a local build then leaves in the
+    // tree for `git add -A` to pick up. That is what this guard is for: the `Shell
+    // Version` check caught it (it saw `android/**` change with no counter bump),
+    // and this says *why* the file may not look like that.
+    const settings = readFileSync(resolve(REPO, 'android/capacitor.settings.gradle'), 'utf8');
+
+    expect(settings).not.toMatch(/[A-Za-z]:[\\/]/);
+    expect(settings).not.toMatch(/\/(Users|home)\//);
+    expect(settings).toMatch(/new File\('\.\.\//);
+  });
+});
+
 describe('the published manifest', () => {
   it('describes an APK with a version and a download', () => {
     expect(Number.isInteger(manifest.versionCode)).toBe(true);
