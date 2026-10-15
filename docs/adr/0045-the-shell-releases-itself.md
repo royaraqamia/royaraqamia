@@ -91,8 +91,10 @@ remains the only way to say an update cannot wait, and it is still carried forwa
 The workflow costs about four minutes of runner time when there is something to publish — 4m06s on the
 first run, cache cold, and that run included the JVM tests, the build, the upload and the re-download
 check — and ten seconds when there is not, measured on the manual dispatch that found `20002` already
-published. The shell's JVM tests run inside it as well as on pull requests, so a direct push to `main` —
-the release train — cannot carry untested native code into a release.
+published. A run that overlaps a web release takes longer, because the manifest waits for the release train
+before it commits: both write to `main`, and the train refuses to push over a moved HEAD (ADR-0046). The
+shell's JVM tests run inside it as well as on pull requests, so a direct push to `main` — the release
+train — cannot carry untested native code into a release.
 
 `npm run android:publish` stays the same command, now with `--json` for the workflow and `--verdict` for
 the question "is there anything to publish at all", both unit-tested rather than written in shell. A
