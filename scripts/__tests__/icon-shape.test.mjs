@@ -23,6 +23,14 @@ import { DISC_TOLERANCE_PX, TARGET_DISC_RATIO, measure } from '../logo-shape.mjs
  * The favicons are the third case, and deliberately so: the master circle-cropped
  * at 100%, a tab icon rather than an install surface, and the wider disc is the
  * readable one at 16–32px.
+ *
+ * Shape is the other axis, and it follows the same question — *who draws the
+ * file*. A surface that draws it as it is gets the logo's own shape: the `any`
+ * set and the favicons are discs with transparent corners, which is what a desktop
+ * install UI and a browser tab render. A surface that crops it gets a full-bleed
+ * square and is shaped by the crop: the maskable set (a launcher's mask) and
+ * `apple-touch-icon` (iOS's squircle). A square handed to an unmasked surface is a
+ * purple sticker; a disc handed to a mask only loses its corners twice.
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -66,8 +74,13 @@ const faviconFiles = ['favicon-192x192.png', 'favicon-512x512.png'].map((name) =
   join(ROOT, 'public', name)
 );
 
-const master = await measure(join(ICONS, 'icon-1024x1024.png'), PURPLE);
-/** The PWA's own proportion: the artwork inset to 86% of the tile. */
+const master = await measure(join(ICONS, 'icon-maskable-1024x1024.png'), PURPLE);
+/**
+ * The PWA's own proportion: the artwork inset to 86% of the tile. Measured off the
+ * maskable icon because that is the full-bleed square the inset describes — the
+ * `any` set is the same tile circle-cropped, so it carries the same disc but is a
+ * disc rather than a tile to measure it against.
+ */
 const discProportion = master.disc / master.tile;
 /**
  * The adaptive canvas's artwork share, derived from the same two numbers the
@@ -81,22 +94,34 @@ const sourceProportion = source.disc / source.tile;
 const shown = (file) => relative(ROOT, file).split('\\').join('/');
 
 /**
- * The largest image inside `favicon.ico`, as a buffer, so the tab icon can be
- * measured like every other asset. A browser picks from the same set, and the
- * small entries are too coarse to measure (0.6 of 16px is 10px, ±1px = 10%).
+ * The 16px tab icon's disc, as a share of its canvas: the master's own proportion
+ * drawn 1.3x larger, because the mark inside the disc does not survive 16px at
+ * 60%. Pinned like `LAUNCHER_MAGNIFICATION`, so it can only change on purpose.
  */
-function largestIcoEntry(file) {
+const FAVICON_SMALL_SIZE = 16;
+const FAVICON_SMALL_RATIO = 0.78;
+/**
+ * The 16px entry is measured at ±1px, not ±`DISC_TOLERANCE_PX`: at that size the
+ * two proportions this check exists to tell apart — the master's 60% and the
+ * scaled-up 78% — are 10px and 12px, so a 2px tolerance would accept either.
+ */
+const FAVICON_SMALL_TOLERANCE_PX = 1;
+
+/**
+ * Every image inside `favicon.ico`, as buffers, so the tab icon can be measured
+ * like every other asset.
+ */
+function icoEntries(file) {
   const ico = readFileSync(file);
   const count = ico.readUInt16LE(4);
-  let best;
+  const entries = [];
   for (let i = 0; i < count; i++) {
     const entry = 6 + 16 * i;
     const size = ico[entry] === 0 ? 256 : ico[entry];
-    if (best && size <= best.size) continue;
     const offset = ico.readUInt32LE(entry + 12);
-    best = { size, data: ico.subarray(offset, offset + ico.readUInt32LE(entry + 8)) };
+    entries.push({ size, data: ico.subarray(offset, offset + ico.readUInt32LE(entry + 8)) });
   }
-  return best.data;
+  return entries;
 }
 
 describe('the logo is one shape on every surface', () => {
@@ -271,21 +296,57 @@ describe('the logo is one shape on every surface', () => {
     expect(squares).toEqual([]);
   });
 
-  it('leaves the favicons on the master, for a legible 16px tab', async () => {
+  it('keeps the favicons on the master, with the 16px entry scaled up to read', async () => {
     // Deliberately not the tile's proportion: a favicon is a tab icon, not an
-    // install surface, and the wider disc is the readable one at 16-32px. Pinned
-    // so it can only change on purpose.
+    // install surface, and the wider disc is the readable one at 16-32px. The 16px
+    // entry is the exception — the one size where the master's proportion leaves the
+    // mark inside the disc under a pixel of stroke — and it is the only one. Pinned
+    // so either can only change on purpose.
     const drifts = [];
     for (const file of [...faviconFiles, join(ROOT, 'public', 'favicon.ico')]) {
-      const { disc, tile } = await measure(
-        file.endsWith('.ico') ? largestIcoEntry(file) : file,
-        PURPLE
-      );
-      if (Math.abs(disc - Math.round(sourceProportion * tile)) > DISC_TOLERANCE_PX) {
+      const entries = file.endsWith('.ico')
+        ? icoEntries(file)
+        : [{ size: Number(/(\d+)x\d+\.png$/.exec(file)[1]), data: file }];
+      for (const { size, data } of entries) {
+        const { disc } = await measure(data, PURPLE);
+        const small = size === FAVICON_SMALL_SIZE;
+        const ratio = small ? FAVICON_SMALL_RATIO : sourceProportion;
+        // The canvas, not the measured purple run: at 16px the rim is two
+        // anti-aliased pixels wide, so what it measures is not the box the disc
+        // sits in — the entry's own size is.
+        const expected = Math.round(ratio * size);
+        const tolerance = small ? FAVICON_SMALL_TOLERANCE_PX : DISC_TOLERANCE_PX;
+        if (Math.abs(disc - expected) > tolerance) {
+          drifts.push(
+            `${shown(file)} ${size}x${size}: the disc is ${disc}px of ${size}px, expected ` +
+              `${expected}px (${(100 * ratio).toFixed(0)}% of the canvas)`
+          );
+        }
+      }
+    }
+    expect(drifts).toEqual([]);
+  });
+
+  it('shapes each icon set by the surface that draws it', async () => {
+    // A desktop install UI draws the `any` icon as it is, so the file has to carry
+    // the logo's own shape; a launcher's mask and iOS's squircle are what shape the
+    // maskable and apple-touch sets, so those stay full-bleed squares on disk.
+    const drifts = [];
+    for (const name of readdirSync(ICONS)) {
+      const any = /^icon-\d+x\d+\.png$/.test(name);
+      const masked = /^(icon-maskable-\d+x\d+|apple-touch-icon-\d+x\d+)\.png$/.test(name);
+      if (!any && !masked) continue;
+      const alpha = (await measure(join(ICONS, name), PURPLE)).image.at(0, 0).a;
+      if (any && alpha !== 0) {
         drifts.push(
-          `${shown(file)}: the disc is ${disc}px of ${tile}px, expected ` +
-            `${Math.round(sourceProportion * tile)}px (the master's own ` +
-            `${(100 * sourceProportion).toFixed(0)}%)`
+          `icons/${name}: a desktop install draws this file as it is, so its corners must ` +
+            `be transparent (corner alpha ${alpha})`
+        );
+      }
+      if (masked && alpha !== 255) {
+        drifts.push(
+          `icons/${name}: a mask is what shapes this one, so it must stay full-bleed ` +
+            `(corner alpha ${alpha}, expected 255)`
         );
       }
     }
