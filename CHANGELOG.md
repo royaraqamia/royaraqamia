@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.96.0] - 2026-10-15
+
+### Changed
+- feat(nav): one app shell for every device
+
+### Added
+- install the app from /account, or check the shell for updates
+
 ## [1.95.0] - 2026-10-15
 
 ### Changed
