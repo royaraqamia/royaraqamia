@@ -30,11 +30,17 @@
  * publish is a new, immutable release and the URL in the manifest names exactly
  * the bytes it hashed. `android-` keeps shell tags apart from the web train's.
  *
+ * The bytes are served from our own origin (ADR-0047): the manifest points at
+ * `/android/royaraqamia-1.0.3.apk`, which the site proxies to the Supabase Storage
+ * bucket, and the GitHub release carries the same file as the archive. GitHub's
+ * release assets are unreachable from at least one country this app has users in,
+ * and an update nobody can download is not an update.
+ *
  * Two callers use this. `.github/workflows/shell-release.yml` runs it on a push to
- * main that touches the shell, with `--json`, and does the upload, the re-download
+ * main that touches the shell, with `--json`, and does the uploads, the re-download
  * check and the manifest commit itself; the keystore comes from repository secrets
- * there. Run by hand it is the same publish, printing the `gh` and `git` commands
- * for you to run — with `--dry-run` to see all of it and touch nothing.
+ * there. Run by hand it is the same publish, printing the `curl`, `gh` and `git`
+ * commands for you to run — with `--dry-run` to see all of it and touch nothing.
  */
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -181,28 +187,24 @@ export function stampManifest({
   };
 }
 
-/** The asset name the published URL ends in — the file has to carry it exactly. */
-export function assetNameFromUrl(apkUrl) {
-  const name = basename(new URL(apkUrl).pathname);
-  if (!name.toLowerCase().endsWith('.apk')) {
-    throw new Error(`the published URL does not end in an .apk name: ${apkUrl}`);
-  }
-  return name;
-}
-
 /**
- * The release tag in a published URL — the segment before the asset name, which is
- * `android-1.0.3` for `/releases/download/android-1.0.3/royaraqamia-1.0.3.apk`, and
- * was `shell` for the single file both of those replaced (ADR-0046). Printed as part
- * of the `gh release upload` that finishes a publish, so it has to be the tag and
- * not, say, `download`.
+ * Where a published APK is served from — our own origin, not GitHub's.
+ *
+ * A release asset was reachable everywhere except at least one country this app
+ * has users in, and an update that cannot be downloaded is not an update. The
+ * bytes live in a Supabase Storage bucket and the site proxies this path to it
+ * (`next.config.js`), so the only host a device needs is the one it already loads
+ * the app from. The GitHub release keeps the same file as the permanent archive
+ * (ADR-0047).
  */
-export function releaseTagFromUrl(apkUrl) {
-  const segments = new URL(apkUrl).pathname.split('/').filter(Boolean);
-  if (segments.length < 2) {
-    throw new Error(`the published URL names no release: ${apkUrl}`);
-  }
-  return segments[segments.length - 2];
+export const APK_ORIGIN = 'https://royaraqamia.com/android';
+
+/** The bucket `APK_ORIGIN` is proxied to, and where a publish uploads. */
+export const STORAGE_BUCKET = 'android';
+
+/** The URL a version is published at: `/android/royaraqamia-1.0.3.apk`. */
+export function apkUrlFor(versionName) {
+  return `${APK_ORIGIN}/${shellAssetName(versionName)}`;
 }
 
 /**
@@ -253,41 +255,6 @@ function validateVersionName(versionName) {
  */
 export function shellReleaseTitle(versionName) {
   return shellReleaseTag(versionName);
-}
-
-/**
- * The URL the next publish should name, derived from the one that is published
- * now: same host, same repository, and the tag and asset name for the new
- * version.
- *
- * Derived rather than typed, because the three things that matter about it — the
- * tag, the asset's name, and that the two agree — are the kind of detail a person
- * gets wrong exactly once, silently. Only the repository is carried over from the
- * old URL: the tag is a function of the new version, and the old asset's name is
- * ignored on purpose, since a manifest still carrying `royaraqamia-shell.apk`
- * (the first spelling) or `royaraqamia-shell-20002.apk` has to move to a version
- * name as well.
- */
-export function nextApkUrl(previousUrl, versionName) {
-  let url;
-  try {
-    url = new URL(previousUrl);
-  } catch {
-    throw new Error(
-      `the manifest has no usable apkUrl to derive the next one from (${JSON.stringify(previousUrl)}); pass --url`
-    );
-  }
-
-  const segments = url.pathname.split('/').filter(Boolean);
-  const downloadAt = segments.indexOf('download');
-  if (url.hostname !== 'github.com' || downloadAt !== 3 || segments.length < downloadAt + 2) {
-    throw new Error(
-      `cannot derive the next asset URL from ${previousUrl} (expected a GitHub release URL); pass --url`
-    );
-  }
-
-  const [owner, repo] = segments;
-  return `https://github.com/${owner}/${repo}/releases/download/${shellReleaseTag(versionName)}/${shellAssetName(versionName)}`;
 }
 
 /**
@@ -489,7 +456,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     assetlinksText: readFileSync(ASSETLINKS_PATH, 'utf8'),
   });
 
-  const apkUrl = valueOf('--url') ?? nextApkUrl(previous.apkUrl, versionName);
+  const apkUrl = valueOf('--url') ?? apkUrlFor(versionName);
   const min =
     valueOf('--min') === undefined ? previous.minSupportedVersionCode : Number(valueOf('--min'));
   const manifest = stampManifest({
@@ -504,11 +471,11 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     minSupportedVersionCode: min,
   });
 
-  const asset = assetNameFromUrl(manifest.apkUrl);
+  const asset = shellAssetName(manifest.versionName);
   const staged = join(STAGING_DIR, asset);
   const megabytes = (manifest.sizeBytes / (1024 * 1024)).toFixed(1);
-  const tag = releaseTagFromUrl(manifest.apkUrl);
-  const releaseTitle = shellReleaseTitle(versionName);
+  const tag = shellReleaseTag(manifest.versionName);
+  const releaseTitle = shellReleaseTitle(manifest.versionName);
 
   const summary = {
     versionCode: manifest.versionCode,
@@ -523,6 +490,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     tag,
     asset,
     releaseTitle,
+    storageBucket: STORAGE_BUCKET,
     apkPath,
   };
 
@@ -560,16 +528,22 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   log(`staged   ${staged}`);
   log(`stamped  ${MANIFEST_PATH}`);
   log('');
-  log(`This version is its own release (${tag}) — one APK per version, never overwritten, so a`);
-  log('device that read a manifest can never fetch bytes that disagree with the hash in it:');
+  log(`Publish the bytes first — the manifest names the hash of whatever a device`);
+  log(`will fetch, and that URL serves the bucket, not this machine:`);
+  log(`  curl -sS -X POST "$SUPABASE_URL/storage/v1/object/${STORAGE_BUCKET}/${asset}" \\`);
+  log('    -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \\');
+  log('    -H "Content-Type: application/vnd.android.package-archive" \\');
+  log('    -H "cache-control: max-age=31536000" -H "x-upsert: false" \\');
+  log(`    --data-binary @"${staged}"`);
+  log('');
+  log(`The GitHub release is the archive, and is not what a device downloads:`);
   log(`  gh release create ${tag} "${staged}" --latest --target main \\`);
   log(`    --title "${releaseTitle}" --notes "<what changed>"`);
   log('');
   log('Re-running a publish that already happened is not an upload: the name belongs to this');
   log('version, and the bytes are checked against what is already there.');
   log('');
-  log('Then land the manifest so the site serves it — the asset has to be up first, because');
-  log('the manifest names the hash of what it points at:');
+  log('Then land the manifest so the site serves it:');
   log(
     `  git add public/android/latest.json && git commit -m "chore(android): publish shell ${versionName} (${manifest.versionCode})"`
   );

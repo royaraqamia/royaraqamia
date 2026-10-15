@@ -132,3 +132,10 @@ Two things that _do_ work, and one that found the whole problem above:
 Monthly routine: read the Usage panel early in the period (a cap hit mid-month is
 felt as an outage, not a bill), confirm the retained deployment count is near
 `keep`, and re-check `Fluid Active CPU`, the tightest of the caps.
+
+The Android shell's APK is the one large file the site serves: `/android/*.apk` is
+rewritten to Supabase Storage (ADR-0047), so it costs Fast Data Transfer rather
+than CPU — a rewrite is proxied at the routing layer, which is why it is not a
+route handler (a function's response body is capped at 4.5 MB and the APK is
+~7.4 MB). A few thousand installs or updates a month is what would move this
+meter, against a 10 GB cap.
