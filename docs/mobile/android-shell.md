@@ -133,20 +133,20 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                       | State                                                                                  |
-| ----------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| capability                                      | where                                                       | state                                                                                  |
-| ------------------------------------            | -----------------------------------------------------       | -------------------------------------------------------------------------------------- |
-| Load the live site                              | `capacitor.config.ts` `server.url`                          | Working                                                                                |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                      | Working — in-page, so it shows in the shell too                                        |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog, and it installs in place (ADR-0044)                         |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`           | Working                                                                                |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                   | Working — needs two Supabase allowlist entries (below)                                 |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity` | Working                                                                                |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed       | Installed, unused by app code yet                                                      |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed               | Installed, unused by app code yet                                                      |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**              | Scaffolding only, by decision                                                          |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest                  | Native side ready; server side blocked on credentials — see "Push notifications" below |
+| Capability                                      | Where                                                       | State                                                                                          |
+| ----------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| capability                                      | where                                                       | state                                                                                          |
+| ------------------------------------            | -----------------------------------------------------       | --------------------------------------------------------------------------------------         |
+| Load the live site                              | `capacitor.config.ts` `server.url`                          | Working                                                                                        |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                      | Working — in-page, so it shows in the shell too                                                |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`           | Working                                                                                        |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                   | Working — needs two Supabase allowlist entries (below)                                         |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity` | Working                                                                                        |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed       | Installed, unused by app code yet                                                              |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed               | Installed, unused by app code yet                                                              |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**              | Scaffolding only, by decision                                                                  |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest                  | Native side ready; server side blocked on credentials — see "Push notifications" below         |
 
 ### The native bridge on a remote origin
 
@@ -292,6 +292,13 @@ from `android/shell-version.properties` rather than from `package.json`. `ShellU
 user natively when a newer APK exists — an `AlertDialog`, at most every six hours and on a fresh launch —
 and the site stays quiet meanwhile, because `MainActivity` appends `RoyaraqamiaShell/<code>` to the
 WebView's user agent and the page compares that with the same manifest.
+
+`/account` carries the same check on demand, for a user who does not want to wait for the next launch:
+`InstallSection` recognises the shell from that user agent token (the bridge is not always injected), reads
+the manifest itself and reports whether a newer APK is published. It installs nothing — the page cannot
+reach `ShellInstaller` — so the message points at the native prompt on the next launch. In a browser the
+same row is where the two installs live: the PWA through the browser's prompt, and the APK through the
+manifest's `apkUrl`.
 
 It is native for a reason worth remembering: the page cannot reach the shell reliably. With
 `server.url` set, Capacitor injects its bridge through a proxy, and on the WebView the app still meets on

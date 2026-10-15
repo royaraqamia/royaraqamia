@@ -1482,18 +1482,27 @@
 }
 
 /* ========================================
-   MOBILE BOTTOM TAB BAR (< lg)
+   BOTTOM TAB BAR
    ======================================== */
-@media (max-width: 1023px) {
-  /* Reserve space so the fixed tab bar never occludes page content. */
-  body:has([data-mobile-tabbar]) {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
-  }
+/* Reserve space so the fixed tab bar never occludes page content. */
+body:has([data-bottom-tabbar]) {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+}
 
-  /* Lift the floating utilities above the tab bar. */
+/* Flush bar (< lg): lift the floating utilities clear of it. */
+@media (max-width: 1023px) {
   .go-up-btn,
   .compose-fab-btn {
     bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
+  }
+}
+
+/* Floating pill (`lg` + up): the bar sits one gap above the viewport edge, so
+   the reserved space grows by that gap. The corner utilities stay put — the
+   pill is centred and never reaches them. */
+@media (min-width: 1024px) {
+  body:has([data-bottom-tabbar]) {
+    padding-bottom: calc(3.5rem + 1.5rem + env(safe-area-inset-bottom));
   }
 }
 
