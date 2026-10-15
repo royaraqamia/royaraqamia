@@ -1,24 +1,45 @@
 import { describe, it, expect } from 'vitest';
-import { parseTag, sortSemverTags, latestSemverTag } from '../git-utils.mjs';
+import {
+  parseTag,
+  formatTag,
+  formatVersion,
+  sortSemverTags,
+  latestSemverTag,
+} from '../git-utils.mjs';
 
 describe('git-utils', () => {
   describe('parseTag', () => {
-    it('accepts bare and v-prefixed semver tags', () => {
-      expect(parseTag('1.4.1')).toEqual({ major: 1, minor: 4, patch: 1 });
+    it('accepts the current spelling and the two that came before it', () => {
+      expect(parseTag('web-1.97.0')).toEqual({ major: 1, minor: 97, patch: 0 });
       expect(parseTag('v2.0.0')).toEqual({ major: 2, minor: 0, patch: 0 });
+      expect(parseTag('1.4.1')).toEqual({ major: 1, minor: 4, patch: 1 });
     });
 
-    it('rejects non-semver tags', () => {
+    it('rejects non-semver tags, including the shell line', () => {
       expect(parseTag('backup-1')).toBeNull();
       expect(parseTag('v1.4')).toBeNull();
       expect(parseTag(null)).toBeNull();
+      // The two release lines have separate clocks: a shell tag in the web
+      // version list would make the web train bump for an APK (ADR-0046).
+      expect(parseTag('android-1.0.3')).toBeNull();
+      expect(parseTag('shell')).toBeNull();
+    });
+  });
+
+  describe('formatTag / formatVersion', () => {
+    it('one puts the prefix on, the other leaves it off', () => {
+      const version = { major: 1, minor: 97, patch: 0 };
+      expect(formatVersion(version)).toBe('1.97.0');
+      expect(formatTag(version)).toBe('web-1.97.0');
+      expect(parseTag(formatTag(version))).toEqual(version);
+      expect(parseTag(formatVersion(version))).toEqual(version);
     });
   });
 
   describe('sortSemverTags', () => {
     it('filters non-semver tags and sorts descending by version', () => {
-      const entries = sortSemverTags('backup-1\nv1.0.0\nv1.4.1\nv1.4.0\nv2.0.0');
-      expect(entries.map((e) => e.tag)).toEqual(['v2.0.0', 'v1.4.1', 'v1.4.0', 'v1.0.0']);
+      const entries = sortSemverTags('backup-1\nv1.0.0\nweb-1.4.1\nv1.4.0\nandroid-1.0.3\nv2.0.0');
+      expect(entries.map((e) => e.tag)).toEqual(['v2.0.0', 'web-1.4.1', 'v1.4.0', 'v1.0.0']);
     });
 
     it('handles empty input', () => {

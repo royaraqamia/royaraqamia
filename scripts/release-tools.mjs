@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { git, latestSemverTag, parseTag, formatTag } from './git-utils.mjs';
+import { git, latestSemverTag, parseTag, formatTag, formatVersion } from './git-utils.mjs';
 
 // Re-exported for the existing release-tools test suite.
-export { parseTag, formatTag };
+export { parseTag, formatTag, formatVersion };
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGE_LOCK = resolve(ROOT, 'package-lock.json');
@@ -106,7 +106,7 @@ function normalizeEntry(entry) {
 
 /** Renders a dated Keep-a-Changelog section from ready-made groups. */
 export function changelogSectionFromGroups(version, date, groups) {
-  const lines = [`## [${formatTag(version)}] - ${date}`];
+  const lines = [`## [${formatVersion(version)}] - ${date}`];
   for (const section of ALL_CHANGED) {
     const entries = groups?.[section] ?? [];
     if (entries.length === 0) continue;
@@ -295,13 +295,13 @@ export function gradeWindows(tags, readMessages) {
   let current = tags[0].version;
   for (let i = 1; i < tags.length; i++) {
     const messages = readMessages(tags[i - 1].tag, tags[i].tag);
-    const version = nextVersionFromMessages(formatTag(current), messages);
+    const version = nextVersionFromMessages(formatVersion(current), messages);
     windows.push({ from: tags[i - 1].tag, to: tags[i].tag, messages, version });
     current = version;
   }
   const tailMessages = readMessages(tags[tags.length - 1].tag, 'HEAD');
   if (tailMessages.length > 0) {
-    const version = nextVersionFromMessages(formatTag(current), tailMessages);
+    const version = nextVersionFromMessages(formatVersion(current), tailMessages);
     windows.push({ from: tags[tags.length - 1].tag, to: 'HEAD', messages: tailMessages, version });
     current = version;
   }
@@ -327,7 +327,7 @@ export function replayVersions() {
 export function bumpPackageVersion(version) {
   const pkgPath = resolve(ROOT, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  const next = formatTag(
+  const next = formatVersion(
     typeof version === 'string' ? (parseTag(version) ?? { major: 0, minor: 0, patch: 0 }) : version
   );
   pkg.version = next;
@@ -444,14 +444,14 @@ function main() {
     for (const w of windows) {
       const fromLabel = w.from ?? '(root)';
       process.stdout.write(
-        `${fromLabel}..${w.to}: ${w.messages.length} commits -> ${formatTag(w.version)}\n`
+        `${fromLabel}..${w.to}: ${w.messages.length} commits -> ${formatVersion(w.version)}\n`
       );
     }
-    process.stdout.write(`final=${formatTag(final)}\n`);
+    process.stdout.write(`final=${formatVersion(final)}\n`);
     return;
   }
 
-  if (has('--next')) {
+  if (has('--next') || has('--next-tag')) {
     const lastTag = readLatestTag();
     const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
     const commits = from ? readCommits(from) : [];
@@ -459,8 +459,12 @@ function main() {
       lastTag,
       commits.map((commit) => commit.subject)
     );
-    process.stdout.write(`${formatTag(next)}\n`);
-    if (dryRun) {
+    // `--next` is the version (`1.97.0`), because that is what bumps a file and
+    // names a changelog section. `--next-tag` is the tag (`web-1.97.0`), because
+    // that is what git and GitHub want. This is the one place that owns the
+    // prefix, so the workflow never spells it (ADR-0046).
+    process.stdout.write(`${has('--next-tag') ? formatTag(next) : formatVersion(next)}\n`);
+    if (dryRun && has('--next')) {
       process.stdout.write(buildReleaseSection(next, from));
     }
     return;
@@ -486,7 +490,7 @@ function main() {
   }
 
   process.stdout.write(
-    'usage: node scripts/release-tools.mjs (--guard | --next [--dry-run] | --replay | --apply <version> [--notes-file <path>])\n'
+    'usage: node scripts/release-tools.mjs (--guard | --next | --next-tag [--dry-run] | --replay | --apply <version> [--notes-file <path>])\n'
   );
 }
 
