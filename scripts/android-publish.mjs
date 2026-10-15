@@ -37,7 +37,7 @@
  * for you to run — with `--dry-run` to see all of it and touch nothing.
  */
 import { createHash } from 'node:crypto';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import {
   copyFileSync,
   existsSync,
