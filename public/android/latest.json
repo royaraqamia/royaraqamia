@@ -1,10 +1,10 @@
 {
-  "versionCode": 20002,
-  "versionName": "1.94.2+shell.20002",
-  "apkUrl": "https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-20002.apk",
-  "sha256": "ec821645e00ecbf58f5ca6b8bc80d1b6a6e600e79cddf866adc83a4b9f0e3bfb",
-  "sizeBytes": 7447121,
+  "versionCode": 20003,
+  "versionName": "1.0.3",
+  "apkUrl": "https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-shell-1.0.3.apk",
+  "sha256": "78fe6c833d07bb8512d0bfc468739cd086eb2de52fe7ccd08a68e50679edafad",
+  "sizeBytes": 7447105,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(ci): let the shell release itself",
+  "notes": "feat(android): give the shell its own version, and its own release",
   "releasedAt": "2026-10-15"
 }
