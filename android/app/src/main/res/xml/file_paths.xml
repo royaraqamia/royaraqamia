@@ -2,4 +2,10 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-path name="my_images" path="." />
     <cache-path name="my_cache_images" path="." />
+    <!--
+      Where a downloaded shell update waits for the installer (ADR-0044). This is
+      `getFilesDir()`, app-private internal storage; the provider is what lets the
+      installer read exactly one file, for as long as the install runs.
+    -->
+    <files-path name="shell_updates" path="updates/" />
 </paths>

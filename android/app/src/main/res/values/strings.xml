@@ -10,9 +10,17 @@
          WebViews this app supports. -->
     <string name="shell_update_title">تحديث التطبيق</string>
     <string name="shell_update_message">يتوفَّر إصدار جديد من التطبيق. تنزيله الآن؟</string>
-    <string name="shell_update_install">تنزيل التحديث</string>
+    <string name="shell_update_install">تنزيل وتثبيت</string>
     <string name="shell_update_later">لاحقًا</string>
     <string name="shell_update_required_title">تحديث مطلوب</string>
     <string name="shell_update_required_message">هذا الإصدار من التطبيق لم يعد مدعومًا. حدِّث التطبيق للمتابعة.</string>
-    <string name="shell_update_no_handler">لا يوجد تطبيق على هذا الجهاز يمكنه فتح رابط التنزيل.</string>
+
+    <!-- The install itself (ADR-0044). The APK is downloaded, checked against
+         the size and hash the manifest published, and only then handed to the
+         system installer — which is what asks the last question. -->
+    <string name="shell_update_downloading">جارٍ تنزيل التحديث…</string>
+    <string name="shell_update_allow_installs">اسمح لرؤيَة رقَميَّة بتثبيت التطبيقات من هذا المصدر، ثم عُد إلى التطبيق.</string>
+    <string name="shell_update_download_failed">تعذَّر تنزيل التحديث. تحقَّق من الاتصال وسنعرضه عليك مرة أخرى.</string>
+    <string name="shell_update_verify_failed">الملف الذي نزَّلناه لا يطابق الإصدار المنشور، ولم يُثبَّت شيء.</string>
+    <string name="shell_update_no_installer">تعذَّر فتح مُثبِّت التطبيقات على هذا الجهاز، ولم يُثبَّت شيء.</string>
 </resources>

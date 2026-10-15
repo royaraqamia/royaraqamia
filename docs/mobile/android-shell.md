@@ -33,6 +33,8 @@ npm run android:assets    # regenerate the launcher icon from public/icons (afte
 npm run android:apk       # debug APK   → android/app/build/outputs/apk/debug/app-debug.apk
 npm run android:release   # signed APK  → android/app/build/outputs/apk/release/app-release.apk
 npm run android:aab       # signed AAB  → android/app/build/outputs/bundle/release/app-release.aab
+npm run android:publish   # the release APK + public/android/latest.json, stamped from the file (ADR-0044)
+npm run android:test      # the shell's JVM tests: the update decision and the download (ADR-0043, ADR-0044)
 npm run android:verify-bridge   # on a connected device: is the native bridge live?
 ```
 
@@ -109,6 +111,11 @@ deploy look like a new APK to the update check that compares it against `public/
 `npm run android:shell-version` reads it, `-- --bump` moves it, and
 `.github/workflows/shell-version.yml` fails a pull request that changed the shell without moving it.
 
+`npm run android:test` runs the shell's JVM tests — the update decision and the download that verifies
+what may be installed. `.github/workflows/shell-tests.yml` runs them on any pull request that touches
+`android/**`, `capacitor.config.ts`, or the scripts that feed them, so they are checked where the shell
+changes rather than only on the machine that wrote them.
+
 ## What the shell wires up
 
 | Capability                                      | Where                                                       | State                                                                                  |
@@ -117,7 +124,7 @@ deploy look like a new APK to the update check that compares it against `public/
 | ------------------------------------            | -----------------------------------------------------       | -------------------------------------------------------------------------------------- |
 | Load the live site                              | `capacitor.config.ts` `server.url`                          | Working                                                                                |
 | Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                      | Working — in-page, so it shows in the shell too                                        |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog; installing it in place is Stage 2                           |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog, and it installs in place (ADR-0044)                         |
 | Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`           | Working                                                                                |
 | Custom-scheme OAuth return                      | manifest + `MainActivity`                                   | Working — needs two Supabase allowlist entries (below)                                 |
 | Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity` | Working                                                                                |
@@ -259,10 +266,10 @@ that a shell which loads all of its content remotely is a gray area reviewers ca
 (App Store compliance is discussed in ADR-0036) — an APK distributed directly avoids that
 question entirely, which is where this project is pointed.
 
-### 4. Announcing a shell update
+### 4. Announcing and installing a shell update
 
-Both halves exist: the shell announces its own APK (ADR-0043) and the page holds its own offer back while
-that is pending. What is left is installing it in place.
+Both halves work: the shell announces its own APK (ADR-0043) and installs it (ADR-0044), and the page
+holds its own offer back while that is pending.
 
 **What is in place.** `ShellUpdate` reads `/android/latest.json` (published from
 `public/android/latest.json`) and compares its `versionCode` with `BuildConfig.VERSION_CODE`, which comes
@@ -277,36 +284,72 @@ older devices a failed proxied request leaves the document without `window.Capac
 on the API 30 emulator (WebView 83), where a page-driven version of this existed, registered itself, and
 was invisible to the page.
 
-**What is not.** The dialog opens the published APK in the browser; it does not download and hand the
-file to the system installer. That is Stage 2, and it needs `REQUEST_INSTALL_PACKAGES`, the "install
-unknown apps" flow, a download verified against the manifest's `sha256` before it is offered, and a
-device to prove it on. The manifest already carries `sha256`, `sizeBytes`, and `apkUrl` for it.
+**Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
+under the app's own internal files directory, hashing as it writes, and renames it into place only when
+the byte count and the `sha256` match what the manifest published. `ShellInstaller` then opens the system
+installer on that file through the existing `FileProvider`. A manifest that does not describe the file —
+no usable hash, or no size — installs nothing at all, a body longer than the manifest described is
+refused at the byte it exceeds it, and a failed verification leaves nothing behind. Internal storage
+rather than the external files directory, which on API 24–29 another app can write to: that would leave a
+window between verifying the file and installing it.
 
-**Publishing is manual, deliberately.** Building the APK needs the upload keystore, which lives outside
-the repository and must never be lost; putting it in CI as well is a decision about where the backup
-lives. The sequence when the shell changes:
+The hash is a check on the download, not a trust boundary: the manifest and the APK come from the same
+place, so anything that can rewrite one can rewrite the other. What makes a rewritten manifest useless is
+Android refusing an update whose signature differs from the installed app's — which is why
+`android:publish` refuses a keystore `public/.well-known/assetlinks.json` does not list.
+
+The permission to hand an APK to the installer is per app from Android 8, and it is asked for at the
+moment it is needed: the shell opens the "install unknown apps" screen for this package and the prompt
+returns. Measured: **granting it restarts the app** — same process id while the user was in Settings,
+gone the moment the toggle moved — so the parked install does not survive the trip and the second tap is
+the one that installs. It costs no second download, because the verified file is still there.
+
+Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manifest at `20003`:
+
+| Step                         | What the device showed                                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The check                    | `ShellUpdater: checked …/android/latest.json: installed=20002 latest=20003 pending=true`                                                               |
+| The prompt                   | `alertTitle` = «تحديث التطبيق»; `button1` = «تنزيل وتثبيت», `button2` = «لاحقًا»                                                                       |
+| Permission missing           | `Settings$ManageAppExternalSourcesActivity` came to the front, the app still alive (`pid 6668`)                                                        |
+| Granting it                  | `REQUEST_INSTALL_PACKAGES: allow`, and the app's process was gone — the prompt returns afterwards                                                      |
+| The download                 | `ShellUpdater: verified royaraqamia-shell-20003.apk (9167448 bytes) against the manifest`                                                              |
+| The install                  | the package installer opened on the downloaded file; the tap produced `PACKAGE_REPLACED` and `versionCode=20003`                                       |
+| The verified file            | `files/updates/royaraqamia-shell-20003.apk`, `-rw-------`, 9167448 bytes — internal storage, readable by nothing else                                  |
+| The state after it           | `installed=20003 latest=20003 pending=false`, and no prompt                                                                                            |
+| A manifest with a wrong hash | `the update did not verify: the download hashes to 8a23f313…, the manifest says abab…`; nothing installed, `updates/` left empty, the prompt came back |
+
+**Publishing is a command, and uploading is still a person.** `npm run android:publish` builds the
+signed release APK, reads `versionCode`, `versionName`, the size and the SHA-256 out of the file itself,
+refuses an unsigned APK or one whose key `public/.well-known/assetlinks.json` does not list, refuses a
+version code that disagrees with `android/shell-version.properties`, refuses to publish backwards, and
+writes the manifest. It prints the `gh release upload` that finishes the job:
 
 ```powershell
 npm run android:shell-version -- --bump   # moves android/shell-version.properties
-npm run android:release                   # signed release APK
+npm run android:publish                   # signed APK + public/android/latest.json stamped from
+                                          #   the file itself; it prints the gh command above
+git add public/android/latest.json android/shell-version.properties
 
 # The manifest's apkUrl names a *channel* release, not a version: its tag is
 # literally `shell`. Nothing derives it from a version number, so it has to be
 # created once — and until it was, the published manifest named a URL that 404s
 # with no check noticing, because a URL's shape is all the tests can see.
 # `--latest=false` leaves "Latest" on the version releases, where a reader
-# expects it; the asset's name must match apkUrl's last segment, so rename the
-# build on the way in.
-Copy-Item android\app\build\outputs\apk\release\app-release.apk $env:TEMP\royaraqamia-shell.apk
-gh release create shell $env:TEMP\royaraqamia-shell.apk `
+# expects it. `android:publish` stages a copy named after apkUrl's last segment,
+# so the asset name is not a rename anyone has to remember.
+gh release create shell <staged>\royaraqamia-shell.apk `
   --title "Android shell (latest)" --latest=false --target main
 # a later publish replaces the asset on the same release:
-gh release upload shell $env:TEMP\royaraqamia-shell.apk --clobber
-
-# Then set public/android/latest.json's versionCode / versionName to what the
-# APK reports (`aapt2 dump badging app-release.apk`), and fill sha256 and
-# sizeBytes from the file itself — Stage 2 verifies a download against those.
+gh release upload shell <staged>\royaraqamia-shell.apk --clobber
 ```
+
+The asset name is load-bearing: the published URL ends in `royaraqamia-shell.apk`, so the script stages a
+copy under exactly that name rather than leaving you to rename it correctly.
+
+**What remains is not code.** The APK on any device today predates this, so the first update still has to
+be installed by hand (or by a store) — after that the loop closes itself. And declaring
+`REQUEST_INSTALL_PACKAGES` rules the shell out of Google Play while it updates itself, which is
+consistent with where this project is pointed (item 3 above).
 
 The counter is what the check compares, so a bump with no published APK tells shells nothing (the
 published code is not ahead of theirs) — the safe direction. A manifest test refuses a manifest that
