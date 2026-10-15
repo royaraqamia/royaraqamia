@@ -13,7 +13,8 @@ name: 'Shell Release'
 #   3. builds and signs the release APK, stamping the manifest from the file
 #   4. creates this version's own release (`android-1.0.3`) and attaches the asset
 #   5. downloads it back and hashes it against the manifest
-#   6. commits the manifest, so the site announces it
+#   6. waits for the release train (both write to main, and it will not push over a
+#      moved HEAD), then commits the manifest, so the site announces it
 #
 # Failing at 3–5 leaves the published channel exactly as it was: nothing is
 # announced. Failing at 6 leaves the asset uploaded and the manifest stale — the
@@ -306,6 +307,45 @@ jobs:
       # workflows, so there is nothing to loop, and the manifest has to reach the
       # site — a marker that tells deploys to stand down is one more thing that
       # could quietly stop it.
+      # Two workflows write to main, and the release train checks out the commit
+      # Code Quality tested and refuses to push if HEAD moved under it. Measured on
+      # the first per-version publish: this workflow's manifest commit landed at
+      # 11:48:0x and the release train's push at 11:48:1x was rejected, so the web
+      # version for that merge was never cut — its bump was local to the runner and
+      # gone. The manifest is the one that can wait, so it does.
+      - name: Let the release train finish first
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Bounded, and a timeout warns rather than fails: a broken release train
+          # must never be able to hold a shell release back.
+          deadline=$((SECONDS + 900))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            run=$(gh run list --workflow=release.yml --branch main --limit 20 --json headSha,status,conclusion \
+              --jq "[.[] | select(.headSha == \"$SHA\")][0] // empty")
+            if [ -z "$run" ]; then
+              echo "no release train run yet for ${SHA:0:8}; waiting for it to start"
+            else
+              status=$(printf '%s' "$run" | jq -r .status)
+              if [ "$status" = "completed" ]; then
+                conclusion=$(printf '%s' "$run" | jq -r .conclusion)
+                if [ "$conclusion" != "success" ]; then
+                  # Not this workflow's failure to fix, but worth saying out loud:
+                  # a failed release train means a web version was not cut.
+                  echo "::warning title=The release train failed::it finished $conclusion for ${SHA:0:8}, so no web version was cut. Re-run it: gh workflow run release.yml --ref main"
+                fi
+                echo "the release train finished for ${SHA:0:8}; the manifest can be the last writer"
+                exit 0
+              fi
+              echo "the release train is $status for ${SHA:0:8}; waiting"
+            fi
+            sleep 20
+          done
+          echo "::warning title=The release train never finished::waited 15 minutes for a Release run on ${SHA:0:8}. Pushing the manifest anyway — if that run failed, re-run the Release workflow afterwards."
+
       - name: Land the manifest
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
         env:
@@ -321,6 +361,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/android/latest.json
           git commit -m "chore(android): publish shell $VERSION_NAME ($VERSION_CODE)"
+
+          # The release train's own commit may have landed while this ran: rebase
+          # onto main before pushing, since a rejected push here would leave the
+          # asset uploaded and nobody told about it. The two commits never touch
+          # the same files (this one is the manifest alone).
+          git fetch origin main --quiet
+          git rebase origin/main
           git push origin HEAD:main
 
       - name: Summary

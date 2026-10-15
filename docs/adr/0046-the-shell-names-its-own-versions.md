@@ -101,3 +101,22 @@ them, a pull request could be required to bump the counter and then never publis
 — the one way a release goes missing without anything failing. The cost is a
 ten-second no-op run on dependency merges and web releases, which the verdict
 already absorbs.
+
+**Two workflows write to `main`, so the manifest waits its turn.** The release
+train checks out the commit Code Quality tested and refuses to push if HEAD has
+moved under it. Measured on the first per-version publish: the shell release's
+manifest commit landed at 11:48:0x, the release train's `git push` at 11:48:1x was
+rejected as non-fast-forward, and the web version for that merge was never cut —
+the bump existed only in that runner's workspace. Neither workflow is wrong; they
+simply both write to the same branch, and the shell release finishes first because
+it does not wait for Code Quality.
+
+The manifest is the one that can wait, so before committing it the workflow polls
+for a `Release` run on its own commit and lets it finish (bounded at fifteen
+minutes, and a timeout warns and continues, because a broken release train must not
+be able to hold a shell release back). Then it fetches and rebases onto `main`
+before pushing, in case anything else landed meanwhile. The two commits never touch
+the same files — this one is the manifest alone — so the rebase is trivial. The
+cost is a shell release that takes a few minutes longer when a web release is in
+flight, which is the price of the manifest being the last writer rather than the
+loser of a race.

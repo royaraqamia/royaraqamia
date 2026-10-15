@@ -359,8 +359,9 @@ bump could be required to move the counter and then never publish it. In order:
 5. **The re-download** — the asset is fetched back and hashed against the manifest before anything is
    announced. Until this step existed, the only thing that had ever seen the uploaded file was the machine
    that uploaded it.
-6. **The manifest commit** — `chore(android): publish shell 1.0.3 (20003)`, pushed by CI, so the deploy
-   serves it.
+6. **The manifest commit** — `chore(android): publish shell 1.0.3 (20003)`, pushed by CI after the
+   release train has finished with this commit (both write to `main`, and it refuses to push over a moved
+   HEAD), so the deploy serves it.
 
 Failing at 3–5 leaves the published channel exactly as it was. Failing at 6 leaves the asset uploaded and
 the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
