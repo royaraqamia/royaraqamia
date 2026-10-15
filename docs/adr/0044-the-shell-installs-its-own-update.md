@@ -8,13 +8,24 @@ installs APKs by hand, that is where the update story ended.
 This is the rest of it. Four decisions, each of which had a cheaper version that the platform or the
 drill ruled out.
 
-**The download is ours, and nothing is offered that does not hash to what the manifest published.**
-`ShellDownload` streams the APK into app-private storage, counting bytes and hashing as it goes, and
-only renames the file into place once the size and the SHA-256 match. A manifest with no usable hash
-installs nothing at all: the point of the check is the file that is about to be handed to the installer,
-and "it arrived over https from GitHub" is not a check. The rename is also the only moment a file
-becomes readable at the target path, so a reader never sees a half-written APK, and every failure path
-deletes the partial file — the directory holds either the verified file or nothing.
+**The download is ours, and nothing is offered that does not match what the manifest published.**
+`ShellDownload` streams the APK into app-private internal storage, counting bytes and hashing as it
+goes, and only renames the file into place once the size and the SHA-256 match. A manifest that does not
+describe the file — no usable hash, or no size to bound the download — installs nothing at all, because
+the point of the check is the file that is about to be handed to the installer, and "it arrived over
+https from GitHub" is not a check. A server that sends more than the manifest described is refused at
+the byte it exceeds it, so a wrong or lying source cannot fill the device. The rename is the only moment
+a file becomes readable at the target path, so a reader never sees a half-written APK, and every failure
+path deletes the partial file: the directory holds either the verified file or nothing.
+
+**What the hash is, and is not.** The manifest and the APK come from the same place, so the hash is not a
+defence against somebody who can rewrite the manifest — they can rewrite both fields. It is there for the
+failures that actually happen: a download cut short, a cached or stale file, a build that is not the one
+that was published. What stops a rewritten manifest from becoming an installed app is Android's own rule
+that an update has to be signed by the key the installed app was signed with, which is why
+`android:publish` refuses a keystore that `public/.well-known/assetlinks.json` does not list. Saying this
+plainly matters: a document that calls a hash "the only thing standing between a document and what gets
+installed" invites a trust it cannot carry.
 
 **The install belongs to the platform, and we cannot do it without the user.** Android's package
 installer is the only thing that may install, and from Android 8 the permission to hand it an APK is
@@ -30,18 +41,27 @@ does survive the trip (nothing is granted, or a platform that does not restart):
 without it that case would need a third tap for no reason.
 
 **The file reaches the installer through the provider that is already there.** `FileProvider`
-(`${applicationId}.fileprovider`) exposes a new `external-files-path` for `updates/`, and the install
-intent is `ACTION_VIEW` with `application/vnd.android.package-archive` and
-`FLAG_GRANT_READ_URI_PERMISSION`, which is the supported spelling from Android 8. `minSdk` is 24, so
-`ACTION_INSTALL_PACKAGE` remains as the fallback, marked deprecated at its call site rather than
-pretended away.
+(`${applicationId}.fileprovider`) exposes a new `files-path` for `updates/`, and the install intent is
+`ACTION_VIEW` with `application/vnd.android.package-archive` and `FLAG_GRANT_READ_URI_PERMISSION`, which
+is the supported spelling from Android 8. `minSdk` is 24, so `ACTION_INSTALL_PACKAGE` remains as the
+fallback, marked deprecated at its call site rather than pretended away.
+
+**Internal storage, not the external files directory.** `getExternalFilesDir()` is the conventional place
+for a downloaded APK and is easier to inspect from a host, but on API 24–29 another app holding storage
+permission can write there, which would open a window between verifying the file and handing it to the
+installer. `getFilesDir()` is unreadable by other apps at every supported API level, and the provider
+grants the installer exactly one URI for exactly as long as the install runs.
 
 **Plain http is allowed for a development host, and only in a debug build.** The emulator reaches its
 host on `10.0.2.2`, and every real defect in this feature so far was found by a device drill rather
 than by a test — the version-code downgrade, the missing Capacitor bridge, the manifest with a
 byte-order mark. An install path that could only be exercised by publishing to GitHub first would not
 be exercised. `ShellUpdate.isAllowedUpdateUrl` takes the build's `DEBUG` flag, so a release build
-accepts nothing but https, and the check is unit-tested in both directions.
+accepts nothing but https, and the check is unit-tested in both directions. The host is matched whole,
+so `10.0.2.2.example.test` is not a development host. Measured while checking this: the packaged debug
+APK carries `android:usesCleartextTraffic=true`, the release APK carries no such attribute — so the
+release build blocks cleartext at the platform level as well as at this check, and the debug allowance
+is what the drill actually used.
 
 **Publishing is a command that cannot type the numbers wrong.** `npm run android:publish` builds the
 signed release APK, reads `versionCode`/`versionName` out of it with `aapt2`, reads the signing
@@ -82,12 +102,21 @@ needs the upload keystore and the keystore is the one credential that must not b
 
 ## Consequences
 
-`npm run android:test` now covers the whole decision on the JVM: 22 cases across the manifest
+`npm run android:test` covers the whole decision on the JVM, and `.github/workflows/shell-tests.yml` runs
+it on every pull request that touches the shell (or the scripts that feed it) — a test suite that only
+runs on the machine that wrote it is a claim, not a gate. Today that is 25 cases across the manifest
 (`ShellUpdateTest`) and the download (`ShellDownloadTest`), the latter against a real HTTP server it
-starts itself — a body that arrives whole, a body cut short, a body that is not the published one, a
-manifest with no hash, an HTTP error, and the reuse of a file verified on an earlier attempt. What is
-left to a device is the part a device owns: the permission flow, the progress dialog, the installer,
-and the version code afterwards.
+starts itself: a body that arrives whole, a body cut short, a body longer than the manifest describes, a
+body that is not the published one, a manifest with no hash or no size, an HTTP error, the reuse of a
+file verified on an earlier attempt, and the one claim the rename exists for — that nothing is readable
+at the target path while the bytes are still arriving. What is left to a device is the part a device
+owns: the permission flow, the progress dialog, the installer, and the version code afterwards.
+
+A download outlives the activity that started it — the platform restarts the app when its install
+permission changes, and an ordinary low-memory destruction does the same thing more quietly. So every
+callback that touches a view goes through one guard that asks whether the shell is still alive: a dialog
+shown from a background thread on a destroyed activity is a `BadTokenException`, which is a crash in the
+one code path users reach at their most impatient.
 
 The manifest's `sha256` and `sizeBytes` are now load-bearing rather than advisory. A manifest published
 by hand without them installs nothing, which is the safe direction, but it is also a silent one: the

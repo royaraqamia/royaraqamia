@@ -22,14 +22,22 @@ import java.util.Locale;
  *
  * Three things are checked, each because of a failure that is otherwise silent:
  *
- * - **That there is a hash at all.** A manifest without one describes an APK
- *   nobody can check, so it is refused rather than trusted because it arrived
- *   over https.
- * - **The size.** A download cut short by a flaky connection is what a phone
- *   actually produces, and Android will open a half file.
- * - **The SHA-256.** The file is about to be handed to the platform installer;
- *   this is the only thing standing between a document on the network and what
- *   gets installed.
+ * - **That the manifest describes the file at all** — a hash and a size. Without
+ *   them the download cannot be checked or bounded, so it is refused rather than
+ *   trusted because it arrived over https.
+ * - **The size**, because a download cut short by a flaky connection is what a
+ *   phone actually produces, Android will open a half file, and a server that
+ *   sends more than was described is not sending the file we asked for.
+ * - **The SHA-256**, because the file is about to be handed to the platform
+ *   installer.
+ *
+ * What the hash is *not*: a trust boundary. The hash and the URL arrive in the
+ * same manifest, so this catches a truncated, stale, cached or otherwise
+ * unexpected file — not a hostile one, because anything that can rewrite the
+ * manifest can rewrite both fields. What stops a rewritten manifest from becoming
+ * an installed app is Android's own rule that an update has to be signed by the
+ * key the installed app was signed with, which is why `android:publish` refuses to
+ * publish a key that `assetlinks.json` does not list.
  */
 final class ShellDownload {
 
@@ -57,7 +65,8 @@ final class ShellDownload {
      * An APK that is already present and still hashes correctly is left alone:
      * another ten megabytes over a phone connection buys nothing, and this is
      * also what makes a retry after a declined install cheap. Anything that fails
-     * leaves no file behind — nothing unverified is ever readable at `target`.
+     * leaves no file behind — nothing unverified is ever readable at `target`,
+     * because the verified file only appears there by being renamed into place.
      */
     static File fetch(
             String url, File target, long expectedBytes, String expectedSha256, Progress progress)
@@ -67,6 +76,11 @@ final class ShellDownload {
             throw new VerificationFailed(
                     "the manifest publishes no usable sha256, so this APK cannot be checked: "
                             + expectedSha256);
+        }
+        if (expectedBytes <= 0) {
+            throw new VerificationFailed(
+                    "the manifest does not say how big the APK is, so the download cannot be bounded: "
+                            + expectedBytes);
         }
 
         if (target.isFile() && expected.equals(sha256Hex(target))) {
@@ -91,8 +105,6 @@ final class ShellDownload {
                 throw new IOException("HTTP " + code + " from " + url);
             }
 
-            long declared = connection.getContentLengthLong();
-            long total = declared > 0 ? declared : expectedBytes;
             long received = 0;
             MessageDigest digest = sha256();
 
@@ -101,16 +113,23 @@ final class ShellDownload {
                 byte[] buffer = new byte[BUFFER_BYTES];
                 int read;
                 while ((read = in.read(buffer)) != -1) {
+                    received += read;
+                    // Counted before it is written: a body longer than the manifest
+                    // described is not the file that was asked for, and there is no
+                    // reason to keep writing it to the device.
+                    if (received > expectedBytes) {
+                        throw new VerificationFailed(
+                                "the download is longer than the manifest's " + expectedBytes + " bytes");
+                    }
                     out.write(buffer, 0, read);
                     digest.update(buffer, 0, read);
-                    received += read;
-                    report(progress, received, total);
+                    report(progress, received, expectedBytes);
                 }
             }
 
             // A server that closes the stream early looks like a successful read
             // here, so the length is what catches a truncated download.
-            if (expectedBytes > 0 && received != expectedBytes) {
+            if (received != expectedBytes) {
                 throw new VerificationFailed(
                         "the download is " + received + " bytes, the manifest says " + expectedBytes);
             }
@@ -191,8 +210,9 @@ final class ShellDownload {
     }
 
     private static void deleteQuietly(File file) {
-        // A delete that fails leaves a file the next attempt overwrites, in
-        // storage only this app can read; not worth an error or a log.
+        // A delete that fails leaves a file the next download removes before it
+        // writes (`ShellInstaller.fetch` also sweeps the directory), in storage
+        // only this app can read; not worth an error or a log.
         if (file != null) file.delete();
     }
 }

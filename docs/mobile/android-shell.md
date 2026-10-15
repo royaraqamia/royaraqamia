@@ -111,6 +111,11 @@ deploy look like a new APK to the update check that compares it against `public/
 `npm run android:shell-version` reads it, `-- --bump` moves it, and
 `.github/workflows/shell-version.yml` fails a pull request that changed the shell without moving it.
 
+`npm run android:test` runs the shell's JVM tests — the update decision and the download that verifies
+what may be installed. `.github/workflows/shell-tests.yml` runs them on any pull request that touches
+`android/**`, `capacitor.config.ts`, or the scripts that feed them, so they are checked where the shell
+changes rather than only on the machine that wrote them.
+
 ## What the shell wires up
 
 | Capability                                      | Where                                                       | State                                                                                  |
@@ -280,10 +285,18 @@ on the API 30 emulator (WebView 83), where a page-driven version of this existed
 was invisible to the page.
 
 **Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
-under the app's external files directory, hashing as it writes, and renames it into place only when the
-byte count and the `sha256` match what the manifest published. `ShellInstaller` then opens the system
-installer on that file through the existing `FileProvider`. A manifest with no usable hash installs
-nothing at all, and a failed verification leaves nothing behind.
+under the app's own internal files directory, hashing as it writes, and renames it into place only when
+the byte count and the `sha256` match what the manifest published. `ShellInstaller` then opens the system
+installer on that file through the existing `FileProvider`. A manifest that does not describe the file —
+no usable hash, or no size — installs nothing at all, a body longer than the manifest described is
+refused at the byte it exceeds it, and a failed verification leaves nothing behind. Internal storage
+rather than the external files directory, which on API 24–29 another app can write to: that would leave a
+window between verifying the file and installing it.
+
+The hash is a check on the download, not a trust boundary: the manifest and the APK come from the same
+place, so anything that can rewrite one can rewrite the other. What makes a rewritten manifest useless is
+Android refusing an update whose signature differs from the installed app's — which is why
+`android:publish` refuses a keystore `public/.well-known/assetlinks.json` does not list.
 
 The permission to hand an APK to the installer is per app from Android 8, and it is asked for at the
 moment it is needed: the shell opens the "install unknown apps" screen for this package and the prompt
@@ -291,16 +304,18 @@ returns. Measured: **granting it restarts the app** — same process id while th
 gone the moment the toggle moved — so the parked install does not survive the trip and the second tap is
 the one that installs. It costs no second download, because the verified file is still there.
 
-Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20001`, manifest at `20002`:
+Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manifest at `20003`:
 
 | Step                         | What the device showed                                                                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The check                    | `ShellUpdater: checked …/android/latest.json: installed=20001 latest=20002 pending=true`                                                               |
+| The check                    | `ShellUpdater: checked …/android/latest.json: installed=20002 latest=20003 pending=true`                                                               |
 | The prompt                   | `alertTitle` = «تحديث التطبيق»; `button1` = «تنزيل وتثبيت», `button2` = «لاحقًا»                                                                       |
 | Permission missing           | `Settings$ManageAppExternalSourcesActivity` came to the front, the app still alive (`pid 6668`)                                                        |
-| Granting it                  | `REQUEST_INSTALL_PACKAGES: allow`, and the app's process was gone                                                                                      |
-| The install                  | the package installer opened on the downloaded file; the tap produced `PACKAGE_REPLACED`, `InstallSuccess`, and `versionCode=20002`                    |
-| The verified file            | `updates/royaraqamia-shell-20002.apk`, 8987853 bytes; `sha256sum` on the device = the manifest's `8a23f313…`                                           |
+| Granting it                  | `REQUEST_INSTALL_PACKAGES: allow`, and the app's process was gone — the prompt returns afterwards                                                      |
+| The download                 | `ShellUpdater: verified royaraqamia-shell-20003.apk (9167448 bytes) against the manifest`                                                              |
+| The install                  | the package installer opened on the downloaded file; the tap produced `PACKAGE_REPLACED` and `versionCode=20003`                                       |
+| The verified file            | `files/updates/royaraqamia-shell-20003.apk`, `-rw-------`, 9167448 bytes — internal storage, readable by nothing else                                  |
+| The state after it           | `installed=20003 latest=20003 pending=false`, and no prompt                                                                                            |
 | A manifest with a wrong hash | `the update did not verify: the download hashes to 8a23f313…, the manifest says abab…`; nothing installed, `updates/` left empty, the prompt came back |
 
 **Publishing is a command, and uploading is still a person.** `npm run android:publish` builds the

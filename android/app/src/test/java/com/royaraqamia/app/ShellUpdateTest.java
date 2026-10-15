@@ -148,8 +148,16 @@ public class ShellUpdateTest {
         // Never in a build a user has.
         assertFalse(ShellUpdate.isAllowedUpdateUrl("http://10.0.2.2:3000/shell-2.apk", false));
         assertFalse(ShellUpdate.isAllowedUpdateUrl("http://localhost:3000/shell-2.apk", false));
-        // And not for an address that is not a dev server, debug or not.
+        // And not for an address that is not a dev server, debug or not. The host
+        // is matched whole: a name that merely starts with one of these must not
+        // pass, because that is how an attacker would spell their own host.
         assertFalse(ShellUpdate.isAllowedUpdateUrl("http://example.test/shell-2.apk", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://10.0.2.2.example.test/shell-2.apk", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://localhost.example.test/shell-2.apk", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://127.0.0.1.example.test/shell-2.apk", true));
+        // Ports, paths and credentials do not change the host, and http to a dev
+        // host with any of them is still a dev host.
+        assertTrue(ShellUpdate.isAllowedUpdateUrl("http://10.0.2.2:8080/a/b.apk?x=1", true));
     }
 
     @Test

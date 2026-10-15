@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -181,13 +183,80 @@ public class ShellDownloadTest {
     }
 
     @Test
-    public void anUnknownSizeStillPassesTheHashCheck() throws Exception {
-        // sizeBytes is 0 in a manifest that does not declare one; the hash is what
-        // decides, and it is still checked.
+    public void withoutAPublishedSizeNothingIsDownloaded() throws Exception {
+        // A manifest that does not say how big the file is cannot bound the
+        // download, so it is refused for the same reason a missing hash is.
         server.serve(BODY);
 
-        ShellDownload.fetch(server.url(), target, 0, sha256(BODY), null);
+        for (long size : new long[] { 0, -1 }) {
+            IOException error = assertThrows(
+                IOException.class,
+                () -> ShellDownload.fetch(server.url(), target, size, sha256(BODY), null)
+            );
+            assertTrue(String.valueOf(error), error instanceof ShellDownload.VerificationFailed);
+        }
 
+        assertEquals(0, server.requests());
+        assertDirectoryIsEmpty();
+    }
+
+    @Test
+    public void aBodyLongerThanTheManifestDescribesIsRefused() throws Exception {
+        // The server sends everything; the manifest says the APK is smaller. The
+        // extra bytes are not what was published, and writing them to the device
+        // serves no purpose.
+        server.serve(BODY);
+
+        IOException error = assertThrows(
+            IOException.class,
+            () -> ShellDownload.fetch(server.url(), target, BODY.length - 1000, sha256(BODY), null)
+        );
+
+        assertTrue(error.getMessage(), error.getMessage().contains("longer than"));
+        assertFalse(target.exists());
+        assertDirectoryIsEmpty();
+    }
+
+    @Test
+    public void aStalePartialFileDoesNotSurvive() throws Exception {
+        // What a download that was killed mid-flight leaves behind. It is never
+        // installable, and the next attempt clears it.
+        Files.write(new File(directory, target.getName() + ".part").toPath(), "half a download".getBytes(StandardCharsets.UTF_8));
+        server.serve(BODY);
+
+        ShellDownload.fetch(server.url(), target, BODY.length, sha256(BODY), null);
+
+        assertEquals(Arrays.toString(directory.listFiles()), 1, directory.listFiles().length);
+        assertArrayEquals(BODY, Files.readAllBytes(target.toPath()));
+    }
+
+    @Test
+    public void theTargetOnlyAppearsWhenTheFileIsVerified() throws Exception {
+        // The claim the rename exists for: while the bytes are still arriving,
+        // nothing is readable at the path the installer is handed.
+        server.servePausedAfterHalf(BODY);
+        Thread download = new Thread(() -> {
+            try {
+                ShellDownload.fetch(server.url(), target, BODY.length, sha256(BODY), null);
+            } catch (Exception error) {
+                // Reaching this is a failure of the assertions below, not here.
+            }
+        });
+        download.setDaemon(true);
+        download.start();
+
+        assertTrue("the server should have paused mid-body", server.awaitPause(20));
+        Thread.sleep(300);
+        assertFalse("the verified file must not exist yet", target.exists());
+        File[] during = directory.listFiles();
+        assertNotNull(during);
+        for (File file : during) {
+            assertTrue(file.getName(), file.getName().endsWith(".part"));
+        }
+
+        server.release();
+        download.join(20_000);
+        assertFalse(download.isAlive());
         assertArrayEquals(BODY, Files.readAllBytes(target.toPath()));
     }
 
@@ -248,6 +317,8 @@ public class ShellDownloadTest {
         private volatile byte[] payload;
         private volatile int status = 500;
         private volatile boolean truncate;
+        private volatile CountDownLatch pausedAfterHalf;
+        private volatile CountDownLatch released;
 
         Server() throws IOException {
             socket = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
@@ -279,6 +350,25 @@ public class ShellDownloadTest {
 
         void serveStatus(int code) {
             status = code;
+        }
+
+        /** Sends half the body, waits to be released, then sends the rest. */
+        void servePausedAfterHalf(byte[] body) {
+            payload = body;
+            status = 200;
+            truncate = false;
+            released = new CountDownLatch(1);
+            pausedAfterHalf = new CountDownLatch(1);
+        }
+
+        boolean awaitPause(long seconds) throws InterruptedException {
+            CountDownLatch latch = pausedAfterHalf;
+            return latch != null && latch.await(seconds, TimeUnit.SECONDS);
+        }
+
+        void release() {
+            CountDownLatch latch = released;
+            if (latch != null) latch.countDown();
         }
 
         @Override
@@ -316,12 +406,28 @@ public class ShellDownloadTest {
 
             byte[] body = payload;
             int sent = truncate ? body.length - 1000 : body.length;
-            int declared = body.length;
             out.write(("HTTP/1.1 200 OK\r\n"
                 + "Content-Type: application/vnd.android.package-archive\r\n"
-                + "Content-Length: " + declared + "\r\n"
+                + "Content-Length: " + body.length + "\r\n"
                 + "Connection: close\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
-            out.write(body, 0, sent);
+
+            CountDownLatch pauseNow = pausedAfterHalf;
+            if (pauseNow == null) {
+                out.write(body, 0, sent);
+                out.flush();
+                return;
+            }
+
+            int half = body.length / 2;
+            out.write(body, 0, half);
+            out.flush();
+            pauseNow.countDown();
+            try {
+                released.await(20, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            out.write(body, half, sent - half);
             out.flush();
         }
     }

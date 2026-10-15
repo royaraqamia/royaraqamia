@@ -188,6 +188,41 @@ export function releaseTagFromUrl(apkUrl) {
   return segments[segments.length - 2];
 }
 
+/** The one package this manifest may ever point at. */
+export const PACKAGE_NAME = 'com.royaraqamia.app';
+
+/**
+ * Whether the APK is the one this tree means to publish, as a thrown reason when
+ * it is not, and the signing keys that passed.
+ *
+ * These are the three ways a publish goes wrong without anyone noticing: an APK
+ * built from another package, an APK whose version code disagrees with the counter
+ * CI checks, and an APK signed with a key that is not the one Android has for the
+ * installed app — which is unrecoverable for any device that has it, because the
+ * signature can never change.
+ */
+export function checkApkAgainstTree({ badging, fingerprints, counter, assetlinksText }) {
+  if (badging.packageName !== PACKAGE_NAME) {
+    throw new Error(`that APK is ${badging.packageName}, not ${PACKAGE_NAME}`);
+  }
+  if (badging.versionCode !== counter) {
+    throw new Error(
+      `the APK says versionCode ${badging.versionCode}, android/shell-version.properties says ${counter}.\n` +
+        'Rebuild after bumping the counter (npm run android:shell-version -- --bump).'
+    );
+  }
+
+  const trusted = isTrustedSigner(assetlinksText, fingerprints);
+  if (trusted.length === 0) {
+    throw new Error(
+      `no signing key matches public/.well-known/assetlinks.json:\n  APK: ${fingerprints.join('\n       ') || '(unsigned)'}\n` +
+        'Android requires the same key as the installed app; a device that has the app could not\n' +
+        'install this, and its App Links would stop verifying. Check which keystore was used.'
+    );
+  }
+  return trusted;
+}
+
 function sdkTool(name) {
   const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
   if (!sdk) throw new Error('ANDROID_HOME (or ANDROID_SDK_ROOT) must point at the Android SDK');
@@ -271,24 +306,12 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   if (!existsSync(apkPath)) throw new Error(`no APK at ${apkPath}`);
 
   const { badging, fingerprints } = inspect(apkPath);
-  if (badging.packageName !== 'com.royaraqamia.app') {
-    throw new Error(`that APK is ${badging.packageName}, not com.royaraqamia.app`);
-  }
-  if (badging.versionCode !== counter) {
-    throw new Error(
-      `the APK says versionCode ${badging.versionCode}, android/shell-version.properties says ${counter}.\n` +
-        'Rebuild after bumping the counter (npm run android:shell-version -- --bump).'
-    );
-  }
-
-  const trusted = isTrustedSigner(readFileSync(ASSETLINKS_PATH, 'utf8'), fingerprints);
-  if (trusted.length === 0) {
-    throw new Error(
-      `no signing key matches public/.well-known/assetlinks.json:\n  APK: ${fingerprints.join('\n       ')}\n` +
-        'Android requires the same key as the installed app; a device that has the app could not\n' +
-        'install this, and its App Links would stop verifying. Check which keystore was used.'
-    );
-  }
+  const trusted = checkApkAgainstTree({
+    badging,
+    fingerprints,
+    counter,
+    assetlinksText: readFileSync(ASSETLINKS_PATH, 'utf8'),
+  });
 
   const apkUrl = valueOf('--url') ?? previous.apkUrl;
   const min =

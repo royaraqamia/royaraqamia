@@ -53,6 +53,8 @@ final class ShellUpdatePrompt {
     private AlertDialog progressDialog;
     private ProgressBar progressBar;
     private int lastPercent = -1;
+    /** The activity is gone: nothing may touch a view or show a dialog any more. */
+    private boolean destroyed;
 
     ShellUpdatePrompt(Activity activity, String serverUrl) {
         this.activity = activity;
@@ -76,7 +78,7 @@ final class ShellUpdatePrompt {
                 ShellUpdate.Status checked = ShellUpdate.check(manifestUrl, installedCode);
                 Log.i(TAG, "checked " + manifestUrl + ": installed=" + checked.installedCode
                         + " latest=" + checked.latestCode + " pending=" + checked.updatePending());
-                activity.runOnUiThread(() -> {
+                onUiThread(() -> {
                     status = checked;
                     maybeAsk();
                 });
@@ -106,12 +108,32 @@ final class ShellUpdatePrompt {
     }
 
     void shutdown() {
+        // A download can outlive the activity that started it, and `runOnUiThread`
+        // posts to a handler that outlives it too, so this flag is what stops a
+        // finished shell from showing a dialog (`onUiThread`) — `shutdownNow` only
+        // stops tasks that have not started.
+        destroyed = true;
         hideProgress();
-        io.shutdown();
+        io.shutdownNow();
+    }
+
+    /**
+     * Runs UI work only while the shell that asked for it is still alive. Every
+     * callback here is reached from the download thread, and the activity may be
+     * gone by then: the platform restarts the app when its install permission
+     * changes, and a low-memory or "don't keep activities" destruction is just as
+     * ordinary. Showing a dialog on a destroyed activity is a `BadTokenException`.
+     */
+    private void onUiThread(Runnable action) {
+        if (destroyed) return;
+        activity.runOnUiThread(() -> {
+            if (destroyed || activity.isFinishing() || activity.isDestroyed()) return;
+            action.run();
+        });
     }
 
     private void maybeAsk() {
-        if (asking || status == null || !status.updatePending()) return;
+        if (destroyed || asking || status == null || !status.updatePending()) return;
         if (!ShellUpdate.isAllowedUpdateUrl(status.apkUrl, BuildConfig.DEBUG)) {
             Log.w(TAG, "an update is published without a usable apkUrl: " + status.apkUrl);
             return;
@@ -142,7 +164,7 @@ final class ShellUpdatePrompt {
      * installer, in that order — and none of them on the main thread.
      */
     private void startInstall(ShellUpdate.Status installing) {
-        if (installing == null) return;
+        if (destroyed || installing == null) return;
 
         if (!ShellInstaller.canInstall(activity)) {
             // Android 8 makes this a per-app permission only the user can grant, so
@@ -158,34 +180,42 @@ final class ShellUpdatePrompt {
             try {
                 File apk = ShellInstaller.fetch(activity, installing, this::onProgress);
                 Log.i(TAG, "verified " + apk.getName() + " (" + apk.length() + " bytes) against the manifest");
-                activity.runOnUiThread(() -> {
+                onUiThread(() -> {
                     hideProgress();
                     try {
                         ShellInstaller.offer(activity, apk);
                     } catch (Exception error) {
+                        // Nothing was installed; the file is fine, opening the
+                        // installer on it is what failed.
                         Log.w(TAG, "nothing can install " + apk + ": " + error);
-                        failed(R.string.shell_update_download_failed);
+                        failed(R.string.shell_update_no_installer);
                     }
                 });
             } catch (ShellDownload.VerificationFailed error) {
                 Log.w(TAG, "the update did not verify: " + error.getMessage());
-                activity.runOnUiThread(() -> failed(R.string.shell_update_verify_failed));
+                onUiThread(() -> failed(R.string.shell_update_verify_failed));
             } catch (Exception error) {
                 Log.w(TAG, "the update could not be downloaded: " + error);
-                activity.runOnUiThread(() -> failed(R.string.shell_update_download_failed));
+                onUiThread(() -> failed(R.string.shell_update_download_failed));
             }
         });
     }
 
     /**
-     * A Toast and the prompt again, not just the Toast: the check that would
-     * otherwise bring it back is hours away, and this is a question the user is
-     * free to decline.
+     * A Toast and the prompt again — not just the Toast, because the check that
+     * would otherwise bring it back is hours away, and this is a question the user
+     * is free to decline.
+     *
+     * A shell the site has marked unsupported is the exception: its dialog has no
+     * «لاحقًا» and does not dismiss, so re-asking after a failed download would be a
+     * dialog whose only button repeats the failure with no way out. There, the
+     * prompt comes back on the next launch or check instead.
      */
     private void failed(int messageId) {
         hideProgress();
         Toast.makeText(activity, messageId, Toast.LENGTH_LONG).show();
         asking = false;
+        if (status == null || status.unsupported()) return;
         maybeAsk();
     }
 
@@ -198,7 +228,7 @@ final class ShellUpdatePrompt {
         int percent = (int) Math.min(100L, received * 100L / total);
         if (percent == lastPercent) return;
         lastPercent = percent;
-        activity.runOnUiThread(() -> {
+        onUiThread(() -> {
             if (progressBar != null) progressBar.setProgress(percent);
         });
     }

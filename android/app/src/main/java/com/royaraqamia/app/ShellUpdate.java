@@ -134,7 +134,10 @@ final class ShellUpdate {
      * and only in a debug build. The emulator reaches its host on 10.0.2.2, so
      * without that exception the install path could not be exercised on a device
      * before publishing to GitHub — and the drill is what has caught every real
-     * defect in this feature so far. A release build never allows it.
+     * defect in this feature so far. Measured: the packaged debug APK carries
+     * `android:usesCleartextTraffic=true`, the release APK carries no such
+     * attribute, and this check refuses http in a release build in any case. A
+     * release build never allows it.
      */
     static boolean isAllowedUpdateUrl(String url, boolean debug) {
         if (url == null || url.isEmpty()) return false;

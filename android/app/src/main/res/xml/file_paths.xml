@@ -4,8 +4,8 @@
     <cache-path name="my_cache_images" path="." />
     <!--
       Where a downloaded shell update waits for the installer (ADR-0044). This is
-      `getExternalFilesDir()`, which is app-private; the provider is what lets the
+      `getFilesDir()`, app-private internal storage; the provider is what lets the
       installer read exactly one file, for as long as the install runs.
     -->
-    <external-files-path name="shell_updates" path="updates/" />
+    <files-path name="shell_updates" path="updates/" />
 </paths>

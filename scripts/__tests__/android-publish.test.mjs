@@ -6,14 +6,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
   assetNameFromUrl,
+  checkApkAgainstTree,
   isTrustedSigner,
-  releaseTagFromUrl,
   listedFingerprints,
   MANIFEST_KEYS,
   manifestText,
   normalizeFingerprint,
   parseBadging,
   parseSignerFingerprints,
+  releaseTagFromUrl,
   sha256File,
   stampManifest,
 } from '../android-publish.mjs';
@@ -227,6 +228,48 @@ describe('stamping the manifest', () => {
         minSupportedVersionCode: 20002,
       })
     ).toThrow(/minSupportedVersionCode/);
+  });
+});
+
+describe('what this tree refuses to publish', () => {
+  const badging = {
+    packageName: 'com.royaraqamia.app',
+    versionCode: 20001,
+    versionName: '1.92.0+shell.20001',
+  };
+  const check = (overrides = {}) =>
+    checkApkAgainstTree({
+      badging,
+      fingerprints: [RELEASE_FINGERPRINT],
+      counter: 20001,
+      assetlinksText: assetlinks,
+      ...overrides,
+    });
+
+  it('accepts the APK this tree built, signed by a key Android already trusts', () => {
+    expect(check()).toEqual([RELEASE_FINGERPRINT]);
+  });
+
+  it('refuses an APK for another package', () => {
+    expect(() => check({ badging: { ...badging, packageName: 'com.example.test' } })).toThrow(
+      /not com\.royaraqamia\.app/
+    );
+  });
+
+  it('refuses a version code the counter disagrees with', () => {
+    // The counter is what CI checks and what the app compares; an APK that
+    // disagrees with it is a publish nobody can reason about.
+    expect(() => check({ counter: 20002 })).toThrow(/shell-version\.properties/);
+  });
+
+  it('refuses a key assetlinks.json does not list', () => {
+    expect(() => check({ fingerprints: ['AB'.repeat(32)] })).toThrow(/assetlinks/);
+  });
+
+  it('refuses an APK with no signer at all', () => {
+    // What a release build without keystore.properties produces: apksigner prints
+    // no certificate, and there is nothing Android would accept.
+    expect(() => check({ fingerprints: [] })).toThrow(/assetlinks/);
   });
 });
 

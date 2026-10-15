@@ -27,9 +27,13 @@ final class ShellInstaller {
     private static final String TAG = "ShellUpdater";
     private static final String PACKAGE_ARCHIVE = "application/vnd.android.package-archive";
     /**
-     * App-private storage: no permission needed to write it, and no other app can
-     * read what is in it. The installer reaches it through the FileProvider,
-     * which grants exactly one URI for exactly as long as the install runs.
+     * App-private internal storage (`getFilesDir()`). The external files
+     * directory would work and is easier to inspect, but on API 24–29 another app
+     * holding storage permission can write there, which would leave a window
+     * between verifying the file and handing it to the installer. Internal
+     * storage is unreadable by other apps on every supported API level, and the
+     * installer reaches the one file it needs through the FileProvider, which
+     * grants exactly one URI for exactly as long as the install runs.
      */
     private static final String DIR = "updates";
 
@@ -106,9 +110,7 @@ final class ShellInstaller {
         }
     }
 
-    private static File target(Activity activity, int versionCode) throws IOException {
-        File base = activity.getExternalFilesDir(null);
-        if (base == null) throw new IOException("the app has no storage to download into");
-        return new File(new File(base, DIR), "royaraqamia-shell-" + versionCode + ".apk");
+    private static File target(Activity activity, int versionCode) {
+        return new File(new File(activity.getFilesDir(), DIR), "royaraqamia-shell-" + versionCode + ".apk");
     }
 }
