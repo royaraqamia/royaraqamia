@@ -23,6 +23,15 @@ import { logger } from './logger';
 export const SHELL_USER_AGENT_TOKEN = 'RoyaraqamiaShell';
 export const SHELL_MANIFEST_PATH = '/android/latest.json';
 
+/** The published APK, as the manifest beside the site describes it. */
+export interface ShellManifest {
+  versionCode: number;
+  versionName: string | null;
+  /** https URL of the newest APK, or null when the manifest names no usable one. */
+  apkUrl: string | null;
+  minSupportedVersionCode: number;
+}
+
 export interface ShellUpdateState {
   /** A newer APK is published than the one the shell says it is. */
   updatePending: boolean;
@@ -50,6 +59,46 @@ export function shellVersionFromUserAgent(userAgent: string): number | null {
 
 const asCode = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) ? value : 0;
+
+/** Reads a manifest body defensively: anything unreadable is simply absent. */
+export function toShellManifest(value: unknown): ShellManifest {
+  const record = (value ?? {}) as Record<string, unknown>;
+  const apkUrl = typeof record.apkUrl === 'string' ? record.apkUrl.trim() : '';
+  const versionName = typeof record.versionName === 'string' ? record.versionName.trim() : '';
+
+  return {
+    versionCode: asCode(record.versionCode),
+    versionName: versionName || null,
+    // Only https: this URL becomes a link a visitor is asked to install from.
+    apkUrl: apkUrl.startsWith('https://') ? apkUrl : null,
+    minSupportedVersionCode: asCode(record.minSupportedVersionCode),
+  };
+}
+
+/**
+ * Reads the published manifest, for any document. `refreshShellUpdate` asks this
+ * only when the user agent says it is the shell; the account page needs the same
+ * answer in a browser too, where it offers the APK as a download. Null means the
+ * manifest could not be read — never a claim that an update exists.
+ */
+export async function fetchShellManifest({
+  fetchImpl = fetch,
+  manifestPath = SHELL_MANIFEST_PATH,
+}: {
+  fetchImpl?: typeof fetch;
+  manifestPath?: string;
+} = {}): Promise<ShellManifest | null> {
+  try {
+    // Never from a cache: a stale manifest would keep the page quiet about an
+    // update the shell is not actually offering.
+    const response = await fetchImpl(manifestPath, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return toShellManifest(await response.json());
+  } catch (error) {
+    logger.warn('Shell update manifest unreadable', { error: String(error) });
+    return null;
+  }
+}
 
 /**
  * The decision, from the manifest and the shell's own version. A manifest that
@@ -120,16 +169,10 @@ export async function refreshShellUpdate({
     return;
   }
 
-  try {
-    // Never from a cache: a stale manifest would keep the page quiet about an
-    // update the shell is not actually offering.
-    const response = await fetchImpl(manifestPath, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    publish(toShellUpdateState(await response.json(), installedCode));
-  } catch (error) {
-    logger.warn('Shell update manifest unreadable', { error: String(error) });
-    publish({ ...SHELL_UPDATE_IDLE, installedCode });
-  }
+  const manifest = await fetchShellManifest({ fetchImpl, manifestPath });
+  publish(
+    manifest ? toShellUpdateState(manifest, installedCode) : { ...SHELL_UPDATE_IDLE, installedCode }
+  );
 }
 
 /**

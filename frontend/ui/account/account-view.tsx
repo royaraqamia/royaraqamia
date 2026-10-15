@@ -20,6 +20,8 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
+import { InstallSection } from '@/frontend/ui/account/install-section';
+import { rowClasses } from '@/frontend/ui/account/row-classes';
 
 function AccountSkeleton() {
   return (
@@ -31,9 +33,6 @@ function AccountSkeleton() {
     </div>
   );
 }
-
-const rowClasses =
-  'group flex w-full items-center justify-between gap-3 px-4 py-4 text-start text-sm sm:text-base font-bold text-foreground rounded-2xl border border-border/50 bg-card/60 hover:bg-primary/10 hover:text-primary hover:border-primary/30 active:scale-[0.99] transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
 
 export function AccountView() {
   const { user, isLoading, isAdmin, profileName, profileAvatarUrl, signOut } = useSession();
@@ -143,6 +142,8 @@ export function AccountView() {
             </span>
           </Link>
         )}
+
+        <InstallSection />
 
         <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className={rowClasses}>
           <span className="flex items-center gap-2.5">

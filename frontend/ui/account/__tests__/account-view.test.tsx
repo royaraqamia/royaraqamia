@@ -22,6 +22,11 @@ vi.mock('@/frontend/shared/constants', () => ({
   getWhatsAppUrl: () => 'https://wa.me/963968478904',
 }));
 
+/* The install row reads the PWA context; it has its own suite. */
+vi.mock('@/frontend/ui/account/install-section', () => ({
+  InstallSection: () => null,
+}));
+
 import { AccountView } from '../account-view';
 
 /* Radix dialog measures with ResizeObserver; jsdom does not ship it. */

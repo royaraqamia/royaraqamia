@@ -85,6 +85,60 @@ describe('toShellUpdateState', () => {
   });
 });
 
+describe('fetchShellManifest', () => {
+  it('reads the published APK from beside the site, uncached', async () => {
+    const { fetchShellManifest } = await loadModule();
+    const fetchImpl = respond({
+      versionCode: 20001,
+      versionName: '1.93.0+shell.20001',
+      apkUrl:
+        'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk',
+      minSupportedVersionCode: 20000,
+    });
+
+    const manifest = await fetchShellManifest({ fetchImpl });
+
+    expect(fetchImpl).toHaveBeenCalledWith('/android/latest.json', { cache: 'no-store' });
+    expect(manifest).toEqual({
+      versionCode: 20001,
+      versionName: '1.93.0+shell.20001',
+      apkUrl:
+        'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk',
+      minSupportedVersionCode: 20000,
+    });
+  });
+
+  it('keeps only an https download target', async () => {
+    const { fetchShellManifest } = await loadModule();
+
+    const insecure = await fetchShellManifest({
+      fetchImpl: respond({ apkUrl: 'http://example.com/app.apk' }),
+    });
+    expect(insecure?.apkUrl).toBeNull();
+
+    const absent = await fetchShellManifest({ fetchImpl: respond({}) });
+    expect(absent).toEqual({
+      versionCode: 0,
+      versionName: null,
+      apkUrl: null,
+      minSupportedVersionCode: 0,
+    });
+  });
+
+  it('reads as absent when the manifest is missing or unreadable', async () => {
+    const { fetchShellManifest } = await loadModule();
+
+    expect(await fetchShellManifest({ fetchImpl: respond({}, false, 404) })).toBeNull();
+    expect(
+      await fetchShellManifest({
+        fetchImpl: vi.fn(async () => {
+          throw new Error('offline');
+        }) as unknown as typeof fetch,
+      })
+    ).toBeNull();
+  });
+});
+
 describe('refreshShellUpdate', () => {
   it('does not even ask in a browser', async () => {
     const { refreshShellUpdate, getShellUpdateState } = await loadModule();
