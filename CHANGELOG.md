@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.94.2] - 2026-10-15
+
+### Fixed
+- draw the desktop icon from the logo's shape, and the 16px tab icon at all
+
 ## [1.94.1] - 2026-10-15
 
 ### Changed
