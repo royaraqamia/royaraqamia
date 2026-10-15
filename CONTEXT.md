@@ -321,7 +321,7 @@ updating itself within the same install (ADR-0042).
 
 The manifest is stamped from the built APK by `android:publish` and published by the `Shell Release`
 workflow on a change to the shell (ADR-0045). Each version is its own release — `android-1.0.3`, holding
-`royaraqamia-shell-1.0.3.apk` — because a tag that gets reused can be repointed at other bytes, and the
+`royaraqamia-1.0.3.apk` — because a tag that gets reused can be repointed at other bytes, and the
 version in the tag is the shell's own, derived from the counter and never typed (ADR-0046). `Shell version`
 is that counter; the `1.0.3` is what a user reads in the app's info screen and in the account footer.
 _Avoid_: app update, force update

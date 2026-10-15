@@ -7,8 +7,7 @@ const BROWSER_UA =
   'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36';
 const SHELL_UA = `${BROWSER_UA} RoyaraqamiaShell/20000`;
 
-const APK_URL =
-  'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk';
+const APK_URL = 'https://example.test/royaraqamia-1.0.4.apk';
 
 const manifest: ShellManifest = {
   versionCode: 20001,

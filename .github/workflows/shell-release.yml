@@ -344,7 +344,7 @@ jobs:
             fi
             sleep 20
           done
-          echo "::warning title=The release train never finished::waited 15 minutes for a Release run on ${SHA:0:8}. Pushing the manifest anyway — if that run failed, re-run the Release workflow afterwards."
+          echo "::warning title=The release train never finished::waited 15 minutes for a Release run on ${SHA:0:8}. Pushing the manifest anyway — a manifest commit no longer blocks the train (scripts/release-guard.mjs), so a run that starts later still cuts this merge's version."
 
       - name: Land the manifest
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
