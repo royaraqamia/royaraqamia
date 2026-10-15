@@ -26,7 +26,7 @@
  *   npm run android:publish -- --verdict    # just: is there anything to publish? (JSON, no build)
  *
  * The asset name and the release tag come from the version the APK carries — the
- * release is `android-1.0.3`, the asset `royaraqamia-shell-1.0.3.apk` — so every
+ * release is `android-1.0.3`, the asset `royaraqamia-1.0.3.apk` — so every
  * publish is a new, immutable release and the URL in the manifest names exactly
  * the bytes it hashed. `android-` keeps shell tags apart from the web train's.
  *
@@ -205,7 +205,7 @@ export function releaseTagFromUrl(apkUrl) {
 }
 
 /**
- * What the published asset is called: `royaraqamia-shell-1.0.3.apk`.
+ * What the published asset is called: `royaraqamia-1.0.3.apk`.
  *
  * One file per version, and the manifest points at that exact file. The
  * alternative — one name that each publish overwrites — means a device that read
@@ -214,11 +214,13 @@ export function releaseTagFromUrl(apkUrl) {
  * a failure mode a release channel should have.
  *
  * The name is the shell's own version rather than the counter, because it is what
- * a person reads: `royaraqamia-shell-1.0.3.apk` says which app version it is.
+ * a person reads: `royaraqamia-1.0.3.apk` says which app version it is. No `shell`
+ * in it: every file a user downloads from this repository is an APK of this app,
+ * and the release tag already says which line it belongs to.
  */
 export function shellAssetName(versionName) {
   validateVersionName(versionName);
-  return `royaraqamia-shell-${versionName}.apk`;
+  return `royaraqamia-${versionName}.apk`;
 }
 
 /**
