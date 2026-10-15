@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   parseTag,
   formatTag,
+  formatVersion,
   nextVersion,
   nextVersionFromMessages,
   isBreakingCommit,
@@ -55,8 +56,15 @@ describe('release-tools', () => {
       expect(parseTag(null)).toBeNull();
     });
 
-    it('formats a version back to a string', () => {
-      expect(formatTag({ major: 2, minor: 0, patch: 5 })).toBe('2.0.5');
+    it('formats a version as a version and as a tag', () => {
+      expect(formatVersion({ major: 2, minor: 0, patch: 5 })).toBe('2.0.5');
+      expect(formatTag({ major: 2, minor: 0, patch: 5 })).toBe('web-2.0.5');
+    });
+
+    it('parses the current tag spelling too', () => {
+      expect(parseTag('web-1.4.1')).toEqual({ major: 1, minor: 4, patch: 1 });
+      // And never a shell tag: separate release lines (ADR-0046).
+      expect(parseTag('android-1.0.3')).toBeNull();
     });
   });
 

@@ -78,17 +78,21 @@ jobs:
       - name: Compute Next Version
         id: next
         if: steps.guard.outputs.skip != 'true'
-        run: echo "version=$(node scripts/release-tools.mjs --next)" >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo "version=$(node scripts/release-tools.mjs --next)"
+            echo "tag=$(node scripts/release-tools.mjs --next-tag)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Rehearse Next Release (dry-run)
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run == true
         run: |
-          echo "next version: ${{ steps.next.outputs.version }}"
+          echo "next release: ${{ steps.next.outputs.tag }} (version ${{ steps.next.outputs.version }})"
           node scripts/release-tools.mjs --next --dry-run
 
       - name: Bump package.json, Write CHANGELOG.md, Capture Release Notes
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
-        run: node scripts/release-tools.mjs --apply "v${{ steps.next.outputs.version }}" --notes-file "${{ runner.temp }}/release-notes.md"
+        run: node scripts/release-tools.mjs --apply "${{ steps.next.outputs.version }}" --notes-file "${{ runner.temp }}/release-notes.md"
 
       - name: Regenerate committed version default
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
@@ -100,16 +104,21 @@ jobs:
           git config user.name "royaraqamia bot"
           git config user.email "bot@royaraqamia.com"
           git add package.json package-lock.json CHANGELOG.md backend/config/generated/app-version.ts
-          git commit -m "chore(release): v${{ steps.next.outputs.version }} [skip ci]"
-          git tag -a "v${{ steps.next.outputs.version }}" -m "v${{ steps.next.outputs.version }}"
+          git commit -m "chore(release): ${{ steps.next.outputs.tag }} [skip ci]"
+          git tag -a "${{ steps.next.outputs.tag }}" -m "${{ steps.next.outputs.tag }}"
           git push origin main --tags
 
       - name: Create GitHub Release
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
-          tag_name: v${{ steps.next.outputs.version }}
+          tag_name: ${{ steps.next.outputs.tag }}
           body_path: ${{ runner.temp }}/release-notes.md
+          # `false` on purpose: the Android shell's release claims "Latest" so the APK
+          # sits at the top of the releases page instead of drifting down as web
+          # releases land. A web release still has its notes and its tag; it is just
+          # not the one the page pins.
+          make_latest: false
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Sentry Preflight
@@ -137,5 +146,5 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
-          release: v${{ steps.next.outputs.version }}
+          release: ${{ steps.next.outputs.tag }}
           finalize: false

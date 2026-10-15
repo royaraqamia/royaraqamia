@@ -361,7 +361,7 @@ This produces the optimized production bundle in `.next/` ready for `next start`
 Every merge/commit to `main` produces a unique, monotonic release version in the format `<X.Y.Z>+build.<N>.<7-char-sha>` (SemVer 2.0 core + build metadata). The build metadata is ignored for SemVer precedence but gives every commit a reproducible identifier.
 
 - **`X.Y.Z`** — the **displayed** release number. Source of truth is the committed `package.json#version`, kept equal to the current tag by the release workflow (an `APP_VERSION` env override pins a manual deploy).
-- **`N`** — commits since the last `vX.Y.Z` tag.
+- **`N`** — commits since the last `web-X.Y.Z` tag.
 - **`<sha>`** — 7-char commit hash (from `VERCEL_GIT_COMMIT_SHA` on Vercel, `git rev-parse --short HEAD` locally, `unknown` as last resort).
 
 ### Release pipeline
@@ -369,11 +369,11 @@ Every merge/commit to `main` produces a unique, monotonic release version in the
 Pushing to `main` runs the Code Quality gate; on success the `Release` workflow (`workflow_run`-gated to `event == push && head_branch == main`):
 
 1. Verifies `npm run build` passes **before** minting a release (a broken tree never releases).
-2. Reads the latest `vX.Y.Z` tag and bumps from the merged conventional commit:
+2. Reads the latest `web-X.Y.Z` tag and bumps from the merged conventional commit (`scripts/git-utils.mjs` also reads the legacy `vX.Y.Z` and bare spellings, and deliberately never an `android-…` tag — the two release lines have separate clocks):
    - breaking / `!` → **major** (`X+1.0.0`)
    - `feat` → **minor** (`X.Y+1.0`)
    - anything else → **patch** (`X.Y.Z+1`)
-3. Bumps `package.json#version`, writes `CHANGELOG.md` (Keep-a-Changelog), commits `chore(release): vX.Y.Z [skip ci]`, tags, and creates a GitHub Release with notes from the changelog section.
+3. Bumps `package.json#version`, writes `CHANGELOG.md` (Keep-a-Changelog), commits `chore(release): web-X.Y.Z [skip ci]`, tags `web-X.Y.Z`, and creates a GitHub Release with notes from the changelog section. Web releases do **not** claim "Latest": the Android shell's release does, so the APK stays at the top of the releases page (ADR-0046).
 
 Entries already written under `[Unreleased]` are folded into the released section — one header per change type — and `[Unreleased]` is emptied. A commit that authored its own `[Unreleased]` entry is not restated as a generated subject line, so each change appears exactly once.
 
