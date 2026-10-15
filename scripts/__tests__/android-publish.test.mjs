@@ -11,11 +11,14 @@ import {
   listedFingerprints,
   MANIFEST_KEYS,
   manifestText,
+  nextApkUrl,
   normalizeFingerprint,
   parseBadging,
   parseSignerFingerprints,
+  publishVerdict,
   releaseTagFromUrl,
   sha256File,
+  shellAssetName,
   stampManifest,
 } from '../android-publish.mjs';
 
@@ -303,5 +306,79 @@ describe('the file that gets served', () => {
     writeFileSync(file, 'not really an apk');
 
     expect(sha256File(file)).toBe(createHash('sha256').update('not really an apk').digest('hex'));
+  });
+});
+
+describe('where the next publish goes', () => {
+  const LEGACY =
+    'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk';
+
+  it('names the asset after the version code', () => {
+    expect(shellAssetName(20002)).toBe('royaraqamia-shell-20002.apk');
+    expect(() => shellAssetName(0)).toThrow(/positive integer/);
+    expect(() => shellAssetName('20002')).toThrow(/positive integer/);
+  });
+
+  it('keeps the host, the repository and the tag, and moves the asset name on', () => {
+    expect(nextApkUrl(LEGACY, 20002)).toBe(
+      'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-20002.apk'
+    );
+    // And once a versioned URL is published, the next one replaces only its name.
+    expect(nextApkUrl(nextApkUrl(LEGACY, 20002), 20003)).toBe(
+      'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-20003.apk'
+    );
+  });
+
+  it('produces a URL whose last segment is the file that has to be uploaded', () => {
+    // The invariant the staging step depends on: rename the file, break the channel.
+    const url = nextApkUrl(LEGACY, 20002);
+    expect(assetNameFromUrl(url)).toBe(shellAssetName(20002));
+    expect(releaseTagFromUrl(url)).toBe('shell');
+  });
+
+  it('derives from the manifest the repository actually publishes', () => {
+    const published = JSON.parse(readFileSync(resolve(REPO, 'public/android/latest.json'), 'utf8'));
+    expect(nextApkUrl(published.apkUrl, published.versionCode + 1)).toBe(
+      `https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-${published.versionCode + 1}.apk`
+    );
+  });
+
+  it('refuses to guess when the published URL is not a release URL it understands', () => {
+    expect(() => nextApkUrl('', 20002)).toThrow(/pass --url/);
+    expect(() => nextApkUrl(null, 20002)).toThrow(/pass --url/);
+    expect(() => nextApkUrl('https://example.test/shell.apk', 20002)).toThrow(/pass --url/);
+    expect(() =>
+      nextApkUrl('https://github.com/royaraqamia/royaraqamia/releases/tag/shell', 20002)
+    ).toThrow(/pass --url/);
+  });
+});
+
+describe('whether there is anything to publish', () => {
+  const published = { versionCode: 20001 };
+
+  it('publishes when the counter is ahead of the manifest', () => {
+    expect(publishVerdict({ counter: 20002, published })).toEqual({
+      publish: true,
+      reason: 'publishing 20002 over the published 20001',
+    });
+  });
+
+  it('does nothing when the manifest already names this counter', () => {
+    // The state right after a successful publish, and after any re-run of the
+    // release workflow: not an error, just nothing to do.
+    const verdict = publishVerdict({ counter: 20001, published });
+    expect(verdict.publish).toBe(false);
+    expect(verdict.reason).toMatch(/already published/);
+  });
+
+  it('does nothing when the manifest is ahead of this tree', () => {
+    const verdict = publishVerdict({ counter: 20000, published });
+    expect(verdict.publish).toBe(false);
+    expect(verdict.reason).toMatch(/ahead of this tree/);
+  });
+
+  it('refuses a counter it cannot read, rather than guessing', () => {
+    expect(() => publishVerdict({ counter: 0, published })).toThrow(/no usable counter/);
+    expect(() => publishVerdict({ counter: '20002', published })).toThrow(/no usable counter/);
   });
 });

@@ -318,33 +318,64 @@ Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manife
 | The state after it           | `installed=20003 latest=20003 pending=false`, and no prompt                                                                                            |
 | A manifest with a wrong hash | `the update did not verify: the download hashes to 8a23f313…, the manifest says abab…`; nothing installed, `updates/` left empty, the prompt came back |
 
-**Publishing is a command, and uploading is still a person.** `npm run android:publish` builds the
-signed release APK, reads `versionCode`, `versionName`, the size and the SHA-256 out of the file itself,
-refuses an unsigned APK or one whose key `public/.well-known/assetlinks.json` does not list, refuses a
-version code that disagrees with `android/shell-version.properties`, refuses to publish backwards, and
-writes the manifest. It prints the `gh release upload` that finishes the job:
+**Publishing releases itself.** `.github/workflows/shell-release.yml` runs on any push to `main` that
+touches `android/**` or `capacitor.config.ts`, and on a manual dispatch. In order:
+
+1. **A verdict** — the counter in `android/shell-version.properties` against the manifest that is
+   published. A push that changed nothing native, or a re-run, stops here in about ten seconds with
+   `publish=false` and the reason why.
+2. **The shell's JVM tests**, so nothing lands on main without them.
+3. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
+   keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
+   `public/android/latest.json`.
+4. **The asset** — `royaraqamia-shell-<versionCode>.apk` on the release tagged `shell`: one file per
+   version code, never overwritten. An asset that already exists is only reused when it is byte-identical
+   to this build; if a _committed_ manifest already names it with a different hash, the run fails instead,
+   because that is the one thing that may not happen.
+5. **The re-download** — the asset is fetched back and hashed against the manifest before anything is
+   announced. Until this step existed, the only thing that had ever seen the uploaded file was the machine
+   that uploaded it.
+6. **The manifest commit** — `chore(android): publish shell <code>`, pushed by CI, so the deploy serves it.
+
+Failing at 3–5 leaves the published channel exactly as it was. Failing at 6 leaves the asset uploaded and
+the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
+verified, and re-running finishes it. Only `main` publishes; a dispatch on a branch can rehearse with
+`dry_run` (build and sign, upload nothing).
+
+**The secrets it needs** (Settings → Secrets and variables → Actions):
+
+| Secret                      | Value                                           |
+| --------------------------- | ----------------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | the upload keystore, base64-encoded (see below) |
+| `ANDROID_KEYSTORE_PASSWORD` | the store password                              |
+| `ANDROID_KEY_ALIAS`         | the key alias (`royar`)                         |
+| `ANDROID_KEY_PASSWORD`      | that key's password                             |
 
 ```powershell
-npm run android:shell-version -- --bump   # moves android/shell-version.properties
-npm run android:publish                   # signed APK + public/android/latest.json stamped from
-                                          #   the file itself; it prints the gh command above
-git add public/android/latest.json android/shell-version.properties
-
-# The manifest's apkUrl names a *channel* release, not a version: its tag is
-# literally `shell`. Nothing derives it from a version number, so it has to be
-# created once — and until it was, the published manifest named a URL that 404s
-# with no check noticing, because a URL's shape is all the tests can see.
-# `--latest=false` leaves "Latest" on the version releases, where a reader
-# expects it. `android:publish` stages a copy named after apkUrl's last segment,
-# so the asset name is not a rename anyone has to remember.
-gh release create shell <staged>\royaraqamia-shell.apk `
-  --title "Android shell (latest)" --latest=false --target main
-# a later publish replaces the asset on the same release:
-gh release upload shell <staged>\royaraqamia-shell.apk --clobber
+# Windows, from the keys directory
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('D:\Projects\royaraqamia-android-keys\royaraqamia-release.jks')) |
+  Set-Clipboard    # paste into the ANDROID_KEYSTORE_BASE64 secret
+# Linux/macOS
+base64 -w0 royaraqamia-release.jks
 ```
 
-The asset name is load-bearing: the published URL ends in `royaraqamia-shell.apk`, so the script stages a
-copy under exactly that name rather than leaving you to rename it correctly.
+The keystore is the one credential that cannot be re-derived, so having it in the repository's secrets is
+a backup decision as much as a convenience one. Rotating it means updating `ANDROID_KEYSTORE_BASE64` **and**
+`public/.well-known/assetlinks.json` together — a signature change that a device with the app installed
+cannot be talked out of: it would have to be reinstalled by hand.
+
+The local path still exists, and is the right one for a dry run or an emergency:
+
+```powershell
+npm run android:shell-version -- --bump        # in the pull request that changes the shell
+npm run android:publish                        # add --dry-run to see everything and touch nothing
+gh release upload shell <staged>\royaraqamia-shell-<code>.apk
+git add public/android/latest.json; git commit -m "chore(android): publish shell <code>"
+```
+
+The asset name is load-bearing: the published URL ends in it, `android:publish` stages a copy under
+exactly that name, and `gh release upload` without `--clobber` refuses a name that already exists — which
+is the immutability guarantee, in the one command where a person could otherwise undo it.
 
 **What remains is not code.** The APK on any device today predates this, so the first update still has to
 be installed by hand (or by a store) — after that the loop closes itself. And declaring

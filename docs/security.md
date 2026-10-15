@@ -18,6 +18,17 @@
 - `MCP_TOKEN_ENCRYPTION_KEY`
 - `github_dispatch_token` (Supabase Vault, not env — see runbook below)
 
+## GitHub Actions secrets
+
+Repository secrets, not environment variables. `shell-release.yml` is the only workflow that uses these.
+
+- `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` —
+  the Android shell's upload keystore. It is the one credential that cannot be re-derived: a device with
+  the app installed will not accept an update signed by a different key, so losing this secret _and_ the
+  copy in `D:\Projects\royaraqamia-android-keys` means the app can never be updated again. Rotating it
+  means changing the secret and `public/.well-known/assetlinks.json` together, and every installed shell
+  has to be replaced by hand (ADR-0045, `docs/mobile/android-shell.md`).
+
 ## Security baseline
 
 - Validate all external inputs via Zod (`shared/contracts`)

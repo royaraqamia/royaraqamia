@@ -71,8 +71,9 @@ release build without `keystore.properties` produces), a signature that `public/
 does not list (a device with the app installed could not install it, and its App Links would stop
 verifying), a `versionCode` that disagrees with `android/shell-version.properties` (the counter CI
 checks and the APK users get are then different claims), and a published version going backwards (a
-device on a higher build would be told nothing, forever). Uploading the file stays manual, because it
-needs the upload keystore and the keystore is the one credential that must not be duplicated.
+device on a higher build would be told nothing, forever). Uploading the file and committing the manifest
+are the release workflow's now, with the keystore in repository secrets — that reversal, and what it
+costs, is ADR-0045.
 
 ## Considered Options
 
@@ -93,9 +94,10 @@ needs the upload keystore and the keystore is the one credential that must not b
   in `public/` would be in every deploy and every CDN cache, for a file fetched once per update. The
   manifest stays on our origin, where it is small and must be fresh; the APK is on a host that already
   serves release assets over https.
-- **Publishing from CI.** Still no, for the reason ADR-0043 gave: the keystore lives outside the
-  repository and duplicating it is a decision about where the backup lives, not a build detail.
-  `android:publish` removes the hand-typed numbers, which was the part CI would have been buying.
+- **Publishing from CI.** Decided otherwise in ADR-0045: the keystore lives in repository secrets now, and
+  the release workflow uploads the asset and commits the manifest. What made it safe was never the
+  keystore's secrecy — `android:publish` removes the hand-typed numbers, and the workflow hashes the
+  uploaded bytes before announcing them.
 - **Asking for `REQUEST_INSTALL_PACKAGES` upfront at first launch.** Rejected: it is a permission that
   only matters when there is an update, and a permission asked for at a moment with no reason behind it
   is the one users deny.
