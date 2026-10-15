@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.100.0] - 2026-10-15
+
+### Changed
+- name the published APK royaraqamia-1.0.3.apk
+
+### Added
+- title a shell release with its own tag, and migrate the legacy assets
+
 ## [1.99.0] - 2026-10-15
 
 ### Added
