@@ -353,7 +353,8 @@ bump could be required to move the counter and then never publish it. In order:
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
    `public/android/latest.json`.
 4. **The release** — `android-1.0.3`, one release per version, holding
-   `royaraqamia-1.0.3.apk`. The tag in a published URL belongs to one version and is never repointed
+   `royaraqamia-1.0.3.apk`, titled with its own tag so the releases list and the tags
+   list cannot disagree. The tag in a published URL belongs to one version and is never repointed
    at other bytes. A release that already exists is a re-run: identical content is reused, different
    content fails when a _committed_ manifest names that asset, and is replaced only when none ever has.
 5. **The re-download** — the asset is fetched back and hashed against the manifest before anything is
@@ -411,7 +412,7 @@ The local path still exists, and is the right one for a dry run or an emergency:
 npm run android:shell-version -- --bump        # in the pull request that changes the shell
 npm run android:publish                        # add --dry-run to see everything and touch nothing
 gh release create android-1.0.4 <staged>\royaraqamia-1.0.4.apk `
-  --title "Android shell 1.0.4 (20004)" --latest --target main
+  --title "android-1.0.4" --latest --target main
 git add public/android/latest.json; git commit -m "chore(android): publish shell 1.0.4 (20004)"
 ```
 

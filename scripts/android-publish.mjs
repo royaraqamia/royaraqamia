@@ -242,9 +242,16 @@ function validateVersionName(versionName) {
   }
 }
 
-/** What the release is called: `Android shell 1.0.3 (20003)`. */
-export function shellReleaseTitle(versionName, versionCode) {
-  return `Android shell ${versionName} (${versionCode})`;
+/**
+ * What the release is called: `android-1.0.3` — the same string as its tag.
+ *
+ * A title that says something else (`Android shell 1.0.3 (20003)`) makes the
+ * releases list and the tags list disagree about one release, and the prefix is
+ * already how a reader tells the two release lines apart. The version code lives
+ * in the release body, where a support conversation can find it.
+ */
+export function shellReleaseTitle(versionName) {
+  return shellReleaseTag(versionName);
 }
 
 /**
@@ -500,7 +507,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   const staged = join(STAGING_DIR, asset);
   const megabytes = (manifest.sizeBytes / (1024 * 1024)).toFixed(1);
   const tag = releaseTagFromUrl(manifest.apkUrl);
-  const releaseTitle = shellReleaseTitle(versionName, manifest.versionCode);
+  const releaseTitle = shellReleaseTitle(versionName);
 
   const summary = {
     versionCode: manifest.versionCode,

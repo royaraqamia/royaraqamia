@@ -326,7 +326,7 @@ describe('where the next publish goes', () => {
   it('names the asset and the release after the version', () => {
     expect(shellAssetName('1.0.3')).toBe('royaraqamia-1.0.3.apk');
     expect(shellReleaseTag('1.0.3')).toBe('android-1.0.3');
-    expect(shellReleaseTitle('1.0.3', 20003)).toBe('Android shell 1.0.3 (20003)');
+    expect(shellReleaseTitle('1.0.3')).toBe('android-1.0.3');
     expect(() => shellAssetName('20003')).toThrow(/major\.minor\.patch/);
     expect(() => shellAssetName('1.0')).toThrow(/major\.minor\.patch/);
     expect(() => shellReleaseTag('v1.0.3')).toThrow(/major\.minor\.patch/);
