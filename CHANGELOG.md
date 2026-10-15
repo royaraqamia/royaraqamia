@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.1] - 2026-10-15
+
+### Changed
+- delete the one-off, and let a version's APK be cached for a year
+- serve the published APK from our own origin
+
 ## [1.101.0] - 2026-10-15
 
 ### Added
