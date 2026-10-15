@@ -16,7 +16,7 @@ import {
   type DeferredWork,
   type LinkClickedNotifier,
 } from '@/backend/services/linksnap/redirect-url';
-import { getAdminSupabase, getPublicSupabase } from '@/backend/config/supabase';
+import { getAdminSupabase } from '@/backend/config/supabase';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { env } from '@/backend/config/env';
@@ -26,7 +26,10 @@ import { env } from '@/backend/config/env';
  * services used by the API route handlers.
  */
 export function createShortLinkRepository(): SupabaseShortLinkRepository {
-  return new SupabaseShortLinkRepository(getAdminSupabase(), getPublicSupabase());
+  // The service role is required: `anon` no longer has SELECT on short_links, so
+  // the anonymous redirect and unlock resolve through it without exposing the
+  // password hash or owner over the Data API.
+  return new SupabaseShortLinkRepository(getAdminSupabase());
 }
 
 export function createAnalyticsRepository(): SupabaseAnalyticsRepository {
