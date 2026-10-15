@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.93.2] - 2026-10-15
+
+### Changed
+- create the shell release before the manifest names it
+
 ## [1.93.1] - 2026-10-15
 
 ### Changed
