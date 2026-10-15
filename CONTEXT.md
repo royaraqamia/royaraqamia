@@ -318,6 +318,11 @@ installed by it — downloaded into the app's own storage, checked against the m
 SHA-256, then handed to the system installer, which is what asks the user (ADR-0044). While it is
 pending, the site holds its web offer back. Distinct from a worker swap, which is the web build
 updating itself within the same install (ADR-0042).
+
+The manifest is stamped from the built APK by `android:publish` and published by the `Shell Release`
+workflow on a change to the shell (ADR-0045): one GitHub release tagged `shell` — a channel, not a
+version — carrying an immutable `royaraqamia-shell-<versionCode>.apk`. `Shell version` is the number, a
+`shell release` is the act of publishing one.
 _Avoid_: app update, force update
 
 **Tombstone**:

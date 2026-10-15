@@ -1,0 +1,333 @@
+name: 'Shell Release'
+
+# When the shell changes, the APK should follow without anyone remembering to run
+# anything. A push to main that touches `android/**` or the Capacitor config is the
+# signal that a new APK exists — `android/shell-version.properties` is what moves
+# with it, and `Shell Version` on the pull request is what keeps that honest.
+#
+# What it does, in this order, because the order is the safety story:
+#
+#   1. decides whether there is anything to publish at all (counter vs the manifest)
+#   2. runs the shell's JVM tests
+#   3. builds and signs the release APK, stamping the manifest from the file
+#   4. attaches the asset (one immutable file per version code, never overwritten)
+#   5. downloads it back and hashes it against the manifest
+#   6. commits the manifest, so the site announces it
+#
+# Failing at 3–5 leaves the published channel exactly as it was: nothing is
+# announced. Failing at 6 leaves the asset uploaded and the manifest stale — the
+# safe direction, because nobody is told about an APK whose bytes were not
+# verified. Re-running finishes the job.
+#
+# A push that changed nothing native costs about ten seconds: the verdict is the
+# first step and needs nothing but node. `workflow_dispatch` runs the same thing on
+# whatever ref you pick, with `dry_run` to build and sign without touching the
+# release or the manifest — and only `main` ever publishes, so a dispatch on a
+# branch can rehearse but cannot put an asset on the release that no site serves.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - '.github/workflows/shell-release.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and sign, but do not upload the asset or commit the manifest'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # the release asset and the manifest commit
+
+# Never cancel a publish half way. An uploaded asset and no manifest commit is
+# recoverable; an upload interrupted for a newer run is not worth reasoning about.
+concurrency:
+  group: shell-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish the shell
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # First, and before any toolchain: most runs of this workflow have nothing to
+      # publish, and they should cost ten seconds rather than a Gradle build.
+      - name: Is there anything to publish?
+        id: verdict
+        run: |
+          set -euo pipefail
+          verdict=$(node scripts/android-publish.mjs --verdict)
+          echo "$verdict"
+          {
+            echo "publish=$(echo "$verdict" | jq -r .publish)"
+            echo "reason=$(echo "$verdict" | jq -r .reason)"
+            echo "counter=$(echo "$verdict" | jq -r .counter)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Build Environment
+        if: steps.verdict.outputs.publish == 'true'
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
+      # `scripts/android.mjs` looks for the JDK itself and refuses anything but 21,
+      # because AGP 8.13 does not run on newer ones.
+      - name: Setup JDK 21
+        if: steps.verdict.outputs.publish == 'true'
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        if: steps.verdict.outputs.publish == 'true'
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Accept the SDK licences
+        if: steps.verdict.outputs.publish == 'true'
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Cache Gradle
+        if: steps.verdict.outputs.publish == 'true'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-release-${{ runner.os }}-
+
+      # Nothing lands on main that the tests do not pass. They ran on the pull
+      # request too, but a direct push to main (the release train) can carry shell
+      # changes nobody tested.
+      - name: The shell's JVM tests
+        if: steps.verdict.outputs.publish == 'true'
+        run: npm run android:test
+
+      # The upload keystore lives in repository secrets, base64 in one of them, and
+      # is written to a path outside the checkout. `keystore.properties` is
+      # gitignored, so it never reaches a commit.
+      - name: Write the signing material
+        if: steps.verdict.outputs.publish == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing secret::${name} is not set. See docs/mobile/android-shell.md."
+              exit 1
+            fi
+          done
+
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$RUNNER_TEMP/release.jks" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+
+          # Proves the key and the password belong together without printing either.
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "signing material is readable"
+
+      # The dialog shows this text, so it is the sentence whoever made the change
+      # wrote — a merged pull request's title rather than "Merge pull request #234".
+      - name: What to tell users
+        id: notes
+        if: steps.verdict.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          subject=$(git log -1 --pretty=%s)
+          if [[ "$subject" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
+            subject=$(gh pr view "${BASH_REMATCH[1]}" --json title --jq .title)
+            echo "merged pull request title: $subject"
+          else
+            echo "commit subject: $subject"
+          fi
+          # Trimmed in bash rather than with `cut -c`, which counts bytes in some
+          # locales and would split an Arabic title mid-character.
+          title=$(printf '%s' "$subject" | tr -d '\r\n')
+          echo "notes=${title:0:160}" >> "$GITHUB_OUTPUT"
+      - name: Build, sign and stamp
+        id: publish
+        if: steps.verdict.outputs.publish == 'true'
+        env:
+          NOTES: ${{ steps.notes.outputs.notes }}
+        run: |
+          set -euo pipefail
+          extra=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            extra="--dry-run"
+          fi
+
+          log="$RUNNER_TEMP/publish.log"
+          # shellcheck disable=SC2086 # $extra is one flag or nothing, on purpose
+          if ! npm run android:publish -- --json $extra --notes "$NOTES" > "$log" 2>&1; then
+            tail -n 200 "$log"
+            echo "::error title=The publish failed::nothing was uploaded or committed"
+            exit 1
+          fi
+          tail -n 12 "$log"
+          result=$(tail -n 1 "$log")
+          echo "$result" | jq . # fails the step if that last line is not the JSON
+
+          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset stagedPath; do
+            echo "$key=$(echo "$result" | jq -r ".$key")" >> "$GITHUB_OUTPUT"
+          done
+
+      # The tag is a channel, not a version: everything is attached to `shell`, and
+      # the *asset name* carries the version. So an asset that already exists means
+      # this version was published before, and it is only safe to continue if the
+      # bytes are the ones just built.
+      - name: Attach the asset
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          STAGED: ${{ steps.publish.outputs.stagedPath }}
+        run: |
+          set -euo pipefail
+
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "Android shell (latest)" \
+              --latest=false \
+              --target main \
+              --notes "Direct APK builds for the Android shell. The manifest the app follows is https://royaraqamia.com/android/latest.json"
+          fi
+
+          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx "$ASSET"; then
+            mkdir -p "$RUNNER_TEMP/existing"
+            for attempt in 1 2 3; do
+              if gh release download "$TAG" -p "$ASSET" -D "$RUNNER_TEMP/existing"; then break; fi
+              echo "download attempt $attempt failed"
+              if [ "$attempt" = 3 ]; then exit 1; fi
+              sleep 5
+            done
+
+            published=$(sha256sum "$RUNNER_TEMP/existing/$ASSET" | cut -d' ' -f1)
+            built=$(sha256sum "$STAGED" | cut -d' ' -f1)
+            echo "on the release: $published"
+            echo "this build:     $built"
+
+            # The manifest that is *committed* — not the one this run stamped —
+            # is what a device could already be following.
+            named_asset=$(git show HEAD:public/android/latest.json | jq -r .apkUrl | sed 's|.*/||')
+
+            if [ "$published" = "$built" ]; then
+              echo "$ASSET is already this build; nothing to upload"
+            elif [ "$named_asset" = "$ASSET" ]; then
+              echo "::error title=Same version, different bytes::the manifest on main already names $ASSET with a different hash. A version code is never republished with different bytes — bump android/shell-version.properties instead."
+              exit 1
+            else
+              echo "::warning title=Replacing an asset no manifest named::$ASSET exists with different bytes, from a run that did not finish. No published manifest points at it, so replacing it is safe."
+              gh release upload "$TAG" "$STAGED" --clobber
+            fi
+          else
+            gh release upload "$TAG" "$STAGED"
+          fi
+
+      # The check the whole design is for: the bytes a device will fetch, hashed
+      # here, must be the bytes the manifest promises. Before this, the only thing
+      # that had ever seen the uploaded file was the machine that uploaded it.
+      - name: Verify what a device will download
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/verify"; mkdir -p "$RUNNER_TEMP/verify"
+          # Three tries: the asset CDN can lag a moment behind an upload, and a
+          # flake here would otherwise fail a publish that is already done.
+          for attempt in 1 2 3; do
+            if gh release download "$TAG" -p "$ASSET" -D "$RUNNER_TEMP/verify"; then break; fi
+            echo "download attempt $attempt failed"
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 5
+          done
+
+          actual=$(sha256sum "$RUNNER_TEMP/verify/$ASSET" | cut -d' ' -f1)
+          expected=$(jq -r .sha256 public/android/latest.json)
+          actual_bytes=$(stat -c%s "$RUNNER_TEMP/verify/$ASSET")
+          expected_bytes=$(jq -r .sizeBytes public/android/latest.json)
+
+          echo "downloaded: $actual_bytes bytes, sha256 $actual"
+          echo "manifest:   $expected_bytes bytes, sha256 $expected"
+
+          if [ "$actual" != "$expected" ] || [ "$actual_bytes" != "$expected_bytes" ]; then
+            echo "::error title=The uploaded bytes are not the published manifest::the manifest was NOT committed, so no shell is told about this build"
+            exit 1
+          fi
+
+      # Deliberately no `[skip ci]`: a push made with GITHUB_TOKEN starts no
+      # workflows, so there is nothing to loop, and the manifest has to reach the
+      # site — a marker that tells deploys to stand down is one more thing that
+      # could quietly stop it.
+      - name: Land the manifest
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          VERSION_CODE: ${{ steps.publish.outputs.versionCode }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- public/android/latest.json; then
+            echo "the manifest already says shell $VERSION_CODE"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/android/latest.json
+          git commit -m "chore(android): publish shell $VERSION_CODE"
+          git push origin HEAD:main
+
+      - name: Summary
+        if: always()
+        env:
+          VERDICT: ${{ steps.verdict.outputs.publish == 'true' && 'publishing' || 'nothing to publish' }}
+          REASON: ${{ steps.verdict.outputs.reason }}
+          VERSION_CODE: ${{ steps.publish.outputs.versionCode }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+          SIZE: ${{ steps.publish.outputs.sizeBytes }}
+          URL: ${{ steps.publish.outputs.apkUrl }}
+        run: |
+          {
+            echo "### Shell release"
+            echo ""
+            echo "**$VERDICT** — $REASON"
+            echo ""
+            if [ -n "${VERSION_CODE:-}" ]; then
+              echo "| | |"
+              echo "| --- | --- |"
+              echo "| versionCode | \`$VERSION_CODE\` |"
+              echo "| asset | \`$ASSET\` |"
+              echo "| sha256 | \`$SHA256\` |"
+              echo "| size | $SIZE bytes |"
+              echo "| published URL | $URL |"
+            fi
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo ""
+              echo "**Dry run**: nothing was uploaded and the manifest was not committed."
+            fi
+            if [ "${{ github.ref_name }}" != "main" ]; then
+              echo ""
+              echo "**Ref \`${{ github.ref_name }}\`, not main**: the upload and the manifest commit were skipped."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
