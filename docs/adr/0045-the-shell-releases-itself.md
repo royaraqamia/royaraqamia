@@ -86,9 +86,11 @@ A shell change now reaches users without anyone deciding to release it. The safe
 the checks rather than in the pause, which is what the ordering and the checks are for; `minSupported`
 remains the only way to say an update cannot wait, and it is still carried forward unless raised.
 
-The workflow costs about six minutes of runner time when there is something to publish, and about ten
-seconds when there is not. The shell's JVM tests run inside it as well as on pull requests, so a direct
-push to `main` — the release train — cannot carry untested native code into a release.
+The workflow costs about four minutes of runner time when there is something to publish — 4m06s on the
+first run, cache cold, and that run included the JVM tests, the build, the upload and the re-download
+check — and ten seconds when there is not, measured on the manual dispatch that found `20002` already
+published. The shell's JVM tests run inside it as well as on pull requests, so a direct push to `main` —
+the release train — cannot carry untested native code into a release.
 
 `npm run android:publish` stays the same command, now with `--json` for the workflow and `--verdict` for
 the question "is there anything to publish at all", both unit-tested rather than written in shell. A
