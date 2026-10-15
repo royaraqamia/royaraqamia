@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.95.0] - 2026-10-15
+
+### Changed
+- put the measured release timings in ADR-0045
+- publish shell 20002
+
+### Added
+- let the shell release itself
+
+### Fixed
+- drop unused execFileSync import
+- group the redirects into GITHUB_OUTPUT, as shellcheck asks
+
 ## [1.94.2] - 2026-10-15
 
 ### Fixed
