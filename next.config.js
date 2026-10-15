@@ -198,6 +198,15 @@ const nextConfig = {
       // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
       // Keep it there only — a second definition here produced conflicting
       // Cache-Control values.
+      // A version's bytes never change, and the filename carries the version, so a
+      // repeat download can be served from the edge without revalidating and
+      // without ever handing out the wrong file. Same pattern as the rewrite in
+      // `rewrites()`; the manifest at `/android/latest.json` is deliberately not
+      // covered — it has to be re-read every time.
+      {
+        source: '/android/:file(.*\\.apk)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         source: '/:path*.webp',
         headers: [
