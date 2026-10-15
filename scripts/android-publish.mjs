@@ -360,8 +360,12 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   log('Upload it — the asset name is what the published URL ends in, so it is not a rename');
   log('that can be skipped:');
   log(`  gh release upload ${tag} "${staged}" --clobber`);
+  log('');
+  log(`The tag is a channel, not a version (it is "${tag}" for every publish), so the first`);
+  log('publish has to create the release once — with --latest=false, so "Latest" stays on the');
+  log('version releases where a reader expects it:');
   log(
-    `  (first time only: gh release create ${tag} --title "Android shell" --notes "Direct APK builds")`
+    `  gh release create ${tag} "${staged}" --title "Android shell (latest)" --latest=false --target main`
   );
   log('');
   log('Then land the manifest so the site serves it:');
