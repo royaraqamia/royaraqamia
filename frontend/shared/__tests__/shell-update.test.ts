@@ -128,8 +128,7 @@ describe('fetchShellManifest', () => {
     const fetchImpl = respond({
       versionCode: 20001,
       versionName: '1.93.0+shell.20001',
-      apkUrl:
-        'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk',
+      apkUrl: 'https://example.test/royaraqamia-1.0.4.apk',
       minSupportedVersionCode: 20000,
     });
 
@@ -139,8 +138,7 @@ describe('fetchShellManifest', () => {
     expect(manifest).toEqual({
       versionCode: 20001,
       versionName: '1.93.0+shell.20001',
-      apkUrl:
-        'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk',
+      apkUrl: 'https://example.test/royaraqamia-1.0.4.apk',
       minSupportedVersionCode: 20000,
     });
   });

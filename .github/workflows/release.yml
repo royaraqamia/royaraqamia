@@ -41,16 +41,21 @@ jobs:
       - name: Fetch Tags Explicitly
         run: git fetch --tags --force
 
-      - name: Verify Tested Commit Is Still HEAD
+      - name: Verify the Tested Commit Is Still Releasable
         if: github.event_name == 'workflow_run'
         shell: bash
         run: |
+          # A manifest commit is pushed by the Shell Release workflow with
+          # GITHUB_TOKEN, which starts no workflows — so it has no pipeline of its
+          # own, and aborting for it loses the version this merge is owed. The rule,
+          # and its one exception, live in scripts/release-guard.mjs (which uses the
+          # runner's own Node: it imports nothing outside the standard library).
           tested="${{ github.event.workflow_run.head_sha }}"
-          current="$(git rev-parse HEAD)"
-          if [ "$tested" != "$current" ]; then
-            echo "::error::Tested commit ${tested} is no longer HEAD (${current}) — aborting to avoid releasing untested code. The newer commit's own pipeline will release it."
+          if ! reason=$(node scripts/release-guard.mjs --tested "$tested"); then
+            echo "::error title=Untested code on main::$reason"
             exit 1
           fi
+          echo "$reason"
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
@@ -106,7 +111,25 @@ jobs:
           git add package.json package-lock.json CHANGELOG.md backend/config/generated/app-version.ts
           git commit -m "chore(release): ${{ steps.next.outputs.tag }} [skip ci]"
           git tag -a "${{ steps.next.outputs.tag }}" -m "${{ steps.next.outputs.tag }}"
-          git push origin main --tags
+          # Two workflows write to `main`. If this push is rejected the version is
+          # simply lost: the tag exists only in this runner, and no later run
+          # recomputes it — which is how the web version owed to #240's merge went
+          # missing. Rebase and try again; the other writer only ever touches the
+          # manifest, so a rebase here cannot conflict with it.
+          for attempt in 1 2 3 4 5; do
+            if git push origin main --tags; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); rebasing onto origin/main"
+            git fetch origin main --quiet
+            if ! git rebase origin/main; then
+              echo "::error title=Could not rebase the release commit::origin/main moved under a version bump that conflicts; the version was not cut. Re-run this workflow."
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "::error title=Could not push the release commit::origin/main kept moving under this run; the version was not cut. Re-run this workflow."
+          exit 1
 
       - name: Create GitHub Release
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true

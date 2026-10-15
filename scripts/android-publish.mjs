@@ -191,10 +191,11 @@ export function assetNameFromUrl(apkUrl) {
 }
 
 /**
- * The release tag in a published URL — the segment before the asset name, which
- * is `shell` for `/releases/download/shell/royaraqamia-shell.apk`. Printed as
- * part of the `gh release upload` that finishes a publish, so it has to be the
- * tag and not, say, `download`.
+ * The release tag in a published URL — the segment before the asset name, which is
+ * `android-1.0.3` for `/releases/download/android-1.0.3/royaraqamia-1.0.3.apk`, and
+ * was `shell` for the single file both of those replaced (ADR-0046). Printed as part
+ * of the `gh release upload` that finishes a publish, so it has to be the tag and
+ * not, say, `download`.
  */
 export function releaseTagFromUrl(apkUrl) {
   const segments = new URL(apkUrl).pathname.split('/').filter(Boolean);
