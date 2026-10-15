@@ -93,7 +93,19 @@ Deleting the old `shell` release has an order that cannot be skipped: the manife
 published today (20002) points _into_ it, and its URL contains the tag, so the
 release can only go once the manifest has moved to a per-version release. Moving
 the old APKs into `android-1.0.1` and `android-1.0.2` preserves the files under
-the new naming; it cannot preserve their old URLs, because those were the tag.
+the new naming; it cannot preserve their old URLs, because those were the tag. The
+migration ran once, from a dispatch-only workflow that verified each historical file
+against the hash it was published under before touching anything, hashed all three
+assets back after uploading them, and refused to change the manifest's sha256. That
+workflow is deleted; the state it produced is what stands.
+
+**The pinned release, not the lists, is where the APK is visible.** GitHub orders the
+releases list by publication date and the _tags page by tag name, descending_ — so
+`android-…` sorts after every `web-…` tag no matter when either was created, and an
+APK cut this morning drifts down the list as web releases land. That is why the shell
+release claims **Latest**: the pinned card at the top of `/releases` is the one place
+on the page whose position we control, and it names the APK. A link from the README is
+the other lever; renaming either line is not, because the ordering is lexicographic.
 
 `package.json` and `package-lock.json` join the trigger paths, because the
 counter's own definition of a shell change includes a Capacitor plugin dependency
