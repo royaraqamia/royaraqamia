@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.97.0] - 2026-10-15
+
+### Changed
+- publish shell 1.0.3 (20003)
+
+### Added
+- give the shell its own version, and its own release
+
 ## [1.96.1] - 2026-10-15
 
 ### Changed
