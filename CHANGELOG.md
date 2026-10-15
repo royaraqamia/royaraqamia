@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.94.0] - 2026-10-15
+
+### Added
+- download, verify and install the published APK
+
+### Fixed
+- store gradlew executable, so Gradle runs on Linux and macOS
+- guard the install against a dead activity, bound the download, store it internally
+
 ## [1.93.2] - 2026-10-15
 
 ### Changed
