@@ -44,8 +44,10 @@ adaptive canvas, 52% inset to the 72dp safe zone. The extremes exist because the
 the adaptive canvas's visible centre magnified, measured at **1.47x** on the API 30 Pixel
 Launcher, so that one surface divides the magnification out (`ADAPTIVE_ARTWORK_SCALE`) while the
 notification icon and the legacy and round launcher icons scale the artwork
-instead, cropping purple. The PWA's own icon set keeps the artwork's 51.7%, since that is what
-the installed PWA's icon is drawn from.
+instead, cropping purple — the launch theme's icon divides the splash mask out the same way
+(`SPLASH_ARTWORK_SCALE`). The PWA's own icon set keeps the artwork's 51.7%, since that is what
+the installed PWA's icon is drawn from. The notification icon and the round launcher icon are
+circle-cropped (transparent corners), the badge is the mark alone.
 `scripts/generate-android-assets.mjs` does this by hand rather than through
 `@capacitor/assets`, whose transitive `tar` carries a critical advisory that would fail
 `security-scan.yml`'s `npm audit --audit-level=high`. It measures every asset it writes
@@ -53,27 +55,30 @@ against its surface's target and exits non-zero on a miss, and
 `scripts/__tests__/icon-shape.test.mjs` holds the committed files to the same proportions in
 `npm test` (`scripts/logo-shape.mjs` is the measurement both use).
 
-The splash is **not an asset**. It is the launch theme — one `AppTheme.NoActionBarLaunch` in
+The splash is the launch theme — one `AppTheme.NoActionBarLaunch` in
 `android/app/src/main/res/values/styles.xml` declaring three items: `windowSplashScreenBackground`
 (`#0f172a`, the colour the WebView paints, so the handover shows no colour change),
-`windowSplashScreenAnimatedIcon` (`@mipmap/ic_launcher`, the launcher icon itself) and
-`postSplashScreenTheme`. Android 12+ draws that natively; `androidx.core:core-splashscreen` draws
-the same theme below it, which is why `MainActivity` calls `installSplashScreen()` before
-`super.onCreate`. Neither family leaves a duration of ours to keep in step: the platform dismisses
-the splash when the app draws its first frame — this shell loads a remote URL, so a fixed duration
-had no relationship to when the WebView was ready.
+`windowSplashScreenAnimatedIcon` (`@drawable/splash_icon`) and `postSplashScreenTheme`. Android 12+
+draws that natively; `androidx.core:core-splashscreen` draws the same theme below it, which is why
+`MainActivity` calls `installSplashScreen()` before `super.onCreate`. Neither family leaves a
+duration of ours to keep in step: the platform dismisses the splash when the app draws its first
+frame — this shell loads a remote URL, so a fixed duration had no relationship to when the WebView
+was ready.
 
-The icon reads **larger than the launcher icon does**, on both OS families, and that is the
-platform's own geometry rather than a number we chose. Measured on the API 30 emulator (320x640 @
-160dpi, mdpi): the visible circle is **192dp** and the white disc inside it is **186px = 97%** of
-it, against the launcher icon's `TARGET_DISC_RATIO` of 64%. `core-splashscreen`'s layer-list
-(`compat_splash_screen_no_icon_background.xml`) draws `windowSplashScreenAnimatedIcon` at 288dp and
-strokes a mask down to a 192dp circle; an adaptive drawable magnifies its layers inside its bounds,
-so the artwork lands full-bleed and only a thin purple rim of the tile survives. Android 12+ uses
-the documented 240dp icon area with a 160dp visible circle
-([dimensions](https://developer.android.com/develop/ui/views/launch/splash-screen#dimensions)) and
-the same one-third mask, so the disc reads large there too. A splash that reproduces the launcher's
-64% needs its own icon — the splash-specific asset #212 exists to delete.
+`@drawable/splash_icon` is **generated from the launcher artwork** at `SPLASH_ICON_DP` (288dp)
+rather than being the launcher icon itself, and that difference is the one number worth knowing.
+Both implementations draw the icon across an area and mask it down to a circle **two thirds** of
+that area — `core-splashscreen`'s layer-list draws it at 288dp and strokes the mask in to 192dp,
+and Android 12+ pairs the documented 240dp area with a 160dp visible circle — while an adaptive
+drawable magnifies its canvas inside its bounds as well. Point the theme at the launcher icon and
+those two magnifications multiply: measured on the API 30 emulator, its disc filled **186px of the
+192px** circle (97%), the artwork full-bleed with only a thin purple rim of the tile left. The
+generated icon is authored against the mask instead — the artwork at `SPLASH_ARTWORK_SCALE`
+(`TARGET_DISC_RATIO / (ARTWORK_RATIO * 1.5)`, i.e. the same construction as the adaptive foreground,
+one mask ratio apart) — so the disc lands on the launcher icon's own `TARGET_DISC_RATIO`. Measured
+the same way it fills **122px of the 192px** circle, **63.5%**, against the launcher icon's 64.0% on
+the same emulator. It is 288dp rather than 240dp so that whichever area the platform picks, the
+icon is scaled down rather than up.
 
 Before [#212](https://github.com/royaraqamia/royaraqamia/issues/212) there were two splash
 implementations by OS version: the plugin's dialog on API ≤ 30, drawing `drawable/splash.xml` (a
@@ -81,8 +86,8 @@ layer-list over a 96dp `splash_logo.png`) for `launchShowDuration: 1200`, and th
 on 31+, which ignores all of it. The plugin's drawable was handed to `setBackground`
 (`SplashScreen.java`), so a bitmap was stretched to fill and `androidScaleType` never applied — our
 1:2 frames came out 190x180px on the API 30 emulator — and the two families showed different
-sizes, 96dp against 160dp. The plugin, its config, its drawable, its bitmap and its colour file are
-all gone; `scripts/__tests__/icon-shape.test.mjs` fails if any of them reappears.
+sizes, 96dp against 160dp. The plugin, its config, its layer-list and its colour file are gone;
+`scripts/__tests__/icon-shape.test.mjs` fails if any of them returns.
 
 Install on a device or emulator:
 

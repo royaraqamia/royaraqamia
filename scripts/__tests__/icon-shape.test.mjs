@@ -153,16 +153,25 @@ describe('the logo is one shape on every surface', () => {
     expect(drifts).toEqual([]);
   });
 
-  it('draws the splash from the launch theme, with no splash asset left', () => {
+  it('crops the notification icon to a disc, like the round launcher icon', async () => {
+    // The shade draws this on the notification's own surface, so transparent
+    // corners are what makes it read as the logo rather than as a purple sticker
+    // pasted on the card. Its proportion is checked with the other app surfaces.
+    const { image } = await measure(notificationFile, PURPLE);
+    expect(image.at(0, 0).a).toBe(0);
+  });
+
+  it('draws the splash from the launch theme, from the launcher artwork', async () => {
     // #212: the platform splash on Android 12+ and `core-splashscreen` below it
-    // both read `AppTheme.NoActionBarLaunch`, and both draw the launcher icon — so
-    // a splash-specific drawable, bitmap or colour would be a second splash, and a
-    // plugin duration would be a second, unsynchronised dismissal.
+    // both read `AppTheme.NoActionBarLaunch`, and both draw the icon that theme
+    // names — so any other splash resource would be a second splash, and a plugin
+    // duration would be a second, unsynchronised dismissal.
     const drifts = [];
 
+    // The theme's icon is the one splash-named resource allowed to exist.
     for (const name of readdirSync(RES, { recursive: true }).map(String)) {
-      if (!/(^|[\\/])splash/i.test(name)) continue;
-      drifts.push(`${shown(join(RES, name))}: no splash-specific resource may exist`);
+      if (!/(^|[\\/])splash/i.test(name) || /splash_icon\.png$/.test(name)) continue;
+      drifts.push(`${shown(join(RES, name))}: no other splash resource may exist`);
     }
 
     const styles = readFileSync(join(RES, 'values', 'styles.xml'), 'utf8');
@@ -177,14 +186,32 @@ describe('the logo is one shape on every surface', () => {
       }
       for (const item of [
         '<item name="windowSplashScreenBackground">#0f172a</item>',
-        '<item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>',
+        '<item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>',
         '<item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>',
       ]) {
         if (!launch[1].includes(item)) drifts.push(`AppTheme.NoActionBarLaunch: missing ${item}`);
       }
-      if (launch[1].includes('@drawable/splash')) {
-        drifts.push('AppTheme.NoActionBarLaunch: must not point at a splash drawable');
-      }
+    }
+
+    // Both implementations draw the icon across an area and mask it down to a
+    // circle two thirds of that area (288dp against 192dp, 240dp against 160dp),
+    // which is the launcher's own magnification — so a disc at
+    // `TARGET_DISC_RATIO / 1.5` of the asset reads `TARGET_DISC_RATIO` of the
+    // circle a person sees. That is why the icon is not the launcher icon itself,
+    // which the platform magnifies twice over.
+    const iconFile = join(RES, 'drawable-xxxhdpi', 'splash_icon.png');
+    const { disc, image } = await measure(iconFile, PURPLE);
+    const visible = (image.width * 2) / 3;
+    const expected = Math.round(TARGET_DISC_RATIO * visible);
+    if (Math.abs(disc - expected) > DISC_TOLERANCE_PX) {
+      drifts.push(
+        `drawable-xxxhdpi/splash_icon.png: the disc is ${disc}px, expected ${expected}px — ` +
+          `${((100 * disc) / visible).toFixed(0)}% of the ${Math.round(visible)}px circle ` +
+          'the mask leaves'
+      );
+    }
+    if (image.at(0, 0).a !== 0) {
+      drifts.push('drawable-xxxhdpi/splash_icon.png: corners must be transparent');
     }
 
     const manifest = readFileSync(

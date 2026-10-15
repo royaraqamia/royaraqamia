@@ -65,10 +65,12 @@ async function tileFullBleed(file, size) {
 }
 
 // Notification icon: the app's proportion, not the artwork's — the disc at
-// `TARGET_DISC_RATIO` of the icon, which is what the launcher icon and the splash
-// logo read as. The artwork is scaled up and its purple edges cropped to get
-// there; the "any" icons above keep the artwork's own 51.7% because they are what
-// the PWA's installed icon is drawn from.
+// `TARGET_DISC_RATIO` of the icon, which is what the launcher icon reads as. The
+// artwork is scaled up and its purple edges cropped to get there; the "any" icons
+// above keep the artwork's own 51.7% because they are what the PWA's installed
+// icon is drawn from. Circle-cropped like the round launcher icon and the
+// favicons: the shade draws this on the notification's own surface, so a disc
+// reads as the logo where a square tile reads as a sticker pasted on the card.
 async function generateNotificationIcon() {
   const art = Math.round(NOTIFICATION_SIZE * NOTIFICATION_ARTWORK_SCALE);
   const inset = Math.round((art - NOTIFICATION_SIZE) / 2);
@@ -76,15 +78,12 @@ async function generateNotificationIcon() {
     .resize(art, art, { fit: 'fill' })
     .extract({ left: inset, top: inset, width: NOTIFICATION_SIZE, height: NOTIFICATION_SIZE })
     .toBuffer();
-  await sharp({
-    create: {
-      width: NOTIFICATION_SIZE,
-      height: NOTIFICATION_SIZE,
-      channels: 3,
-      background: PURPLE,
-    },
-  })
-    .composite([{ input: logo, gravity: 'center' }])
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${NOTIFICATION_SIZE}" height="${NOTIFICATION_SIZE}">` +
+      `<circle cx="${NOTIFICATION_SIZE / 2}" cy="${NOTIFICATION_SIZE / 2}" r="${NOTIFICATION_SIZE / 2}" fill="#fff"/></svg>`
+  );
+  await sharp(logo)
+    .composite([{ input: mask, blend: 'dest-in' }])
     .png()
     .toFile(`${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`);
 }
@@ -301,8 +300,8 @@ async function validate() {
       errors++;
     } else {
       const corners = await cornerPixels(notifFp, NOTIFICATION_SIZE);
-      if (!corners.TL.r || !corners.TL.a) {
-        console.error(`  ✗ notification icon: must be the opaque full-bleed logo`);
+      if (Object.values(corners).some((p) => p.a !== 0)) {
+        console.error(`  ✗ notification icon: corners must be transparent — it is a disc`);
         errors++;
       }
       const notif = await measure(notifFp, PURPLE);

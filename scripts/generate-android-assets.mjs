@@ -46,6 +46,21 @@ const ADAPTIVE_DP = 108;
  * 1.47x larger than its canvas proportion.
  */
 const LAUNCHER_MAGNIFICATION = 1.47;
+/**
+ * The launch theme's icon, in dp — and the one surface whose proportion comes out
+ * of geometry rather than out of a scale we pick.
+ *
+ * Both splash implementations draw the icon across an area and mask it down to a
+ * circle two thirds of that area: `core-splashscreen`'s layer-list draws it at
+ * 288dp and strokes the mask in to 192dp, and Android 12+ pairs the documented
+ * 240dp area with a 160dp visible circle. So a drawable whose disc sits at
+ * `SPLASH_ARTWORK_SCALE` (42.7%) of its own width reads `TARGET_DISC_RATIO` (64%)
+ * of the circle a person sees: the launcher icon's proportion, at launch.
+ *
+ * 288dp rather than 240: it is the larger of the two areas, so the platform scales
+ * it down rather than up whichever one it picks.
+ */
+const SPLASH_ICON_DP = 288;
 
 function rgb(hex) {
   const value = hex.replace('#', '');
@@ -66,17 +81,22 @@ if (!fs.existsSync(SOURCE)) {
 /** The artwork's own disc proportion, measured off the shipped icon. */
 const ARTWORK_RATIO = await artworkDiscRatio(SOURCE, PURPLE);
 /**
- * The two scales that reach `TARGET_DISC_RATIO`, per surface.
+ * The scales that reach `TARGET_DISC_RATIO`, per surface.
  *
  * A surface drawn at its own size — the legacy launcher icon, the round icon —
  * gets the artwork larger than its logo box, cropping purple to hit the target.
- * The adaptive canvas is different: a launcher magnifies its
- * visible centre, so the same target is reached by dividing that magnification
- * out. Both are one expression, so moving `TARGET_DISC_RATIO` moves every surface
- * together.
+ * The two surfaces a platform magnifies are different: they divide that
+ * magnification out instead. `LAUNCHER_MAGNIFICATION` is a launcher's own, as
+ * measured on the API 30 Pixel Launcher; the splash's mask is exactly two thirds
+ * of the area the icon is drawn in (288dp against 192dp, 240dp against 160dp), so
+ * that one is geometry — 1.5 — rather than a measurement, and lands on the target
+ * exactly. Every scale is one expression, so moving `TARGET_DISC_RATIO` moves all
+ * of them together.
  */
 const SURFACE_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
 const ADAPTIVE_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * LAUNCHER_MAGNIFICATION);
+const SPLASH_MASK_RATIO = 3 / 2;
+const SPLASH_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * SPLASH_MASK_RATIO);
 
 const tile = await sharp(SOURCE).metadata();
 if (!tile.width || tile.width !== tile.height) {
@@ -101,13 +121,12 @@ async function fullBleedTile(size, file) {
 }
 
 /**
- * Adaptive foreground: the artwork centred in the 108dp canvas at
- * `ADAPTIVE_ARTWORK_SCALE` of it, on transparency. That scale is
- * `TARGET_DISC_RATIO` with the launcher's magnification divided out, so this
- * surface reads the same as the ones a launcher draws at their own size.
+ * The artwork centred at `scale` of a transparent `size` square. Two surfaces use
+ * it: the adaptive foreground, across the 108dp canvas, and the launch theme's
+ * icon at `SPLASH_ICON_DP`.
  */
-async function adaptiveForeground(size, file) {
-  const inner = Math.round(size * ADAPTIVE_ARTWORK_SCALE);
+async function artworkOnTransparency(size, scale, file) {
+  const inner = Math.round(size * scale);
   const logo = await sharp(SOURCE).resize(inner, inner, { fit: 'fill' }).toBuffer();
   await sharp({
     create: {
@@ -120,6 +139,19 @@ async function adaptiveForeground(size, file) {
     .composite([{ input: logo, gravity: 'center' }])
     .png()
     .toFile(file);
+}
+
+/**
+ * The launch theme's icon: the artwork centred on transparency at
+ * `SPLASH_ARTWORK_SCALE`, at `SPLASH_ICON_DP` — the same construction as the
+ * adaptive foreground, one mask ratio apart, so the splash and the launcher icon
+ * agree on the disc (see `SPLASH_ICON_DP`).
+ */
+async function writeSplashIcon(written) {
+  const file = path.join(RES, 'drawable-xxxhdpi', 'splash_icon.png');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  await artworkOnTransparency(SPLASH_ICON_DP * 4, SPLASH_ARTWORK_SCALE, file);
+  written.push(`${file} (${SPLASH_ICON_DP * 4}²)`);
 }
 
 /**
@@ -223,12 +255,23 @@ async function validate() {
     await expectArtwork(foreground, canvas, ADAPTIVE_ARTWORK_SCALE);
   }
 
-  // No splash asset may exist at all: the launch theme draws the launcher icon
-  // itself (#212), so anything splash-named here would be a second splash on
-  // API <= 30 — a drawable, a bitmap frame, or the colour the layer-list read.
+  // The launch theme's icon is generated above; nothing else splash-named may
+  // exist. A layer-list, a frame bitmap or the plugin's colour file would be a
+  // second splash again — and this one is the launcher's own construction, so it
+  // cannot drift from the icon it mirrors.
+  const splashIcon = path.join(RES, 'drawable-xxxhdpi', 'splash_icon.png');
+  await expectDisc(
+    splashIcon,
+    SPLASH_ICON_DP * 4,
+    TARGET_DISC_RATIO / SPLASH_MASK_RATIO,
+    'the drawn area'
+  );
+  await expectArtwork(splashIcon, SPLASH_ICON_DP * 4, SPLASH_ARTWORK_SCALE);
+
+  const allowed = new Set(['splash_icon.png']);
   for (const dir of fs.readdirSync(RES).filter((name) => name.startsWith('drawable'))) {
     for (const file of fs.readdirSync(path.join(RES, dir))) {
-      if (!/^splash/i.test(file)) continue;
+      if (!/^splash/i.test(file) || allowed.has(file)) continue;
       console.error(`  ✗ ${where(path.join(RES, dir, file))}: no splash asset may exist`);
       errors += 1;
     }
@@ -271,11 +314,13 @@ for (const [density, scale] of Object.entries(DENSITIES)) {
     file: path.join(dir, 'ic_launcher_foreground.png'),
     size: Math.round(ADAPTIVE_DP * scale),
   };
-  await adaptiveForeground(adaptive.size, adaptive.file);
+  await artworkOnTransparency(adaptive.size, ADAPTIVE_ARTWORK_SCALE, adaptive.file);
   written.push(`${adaptive.file} (${adaptive.size}²)`);
 }
 
 written.push(writeBackgroundColour());
+
+await writeSplashIcon(written);
 
 console.log(`Generated ${written.length} Android resources in ${RES}:`);
 for (const entry of written) console.log(`  ✓ ${entry}`);
