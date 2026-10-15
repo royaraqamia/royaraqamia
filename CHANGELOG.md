@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.98.0] - 2026-10-15
+
+### Changed
+- assert the manifest's versionName the way the tree derives it
+
+### Added
+- tag web releases as `web-X.Y.Z`
+
+### Fixed
+- let the manifest wait for the release train
+
 ## [1.97.0] - 2026-10-15
 
 ### Changed
