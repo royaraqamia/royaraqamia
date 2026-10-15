@@ -1,10 +1,10 @@
 {
-  "versionCode": 20000,
-  "versionName": "1.91.0+shell.20000",
+  "versionCode": 20001,
+  "versionName": "1.93.0+shell.20001",
   "apkUrl": "https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk",
-  "sha256": "",
-  "sizeBytes": 0,
+  "sha256": "83287d303d9cd6cd1b228e13fbef100522ea46a1181ee91ec814ec43469f8e75",
+  "sizeBytes": 7446805,
   "minSupportedVersionCode": 20000,
-  "notes": "",
-  "releasedAt": "2026-10-14"
+  "notes": "The splash screen draws the app's own logo again, and the notification icon is the same disc as the launcher icon.",
+  "releasedAt": "2026-10-15"
 }
