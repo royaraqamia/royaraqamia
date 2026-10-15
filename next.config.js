@@ -115,11 +115,39 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    // The signed APK is served from our own origin, not from the GitHub release
+    // that also carries it as an archive: release assets are unreachable from at
+    // least one country this app has users in, and an update that cannot be
+    // downloaded is not an update (ADR-0047).
+    //
+    // A rewrite, deliberately, and not a route handler: a function's response body
+    // is capped at 4.5 MB and the APK is ~7.4 MB. This is proxied at the routing
+    // layer instead, so the size does not apply and no function is invoked.
+    //
+    // The `:file(.*\.apk)` constraint keeps the rule to the one shape the manifest
+    // names. `/android/latest.json` is a file in `public/`, and filesystem routes
+    // are matched before rewrites, so the manifest is never proxied to the bucket.
+    const storage = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!storage) {
+      // Local builds without Supabase configured still stack up; the APK path is
+      // simply 404 until the env is set, which is louder than a silent proxy to
+      // nowhere.
+      console.warn('NEXT_PUBLIC_SUPABASE_URL is unset: /android/*.apk will not be served');
+    }
+
     return [
       {
         source: '/unlock/:code',
         destination: '/linksnap/unlock/:code',
       },
+      ...(storage
+        ? [
+            {
+              source: '/android/:file(.*\\.apk)',
+              destination: `${storage}/storage/v1/object/public/android/:file`,
+            },
+          ]
+        : []),
     ];
   },
   async headers() {

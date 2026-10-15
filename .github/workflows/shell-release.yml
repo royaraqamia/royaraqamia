@@ -196,9 +196,54 @@ jobs:
           result=$(tail -n 1 "$log")
           echo "$result" | jq . # fails the step if that last line is not the JSON
 
-          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset releaseTitle stagedPath; do
+          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset releaseTitle stagedPath storageBucket; do
             echo "$key=$(echo "$result" | jq -r ".$key")" >> "$GITHUB_OUTPUT"
           done
+
+      # The device's copy comes from our own origin: `/android/<version>.apk` is the
+      # site proxied to this bucket (ADR-0047), so this is the upload that matters,
+      # and it goes first. `x-upsert: false` carries the same rule the releases
+      # have — a version's bytes are immutable, and a re-run never overwrites them.
+      - name: Upload the APK to storage
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUCKET: ${{ steps.publish.outputs.storageBucket }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          STAGED: ${{ steps.publish.outputs.stagedPath }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          url="https://ievboaylytxgtijconak.supabase.co/storage/v1/object/${BUCKET}/${ASSET}"
+
+          status=$(curl -sS -o "$RUNNER_TEMP/upload.out" -w '%{http_code}' \
+            -X POST "$url" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            -H "cache-control: max-age=31536000" \
+            -H "x-upsert: false" \
+            --data-binary @"$STAGED" || echo "000")
+          if [ "$status" = "200" ]; then
+            echo "uploaded $ASSET to $BUCKET"
+            exit 0
+          fi
+
+          echo "upload answered $status"
+          head -c 400 "$RUNNER_TEMP/upload.out" || true
+
+          # Anything but "created" is only safe to walk away from when the object in
+          # the bucket is already exactly this build — which is what a re-run looks
+          # like, and the only case where the manifest may still be committed.
+          curl -sS -f -o "$RUNNER_TEMP/existing.apk" "$url" || {
+            echo "::error title=The APK is not in storage::the upload answered $status and downloading it back failed too"
+            exit 1
+          }
+          existing=$(sha256sum "$RUNNER_TEMP/existing.apk" | cut -d' ' -f1)
+          if [ "$existing" != "$SHA256" ]; then
+            echo "::error title=Same version, different bytes in storage::$ASSET already holds sha256 $existing, not $SHA256. A version is never republished with different bytes — bump android/shell-version.properties instead."
+            exit 1
+          fi
+          echo "$ASSET in storage is already this build"
 
       # One release per version, so the tag in a published URL can never later be
       # pointed at other bytes. A release that already exists means a re-run, or a
@@ -275,19 +320,28 @@ jobs:
       - name: Verify what a device will download
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.publish.outputs.tag }}
+          APK_URL: ${{ steps.publish.outputs.apkUrl }}
           ASSET: ${{ steps.publish.outputs.asset }}
         run: |
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/verify"; mkdir -p "$RUNNER_TEMP/verify"
-          # Three tries: the asset CDN can lag a moment behind an upload, and a
-          # flake here would otherwise fail a publish that is already done.
-          for attempt in 1 2 3; do
-            if gh release download "$TAG" -p "$ASSET" -D "$RUNNER_TEMP/verify"; then break; fi
-            echo "download attempt $attempt failed"
-            if [ "$attempt" = 3 ]; then exit 1; fi
-            sleep 5
+
+          # The URL from the manifest, fetched from outside: the point of this step
+          # is that it is the path a device takes — the site's own path, proxied to
+          # the bucket — and not the path CI uploaded through. Retries cover the two
+          # reasons a first answer can be wrong: the bucket's CDN lagging the upload,
+          # and a deploy of the rewrite still landing.
+          status="000"
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl -sSL -o "$RUNNER_TEMP/verify/$ASSET" -w '%{http_code}' \
+              --max-time 300 "$APK_URL" || echo "000")
+            if [ "$status" = "200" ]; then break; fi
+            echo "download attempt $attempt answered $status"
+            if [ "$attempt" = 6 ]; then
+              echo "::error title=The published URL does not serve the APK::$APK_URL answered $status. The manifest was NOT committed, so no shell is told about this build."
+              exit 1
+            fi
+            sleep 20
           done
 
           actual=$(sha256sum "$RUNNER_TEMP/verify/$ASSET" | cut -d' ' -f1)
@@ -299,7 +353,7 @@ jobs:
           echo "manifest:   $expected_bytes bytes, sha256 $expected"
 
           if [ "$actual" != "$expected" ] || [ "$actual_bytes" != "$expected_bytes" ]; then
-            echo "::error title=The uploaded bytes are not the published manifest::the manifest was NOT committed, so no shell is told about this build"
+            echo "::error title=The bytes a device fetches are not the published manifest::the manifest was NOT committed, so no shell is told about this build"
             exit 1
           fi
 

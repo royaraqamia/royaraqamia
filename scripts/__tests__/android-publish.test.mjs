@@ -5,23 +5,23 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  assetNameFromUrl,
+  APK_ORIGIN,
+  apkUrlFor,
   checkApkAgainstTree,
   isTrustedSigner,
   listedFingerprints,
   MANIFEST_KEYS,
   manifestText,
-  nextApkUrl,
   normalizeFingerprint,
   parseBadging,
   parseSignerFingerprints,
   publishVerdict,
-  releaseTagFromUrl,
   sha256File,
   shellAssetName,
   shellReleaseTag,
   shellReleaseTitle,
   stampManifest,
+  STORAGE_BUCKET,
 } from '../android-publish.mjs';
 import { shellVersionNameFor } from '../android-shell-version.mjs';
 
@@ -292,22 +292,20 @@ describe('the file that gets served', () => {
     expect(manifestText(JSON.parse(committedManifest))).toBe(committedManifest);
   });
 
-  it('takes the asset name from the URL, which is why uploading needs the file named that', () => {
-    expect(assetNameFromUrl('https://example.com/a/b/royaraqamia-shell.apk')).toBe(
-      'royaraqamia-shell.apk'
-    );
-    expect(() => assetNameFromUrl('https://example.com/a/b/shell.apk.zip')).toThrow(/\.apk/);
-  });
-
-  it('takes the release tag from the URL the manifest publishes', () => {
-    // Printed as the `gh release upload <tag>` that finishes a publish. It read
-    // `download` until this was run against a real manifest.
+  it('accepts the URL a publish writes as a manifest apkUrl', () => {
+    // These two have to agree: `stampManifest` refuses anything that is not https,
+    // and `apkUrlFor` is the only URL a publish ever writes.
     expect(
-      releaseTagFromUrl(
-        'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk'
-      )
-    ).toBe('shell');
-    expect(() => releaseTagFromUrl('https://example.com/shell.apk')).toThrow(/release/);
+      stampManifest({
+        previous: { versionCode: 20003 },
+        versionCode: 20004,
+        versionName: '1.0.4',
+        apkUrl: apkUrlFor('1.0.4'),
+        sha256: GOOD_SHA,
+        sizeBytes: 1,
+        minSupportedVersionCode: 20000,
+      }).apkUrl
+    ).toBe('https://royaraqamia.com/android/royaraqamia-1.0.4.apk');
   });
 
   it('hashes a file the way the manifest spells a hash', () => {
@@ -320,9 +318,6 @@ describe('the file that gets served', () => {
 });
 
 describe('where the next publish goes', () => {
-  const LEGACY =
-    'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk';
-
   it('names the asset and the release after the version', () => {
     expect(shellAssetName('1.0.3')).toBe('royaraqamia-1.0.3.apk');
     expect(shellReleaseTag('1.0.3')).toBe('android-1.0.3');
@@ -332,46 +327,26 @@ describe('where the next publish goes', () => {
     expect(() => shellReleaseTag('v1.0.3')).toThrow(/major\.minor\.patch/);
   });
 
-  it('keeps the host and the repository, and moves the tag and the asset on', () => {
-    expect(nextApkUrl(LEGACY, '1.0.3')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-1.0.3.apk'
-    );
-    // And once a versioned URL is published, the next one is derived from it just
-    // the same — the old tag is not carried over, the version name decides.
-    const current =
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-1.0.3.apk';
-    expect(nextApkUrl(current, '1.0.4')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.4/royaraqamia-1.0.4.apk'
-    );
-    // The migration's own spelling: the old channel tag is ignored too.
-    expect(nextApkUrl(LEGACY, '1.0.2')).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.2/royaraqamia-1.0.2.apk'
-    );
+  it('serves it from our own origin, so no device depends on GitHub', () => {
+    const url = apkUrlFor('1.0.4');
+
+    expect(url).toBe(`${APK_ORIGIN}/royaraqamia-1.0.4.apk`);
+    expect(new URL(url).origin).toBe('https://royaraqamia.com');
+    expect(url).not.toContain('github');
+    // The object in the bucket carries the same name as the file, which is what
+    // makes one upload cover the site, the archive and the device.
+    expect(new URL(url).pathname.split('/').pop()).toBe(shellAssetName('1.0.4'));
   });
 
-  it('produces a URL whose tag and last segment match the version', () => {
-    // The invariants the staging and the upload steps depend on: rename either
-    // one, and the channel breaks.
-    const url = nextApkUrl(LEGACY, '1.0.3');
-    expect(assetNameFromUrl(url)).toBe(shellAssetName('1.0.3'));
-    expect(releaseTagFromUrl(url)).toBe(shellReleaseTag('1.0.3'));
-  });
-
-  it('derives from the manifest the repository actually publishes', () => {
+  it('puts the version in the URL from one source, however the last one was published', () => {
+    // ADR-0047 moved the host from GitHub's release assets to our own origin, and
+    // the next publish moves with it without anyone passing --url: the URL is a
+    // function of the version, not of the URL that came before it.
     const published = JSON.parse(readFileSync(resolve(REPO, 'public/android/latest.json'), 'utf8'));
-    const version = shellVersionNameFor(published.versionCode + 1);
-    expect(nextApkUrl(published.apkUrl, version)).toBe(
-      `https://github.com/royaraqamia/royaraqamia/releases/download/android-${version}/royaraqamia-${version}.apk`
-    );
-  });
+    const next = shellVersionNameFor(published.versionCode + 1);
 
-  it('refuses to guess when the published URL is not a release URL it understands', () => {
-    expect(() => nextApkUrl('', '1.0.3')).toThrow(/pass --url/);
-    expect(() => nextApkUrl(null, '1.0.3')).toThrow(/pass --url/);
-    expect(() => nextApkUrl('https://example.test/shell.apk', '1.0.3')).toThrow(/pass --url/);
-    expect(() =>
-      nextApkUrl('https://github.com/royaraqamia/royaraqamia/releases/tag/shell', '1.0.3')
-    ).toThrow(/pass --url/);
+    expect(apkUrlFor(next)).toBe(`https://royaraqamia.com/android/royaraqamia-${next}.apk`);
+    expect(STORAGE_BUCKET).toBe('android');
   });
 });
 
