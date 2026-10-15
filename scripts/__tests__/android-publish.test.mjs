@@ -19,8 +19,11 @@ import {
   releaseTagFromUrl,
   sha256File,
   shellAssetName,
+  shellReleaseTag,
+  shellReleaseTitle,
   stampManifest,
 } from '../android-publish.mjs';
+import { shellVersionNameFor } from '../android-shell-version.mjs';
 
 const REPO = process.cwd();
 const assetlinks = readFileSync(resolve(REPO, 'public/.well-known/assetlinks.json'), 'utf8');
@@ -28,7 +31,7 @@ const committedManifest = readFileSync(resolve(REPO, 'public/android/latest.json
 
 // Both of these are the real shapes, copied from aapt2 and apksigner output.
 const BADGING = [
-  "package: name='com.royaraqamia.app' versionCode='20001' versionName='1.92.0+shell.20001' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'",
+  "package: name='com.royaraqamia.app' versionCode='20001' versionName='1.0.1' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'",
   "sdkVersion:'24'",
   "targetSdkVersion:'36'",
   "application-label:'رؤية رقمية'",
@@ -51,7 +54,7 @@ describe('reading the built APK', () => {
     expect(parseBadging(BADGING)).toEqual({
       packageName: 'com.royaraqamia.app',
       versionCode: 20001,
-      versionName: '1.92.0+shell.20001',
+      versionName: '1.0.1',
     });
   });
 
@@ -106,7 +109,7 @@ describe('which keys may sign a published APK', () => {
 describe('stamping the manifest', () => {
   const previous = {
     versionCode: 20000,
-    versionName: '1.92.0+shell.20000',
+    versionName: '1.0.0',
     apkUrl:
       'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk',
     sha256: 'cd'.repeat(32),
@@ -120,7 +123,7 @@ describe('stamping the manifest', () => {
     stampManifest({
       previous,
       versionCode: 20001,
-      versionName: '1.92.0+shell.20001',
+      versionName: '1.0.1',
       apkUrl: previous.apkUrl,
       sha256: GOOD_SHA,
       sizeBytes: 10_800_000,
@@ -238,7 +241,7 @@ describe('what this tree refuses to publish', () => {
   const badging = {
     packageName: 'com.royaraqamia.app',
     versionCode: 20001,
-    versionName: '1.92.0+shell.20001',
+    versionName: '1.0.1',
   };
   const check = (overrides = {}) =>
     checkApkAgainstTree({
@@ -263,6 +266,13 @@ describe('what this tree refuses to publish', () => {
     // The counter is what CI checks and what the app compares; an APK that
     // disagrees with it is a publish nobody can reason about.
     expect(() => check({ counter: 20002 })).toThrow(/shell-version\.properties/);
+  });
+
+  it('refuses an APK whose name disagrees with the counter', () => {
+    // The name is what a user reads in Android's app info and in the app footer,
+    // and it is derived from the same counter — so an APK carrying a different one
+    // was built from a tree that is not this one.
+    expect(() => check({ badging: { ...badging, versionName: '1.0.2' } })).toThrow(/versionName/);
   });
 
   it('refuses a key assetlinks.json does not list', () => {
@@ -313,42 +323,54 @@ describe('where the next publish goes', () => {
   const LEGACY =
     'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk';
 
-  it('names the asset after the version code', () => {
-    expect(shellAssetName(20002)).toBe('royaraqamia-shell-20002.apk');
-    expect(() => shellAssetName(0)).toThrow(/positive integer/);
-    expect(() => shellAssetName('20002')).toThrow(/positive integer/);
+  it('names the asset and the release after the version', () => {
+    expect(shellAssetName('1.0.3')).toBe('royaraqamia-shell-1.0.3.apk');
+    expect(shellReleaseTag('1.0.3')).toBe('android-1.0.3');
+    expect(shellReleaseTitle('1.0.3', 20003)).toBe('Android shell 1.0.3 (20003)');
+    expect(() => shellAssetName('20003')).toThrow(/major\.minor\.patch/);
+    expect(() => shellAssetName('1.0')).toThrow(/major\.minor\.patch/);
+    expect(() => shellReleaseTag('v1.0.3')).toThrow(/major\.minor\.patch/);
   });
 
-  it('keeps the host, the repository and the tag, and moves the asset name on', () => {
-    expect(nextApkUrl(LEGACY, 20002)).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-20002.apk'
+  it('keeps the host and the repository, and moves the tag and the asset on', () => {
+    expect(nextApkUrl(LEGACY, '1.0.3')).toBe(
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-shell-1.0.3.apk'
     );
-    // And once a versioned URL is published, the next one replaces only its name.
-    expect(nextApkUrl(nextApkUrl(LEGACY, 20002), 20003)).toBe(
-      'https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-20003.apk'
+    // And once a versioned URL is published, the next one is derived from it just
+    // the same — the old tag is not carried over, the version name decides.
+    const current =
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.3/royaraqamia-shell-1.0.3.apk';
+    expect(nextApkUrl(current, '1.0.4')).toBe(
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.4/royaraqamia-shell-1.0.4.apk'
+    );
+    // The migration's own spelling: the old channel tag is ignored too.
+    expect(nextApkUrl(LEGACY, '1.0.2')).toBe(
+      'https://github.com/royaraqamia/royaraqamia/releases/download/android-1.0.2/royaraqamia-shell-1.0.2.apk'
     );
   });
 
-  it('produces a URL whose last segment is the file that has to be uploaded', () => {
-    // The invariant the staging step depends on: rename the file, break the channel.
-    const url = nextApkUrl(LEGACY, 20002);
-    expect(assetNameFromUrl(url)).toBe(shellAssetName(20002));
-    expect(releaseTagFromUrl(url)).toBe('shell');
+  it('produces a URL whose tag and last segment match the version', () => {
+    // The invariants the staging and the upload steps depend on: rename either
+    // one, and the channel breaks.
+    const url = nextApkUrl(LEGACY, '1.0.3');
+    expect(assetNameFromUrl(url)).toBe(shellAssetName('1.0.3'));
+    expect(releaseTagFromUrl(url)).toBe(shellReleaseTag('1.0.3'));
   });
 
   it('derives from the manifest the repository actually publishes', () => {
     const published = JSON.parse(readFileSync(resolve(REPO, 'public/android/latest.json'), 'utf8'));
-    expect(nextApkUrl(published.apkUrl, published.versionCode + 1)).toBe(
-      `https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell-${published.versionCode + 1}.apk`
+    const version = shellVersionNameFor(published.versionCode + 1);
+    expect(nextApkUrl(published.apkUrl, version)).toBe(
+      `https://github.com/royaraqamia/royaraqamia/releases/download/android-${version}/royaraqamia-shell-${version}.apk`
     );
   });
 
   it('refuses to guess when the published URL is not a release URL it understands', () => {
-    expect(() => nextApkUrl('', 20002)).toThrow(/pass --url/);
-    expect(() => nextApkUrl(null, 20002)).toThrow(/pass --url/);
-    expect(() => nextApkUrl('https://example.test/shell.apk', 20002)).toThrow(/pass --url/);
+    expect(() => nextApkUrl('', '1.0.3')).toThrow(/pass --url/);
+    expect(() => nextApkUrl(null, '1.0.3')).toThrow(/pass --url/);
+    expect(() => nextApkUrl('https://example.test/shell.apk', '1.0.3')).toThrow(/pass --url/);
     expect(() =>
-      nextApkUrl('https://github.com/royaraqamia/royaraqamia/releases/tag/shell', 20002)
+      nextApkUrl('https://github.com/royaraqamia/royaraqamia/releases/tag/shell', '1.0.3')
     ).toThrow(/pass --url/);
   });
 });

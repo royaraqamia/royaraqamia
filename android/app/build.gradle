@@ -1,21 +1,25 @@
 apply plugin: 'com.android.application'
 
-// versionName is derived from the root package.json so a support conversation
-// and the release train agree on which site build a shell is carrying.
+// Both of these come from the shell's own counter file (android/shell-version.properties,
+// ADR-0043), and neither has anything to do with package.json:
 //
-// versionCode is NOT: it is the shell's own counter (android/shell-version.properties,
-// ADR-0043). The shell loads the live site, so a web release does not change the
-// installed app — deriving versionCode from package.json would have every deploy
-// look like a new APK to the update check that compares it against
-// public/android/latest.json. Only the native side moves this number.
-def appVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version.toString()
-
+// - versionCode is an integer Android compares; it is the update key, and it
+//   only moves when the native side moves.
+// - versionName is what a user reads. It used to be the *web* version at build
+//   time (`1.94.2+shell.20002`), which described nothing: this shell carries no
+//   web code, it loads the live site, so that number was stale the moment the
+//   site deployed. It is now the shell's own name, derived from the counter by
+//   `scripts/android-shell-version.mjs` and written into the properties file —
+//   so the app, the release tag and the APK cannot disagree about it.
+//
+// The web version is still there for support: the site knows it, and shows it.
 def shellVersionFile = file('../shell-version.properties')
 def shellVersionProperties = new Properties()
 if (shellVersionFile.exists()) {
     shellVersionFile.withInputStream { shellVersionProperties.load(it) }
 }
 def shellVersionCode = (shellVersionProperties.getProperty('shellVersionCode') ?: '0').toInteger()
+def shellVersionName = (shellVersionProperties.getProperty('shellVersionName') ?: "${shellVersionCode}")
 
 // The upload keystore lives outside the repository (D:\Projects\royaraqamia-android-keys)
 // and is referenced by a git-ignored keystore.properties, so credentials are
@@ -36,10 +40,9 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode shellVersionCode
-        // `+shell.N` keeps the site build and the shell counter in one string:
-        // support can tell which of the two a user is on from Settings alone,
-        // and the shell's update check compares versionCode, not this.
-        versionName "${appVersion}+shell.${shellVersionCode}"
+        // What the user sees in Android's app info and in the app's own footer.
+        // The update check compares versionCode, never this.
+        versionName shellVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

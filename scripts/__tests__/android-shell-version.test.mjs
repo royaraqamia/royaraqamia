@@ -8,8 +8,12 @@ import {
   changedCapacitorDependencies,
   isShellPath,
   parseShellVersion,
+  parseShellVersionName,
+  shellVersionNameFor,
   shellVersionVerdict,
+  versionNameVerdict,
   writeShellVersion,
+  writeShellVersionName,
 } from '../android-shell-version.mjs';
 
 const REPO = process.cwd();
@@ -28,18 +32,75 @@ describe('the shell version counter', () => {
     expect(() => parseShellVersion('# nothing here\n')).toThrow(/shellVersionCode/);
   });
 
-  it('bumps the counter without disturbing anything else', () => {
-    const before = '# a comment\nshellVersionCode=3\n# another\n';
-    const { text, from, to } = bumpShellVersion(before);
+  it('bumps the counter, and writes the derived name beside it', () => {
+    const before = '# a comment\nshellVersionCode=20002\n# another\n';
+    const { text, from, to, versionName } = bumpShellVersion(before);
 
-    expect(from).toBe(3);
-    expect(to).toBe(4);
-    expect(text).toBe('# a comment\nshellVersionCode=4\n# another\n');
-    expect(parseShellVersion(text)).toBe(4);
+    expect(from).toBe(20002);
+    expect(to).toBe(20003);
+    expect(versionName).toBe('1.0.3');
+    expect(text).toBe('# a comment\nshellVersionName=1.0.3\nshellVersionCode=20003\n# another\n');
+    expect(parseShellVersion(text)).toBe(20003);
+  });
+
+  it('repairs the name line instead of adding a second one', () => {
+    const before = 'shellVersionName=9.9.9\nshellVersionCode=20003\n';
+    expect(bumpShellVersion(before).text).toBe('shellVersionName=1.0.4\nshellVersionCode=20004\n');
   });
 
   it('writes a specific code when asked to', () => {
     expect(writeShellVersion('shellVersionCode=1\n', 9)).toBe('shellVersionCode=9\n');
+  });
+});
+
+describe('the shell version name', () => {
+  it('is derived from the counter, and never typed', () => {
+    // `1.<minor>.<patch>`, minor and patch from (counter - 20000): the number a
+    // user reads and the number Android compares are the same fact twice.
+    expect(shellVersionNameFor(20000)).toBe('1.0.0');
+    expect(shellVersionNameFor(20001)).toBe('1.0.1');
+    expect(shellVersionNameFor(20002)).toBe('1.0.2');
+    expect(shellVersionNameFor(20003)).toBe('1.0.3');
+    expect(shellVersionNameFor(20099)).toBe('1.0.99');
+    // The hundreds carry into the minor, so it stays readable at scale.
+    expect(shellVersionNameFor(20100)).toBe('1.1.0');
+    expect(shellVersionNameFor(20101)).toBe('1.1.1');
+    // The major never moves on its own: raising it means changing the base.
+    expect(shellVersionNameFor(30000)).toBe('1.100.0');
+  });
+
+  it('refuses a counter below where the numbering starts', () => {
+    expect(() => shellVersionNameFor(19100)).toThrow(/20000/);
+    expect(() => shellVersionNameFor('20003')).toThrow(/20000/);
+  });
+
+  it('reads and writes the name line', () => {
+    expect(parseShellVersionName('shellVersionName=1.0.3\nshellVersionCode=20003\n')).toBe('1.0.3');
+    expect(() => parseShellVersionName('shellVersionCode=20003\n')).toThrow(/shellVersionName/);
+    expect(writeShellVersionName('shellVersionCode=20003\n', '1.0.3')).toBe(
+      'shellVersionName=1.0.3\nshellVersionCode=20003\n'
+    );
+    expect(writeShellVersionName('shellVersionName=1.0.2\nshellVersionCode=20003\n', '1.0.3')).toBe(
+      'shellVersionName=1.0.3\nshellVersionCode=20003\n'
+    );
+  });
+
+  it('judges the file against the counter, so a hand edit is caught', () => {
+    expect(versionNameVerdict({ code: 20003, name: '1.0.3' })).toEqual({
+      expected: '1.0.3',
+      matches: true,
+    });
+    expect(versionNameVerdict({ code: 20003, name: '2.5.0' })).toEqual({
+      expected: '1.0.3',
+      matches: false,
+    });
+  });
+
+  it('agrees with the file this repository ships', () => {
+    // The check that catches a counter bumped by hand without its name.
+    const code = parseShellVersion(properties);
+    const name = parseShellVersionName(properties);
+    expect(versionNameVerdict({ code, name })).toEqual({ expected: name, matches: true });
   });
 });
 

@@ -75,7 +75,12 @@ public class MainActivity extends BridgeActivity {
      * The page cannot ask the shell which version it is — on the WebViews this app
      * meets, the Capacitor bridge is not there to ask through (ADR-0043) — so the
      * shell states it where every document can read it. This is what lets the site
-     * hold its own prompt back while the shell is asking about its update.
+     * hold its own prompt back while the shell is asking about its update, and what
+     * the account footer reads to show the installed version (ADR-0046).
+     *
+     * `1.0.3+20003`: the version a user reads, then the counter the update check
+     * compares. Both, because the site has to keep working with shells already
+     * installed that can only say `20003`.
      */
     private void announceShellVersion() {
         Bridge bridge = getBridge();
@@ -86,7 +91,8 @@ public class MainActivity extends BridgeActivity {
         if (userAgent == null || userAgent.contains(ShellUpdate.USER_AGENT_TOKEN)) return;
 
         webView.getSettings()
-                .setUserAgentString(userAgent + " " + ShellUpdate.USER_AGENT_TOKEN + "/" + BuildConfig.VERSION_CODE);
+                .setUserAgentString(userAgent + " " + ShellUpdate.USER_AGENT_TOKEN + "/"
+                        + BuildConfig.VERSION_NAME + "+" + BuildConfig.VERSION_CODE);
     }
 
     @Override

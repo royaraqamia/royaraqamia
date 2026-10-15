@@ -34,7 +34,9 @@ whatever is pending; a workflow change is a good moment to re-check that the cha
 
 **One immutable asset per version code, and the URL is derived rather than typed.** The asset is
 `royaraqamia-shell-<versionCode>.apk`, and the manifest's `apkUrl` is computed from the manifest that is
-published now by replacing the last segment — host, repository and tag carried over. The first spelling,
+published now by replacing the last segment — host, repository and tag carried over. (Superseded in part by
+ADR-0046: each version is now its own release and the asset is named for the shell's own version rather
+than the counter, which is what removed the reusable tag in the first place.) The first spelling,
 one file named `royaraqamia-shell.apk` that each publish overwrote, meant a device that had read a
 manifest could download bytes that no longer matched its hash. That fails safe (the shell refuses them),
 but "the update sometimes does not work" is not a failure mode a release channel should be able to have,

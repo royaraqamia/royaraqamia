@@ -38,6 +38,35 @@ const CAPACITOR_DEPENDENCY = /^@capacitor\/|^@capgo\//;
  * would let a match run across lines and swallow the newline it replaces.
  */
 const SHELL_VERSION_LINE = /^[ \t]*shellVersionCode[ \t]*=[ \t]*(\d+)[ \t]*$/m;
+const SHELL_VERSION_NAME_LINE = /^[ \t]*shellVersionName[ \t]*=[ \t]*(\d+\.\d+\.\d+)[ \t]*$/m;
+
+/**
+ * Where the display numbering starts, mirroring the counter's own base.
+ *
+ * The name is *derived* from the counter rather than typed: `1.<minor>.<patch>`
+ * where minor and patch come from the offset. Two reasons, and the second is the
+ * one that matters. First, nobody can forget it. Second, two numbers that can
+ * disagree eventually do — and the number users read in their app must describe
+ * the APK they actually have, not a value someone edited in a file.
+ *
+ * The `1` never moves on its own. Raising it means deliberately changing this
+ * base, which is a decision with a consequence: every installed shell keeps
+ * working, but the name starts describing a different line of the same offset.
+ *
+ * It carries no semantic promise. A `1.0.3` may contain anything a `1.0.2` did
+ * not; the counter is the only thing that decides whether an update exists.
+ */
+export const SHELL_VERSION_BASE = 20000;
+
+export function shellVersionNameFor(code) {
+  if (!Number.isInteger(code) || code < SHELL_VERSION_BASE) {
+    throw new Error(
+      `a shell version code is an integer >= ${SHELL_VERSION_BASE}, got ${JSON.stringify(code)}`
+    );
+  }
+  const offset = code - SHELL_VERSION_BASE;
+  return `1.${Math.floor(offset / 100)}.${offset % 100}`;
+}
 
 export function parseShellVersion(text) {
   const match = SHELL_VERSION_LINE.exec(text);
@@ -47,13 +76,48 @@ export function parseShellVersion(text) {
   return Number(match[1]);
 }
 
+export function parseShellVersionName(text) {
+  const match = SHELL_VERSION_NAME_LINE.exec(text);
+  if (!match) {
+    throw new Error(
+      'android/shell-version.properties has no shellVersionName=<major.minor.patch> line'
+    );
+  }
+  return match[1];
+}
+
 export function writeShellVersion(text, code) {
   return text.replace(SHELL_VERSION_LINE, `shellVersionCode=${code}`);
 }
 
+/** Written above the counter, because it is the line a person reads first. */
+export function writeShellVersionName(text, name) {
+  if (SHELL_VERSION_NAME_LINE.test(text)) {
+    return text.replace(SHELL_VERSION_NAME_LINE, `shellVersionName=${name}`);
+  }
+  return text.replace(SHELL_VERSION_LINE, (line) => `shellVersionName=${name}\n${line}`);
+}
+
+/**
+ * Whether the file's name line still agrees with its counter. It is derived, so
+ * a mismatch is a hand edit — and a hand edit here is exactly how the number in
+ * the app and the number of the APK come apart.
+ */
+export function versionNameVerdict({ code, name }) {
+  const expected = shellVersionNameFor(code);
+  return { expected, matches: name === expected };
+}
+
 export function bumpShellVersion(text) {
   const from = parseShellVersion(text);
-  return { text: writeShellVersion(text, from + 1), from, to: from + 1 };
+  const to = from + 1;
+  const versionName = shellVersionNameFor(to);
+  return {
+    text: writeShellVersionName(writeShellVersion(text, to), versionName),
+    from,
+    to,
+    versionName,
+  };
 }
 
 export function isShellPath(file) {
@@ -132,10 +196,11 @@ export function main({
   const text = readFile(versionPath, 'utf8');
 
   if (argv.includes('--bump')) {
-    const { text: next, from, to } = bumpShellVersion(text);
+    const { text: next, from, to, versionName } = bumpShellVersion(text);
     writeFile(versionPath, next);
-    log(`shellVersionCode ${from} -> ${to}. Build the APK, publish it, then point`);
-    log(`public/android/latest.json at it with versionCode ${to}.`);
+    log(`shellVersionCode ${from} -> ${to}, shellVersionName ${versionName}. (The name is`);
+    log('derived from the counter, so it is written for you and never typed.)');
+    log(`Build the APK, publish it, then point public/android/latest.json at versionCode ${to}.`);
     return 0;
   }
 
@@ -163,9 +228,22 @@ export function main({
     });
 
     if (!verdict.needsBump) {
+      // The name is derived from the counter, so a mismatch means one of the two
+      // was hand-edited — and the number a user reads in the app would then be
+      // describing a different APK than the one they have.
+      const code = parseShellVersion(text);
+      const name = parseShellVersionName(text);
+      const nameCheck = versionNameVerdict({ code, name });
+      if (!nameCheck.matches) {
+        log(`shellVersionName is ${name}, but counter ${code} means ${nameCheck.expected}.`);
+        log('It is derived, not typed. Write both lines with:');
+        log('  npm run android:shell-version -- --bump');
+        return 1;
+      }
+
       log(
         verdict.changesShell
-          ? `shellVersionCode ${parseShellVersion(text)} is ahead of ${base}: the shell moved, and the app will announce it.`
+          ? `shellVersionCode ${code} is ahead of ${base}: the shell moved, and the app will announce it.`
           : 'No shell change; the counter has nothing to move for.'
       );
       return 0;
@@ -180,8 +258,10 @@ export function main({
     return 1;
   }
 
+  log(`shellVersionName=${parseShellVersionName(text)}   # derived from the counter`);
   log(`shellVersionCode=${parseShellVersion(text)}`);
-  log('Bump it when one of these changes:');
+  log('');
+  log('It moves when one of these changes:');
   for (const path of SHELL_PATHS) log(`  - ${path}`);
   log(`  - a dependency matching ${CAPACITOR_DEPENDENCY}`);
   return 0;

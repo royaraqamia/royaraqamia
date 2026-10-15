@@ -1,16 +1,17 @@
 name: 'Shell Release'
 
 # When the shell changes, the APK should follow without anyone remembering to run
-# anything. A push to main that touches `android/**` or the Capacitor config is the
-# signal that a new APK exists — `android/shell-version.properties` is what moves
-# with it, and `Shell Version` on the pull request is what keeps that honest.
+# anything. A push to main that touches `android/**`, the Capacitor config, or a
+# Capacitor plugin dependency is the signal that a new APK exists —
+# `android/shell-version.properties` is what moves with it, and `Shell Version` on
+# the pull request is what keeps that honest.
 #
 # What it does, in this order, because the order is the safety story:
 #
 #   1. decides whether there is anything to publish at all (counter vs the manifest)
 #   2. runs the shell's JVM tests
 #   3. builds and signs the release APK, stamping the manifest from the file
-#   4. attaches the asset (one immutable file per version code, never overwritten)
+#   4. creates this version's own release (`android-1.0.3`) and attaches the asset
 #   5. downloads it back and hashes it against the manifest
 #   6. commits the manifest, so the site announces it
 #
@@ -23,7 +24,7 @@ name: 'Shell Release'
 # first step and needs nothing but node. `workflow_dispatch` runs the same thing on
 # whatever ref you pick, with `dry_run` to build and sign without touching the
 # release or the manifest — and only `main` ever publishes, so a dispatch on a
-# branch can rehearse but cannot put an asset on the release that no site serves.
+# branch can rehearse but cannot put an asset on a release that no site serves.
 
 on:
   push:
@@ -31,6 +32,14 @@ on:
     paths:
       - 'android/**'
       - 'capacitor.config.ts'
+      # The counter's own definition of a shell change includes a Capacitor plugin
+      # dependency (scripts/android-shell-version.mjs). Without these two, a plugin
+      # version bump would demand a counter bump on the pull request and then never
+      # publish it — the one way a release could go missing without anything failing.
+      # The cost is a ten-second no-op on dependency merges and web releases, which
+      # the verdict below absorbs.
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/shell-release.yml'
   workflow_dispatch:
     inputs:
@@ -186,61 +195,77 @@ jobs:
           result=$(tail -n 1 "$log")
           echo "$result" | jq . # fails the step if that last line is not the JSON
 
-          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset stagedPath; do
+          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset releaseTitle stagedPath; do
             echo "$key=$(echo "$result" | jq -r ".$key")" >> "$GITHUB_OUTPUT"
           done
 
-      # The tag is a channel, not a version: everything is attached to `shell`, and
-      # the *asset name* carries the version. So an asset that already exists means
-      # this version was published before, and it is only safe to continue if the
-      # bytes are the ones just built.
-      - name: Attach the asset
+      # One release per version, so the tag in a published URL can never later be
+      # pointed at other bytes. A release that already exists means a re-run, or a
+      # run that stopped half way; the only safe cases there are byte-identical
+      # content, or replacing something no committed manifest has ever named.
+      - name: Publish the release and attach the asset
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.publish.outputs.tag }}
+          TITLE: ${{ steps.publish.outputs.releaseTitle }}
           ASSET: ${{ steps.publish.outputs.asset }}
           STAGED: ${{ steps.publish.outputs.stagedPath }}
+          NOTES: ${{ steps.notes.outputs.notes }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+          SIZE: ${{ steps.publish.outputs.sizeBytes }}
+          APK_URL: ${{ steps.publish.outputs.apkUrl }}
         run: |
           set -euo pipefail
 
+          body=$(printf '%s\n\n%s\n\n%s\n' \
+            "$NOTES" \
+            "The app follows https://royaraqamia.com/android/latest.json, which names these exact bytes." \
+            "sha256 $SHA256, $SIZE bytes — [$ASSET]($APK_URL)")
+
           if ! gh release view "$TAG" > /dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "Android shell (latest)" \
-              --latest=false \
+            # --latest on purpose: the newest shell release is the one a person
+            # looking at the releases page should find first.
+            gh release create "$TAG" "$STAGED" \
+              --title "$TITLE" \
+              --latest \
               --target main \
-              --notes "Direct APK builds for the Android shell. The manifest the app follows is https://royaraqamia.com/android/latest.json"
+              --notes "$body"
+            echo "created $TAG with $ASSET"
+            exit 0
           fi
 
-          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx "$ASSET"; then
-            mkdir -p "$RUNNER_TEMP/existing"
-            for attempt in 1 2 3; do
-              if gh release download "$TAG" -p "$ASSET" -D "$RUNNER_TEMP/existing"; then break; fi
-              echo "download attempt $attempt failed"
-              if [ "$attempt" = 3 ]; then exit 1; fi
-              sleep 5
-            done
-
-            published=$(sha256sum "$RUNNER_TEMP/existing/$ASSET" | cut -d' ' -f1)
-            built=$(sha256sum "$STAGED" | cut -d' ' -f1)
-            echo "on the release: $published"
-            echo "this build:     $built"
-
-            # The manifest that is *committed* — not the one this run stamped —
-            # is what a device could already be following.
-            named_asset=$(git show HEAD:public/android/latest.json | jq -r .apkUrl | sed 's|.*/||')
-
-            if [ "$published" = "$built" ]; then
-              echo "$ASSET is already this build; nothing to upload"
-            elif [ "$named_asset" = "$ASSET" ]; then
-              echo "::error title=Same version, different bytes::the manifest on main already names $ASSET with a different hash. A version code is never republished with different bytes — bump android/shell-version.properties instead."
-              exit 1
-            else
-              echo "::warning title=Replacing an asset no manifest named::$ASSET exists with different bytes, from a run that did not finish. No published manifest points at it, so replacing it is safe."
-              gh release upload "$TAG" "$STAGED" --clobber
-            fi
-          else
+          if ! gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx "$ASSET"; then
             gh release upload "$TAG" "$STAGED"
+            echo "uploaded $ASSET into the existing $TAG"
+            exit 0
+          fi
+
+          mkdir -p "$RUNNER_TEMP/existing"
+          for attempt in 1 2 3; do
+            if gh release download "$TAG" -p "$ASSET" -D "$RUNNER_TEMP/existing"; then break; fi
+            echo "download attempt $attempt failed"
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 5
+          done
+
+          published=$(sha256sum "$RUNNER_TEMP/existing/$ASSET" | cut -d' ' -f1)
+          built=$(sha256sum "$STAGED" | cut -d' ' -f1)
+          echo "on the release: $published"
+          echo "this build:     $built"
+
+          # The manifest that is *committed* — not the one this run stamped — is
+          # what a device could already be following.
+          named_asset=$(git show HEAD:public/android/latest.json | jq -r .apkUrl | sed 's|.*/||')
+
+          if [ "$published" = "$built" ]; then
+            echo "$ASSET is already this build; nothing to upload"
+          elif [ "$named_asset" = "$ASSET" ]; then
+            echo "::error title=Same version, different bytes::the manifest on main already names $ASSET with a different hash. A version is never republished with different bytes — bump android/shell-version.properties instead."
+            exit 1
+          else
+            echo "::warning title=Replacing an asset no manifest named::$ASSET exists with different bytes, from a run that did not finish. No published manifest points at it, so replacing it is safe."
+            gh release upload "$TAG" "$STAGED" --clobber
           fi
 
       # The check the whole design is for: the bytes a device will fetch, hashed
@@ -285,16 +310,17 @@ jobs:
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
         env:
           VERSION_CODE: ${{ steps.publish.outputs.versionCode }}
+          VERSION_NAME: ${{ steps.publish.outputs.versionName }}
         run: |
           set -euo pipefail
           if git diff --quiet -- public/android/latest.json; then
-            echo "the manifest already says shell $VERSION_CODE"
+            echo "the manifest already says shell $VERSION_NAME"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/android/latest.json
-          git commit -m "chore(android): publish shell $VERSION_CODE"
+          git commit -m "chore(android): publish shell $VERSION_NAME ($VERSION_CODE)"
           git push origin HEAD:main
 
       - name: Summary
@@ -303,6 +329,9 @@ jobs:
           VERDICT: ${{ steps.verdict.outputs.publish == 'true' && 'publishing' || 'nothing to publish' }}
           REASON: ${{ steps.verdict.outputs.reason }}
           VERSION_CODE: ${{ steps.publish.outputs.versionCode }}
+          VERSION_NAME: ${{ steps.publish.outputs.versionName }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          TITLE: ${{ steps.publish.outputs.releaseTitle }}
           ASSET: ${{ steps.publish.outputs.asset }}
           SHA256: ${{ steps.publish.outputs.sha256 }}
           SIZE: ${{ steps.publish.outputs.sizeBytes }}
@@ -316,7 +345,8 @@ jobs:
             if [ -n "${VERSION_CODE:-}" ]; then
               echo "| | |"
               echo "| --- | --- |"
-              echo "| versionCode | \`$VERSION_CODE\` |"
+              echo "| version | \`$VERSION_NAME\` (versionCode \`$VERSION_CODE\`) |"
+              echo "| release | $TITLE — tag \`$TAG\` |"
               echo "| asset | \`$ASSET\` |"
               echo "| sha256 | \`$SHA256\` |"
               echo "| size | $SIZE bytes |"

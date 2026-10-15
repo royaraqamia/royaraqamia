@@ -14,10 +14,16 @@ import { logger } from './logger';
  *
  * What the page still needs is one bit — *is the shell already asking?* — so that
  * the two never speak at once. The shell states it where every document can read
- * it: its own user agent (`RoyaraqamiaShell/20000`). The page compares that with
- * the manifest on its own origin, and holds its own offer back while the shell's
- * is pending. Absent token (a browser, or a shell built before this) reads as
- * "no shell update pending", which leaves the web prompt working everywhere else.
+ * it: its own user agent. Two spellings, and both have to stay readable, because
+ * an installed shell can only ever send the one it was built with:
+ *
+ *   `RoyaraqamiaShell/20003`        — the counter, all a shell before ADR-0046 sent
+ *   `RoyaraqamiaShell/1.0.3+20003`  — the version a user reads, then the counter
+ *
+ * The page compares the counter with the manifest on its own origin, and holds its
+ * own offer back while the shell's is pending. Absent token (a browser, or a shell
+ * built before any of this) reads as "no shell update pending", which leaves the
+ * web prompt working everywhere else.
  */
 
 export const SHELL_USER_AGENT_TOKEN = 'RoyaraqamiaShell';
@@ -31,6 +37,16 @@ export interface ShellManifest {
   apkUrl: string | null;
   minSupportedVersionCode: number;
 }
+
+/**
+ * Both spellings, in one pattern, with the trailing guard that makes the
+ * difference: without `(?![\d.])` the counter would be read out of the *name*
+ * (`1.0.3+20003` would answer "1", and a shell at 1.0.3 would look like a shell
+ * from before the counter existed).
+ */
+const SHELL_TOKEN_PATTERN = new RegExp(
+  `${SHELL_USER_AGENT_TOKEN}/(?:(\\d+\\.\\d+\\.\\d+)\\+)?(\\d+)(?![\\d.])`
+);
 
 export interface ShellUpdateState {
   /** A newer APK is published than the one the shell says it is. */
@@ -51,10 +67,28 @@ export const SHELL_UPDATE_IDLE: ShellUpdateState = {
 
 /** The shell version a user agent names, or null when this is not the shell. */
 export function shellVersionFromUserAgent(userAgent: string): number | null {
-  const match = new RegExp(`${SHELL_USER_AGENT_TOKEN}/(\\d+)`).exec(userAgent);
-  if (!match || match[1] === undefined) return null;
-  const code = Number(match[1]);
+  const match = SHELL_TOKEN_PATTERN.exec(userAgent);
+  if (!match || match[2] === undefined) return null;
+  const code = Number(match[2]);
   return Number.isInteger(code) ? code : null;
+}
+
+/** The installed app version a user agent names, or null on a shell too old to say. */
+export function shellVersionNameFromUserAgent(userAgent: string): string | null {
+  const match = SHELL_TOKEN_PATTERN.exec(userAgent);
+  return match?.[1] ?? null;
+}
+
+/**
+ * What the app calls itself where a user can read it: `1.0.3 (20003)`, or just
+ * the counter for a shell built before it carried a name. Null in a browser,
+ * which is what keeps this out of the web entirely.
+ */
+export function shellDisplayVersion(userAgent: string): string | null {
+  const code = shellVersionFromUserAgent(userAgent);
+  if (code === null) return null;
+  const name = shellVersionNameFromUserAgent(userAgent);
+  return name ? `${name} (${code})` : String(code);
 }
 
 const asCode = (value: unknown): number =>
