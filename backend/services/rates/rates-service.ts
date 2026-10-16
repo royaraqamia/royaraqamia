@@ -30,7 +30,6 @@ type RatesLogger = Pick<typeof logger, 'error' | 'warn' | 'info'>;
 
 export interface RatesServiceOptions {
   now?: () => Date;
-  staleAfterMs?: number;
   staleQuoteAfterMs?: number;
   /** How far back the board looks for a currency's last known parallel value. */
   parallelLastKnownMs?: number;
@@ -44,8 +43,12 @@ export interface RefreshResult {
   metalCount: number;
 }
 
-const DEFAULT_STALE_AFTER_MS = 48 * 60 * 60 * 1000;
-
+/**
+ * How old a **provider quote date** may be before the page warns and the
+ * health endpoint reports a failure. Both read the same quantity so a feed
+ * that keeps fetching an unchanged quote date cannot keep monitoring green
+ * while the page shows the stale-rates badge (ADR-0011).
+ */
 const DEFAULT_STALE_QUOTE_AFTER_MS = 96 * 60 * 60 * 1000;
 
 /**
@@ -104,7 +107,6 @@ function buildParallelMarkets(
 
 export class RatesService {
   private readonly now: () => Date;
-  private readonly staleAfterMs: number;
   private readonly staleQuoteAfterMs: number;
   private readonly parallelLastKnownMs: number;
   private readonly log: RatesLogger;
@@ -117,7 +119,6 @@ export class RatesService {
     options: RatesServiceOptions = {}
   ) {
     this.now = options.now ?? (() => new Date());
-    this.staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
     this.staleQuoteAfterMs = options.staleQuoteAfterMs ?? DEFAULT_STALE_QUOTE_AFTER_MS;
     this.parallelLastKnownMs = options.parallelLastKnownMs ?? DEFAULT_PARALLEL_LAST_KNOWN_MS;
     this.log = options.logger ?? logger;
@@ -272,10 +273,11 @@ export class RatesService {
       this.repository.getParallelsSince(since),
     ]);
 
-    const fetchedAt = latest?.fetched_at ?? lastRun?.finished_at ?? null;
-    const stale =
-      fetchedAt === null ||
-      this.now().getTime() - new Date(fetchedAt).getTime() > this.staleAfterMs;
+    // The feed staying up is not the same as the quote date moving forward: a
+    // provider can keep answering successfully with an unchanged (weekend,
+    // upstream-stuck) quote date. Age the same quantity the board ages, so
+    // external monitoring cannot stay green over a visibly stale page.
+    const stale = this.isQuoteStale(latest?.provider_quote_date);
 
     const lastKnown = this.lastKnownParallels(parallels);
     const codes = new Set([...Object.keys(latest?.parallel_rates ?? {}), ...lastKnown.keys()]);
@@ -293,6 +295,18 @@ export class RatesService {
       stale,
       staleParallels,
     };
+  }
+
+  /**
+   * Whether a **provider quote date** is too old to serve as current. Shared by
+   * the board badge and the health endpoint so the two can never disagree; a
+   * missing date counts as stale.
+   */
+  private isQuoteStale(providerQuoteDate: string | null | undefined): boolean {
+    return (
+      !providerQuoteDate ||
+      this.now().getTime() - new Date(providerQuoteDate).getTime() > this.staleQuoteAfterMs
+    );
   }
 
   /**
@@ -399,9 +413,7 @@ export class RatesService {
       ];
     });
 
-    const isStale =
-      this.now().getTime() - new Date(latest.provider_quote_date).getTime() >
-      this.staleQuoteAfterMs;
+    const isStale = this.isQuoteStale(latest.provider_quote_date);
 
     return {
       base: latest.base_currency,

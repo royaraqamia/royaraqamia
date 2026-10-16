@@ -135,8 +135,15 @@ export interface RateSeries {
 
 export interface RateHealth {
   ok: boolean;
+  /** The last Rate Sync Run's `finished_at` — that the feed is running at all. */
   lastSuccessAt: string | null;
   providerQuoteDate: string | null;
+  /**
+   * Whether `providerQuoteDate` is older than the board's staleness threshold.
+   * The same quantity the page ages, so a feed that keeps fetching
+   * successfully with an unchanged quote date cannot report healthy while the
+   * page shows the stale-rates badge (ADR-0011). A missing quote date is stale.
+   */
   stale: boolean;
   /** Dual-rate codes whose market value the board is holding from an earlier sync. */
   staleParallels: string[];
