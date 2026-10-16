@@ -405,6 +405,18 @@ describe('RetainerService.updateOwned', () => {
     expect(payload).not.toHaveProperty('status');
   });
 
+  it('passes a past preferred_start through, so a correcting edit is never blocked', async () => {
+    const { service, repository } = makeService();
+
+    await service.updateOwned('user-9', 'ret-1', { ...EDIT, preferred_start: '1990-01-01' });
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'ret-1',
+      'user-9',
+      expect.objectContaining({ preferred_start: '1990-01-01' })
+    );
+  });
+
   it('stores blank optional fields as NULL rather than empty strings', async () => {
     const { service, repository } = makeService();
 

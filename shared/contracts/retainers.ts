@@ -132,7 +132,13 @@ export interface Retainer {
 // Validation schema
 // ------------------------------------------------------------
 
-export const RetainerSchema = z.object({
+/**
+ * The fields a submitter answers, shared by create and edit so the two cannot
+ * drift — and so an edit can never clear a required answer or forge an
+ * agreement. `preferred_start` carries only the format check here; the
+ * create-time floor is added by `RetainerSchema` alone.
+ */
+const submitterFields = {
   full_name: z
     .string()
     .trim()
@@ -169,14 +175,25 @@ export const RetainerSchema = z.object({
     .string()
     .trim()
     .optional()
-    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح')
-    .refine((value) => !value || isTodayOrLater(value), 'تاريخ البدء يجب أن يكون اليوم أو بعده'),
+    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح'),
   /**
    * Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169).
    * Absent on the plain online path; present when the form queued the submit
    * offline, so a replayed POST returns the row it already created.
    */
   client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
+};
+
+/**
+ * A new request, which is written at submit time — so `preferred_start` must be
+ * today or later, and a past start is never meaningful.
+ */
+export const RetainerSchema = z.object({
+  ...submitterFields,
+  preferred_start: submitterFields.preferred_start.refine(
+    (value) => !value || isTodayOrLater(value),
+    'تاريخ البدء يجب أن يكون اليوم أو بعده'
+  ),
 });
 
 export type RetainerInput = z.infer<typeof RetainerSchema>;
@@ -190,8 +207,14 @@ export type RetainerInput = z.infer<typeof RetainerSchema>;
  * fields they filled in. The Reference Code, `status`, Admin `notes`, the
  * agreed `monthly_fee_usd`/`paid_through` terms and attribution are never
  * accepted here, so an edit cannot forge an agreement or re-point a row.
+ *
+ * An edit is not a new submission: it deliberately drops the create-time
+ * `preferred_start` floor, because the stored start is a recorded preference
+ * that may already have passed and correcting an unrelated field must not force
+ * the visitor to move a date they never meant to touch. The ISO-date shape
+ * check still applies.
  */
-export const RetainerEditSchema = RetainerSchema;
+export const RetainerEditSchema = z.object(submitterFields);
 
 export type RetainerEditInput = z.infer<typeof RetainerEditSchema>;
 

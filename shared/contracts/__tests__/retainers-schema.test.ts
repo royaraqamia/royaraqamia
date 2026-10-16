@@ -8,6 +8,7 @@ import {
   RETAINER_NOTES_MAX,
   RETAINER_REFERENCE_CODE_REGEX,
   RETAINER_STATUSES,
+  RetainerEditSchema,
   RetainerSchema,
   RetainerUpdateSchema,
   todayIsoDate,
@@ -152,6 +153,42 @@ describe('RetainerSchema', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toContain('اليوم أو بعده');
+  });
+});
+
+describe('RetainerEditSchema', () => {
+  it('accepts an edit whose stored start has already passed, so any other field stays editable', () => {
+    // The regression: a create-time floor applied to an edit blocks saving a
+    // phone or needs change behind an untouched, now-past start date.
+    const result = RetainerEditSchema.safeParse({
+      ...validRetainer,
+      preferred_start: '1990-01-01',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('still rejects a preferred start that is not an ISO date', () => {
+    expect(
+      RetainerEditSchema.safeParse({ ...validRetainer, preferred_start: 'next week' }).success
+    ).toBe(false);
+    expect(
+      RetainerEditSchema.safeParse({ ...validRetainer, preferred_start: '1990-13-45' }).success
+    ).toBe(false);
+  });
+
+  it('keeps every field-level requirement, so an edit cannot clear a required answer', () => {
+    expect(RetainerEditSchema.safeParse({ ...validRetainer, needs: '' }).success).toBe(false);
+    expect(RetainerEditSchema.safeParse({ ...validRetainer, full_name: 'أ' }).success).toBe(false);
+  });
+
+  it('leaves the create-time floor on a new request untouched', () => {
+    expect(
+      RetainerSchema.safeParse({ ...validRetainer, preferred_start: '1990-01-01' }).success
+    ).toBe(false);
+    expect(
+      RetainerEditSchema.safeParse({ ...validRetainer, preferred_start: '1990-01-01' }).success
+    ).toBe(true);
   });
 });
 

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
 import { updateMyRetainer } from '@/frontend/api/retainers';
-import { RetainerSchema, type Retainer } from '@/shared/contracts/retainers';
+import { RetainerEditSchema, type Retainer } from '@/shared/contracts/retainers';
 import { RetainerProjectsStep } from '../retainers/steps/retainer-projects-step';
 import { RetainerNeedsStep } from '../retainers/steps/retainer-needs-step';
 import { RetainerContactStep } from '../retainers/steps/retainer-contact-step';
@@ -45,7 +45,7 @@ export function RetainerEditForm({ retainer, onSaved, onCancel }: RetainerEditFo
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RetainerFormValues>({
-    resolver: zodResolver(RetainerSchema),
+    resolver: zodResolver(RetainerEditSchema),
     mode: 'onBlur',
     defaultValues: toFormValues(retainer),
   });
@@ -80,7 +80,12 @@ export function RetainerEditForm({ retainer, onSaved, onCancel }: RetainerEditFo
       className="space-y-5"
     >
       <RetainerProjectsStep register={register} errors={errors} />
-      <RetainerNeedsStep control={control} register={register} errors={errors} />
+      <RetainerNeedsStep
+        control={control}
+        register={register}
+        errors={errors}
+        requireFutureStart={false}
+      />
       <RetainerContactStep control={control} register={register} errors={errors} />
 
       {submitError && (
