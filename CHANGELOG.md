@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.5] - 2026-10-16
+
+### Fixed
+- sync HabitFlow and LinkSnap tombstones across devices
+
 ## [1.101.4] - 2026-10-16
 
 ### Changed
