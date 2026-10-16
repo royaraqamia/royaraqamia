@@ -536,7 +536,11 @@ export class AuthService {
       return { ok: false, message: 'رمز إعادة تعيين كلمة المرور غير صالح' };
     }
 
-    await this.passwordResetTokenRepository.markTokenAsUsed(record.id);
+    const claimed = await this.passwordResetTokenRepository.markTokenAsUsed(record.id);
+
+    if (!claimed) {
+      return { ok: false, message: 'تم استخدام رابط إعادة تعيين كلمة المرور بالفعل' };
+    }
 
     const { error } = await this.gateway.updateUserPassword(record.userId, input.password);
 

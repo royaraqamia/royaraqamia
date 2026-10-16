@@ -48,11 +48,16 @@ export class SupabasePasswordResetTokenRepository implements PasswordResetTokenR
     };
   }
 
-  async markTokenAsUsed(id: string): Promise<void> {
-    const { error } = await this.supabase
+  async markTokenAsUsed(id: string): Promise<boolean> {
+    // Guard on used_at so concurrent redemptions cannot both claim the token.
+    const { data, error } = await this.supabase
       .from('password_reset_tokens')
       .update({ used_at: new Date().toISOString() })
-      .eq('id', id);
+      .eq('id', id)
+      .is('used_at', null)
+      .select('id')
+      .maybeSingle();
     if (error) throw error;
+    return data !== null;
   }
 }

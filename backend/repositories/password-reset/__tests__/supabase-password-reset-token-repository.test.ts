@@ -21,10 +21,17 @@ function makeClient(
     record?: TokenRecord | null;
     fetchError?: Error | null;
     updateError?: Error | null;
+    claimed?: boolean;
   } = {}
 ) {
   const insert = vi.fn().mockResolvedValue({ error: overrides.insertError ?? null });
-  const updateEq = vi.fn().mockResolvedValue({ error: overrides.updateError ?? null });
+  const claimMaybeSingle = vi.fn().mockResolvedValue({
+    data: (overrides.claimed ?? true) ? { id: 'token-1' } : null,
+    error: overrides.updateError ?? null,
+  });
+  const updateSelect = vi.fn().mockReturnValue({ maybeSingle: claimMaybeSingle });
+  const updateIs = vi.fn().mockReturnValue({ select: updateSelect });
+  const updateEq = vi.fn().mockReturnValue({ is: updateIs });
   const update = vi.fn().mockReturnValue({ eq: updateEq });
   const maybeSingle = vi
     .fn()
@@ -40,7 +47,19 @@ function makeClient(
   });
 
   const client = { from } as unknown as SupabaseClient<Database>;
-  return { client, insert, update, updateEq, maybeSingle, from, selectEq, is };
+  return {
+    client,
+    insert,
+    update,
+    updateEq,
+    updateIs,
+    updateSelect,
+    claimMaybeSingle,
+    maybeSingle,
+    from,
+    selectEq,
+    is,
+  };
 }
 
 function makeRecord(overrides: Partial<TokenRecord> = {}): TokenRecord {
@@ -131,14 +150,23 @@ describe('SupabasePasswordResetTokenRepository', () => {
   });
 
   describe('markTokenAsUsed', () => {
-    it('sets used_at on the record', async () => {
-      const { client, update, updateEq } = makeClient();
+    it('claims the token, guarding on used_at, and reports success', async () => {
+      const { client, update, updateEq, updateIs, claimMaybeSingle } = makeClient();
       const repo = new SupabasePasswordResetTokenRepository(client);
 
-      await repo.markTokenAsUsed('token-1');
+      await expect(repo.markTokenAsUsed('token-1')).resolves.toBe(true);
 
       expect(update).toHaveBeenCalledWith({ used_at: expect.any(String) });
       expect(updateEq).toHaveBeenCalledWith('id', 'token-1');
+      expect(updateIs).toHaveBeenCalledWith('used_at', null);
+      expect(claimMaybeSingle).toHaveBeenCalled();
+    });
+
+    it('reports false when the token was already claimed', async () => {
+      const { client } = makeClient({ claimed: false });
+      const repo = new SupabasePasswordResetTokenRepository(client);
+
+      await expect(repo.markTokenAsUsed('token-1')).resolves.toBe(false);
     });
 
     it('throws when the update fails', async () => {
