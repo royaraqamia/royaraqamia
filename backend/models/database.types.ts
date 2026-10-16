@@ -1719,6 +1719,7 @@ export type Database = {
       show_trgm: { Args: { '': string }; Returns: string[] };
       slugify_username: { Args: { raw: string }; Returns: string };
       sweep_download_jobs: { Args: never; Returns: undefined };
+      sweep_expired_mcp_oauth_auth_codes: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
       transliterate_arabic: { Args: { raw: string }; Returns: string };

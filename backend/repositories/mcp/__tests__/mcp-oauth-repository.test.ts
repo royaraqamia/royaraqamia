@@ -8,6 +8,8 @@ import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-r
  * `markAuthCodeUsed` is the replay guard: it must only flip `used_at` while it
  * is still null and report whether this caller won the claim. The chain is
  * `update({...}).eq('id', id).is('used_at', null).select('id').maybeSingle()`.
+ * Winning the claim is also a shred: the ciphertext has been copied into the
+ * issued token pair, so the code row must not keep it.
  */
 function makeClient(
   overrides: {
@@ -46,7 +48,10 @@ describe('createMcpOAuthRepository.markAuthCodeUsed', () => {
     await expect(repo.markAuthCodeUsed('code-1')).resolves.toBe(true);
 
     expect(from).toHaveBeenCalledWith('mcp_oauth_auth_codes');
-    expect(update).toHaveBeenCalledWith({ used_at: expect.any(String) });
+    expect(update).toHaveBeenCalledWith({
+      used_at: expect.any(String),
+      session_enc: null,
+    });
     expect(eq).toHaveBeenCalledWith('id', 'code-1');
     // The guard: only rows whose used_at is still null can be claimed.
     expect(is).toHaveBeenCalledWith('used_at', null);
@@ -530,5 +535,57 @@ describe('createMcpOAuthRepository.deleteUserAuthCodes', () => {
     await expect(createMcpOAuthRepository(client).deleteUserAuthCodes('user-1')).rejects.toThrow(
       'code delete failed'
     );
+  });
+});
+
+/**
+ * The daily sweep, mirrored from the two `sweep_expired_mcp_oauth_*` functions:
+ * a token dies when revoked or expired, an authorization code when claimed or
+ * expired. Neither store may keep a bridge ciphertext past its life, so one call
+ * has to prune both.
+ */
+function makeSweepClient(errors: { tokens?: Error | null; codes?: Error | null } = {}) {
+  const tokensOr = vi.fn().mockResolvedValue({ error: errors.tokens ?? null });
+  const codesOr = vi.fn().mockResolvedValue({ error: errors.codes ?? null });
+  const from = vi.fn((table: string) => {
+    if (table === 'mcp_oauth_tokens') return { delete: vi.fn(() => ({ or: tokensOr })) };
+    if (table === 'mcp_oauth_auth_codes') return { delete: vi.fn(() => ({ or: codesOr })) };
+    throw new Error(`unexpected table: ${table}`);
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, from, tokensOr, codesOr };
+}
+
+describe('createMcpOAuthRepository.deleteExpired', () => {
+  const NOW = new Date('2026-10-16T03:30:00.000Z');
+  const CUTOFF = NOW.toISOString();
+
+  it('prunes revoked/expired tokens and claimed/expired codes', async () => {
+    const { client, from, tokensOr, codesOr } = makeSweepClient();
+
+    await createMcpOAuthRepository(client).deleteExpired(NOW);
+
+    expect(from).toHaveBeenCalledWith('mcp_oauth_tokens');
+    expect(tokensOr).toHaveBeenCalledWith(`revoked_at.is.not.null,expires_at.lt.${CUTOFF}`);
+    expect(from).toHaveBeenCalledWith('mcp_oauth_auth_codes');
+    expect(codesOr).toHaveBeenCalledWith(`used_at.is.not.null,expires_at.lt.${CUTOFF}`);
+  });
+
+  it('throws when the token delete fails', async () => {
+    const { client, codesOr } = makeSweepClient({ tokens: new Error('tokens down') });
+
+    await expect(createMcpOAuthRepository(client).deleteExpired(NOW)).rejects.toThrow(
+      'tokens down'
+    );
+    // A failed token sweep does not go on to delete codes: the caller sees one
+    // error, not a half-applied sweep.
+    expect(codesOr).not.toHaveBeenCalled();
+  });
+
+  it('throws when the code delete fails', async () => {
+    const { client } = makeSweepClient({ codes: new Error('codes down') });
+
+    await expect(createMcpOAuthRepository(client).deleteExpired(NOW)).rejects.toThrow('codes down');
   });
 });
