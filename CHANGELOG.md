@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.8] - 2026-10-16
+
+### Changed
+- keep local main in sync at both ends of the landing loop (#261)
+
 ## [1.101.7] - 2026-10-16
 
 ### Fixed
