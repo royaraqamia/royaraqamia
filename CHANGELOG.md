@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.104.0] - 2026-10-16
+
+### Changed
+- publish shell 1.0.6 (20006)
+
+### Added
+- make the shell's update dialogs look like the product (#284)
+
 ## [1.103.2] - 2026-10-16
 
 ### Fixed
