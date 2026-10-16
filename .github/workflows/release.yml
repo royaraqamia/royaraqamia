@@ -42,20 +42,25 @@ jobs:
         run: git fetch --tags --force
 
       - name: Verify the Tested Commit Is Still Releasable
+        id: releasable
         if: github.event_name == 'workflow_run'
         shell: bash
         run: |
           # A manifest commit is pushed by the Shell Release workflow with
           # GITHUB_TOKEN, which starts no workflows — so it has no pipeline of its
-          # own, and aborting for it loses the version this merge is owed. The rule,
-          # and its one exception, live in scripts/release-guard.mjs (which uses the
-          # runner's own Node: it imports nothing outside the standard library).
+          # own, and skipping it loses the version this merge is owed. The rule,
+          # its one exception, and the verdict a run that lost the race gets (it
+          # skips: the newer commit's own run cuts every commit since the last tag,
+          # which includes this one) live in scripts/release-guard.mjs — which uses
+          # the runner's own Node, importing nothing outside the standard library.
+          # ADR-0052.
           tested="${{ github.event.workflow_run.head_sha }}"
-          if ! reason=$(node scripts/release-guard.mjs --tested "$tested"); then
-            echo "::error title=Untested code on main::$reason"
+          if ! verdict=$(node scripts/release-guard.mjs --tested "$tested"); then
+            echo "::error title=Refused to cut a version for this commit::$verdict"
             exit 1
           fi
-          echo "$reason"
+          printf '%s\n' "$verdict"
+          printf '%s\n' "$verdict" | head -n 1 >> "$GITHUB_OUTPUT"
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
@@ -65,11 +70,28 @@ jobs:
       - name: Idempotency Guard
         id: guard
         shell: bash
-        run: echo "skip=$(node scripts/release-tools.mjs --guard | sed -E 's/^skip=([A-Za-z]+).*/\1/')" >> "$GITHUB_OUTPUT"
+        env:
+          SUPERSEDED: ${{ steps.releasable.outputs.skip }}
+        run: |
+          # Two ways a run has nothing to cut, and both are somebody else's
+          # version: HEAD is already a tagged release commit, or the commit Code
+          # Quality tested is no longer the one on top of `main` (the releasability
+          # step above — a newer commit's run cuts the window that contains it).
+          if [ "$SUPERSEDED" = 'true' ]; then
+            skip=true
+            reason="a newer commit on main owns this version"
+          else
+            reason="HEAD is already a tagged release commit"
+            skip=$(node scripts/release-tools.mjs --guard | sed -E 's/^skip=([A-Za-z]+).*/\1/')
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
 
-      - name: Skip release on existing release commit
+      - name: Skip release when another run owns it
         if: steps.guard.outputs.skip == 'true'
-        run: echo "HEAD is already a tagged release commit — nothing to do"
+        env:
+          REASON: ${{ steps.guard.outputs.reason }}
+        run: echo "::notice title=Nothing to release::$REASON — no version is cut here"
 
       - name: Build Verify
         if: steps.guard.outputs.skip != 'true'

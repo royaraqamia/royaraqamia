@@ -75,6 +75,8 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 **Primary path:** Push to `main` → CI runs code-quality checks → `.github/workflows/release.yml` (gated: push on `main`) → bump/tag/`chore(release)` commit `[skip ci]` → Vercel auto-deploys.
 
+**The train is watched:** `.github/workflows/release-health.yml` asks `scripts/release-health.mjs` every fifteen minutes whether `main` has commits owing a version — and that have been owed for more than thirty minutes — and opens (or closes) one `release:alert` issue if it does. A release run that lost the race to a newer commit skips green instead of failing, which is why something has to notice a version nobody cut (ADR-0052).
+
 **Manual override:** `vercel deploy` (preview) or `vercel deploy --prod` (production). Or use the `deploy-to-vercel` skill.
 
 **Linked project:** Use `vercel create_git_project` for repo-linked auto-deploys.

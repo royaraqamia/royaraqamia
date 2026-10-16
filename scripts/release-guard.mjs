@@ -12,8 +12,12 @@ import { fileURLToPath } from 'node:url';
  * merge underneath it.
  *
  * A manifest publish is not untested code. It is data beside the app, written
- * after the tests ran and compiled from nothing. Every other move stays fatal,
- * because every other move is a commit whose own pipeline does release it.
+ * after the tests ran and compiled from nothing. Every other move is a commit
+ * whose own pipeline does release it — so this run skips instead of failing, and
+ * the version reaches `main` from that commit's run: the window a release cuts is
+ * every commit since the last tag, which contains this one too. The skip is
+ * honest only because something notices a train that is behind anyway
+ * (`.github/workflows/release-health.yml`, ADR-0052).
  */
 export const PUBLISH_ONLY_FILES = ['public/android/latest.json'];
 
@@ -26,22 +30,25 @@ function short(sha) {
  *
  * - `same` — nothing moved; release as usual
  * - `publish-only` — only the published manifest landed; release as usual
- * - `moved` — real code landed; that commit's own pipeline owns the release
+ * - `superseded` — real code landed on top; that commit's own run owns the
+ *   version, so this one has nothing to cut and skips green
+ * - `rewritten` — the tested commit is not an ancestor of HEAD at all, so the
+ *   history this run tested is not the history it would release; it fails
  */
 export function classifyHeadMove({ tested, current, changedFiles, isAncestor = true }) {
   if (tested === current) return { verdict: 'same' };
 
   if (!isAncestor) {
     return {
-      verdict: 'moved',
-      reason: `the tested commit ${short(tested)} is not an ancestor of ${short(current)}`,
+      verdict: 'rewritten',
+      reason: `the tested commit ${short(tested)} is not an ancestor of ${short(current)}; the branch was rewritten under this run`,
     };
   }
 
   const unexpected = changedFiles.filter((file) => !PUBLISH_ONLY_FILES.includes(file));
   if (unexpected.length > 0) {
     return {
-      verdict: 'moved',
+      verdict: 'superseded',
       reason: `${short(current)} landed on top of the tested commit ${short(tested)}, touching ${unexpected.join(', ')}`,
     };
   }
@@ -61,8 +68,10 @@ function git(args, fallback = null) {
 }
 
 /**
- * Answers the question for a real repository and prints one line — the reason —
- * so the workflow can put it straight into its failure annotation.
+ * Answers the question for a real repository and prints `skip=<true|false>` on
+ * the first line, then the reason, so the workflow can take the flag as an output
+ * and still have the reason to log. A verdict it cannot act on prints the reason
+ * alone and exits non-zero, which is what the failure annotation carries.
  */
 export function main(argv) {
   const flag = (name, fallback) => {
@@ -101,19 +110,29 @@ export function main(argv) {
     isAncestor,
   });
 
-  if (move.verdict === 'same') {
-    console.log(`the tested commit ${short(testedSha)} is still HEAD`);
-    return 0;
-  }
-  if (move.verdict === 'publish-only') {
-    console.log(
-      `HEAD moved to ${short(currentSha)}, but only by the published manifest (${PUBLISH_ONLY_FILES.join(', ')}); releasing ${short(testedSha)}`
-    );
-    return 0;
+  const outcome = {
+    same: {
+      skip: false,
+      reason: `the tested commit ${short(testedSha)} is still HEAD`,
+    },
+    'publish-only': {
+      skip: false,
+      reason: `HEAD moved to ${short(currentSha)}, but only by the published manifest (${PUBLISH_ONLY_FILES.join(', ')}); releasing ${short(testedSha)}`,
+    },
+    superseded: {
+      skip: true,
+      reason: `${move.reason}; that commit's own release run cuts the version for both`,
+    },
+  }[move.verdict];
+
+  if (!outcome) {
+    console.log(move.reason);
+    return 1;
   }
 
-  console.log(move.reason);
-  return 1;
+  console.log(`skip=${String(outcome.skip)}`);
+  console.log(outcome.reason);
+  return 0;
 }
 
 const invokedDirectly =
