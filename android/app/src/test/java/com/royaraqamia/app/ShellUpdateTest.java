@@ -171,4 +171,44 @@ public class ShellUpdateTest {
         assertFalse(ShellUpdate.isAllowedUpdateUrl("content://example/shell-2.apk", true));
         assertFalse(ShellUpdate.isAllowedUpdateUrl("not a url", true));
     }
+
+    @Test
+    public void aSizeReadsInMebibytesToPlace() {
+        // What the dialog prints for the published APK (7,449,653 bytes), and for
+        // the sizes either side of it. Binary megabytes, because that is what
+        // Android's own file sizes use: 7.4 would be the decimal reading, and the
+        // manifest's number is the one in Android's app-info screen.
+        assertEquals("7.1", ShellUpdate.formatSize(7_449_653L));
+        assertEquals("0.5", ShellUpdate.formatSize(524_288L));
+        assertEquals("0.1", ShellUpdate.formatSize(104_858L));
+    }
+
+    @Test
+    public void aWholeNumberOfMebibytesDropsTheTenth() {
+        // «30 م.ب», not «30.0 م.ب»: the zero tenth is noise in a sentence about
+        // how big a download is, and it is what a hand-published manifest is
+        // least likely to hit exactly.
+        assertEquals("1", ShellUpdate.formatSize(1_048_576L));
+        assertEquals("30", ShellUpdate.formatSize(30L * 1024 * 1024));
+        assertEquals("7", ShellUpdate.formatSize(7L * 1024 * 1024));
+    }
+
+    @Test
+    public void aSizeNobodyCanMeanStillRenders() {
+        // The manifest is a document that arrives over the network, and `sizeBytes`
+        // is `optLong`: absent, zero and negative are all reachable without the
+        // dialog crashing on the way to reporting that there is nothing to install.
+        assertEquals("0", ShellUpdate.formatSize(0));
+        assertEquals("0", ShellUpdate.formatSize(-1));
+    }
+
+    @Test
+    public void aSizeAlwaysUsesALatinDecimalPoint() {
+        // `Locale.ROOT`, not the device's: an Arabic-locale device would otherwise
+        // render «7,1» beside a version number that is already Latin.
+        String size = ShellUpdate.formatSize(7_449_653L);
+
+        assertEquals("7.1", size);
+        assertFalse(size.contains(","));
+    }
 }

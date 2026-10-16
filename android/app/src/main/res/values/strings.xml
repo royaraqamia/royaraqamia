@@ -5,22 +5,54 @@
     <string name="package_name">com.royaraqamia.app</string>
     <string name="custom_url_scheme">com.royaraqamia.app</string>
 
-    <!-- The shell's own update prompt (ADR-0043). Native, because the page
-         cannot be relied on to carry it: the Capacitor bridge is missing on the
-         WebViews this app supports. -->
-    <string name="shell_update_title">تحديث التطبيق</string>
-    <string name="shell_update_message">يتوفَّر إصدار جديد من التطبيق. تنزيله الآن؟</string>
+    <!--
+      The shell's own update prompt (ADR-0043, ADR-0054). Native, because the
+      page cannot be relied on to carry it: the Capacitor bridge is missing on
+      the WebViews this app supports.
+
+      The copy follows the site's own voice — a plain statement of what is
+      available and what the button does, with no "we recommend", no countdown
+      and no exclamation. «تنزيل وتثبيت» names both halves of what the button
+      starts, because the platform's own confirmation is still to come and a
+      button that only promises a download reads as a betrayal when an installer
+      appears instead.
+
+      The tashkeel is deliberate and only where it disambiguates: the shadda on
+      «التَّحديث», «التَّنزيل» and «الاتِّصال», and the fatha on «ثمَّ». It is not a
+      general vowelling of the strings — «يتوفَّر» and «تعذَّر» already carried
+      theirs — so this stays a reading aid rather than decoration.
+    -->
+    <string name="shell_update_title">تحديث التَّطبيق</string>
+    <string name="shell_update_message">يتوفَّر إصدار جديد من التَّطبيق. تنزيله الآن؟</string>
     <string name="shell_update_install">تنزيل وتثبيت</string>
     <string name="shell_update_later">لاحقًا</string>
     <string name="shell_update_required_title">تحديث مطلوب</string>
-    <string name="shell_update_required_message">هذا الإصدار من التطبيق لم يعد مدعومًا. حدِّث التطبيق للمتابعة.</string>
+    <string name="shell_update_required_message">هذا الإصدار من التَّطبيق لم يعد مدعومًا. حدِّث التَّطبيق للمتابعة.</string>
+    <!-- «تحديث من 1.0.2 إلى 1.0.4» — the version jump in words rather than as
+         `1.0.2 → 1.0.4`: inside an RTL paragraph the arrow's direction reverses,
+         so the same characters read as a downgrade on half of the devices. -->
+    <string name="shell_update_meta">تحديث من %1$s إلى %2$s</string>
+    <string name="shell_update_size">%1$s م.ب</string>
+    <string name="shell_update_failed_title">تعذَّر تنزيل التَّحديث</string>
+    <string name="shell_update_retry">إعادة المحاولة</string>
 
-    <!-- The install itself (ADR-0044). The APK is downloaded, checked against
-         the size and hash the manifest published, and only then handed to the
-         system installer — which is what asks the last question. -->
-    <string name="shell_update_downloading">جارٍ تنزيل التحديث…</string>
-    <string name="shell_update_allow_installs">اسمح لرؤيَة رقَميَّة بتثبيت التطبيقات من هذا المصدر، ثم عُد إلى التطبيق.</string>
-    <string name="shell_update_download_failed">تعذَّر تنزيل التحديث. تحقَّق من الاتصال وسنعرضه عليك مرة أخرى.</string>
+    <!--
+      The install itself (ADR-0044, ADR-0054). The APK is downloaded, checked
+      against the size and hash the manifest published, and only then handed to
+      the system installer — which is what asks the last question.
+    -->
+    <string name="shell_update_downloading">جاري تنزيل التَّحديث…</string>
+    <!-- `%%` is a literal percent sign for `String.format`, so this renders as
+         «42%». Western digits, like every other number the app shows. -->
+    <string name="shell_update_percent">%1$d%%</string>
+    <string name="shell_update_progress_size">%1$s من %2$s م.ب</string>
+    <string name="shell_update_cancel">إلغاء</string>
+    <!-- Said only after «إلغاء» has been tapped: the download stops at the next
+         read rather than instantly, and a button that appears to do nothing for
+         a second is worth a word. -->
+    <string name="shell_update_cancelling">جاري الإلغاء…</string>
+    <string name="shell_update_allow_installs">اسمح لرؤيَة رقَميَّة بتثبيت التَّطبيقات من هذا المصدر، ثمَّ عُد إلى التَّطبيق.</string>
+    <string name="shell_update_download_failed">لم يكتمل التَّنزيل. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.</string>
     <string name="shell_update_verify_failed">الملف الذي نزَّلناه لا يطابق الإصدار المنشور، ولم يُثبَّت شيء.</string>
-    <string name="shell_update_no_installer">تعذَّر فتح مُثبِّت التطبيقات على هذا الجهاز، ولم يُثبَّت شيء.</string>
+    <string name="shell_update_no_installer">تعذَّر فتح مُثبِّت التَّطبيقات على هذا الجهاز، ولم يُثبَّت شيء.</string>
 </resources>

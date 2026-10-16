@@ -41,13 +41,35 @@ import java.util.Locale;
  */
 final class ShellDownload {
 
+    /**
+     * Told how far the download has come, once per read.
+     *
+     * It may throw, and that is the only way a download can be stopped
+     * (ADR-0054): the callback runs on the thread that is reading the socket,
+     * and `InputStream.read` on an `HttpURLConnection` is not interruptible, so
+     * cancelling the future would leave the bytes arriving until the server
+     * finished sending them. Throwing from here unwinds `fetch` through its own
+     * failure path, which is what deletes the partial file.
+     */
     interface Progress {
-        void onProgress(long received, long total);
+        void onProgress(long received, long total) throws IOException;
     }
 
     /** The download did not produce the file the manifest described. */
     static final class VerificationFailed extends IOException {
         VerificationFailed(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * The caller stopped the download. Extends `IOException` deliberately: it
+     * has to travel out through the loop above, and going out that way means the
+     * partial file is deleted by exactly the code that deletes it for a
+     * truncated one — there is no second cleanup path to keep correct.
+     */
+    static final class Cancelled extends IOException {
+        Cancelled(String message) {
             super(message);
         }
     }
@@ -205,7 +227,7 @@ final class ShellDownload {
         return out.toString();
     }
 
-    private static void report(Progress progress, long received, long total) {
+    private static void report(Progress progress, long received, long total) throws IOException {
         if (progress != null) progress.onProgress(received, total);
     }
 

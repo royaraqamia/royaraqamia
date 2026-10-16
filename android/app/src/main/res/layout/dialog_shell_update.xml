@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The update offer, and the same card with the reason a download failed
+  (ADR-0054).
+
+  Three states share it, because all three are a headline, a sentence and up to
+  two answers: ask about a newer APK, insist on it when the site has marked this
+  shell unsupported, or report that the download did not arrive. `ShellUpdatePrompt`
+  swaps the strings and hides what a state has no use for — the meta line on a
+  failure, the «لاحقًا» on an unsupported shell.
+
+  Two choices worth stating, because both differ from the platform's own dialog:
+
+  - **The text is centred**, over a stack of full-width buttons. That is what the
+    site's own dialogs do on a phone (`text-center sm:text-left` in
+    `frontend/ui/primitives/alert-dialog.tsx`), and it is what these three lines
+    want: a headline, one sentence and one line of numbers, none of them long
+    enough to need a ragged edge to read as a block.
+  - **The primary sits above the secondary.** That is the site's mobile footer
+    (`flex-col-reverse`), and on a card this narrow the gradient action wants the
+    full width to itself rather than half of a row.
+
+  `android:fontFamily` names a font resource rather than a family string. On
+  API 24 and 25 that resolves through AppCompat — every view here is an
+  `AppCompatTextView`/`AppCompatButton`, because the activity is an
+  `AppCompatActivity` and the layout is inflated from its own `LayoutInflater`,
+  which is where the view factory is installed. On a device where that ever
+  stopped being true the text falls back to the system face rather than failing.
+
+  `android:layoutDirection="rtl"` on the root, unconditionally. Every string in
+  this app is Arabic and the site hard-codes `dir="rtl"`
+  (`frontend/shared/constants.ts`, `DIRECTION`), so a dialog that took its
+  direction from the phone's language would lay this card out left to right on
+  an English-locale device while the page behind it stayed RTL. Measured on an
+  en-US AVD: the percentage and the size swapped ends under `adb reverse`.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layoutDirection="rtl"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/shell_update_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/ibm_plex_sans_arabic_bold"
+        android:gravity="center"
+        android:lineSpacingMultiplier="1.2"
+        android:textColor="@color/roy_foreground"
+        android:textSize="20sp"
+        tools:text="تحديث التطبيق" />
+
+    <TextView
+        android:id="@+id/shell_update_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/ibm_plex_sans_arabic_regular"
+        android:gravity="center"
+        android:lineSpacingMultiplier="1.5"
+        android:textColor="@color/roy_muted_foreground"
+        android:textSize="14sp"
+        tools:text="يتوفَّر إصدار جديد من التطبيق. تنزيله الآن؟" />
+
+    <!--
+      The versions and the size. Hidden whenever the manifest gave us neither,
+      which is the state a manifest published by hand produces: a manifest that
+      does not describe the file cannot be reasoned about, and `ShellDownload`
+      refuses it, so the offer has to be able to stand without these.
+    -->
+    <TextView
+        android:id="@+id/shell_update_meta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/ibm_plex_sans_arabic_regular"
+        android:gravity="center"
+        android:textColor="@color/roy_subtle"
+        android:textSize="13sp"
+        tools:text="تحديث من 1.0.2 إلى 1.0.4 · 7.1 م.ب" />
+
+    <Button
+        android:id="@+id/shell_update_primary"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/roy_button_primary"
+        android:fontFamily="@font/ibm_plex_sans_arabic_bold"
+        android:gravity="center"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:textColor="@color/roy_primary_foreground"
+        android:textSize="15sp"
+        tools:text="تنزيل وتثبيت" />
+
+    <Button
+        android:id="@+id/shell_update_secondary"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/roy_button_secondary"
+        android:fontFamily="@font/ibm_plex_sans_arabic_regular"
+        android:gravity="center"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:stateListAnimator="@null"
+        android:textAllCaps="false"
+        android:textColor="@color/roy_muted_foreground"
+        android:textSize="15sp"
+        tools:text="لاحقًا" />
+
+</LinearLayout>

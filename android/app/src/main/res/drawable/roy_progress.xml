@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The download's progress (ADR-0054).
+
+  A horizontal `ProgressBar`'s two halves are addressed by id: `background` is
+  the whole track, `progress` is clipped to the filled share. The site has no
+  progress bar to copy — this is the brand's gradient on a track one step up
+  from the card, which is the only place in either dialog where the accent
+  appears twice.
+
+  The 3dp radius is half the bar's 6dp height, so the track reads as a capsule
+  and the fill's leading edge is the only square corner — which is what a
+  partially filled bar looks like everywhere.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="3dp" />
+            <solid android:color="@color/roy_track" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="3dp" />
+                <gradient
+                    android:angle="0"
+                    android:startColor="@color/roy_gradient_start"
+                    android:centerColor="@color/roy_gradient_mid"
+                    android:endColor="@color/roy_gradient_end" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

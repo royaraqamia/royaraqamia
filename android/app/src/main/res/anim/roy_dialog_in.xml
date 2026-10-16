@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  How a dialog arrives (ADR-0054).
+
+  The site's `zoom-in-95` + `fade-in-0` at 200ms, expressed in the platform's
+  animation classes. `fast_out_slow_in` is the platform's own ease-out-heavy
+  curve and stands in for the site's `cubic-bezier(0.16, 1, 0.3, 1)`.
+
+  180ms rather than the site's 200: a native window animation is composited by
+  the system rather than by the page, and the same duration lands a touch later.
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in"
+    android:shareInterpolator="true">
+    <alpha
+        android:duration="180"
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0" />
+    <scale
+        android:duration="180"
+        android:fromXScale="0.96"
+        android:fromYScale="0.96"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:toXScale="1.0"
+        android:toYScale="1.0" />
+</set>

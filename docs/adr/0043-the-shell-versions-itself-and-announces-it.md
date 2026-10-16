@@ -36,6 +36,12 @@ is not a channel. So `ShellUpdatePrompt` is an `AlertDialog`: it checks at most 
 fresh launch, asks with two buttons, and opens the published APK. Platform UI, on every WebView, with
 nothing to be absent.
 
+_Amended by ADR-0054._ The decision above is untouched — the announcement is still native, still asks at
+most every six hours and on a fresh launch, and the page still stays quiet while it is pending. What
+changed is the _presentation_: it is no longer the platform's `AlertDialog` but a card laid out and
+painted from this product's own tokens, and the shell no longer takes its light/dark or its direction
+from the phone.
+
 The page's half is only _not to double up_. It can see which shell it is in from its own user agent —
 `MainActivity` appends `RoyaraqamiaShell/20000`, a token every document can read — and compares that
 with the manifest from its own origin. While the shell's offer is pending, the site's own prompt stays

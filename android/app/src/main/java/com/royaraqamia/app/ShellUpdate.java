@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * The shell's side of update handling (ADR-0043).
@@ -182,6 +183,29 @@ final class ShellUpdate {
         } finally {
             if (connection != null) connection.disconnect();
         }
+    }
+
+    /**
+     * A byte count as the dialogs print it (ADR-0054): mebibytes to one decimal
+     * place, always with a `.` and Western digits — and a tenth that is always
+     * zero is dropped.
+     *
+     * Pure, and tested, because it is the one part of the dialog's copy that is
+     * arithmetic rather than a string resource. `Locale.ROOT` rather than the
+     * device locale: an Arabic device would otherwise render `7,1`, and the
+     * size reads beside a version number that is already Latin.
+     *
+     * Binary megabytes, which is what Android's own file sizes use — the
+     * published APK is 7,449,653 bytes and this says «7.1», not «7.4». A whole
+     * number of them says «30» rather than «30.0»: a tenth that is always zero
+     * is noise in a sentence about how big a download is, and a size that never
+     * carries one is the exception, not the rule.
+     */
+    static String formatSize(long bytes) {
+        String mebibytes = String.format(Locale.ROOT, "%.1f", Math.max(0L, bytes) / 1024.0 / 1024.0);
+        return mebibytes.endsWith(".0")
+                ? mebibytes.substring(0, mebibytes.length() - 2)
+                : mebibytes;
     }
 
     private static String readFully(InputStream stream) throws IOException {
