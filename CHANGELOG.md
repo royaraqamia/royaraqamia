@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.103.2] - 2026-10-16
+
+### Fixed
+- declare the camera permission the Scanner needs (#283)
+
 ## [1.103.1] - 2026-10-16
 
 ### Changed
