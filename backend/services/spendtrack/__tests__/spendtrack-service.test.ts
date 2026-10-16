@@ -443,6 +443,31 @@ describe('SpendtrackService split expense validation', () => {
     expect(repository.updateExpense).toHaveBeenCalledTimes(1);
   });
 
+  it('accepts a partial update and forwards only the provided fields', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await service.updateExpense('exp-1', 'u-1', { description: 'عشاء' });
+
+    expect(repository.updateExpense).toHaveBeenCalledWith('exp-1', 'u-1', { description: 'عشاء' });
+  });
+
+  it('still rejects an invalid amount, category or date in a patch', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(service.updateExpense('exp-1', 'u-1', { amount: 0 })).rejects.toThrow(
+      'مبلغ غير صالح'
+    );
+    await expect(service.updateExpense('exp-1', 'u-1', { category_id: '' })).rejects.toThrow(
+      'التصنيف مطلوب'
+    );
+    await expect(service.updateExpense('exp-1', 'u-1', { date: '' })).rejects.toThrow(
+      'التاريخ مطلوب'
+    );
+    expect(repository.updateExpense).not.toHaveBeenCalled();
+  });
+
   it('rejects an unsupported per-expense currency on create', async () => {
     const { repository } = makeSplitRepo();
     const service = makeService(repository);

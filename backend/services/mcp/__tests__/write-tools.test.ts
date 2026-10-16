@@ -171,6 +171,23 @@ describe('spendtrack write tools', () => {
     expect(result.isError).toBe(true);
   });
 
+  it('updateExpenseHandler forwards only the provided fields', async () => {
+    const updateExpense = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({ updateExpense }),
+    }));
+
+    const { updateExpenseHandler } = await import('../tools/spendtrack');
+    const result = await updateExpenseHandler(
+      { id: 'e1', description: 'عشاء', format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBeFalsy();
+    // Omitted amount/category_id/date must not be sent as `0`/`''` placeholders.
+    expect(updateExpense).toHaveBeenCalledWith('e1', 'u1', { description: 'عشاء' });
+  });
+
   it('createCategoryHandler routes through the spendtrack module', async () => {
     const createCategory = vi.fn().mockResolvedValue(undefined);
     vi.doMock('@/backend/config/spendtrack', () => ({

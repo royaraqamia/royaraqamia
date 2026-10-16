@@ -10,7 +10,10 @@ import type {
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
-import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
+import type {
+  ExpenseUpdateInput,
+  SpendtrackRepository,
+} from '@/backend/repositories/spendtrack/spendtrack-repository';
 import { guardRepositoryMethods } from '@/backend/shared/repository-error';
 
 const nowIso = () => new Date().toISOString();
@@ -371,28 +374,24 @@ export function createSpendtrackRepository(
     async updateExpense(
       expenseId: string,
       userId: string,
-      input: {
-        amount: number;
-        category_id: string;
-        date: string;
-        description: string | null;
-        currency?: string | null;
-        splits?: { category_id: string; amount: number; clientId?: string | null }[] | null;
-        clientId?: string | null;
-        updatedAt?: string;
-        deletedAt?: string | null;
-      }
+      input: ExpenseUpdateInput
     ): Promise<void> {
       // `clientId` is offline-write metadata, not an `expenses` column: leaving
       // it in the update payload makes PostgREST reject the write (PGRST204).
-      const { splits, updatedAt, deletedAt, clientId: _clientId, ...expense } = input;
+      const { splits, updatedAt, deletedAt, clientId: _clientId, ...patch } = input;
       void _clientId;
       const resurrect = deletedAt === null;
 
+      // Only the provided fields reach the row (ticket #253): an omitted one is
+      // left out, so a partial edit cannot blank its stored value.
       const row: Database['public']['Tables']['expenses']['Update'] = {
-        ...expense,
         updated_at: updatedAt ?? nowIso(),
       };
+      if (patch.amount !== undefined) row.amount = patch.amount;
+      if (patch.category_id !== undefined) row.category_id = patch.category_id;
+      if (patch.date !== undefined) row.date = patch.date;
+      if (patch.description !== undefined) row.description = patch.description;
+      if (patch.currency !== undefined) row.currency = patch.currency;
       if (deletedAt !== undefined) row.deleted_at = deletedAt;
 
       // Last-write-wins on the client write time (ADR-0029): a replayed older

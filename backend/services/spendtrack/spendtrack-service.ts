@@ -45,9 +45,14 @@ export interface SpendtrackExpenseInput {
   updatedAt?: string;
 }
 
-export interface SpendtrackExpenseUpdateInput extends SpendtrackExpenseInput {
+/**
+ * A patch: only the fields the caller supplies are validated and written, so a
+ * partial edit (for example a description-only change) leaves the omitted
+ * columns alone (ticket #253).
+ */
+export type SpendtrackExpenseUpdateInput = Partial<SpendtrackExpenseInput> & {
   deletedAt?: string | null;
-}
+};
 
 export interface SpendtrackOfflineMeta {
   updatedAt?: string;
@@ -220,6 +225,35 @@ export class SpendtrackService {
     return this.repository.getTransactions(query);
   }
 
+  private async validateSplits(
+    splits: NonNullable<SpendtrackExpenseInput['splits']>,
+    totalAmount: number | undefined,
+    userId: string
+  ): Promise<void> {
+    if (splits.length === 0) return;
+    if (totalAmount === undefined) {
+      throw new Error('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي');
+    }
+
+    const seen = new Set<string>();
+    let sum = 0;
+    for (const split of splits) {
+      if (!split.category_id) throw new Error('التصنيف مطلوب في التقسيم');
+      if (isNaN(split.amount) || split.amount <= 0) throw new Error('مبلغ التقسيم غير صالح');
+      if (seen.has(split.category_id)) throw new Error('لا يمكن تكرار التصنيف في التقسيم');
+      seen.add(split.category_id);
+      sum += split.amount;
+    }
+    if (Math.abs(sum - totalAmount) > 0.01) {
+      throw new Error('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي');
+    }
+    const allowed = await this.repository.getUserCategories(userId);
+    const allowedIds = new Set(allowed.map((category) => category.id));
+    for (const split of splits) {
+      if (!allowedIds.has(split.category_id)) throw new Error('تصنيف غير مسموح في التقسيم');
+    }
+  }
+
   private async validateExpenseInput(input: SpendtrackExpenseInput, userId: string): Promise<void> {
     if (isNaN(input.amount) || input.amount <= 0) {
       throw new Error('مبلغ غير صالح');
@@ -236,26 +270,34 @@ export class SpendtrackService {
       throw new Error('عملة غير مدعومة');
     }
 
-    const splits = input.splits ?? [];
-    if (splits.length > 0) {
-      const seen = new Set<string>();
-      let sum = 0;
-      for (const split of splits) {
-        if (!split.category_id) throw new Error('التصنيف مطلوب في التقسيم');
-        if (isNaN(split.amount) || split.amount <= 0) throw new Error('مبلغ التقسيم غير صالح');
-        if (seen.has(split.category_id)) throw new Error('لا يمكن تكرار التصنيف في التقسيم');
-        seen.add(split.category_id);
-        sum += split.amount;
-      }
-      if (Math.abs(sum - input.amount) > 0.01) {
-        throw new Error('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي');
-      }
-      const allowed = await this.repository.getUserCategories(userId);
-      const allowedIds = new Set(allowed.map((category) => category.id));
-      for (const split of splits) {
-        if (!allowedIds.has(split.category_id)) throw new Error('تصنيف غير مسموح في التقسيم');
-      }
+    await this.validateSplits(input.splits ?? [], input.amount, userId);
+  }
+
+  /**
+   * A patch validates only what the caller provided (ticket #253): an omitted
+   * `amount`/`category_id`/`date` is neither rejected as empty nor written as a
+   * placeholder, so an untouched column keeps its stored value.
+   */
+  private async validateExpensePatch(
+    input: SpendtrackExpenseUpdateInput,
+    userId: string
+  ): Promise<void> {
+    if (input.amount !== undefined && (isNaN(input.amount) || input.amount <= 0)) {
+      throw new Error('مبلغ غير صالح');
     }
+    if (input.category_id !== undefined && !input.category_id) {
+      throw new Error('التصنيف مطلوب');
+    }
+    if (input.date !== undefined && !input.date) {
+      throw new Error('التاريخ مطلوب');
+    }
+
+    const currency = input.currency ?? null;
+    if (currency !== null && !isExpenseCurrency(currency)) {
+      throw new Error('عملة غير مدعومة');
+    }
+
+    await this.validateSplits(input.splits ?? [], input.amount, userId);
   }
 
   async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<string> {
@@ -338,7 +380,7 @@ export class SpendtrackService {
     userId: string,
     input: SpendtrackExpenseUpdateInput
   ): Promise<void> {
-    await this.validateExpenseInput(input, userId);
+    await this.validateExpensePatch(input, userId);
 
     await this.repository.updateExpense(expenseId, userId, input);
   }
