@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.103.1] - 2026-10-16
+
+### Changed
+- exclude the Firebase client config from secret scanning (#282)
+
 ## [1.103.0] - 2026-10-16
 
 ### Added
