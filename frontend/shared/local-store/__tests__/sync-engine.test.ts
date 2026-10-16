@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import { ApiError } from '@/frontend/transport/http';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import {
   PermanentSyncError,
@@ -212,5 +213,40 @@ describe('SyncEngine outbox ordering', () => {
 
     await engine.flush();
     expect(sent).toEqual(['habit.create']);
+  });
+});
+
+describe('SyncEngine transient re-arm', () => {
+  it('retries a 401-marked intent on the next flush once the session is valid, without retry()', async () => {
+    const store = new FakeOutbox([entry()]);
+    let unauthorized = true;
+    const sent: string[] = [];
+    const engine = new SyncEngine(
+      {
+        store,
+        transport: {
+          async send(e) {
+            if (unauthorized) throw new ApiError('Unauthorized', 401);
+            sent.push(e.type);
+          },
+        },
+        isSignedIn: () => true,
+        now: () => NOW,
+        random: () => 0,
+      },
+      OPTIONS
+    );
+
+    // A 401 is transient: the entry backs off and stays pending, not failed.
+    await engine.flush();
+    expect(sent).toEqual([]);
+    expect(store.entries).toHaveLength(1);
+    expect(store.entries[0]!.status).toBe('pending');
+
+    // Once auth is restored the very next flush drains it — no retry() needed.
+    unauthorized = false;
+    await engine.flush();
+    expect(sent).toEqual(['expense.create']);
+    expect(store.entries).toHaveLength(0);
   });
 });

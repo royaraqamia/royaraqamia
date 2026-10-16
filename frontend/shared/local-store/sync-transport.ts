@@ -14,7 +14,14 @@ export interface SyncTransport {
   send(entry: OutboxEntry): Promise<void>;
 }
 
-const RETRYABLE_STATUS = new Set([408, 409, 425, 429]);
+/**
+ * Statuses that are transient by definition even though they are 4xx. 401 is
+ * here because the authenticated transports answer it when no session is
+ * established — a lapsed/expiring Bearer token, not a malformed intent — so the
+ * entry must back off and replay once auth is restored rather than be failed
+ * permanently (ADR-0029).
+ */
+const RETRYABLE_STATUS = new Set([401, 408, 409, 425, 429]);
 
 /**
  * Classifies an outbox failure into "retry forever with backoff" or "give up
