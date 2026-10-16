@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.10] - 2026-10-16
+
+### Fixed
+- stop pruning push subscriptions by shared User-Agent (#264)
+- let a submitter edit a retainer after its start has passed (#263)
+
 ## [1.101.9] - 2026-10-16
 
 ### Changed
