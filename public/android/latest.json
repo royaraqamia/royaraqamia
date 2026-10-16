@@ -1,10 +1,10 @@
 {
-  "versionCode": 20006,
-  "versionName": "1.0.6",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.6.apk",
-  "sha256": "d4e120613d8d3b7204bca9d8fe2d8ebe8ccae00fc67c7b0d80f7da78416a8f6c",
-  "sizeBytes": 7449705,
+  "versionCode": 20007,
+  "versionName": "1.0.7",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.7.apk",
+  "sha256": "0b46c99bea4453269b023e997c87d26fe4fbcf822201f8bc16fbd68c32f11cd1",
+  "sizeBytes": 7606788,
   "minSupportedVersionCode": 20000,
-  "notes": "fix(shell): declare the camera permission the Scanner needs (#283)",
+  "notes": "feat(android): make the shell's update dialogs look like the product (#284)",
   "releasedAt": "2026-10-15"
 }
