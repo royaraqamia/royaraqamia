@@ -1,6 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
-import type { SyncTransport } from '@/frontend/shared/local-store/sync-transport';
+import {
+  PermanentSyncError,
+  type SyncTransport,
+} from '@/frontend/shared/local-store/sync-transport';
 import { SyncEngine, type OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 
 const NOW = 1_000_000;
@@ -174,5 +177,40 @@ describe('SyncEngine channel ownership', () => {
     engine.dispose();
     expect(() => engine.dispose()).not.toThrow();
     expect(FakeBroadcastChannel.instances).toHaveLength(0);
+  });
+});
+
+describe('SyncEngine outbox ordering', () => {
+  it('does not overtake a backing-off intent, then sends it first once it is due', async () => {
+    const backingOff = entry({ seq: 1, id: 'a', type: 'habit.delete', nextAttemptAt: NOW + 1_000 });
+    const later = entry({ seq: 2, id: 'b', type: 'habit.create' });
+    const sent: string[] = [];
+    const engine = makeEngine([backingOff, later], {
+      async send(e) {
+        sent.push(e.type);
+      },
+    });
+
+    await engine.flush();
+    expect(sent).toEqual([]);
+
+    backingOff.nextAttemptAt = 0;
+    await engine.flush();
+    expect(sent).toEqual(['habit.delete', 'habit.create']);
+  });
+
+  it('does not block a later intent when an earlier one fails permanently', async () => {
+    const failing = entry({ seq: 1, id: 'a', type: 'habit.delete' });
+    const later = entry({ seq: 2, id: 'b', type: 'habit.create' });
+    const sent: string[] = [];
+    const engine = makeEngine([failing, later], {
+      async send(e) {
+        if (e.type === 'habit.delete') throw new PermanentSyncError('nope');
+        sent.push(e.type);
+      },
+    });
+
+    await engine.flush();
+    expect(sent).toEqual(['habit.create']);
   });
 });
