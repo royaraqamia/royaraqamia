@@ -74,6 +74,77 @@ describe('createMcpOAuthRepository.markAuthCodeUsed', () => {
 });
 
 /**
+ * `claimRefreshToken` is the rotation guard and has the same shape as
+ * `markAuthCodeUsed`: `update({...}).eq('id', id).is('revoked_at', null)
+ * .select('id').maybeSingle()`. Only the caller that flips `revoked_at` from null
+ * wins the rotation; the loser matches no row and must be answered `invalid_grant`
+ * rather than minting a second pair. Winning is also a revoke-and-shred: the
+ * ciphertext has been read and is carried into the pair the caller issues.
+ */
+function makeTokenClaimClient(
+  overrides: {
+    updatedRow?: { id: string } | null;
+    updateError?: Error | null;
+  } = {}
+) {
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: overrides.updatedRow ?? null,
+    error: overrides.updateError ?? null,
+  });
+  const selectUpdated = vi.fn(() => ({ maybeSingle }));
+  const is = vi.fn(() => ({ select: selectUpdated }));
+  const eq = vi.fn(() => ({ is }));
+  const update = vi.fn(() => ({ eq }));
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_tokens') throw new Error(`unexpected table: ${table}`);
+    return { update };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, from, update, eq, is, selectUpdated, maybeSingle };
+}
+
+describe('createMcpOAuthRepository.claimRefreshToken', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('claims a live refresh row and reports success', async () => {
+    const { client, from, update, eq, is, selectUpdated } = makeTokenClaimClient({
+      updatedRow: { id: 'tok-1' },
+    });
+    const repo = createMcpOAuthRepository(client);
+
+    await expect(repo.claimRefreshToken('tok-1')).resolves.toBe(true);
+
+    expect(from).toHaveBeenCalledWith('mcp_oauth_tokens');
+    expect(update).toHaveBeenCalledWith({
+      revoked_at: expect.any(String),
+      session_enc: null,
+    });
+    expect(eq).toHaveBeenCalledWith('id', 'tok-1');
+    // The compare-and-set: only a row with no revoked_at can be claimed, so two
+    // overlapping rotations cannot both match.
+    expect(is).toHaveBeenCalledWith('revoked_at', null);
+    expect(selectUpdated).toHaveBeenCalledWith('id');
+  });
+
+  it('reports a lost race when no live row matched', async () => {
+    const { client } = makeTokenClaimClient({ updatedRow: null });
+    const repo = createMcpOAuthRepository(client);
+
+    await expect(repo.claimRefreshToken('tok-1')).resolves.toBe(false);
+  });
+
+  it('throws when the update fails', async () => {
+    const { client } = makeTokenClaimClient({ updateError: new Error('claim failed') });
+    const repo = createMcpOAuthRepository(client);
+
+    await expect(repo.claimRefreshToken('tok-1')).rejects.toThrow('claim failed');
+  });
+});
+
+/**
  * Revocation is also a shred. `session_enc` is the encrypted Supabase session
  * the data plane drains, so a revoked row must stop carrying it: otherwise a
  * disconnected grant leaves a replayable credential behind, and a later

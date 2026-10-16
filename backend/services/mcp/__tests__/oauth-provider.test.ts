@@ -63,6 +63,7 @@ const mockRepo = {
   getTokenByHash: vi.fn(),
   getAccessTokenByRefreshHash: vi.fn(),
   touchTokenLastUsed: vi.fn(),
+  claimRefreshToken: vi.fn(),
   revokeToken: vi.fn(),
   revokeAllUserTokens: vi.fn(),
   listUserSessionEncs: vi.fn(),
@@ -111,6 +112,9 @@ describe('createMcpOAuthProvider', () => {
     mockRepo.getTokenByHash.mockResolvedValue(null);
     mockRepo.getAccessTokenByRefreshHash.mockResolvedValue(null);
     mockRepo.getAuthCode.mockResolvedValue(null);
+    // The default: this caller wins the rotation claim. Tests that care about the
+    // loser override it.
+    mockRepo.claimRefreshToken.mockResolvedValue(true);
     mockRepo.listUserSessionEncs.mockResolvedValue([]);
     mockBridgeSessions.revoke.mockResolvedValue(true);
     provider = createMcpOAuthProvider({
@@ -290,7 +294,7 @@ describe('createMcpOAuthProvider', () => {
         client: mockClient,
       });
 
-      expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-1');
+      expect(mockRepo.claimRefreshToken).toHaveBeenCalledWith('tok-1');
       expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-access');
       expect(response.refresh_token).toBe('opaque-token');
     });
@@ -304,7 +308,7 @@ describe('createMcpOAuthProvider', () => {
         client: mockClient,
       });
 
-      expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-1');
+      expect(mockRepo.claimRefreshToken).toHaveBeenCalledWith('tok-1');
       expect(mockRepo.revokeToken).not.toHaveBeenCalledWith('tok-access');
       expect(response.refresh_token).toBe('opaque-token');
       expect(mockRepo.createToken).toHaveBeenCalledWith(
@@ -353,6 +357,67 @@ describe('createMcpOAuthProvider', () => {
       await expect(
         provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient })
       ).rejects.toThrow(McpOAuthError);
+    });
+
+    it('answers invalid_grant when the rotation claim is lost, minting nothing', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue({
+        ...mockTokenRecord,
+        id: 'tok-access',
+        kind: 'access',
+        token_hash: 'access-hash',
+        refresh_token_hash: 'refresh-hash',
+      });
+      mockRepo.claimRefreshToken.mockResolvedValue(false);
+
+      await expect(
+        provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient })
+      ).rejects.toMatchObject({ code: 'invalid_grant' });
+
+      // The loser revokes nothing and mints nothing: the pair belongs to whoever
+      // won the claim.
+      expect(mockRepo.createToken).not.toHaveBeenCalled();
+      expect(mockRepo.revokeToken).not.toHaveBeenCalled();
+      expect(invalidateTokenCache).not.toHaveBeenCalled();
+    });
+
+    it('lets exactly one of two overlapping refreshes rotate the token', async () => {
+      // A barrier on the read keeps the interleaving honest: without the atomic
+      // claim both requests reach the revocation with the row still live, which
+      // is the bug. Each read waits until both requests have read the row.
+      let readers = 0;
+      let release: (() => void) | undefined;
+      const bothRead = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      mockRepo.getTokenByHash.mockImplementation(async () => {
+        readers += 1;
+        if (readers === 2) release?.();
+        await bothRead;
+        return mockTokenRecord;
+      });
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue(null);
+
+      let claims = 0;
+      mockRepo.claimRefreshToken.mockImplementation(async () => {
+        claims += 1;
+        return claims === 1;
+      });
+
+      const results = await Promise.allSettled([
+        provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient }),
+        provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient }),
+      ]);
+
+      const fulfilled = results.filter((result) => result.status === 'fulfilled');
+      const rejected = results.filter(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      );
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected.map((result) => result.reason.code)).toEqual(['invalid_grant']);
+      // Both requests tried to claim; one pair was minted, for the winner alone.
+      expect(mockRepo.claimRefreshToken).toHaveBeenCalledTimes(2);
+      expect(mockRepo.createToken).toHaveBeenCalledTimes(2);
     });
   });
 

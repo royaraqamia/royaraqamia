@@ -137,7 +137,11 @@ export interface McpOAuthProvider {
     clientSecret?: string;
   }): Promise<TokenResponse>;
 
-  /** Rotate a refresh token into a fresh access + refresh pair. */
+  /**
+   * Rotate a refresh token into a fresh access + refresh pair. Single-use: the
+   * presented refresh row is claimed atomically, so overlapping refreshes yield
+   * exactly one pair and every other caller is answered `invalid_grant`.
+   */
   refreshAccessToken(input: {
     refreshToken: string;
     client: McpOAuthClientRecord;
@@ -308,12 +312,22 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       // the data plane persists the rotated Supabase refresh token there.
       const accessRow = await repo.getAccessTokenByRefreshHash(refreshHash);
 
-      // Rotation: revoke the old pair, then issue a brand-new pair. Drop any
-      // cached context for the superseded access token so it stops authorizing
-      // requests immediately, not up to 5 minutes later. Both rows were read
-      // above on purpose — revoking shreds `session_enc`, and `issueTokenPair`
-      // below still needs the encrypted session to carry forward.
-      await repo.revokeToken(refreshRow.id);
+      // Single-use rotation: claim the refresh row before issuing anything, so
+      // two overlapping refreshes cannot both rotate it. The claim also revokes
+      // and shreds the row (see the repository), and the read above happened
+      // first on purpose. The loser is answered `invalid_grant` — the same answer
+      // a replayed, already-rotated token gets — and mints nothing.
+      const claimed = await repo.claimRefreshToken(refreshRow.id);
+      if (!claimed) {
+        throw new McpOAuthError(400, 'invalid_grant', 'Refresh token has already been rotated');
+      }
+
+      // Rotation: revoke the superseded access row, then issue a brand-new pair.
+      // Drop any cached context for the superseded access token so it stops
+      // authorizing requests immediately, not up to 5 minutes later. Both rows
+      // were read before anything was revoked on purpose — the claim and the
+      // revoke shred `session_enc`, and `issueTokenPair` below still needs the
+      // encrypted session to carry forward.
       if (accessRow) {
         await repo.revokeToken(accessRow.id);
         invalidateTokenCache(accessRow.token_hash);

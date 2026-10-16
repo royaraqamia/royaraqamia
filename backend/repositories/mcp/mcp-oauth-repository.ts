@@ -134,6 +134,18 @@ export interface McpOAuthRepository {
   getAccessTokenByRefreshHash(refreshTokenHash: string): Promise<McpTokenRecord | null>;
   touchTokenLastUsed(id: string): Promise<void>;
   updateTokenSessionEnc(id: string, sessionEnc: string): Promise<void>;
+  /**
+   * Atomically claim a refresh row for rotation, so exactly one of several
+   * overlapping refreshes wins. Returns `true` only for the caller that flipped
+   * `revoked_at` from null; a concurrent caller gets `false` and must answer
+   * `invalid_grant`. Rotation is single-use (RFC 6749 §6, RFC 9700 §4.14), which
+   * a read-then-revoke cannot guarantee: both callers read the same live row.
+   *
+   * The claim *is* the revoke, and like `markAuthCodeUsed` it shreds
+   * `session_enc` in the same update — the caller has already read the
+   * ciphertext it carries into the new pair.
+   */
+  claimRefreshToken(id: string): Promise<boolean>;
   revokeToken(id: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
   /**
@@ -292,6 +304,21 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
         .update({ session_enc: sessionEnc })
         .eq('id', id);
       if (error) throw error;
+    },
+
+    async claimRefreshToken(id) {
+      // Claiming is a revoke-and-shred — see the module note. `.is('revoked_at',
+      // null)` is what makes it a compare-and-set: a caller that loses the race
+      // matches no row, so it cannot revoke a pair it did not rotate.
+      const { data, error } = await (supabase as any)
+        .from(TOKENS_TABLE)
+        .update({ revoked_at: new Date().toISOString(), session_enc: null })
+        .eq('id', id)
+        .is('revoked_at', null)
+        .select('id')
+        .maybeSingle();
+      if (error) throw error;
+      return data !== null;
     },
 
     async revokeToken(id) {
