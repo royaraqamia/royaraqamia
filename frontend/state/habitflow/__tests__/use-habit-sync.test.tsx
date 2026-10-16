@@ -29,6 +29,17 @@ vi.mock('@/frontend/api/habitflow/habit-api', () => ({
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { userIdentity } from '@/frontend/shared/local-store/identity';
 import { useHabitSync } from '@/frontend/state/habitflow/use-habit-sync';
+import {
+  useDashboardData,
+  type DashboardSeed,
+} from '@/frontend/state/habitflow/use-dashboard-data';
+
+const DASHBOARD_SEED: DashboardSeed = {
+  habits: [],
+  logs: [],
+  mode: 'supabase',
+  user: { id: 'u-1' },
+};
 
 describe('useHabitSync', () => {
   beforeEach(() => {
@@ -120,5 +131,50 @@ describe('useHabitSync', () => {
     }
 
     expect(rejections).toEqual([]);
+  });
+
+  // #204: here the store-owning hook (`useDashboardData`) and the engine-owning
+  // hook (`useHabitSync`) are separate, but both clean up on the same unmount —
+  // the store closes while the flush is still parked inside `send`. The next
+  // store call must not reject on the closed connection.
+  it('abandons an in-flight flush without rejecting when the store owner unmounts', async () => {
+    const seeded = await HabitLocalStore.open(userIdentity('u-1'));
+    await seeded.createHabit({ name: 'قراءة', frequency: 'daily' });
+
+    const rejections: unknown[] = [];
+    const onRejection = (reason: unknown) => rejections.push(reason);
+    process.on('unhandledRejection', onRejection);
+
+    let releaseSend: () => void = () => {};
+    sendGate = new Promise<void>((resolve) => {
+      releaseSend = resolve;
+    });
+
+    try {
+      const { result, unmount } = renderHook(() => {
+        const dashboard = useDashboardData(DASHBOARD_SEED);
+        useHabitSync(dashboard.store, true, vi.fn());
+        return dashboard;
+      });
+      await waitFor(() => expect(result.current.store).not.toBeNull());
+      // The flush has picked the intent up and is parked inside `send`.
+      await waitFor(() => expect(sent).toContain('habit.create'));
+
+      // The dashboard hook's cleanup closes the store while that flush is in flight.
+      unmount();
+      releaseSend();
+
+      // Give a rejection raised by the post-unmount store calls a tick to surface.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    } finally {
+      process.off('unhandledRejection', onRejection);
+      seeded.close();
+    }
+
+    expect(rejections).toEqual([]);
+
+    const store = await HabitLocalStore.open(userIdentity('u-1'));
+    expect(await store.getOutbox()).toHaveLength(1);
+    store.close();
   });
 });

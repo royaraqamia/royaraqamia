@@ -9,6 +9,7 @@ import {
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
+import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
 import {
   OUTBOX_STORE,
   type NewOutboxEntry,
@@ -46,16 +47,20 @@ export const leadsStoreMigrations: readonly LocalStoreMigration[] = [
  * The Local Store behind the non-inventory lead forms. It holds only the Outbox:
  * a lead is delivered, not owned, so there is no local copy to render and no
  * server merge — the entry is removed once the server accepts the replay.
+ *
+ * Every operation goes through the connection (#204), so a Sync Engine flush
+ * that outlives its owning hook resolves as a no-op instead of throwing on a
+ * closed connection.
  */
 export class LeadsLocalStore {
-  private readonly db: IDBDatabase;
+  private readonly connection: LocalStoreConnection;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
     db: IDBDatabase,
     readonly identity: LocalIdentity
   ) {
-    this.db = db;
+    this.connection = new LocalStoreConnection(db);
   }
 
   subscribeWrites(listener: () => void): () => void {
@@ -78,15 +83,21 @@ export class LeadsLocalStore {
     return new LeadsLocalStore(db, GUEST_IDENTITY);
   }
 
+  /**
+   * Closes the connection: work already in flight settles first, and every
+   * operation after this one resolves without touching IndexedDB (#204).
+   */
   close(): void {
-    this.db.close();
+    this.connection.close();
   }
 
   async getOutbox(): Promise<OutboxEntry[]> {
-    const transaction = this.db.transaction(OUTBOX_STORE, 'readonly');
-    return promisifyRequest(
-      transaction.objectStore(OUTBOX_STORE).getAll() as IDBRequest<OutboxEntry[]>
-    );
+    return this.connection.run(async (db) => {
+      const transaction = db.transaction(OUTBOX_STORE, 'readonly');
+      return promisifyRequest(
+        transaction.objectStore(OUTBOX_STORE).getAll() as IDBRequest<OutboxEntry[]>
+      );
+    }, []);
   }
 
   /** Durably queues one submission for replay. */
@@ -103,50 +114,65 @@ export class LeadsLocalStore {
       nextAttemptAt: 0,
     };
 
-    const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
-    transaction.objectStore(OUTBOX_STORE).put(entry);
-    await transactionDone(transaction);
-    this.notifyWrites();
+    const queued = await this.connection.run(async (db) => {
+      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
+      transaction.objectStore(OUTBOX_STORE).put(entry);
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (queued) this.notifyWrites();
   }
 
   async removeOutbox(seq: number): Promise<void> {
-    const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
-    transaction.objectStore(OUTBOX_STORE).delete(seq);
-    await transactionDone(transaction);
-    this.notifyWrites();
+    const removed = await this.connection.run(async (db) => {
+      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
+      transaction.objectStore(OUTBOX_STORE).delete(seq);
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (removed) this.notifyWrites();
   }
 
   async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
-    // Two transactions: an IndexedDB transaction auto-commits as soon as it has
-    // no pending requests, so the read must finish in its own before the write.
-    const read = this.db.transaction(OUTBOX_STORE, 'readonly');
-    const existing = await promisifyRequest(
-      read.objectStore(OUTBOX_STORE).get(seq) as IDBRequest<OutboxEntry | undefined>
-    );
-    if (!existing) return;
+    const patched = await this.connection.run(async (db) => {
+      // Two transactions: an IndexedDB transaction auto-commits as soon as it has
+      // no pending requests, so the read must finish in its own before the write.
+      const read = db.transaction(OUTBOX_STORE, 'readonly');
+      const existing = await promisifyRequest(
+        read.objectStore(OUTBOX_STORE).get(seq) as IDBRequest<OutboxEntry | undefined>
+      );
+      if (!existing) return false;
 
-    const write = this.db.transaction(OUTBOX_STORE, 'readwrite');
-    write.objectStore(OUTBOX_STORE).put({ ...existing, ...patch });
-    await transactionDone(write);
-    this.notifyWrites();
+      const write = db.transaction(OUTBOX_STORE, 'readwrite');
+      write.objectStore(OUTBOX_STORE).put({ ...existing, ...patch });
+      await transactionDone(write);
+      return true;
+    }, false);
+    if (patched) this.notifyWrites();
   }
 
   async retryFailedOutbox(): Promise<void> {
-    const outbox = await this.getOutbox();
-    const failed = outbox.filter((entry) => entry.status === 'failed');
-    if (failed.length === 0) return;
+    const retried = await this.connection.run(async (db) => {
+      const read = db.transaction(OUTBOX_STORE, 'readonly');
+      const outbox = await promisifyRequest(
+        read.objectStore(OUTBOX_STORE).getAll() as IDBRequest<OutboxEntry[]>
+      );
+      const failed = outbox.filter((entry) => entry.status === 'failed');
+      if (failed.length === 0) return false;
 
-    const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
-    for (const entry of failed) {
-      transaction.objectStore(OUTBOX_STORE).put({
-        ...entry,
-        status: 'pending',
-        attempts: 0,
-        nextAttemptAt: 0,
-        lastError: null,
-      });
-    }
-    await transactionDone(transaction);
-    this.notifyWrites();
+      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
+      for (const entry of failed) {
+        transaction.objectStore(OUTBOX_STORE).put({
+          ...entry,
+          status: 'pending',
+          attempts: 0,
+          nextAttemptAt: 0,
+          lastError: null,
+        });
+      }
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (retried) this.notifyWrites();
   }
 }

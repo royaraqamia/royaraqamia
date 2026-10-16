@@ -136,6 +136,29 @@ describe('LinksnapLocalStore', () => {
     account.close();
   });
 
+  // #204: claiming reads and writes through the account store, so the account's
+  // cleanup can land mid-claim. A claim that could not write must not absorb the
+  // guest store — that would destroy the rows it never copied.
+  it('leaves the guest store alone when the claim cannot reach the account store', async () => {
+    const guest = await open(GUEST_IDENTITY);
+    await guest.createLink({ originalUrl: 'https://guest.com' });
+    guest.close();
+
+    const account = await open(userIdentity('u-1'));
+    const reopenedGuest = await open(GUEST_IDENTITY);
+
+    account.close();
+    await account.claimFrom(reopenedGuest);
+
+    expect(await reopenedGuest.getLinks()).toHaveLength(1);
+    expect(await reopenedGuest.getOutbox()).toHaveLength(1);
+    reopenedGuest.close();
+
+    const reopenedAccount = await open(userIdentity('u-1'));
+    expect(await reopenedAccount.getLinks()).toHaveLength(0);
+    reopenedAccount.close();
+  });
+
   it('seeds once and never overwrites local writes', async () => {
     const store = await open(userIdentity('u-1'));
     await store.seedIfEmpty([
