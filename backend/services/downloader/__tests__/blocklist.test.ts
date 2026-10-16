@@ -31,6 +31,13 @@ describe('isUrlBlocked', () => {
     );
   });
 
+  it('blocks a trailing-dot (absolute) host the entry bans', () => {
+    const entries = [entry('domain', 'example.com')];
+
+    expect(isUrlBlocked('https://example.com./private', entries)).toBe(true);
+    expect(isUrlBlocked('https://cdn.example.com./private', entries)).toBe(true);
+  });
+
   it('blocks only an exact url entry', () => {
     const entries = [entry('url', 'https://example.com/private')];
 

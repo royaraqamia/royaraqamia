@@ -450,6 +450,16 @@ describe('DownloaderService platform allowlist', () => {
     await expect(service.create(YOUTUBE_INPUT)).rejects.toBeInstanceOf(PlatformUnavailableError);
   });
 
+  it('refuses a disabled Platform whose URL host is written with a trailing dot', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    await platforms.save('youtube', { enabled: false });
+    const { service } = makeService({ platforms });
+
+    await expect(
+      service.create({ url: 'https://youtube.com./watch?v=abc123', format: 'audio' })
+    ).rejects.toBeInstanceOf(PlatformUnavailableError);
+  });
+
   it('refuses a Platform whose circuit breaker is open', async () => {
     const platforms = new InMemoryDownloadPlatformRepository();
     await platforms.save('youtube', { openUntil: '2031-01-01T00:00:00.000Z' });
@@ -553,6 +563,16 @@ describe('DownloaderService blocklist', () => {
 
     await expect(service.create(INPUT)).rejects.toBeInstanceOf(BlockedLinkError);
     expect(repository.jobs.size).toBe(0);
+  });
+
+  it('refuses a blocked host written with a trailing dot', async () => {
+    const blocklist = new InMemoryDownloadBlocklistRepository();
+    await blocklist.add({ kind: 'domain', value: 'example.com', createdBy: null });
+    const { service } = makeService({ blocklist });
+
+    await expect(
+      service.create({ url: 'https://example.com./private', format: 'audio' })
+    ).rejects.toBeInstanceOf(BlockedLinkError);
   });
 
   it('accepts a link when the blocklist is empty', async () => {

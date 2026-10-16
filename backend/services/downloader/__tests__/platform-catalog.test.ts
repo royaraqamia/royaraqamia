@@ -20,6 +20,11 @@ describe('platformForUrl', () => {
     expect(platformIdForUrl(url)).toBe(id);
   });
 
+  it('maps a trailing-dot (absolute) host to the same Platform', () => {
+    expect(platformIdForUrl('https://youtube.com./watch?v=abc')).toBe('youtube');
+    expect(platformIdForUrl('https://www.youtube.com./watch?v=abc')).toBe('youtube');
+  });
+
   it('treats an unlisted host as generic', () => {
     expect(platformForUrl('https://example.com/v/1')).toBeNull();
     expect(platformForUrl('https://some-blog.dev/post')).toBeNull();

@@ -67,7 +67,9 @@ describe('CreateDownloadJobSchema', () => {
 describe('isPublicHttpUrl (SSRF guard)', () => {
   it.each([
     'http://localhost/a.mp4',
+    'http://localhost./a.mp4',
     'http://127.0.0.1/a.mp4',
+    'http://127.0.0.1./a.mp4',
     'http://10.1.2.3/a.mp4',
     'http://192.168.1.1/a.mp4',
     'http://172.16.0.1/a.mp4',
@@ -84,9 +86,21 @@ describe('isPublicHttpUrl (SSRF guard)', () => {
     expect(isPublicHttpUrl('https://fcm.example.com/a.mp4')).toBe(true);
   });
 
+  it('accepts a public host written in its trailing-dot (absolute) form', () => {
+    expect(isPublicHttpUrl('https://example.com./a.mp4')).toBe(true);
+  });
+
   it('rejects a private literal at the schema', () => {
     const result = CreateDownloadJobSchema.safeParse({
       url: 'http://192.168.1.1/a.mp4',
+      format: 'video-720p',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a loopback host in its trailing-dot form at the schema', () => {
+    const result = CreateDownloadJobSchema.safeParse({
+      url: 'http://localhost./a.mp4',
       format: 'video-720p',
     });
     expect(result.success).toBe(false);

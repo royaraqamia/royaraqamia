@@ -174,6 +174,16 @@ export function isHttpUrl(value: string): boolean {
   }
 }
 
+/**
+ * Normalize a host for comparison. DNS's absolute form of a name (`example.com.`)
+ * resolves identically to the relative form but compares differently, so every
+ * host check strips a single trailing dot and lowercases first. Shared so the
+ * Blocklist, the Platform allowlist and the SSRF guard cannot drift apart.
+ */
+export function normalizeHostname(host: string): string {
+  return host.toLowerCase().replace(/\.$/, '');
+}
+
 const PRIVATE_IPV4 = (a: number, b: number): boolean => {
   if (a === 0 || a === 10 || a === 127) return true;
   if (a === 192 && b === 168) return true;
@@ -194,7 +204,7 @@ export function isPublicHttpUrl(value: string): boolean {
 
   let host: string;
   try {
-    host = new URL(value).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    host = normalizeHostname(new URL(value).hostname.replace(/^\[|\]$/g, ''));
   } catch {
     return false;
   }

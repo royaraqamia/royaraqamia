@@ -1,4 +1,4 @@
-import type { DownloadBlocklistEntry } from '@/shared/contracts/downloader';
+import { normalizeHostname, type DownloadBlocklistEntry } from '@/shared/contracts/downloader';
 
 /**
  * Whether a source URL is refused by the blocklist. A `domain` entry bans the
@@ -11,7 +11,7 @@ export function isUrlBlocked(url: string, entries: readonly DownloadBlocklistEnt
 
   let host: string | null = null;
   try {
-    host = new URL(trimmed).hostname.toLowerCase();
+    host = normalizeHostname(new URL(trimmed).hostname);
   } catch {
     host = null;
   }

@@ -9,6 +9,8 @@
  * domains) to give it one.
  */
 
+import { normalizeHostname } from '@/shared/contracts/downloader';
+
 export interface DownloadPlatform {
   /** Stable id stored on a job's `platform` and in `downloader_platforms`. */
   id: string;
@@ -73,7 +75,7 @@ export const DOWNLOAD_PLATFORMS: readonly DownloadPlatform[] = [
 
 function hostnameOf(url: string): string | null {
   try {
-    return new URL(url).hostname.toLowerCase();
+    return normalizeHostname(new URL(url).hostname);
   } catch {
     return null;
   }
