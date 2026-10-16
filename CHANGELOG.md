@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.3] - 2026-10-16
+
+### Changed
+- Outbox replay now stays in seq order.
+
 ## [1.101.2] - 2026-10-15
 
 ### Changed
