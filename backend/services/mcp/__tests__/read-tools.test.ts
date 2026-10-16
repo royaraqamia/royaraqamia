@@ -242,34 +242,65 @@ describe('spendtrack tools', () => {
 describe('certificates tools', () => {
   beforeEach(() => vi.resetModules());
 
-  it('verifyCertificateHandler works anonymously and returns public shape', async () => {
-    vi.doMock('@/backend/repositories/certificates', () => ({
-      createCertificatesRepository: () => ({
-        getByCode: async () => ({
-          id: 'c1',
-          certificate_code: 'COMP-2026-A1B2C3D4',
-          student_name: 'أحمد',
-          course_name: 'برمجة الويب',
-          issue_date: '2026-01-01',
-          expiration_date: null,
-          grade_or_status: 'ممتاز',
-          recipient_email: 'x@example.com',
-          recipient_user_ids: ['u1'],
-          created_at: '2026-01-01T00:00:00.000Z',
-        }),
-      }),
+  const certificateRow = {
+    id: 'c1',
+    certificate_code: 'COMP-2026-A1B2C3D4',
+    student_name: 'أحمد',
+    course_name: 'برمجة الويب',
+    issue_date: '2026-01-01',
+    expiration_date: null,
+    grade_or_status: 'ممتاز',
+    recipient_email: 'x@example.com',
+    recipient_user_ids: ['someone-else'],
+    created_at: '2026-01-01T00:00:00.000Z',
+  };
+
+  function mockVerifyDeps() {
+    // A distinct sentinel for the publishable client, so a test can prove the
+    // handler read through it rather than the caller's user-scoped client.
+    const publicClient = { role: 'anon' } as never;
+    const getPublicSupabase = vi.fn(() => publicClient);
+    const createCertificatesRepository = vi.fn(() => ({
+      getByCode: async () => certificateRow,
     }));
+    vi.doMock('@/backend/config/supabase', () => ({ getPublicSupabase }));
+    vi.doMock('@/backend/repositories/certificates', () => ({ createCertificatesRepository }));
+    return { publicClient, getPublicSupabase, createCertificatesRepository };
+  }
+
+  it('verifyCertificateHandler reads through the public client for an authenticated caller', async () => {
+    const { publicClient, getPublicSupabase, createCertificatesRepository } = mockVerifyDeps();
+
+    const { verifyCertificateHandler } = await import('../tools/certificates');
+    // An authenticated caller who is neither the recipient nor an admin: the
+    // user-scoped client would return no rows under RLS, so the public client
+    // must be the one that resolves the certificate.
+    const result = await verifyCertificateHandler(
+      { code: 'COMP-2026-A1B2C3D4', format: 'json' },
+      userCtx
+    );
+
+    expect(getPublicSupabase).toHaveBeenCalled();
+    expect(createCertificatesRepository).toHaveBeenCalledWith(publicClient);
+    expect(createCertificatesRepository).not.toHaveBeenCalledWith(userCtx.supabase);
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent?.certificate_code).toBe('COMP-2026-A1B2C3D4');
+    // public shape must not leak recipient data
+    expect(result.structuredContent?.recipient_email).toBeUndefined();
+    expect(result.structuredContent?.recipient_user_ids).toBeUndefined();
+  });
+
+  it('verifyCertificateHandler works anonymously and returns public shape', async () => {
+    const { createCertificatesRepository } = mockVerifyDeps();
 
     const { verifyCertificateHandler } = await import('../tools/certificates');
     const result = await verifyCertificateHandler(
       { code: 'COMP-2026-A1B2C3D4', format: 'json' },
       anonymousCtx
     );
+    expect(createCertificatesRepository).toHaveBeenCalledOnce();
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.certificate_code).toBe('COMP-2026-A1B2C3D4');
-    // public shape must not leak recipient data
-    expect(result.structuredContent?.recipient_email).toBeUndefined();
-    expect(result.structuredContent?.recipient_user_ids).toBeUndefined();
   });
 
   it('listMineHandler requires certificates.read scope', async () => {
