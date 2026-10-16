@@ -55,6 +55,10 @@ users, but blast radius stays bounded by:
   `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which is also `revokeAllUserTokens`'s
   production caller and drops the client's live authorization codes, because a code carries a
   bridge ciphertext of its own and exchanges for a fresh pair,
+- refresh-token rotation is single-use: the refresh row is claimed with a compare-and-set
+  (`.is('revoked_at', null)`) before anything is issued, so two overlapping refreshes mint exactly
+  one pair and the loser is answered `invalid_grant`. A replayed, already-rotated token is refused
+  the same way,
 - the daily pg_cron sweepers: expired/revoked token rows, and claimed/expired authorization-code
   rows. Claiming a code shreds it too (the exchange copied the ciphertext into the token pair it
   issued), so a code's bridge session lives only for the exchange that consumes it.
