@@ -275,6 +275,13 @@ through the bridge rather than an npm import.
    that certificate here too — the restriction fails silently, as a device that never
    registers.
 
+   That key is also what trips GitHub's secret-scanning alert on this file, and push
+   protection is on for the repository, so a later edit to it — rotating the key regenerates
+   the file — would be refused until someone bypasses the block. `.github/secret_scanning.yml`
+   excludes this one path instead: the alert closes as "ignored by configuration" and a
+   rotation pushes cleanly. `.gitleaks.toml` carries the same allowlist for CI. Keep both
+   lists to that single path, so a real secret anywhere else still alerts and still blocks.
+
 2. **Three environment variables** in Vercel (Production, Preview, Development), from the
    service-account JSON generated under Project settings → Service accounts:
    `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
