@@ -94,6 +94,11 @@ and start again from step 1. Never merge over a red check.
 
 `--delete-branch` drops the remote branch, and `main` is also configured to delete it on merge.
 
+A merge can also come back `Base branch was modified`, which means `main` moved between the check and
+the write — releasing a tag does that. Retry it once; the second attempt settles. The Issue
+Implementer's merge step retries the same failure for the same reason
+([ADR 0048](adr/0048-the-implementer-merges-its-own-pull-request.md)).
+
 ## 7. Clean up and re-sync
 
 Immediately after the merge. The worktree has to go from outside itself, so `session_move` the
