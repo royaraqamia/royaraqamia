@@ -30,10 +30,14 @@ export interface ExpenseWriteInput {
 }
 
 export interface ExpenseUpdateInput {
-  amount: number;
-  category_id: string;
-  date: string;
-  description: string | null;
+  /**
+   * All fields are optional: an update is a patch, and a field the caller omits
+   * is left out of the row rather than written as a placeholder (ticket #253).
+   */
+  amount?: number;
+  category_id?: string;
+  date?: string;
+  description?: string | null;
   currency?: string | null;
   splits?: { category_id: string; amount: number; clientId?: string | null }[] | null;
   /** Offline write metadata; stripped before it can reach the DB row. */

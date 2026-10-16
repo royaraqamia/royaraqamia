@@ -6,6 +6,7 @@ import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from
 import { requireAnyScope, requireUserId } from './guards';
 import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
+import type { SpendtrackExpenseUpdateInput } from '@/backend/services/spendtrack/spendtrack-service';
 import {
   buildPaginationMeta,
   DEFAULT_PAGE_SIZE,
@@ -490,13 +491,15 @@ export async function updateExpenseHandler(
     const userId = requireUserId(ctx, 'Updating an expense');
     const service = createSpendtrackService(ctx.supabase as never);
 
-    await service.updateExpense(params.id, userId, {
-      amount: params.amount ?? 0,
-      category_id: params.category_id ?? '',
-      date: params.date ?? '',
-      description: params.description ?? null,
-      currency: params.currency ?? null,
-    });
+    // Forward only the fields the caller supplied: a patch must not blank the
+    // ones it omitted with a `0`/`''`/`null` placeholder (ticket #253).
+    const patch: SpendtrackExpenseUpdateInput = {};
+    if (params.amount !== undefined) patch.amount = params.amount;
+    if (params.category_id !== undefined) patch.category_id = params.category_id;
+    if (params.date !== undefined) patch.date = params.date;
+    if (params.description !== undefined) patch.description = params.description;
+    if (params.currency !== undefined) patch.currency = params.currency;
+    await service.updateExpense(params.id, userId, patch);
 
     const output = { id: params.id, message: 'Expense updated.' };
     return params.format === 'json'

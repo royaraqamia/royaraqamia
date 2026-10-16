@@ -85,6 +85,25 @@ describe('createSpendtrackRepository — offline write metadata never leaks to a
     expect(updateCall).toContain('"updated_at":"2026-10-10T00:00:00.000Z"');
   });
 
+  it('writes only the provided fields on a partial update', async () => {
+    const { client, calls } = makeClient();
+    const repo = createSpendtrackRepository(client);
+
+    await repo.updateExpense('e-1', 'u-1', {
+      description: 'غداء',
+      updatedAt: '2026-10-10T00:00:00.000Z',
+    });
+
+    const updateCall = calls.find((c) => c.includes('update'));
+    expect(updateCall).toBeDefined();
+    expect(updateCall).toContain('"description":"غداء"');
+    // An omitted field must not be written as `0`/`''`/`null` over the stored value.
+    expect(updateCall).not.toContain('"amount"');
+    expect(updateCall).not.toContain('"category_id"');
+    expect(updateCall).not.toContain('"date"');
+    expect(updateCall).not.toContain('"currency"');
+  });
+
   it('guards a resurrect with last-write-wins on updated_at', async () => {
     const { client, calls } = makeClient();
     const repo = createSpendtrackRepository(client);
