@@ -14,6 +14,12 @@ import { getAdminSupabase } from '@/backend/config/supabase';
  * session lying around for a future database dump to replay, and nothing reads
  * `session_enc` after `revoked_at` is set. Rotation therefore has to read the
  * ciphertext it passes forward *before* it revokes the rows it replaces.
+ *
+ * Claiming an authorization code shreds it the same way, and for the same
+ * reason: the exchange copies the ciphertext into the issued token pair, so the
+ * code row's copy is dead the moment the claim lands. `exchangeCodeForTokens`
+ * reads the row it needs *before* claiming, so the shred cannot race the
+ * issuance. The daily sweep then drops what is left of both stores.
  */
 
 export interface McpOAuthClientRecord {
@@ -107,6 +113,10 @@ export interface McpOAuthRepository {
    * Atomically claim an authorization code for single use. Returns `true` only
    * for the caller that flipped `used_at` from null; concurrent callers get
    * `false` (RFC 6749 §4.1.2 one-time-use guarantee).
+   *
+   * The claim also shreds `session_enc`: the caller has already read the row it
+   * exchanges, and the issued token pair carries the ciphertext forward, so the
+   * code's copy is dead here.
    */
   markAuthCodeUsed(id: string): Promise<boolean>;
 
@@ -156,6 +166,12 @@ export interface McpOAuthRepository {
   deleteUserClientAuthCodes(userId: string, clientId: string): Promise<void>;
   /** Drop every live authorization code the user holds — a full disconnect. */
   deleteUserAuthCodes(userId: string): Promise<void>;
+  /**
+   * The daily sweep, mirroring `sweep_expired_mcp_oauth_tokens` and
+   * `sweep_expired_mcp_oauth_auth_codes` in the migrations: a token is dead once
+   * revoked or expired, a code once claimed or expired. Both carry a bridge
+   * ciphertext, so both are swept.
+   */
   deleteExpired(now: Date): Promise<void>;
 }
 
@@ -214,9 +230,11 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     },
 
     async markAuthCodeUsed(id) {
+      // Claiming shreds the bridge ciphertext — see the module note. The row was
+      // read before this call, so the exchange still has the value it needs.
       const { data, error } = await (supabase as any)
         .from(AUTH_CODES_TABLE)
-        .update({ used_at: new Date().toISOString() })
+        .update({ used_at: new Date().toISOString(), session_enc: null })
         .eq('id', id)
         .is('used_at', null)
         .select('id')
@@ -376,11 +394,18 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     },
 
     async deleteExpired(now) {
+      // The same two predicates the daily sweepers run, one per store.
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
         .delete()
         .or(`revoked_at.is.not.null,expires_at.lt.${now.toISOString()}`);
       if (error) throw error;
+
+      const { error: codesError } = await (supabase as any)
+        .from(AUTH_CODES_TABLE)
+        .delete()
+        .or(`used_at.is.not.null,expires_at.lt.${now.toISOString()}`);
+      if (codesError) throw codesError;
     },
   };
 }

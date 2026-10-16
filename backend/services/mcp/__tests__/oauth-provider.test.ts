@@ -197,6 +197,11 @@ describe('createMcpOAuthProvider', () => {
       });
 
       expect(mockRepo.markAuthCodeUsed).toHaveBeenCalledWith('code-1');
+      // The claim shreds the code row, but the exchange read it first, so the
+      // bridge ciphertext still reaches the pair it is minted from.
+      expect(mockRepo.createToken).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionEnc: mockCodeRecord.session_enc })
+      );
       expect(response).toEqual({
         access_token: 'opaque-token',
         token_type: 'Bearer',
