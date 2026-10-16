@@ -15,6 +15,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { cn } from '@/frontend/shared/cn';
+import { shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
 import {
   SCAN_FORMAT_LABELS,
@@ -54,8 +55,30 @@ const RESCAN_COOLDOWN_MS = 1200;
 /** Consecutive decode failures that mean the decoder, not the frame, is broken. */
 const SCAN_MAX_FRAME_ERRORS = 10;
 
-function cameraErrorMessage(caught: unknown): string {
+/**
+ * The first shell whose manifest declares `android.permission.CAMERA`.
+ *
+ * Below it, the app never asks Android for the camera, and the platform refuses
+ * the WebView's request without drawing a dialog — Chrome then rejects
+ * `getUserMedia` with `NotAllowedError`, the same error a visitor's own refusal
+ * produces, and one no device setting can undo (ADR-0053). A visitor on such a
+ * build needs the update the shell already offers, not a settings screen that
+ * cannot help them.
+ */
+const SHELL_CAMERA_PERMISSION_CODE = 20006;
+
+function cameraErrorMessage(caught: unknown, shellVersionCode: number | null): string {
   const name = caught instanceof DOMException ? caught.name : '';
+
+  // A denial inside the shell has two causes that look identical from here, and
+  // the shell's own version is what tells them apart: an installed build that
+  // cannot ask for the camera at all, or one that asked and was refused.
+  if ((name === 'NotAllowedError' || name === 'SecurityError') && shellVersionCode !== null) {
+    return shellVersionCode < SHELL_CAMERA_PERMISSION_CODE
+      ? 'نسخة التَّطبيق هذه لا تستطيع استخدام الكاميرا. حدِّث التَّطبيق من صفحة الحساب، أو ارفع صورة للرَّمز.'
+      : 'لم يُسمَح للتَّطبيق بالوصول إلى الكاميرا. فعِّل إذن الكاميرا للتَّطبيق من إعدادات النِّظام، أو ارفع صورة للرَّمز.';
+  }
+
   switch (name) {
     case 'NotAllowedError':
     case 'SecurityError':
@@ -332,7 +355,7 @@ export function ScanPage() {
       haltLoop();
       stopStream();
       setStatus('idle');
-      setError(cameraErrorMessage(caught));
+      setError(cameraErrorMessage(caught, shellVersionFromUserAgent(navigator.userAgent)));
     }
   }
 

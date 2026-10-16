@@ -76,6 +76,26 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!--
+      The Scanner (ADR-0035) calls `getUserMedia`, and the WebView asks the app
+      for the camera — Capacitor turns `VIDEO_CAPTURE` into this permission and
+      launches Android's own request (`BridgeWebChromeClient.onPermissionRequest`).
+      Undeclared, the request is refused before any dialog is drawn, Chrome
+      rejects `getUserMedia` with `NotAllowedError`, and the page can only report
+      it as a browser-settings problem: no setting on the device could have
+      granted it. Shells published before counter 20006 are in exactly that
+      state; `frontend/ui/scan/scan-page.tsx` names that counter so an older
+      shell is told to update instead.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!--
+      The camera is a Scanner feature, not a requirement: someone with no camera
+      still gets uploads, so declaring the permission must not imply the hardware
+      (which is what filters an app out of stores and devices otherwise).
+    -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <!--
       Installing the shell's own update (ADR-0044) means handing an APK to the
       platform installer, which Android only allows an app that holds this. It is
       not a Play-style updater: the shell distributes its APK directly, and the

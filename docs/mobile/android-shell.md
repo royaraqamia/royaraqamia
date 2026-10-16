@@ -147,6 +147,7 @@ changes rather than only on the machine that wrote them.
 | Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                 |
 | Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                     |
 | Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
+| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                            |
 
 ### The native bridge on a remote origin
 
@@ -225,6 +226,23 @@ plausible and was wrong; nothing but an installed build would have said so.
 App Links _verification_ (`autoVerify`) cannot be confirmed until
 `public/.well-known/assetlinks.json` is deployed to production — the mechanism above was
 exercised by targeting the activity explicitly, which bypasses that check.
+
+### The camera is a web API behind a manifest permission
+
+The Scanner (ADR-0035) calls `getUserMedia` in the WebView, which never goes through a
+Capacitor plugin: the WebView raises `VIDEO_CAPTURE`, `BridgeWebChromeClient.onPermissionRequest`
+turns that into `android.permission.CAMERA`, and Android's own dialog does the asking. The
+manifest declares the permission from counter `20006`. A shell built before it cannot ask at
+all — the platform refuses the request without drawing a dialog, `getUserMedia` rejects with
+`NotAllowedError`, and no device setting can undo that, because the permission was never in
+the installed package (`adb shell dumpsys package com.royaraqamia.app` lists what it has).
+`scan-page.tsx` compares the shell's own counter (ADR-0046) against `20006` and points an
+older shell at the update it already offers, rather than at a settings screen that cannot
+help it (ADR-0053).
+
+`android.hardware.camera` is declared `required="false"`: the camera is a Scanner feature,
+not a requirement, so a device without one still installs the APK and still gets uploads —
+the page already answers `NotFoundError` with that.
 
 ## Open items
 
