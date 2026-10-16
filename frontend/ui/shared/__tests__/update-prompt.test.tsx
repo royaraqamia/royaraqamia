@@ -68,7 +68,7 @@ describe('UpdatePrompt', () => {
     fireEvent.click(screen.getByRole('button', { name: 'تحديث الآن' }));
 
     expect(pwa.applyUpdate).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: 'جارٍ التحديث…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'جاري التَّحديث...' })).toBeDisabled();
   });
 
   it('stays down once declined, without touching the update', () => {
