@@ -47,7 +47,7 @@ function createService(
   const passwordResetTokenRepository = {
     createToken: vi.fn().mockResolvedValue(undefined),
     findLatestValidToken: vi.fn().mockResolvedValue(null),
-    markTokenAsUsed: vi.fn().mockResolvedValue(undefined),
+    markTokenAsUsed: vi.fn().mockResolvedValue(true),
   };
   const rateLimiter = {
     checkRateLimit: vi
@@ -780,6 +780,30 @@ describe('AuthService.updatePassword', () => {
     expect(result).toEqual({ ok: true, redirectUrl: '/dashboard' });
     expect(passwordResetTokenRepository.markTokenAsUsed).toHaveBeenCalledWith('token-1');
     expect(gateway.updateUserPassword).toHaveBeenCalledWith('user-1', 'Password1!');
+  });
+
+  it('returns already-used and skips the password change when the claim is lost', async () => {
+    const { service, passwordResetTokenRepository, gateway } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord() as never
+    );
+    // The row was claimed by a concurrent request between the read and the claim.
+    vi.mocked(passwordResetTokenRepository.markTokenAsUsed).mockResolvedValue(false);
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'تم استخدام رابط إعادة تعيين كلمة المرور بالفعل',
+    });
+    expect(passwordResetTokenRepository.markTokenAsUsed).toHaveBeenCalledWith('token-1');
+    expect(gateway.updateUserPassword).not.toHaveBeenCalled();
   });
 
   it('returns an error when the gateway fails to update the password', async () => {

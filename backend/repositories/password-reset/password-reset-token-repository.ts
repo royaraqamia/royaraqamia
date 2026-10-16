@@ -17,5 +17,5 @@ export interface PasswordResetTokenRepository {
     expiresAt: Date;
   }): Promise<void>;
   findLatestValidToken(email: string): Promise<PasswordResetTokenRecord | null>;
-  markTokenAsUsed(id: string): Promise<void>;
+  markTokenAsUsed(id: string): Promise<boolean>;
 }
