@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { House, Users, UserRound, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { isPrimaryRoute } from './route-kind';
 
 interface BottomTab {
   href: string;
@@ -35,18 +36,24 @@ const TABS: BottomTab[] = [
 ];
 
 /**
- * App-style bottom tab bar, shown at every width. It pairs with the fixed top
- * navbar: phone and tablet get it flush to the viewport edge, `lg` and up get
- * the same bar floating clear of the page as a rounded pill.
+ * App-style bottom tab bar for the three primary routes, shown at every width.
+ * It pairs with the fixed top navbar: phone and tablet get it flush to the
+ * viewport edge, `lg` and up get the same bar floating clear of the page as a
+ * fully rounded pill.
+ *
+ * Secondary pages render nothing: a real app drops its tab bar the moment you
+ * step into a detail screen, and the `SecondaryHeader` back row replaces it.
  */
 export function BottomTabBar() {
   const pathname = usePathname();
+
+  if (!isPrimaryRoute(pathname)) return null;
 
   return (
     <nav
       data-bottom-tabbar
       aria-label="التَّنقُّل السُّفليّ"
-      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:bottom-6 lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-2xl lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
+      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:bottom-6 lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-full lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
     >
       <ul className="mx-auto flex max-w-md items-stretch lg:max-w-none">
         {TABS.map((tab) => {

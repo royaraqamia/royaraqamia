@@ -1,9 +1,6 @@
-import { Navbar } from '@/frontend/ui/Navbar';
-
 export default function TermsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <Navbar />
       <main id="main-content" className="flex-1 pt-24">
         {children}
       </main>

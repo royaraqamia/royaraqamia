@@ -5,9 +5,26 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { TopNav } from './navbar/TopNav';
 import { SERVICES_LINK } from './navbar/services-link';
+import { isPrimaryRoute } from './navbar/route-kind';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 
+/**
+ * The app's top nav, for the three primary routes only.
+ *
+ * The check lives here rather than in each layout because the primary layouts
+ * also wrap their own sub-routes: `app/community/layout.tsx` renders this on
+ * both `/community` (primary, keeps the nav) and `/community/[slug]`
+ * (secondary, gets the back header instead).
+ */
 export function Navbar() {
+  const pathname = usePathname();
+
+  if (!isPrimaryRoute(pathname)) return null;
+
+  return <PrimaryNavbar />;
+}
+
+function PrimaryNavbar() {
   const { isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);

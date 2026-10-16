@@ -15,7 +15,6 @@ import bash from 'highlight.js/lib/languages/bash';
 import sql from 'highlight.js/lib/languages/sql';
 import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
-import { BackButton } from '@/frontend/ui/shared/back-button';
 import { BookOpen, User } from 'lucide-react';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
@@ -176,10 +175,9 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
 
       <div className="max-w-7xl mx-auto">
         <article aria-label={excerpt}>
-          {/* Back action + publisher share one row; actions sit at the far end */}
+          {/* The publisher chip; the back control lives in the sticky header. */}
           <div className="mb-8 sm:mb-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
             <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              <BackButton />
               {author?.name && (
                 <Link
                   href={`/u/${encodeURIComponent(author.username)}`}
