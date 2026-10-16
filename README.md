@@ -379,6 +379,12 @@ Entries already written under `[Unreleased]` are folded into the released sectio
 
 Vercel's Git integration auto-deploys the `[skip ci]` release commit (GitHub Actions skip it; Vercel does not). The double deploy this creates is intentional — the release commit is the canonical deployed artifact.
 
+### Downloading the Android shell
+
+The newest APK is always at <https://github.com/royaraqamia/royaraqamia/releases/latest>. That link carries no version and nothing has to keep it in step: the shell release is the one that claims "Latest" (see above), so it resolves to the current `android-X.Y.Z` tag with `royaraqamia-<version>.apk` attached.
+
+A device does not use that URL. It downloads the same bytes from our own origin, at `https://royaraqamia.com/android/royaraqamia-<version>.apk`, because `release-assets.githubusercontent.com` is not reachable from everywhere the app has users ([ADR-0047](docs/adr/0047-the-apk-is-served-from-our-own-origin.md)).
+
 ### Where the version is shown
 
 - `GET /api/version` returns `version` (the unchanged deployment fingerprint), plus `releaseVersion`, `commit`, `ref`, `env`, and `releasedAt`.
