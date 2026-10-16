@@ -2,9 +2,13 @@
 # on any issue or PR to trigger it (explain, fix, implement, review...).
 # Two-model pipeline: plan (DeepSeek 4.1 Flash) -> implement (DeepSeek 4.1 Flash).
 # Only collaborators with write access can trigger it (enforced by the action).
+# When the run opens a pull request, the workflow merges it once its checks are
+# green — the landing loop in docs/agents/landing.md, ADR 0048 and ADR 0049.
 #
 # Setup (repo secrets):
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
+#   RELEASE_TOKEN         - a PAT, the merge identity, so the merge starts the
+#                           Code Quality -> Release pipeline a human merge would
 #   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
 #   SUPABASE_PROJECT_REF  - target Supabase project reference
 #   VERCEL_TOKEN          - https://vercel.com/account/tokens
@@ -13,6 +17,9 @@
 #
 # Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
 # are authored by the app identity and DO re-trigger code-quality workflows.
+# The merge, by contrast, uses RELEASE_TOKEN: a merge made with the default
+# GITHUB_TOKEN starts no workflows, so the push to main would skip Code Quality and
+# with it Release. See ADR 0049.
 # Checkout must NOT persist credentials — opencode injects its own app token
 # (persisted credentials cause a duplicate-Authorization failure on push).
 # A runner-only opencode config grants the Supabase MCP server (project-scoped)
@@ -49,7 +56,7 @@ jobs:
       contains(github.event.comment.body, '/oc') ||
       contains(github.event.comment.body, '/opencode')
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
@@ -68,6 +75,29 @@ jobs:
         uses: ./.github/actions/opencode-runner
         with:
           supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Snapshot open agent pull requests
+        id: snapshot
+        # The action reports no pull request number, and two /oc runs can be in flight at
+        # once (the concurrency group is per comment). Recording what is open before the
+        # implement phase is what lets the merge step name the pull request this run
+        # changed — a branch whose tip moved, or one that did not exist yet — instead of
+        # guessing at "the newest opencode/* pull request". See ADR 0049.
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const snapshot = {};
+            for (const pr of prs) {
+              if (pr.head.ref.startsWith('opencode/')) snapshot[pr.number] = pr.head.sha;
+            }
+            core.setOutput('agent_prs', JSON.stringify(snapshot));
+            core.info('Open agent pull requests before this run: ' + JSON.stringify(snapshot));
 
       - name: Plan — DeepSeek 4.1 Flash (Analyze)
         id: plan
@@ -112,6 +142,7 @@ jobs:
             Write ONLY to /tmp/plan.md. Do not modify the working tree.
 
       - name: Implement — DeepSeek 4.1 Flash (Execute)
+        id: implement
         uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -129,7 +160,7 @@ jobs:
           variant: high
           share: 'false'
           prompt: |
-            You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing, and opening the pull request automatically. Do NOT run any git commands yourself.
+            You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing, opening the pull request and merging it once its checks are green. Do NOT run any git commands yourself, and do not merge anything.
 
             Skills: Before starting, load these skills using the skill tool:
             - `implement` — structured implementation workflow
@@ -148,15 +179,18 @@ jobs:
 
             Database change rules: if the fix needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Never run destructive DDL through execute_sql; propose it in the report instead.
 
-            After implementing, review your diff critically for correctness, layering violations, and regressions. Then run: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test ; npm run build . Iterate until all five are green. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so.
+            After implementing, review your diff critically for correctness, layering violations, and regressions. Then run the gates the change can actually break: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests your change reaches (npx vitest run <path> for the test files beside what you touched, or npx vitest run --changed). Do not run the full `npm test` unless the change is repo-wide, do not run e2e tests, and do not run `npm run build` unless nothing cheaper would catch a broken build — next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module; if your change is capable of breaking the build by itself, run it and say so. Iterate until the gates you chose are green. If one fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so.
 
-            Your final response becomes the pull request description, and its first line becomes the pull request title: start with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. Structure the rest as: (1) what you changed and why, (2) evidence that all five gates passed.
+            Your final response becomes the pull request description, and its first line becomes the pull request title: start with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. Structure the rest as: (1) what you changed and why, (2) the gates you ran with their final output summary, naming any you deliberately skipped and why. The checks on the pull request run the whole suite, so do not claim more than you ran.
 
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and
         # titles generated during /oc tasks are not guaranteed to comply. Rewrite
         # any open opencode/* PR title that fails the same regex (rename triggers
         # `edited`, which re-runs Repo Checks green).
+        #
+        # It runs before the merge on purpose: a title repo-checks rejects is a red
+        # check, and the merge step below refuses to merge over one.
         if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
@@ -180,3 +214,133 @@ jobs:
               });
               core.info('Renamed PR #' + pr.number + ': \'' + pr.title + '\' -> \'' + title + '\'');
             }
+
+      - name: Merge the agent's pull request once CI is green
+        id: merge
+        # The landing loop, run for /oc: the action committed, pushed and opened or
+        # updated a pull request; this waits for its checks and merges it.
+        #
+        # The pull request is named by its head commit rather than by "the newest
+        # opencode/* pull request", because the concurrency group is per comment and two
+        # /oc runs can be in flight at once — picking the newest would let one run merge
+        # the other's branch. A branch that did not exist when the snapshot was taken, or
+        # whose tip has moved since, is this run's; more than one candidate is ambiguous
+        # and none is merged. See ADR 0049.
+        #
+        # RELEASE_TOKEN, not GITHUB_TOKEN, is the merge identity: a merge made with the
+        # default token starts no workflows, so the push to main would skip Code Quality
+        # and with it Release.
+        if: always() && steps.implement.outcome == 'success'
+        timeout-minutes: 50
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          BEFORE: ${{ steps.snapshot.outputs.agent_prs }}
+        run: |
+          set -uo pipefail
+
+          before="${BEFORE:-}"
+          if [ -z "$before" ]; then
+            # No snapshot means we cannot tell this run's pull request from another's.
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            printf 'reason=%s\n' "This run could not record which pull requests were already open, so none was merged automatically." >> "$GITHUB_OUTPUT"
+            echo "::warning title=Not merging::No pre-run snapshot of open agent pull requests."
+            exit 0
+          fi
+
+          candidates=$(gh pr list --state open --limit 100 --json number,headRefName,headRefOid |
+            jq -r --argjson before "$before" '
+              [ .[] | select(.headRefName | startswith("opencode/"))
+                    | select(($before[(.number | tostring)] // null) != .headRefOid)
+                    | .number ]
+              | .[]')
+          count=$(printf '%s\n' "$candidates" | grep -c '[0-9]')
+
+          if [ "$count" -eq 0 ]; then
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "No agent pull request was opened or updated by this run; nothing to merge."
+            exit 0
+          fi
+
+          pr=$(printf '%s\n' "$candidates" | head -1)
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+          if [ "$count" -gt 1 ]; then
+            opened=$(printf '%s\n' "$candidates" | paste -sd, -)
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            printf 'reason=%s\n' "More than one agent pull request changed while this run was in flight (#$opened), so which is this task's is ambiguous." >> "$GITHUB_OUTPUT"
+            echo "::warning title=Not merging::Ambiguous: #$opened all changed during this run."
+            exit 0
+          fi
+
+          # A pull request that was just opened has no checks on it yet, and `gh pr
+          # checks` answers an empty rollup with a failure exit code rather than a wait,
+          # so wait for the first check to register before watching.
+          for _ in $(seq 1 30); do
+            checks=$(gh pr view "$pr" --json statusCheckRollup --jq '[.statusCheckRollup[]] | length')
+            if [ "$checks" -gt 0 ]; then break; fi
+            sleep 10
+          done
+
+          timeout 2400 gh pr checks "$pr" --watch --interval 20
+          code=$?
+
+          if [ "$code" -ne 0 ]; then
+            if [ "$code" -eq 124 ]; then
+              reason="The checks on #$pr did not finish within 40 minutes."
+            else
+              failing=$(gh pr checks "$pr" 2>/dev/null |
+                awk -F'\t' '$2 == "fail" || $2 == "pending" { print $1 }' | paste -sd, -)
+              reason="A check on #$pr did not pass: ${failing:-see the pull request}."
+            fi
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Not merging::$reason"
+            exit 0
+          fi
+
+          # GitHub refuses the write when main moved between the check and the merge
+          # ("Base branch was modified"); a second attempt settles it.
+          for attempt in 1 2; do
+            if gh pr merge "$pr" --squash --delete-branch; then
+              echo "merged=true" >> "$GITHUB_OUTPUT"
+              echo "Merged #$pr."
+              exit 0
+            fi
+            echo "Merge attempt $attempt failed; retrying."
+            sleep 10
+          done
+
+          echo "merged=false" >> "$GITHUB_OUTPUT"
+          printf 'reason=%s\n' "The pull request #$pr could not be merged." >> "$GITHUB_OUTPUT"
+          echo "::warning title=Not merging::Could not merge #$pr."
+          exit 0
+
+      - name: Report the merge
+        # Only where there was a pull request to merge: a run that answered a question, or
+        # reviewed, opens none and should stay quiet on the thread.
+        if: always() && steps.merge.outputs.pr != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          PR_NUMBER: ${{ steps.merge.outputs.pr }}
+          MERGED: ${{ steps.merge.outputs.merged }}
+          MERGE_REASON: ${{ steps.merge.outputs.reason }}
+        with:
+          script: |
+            const target =
+              (context.payload.issue && context.payload.issue.number) ||
+              (context.payload.pull_request && context.payload.pull_request.number);
+            if (!target) return;
+            const body =
+              process.env.MERGED === 'true'
+                ? 'Merged in #' + process.env.PR_NUMBER + '.'
+                : 'Pull request #' +
+                  process.env.PR_NUMBER +
+                  ' was not merged: ' +
+                  (process.env.MERGE_REASON || 'the reason was not recorded') +
+                  '\n\nIt is open for a person to look at.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: target,
+              body,
+            });
