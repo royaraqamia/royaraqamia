@@ -5,14 +5,18 @@ import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId, requireAdmin } from './guards';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
+import { getPublicSupabase } from '@/backend/config/supabase';
 import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { formatDate, PAGE_SIZE_SCHEMA } from './shared';
 
 /**
- * Certificates tools. `verify` is public (certificates RLS is `USING (true)`),
- * so it works for anonymous callers. Listing your own certificates uses
- * recipient_user_ids, which only the owner can see under the app's access model.
+ * Certificates tools. `verify` is public: it reads through the publishable
+ * (anon) client so it resolves any valid code for every caller, authenticated
+ * or not. The user-scoped `ctx.supabase` cannot read certificates the caller
+ * neither owns nor administers, so it is never used here. Listing your own
+ * certificates stays user-scoped — recipient_user_ids is only visible to the
+ * owner under the app's access model.
  */
 
 const VerifyInputSchema = z
@@ -36,10 +40,15 @@ type ListMineInput = z.infer<typeof ListMineInputSchema>;
 
 export async function verifyCertificateHandler(
   params: VerifyInput,
-  ctx: McpUserContext
+  // Unused on purpose: verify is public and must not use the caller's
+  // user-scoped client. Kept in the signature for the uniform tool contract.
+  _ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    const repo = createCertificatesRepository(ctx.supabase as never);
+    // Public verify path: always the anon client, matching
+    // createDefaultCertificateVerifier. The certificate RLS grants anon SELECT
+    // on the public projection, so any valid code resolves for any caller.
+    const repo = createCertificatesRepository(getPublicSupabase());
     const certificate = await repo.getByCode(params.code);
 
     if (!certificate) {
