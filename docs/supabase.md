@@ -16,6 +16,21 @@ When the agent has Supabase MCP access:
 - Apply schema changes **only** through `apply_migration`
 - **Mirror discipline:** `apply_migration` assigns the version timestamp itself — you cannot choose it, so the `name` you pass is only a suffix. Apply first, read the version back (`list_migrations`, or `select version, name from supabase_migrations.schema_migrations order by version desc limit 1`), then name the local file `<version>_<name>.sql`. The recorded `statements` contain only the SQL you passed, not the file's comment header, so the repo file is deliberately richer than the remote history. Drift here is silent — compare the two lists by version.
 
+## Agent verification (local CLI)
+
+MCP is not required for the live checks. `supabase` is a devDependency, so `npx supabase` works from the repo root, and the project is already linked (`supabase/.temp/project-ref` holds the ref; the whole `.temp/` is gitignored):
+
+```bash
+npx supabase migration list --linked        # repo files vs the project's recorded versions
+npx supabase db push --linked --dry-run     # exactly what a merge would apply
+npx supabase db query --linked "select ..." # or -f <file.sql>; runs through the Management API
+npx supabase db advisors --linked           # security + performance, the `get_advisors` equivalent
+```
+
+`db query` is how an acceptance criterion gets checked against reality — a function's `prosecdef`/`proconfig`/`proacl`, a `cron.job` row, row counts — and `db advisors --type security` is the advisor run. Use `npx supabase` rather than a global install: it runs the version pinned in `package.json`, which is the version CI pins too.
+
+A merged migration needs no hand-applying: the merge **is** the apply. The `main` run of the drift workflow is ordered plan → vet → apply → verify (see "Applying" below), so the migration is live once that run goes green — what is left to the agent after a merge is the verification, not the apply.
+
 ## Migrations convention
 
 - Incremental timestamped files in `supabase/migrations/`, applied in filename order
