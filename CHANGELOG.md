@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.6] - 2026-10-16
+
+### Changed
+- make landing the work the default end of every task (#259)
+
 ## [1.101.5] - 2026-10-16
 
 ### Fixed
