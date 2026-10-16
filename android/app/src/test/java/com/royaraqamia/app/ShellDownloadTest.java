@@ -288,6 +288,47 @@ public class ShellDownloadTest {
         assertEquals(expected, ShellDownload.sha256Hex(file));
     }
 
+    @Test
+    public void aCancelledDownloadLeavesNothingBehind() throws Exception {
+        // «إلغاء» (ADR-0054). The progress callback is the only thing that can stop
+        // a download — `InputStream.read` on an `HttpURLConnection` does not answer
+        // an interrupt — so throwing from it has to unwind through the same failure
+        // path a truncated body takes. What that buys is this assertion: the user
+        // stopped it and the device holds nothing, which is the objection that made
+        // the dialog undismissable before there was a way to say stop.
+        server.serve(BODY);
+
+        IOException error = assertThrows(
+            IOException.class,
+            () -> ShellDownload.fetch(server.url(), target, BODY.length, sha256(BODY), (read, of) -> {
+                throw new ShellDownload.Cancelled("the test cancelled it after " + read + " bytes");
+            })
+        );
+
+        assertTrue(error.getMessage(), error instanceof ShellDownload.Cancelled);
+        assertFalse(target.exists());
+        assertDirectoryIsEmpty();
+    }
+
+    @Test
+    public void aCancelledDownloadDoesNotTouchAFileThatAlreadyVerifies() throws Exception {
+        // The reuse path reports progress once and returns. A callback that
+        // cancels during it must not take the verified file with it: it is the
+        // file the next install is cheap because of.
+        Files.write(target.toPath(), BODY);
+
+        IOException error = assertThrows(
+            IOException.class,
+            () -> ShellDownload.fetch(server.url(), target, BODY.length, sha256(BODY), (read, of) -> {
+                throw new ShellDownload.Cancelled("the test cancelled it after " + read + " bytes");
+            })
+        );
+
+        assertTrue(error.getMessage(), error instanceof ShellDownload.Cancelled);
+        assertArrayEquals(BODY, Files.readAllBytes(target.toPath()));
+        assertEquals(0, server.requests());
+    }
+
     private void assertDirectoryIsEmpty() {
         File[] files = directory.listFiles();
         assertNotNull(files);

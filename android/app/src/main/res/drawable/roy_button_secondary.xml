@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The dialog's quiet action — «لاحقًا», «إلغاء» (ADR-0054).
+
+  Text and nothing else: no fill, no edge. It began as the site's `outline`
+  button variant, and the outline is what made it read as a box competing with
+  the pill above it; the labels carry the action on their own, at the muted
+  weight the layouts give them.
+
+  The `<shape>` stays even though it draws nothing, because it is what the
+  ripple is masked to — without an item the touch feedback would be a rectangle
+  with square corners under a pill-shaped label.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/roy_ripple_on_surface">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</ripple>

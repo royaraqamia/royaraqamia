@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The dialog card (ADR-0054).
+
+  The site's dialogs are `bg-background` with `border-border/60` and a 24px
+  radius on a phone (`frontend/ui/primitives/dialog.tsx`). This is the same card:
+  the surface is the page's own colour, and what separates the two is the 70%
+  scrim behind it and a hairline edge rather than a different fill — a lighter
+  "panel" grey is what made the platform dialog look pasted on.
+
+  A plain `<shape>`, so it carries no padding of its own: the dialog window's
+  width is set from code and the layout owns its inner 24dp.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/roy_background" />
+    <corners android:radius="24dp" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/roy_border_hairline" />
+</shape>

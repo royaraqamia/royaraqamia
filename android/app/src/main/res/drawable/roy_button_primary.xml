@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The dialog's one primary action (ADR-0054).
+
+  The site gives the gesture that costs something — a reload, an install — the
+  Hero CTA's fill (`frontend/ui/shared/update-prompt.tsx` reuses it at the
+  prompt's own size), and this is that fill: `linear-gradient(120deg, #8b5cf6,
+  #7c3aed, #6366f1)`. `GradientDrawable` only turns in 45-degree steps, so this
+  is the horizontal `0`, which is the axis the gradient actually reads along.
+
+  A pill: 24dp on the 48dp the layouts give this button is exactly half its
+  height, so the corners are semicircles rather than merely generous. The two
+  numbers are coupled — `Canvas.drawRoundRect` clamps a radius past half the
+  height, so a taller button keeps the pill without an edit here.
+
+  Wrapped in a `<ripple>` so the touch feedback is clipped to that pill: a
+  `foreground` ripple would be a rectangle over a rounded button.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/roy_ripple_on_primary">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <gradient
+                android:angle="0"
+                android:startColor="@color/roy_gradient_start"
+                android:centerColor="@color/roy_gradient_mid"
+                android:endColor="@color/roy_gradient_end" />
+        </shape>
+    </item>
+</ripple>

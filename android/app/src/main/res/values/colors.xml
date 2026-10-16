@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The shell's palette (ADR-0054).
+
+  These are not colours chosen here: they are the site's own tokens, converted
+  from `app/global.css` (`@layer base`, `:root`) where they are declared once and
+  read everywhere through `app/theme.css`. The shell's dialogs are drawn by
+  Android rather than by the WebView, so they cannot read a CSS variable — the
+  same values are restated in the form Android uses.
+
+  Each token lists the declaration it comes from, so a change to the site's
+  palette can be carried here by reading the two side by side. The site spells
+  its custom properties with a leading double hyphen; those are left off below,
+  because a double hyphen is not legal inside an XML comment.
+
+    background          hsl(240 10%  8%)  -> #121216
+    foreground          hsl(  0  0% 96%)  -> #F5F5F5
+    muted-foreground    hsl(  0  0% 68%)  -> #ADADAD
+    secondary           hsl(240  6% 16%)  -> #26262B
+    border              hsl(240  5% 22%)  -> #35353B
+    primary             hsl(256 70% 67%)  -> #8F70E6
+    primary-foreground  hsl(  0  0%100%)  -> #FFFFFF
+
+  The gradient is the Hero CTA's, not a token: `app/global.css` spells it out as
+  `linear-gradient(120deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%)` in three
+  places, and the site's update prompt reuses it at a smaller size.
+-->
+<resources>
+
+    <!-- Surfaces -->
+    <color name="roy_background">#FF121216</color>
+    <!-- The dialog card's edge. The site draws its dialogs with
+         `border-border/60`, so this is the border token at 60% over the card,
+         which flattens to #27272C. Kept as the translucent value so it stays
+         correct if the surface behind it ever changes. -->
+    <color name="roy_border_hairline">#9935353B</color>
+    <color name="roy_border">#FF35353B</color>
+    <!-- The unfilled half of the download bar (the site's `secondary`). -->
+    <color name="roy_track">#FF26262B</color>
+
+    <!-- Text -->
+    <color name="roy_foreground">#FFF5F5F5</color>
+    <color name="roy_muted_foreground">#FFADADAD</color>
+    <!-- One step quieter than `muted-foreground`, for the meta line: the versions
+         and the download size are facts about the update, not the sentence asking
+         the question. No token exists for it because the site has no surface that
+         needed a third level. -->
+    <color name="roy_subtle">#FF8A8A8A</color>
+
+    <!-- The one accent. The site's `primary` is the brand violet, and its `ring`
+         is the same value, so focus and accent are one colour by design. -->
+    <color name="roy_primary">#FF8F70E6</color>
+    <color name="roy_primary_foreground">#FFFFFFFF</color>
+    <color name="roy_gradient_start">#FF8B5CF6</color>
+    <color name="roy_gradient_mid">#FF7C3AED</color>
+    <color name="roy_gradient_end">#FF6366F1</color>
+    <!-- The CTA's own glow, `shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)]`.
+         Android casts window elevation shadows in the ambient/spot colours from
+         API 28; below that this is ignored and the shadow is the platform's. -->
+    <color name="roy_primary_glow">#809333EA</color>
+
+    <!-- Touch feedback, drawn as a ripple over each button. -->
+    <color name="roy_ripple_on_primary">#33FFFFFF</color>
+    <color name="roy_ripple_on_surface">#1FFFFFFF</color>
+
+    <!-- The scrim the site's dialogs use: `bg-black/70`. -->
+    <color name="roy_scrim">#B3000000</color>
+
+</resources>

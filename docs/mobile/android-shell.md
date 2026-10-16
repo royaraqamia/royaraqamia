@@ -404,6 +404,35 @@ The drill above runs on a machine whose network is not Syria's, so it proves the
 country's reachability. That half is measured separately and only there: the same URL, fetched from Syria
 without a VPN, returned all 7,447,105 bytes with the sha256 the manifest publishes.
 
+**What the two dialogs look like.** They are not the platform's any more (ADR-0054). The card is the
+site's own surface — `background` with a hairline `border/60` edge and a 24dp radius, IBM Plex Sans
+Arabic, centred text, the Hero CTA's gradient on a pill for the primary action and the label alone, in
+`muted-foreground`, for the secondary — and the values are the site's tokens restated in
+`android/app/src/main/res/values/colors.xml`, each with the CSS declaration it came from written above
+it. The shell is dark-only and RTL on every device, because the site is: both questions were previously
+answered by the OS, so a phone in light mode or an English locale got a shell that did not look like the
+page it was hosting.
+
+The fonts are in the APK rather than fetched. `res/font/ibm_plex_sans_arabic_regular.ttf` and its `_bold`
+sibling are IBM Plex Sans Arabic, the face the site sets its body in (`frontend/shared/fonts.ts`,
+`--font-arabic`), converted once from the two `.woff2` files in `public/fonts/` — which Android cannot
+read — with `fontTools`. There is no regeneration step, so a change to the site's body face would not
+reach here; that is the cost of the 344KB, and it is the reason the `.woff2` files are named above.
+
+Measured on the API 30 image — en-US locale, 320dp wide, shell at `20005`, a manifest at `20099`, and an
+APK served at 300KB/s so the bar stayed on screen:
+
+| Step           | What the device showed                                                                                                           |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| The offer      | «تحديث التَّطبيق», «يتوفَّر إصدار جديد من التَّطبيق. تنزيله الآن؟», «تحديث من 1.0.5 إلى 1.9.9 · 30 م.ب»                          |
+| The download   | «جاري تنزيل التَّحديث…», «23%» at the start of its row and «6.6 من 30 م.ب» at the end, the gradient fill from the right, «إلغاء» |
+| «إلغاء»        | `ShellUpdater: the download was cancelled: cancelled at 7243394 of 31457280 bytes`, and the card closed onto the page            |
+| A failed retry | «تعذَّر تنزيل التَّحديث» with the reason under it, «إعادة المحاولة» and «لاحقًا» — one card, no toast                            |
+
+Two defects were found by that drill rather than by a test, and both would otherwise have shipped: the
+layout took its direction from the phone, so on this en-US image the percentage and the size swapped
+ends, and the percentage shared the headline's line, which wrapped the headline on a screen this narrow.
+
 **Publishing releases itself.** `.github/workflows/shell-release.yml` runs on any push to `main` that
 touches `android/**`, `capacitor.config.ts`, `package.json` or `package-lock.json`, and on a manual
 dispatch. A Capacitor plugin dependency is a shell change (ADR-0043), so without those last two a plugin

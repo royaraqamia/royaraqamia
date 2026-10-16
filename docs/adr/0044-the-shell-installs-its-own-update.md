@@ -137,3 +137,11 @@ owner, which is the point of the platform taking this over.
 An update the user declines is not re-downloaded: the verified APK stays in `updates/` and the dialog
 after it is free. The prompt itself still comes back at most every six hours, and never while one
 install is already in flight.
+
+_Amended by ADR-0054._ The progress dialog is this product's own card now, and it can be stopped.
+«إلغاء» does not contradict the reason this ADR made it undismissable — the callback that carries the
+progress is what throws, so a cancelled download is deleted by exactly the code that deletes a truncated
+one and the directory is left as empty as that ADR promised. What is still true is the other half: the
+download does not outlive the activity, so "keep going while you leave the app" would need a foreground
+service and a notification, which remains the option this ADR deferred rather than a thing the cancel
+button quietly claims.

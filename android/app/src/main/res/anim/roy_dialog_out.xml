@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  How a dialog leaves (ADR-0054): the same movement, reversed and shorter. A
+  dismissal is something the user just asked for, so it should be gone before
+  they look up — and the progress dialog closes itself the moment the file
+  verifies, which is a moment nobody asked for, so it must not linger either.
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_linear_in"
+    android:shareInterpolator="true">
+    <alpha
+        android:duration="140"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+    <scale
+        android:duration="140"
+        android:fromXScale="1.0"
+        android:fromYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:toXScale="0.98"
+        android:toYScale="0.98" />
+</set>
