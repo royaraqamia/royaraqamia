@@ -37,7 +37,7 @@ taskkill /PID $p.Id /T /F
 
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
 
-**Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, open as a pull request, merged once CI is green, and the branch and its worktree are deleted. Do that without being asked, at the end of every task: scoped gates → commit → push → `gh pr create` → merge → cleanup. Sequence, conventions and the cleanup commands: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.
+**Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, open as a pull request, merged once CI is green, the branch and its worktree are deleted, and local `main` is level with `origin/main`. Do that without being asked, at the end of every task: sync → scoped gates → commit → push → `gh pr create` → merge → cleanup → sync. Sequence, conventions and the cleanup commands: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.
 
 ## Detailed references
 
