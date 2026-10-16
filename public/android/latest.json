@@ -1,10 +1,10 @@
 {
-  "versionCode": 20003,
-  "versionName": "1.0.3",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.3.apk",
-  "sha256": "78fe6c833d07bb8512d0bfc468739cd086eb2de52fe7ccd08a68e50679edafad",
-  "sizeBytes": 7447105,
+  "versionCode": 20004,
+  "versionName": "1.0.4",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.4.apk",
+  "sha256": "ec543e883505e729e27f646a57606b54f81b9579d1a57323edc6517ca8762513",
+  "sizeBytes": 7449653,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(android): give the shell its own version, and its own release",
+  "notes": "fix(shell): withhold the push plugin a build cannot serve (#278)",
   "releasedAt": "2026-10-15"
 }
