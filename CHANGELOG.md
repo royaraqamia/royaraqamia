@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.102.1] - 2026-10-16
+
+### Changed
+- say which project the shell's Firebase key lives in (#280)
+
 ## [1.102.0] - 2026-10-16
 
 ### Changed
