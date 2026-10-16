@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.11] - 2026-10-16
+
+### Changed
+- merge the pull request a /oc run opens (#265)
+
+### Fixed
+- treat a 401 as a transient sync failure so the Outbox re-arms (#266)
+- claim password-reset tokens atomically to enforce single use (#267)
+
 ## [1.101.10] - 2026-10-16
 
 ### Fixed
