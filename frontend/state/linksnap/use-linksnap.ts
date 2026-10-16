@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { listLinks, type ShortenedLink } from '@/frontend/api/linksnap';
+import { listLinksIncludingDeleted, type ShortenedLink } from '@/frontend/api/linksnap';
 import {
   LinksnapLocalStore,
   linkStatus,
@@ -190,7 +190,7 @@ export function useLinksnap({
       return;
     }
     try {
-      const server = await listLinks(token);
+      const server = await listLinksIncludingDeleted(token);
       await store.mergeServerData(server.map(serverToRecord));
     } catch (error) {
       logger.error('Failed to refresh LinkSnap links from the server', {

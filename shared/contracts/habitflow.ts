@@ -96,6 +96,12 @@ export interface HabitRepository {
   ): Promise<HabitLog>;
   restoreFromBackup(input: HabitRestoreInput): Promise<void>;
   getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
+  /**
+   * Sync snapshot for cross-device reconciliation: like `getLocalData`, but
+   * includes tombstoned rows so a delete made on another device propagates
+   * (ADR-0029). Display reads keep excluding tombstones.
+   */
+  getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
 }
 
 /** Caps that bound a restore payload before the destructive clear-then-insert. */

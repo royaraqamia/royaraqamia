@@ -21,6 +21,29 @@ export class ApiClient {
     };
   }
 
+  /**
+   * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so
+   * a delete made on another device lands here (ADR-0029). Display reads keep
+   * using the filtered habits/logs endpoints.
+   */
+  static async fetchSyncData(): Promise<{
+    habits: Habit[];
+    logs: HabitLog[];
+    mode: 'supabase' | 'local';
+  }> {
+    const data = await request<{
+      habits: Habit[];
+      logs: HabitLog[];
+      mode: 'supabase' | 'local';
+    }>('/habitflow/api/sync');
+
+    return {
+      habits: data.habits || [],
+      logs: data.logs || [],
+      mode: data.mode || 'local',
+    };
+  }
+
   static async fetchUser() {
     try {
       const data = await request<{ user: unknown }>('/habitflow/api/auth/user');

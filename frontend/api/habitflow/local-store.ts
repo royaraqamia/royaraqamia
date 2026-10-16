@@ -404,6 +404,11 @@ export class HabitLocalStore implements HabitRepository {
     return { habits, logs };
   }
 
+  /** The raw store (tombstones included) — the local twin of the sync read. */
+  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    return this.getLocalData();
+  }
+
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
     const now = new Date().toISOString();
 

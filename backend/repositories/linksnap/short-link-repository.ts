@@ -13,6 +13,11 @@ export interface ShortLinkRepository {
   findByClientId(userId: string, clientId: string): Promise<ShortLink | null>;
   create(link: ShortLink): Promise<ShortLink>;
   listByUserId(userId: string): Promise<ShortLink[]>;
+  /**
+   * Sync read: includes tombstoned links so a delete made on another device
+   * propagates (ADR-0029). Display reads keep using `listByUserId`.
+   */
+  listByUserIdIncludingDeleted(userId: string): Promise<ShortLink[]>;
   update(
     code: string,
     updates: Partial<

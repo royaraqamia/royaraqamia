@@ -221,6 +221,25 @@ describe('SupabaseHabitRepository — offline write contract', () => {
       expect(calls).toContain('habits:is deleted_at=null');
     });
 
+    it('getSyncData includes tombstones for both habits and logs', async () => {
+      const deletedAt = '2026-08-05T00:00:00.000Z';
+      const { client, calls } = makeClient({
+        habits: { data: [{ ...habitRow, deleted_at: deletedAt }], error: null },
+        habit_logs: { data: [{ ...logRow, deleted_at: deletedAt }], error: null },
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const data = await repo.getSyncData();
+
+      // The sync read is deliberately unfiltered by `deleted_at`.
+      expect(calls).not.toContain('habits:is deleted_at=null');
+      expect(calls).not.toContain('habit_logs:is deleted_at=null');
+      expect(calls).toContain('habits:eq user_id=u-1');
+      expect(calls).toContain('habit_logs:eq user_id=u-1');
+      expect(data.habits[0]?.deletedAt).toBe(deletedAt);
+      expect(data.logs[0]?.deletedAt).toBe(deletedAt);
+    });
+
     it('deleteHabit tombstones with last-write-wins on updated_at', async () => {
       const { client, calls } = makeClient({ habits: { data: [habitRow], error: null } });
       const repo = new SupabaseHabitRepository(client, 'u-1');
