@@ -1,4 +1,3 @@
-import { logger } from '@/backend/shared/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type {
@@ -37,6 +36,11 @@ export function createPushSubscriptionsRepository(
 ): PushSubscriptionRepository {
   return {
     async upsert(userId: string, input: PushSubscriptionUpsertInput) {
+      // One row per endpoint, and only the owner's row for that endpoint is
+      // rewritten. Superseded endpoints (rotation debris) are left to the
+      // dead-endpoint prune on dispatch (404/410) and the stale-row sweep —
+      // a User-Agent is shared by every device on the same browser build, so
+      // it cannot identify a device and must never scope a delete.
       const { error } = await supabase.from('push_subscriptions').upsert(
         {
           user_id: userId,
@@ -48,24 +52,6 @@ export function createPushSubscriptionsRepository(
         { onConflict: 'endpoint' }
       );
       if (error) throw error;
-
-      // Endpoint rotation debris: the same browser re-subscribed with a fresh
-      // endpoint, leaving its predecessor behind. Drop superseded rows for
-      // this device (same user agent) so fan-out stays one row per device.
-      if (!input.userAgent || input.userAgent.trim().length === 0) return;
-      const { error: cleanupError } = await supabase
-        .from('push_subscriptions')
-        .delete()
-        .eq('user_id', userId)
-        .eq('user_agent', input.userAgent)
-        .neq('endpoint', input.endpoint);
-      if (cleanupError) {
-        logger.warn('Failed to prune superseded push subscriptions for device', {
-          userId,
-          endpoint: input.endpoint,
-          error: String(cleanupError),
-        });
-      }
     },
 
     async touch(endpoint: string) {
