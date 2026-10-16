@@ -201,6 +201,96 @@ describe('HabitLocalStore', () => {
     repo.close();
   });
 
+  it('merges a server log whose id differs from the local row for the same habit and date', async () => {
+    const repo = await openGuest();
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
+    const local = await repo.toggleLog(habit.id, '2026-08-02', true);
+    // Simulate a completed flush: no pending intent remains, so the server copy wins.
+    for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);
+
+    const server: HabitLog = {
+      id: 'server-minted-log',
+      clientId: 'server-minted-log',
+      habitId: habit.id,
+      date: '2026-08-02',
+      completed: false,
+      completedAt: null,
+      note: 'من الخادم',
+      updatedAt: '9999-01-01T00:00:00.000Z',
+      deletedAt: null,
+    };
+
+    await repo.mergeServerData(
+      [{ ...habit, name: 'من الخادم', updatedAt: '9999-01-01T00:00:00.000Z' }],
+      [server]
+    );
+
+    const data = await repo.getLocalData();
+    // One row per (habitId, date): the merge keeps the local key rather than
+    // leaving the local row's index key behind for the incoming id.
+    expect(data.logs).toHaveLength(1);
+    expect(data.logs[0]?.id).toBe(local.id);
+    expect(data.logs[0]?.note).toBe('من الخادم');
+    expect(data.logs[0]?.updatedAt).toBe('9999-01-01T00:00:00.000Z');
+    // The colliding write no longer aborts the batch, so the habit landed too.
+    expect(data.habits[0]?.name).toBe('من الخادم');
+    // The unique index still resolves the pair exactly once.
+    expect(await repo.getLogs('2026-01-01', '2026-12-31')).toHaveLength(1);
+
+    await repo.toggleLog(habit.id, '2026-08-02', true);
+    const afterToggle = await repo.getLocalData();
+    expect(afterToggle.logs).toHaveLength(1);
+    expect(afterToggle.logs[0]?.completed).toBe(true);
+    repo.close();
+  });
+
+  it('claims a guest log onto an account row for the same habit and date', async () => {
+    const factory = new IDBFactory();
+    const guest = await openGuest(factory);
+    const user = await HabitLocalStore.open(userIdentity('u-1'), factory);
+
+    const guestHabit = await guest.createHabit({ name: 'ضيف', frequency: 'daily' });
+    await guest.toggleLog(guestHabit.id, '2026-08-02', true);
+
+    // The account already holds a log for the same pair, under its own id, and
+    // older than the guest's — so the guest's values win the claim.
+    await user.seedIfEmpty(
+      [
+        {
+          id: guestHabit.id,
+          clientId: guestHabit.id,
+          name: 'من الحساب',
+          frequency: 'daily',
+          createdAt: '2000-01-01T00:00:00.000Z',
+          updatedAt: '2000-01-01T00:00:00.000Z',
+          archived: false,
+        },
+      ],
+      [
+        {
+          id: 'account-log',
+          habitId: guestHabit.id,
+          date: '2026-08-02',
+          completed: false,
+          completedAt: null,
+          updatedAt: '2000-01-01T00:00:00.000Z',
+        },
+      ]
+    );
+
+    await user.claimFrom(guest);
+
+    const logs = (await user.getLocalData()).logs;
+    expect(logs).toHaveLength(1);
+    expect(logs[0]?.id).toBe('account-log');
+    expect(logs[0]?.completed).toBe(true);
+    expect(await user.getLogs('2026-01-01', '2026-12-31')).toHaveLength(1);
+    // The guest's work is re-homed, so the claim still pushes it under the account.
+    expect((await user.getOutbox()).map((e) => e.type)).toContain('log.toggle');
+    guest.close();
+    user.close();
+  });
+
   it('claims guest rows into the account store and re-homes its intents', async () => {
     const factory = new IDBFactory();
     const guest = await openGuest(factory);

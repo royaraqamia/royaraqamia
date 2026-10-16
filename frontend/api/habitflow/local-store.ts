@@ -587,7 +587,10 @@ export class HabitLocalStore implements HabitRepository {
       if (pendingLogKeys.has(key)) continue;
       const local = localLogByKey.get(key);
       if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
-        writes.push([LOGS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
+        writes.push([
+          LOGS_STORE,
+          { ...mergedLog(local, server), deletedAt: server.deletedAt ?? null },
+        ]);
       }
     }
 
@@ -623,7 +626,7 @@ export class HabitLocalStore implements HabitRepository {
       const key = `${log.habitId}#${log.date}`;
       const local = localLogByKey.get(key);
       if (!local || isServerNewer(log.updatedAt, local.updatedAt)) {
-        writes.push([LOGS_STORE, { ...local, ...log }]);
+        writes.push([LOGS_STORE, mergedLog(local, log)]);
       }
     }
     // Re-home the guest's pending intents onto the account outbox. Drop `seq`
@@ -674,4 +677,17 @@ function isServerNewer(serverUpdatedAt: string | undefined, localUpdatedAt: stri
   if (!localUpdatedAt) return true;
   if (!serverUpdatedAt) return false;
   return serverUpdatedAt > localUpdatedAt;
+}
+
+/**
+ * The store keys logs by `id` but also enforces a single row per `(habitId,
+ * date)` through a unique index, so a merged row must keep the id of the row it
+ * replaces: writing it under the incoming id leaves the stale row's index key
+ * behind, and IndexedDB answers with `ConstraintError` — aborting the whole
+ * transaction, habits included (#251). A log id is arbitrary anyway (the server
+ * mints its own on restore, and the Outbox addresses a log by `habitId`/`date`,
+ * never by id), so the local key is the one to keep.
+ */
+function mergedLog(local: HabitLog | undefined, incoming: HabitLog): HabitLog {
+  return { ...local, ...incoming, id: local?.id ?? incoming.id };
 }
