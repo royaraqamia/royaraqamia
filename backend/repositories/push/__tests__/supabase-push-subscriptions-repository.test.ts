@@ -3,17 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 
-const { loggerWarn } = vi.hoisted(() => ({ loggerWarn: vi.fn() }));
-
-vi.mock('@/backend/shared/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: loggerWarn,
-    error: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
 type Row = Database['public']['Tables']['push_subscriptions']['Row'];
 
 function makeRow(overrides: Partial<Row> = {}): Row {
@@ -115,6 +104,54 @@ function makeClient(
   };
 }
 
+/**
+ * Minimal in-memory stand-in for the `push_subscriptions` table: `upsert` is
+ * keyed by endpoint (mirroring the `onConflict: 'endpoint'` call) and `delete`
+ * applies the recorded `eq`/`neq` filters to the live rows. It proves which
+ * rows survive, not just which calls were made, so a test can assert that one
+ * device's subscribe leaves another device's row alone.
+ */
+function makeInMemoryClient() {
+  const rows = new Map<string, Row>();
+  const from = vi.fn((table: string) => {
+    if (table !== 'push_subscriptions') throw new Error(`unexpected table: ${table}`);
+    return {
+      upsert: (payload: Row) => {
+        rows.set(payload.endpoint, payload);
+        return Promise.resolve({ error: null });
+      },
+      delete: () => {
+        const filters: Array<{ column: string; value: string; equal: boolean }> = [];
+        const apply = () => {
+          for (const [key, row] of Array.from(rows)) {
+            const matches = filters.every((filter) => {
+              const same =
+                String((row as unknown as Record<string, unknown>)[filter.column]) === filter.value;
+              return filter.equal ? same : !same;
+            });
+            if (matches) rows.delete(key);
+          }
+          return { error: null };
+        };
+        const chain = {
+          eq: (column: string, value: unknown) => {
+            filters.push({ column, value: String(value), equal: true });
+            return chain;
+          },
+          neq: (column: string, value: unknown) => {
+            filters.push({ column, value: String(value), equal: false });
+            return chain;
+          },
+          then: (onFulfilled: (value: { error: null }) => unknown) =>
+            Promise.resolve(apply()).then(onFulfilled),
+        };
+        return chain;
+      },
+    };
+  });
+  return { client: { from } as unknown as SupabaseClient<Database>, rows };
+}
+
 describe('createPushSubscriptionsRepository', () => {
   describe('upsert', () => {
     it('upserts on the endpoint conflict key with the owner user_id', async () => {
@@ -140,58 +177,66 @@ describe('createPushSubscriptionsRepository', () => {
       );
     });
 
-    it('prunes superseded same-device rows after a successful upsert', async () => {
+    it('deletes no other row for the user (a User-Agent is not a device identity)', async () => {
       const { client, deleteFilters } = makeClient();
       const repo = createPushSubscriptionsRepository(client);
 
       await repo.upsert('u-1', {
-        endpoint: 'https://fcm.googleapis.com/fcm/send/new',
+        endpoint: 'https://fcm.googleapis.com/fcm/send/second-browser',
         p256dh: 'p256',
         auth: 'auth',
         userAgent: 'Chrome/140',
       });
 
-      expect(deleteFilters).toEqual([
-        [
-          'eq:user_id=u-1',
-          'eq:user_agent=Chrome/140',
-          'neq:endpoint=https://fcm.googleapis.com/fcm/send/new',
-        ],
+      expect(deleteFilters).toEqual([]);
+    });
+
+    it('keeps the first device subscribed when a second device reports the same user agent', async () => {
+      const { client, rows } = makeInMemoryClient();
+      const repo = createPushSubscriptionsRepository(client);
+      const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140';
+
+      await repo.upsert('u-1', {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/laptop',
+        p256dh: 'p256',
+        auth: 'auth',
+        userAgent,
+      });
+      await repo.upsert('u-1', {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/desktop',
+        p256dh: 'p256',
+        auth: 'auth',
+        userAgent,
+      });
+
+      expect(Array.from(rows.keys()).sort()).toEqual([
+        'https://fcm.googleapis.com/fcm/send/desktop',
+        'https://fcm.googleapis.com/fcm/send/laptop',
       ]);
     });
 
-    it('skips device cleanup when no user agent is available', async () => {
-      const { client, deleteFilters } = makeClient();
+    it('rewrites the row for a repeated endpoint rather than adding a second one', async () => {
+      const { client, rows } = makeInMemoryClient();
       const repo = createPushSubscriptionsRepository(client);
 
       await repo.upsert('u-1', {
         endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
         p256dh: 'p256',
-        auth: 'auth',
-        userAgent: null,
+        auth: 'old-auth',
+        userAgent: 'Chrome/140',
+      });
+      await repo.upsert('u-1', {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+        p256dh: 'p256',
+        auth: 'new-auth',
+        userAgent: 'Chrome/141',
       });
 
-      expect(deleteFilters).toHaveLength(0);
-    });
-
-    it('keeps the subscription when the device cleanup fails (warn only)', async () => {
-      const { client, deleteFilters } = makeClient({ deleteError: new Error('cleanup failed') });
-      const repo = createPushSubscriptionsRepository(client);
-
-      await expect(
-        repo.upsert('u-1', {
-          endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
-          p256dh: 'p256',
-          auth: 'auth',
-          userAgent: 'Chrome/128',
-        })
-      ).resolves.toBeUndefined();
-
-      expect(deleteFilters).toHaveLength(1);
-      expect(loggerWarn).toHaveBeenCalledWith(
-        'Failed to prune superseded push subscriptions for device',
-        expect.objectContaining({ userId: 'u-1' })
-      );
+      expect(rows.size).toBe(1);
+      expect(rows.get('https://fcm.googleapis.com/fcm/send/abc')).toMatchObject({
+        auth: 'new-auth',
+        user_agent: 'Chrome/141',
+      });
     });
 
     it('throws when the upsert fails', async () => {
