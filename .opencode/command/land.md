@@ -19,7 +19,8 @@ Land the work in this tree, end to end and without asking.
 5. **Open the pull request.** `gh pr create --base main --fill`, then edit the body so it says what
    changed and why and links `Closes #<n>` when there is an issue.
 6. **Merge once CI is green.** `gh pr checks <n> --watch`, then
-   `gh pr merge <n> --squash --delete-branch`. If a check fails, stop, report it, and leave the pull
+   `gh pr merge <n> --squash --delete-branch` — retry once if it answers `Base branch was modified`,
+   which only means `main` moved under it. If a check fails, stop, report it, and leave the pull
    request open — never merge over a red check.
 7. **Clean up and re-sync.** `session_move` out of the worktree, remove it, delete the local branch,
    `git worktree prune`, then `git fetch origin --prune` and `git pull --ff-only` so local `main` is
