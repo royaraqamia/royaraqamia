@@ -12,6 +12,8 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 - `npm test` — unit tests (Vitest)
 - `npm run build` — full build (requires `NEXT_PUBLIC_WHATSAPP_PHONE`)
 
+**Scope them to the change.** Routine work runs `npm run typecheck`, `npm run lint:fix` and only the tests the diff reaches (`npx vitest run <path>`, or `npx vitest run --changed`). The full `npm test` and `npm run build` are for a genuinely repo-wide change, a change that could plausibly break the build, or CI. Details: [docs/agents/landing.md](docs/agents/landing.md).
+
 **Dev server (agents): `npm run dev` (→ `scripts/dev.mjs`) never exits — never run it as a foreground/blocking shell command.**
 
 1. **Prefer Playwright.** Its `webServer` (`playwright.config.ts:73`) starts the server, waits for port `3000`, and tears it down for you. Run browser work as a Playwright test instead of hand-managing the server. (`reuseExistingServer: false` means a stale server on `3000` will fail the run — free the port first.)
@@ -35,6 +37,8 @@ taskkill /PID $p.Id /T /F
 
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
 
+**Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, open as a pull request, merged once CI is green, and the branch and its worktree are deleted. Do that without being asked, at the end of every task: scoped gates → commit → push → `gh pr create` → merge → cleanup. Sequence, conventions and the cleanup commands: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.
+
 ## Detailed references
 
 - [Architecture & layering](docs/architecture.md)
@@ -47,6 +51,7 @@ taskkill /PID $p.Id /T /F
 - [Available skills](docs/skills.md)
 - [Android shell (APK / AAB)](docs/mobile/android-shell.md)
 - [Working in a worktree](docs/agents/worktrees.md)
+- [Landing the work](docs/agents/landing.md)
 
 ## Agent skills
 
