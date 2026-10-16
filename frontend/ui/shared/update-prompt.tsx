@@ -45,6 +45,12 @@ export function UpdatePrompt() {
       className="fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-card-foreground shadow-sm"
     >
       <span>يتوفَّر إصدار جديد</span>
+      {/* The one gesture that costs the user a reload, so it wears the site's
+          primary action — the Hero CTA's gradient, border and glow, at the
+          prompt's small size. While it is applying the button goes inert
+          (`disabled:pointer-events-none`), which freezes the gradient, the lift
+          and the sheen rather than leaving a dead control that still lights up
+          under the cursor. */}
       <button
         type="button"
         disabled={applying}
@@ -52,9 +58,13 @@ export function UpdatePrompt() {
           setApplying(true);
           applyUpdate();
         }}
-        className="transition-safe rounded-full bg-primary px-3 py-1 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-70"
+        className="group relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-3 py-1 font-semibold text-white shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] transition-safe duration-300 hover:scale-[1.02] hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-60"
       >
-        {applying ? 'جارٍ التحديث…' : 'تحديث الآن'}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full transition-transform duration-1000 ease-in-out group-hover:translate-x-full"
+        />
+        <span className="relative z-10">{applying ? 'جاري التَّحديث...' : 'تحديث الآن'}</span>
       </button>
       <button
         type="button"
