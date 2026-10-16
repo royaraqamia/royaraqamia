@@ -1,10 +1,10 @@
 {
-  "versionCode": 20004,
-  "versionName": "1.0.4",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.4.apk",
-  "sha256": "ec543e883505e729e27f646a57606b54f81b9579d1a57323edc6517ca8762513",
-  "sizeBytes": 7449653,
+  "versionCode": 20006,
+  "versionName": "1.0.6",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.6.apk",
+  "sha256": "d4e120613d8d3b7204bca9d8fe2d8ebe8ccae00fc67c7b0d80f7da78416a8f6c",
+  "sizeBytes": 7449705,
   "minSupportedVersionCode": 20000,
-  "notes": "fix(shell): withhold the push plugin a build cannot serve (#278)",
+  "notes": "fix(shell): declare the camera permission the Scanner needs (#283)",
   "releasedAt": "2026-10-15"
 }
