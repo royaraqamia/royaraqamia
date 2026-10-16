@@ -10,6 +10,13 @@ import androidx.core.splashscreen.SplashScreen;
 
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.Logger;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginLoadException;
+import com.getcapacitor.PluginManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The shell loads the live site from {@code server.url}, so Capacitor does not
@@ -48,6 +55,38 @@ public class MainActivity extends BridgeActivity {
         announceShellVersion();
         shellUpdate = new ShellUpdatePrompt(this, getBridge() != null ? getBridge().getServerUrl() : null);
         shellUpdate.maybeCheck(true);
+    }
+
+    /**
+     * Withholds the push plugin from a build that cannot serve it.
+     *
+     * Capacitor resolves its plugin list, and the page's `window.Capacitor.Plugins`, from
+     * the bridge this method builds — so a build with no Firebase app has to say so here
+     * rather than let the page reach a plugin whose `register()` throws where Capacitor
+     * turns it into a fatal crash (ADR-0050, `ShellPlugins`). Newer Capacitor generated
+     * this list from `capacitor.plugins.json`; it is rebuilt here only to drop that one
+     * entry.
+     */
+    @Override
+    protected void load() {
+        if (!BuildConfig.FIREBASE_CONFIGURED) {
+            try {
+                List<Class<? extends Plugin>> kept = new ArrayList<>();
+                for (Class<? extends Plugin> plugin : new PluginManager(getAssets()).loadPluginClasses()) {
+                    if (!ShellPlugins.isWithheld(plugin.getName())) {
+                        kept.add(plugin);
+                    }
+                }
+                bridgeBuilder.setPlugins(kept);
+                Logger.info("No Firebase config in this build: the push plugin is withheld");
+            } catch (PluginLoadException ex) {
+                // Capacitor logs the same failure and carries on; the plugin list it
+                // already read stays in place.
+                Logger.error("Could not read capacitor.plugins.json", ex);
+            }
+        }
+
+        super.load();
     }
 
     @Override

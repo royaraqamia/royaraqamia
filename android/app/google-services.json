@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "641201517453",
+    "project_id": "roya-raqamia",
+    "storage_bucket": "roya-raqamia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:641201517453:android:1a9f8ec34b848257d543c4",
+        "android_client_info": {
+          "package_name": "com.royaraqamia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuDV7bTzIDDPXtu5oZzGy2QDGcOWJHi78"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

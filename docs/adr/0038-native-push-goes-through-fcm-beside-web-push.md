@@ -1,5 +1,12 @@
 # Native push goes through FCM, beside Web Push rather than instead of it
 
+> **Superseded in part by [ADR 0050](0050-a-shell-that-cannot-serve-push-does-not-offer-it.md)
+> (2026-10-16):** `google-services.json` is now committed. It is client config whose API key
+> every APK already ships (and the APK is public), and a build that lacked it reached users
+> as a shell whose push plugin crashed the app on the notification bell. The three FCM
+> environment variables, and the service-account JSON they come from, are unchanged — and a
+> build with no config now withholds the plugin instead of offering it.
+
 The Android shell renders the live site in a WebView (ADR-0036), and an Android WebView
 has no working `PushManager`: the browser subscription path the site uses on the desktop
 cannot deliver anything inside the app, however healthy the server thinks the
@@ -53,9 +60,11 @@ payload's `data.url` (which is why `url` is always sent, defaulting to `/`).
 
 Three FCM environment variables decide whether the channel exists at all: `FCM_PROJECT_ID`,
 `FCM_CLIENT_EMAIL` and `FCM_PRIVATE_KEY`. With any of them missing the service is a no-op,
-which keeps every environment that does not run the app silent rather than failing — the
-same shape the VAPID keys already have. `google-services.json` is deliberately not
-committed: it is per-project config carrying an API key, and the repository is public.
+which keeps every environment that does not run the app silent rather than failing - the
+same shape the VAPID keys already have. `google-services.json` was deliberately not
+committed here: it is per-project config carrying an API key, and the repository is public.
+That is superseded by ADR 0050 — the key is in every APK anyway, so withholding the file
+only produced builds that had no Firebase app.
 
 Web Push and FCM are not interchangeable at the payload level: a browser notification is
 drawn by the service worker from the JSON payload, while FCM draws it from the
