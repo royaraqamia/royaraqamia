@@ -17,6 +17,8 @@ import { ConnectivityIndicator } from '@/frontend/ui/shared/connectivity-indicat
 import { UpdatePrompt } from '@/frontend/ui/shared/update-prompt';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
+import { SecondaryHeader } from '../frontend/ui/navbar/SecondaryHeader';
+import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
@@ -163,6 +165,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Analytics />
                     <PWAProvider>
                       <RouteChangeFocus />
+                      {/* App chrome is route-aware: primary routes keep the top
+                          nav + bottom tab bar, secondary pages swap both for one
+                          back header. */}
+                      <NavHistoryTracker />
+                      <SecondaryHeader />
                       {children}
                       <FloatingActions />
                       <BottomTabBar />

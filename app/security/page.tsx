@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Navbar } from '../../frontend/ui/Navbar';
 import { SectionTitle, SectionTitleHighlight } from '../../frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -29,8 +28,6 @@ export const metadata: Metadata = {
 export default function SecurityPage() {
   return (
     <div className="relative min-h-dvh bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
-      <Navbar />
-
       <main id="main-content" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24" dir="rtl">
         <div className="cv-auto mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}

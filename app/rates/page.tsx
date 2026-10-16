@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/frontend/ui/Navbar';
 import { loadRatesBoard } from '@/backend/loaders/rates';
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
@@ -69,8 +68,6 @@ export default async function RatesPage() {
 
   return (
     <div className="relative min-h-dvh bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
-      <Navbar />
-
       <main id="main-content" dir="rtl" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">

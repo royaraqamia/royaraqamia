@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { identity } from '@/backend/config/identity';
-import { Navbar } from '@/frontend/ui/Navbar';
 
 // The single guard for the whole Admin Console. Sections below only worry about
 // their own width, header and navigation — never about authentication.
@@ -16,7 +15,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="bg-background text-foreground flex min-h-dvh flex-col">
-      <Navbar />
       <main id="main-content" className="flex-1 pt-20 lg:pt-24">
         {children}
       </main>

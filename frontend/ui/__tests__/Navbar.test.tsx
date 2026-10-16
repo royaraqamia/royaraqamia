@@ -1,10 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Navbar } from '../Navbar';
 import { UIProvider } from '../../state/UIContext';
 
+const { mockPathname } = vi.hoisted(() => ({ mockPathname: vi.fn(() => '/') }));
+
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => mockPathname(),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -17,6 +19,10 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe('Navbar', () => {
+  beforeEach(() => {
+    mockPathname.mockReturnValue('/');
+  });
+
   it('renders the skip-to-content link', () => {
     renderWithProviders(<Navbar />);
     const skipLink = screen.getByText('تخطي إلى المحتوى الرئيسي');
@@ -42,5 +48,14 @@ describe('Navbar', () => {
     // in the floating `BottomTabBar`, not here.
     expect(screen.queryByRole('link', { name: 'الرَّئيسيَّة' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'المجتمع' })).not.toBeInTheDocument();
+  });
+
+  it('renders nothing outside the primary routes', () => {
+    mockPathname.mockReturnValue('/community/some-post');
+
+    renderWithProviders(<Navbar />);
+
+    expect(screen.queryByRole('navigation', { name: 'القائمة الرئيسية' })).not.toBeInTheDocument();
+    expect(screen.queryByText('تخطي إلى المحتوى الرئيسي')).not.toBeInTheDocument();
   });
 });

@@ -4,7 +4,6 @@ import { FileText } from 'lucide-react';
 import { loadCommunityMember } from '@/backend/loaders/community';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
-import { BackButton } from '@/frontend/ui/shared/back-button';
 import { PostCard } from '@/app/community/_components/post-card';
 
 export const revalidate = 300;
@@ -51,10 +50,6 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
 
   return (
     <div className="mx-auto max-w-4xl">
-      <nav aria-label="التَّنقُّل للخلف" className="mb-6 sm:mb-8">
-        <BackButton />
-      </nav>
-
       <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-6 shadow-sm sm:p-8">
         <span
           className="glow-orb pointer-events-none absolute -top-16 inset-e-[-10%] h-48 w-48 text-violet-500/20"

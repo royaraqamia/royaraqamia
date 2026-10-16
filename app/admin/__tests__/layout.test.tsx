@@ -20,10 +20,6 @@ vi.mock('@/backend/config/identity', async () => {
   });
 });
 
-vi.mock('@/frontend/ui/Navbar', () => ({
-  Navbar: () => <nav data-testid="navbar" />,
-}));
-
 import AdminLayout from '../layout';
 
 const ADMIN = {
@@ -60,8 +56,8 @@ describe('Admin Console door', () => {
 
     render(await AdminLayout({ children: <div>console-section</div> }));
 
-    expect(screen.getByTestId('navbar')).toBeInTheDocument();
     expect(screen.getByText('console-section')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 });

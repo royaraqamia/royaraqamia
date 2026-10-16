@@ -1,23 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import { Navbar } from '@/frontend/ui/Navbar';
 import { GuestModeBanner } from '@/frontend/ui/app-shell/guest-mode-banner';
 
+/**
+ * The shell the product apps (BlogPress, LinkSnap, HabitFlow, SpendTrack) mount
+ * their dashboards in. Every one of them is a secondary page, so the chrome
+ * around this content — the back header, and the absence of the tab bar — comes
+ * from the route-aware pieces in the root layout, not from here.
+ */
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary font-sans transition-colors duration-300 pt-16 lg:pt-20">
-      {/* Accessible Skip to Main Content Link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:font-medium focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-safe duration-200"
-      >
-        Skip to main content
-      </a>
-
-      {/* Primary Navbar (fixed to viewport top) */}
-      <Navbar />
-
       {/* Main Content Viewport */}
       <main
         id="main-content"

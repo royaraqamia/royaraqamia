@@ -1489,10 +1489,11 @@ body:has([data-bottom-tabbar]) {
   padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
 }
 
-/* Flush bar (< lg): lift the floating utilities clear of it. */
+/* Flush bar (< lg): lift the floating utilities clear of it. Only where the bar
+   is actually rendered — secondary pages have no bar and no reason to sit high. */
 @media (max-width: 1023px) {
-  .go-up-btn,
-  .compose-fab-btn {
+  body:has([data-bottom-tabbar]) .go-up-btn,
+  body:has([data-bottom-tabbar]) .compose-fab-btn {
     bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
   }
 }

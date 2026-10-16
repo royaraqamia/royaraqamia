@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LazyImage } from '../../frontend/ui/LazyImage';
-import { Navbar } from '../../frontend/ui/Navbar';
 
 export const metadata: Metadata = {
   title: 'معلومات الشَّركة',
@@ -27,7 +26,6 @@ export const metadata: Metadata = {
 export default function AppInfoPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <Navbar />
       <main id="main-content" className="flex-1 pt-24" dir="rtl">
         <div className="mx-auto max-w-3xl px-6 py-12 md:py-20">
           <header className="mb-10">
