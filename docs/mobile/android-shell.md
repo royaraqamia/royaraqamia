@@ -261,9 +261,20 @@ through the bridge rather than an npm import.
    notification bell: the plugin's `register()` throws where Capacitor rethrows on its own
    plugin thread, which is a fatal crash rather than a rejected promise. A build without it
    now withholds the plugin entirely — the page reports notifications as unsupported — and
-   `assembleRelease`/`bundleRelease` refuse to run. Restrict the file's API key in the
-   Google Cloud console to Android apps with this package name and the release signing
-   SHA-1; that restriction, not secrecy, is what protects it.
+   `assembleRelease`/`bundleRelease` refuse to run.
+
+   Restricting that key is the one console step, and it is easy to do in the wrong project:
+   the app's Firebase project is **`roya-raqamia`** — APIs & Services → Credentials with
+   `?project=roya-raqamia` — and it is _not_ `royaraqamia`, the project that holds the Google
+   sign-in OAuth clients. On `Android key (auto created by Firebase)` set Application
+   restrictions → Android apps, with one entry per signing certificate the shell is built
+   with: the release one (the certificate `public/.well-known/assetlinks.json` lists) and the
+   debug one from `~/.android/debug.keystore`, or a local debug build cannot register for
+   push. `apksigner verify --print-certs app-release.apk` prints both digests; `Save` and
+   allow a few minutes. Rotating the keystore, or adding Play App Signing later, means adding
+   that certificate here too — the restriction fails silently, as a device that never
+   registers.
+
 2. **Three environment variables** in Vercel (Production, Preview, Development), from the
    service-account JSON generated under Project settings → Service accounts:
    `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
