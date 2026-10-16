@@ -102,3 +102,6 @@ git worktree prune             # drop records for directories already gone
 
 `worktree_remove` does the same, with force as an explicit opt-in — force only after checking that
 nothing unlanded is in there.
+
+Cleanup is the last step of landing the work, not a separate chore: order and the surrounding
+commit/push/pull-request steps are in [landing.md](landing.md).
