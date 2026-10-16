@@ -178,9 +178,9 @@ export class SyncEngine {
   private async run(): Promise<void> {
     await this.setSyncing(true);
     try {
-      const due = (await this.deps.store.getOutbox()).filter((entry) => isDue(entry, this.now()));
-
-      for (const entry of due) {
+      for (const entry of await this.deps.store.getOutbox()) {
+        if (entry.status === 'failed') continue; // surfaced, never dropped
+        if (!isDue(entry, this.now())) break; // ordered barrier: do not overtake
         if (!this.isOnline()) break;
         try {
           await this.deps.transport.send(entry);
