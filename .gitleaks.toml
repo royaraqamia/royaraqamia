@@ -11,6 +11,16 @@ useDefault = true
     # Unit test that asserts example.env and configs contain NO real secrets;
     # it deliberately embeds secret-shaped regex patterns.
     '''scripts/__tests__/security-config\.test\.ts''',
+    # The Firebase client config (ADR-0050). The API key it carries is compiled
+    # into every APK, and the APK is public — the manifest points at
+    # https://royaraqamia.com/android/royaraqamia-1.0.3.apk — so the file was
+    # never a secret: ignoring it only produced builds with no Firebase app,
+    # where `PushNotifications.register()` throws on Capacitor's plugin thread
+    # and kills the app. What protects the key is its Android-app restriction
+    # (package name + signing SHA-1) in the Google Cloud console, not its
+    # publication; the FCM service-account JSON, which can send to every device,
+    # is a different file and stays in Vercel's environment variables.
+    '''android/app/google-services\.json''',
   ]
   regexes = [
     # NEXT_PUBLIC_* values are client-public by design (AGENTS.md / SECURITY.md):
