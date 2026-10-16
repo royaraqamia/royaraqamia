@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.12] - 2026-10-16
+
+### Fixed
+- age the health signal by quote date, not fetch time (#268)
+
 ## [1.101.11] - 2026-10-16
 
 ### Changed
