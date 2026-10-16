@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.13] - 2026-10-16
+
+### Fixed
+- keep one HabitFlow log per habit and date on a merge (#269)
+- normalize trailing-dot hostnames so the Blocklist and Platform allowlist cannot be bypassed (#229) (#270)
+
 ## [1.101.12] - 2026-10-16
 
 ### Fixed
