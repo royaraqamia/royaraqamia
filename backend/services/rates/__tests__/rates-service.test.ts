@@ -340,7 +340,7 @@ describe('RatesService.getSeries', () => {
 });
 
 describe('RatesService.getHealth', () => {
-  it('reports ok for a fresh run', async () => {
+  it('reports ok when the quote date is fresh', async () => {
     const repository = makeRepo({
       getLastSuccessfulRun: vi
         .fn()
@@ -354,20 +354,51 @@ describe('RatesService.getHealth', () => {
     expect(health.stale).toBe(false);
   });
 
-  it('reports stale when the last success is old', async () => {
+  it('reports stale when a recent fetch carries an old quote date', async () => {
     const repository = makeRepo({
       getLastSuccessfulRun: vi
         .fn()
-        .mockResolvedValue({ finished_at: '2026-09-01T00:00:00.000Z' } as RateSyncRun),
-      getLatestSnapshot: vi
-        .fn()
-        .mockResolvedValue(snapshot({ fetched_at: '2026-09-01T00:00:00.000Z' })),
+        .mockResolvedValue({ finished_at: '2026-10-04T06:00:00.000Z' } as RateSyncRun),
+      getLatestSnapshot: vi.fn().mockResolvedValue(
+        snapshot({
+          provider_quote_date: '2026-09-01',
+          fetched_at: '2026-10-04T06:00:00.000Z',
+        })
+      ),
     });
     const { service } = makeService(repository);
 
     const health = await service.getHealth();
     expect(health.ok).toBe(false);
     expect(health.stale).toBe(true);
+  });
+
+  it('reports stale when there is no snapshot to age', async () => {
+    const repository = makeRepo({
+      getLastSuccessfulRun: vi
+        .fn()
+        .mockResolvedValue({ finished_at: '2026-10-04T06:00:00.000Z' } as RateSyncRun),
+      getLatestSnapshot: vi.fn().mockResolvedValue(null),
+    });
+    const { service } = makeService(repository);
+
+    const health = await service.getHealth();
+    expect(health.ok).toBe(false);
+    expect(health.stale).toBe(true);
+    expect(health.providerQuoteDate).toBeNull();
+  });
+
+  it('reports not ok when no run has ever succeeded', async () => {
+    const repository = makeRepo({
+      getLastSuccessfulRun: vi.fn().mockResolvedValue(null),
+      getLatestSnapshot: vi.fn().mockResolvedValue(snapshot()),
+    });
+    const { service } = makeService(repository);
+
+    const health = await service.getHealth();
+    expect(health.ok).toBe(false);
+    expect(health.stale).toBe(false);
+    expect(health.lastSuccessAt).toBeNull();
   });
 
   it('lists market values held from an earlier sync', async () => {
