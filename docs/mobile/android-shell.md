@@ -306,6 +306,13 @@ older devices a failed proxied request leaves the document without `window.Capac
 on the API 30 emulator (WebView 83), where a page-driven version of this existed, registered itself, and
 was invisible to the page.
 
+One build stays outside all of that, and no fix can reach it: a shell made before the user agent carried the
+token, on a WebView where the bridge was not injected either, reads to the page as an ordinary browser. It is
+therefore offered the web row, and its APK link — followed _inside_ the WebView — renders the archive's bytes
+as text instead of downloading it, which is what the emulator's `1.93.0+shell.20001` build did. Such a build
+is not stranded: the native prompt does not depend on the page seeing it, and that is how it reaches a build
+that announces itself.
+
 **Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
 under the app's own internal files directory, hashing as it writes, and renames it into place only when
 the byte count and the `sha256` match what the manifest published. `ShellInstaller` then opens the system
