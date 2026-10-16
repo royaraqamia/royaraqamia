@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.7] - 2026-10-16
+
+### Fixed
+- defer close, and no-op what lands after it (#204) (#260)
+
 ## [1.101.6] - 2026-10-16
 
 ### Changed
