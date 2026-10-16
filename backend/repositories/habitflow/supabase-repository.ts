@@ -332,6 +332,37 @@ export class SupabaseHabitRepository implements HabitRepository {
     };
   }
 
+  /**
+   * The sync snapshot: like `getLocalData`, but deliberately unfiltered by
+   * `deleted_at`. A tombstone must reach the client so a delete made on another
+   * device removes the row locally (ADR-0029); the display reads (`getHabits`,
+   * `getLogs`) keep excluding tombstones.
+   */
+  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    let habitsQuery = this.client.from('habits').select('*');
+    let logsQuery = this.client.from('habit_logs').select('*');
+
+    if (this.userId) {
+      habitsQuery = habitsQuery.eq('user_id', this.userId);
+      logsQuery = logsQuery.eq('user_id', this.userId);
+    }
+
+    const [{ data: habitRows, error: habitsError }, { data: logRows, error: logsError }] =
+      await Promise.all([habitsQuery, logsQuery]);
+
+    if (habitsError) {
+      throw habitsError;
+    }
+    if (logsError) {
+      throw logsError;
+    }
+
+    return {
+      habits: (habitRows || []).map(toHabit),
+      logs: (logRows || []).map(toLog),
+    };
+  }
+
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
     let query = this.client
       .from('habit_logs')

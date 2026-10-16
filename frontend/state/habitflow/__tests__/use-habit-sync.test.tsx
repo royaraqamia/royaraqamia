@@ -23,6 +23,7 @@ vi.mock('@/frontend/api/habitflow/sync-transport', async (importOriginal) => {
 vi.mock('@/frontend/api/habitflow/habit-api', () => ({
   ApiClient: {
     fetchInitialData: async () => ({ habits: [], logs: [], mode: 'supabase' }),
+    fetchSyncData: async () => ({ habits: [], logs: [], mode: 'supabase' }),
   },
 }));
 

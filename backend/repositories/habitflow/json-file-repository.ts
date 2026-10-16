@@ -133,6 +133,11 @@ export class JsonFileHabitRepository implements HabitRepository {
     }
   }
 
+  /** Local mode has no tombstones; the raw file is already the sync snapshot. */
+  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    return this.getLocalData();
+  }
+
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
     const restoredData: Schema = {
       habits: input.habits.map((h) => ({

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthenticatedUser = vi.fn();
-const mockListLinks = { execute: vi.fn() };
+const mockListLinks = { execute: vi.fn(), executeIncludingDeleted: vi.fn() };
 const mockBulkAction = { execute: vi.fn() };
 const mockModerate = { execute: vi.fn() };
 const mockRedirect = { execute: vi.fn() };
@@ -38,6 +38,7 @@ vi.mock('@/backend/config/linksnap', () => ({
 import {
   bulkLinkAction,
   listLinks,
+  listLinksForSync,
   moderateLink,
   redirectShortCode,
 } from '@/backend/controllers/linksnap';
@@ -60,6 +61,7 @@ describe('linksnap controller', () => {
     vi.clearAllMocks();
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'admin@b.com' });
     mockListLinks.execute.mockResolvedValue([link()]);
+    mockListLinks.executeIncludingDeleted.mockResolvedValue([link()]);
     mockBulkAction.execute.mockResolvedValue({ affected: 2 });
     mockModerate.execute.mockResolvedValue(link({ isBlocked: true }));
   });
@@ -129,6 +131,16 @@ describe('linksnap controller', () => {
     await moderateLink('Bearer token', { code: 'abc123', isBlocked: true });
 
     expect(mockModerate.execute).toHaveBeenCalledWith('admin@b.com', 'abc123', true);
+  });
+
+  it('listLinksForSync uses the tombstone-inclusive read', async () => {
+    const result = await listLinksForSync('Bearer token');
+
+    expect(mockListLinks.executeIncludingDeleted).toHaveBeenCalledWith('u-1');
+    expect(mockListLinks.execute).not.toHaveBeenCalled();
+    expect(result).toEqual(
+      expect.objectContaining({ status: 200, body: expect.objectContaining({ success: true }) })
+    );
   });
 });
 

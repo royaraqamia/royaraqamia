@@ -102,6 +102,14 @@ export class HabitService {
     return { habits, logs, count: habits.length };
   }
 
+  /**
+   * The sync snapshot (tombstones included) the client merges on open, so a
+   * delete made on another device lands here (ADR-0029).
+   */
+  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    return this.repository.getSyncData();
+  }
+
   async toggleHabitLog(data: {
     habitId: string;
     date: string;

@@ -121,6 +121,57 @@ describe('LinksnapLocalStore', () => {
     store.close();
   });
 
+  it('removes a local link when the server delivers a tombstone', async () => {
+    const store = await open(userIdentity('u-1'));
+    const link = await store.createLink({ originalUrl: 'https://example.com' });
+    // Simulate a completed flush: no pending intent remains.
+    for (const entry of await store.getOutbox()) await store.removeOutbox(entry.seq);
+    expect(await store.getLinks()).toHaveLength(1);
+
+    const tombstone = '9999-01-01T00:00:00.000Z';
+    await store.mergeServerData([
+      {
+        clientId: link.clientId,
+        code: link.code,
+        originalUrl: link.originalUrl,
+        createdAt: link.createdAt,
+        updatedAt: tombstone,
+        expiresAt: null,
+        isBlocked: false,
+        passwordProtected: false,
+        deletedAt: tombstone,
+      },
+    ]);
+
+    expect(await store.getLinks()).toHaveLength(0);
+    expect((await store.getAllLinks())[0]?.deletedAt).toBe(tombstone);
+    store.close();
+  });
+
+  it('does not resurrect a pending local delete from a stale server row', async () => {
+    const store = await open(userIdentity('u-1'));
+    const link = await store.createLink({ originalUrl: 'https://example.com' });
+    for (const entry of await store.getOutbox()) await store.removeOutbox(entry.seq);
+    await store.deleteLink(link.clientId);
+
+    await store.mergeServerData([
+      {
+        clientId: link.clientId,
+        code: link.code,
+        originalUrl: link.originalUrl,
+        createdAt: link.createdAt,
+        updatedAt: '9999-01-01T00:00:00.000Z',
+        expiresAt: null,
+        isBlocked: false,
+        passwordProtected: false,
+        deletedAt: null,
+      },
+    ]);
+
+    expect(await store.getLinks()).toHaveLength(0);
+    store.close();
+  });
+
   it('claims guest links and re-homes their intents onto the account', async () => {
     const guest = await open(GUEST_IDENTITY);
     const link = await guest.createLink({ originalUrl: 'https://guest.com' });

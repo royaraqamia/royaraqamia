@@ -6,7 +6,10 @@ import { renderHook, waitFor } from '@testing-library/react';
 // The signed-in background pull hits the network; keep it local and empty.
 vi.mock('@/frontend/api/linksnap', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/frontend/api/linksnap')>();
-  return { ...actual, listLinks: vi.fn().mockResolvedValue([]) };
+  return {
+    ...actual,
+    listLinksIncludingDeleted: vi.fn().mockResolvedValue([]),
+  };
 });
 
 import { useLinksnap } from '@/frontend/state/linksnap/use-linksnap';

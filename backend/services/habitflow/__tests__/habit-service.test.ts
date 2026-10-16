@@ -31,6 +31,7 @@ function makeRepo(overrides: Partial<HabitRepository> = {}) {
     setLogNote: vi.fn(),
     restoreFromBackup: vi.fn(),
     getLocalData: vi.fn(),
+    getSyncData: vi.fn(),
     ...overrides,
   };
   return { repository, service: new HabitService(repository) };

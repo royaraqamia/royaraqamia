@@ -36,6 +36,7 @@ function makeDeps() {
     findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
+    listByUserIdIncludingDeleted: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),

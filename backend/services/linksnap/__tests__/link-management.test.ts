@@ -24,6 +24,7 @@ function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
     findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
+    listByUserIdIncludingDeleted: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
@@ -48,6 +49,19 @@ describe('ListLinksService', () => {
     const { repository } = makeRepo();
     const service = new ListLinksService(repository);
     await expect(service.execute('')).rejects.toThrow('User ID is required to retrieve links.');
+    expect(repository.listByUserId).not.toHaveBeenCalled();
+  });
+
+  it('executeIncludingDeleted reads through the tombstone-inclusive list', async () => {
+    const { repository } = makeRepo();
+    const service = new ListLinksService(repository);
+    const tombstoned = { ...linkFixture, deletedAt: now };
+    (repository.listByUserIdIncludingDeleted as ReturnType<typeof vi.fn>).mockResolvedValue([
+      tombstoned,
+    ]);
+
+    await expect(service.executeIncludingDeleted('u-1')).resolves.toEqual([tombstoned]);
+    expect(repository.listByUserIdIncludingDeleted).toHaveBeenCalledWith('u-1');
     expect(repository.listByUserId).not.toHaveBeenCalled();
   });
 });

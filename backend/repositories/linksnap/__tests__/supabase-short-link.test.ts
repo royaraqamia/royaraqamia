@@ -34,6 +34,9 @@ class Builder {
   lte(column: string, value: unknown) {
     return this.log(`lte ${column}=${String(value)}`);
   }
+  order(column: string) {
+    return this.log(`order ${column}`);
+  }
   maybeSingle() {
     this.log('maybeSingle');
     return Promise.resolve(this.result());
@@ -109,5 +112,21 @@ describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
 
     expect(calls.some((c) => c.includes(`lte updated_at=${updatedAt}`))).toBe(true);
     expect(calls.find((c) => c.includes('update'))).toContain(`"deleted_at":"${updatedAt}"`);
+  });
+
+  it('listByUserIdIncludingDeleted keeps tombstones in the sync snapshot', async () => {
+    const deletedAt = '2026-08-05T00:00:00.000Z';
+    const { client, calls } = makeClient({
+      short_links: { data: [{ ...linkRow, deleted_at: deletedAt }], error: null },
+    });
+    const repo = new SupabaseShortLinkRepository(client);
+
+    const links = await repo.listByUserIdIncludingDeleted('u-1');
+
+    // The sync read is deliberately unfiltered by `deleted_at`; the display
+    // read (`listByUserId`) keeps its tombstone filter.
+    expect(calls).not.toContain('short_links:is deleted_at=null');
+    expect(calls).toContain('short_links:eq user_id=u-1');
+    expect(links[0]?.deletedAt).toEqual(new Date(deletedAt));
   });
 });

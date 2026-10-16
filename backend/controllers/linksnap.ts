@@ -145,6 +145,18 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
   });
 }
 
+/**
+ * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so a
+ * delete made on another device lands here (ADR-0029). Display reads keep using
+ * `listLinks`, which excludes tombstones.
+ */
+export async function listLinksForSync(authorization: string | null): Promise<HttpResult> {
+  return requireBearer(authorization, 'Error in list links sync API route:', async ({ userId }) => {
+    const links = await createListLinksService().executeIncludingDeleted(userId);
+    return jsonResult(200, { success: true, links: links.map(linkView) });
+  });
+}
+
 export async function updateLink(
   authorization: string | null,
   body: {

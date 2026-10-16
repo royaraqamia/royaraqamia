@@ -100,7 +100,7 @@ export function useHabitSync(
     const pull = async () => {
       if (!isOnline()) return;
       try {
-        const data = await ApiClient.fetchInitialData();
+        const data = await ApiClient.fetchSyncData();
         await store.mergeServerData(data.habits, data.logs);
         refreshRef.current();
       } catch (error) {

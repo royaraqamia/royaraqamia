@@ -139,6 +139,27 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return (data as ShortLinkDbRow[]).map((row) => this.toDomain(row));
   }
 
+  /**
+   * The sync snapshot: like `listByUserId`, but deliberately unfiltered by
+   * `deleted_at`, so tombstones travel to other devices and a delete made
+   * elsewhere removes the row locally (ADR-0029). Display reads keep excluding
+   * them via `listByUserId`.
+   */
+  async listByUserIdIncludingDeleted(userId: string): Promise<ShortLink[]> {
+    const supabase = this.adminClient;
+    const { data, error } = await supabase
+      .from('short_links')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to list short links: ${error.message}`);
+    }
+
+    return (data as ShortLinkDbRow[]).map((row) => this.toDomain(row));
+  }
+
   async update(
     code: string,
     updates: Partial<

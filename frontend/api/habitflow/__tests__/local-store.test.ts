@@ -165,6 +165,42 @@ describe('HabitLocalStore', () => {
     repo.close();
   });
 
+  it('removes a local habit and log when the server delivers a tombstone', async () => {
+    const repo = await openGuest();
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
+    const log = await repo.toggleLog(habit.id, '2026-08-02', true);
+    // Simulate a completed flush: no pending intent remains for either row.
+    for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);
+    expect(await repo.getHabits()).toHaveLength(1);
+
+    const tombstone = '9999-01-01T00:00:00.000Z';
+    await repo.mergeServerData(
+      [{ ...habit, updatedAt: tombstone, deletedAt: tombstone }],
+      [{ ...log, updatedAt: tombstone, deletedAt: tombstone }]
+    );
+
+    // The tombstone is not resurrected by a stale server row: both reads hide it.
+    expect(await repo.getHabits()).toHaveLength(0);
+    expect(await repo.getLogs('2026-01-01', '2026-12-31')).toHaveLength(0);
+    repo.close();
+  });
+
+  it('does not resurrect a pending local delete from a stale server row', async () => {
+    const repo = await openGuest();
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
+    // Flush the create, then delete locally so only the delete intent is queued.
+    for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);
+    await repo.deleteHabit(habit.id);
+
+    await repo.mergeServerData(
+      [{ ...habit, name: 'من الخادم', updatedAt: '9999-01-01T00:00:00.000Z', deletedAt: null }],
+      []
+    );
+
+    expect(await repo.getHabits()).toHaveLength(0);
+    repo.close();
+  });
+
   it('claims guest rows into the account store and re-homes its intents', async () => {
     const factory = new IDBFactory();
     const guest = await openGuest(factory);

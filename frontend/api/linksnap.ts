@@ -82,6 +82,18 @@ export async function listLinks(token: string): Promise<ShortenedLink[]> {
   return data.links || [];
 }
 
+/**
+ * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so a
+ * delete made on another device lands here (ADR-0029). Display reads keep using
+ * `listLinks`, which excludes tombstones.
+ */
+export async function listLinksIncludingDeleted(token: string): Promise<ShortenedLink[]> {
+  const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links/sync', {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  return data.links || [];
+}
+
 export async function shorten(
   originalUrl: string,
   customCode: string | undefined,

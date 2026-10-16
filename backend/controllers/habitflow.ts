@@ -16,6 +16,22 @@ export async function getHabits(): Promise<HttpResult> {
   );
 }
 
+/**
+ * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so a
+ * delete made on another device lands here (ADR-0029). Display reads keep using
+ * `getHabits`/`getLogs`, which exclude tombstones.
+ */
+export async function getHabitSync(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { service, mode } = createHabitService(userId, supabase);
+      const { habits, logs } = await service.getSyncData();
+      return jsonResult(200, { habits, logs, mode });
+    },
+    { mapError: errorResult }
+  );
+}
+
 export async function createHabit(body: Partial<Habit>): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
