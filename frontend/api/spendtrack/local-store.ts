@@ -13,6 +13,7 @@ import {
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
+import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import {
   OUTBOX_STORE,
@@ -95,14 +96,14 @@ export function budgetKey(month: string, categoryId: string | null): string {
  * transaction; the Sync Engine replays those intents to the server.
  */
 export class SpendtrackLocalStore {
-  private readonly db: IDBDatabase;
+  private readonly connection: LocalStoreConnection;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
     db: IDBDatabase,
     readonly identity: LocalIdentity
   ) {
-    this.db = db;
+    this.connection = new LocalStoreConnection(db);
   }
 
   subscribeWrites(listener: () => void): () => void {
@@ -128,42 +129,59 @@ export class SpendtrackLocalStore {
     return new SpendtrackLocalStore(db, identity);
   }
 
+  /**
+   * Closes the connection: work already in flight settles first, and every
+   * operation after this one resolves without touching IndexedDB (#204).
+   */
   close(): void {
-    this.db.close();
+    this.connection.close();
   }
 
   private async readAll<T>(store: string): Promise<T[]> {
-    const transaction = this.db.transaction(store, 'readonly');
-    return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
+    return this.connection.run(async (db) => {
+      const transaction = db.transaction(store, 'readonly');
+      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
+    }, []);
   }
 
   private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    const transaction = this.db.transaction(store, 'readonly');
-    const value = await promisifyRequest(
-      transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-    );
-    return value ?? null;
+    return this.connection.run(async (db) => {
+      const transaction = db.transaction(store, 'readonly');
+      const value = await promisifyRequest(
+        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
+      );
+      return value ?? null;
+    }, null);
   }
 
-  /** Commits record writes and, when present, the Outbox intent atomically. */
+  /**
+   * Commits record writes and, when present, the Outbox intent atomically.
+   *
+   * Returns false when the store is closing and nothing was written (#204), so a
+   * caller that must not run a follow-up it cannot undo can check first.
+   */
   private async commit(
     writes: ReadonlyArray<[store: string, value: unknown]>,
     intent?: OutboxIntent
-  ): Promise<void> {
-    if (writes.length === 0 && !intent) return;
+  ): Promise<boolean> {
+    if (writes.length === 0 && !intent) return true;
 
     const stores = writes.map(([store]) => store);
     if (intent) stores.push(OUTBOX_STORE);
 
-    const transaction = this.db.transaction(stores, 'readwrite');
-    for (const [store, value] of writes) {
-      transaction.objectStore(store).put(value);
-    }
-    if (intent) {
-      transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-    }
-    await transactionDone(transaction);
-    this.notifyWrites();
+    const committed = await this.connection.run(async (db) => {
+      const transaction = db.transaction(stores, 'readwrite');
+      for (const [store, value] of writes) {
+        transaction.objectStore(store).put(value);
+      }
+      if (intent) {
+        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
+      }
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (committed) this.notifyWrites();
+    return committed;
   }
 
   private entry(intent: OutboxIntent): NewOutboxEntry {
@@ -611,7 +629,13 @@ export class SpendtrackLocalStore {
       writes.push([OUTBOX_STORE, intent]);
     }
 
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) {
+      const claimed = await this.commit(writes);
+      // Absorb the guest only once its rows are actually here: a commit that
+      // no-ops because this store is closing (#204) must not wipe data it never
+      // copied.
+      if (!claimed) return;
+    }
     await guest.clear();
   }
 
@@ -622,10 +646,13 @@ export class SpendtrackLocalStore {
   }
 
   async removeOutbox(seq: number): Promise<void> {
-    const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
-    transaction.objectStore(OUTBOX_STORE).delete(seq);
-    await transactionDone(transaction);
-    this.notifyWrites();
+    const removed = await this.connection.run(async (db) => {
+      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
+      transaction.objectStore(OUTBOX_STORE).delete(seq);
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (removed) this.notifyWrites();
   }
 
   async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
@@ -667,12 +694,15 @@ export class SpendtrackLocalStore {
       OUTBOX_STORE,
       META_STORE,
     ];
-    const transaction = this.db.transaction(stores, 'readwrite');
-    for (const store of stores) {
-      transaction.objectStore(store).clear();
-    }
-    await transactionDone(transaction);
-    this.notifyWrites();
+    const cleared = await this.connection.run(async (db) => {
+      const transaction = db.transaction(stores, 'readwrite');
+      for (const store of stores) {
+        transaction.objectStore(store).clear();
+      }
+      await transactionDone(transaction);
+      return true;
+    }, false);
+    if (cleared) this.notifyWrites();
   }
 
   /** True when the store has received no writes yet (safe to seed). */
