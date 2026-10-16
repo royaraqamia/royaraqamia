@@ -13,9 +13,20 @@ interface RetainerNeedsStepProps {
   control: Control<RetainerFormValues>;
   register: UseFormRegister<RetainerFormValues>;
   errors: FieldErrors<RetainerFormValues>;
+  /**
+   * Whether `preferred_start` is floored at today. True for a new request, the
+   * create-time rule; an edit passes `false`, because its stored start may
+   * already have passed and must stay selectable.
+   */
+  requireFutureStart?: boolean;
 }
 
-export function RetainerNeedsStep({ control, register, errors }: RetainerNeedsStepProps) {
+export function RetainerNeedsStep({
+  control,
+  register,
+  errors,
+  requireFutureStart = true,
+}: RetainerNeedsStepProps) {
   return (
     <div className="space-y-5">
       <div className="form-field">
@@ -48,7 +59,7 @@ export function RetainerNeedsStep({ control, register, errors }: RetainerNeedsSt
               value={field.value ?? ''}
               onChange={field.onChange}
               placeholder="اختر التَّاريخ"
-              min={todayIsoDate()}
+              min={requireFutureStart ? todayIsoDate() : undefined}
               aria-invalid={Boolean(errors.preferred_start)}
               aria-describedby={errors.preferred_start ? 'preferred_start-error' : undefined}
             />
