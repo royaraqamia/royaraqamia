@@ -53,6 +53,15 @@ describe('security configuration', () => {
     expect(gitignore).toContain('*.pem');
   });
 
+  it('keeps the Firebase client config in the tree (ADR-0050)', () => {
+    // It carries an Android API key that every APK already ships, and the APK is public, so
+    // ignoring it protected nothing — it only produced builds with no Firebase app, where
+    // the push plugin's `register()` is fatal (the notification bell closed the app).
+    // Re-ignoring it re-arms exactly that.
+    expect(read('.gitignore')).not.toContain('google-services.json');
+    expect(() => read('android/app/google-services.json')).not.toThrow();
+  });
+
   it('example.env contains placeholder values only (no real secrets)', () => {
     const env = read('example.env');
     const secretShapedValues = [

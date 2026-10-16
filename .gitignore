@@ -88,9 +88,8 @@ public/zxing_reader.wasm
 /android/app/release/
 /android/app/src/main/assets/public/
 /android/capacitor-cordova-android-plugins/
-# Firebase config for com.royaraqamia.app. Not a secret, but it is per-project
-# machine-local config carrying an API key, so it stays out of the repository and
-# is regenerated from the Firebase console (docs/mobile/android-shell.md).
-/android/app/google-services.json
+# Firebase config for com.royaraqamia.app is *committed*: it holds the project id and the
+# Android API key every APK ships inside itself anyway, and a build that lacked it shipped a
+# shell whose push plugin crashed the app on tap (ADR-0050). Do not re-ignore it.
 *.jks
 *.keystore

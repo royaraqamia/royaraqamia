@@ -133,20 +133,20 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                       | State                                                                                          |
-| ----------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| capability                                      | where                                                       | state                                                                                          |
-| ------------------------------------            | -----------------------------------------------------       | --------------------------------------------------------------------------------------         |
-| Load the live site                              | `capacitor.config.ts` `server.url`                          | Working                                                                                        |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                      | Working — in-page, so it shows in the shell too                                                |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`           | Working                                                                                        |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                   | Working — needs two Supabase allowlist entries (below)                                         |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity` | Working                                                                                        |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed       | Installed, unused by app code yet                                                              |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed               | Installed, unused by app code yet                                                              |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**              | Scaffolding only, by decision                                                                  |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest                  | Native side ready; server side blocked on credentials — see "Push notifications" below         |
+| Capability                                      | Where                                                               | State                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                      | where                                                               | state                                                                                                                             |
+| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                            |
+| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                           |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                   |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                    |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                           |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                            |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                           |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                 |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                 |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                     |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
 
 ### The native bridge on a remote origin
 
@@ -246,7 +246,7 @@ Until both are listed, Supabase refuses the redirect and the visitor lands on
 Chrome opens a Custom Tab, so the app side of the handoff is real; the Supabase side
 cannot be verified from here.
 
-### 2. Push notifications (FCM) — implemented; credentials are environment state
+### 2. Push notifications (FCM) — implemented; the sending side is environment state
 
 Web Push (VAPID) does not exist in an Android WebView, so OS-level push uses FCM instead
 (ADR-0038). The whole path is in place: `device_push_tokens` (migration
@@ -255,11 +255,15 @@ with the service-account assertion, `PushFanout` delivering to Web Push and FCM 
 and the client half in `frontend/api/push-native.ts` — driven by the same toggle, reached
 through the bridge rather than an npm import.
 
-What remains is configuration, not code:
-
-1. **`google-services.json`** in `android/app/` — git-ignored, downloaded from the Firebase
-   console for `com.royaraqamia.app`. Without it Gradle logs "Push Notifications won't
-   work" and the build still succeeds.
+1. **`google-services.json`** in `android/app/` — **committed** (ADR-0050). It carries the
+   project id and the Android API key, both of which every APK already ships, and its
+   absence is what once shipped a shell whose push plugin killed the app on the
+   notification bell: the plugin's `register()` throws where Capacitor rethrows on its own
+   plugin thread, which is a fatal crash rather than a rejected promise. A build without it
+   now withholds the plugin entirely — the page reports notifications as unsupported — and
+   `assembleRelease`/`bundleRelease` refuse to run. Restrict the file's API key in the
+   Google Cloud console to Android apps with this package name and the release signing
+   SHA-1; that restriction, not secrecy, is what protects it.
 2. **Three environment variables** in Vercel (Production, Preview, Development), from the
    service-account JSON generated under Project settings → Service accounts:
    `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
@@ -269,7 +273,7 @@ What remains is configuration, not code:
 3. **A rebuild** of the APK/AAB so the shell picks up the messaging SDK.
 
 The service-account JSON itself must never be committed or dropped next to the keystore
-backup: it can send to every device in the project.
+backup: it can send to every device in the project. It is not the file in `android/app/`.
 
 ### 3. Publishing to Google Play
 

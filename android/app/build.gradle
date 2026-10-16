@@ -32,6 +32,19 @@ if (hasKeystore) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
+// The Firebase client config is *committed* (ADR-0050): it holds the project id and the
+// Android API key, which every APK ships anyway, and its absence is what let a released
+// shell reach users with no Firebase app — where `@capacitor/push-notifications` throws
+// and Capacitor rethrows the throw on its own plugin thread, killing the app. Two things
+// follow from it being here:
+//
+// - `FIREBASE_CONFIGURED` tells `MainActivity` whether this build can serve the push
+//   plugin, so a tree without the file withholds the plugin instead of crashing on it.
+// - A *release* build refuses to run without it, because that is the build that reaches
+//   a device through the update flow.
+def servicesJSONFile = file('google-services.json')
+def hasGoogleServices = servicesJSONFile.exists() && servicesJSONFile.length() > 0
+
 android {
     namespace = "com.royaraqamia.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -44,6 +57,9 @@ android {
         // The update check compares versionCode, never this.
         versionName shellVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Read by `MainActivity` before the bridge is built: a build with no Firebase
+        // config must not offer the page a push plugin it cannot serve (ADR-0050).
+        buildConfigField "boolean", "FIREBASE_CONFIGURED", hasGoogleServices.toString()
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -97,11 +113,20 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
+if (hasGoogleServices) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    logger.info("google-services.json is missing, google-services plugin not applied. Push Notifications won't work")
+    // A release with no Firebase config is a shell whose push plugin throws where
+    // Capacitor turns a plugin exception into a crash (ADR-0050). `assembleDebug` stays
+    // usable — `MainActivity` withholds the plugin there, so the app degrades instead of
+    // dying — but the build that ships does not.
+    tasks.matching { it.name == 'assembleRelease' || it.name == 'bundleRelease' }.configureEach { task ->
+        task.doFirst {
+            throw new GradleException(
+                'google-services.json is missing: a released shell must be able to serve ' +
+                'the push plugin it advertises. See docs/mobile/android-shell.md (ADR-0050).'
+            )
+        }
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
