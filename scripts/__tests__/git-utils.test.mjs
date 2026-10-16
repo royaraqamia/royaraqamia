@@ -5,6 +5,7 @@ import {
   formatVersion,
   sortSemverTags,
   latestSemverTag,
+  highestSemverTag,
 } from '../git-utils.mjs';
 
 describe('git-utils', () => {
@@ -53,6 +54,25 @@ describe('git-utils', () => {
       const tag = latestSemverTag();
       if (tag === null) return;
       expect(parseTag(tag)).not.toBeNull();
+    });
+  });
+
+  describe('highestSemverTag', () => {
+    it('returns a semver tag or null when none/git absent', () => {
+      const tag = highestSemverTag();
+      if (tag === null) return;
+      expect(parseTag(tag)).not.toBeNull();
+    });
+
+    it('is never lower than the highest tag reachable from HEAD', () => {
+      // The reachable tags are a subset of the tags that exist, so the version
+      // base can only move forward: a tag whose commit never reached `main`
+      // still owns its number (ADR-0051).
+      const claimed = highestSemverTag();
+      if (claimed === null) return;
+      const reachable = latestSemverTag();
+      const highest = sortSemverTags([claimed, reachable].filter(Boolean).join('\n'))[0];
+      expect(highest.tag).toBe(claimed);
     });
   });
 });

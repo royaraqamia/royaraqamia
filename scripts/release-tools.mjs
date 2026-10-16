@@ -1,7 +1,14 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { git, latestSemverTag, parseTag, formatTag, formatVersion } from './git-utils.mjs';
+import {
+  git,
+  highestSemverTag,
+  latestSemverTag,
+  parseTag,
+  formatTag,
+  formatVersion,
+} from './git-utils.mjs';
 
 // Re-exported for the existing release-tools test suite.
 export { parseTag, formatTag, formatVersion };
@@ -13,13 +20,25 @@ export function readLatestTag() {
   return latestSemverTag();
 }
 
+/**
+ * A commit subject without the invisible characters a merge can leave in front
+ * of it. `\uFEFFfeat(nav): …` (#277) is not `feat` to a `^feat` test, so the
+ * window graded as a patch, the train went back to a version that was already
+ * tagged, and the run died on `fatal: tag 'web-1.101.13' already exists`
+ * (ADR-0051).
+ */
+export function normalizeSubject(message) {
+  return String(message ?? '').replace(/^[\uFEFF\u200B\u200C\u200D\u2060]+/, '');
+}
+
 export function isBreakingCommit(message) {
-  const firstLine = (message || '').split('\n', 1)[0] ?? '';
-  return /^[a-z]+!(\(.*\))?:/i.test(firstLine) || /BREAKING CHANGE\s*:/i.test(message || '');
+  const text = normalizeSubject(message);
+  const firstLine = text.split('\n', 1)[0] ?? '';
+  return /^[a-z]+!(\(.*\))?:/i.test(firstLine) || /BREAKING CHANGE\s*:/i.test(text);
 }
 
 export function isFeatCommit(message) {
-  const firstLine = (message || '').split('\n', 1)[0] ?? '';
+  const firstLine = normalizeSubject(message).split('\n', 1)[0] ?? '';
   return /^feat(\(.*\))?!/i.test(firstLine) ? false : /^feat(\b|\(|:)/i.test(firstLine);
 }
 
@@ -57,7 +76,28 @@ export function nextVersionFromMessages(currentVersion, messages) {
 }
 
 export function isReleaseCommit(message) {
-  return /^chore\(release\):/i.test(message || '');
+  return /^chore\(release\):/i.test(normalizeSubject(message));
+}
+
+/**
+ * The tag the next version counts from. The window graded is the commits since
+ * the last tag *reachable from HEAD*; the number has to clear every tag that
+ * exists.
+ *
+ * `web-1.101.13` was pushed by a run whose branch push was rejected (no
+ * `--atomic`), so the tag named a commit `main` never received. The reachable
+ * tags still said 1.101.12, so every later run computed 1.101.13 again and died
+ * at `git tag` — and the train stopped releasing anything at all. A tag that
+ * exists owns its number, reachable or not (ADR-0051).
+ */
+export function versionBase(reachable, claimed) {
+  if (!claimed) return reachable;
+  if (!reachable) return claimed;
+  const claimedVersion = parseTag(claimed);
+  const reachableVersion = parseTag(reachable);
+  if (!claimedVersion) return reachable;
+  if (!reachableVersion) return claimed;
+  return isHigherBump(claimedVersion, reachableVersion) ? claimed : reachable;
 }
 
 export function shouldSkipRelease({ headMessage, headTag }) {
@@ -65,7 +105,7 @@ export function shouldSkipRelease({ headMessage, headTag }) {
 }
 
 export function stripType(message) {
-  const firstLine = (message || '').split('\n', 1)[0] ?? '';
+  const firstLine = normalizeSubject(message).split('\n', 1)[0] ?? '';
   const noPrefix = firstLine.replace(/^[a-z]+(\(.*\))?!/i, '').replace(/^[a-z]+(\([^)]*\))?:/i, '');
   const cleaned = noPrefix.trim().replace(/\s+$/u, '');
   return cleaned || firstLine.trim();
@@ -88,7 +128,7 @@ const ALL_CHANGED = ['Changed', 'Added', 'Fixed'];
 export function groupCommits(commitMessages) {
   const groups = { Added: [], Fixed: [], Changed: [] };
   for (const message of commitMessages) {
-    const firstLine = String(message).split('\n', 1)[0] ?? '';
+    const firstLine = normalizeSubject(message).split('\n', 1)[0] ?? '';
     const entry = stripType(message);
     const match = CHANGELOG_SECTIONS.find(([type]) => firstLine.startsWith(type));
     const section = match ? match[1] : 'Changed';
@@ -419,7 +459,12 @@ function buildReleaseSection(version, from) {
   const changelogText = readChangelog();
   const written = parseChangelogSections(unreleasedBody(changelogText));
   const hasWritten = countChangelogEntries(written) > 0;
-  const commits = from ? readCommits(from) : [];
+  // A release commit is bookkeeping, not a change. It reaches this window only
+  // when the window opens before a version that was stranded (ADR-0051), and it
+  // has no business being restated as a changelog entry.
+  const commits = from
+    ? readCommits(from).filter((commit) => !isReleaseCommit(commit.subject))
+    : [];
   const documented = hasWritten ? changelogOwningCommits(changelogText) : new Set();
   const generated = groupCommits(
     dropDocumentingCommits(commits, documented).map((commit) => commit.subject)
@@ -456,7 +501,7 @@ function main() {
     const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
     const commits = from ? readCommits(from) : [];
     const next = nextVersionFromMessages(
-      lastTag,
+      versionBase(lastTag, highestSemverTag()),
       commits.map((commit) => commit.subject)
     );
     // `--next` is the version (`1.97.0`), because that is what bumps a file and

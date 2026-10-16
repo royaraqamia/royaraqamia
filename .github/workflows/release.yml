@@ -105,23 +105,38 @@ jobs:
 
       - name: Commit & Tag & Push
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
         run: |
           git config user.name "royaraqamia bot"
           git config user.email "bot@royaraqamia.com"
           git add package.json package-lock.json CHANGELOG.md backend/config/generated/app-version.ts
-          git commit -m "chore(release): ${{ steps.next.outputs.tag }} [skip ci]"
-          git tag -a "${{ steps.next.outputs.tag }}" -m "${{ steps.next.outputs.tag }}"
-          # Two workflows write to `main`. If this push is rejected the version is
-          # simply lost: the tag exists only in this runner, and no later run
-          # recomputes it — which is how the web version owed to #240's merge went
-          # missing. Rebase and try again; the other writer only ever touches the
-          # manifest, so a rebase here cannot conflict with it.
+          git commit -m "chore(release): $TAG [skip ci]"
+          # Two workflows write to `main`, so this push can lose a race. The tag is
+          # created inside the loop, on whatever commit the rebase below leaves on
+          # the branch: a tag made once, before the loop, outlives the rebase and
+          # ends up naming a commit no branch contains.
+          #
+          # `--atomic` is what keeps a tag from outliving its commit at all.
+          # Without it a rejected branch push still lands the tag, and that is how
+          # `web-1.101.13` came to name a commit `main` never received — and then
+          # every later run died on `fatal: tag 'web-1.101.13' already exists`,
+          # because the number was spent but invisible to the tag list this
+          # branch can see (ADR-0051).
           for attempt in 1 2 3 4 5; do
-            if git push origin main --tags; then
+            git tag -f -a "$TAG" -m "$TAG"
+            if git push --atomic origin "HEAD:refs/heads/main" "refs/tags/$TAG"; then
+              exit 0
+            fi
+            git fetch origin main --quiet
+            # The tag is on origin, so another run cut this version first while
+            # this one held it. The number is spent; there is nothing to push and
+            # nothing to fail — what is still owed goes out with the next release.
+            if [ -n "$(git ls-remote --tags origin "refs/tags/$TAG")" ]; then
+              echo "::warning title=Release already cut::$TAG is already on origin, cut by another run; nothing was pushed. The next change on main releases whatever is still owed."
               exit 0
             fi
             echo "push rejected (attempt $attempt); rebasing onto origin/main"
-            git fetch origin main --quiet
             if ! git rebase origin/main; then
               echo "::error title=Could not rebase the release commit::origin/main moved under a version bump that conflicts; the version was not cut. Re-run this workflow."
               exit 1
