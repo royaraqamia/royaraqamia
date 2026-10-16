@@ -5,6 +5,8 @@ import {
   formatVersion,
   nextVersion,
   nextVersionFromMessages,
+  versionBase,
+  normalizeSubject,
   isBreakingCommit,
   isFeatCommit,
   isReleaseCommit,
@@ -155,6 +157,75 @@ describe('release-tools', () => {
         minor: 1,
         patch: 0,
       });
+    });
+  });
+
+  describe('versionBase (a number that exists is taken)', () => {
+    it('counts from the higher of the reachable tag and the highest tag that exists', () => {
+      expect(versionBase('web-1.101.12', 'web-1.101.13')).toBe('web-1.101.13');
+      expect(versionBase('web-1.101.13', 'web-1.101.12')).toBe('web-1.101.13');
+      expect(versionBase('web-1.101.12', 'web-1.4.0')).toBe('web-1.101.12');
+    });
+
+    it('cuts the next release above a tag whose commit never reached main', () => {
+      // web-1.101.13 was pushed without its commit (the stranded tag of
+      // ADR-0051): the last tag on HEAD is 1.101.12 and the window holds a feat,
+      // so the next release is 1.102.0 — not 1.101.13 again, which is the
+      // collision that failed every run.
+      const base = versionBase('web-1.101.12', 'web-1.101.13');
+      expect(
+        nextVersionFromMessages(base, ['feat(nav): give secondary pages a back header'])
+      ).toEqual({ major: 1, minor: 102, patch: 0 });
+      expect(nextVersionFromMessages(base, ['fix(mcp): sweep authorization codes'])).toEqual({
+        major: 1,
+        minor: 101,
+        patch: 14,
+      });
+    });
+
+    it('falls back to whichever side is present', () => {
+      expect(versionBase(null, 'web-1.101.13')).toBe('web-1.101.13');
+      expect(versionBase('web-1.101.12', null)).toBe('web-1.101.12');
+      expect(versionBase(null, null)).toBeNull();
+    });
+
+    it('ignores a claimed tag that is not this release line', () => {
+      // The shell's tags are a separate clock, and a non-semver tag is not a
+      // version at all (ADR-0046).
+      expect(versionBase('web-1.101.12', 'android-1.0.4')).toBe('web-1.101.12');
+      expect(versionBase('web-1.101.12', 'backup-1')).toBe('web-1.101.12');
+    });
+  });
+
+  describe('normalizeSubject', () => {
+    it('drops the invisible prefix a squash merge can leave behind', () => {
+      expect(normalizeSubject('\uFEFFfeat(nav): a back header')).toBe('feat(nav): a back header');
+      expect(normalizeSubject('\u200Bfix: a typo')).toBe('fix: a typo');
+      expect(normalizeSubject('feat: already clean')).toBe('feat: already clean');
+      expect(normalizeSubject(undefined)).toBe('');
+    });
+
+    it('grades and groups a BOM-prefixed feat as the feature it is', () => {
+      const subject =
+        '\uFEFFfeat(nav): give secondary pages a back header, not the app chrome (#277)';
+      expect(isFeatCommit(subject)).toBe(true);
+      expect(nextVersionFromMessages('1.101.12', [subject])).toEqual({
+        major: 1,
+        minor: 102,
+        patch: 0,
+      });
+      expect(stripType(subject)).toBe(
+        'give secondary pages a back header, not the app chrome (#277)'
+      );
+      expect(groupCommits([subject]).Added).toEqual([
+        'give secondary pages a back header, not the app chrome (#277)',
+      ]);
+    });
+
+    it('still recognizes a BOM-prefixed release commit, so the guard holds', () => {
+      const headMessage = '\uFEFFchore(release): web-1.101.13 [skip ci]';
+      expect(isReleaseCommit(headMessage)).toBe(true);
+      expect(shouldSkipRelease({ headMessage, headTag: 'web-1.101.13' })).toBe(true);
     });
   });
 

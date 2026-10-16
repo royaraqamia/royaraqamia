@@ -75,3 +75,16 @@ export function latestSemverTag() {
   const tags = sortSemverTags(git(['tag', '--merged', 'HEAD'], null));
   return tags.length > 0 ? tags[0].tag : null;
 }
+
+/**
+ * The highest semver tag that exists in the repository, whether or not HEAD
+ * contains it. `latestSemverTag` answers "which release is this commit on top
+ * of"; this answers "which numbers are already taken". A tag owns its number
+ * even when the commit it names never reached `main` — that is what a push
+ * without `--atomic` can leave behind, and re-cutting the number then fails
+ * forever on `git tag` (ADR-0051).
+ */
+export function highestSemverTag() {
+  const tags = sortSemverTags(git(['tag', '--list'], null));
+  return tags.length > 0 ? tags[0].tag : null;
+}
