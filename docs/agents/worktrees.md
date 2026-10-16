@@ -56,9 +56,12 @@ the junction out.
 Commit in the worktree, confirm the commit exists (`git log --oneline -1` — a lost commit looks like a
 successful one), then push to `main` (the release train and Vercel deploy follow) or open a PR.
 
-Landing from a worktree does **not** update the canonical checkout: it sits behind `origin/main` until
-someone pulls there, and if it holds unpushed work of its own it is diverged rather than merely behind
-(measured: `ahead 1, behind 1` right after a worktree push). Pull before starting work in it.
+Landing from a worktree does **not** update the canonical checkout by itself: it sits behind
+`origin/main` until someone pulls there, and if it holds unpushed work of its own it is diverged
+rather than merely behind (measured: `ahead 1, behind 1` right after a worktree push). The landing
+loop closes that gap from both ends — it fetches before a worktree is cut, and fast-forwards the
+canonical checkout once the branch is gone ([landing.md](landing.md)) — so a checkout still behind
+`origin/main` means the loop was not run, or its closing pull refused.
 
 ## Delegated agents
 

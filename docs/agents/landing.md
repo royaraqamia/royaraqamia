@@ -1,13 +1,26 @@
 # Landing the work
 
-Every task ends the same way, without being asked: the change is committed, pushed, opened as a pull
-request, merged once CI is green, and then the branch and the worktree it came from are deleted.
-`/land` runs the sequence in one go.
+Every task runs the same loop, without being asked: start from the current remote, commit, push, open
+a pull request, merge once CI is green, delete the branch and the worktree it came from, and leave
+local `main` level with `origin/main`. `/land` runs it in one go.
 
 Work from your own worktree, never the canonical checkout — the guard refuses `git commit` and
 `git push` there, and for good reason ([worktrees.md](worktrees.md)).
 
-## 1. Gate — what the change can actually break
+## 1. Start in sync
+
+```powershell
+git fetch origin --prune
+git pull --ff-only                     # the canonical checkout, before the worktree exists
+git worktree add -b <branch> <dir> origin/main
+```
+
+Cut the branch from `origin/main`, never from local `main` or from whatever the canonical checkout
+happens to hold: a worktree inherits that HEAD, stale commits and all ([worktrees.md](worktrees.md)),
+and a branch cut behind `origin/main` is a conflict waiting to be pushed. `--prune` drops the remote
+branches deleted since the last fetch, which is half of what makes a landed branch stay gone.
+
+## 2. Gate — what the change can actually break
 
 Run the checks the diff is capable of breaking, not the whole suite. Paying the full cost on every
 task is what makes a task slow to finish, and a gate that slow is a gate that gets skipped. CI runs
@@ -31,7 +44,7 @@ npx vitest run --changed     # or everything the diff reaches, resolved from git
 `/verify` is the deliberate full sweep (`typecheck`, `lint:fix`, full `npm test`) for when you want
 it, and it is what CI approximates.
 
-## 2. Commit
+## 3. Commit
 
 Read `git status` before staging. Stage this task's files by name; a generated artifact left behind
 by a build (`backend/config/generated/app-version.ts`, `public/sw-version.js`) or another agent's
@@ -46,7 +59,7 @@ fix(store): keep the offline queue across a worker swap
 pending write. The queue now lives in the Local Store, which the swap keeps.
 ```
 
-## 3. Push
+## 4. Push
 
 Name the branch `<type>/<issue>-<slug>` when it closes an issue (`fix/204-store-close-race`), and
 `<type>/<slug>` otherwise (`docs/landing`).
@@ -58,7 +71,7 @@ git push -u origin HEAD
 Confirm the commit exists before you push — a commit lost to a race looks like a successful one
 (`git log --oneline -1`; see [worktrees.md](worktrees.md)).
 
-## 4. Open the pull request
+## 5. Open the pull request
 
 ```powershell
 gh pr create --base main --fill
@@ -68,7 +81,7 @@ gh pr create --base main --fill
 and link the issue it closes with `Closes #<n>` so the merge closes it. Body conventions: the `pr`
 skill.
 
-## 5. Merge, once CI is green
+## 6. Merge, once CI is green
 
 ```powershell
 gh pr checks <n> --watch     # idle wait; exits non-zero the moment a check fails
@@ -81,24 +94,35 @@ and start again from step 1. Never merge over a red check.
 
 `--delete-branch` drops the remote branch, and `main` is also configured to delete it on merge.
 
-## 6. Clean up
+## 7. Clean up and re-sync
 
 Immediately after the merge. The worktree has to go from outside itself, so `session_move` the
 session to the canonical checkout first — or run this in a later session there:
 
 ```powershell
-git fetch --prune
 git worktree remove <worktree dir>     # or the worktree_remove tool
 git branch -D <branch>                 # the local branch, from the canonical checkout
 git worktree prune
+git fetch origin --prune
+git pull --ff-only                     # local main now equals origin/main
+git status -sb                         # no ahead/behind reported
 ```
+
+The last three lines are the point of the loop, not an epilogue: a landed task leaves the canonical
+checkout level with `origin/main`, so the next one starts from the current remote instead of from
+whatever the last one left behind.
 
 A worktree refuses removal while it is dirty. Check `git status` in it first, and force it
 (`git worktree remove --force` / `worktree_remove({ force: true })`) only after confirming nothing
 unlanded is in there.
 
-If the pull request was closed unmerged, the only cleanup left is the local branch.
+If the pull request was closed unmerged, the only cleanup left is the local branch — the canonical
+checkout still wants the `--ff-only` pull.
+
+If that pull refuses because local `main` has commits of its own, stop and say so: that is unpushed
+work, and it is the one thing here that must not be resolved by the loop. Hand it to whoever owns
+the checkout.
 
 ## When there is nothing to land
 
-A task that changed no files ends at step 1. Say so rather than manufacturing a commit.
+A task that changed no files ends at step 2. Say so rather than manufacturing a commit.
