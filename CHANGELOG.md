@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.102.0] - 2026-10-16
+
+### Changed
+- publish shell 1.0.4 (20004)
+- record that the merge applies a migration and the CLI verifies it (#274)
+
+### Added
+- give secondary pages a back header, not the app chrome (#277)
+
+### Fixed
+- land the release tag with its commit (#279)
+- withhold the push plugin a build cannot serve (#278)
+- give the update prompt the Hero CTA's colours (#276)
+- claim the refresh token atomically so rotation is single-use (#275)
+- pass only provided fields through spendtrack_update_expense (#273)
+- resolve certificates_verify on the public client (#272)
+- sweep exchanged authorization codes and shred their bridge session (#271)
+- keep one HabitFlow log per habit and date on a merge (#269)
+- normalize trailing-dot hostnames so the Blocklist and Platform allowlist cannot be bypassed (#229) (#270)
+
 ## [1.101.13] - 2026-10-16
 
 ### Fixed
