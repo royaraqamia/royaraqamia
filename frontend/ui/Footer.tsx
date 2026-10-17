@@ -83,16 +83,7 @@ const socialLinks = [
  */
 export function Footer() {
   return (
-    <footer
-      className="relative w-full border-t border-border/50 bg-card/60 transition-colors duration-300 overflow-hidden"
-      dir="rtl"
-    >
-      {/* Accent Divider */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
-      />
-
+    <footer className="w-full transition-colors duration-300" dir="rtl">
       <div className="mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center space-y-6 text-center">
           {/* Social Links Bar */}

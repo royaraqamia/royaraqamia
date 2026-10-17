@@ -29,7 +29,7 @@ export default function AccountFaqPage() {
 
       <header className="mb-10 text-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>الأسئلة</SectionTitleHighlight> الشَّائعة
+          <SectionTitleHighlight>الأسئلة الشَّائعة</SectionTitleHighlight>
         </SectionTitle>
       </header>
 
