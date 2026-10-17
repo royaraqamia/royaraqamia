@@ -1,19 +1,23 @@
 import { NextRequest } from 'next/server';
 import { toNextResponse } from '@/backend/transport/http-result';
+import { parseBody } from '@/backend/transport/request-body';
 import { createHabit, deleteHabit, getHabits, updateHabit } from '@/backend/controllers/habitflow';
+import { HabitUpdateSchema, HabitWriteSchema } from '@/shared/contracts/habitflow';
 
 export async function GET() {
   return toNextResponse(await getHabits());
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  return toNextResponse(await createHabit(body));
+  const parsed = parseBody(HabitWriteSchema, await req.json().catch(() => null));
+  if (!parsed.ok) return toNextResponse(parsed.result);
+  return toNextResponse(await createHabit(parsed.data));
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  return toNextResponse(await updateHabit(body));
+  const parsed = parseBody(HabitUpdateSchema, await req.json().catch(() => null));
+  if (!parsed.ok) return toNextResponse(parsed.result);
+  return toNextResponse(await updateHabit(parsed.data));
 }
 
 export async function DELETE(req: NextRequest) {
