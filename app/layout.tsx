@@ -166,8 +166,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <PWAProvider>
                       <RouteChangeFocus />
                       {/* App chrome is route-aware: primary routes keep the top
-                          nav + bottom tab bar, secondary pages swap both for one
-                          back header. */}
+                          nav + bottom tab bar, secondary pages swap both for a
+                          floating back control. */}
                       <NavHistoryTracker />
                       <SecondaryHeader />
                       {children}

@@ -1,7 +1,7 @@
 export default function TermsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <main id="main-content" className="flex-1 pt-24">
+      <main id="main-content" className="flex-1 pt-6">
         {children}
       </main>
     </div>

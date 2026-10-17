@@ -3,8 +3,8 @@
  *
  * Three routes are *primary* — exactly the three bottom-tab destinations. They
  * are the only ones that keep the top nav and the bottom tab bar. Every other
- * route is a *secondary* page: it gets the back header instead, the way a
- * native app drops its tab bar the moment you step into a detail screen.
+ * route is a *secondary* page: it gets the floating back control instead, the way
+ * a native app drops its tab bar the moment you step into a detail screen.
  *
  * `frontend/ui/__tests__/route-kind.test.ts` re-derives the layout-only list
  * below from `app/` and fails when the two drift.

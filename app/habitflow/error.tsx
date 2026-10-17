@@ -19,7 +19,7 @@ export default function Error({
 
   return (
     <div className="min-h-dvh bg-background">
-      <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-24">
+      <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-6">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
           <AlertTriangle className="w-8 h-8 text-destructive" />
         </div>
