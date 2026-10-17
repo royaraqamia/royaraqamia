@@ -22,6 +22,66 @@ const SHELL_UA =
 
 const backControl = (page: Page) => page.locator(BACK_HEADER).getByRole('button', { name: 'رجوع' });
 
+/**
+ * What the floating control is sitting on: painted boxes and real text line rects
+ * that intersect it. Block boxes alone would flag a centred heading whose text
+ * never reaches the corner, so text is measured per line through a `Range`.
+ */
+async function coveredByControl(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const header = document.querySelector('[data-secondary-header]');
+    if (!header) return ['no back control'];
+
+    const control = header.getBoundingClientRect();
+    const overlaps = (r: DOMRect) =>
+      r.left < control.right &&
+      r.right > control.left &&
+      r.top < control.bottom &&
+      r.bottom > control.top;
+    const clipped = (el: Element) =>
+      el === document.body ||
+      el === document.documentElement ||
+      el.closest('.sr-only') !== null ||
+      el.closest('[aria-hidden="true"]') !== null;
+
+    const hits: string[] = [];
+
+    for (const el of Array.from(document.querySelectorAll('*'))) {
+      if (header.contains(el) || clipped(el)) continue;
+      const style = getComputedStyle(el);
+      if (style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0')
+        continue;
+
+      const bordered = Number.parseFloat(style.borderTopWidth) > 0;
+      const media = el.tagName === 'IMG' || el.tagName === 'SVG';
+      const filled =
+        style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
+      if (!bordered && !media && !filled) continue;
+
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || !overlaps(r)) continue;
+      // A full-width fill with no border and no media is a page background.
+      if (!bordered && !media && r.width >= window.innerWidth * 0.95) continue;
+
+      hits.push(`<${el.tagName.toLowerCase()}> ${(el.textContent ?? '').trim().slice(0, 40)}`);
+    }
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      const parent = node.parentElement;
+      if (!node.data.trim() || !parent || header.contains(parent) || clipped(parent)) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      if (Array.from(range.getClientRects()).some(overlaps)) {
+        hits.push(`text: ${node.data.trim().slice(0, 40)}`);
+      }
+    }
+
+    return hits;
+  });
+}
+
 async function expectAppChrome(page: Page) {
   await expect(page.locator(TOP_NAV)).toBeVisible();
   await expect(page.locator(BOTTOM_BAR)).toBeVisible();
@@ -74,16 +134,19 @@ test.describe('primary pages', () => {
 test.describe('a secondary child of a primary shell', () => {
   // `/account/faq` sits under `app/account/layout.tsx`, which is primary for
   // `/account`. The band that layout reserves belongs to the fixed top nav, and
-  // this page has no nav — so the band has to go with it, or the page keeps an
-  // empty strip where a bar would have been.
-  test('drops the reserved band along with the nav', async ({ page }) => {
+  // this page has no nav — so the nav's spacer has to go with it, or the page
+  // keeps an empty strip where a bar would have been. What stays is the back
+  // control's own band, which every secondary page keeps (`app/global.css`).
+  test('drops the nav band, keeping only the back control’s', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/account/faq');
 
     await expectSecondaryChrome(page);
+    await expect(page.locator('[data-navbar-spacer]')).toHaveCount(0);
 
     const main = await page.locator('#main-content').boundingBox();
-    expect(main?.y).toBeLessThan(32);
+    const control = await backControl(page).boundingBox();
+    expect(main?.y).toBeGreaterThanOrEqual((control?.y ?? 0) + (control?.height ?? 0));
   });
 });
 
@@ -139,6 +202,43 @@ test.describe('secondary pages', () => {
 
     // In-app history wins over the URL walk, which would answer `/`.
     await expect(page).toHaveURL(/\/account$/);
+  });
+});
+
+/**
+ * The control floats in the corner instead of sitting in a bar, so on its own it
+ * lands on whatever a page starts with — a publisher chip, a profile card, a form
+ * heading. `app/global.css` reserves the band it occupies; these are the routes
+ * an audit caught it covering before that band existed.
+ */
+test.describe('the floating control never covers page content', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const path of [
+    '/training/apply',
+    '/consultation/book',
+    '/hire',
+    '/request-project',
+    '/rates',
+    '/account/faq',
+  ]) {
+    test(`${path} starts below it`, async ({ page }) => {
+      await page.goto(path);
+
+      await expectSecondaryChrome(page);
+      expect(await coveredByControl(page)).toEqual([]);
+    });
+  }
+
+  test('a post’s publisher chip stays clear of it', async ({ page }) => {
+    await page.goto('/community');
+
+    const post = page.locator('a[href^="/community/"]').first();
+    await expect(post).toBeVisible();
+    await page.goto((await post.getAttribute('href'))!);
+
+    await expectSecondaryChrome(page);
+    expect(await coveredByControl(page)).toEqual([]);
   });
 });
 

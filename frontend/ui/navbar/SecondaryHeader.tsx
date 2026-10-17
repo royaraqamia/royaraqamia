@@ -14,8 +14,10 @@ import { isPrimaryRoute } from './route-kind';
  * are primary for their index route, so only a route-aware control can tell a
  * section's front page from a page inside it.
  *
- * There is no bar and no title: the page already names itself in `metadata`, and
- * the control floats over the content instead of reserving a row for it.
+ * There is no bar and no title: the page already names itself in `metadata`. The
+ * control floats, so it reserves no row of its own — but the band it covers is
+ * kept clear of page content by one rule on `#main-content` in `app/global.css`,
+ * rather than by every shell that mounts it.
  */
 export function SecondaryHeader() {
   const pathname = usePathname();
