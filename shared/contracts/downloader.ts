@@ -257,7 +257,13 @@ export type InspectDownloadLinkInput = z.infer<typeof InspectDownloadLinkSchema>
 export type DownloadRequest = Pick<CreateDownloadJobInput, 'url' | 'format'>;
 
 const DownloadCallbackFileSchema = z.object({
-  url: z.string().url(),
+  /**
+   * The signed file link. The callback payload arrives from an external host, so
+   * its link is untrusted: only http(s) is accepted — `z.string().url()` also
+   * waved through `javascript:`, `data:`, `file:` and `ftp:`, and this value is
+   * handed straight to a DOM anchor.
+   */
+  url: z.string().refine(isHttpUrl, 'رابط الملف غير مدعوم؛ يجب أن يبدأ بـ http أو https.'),
   filename: z.string().trim().min(1).max(255),
   sizeBytes: z.number().int().nonnegative(),
   expiresAt: z.string().min(1),
