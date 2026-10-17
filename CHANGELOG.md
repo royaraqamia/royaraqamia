@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.108.2] - 2026-10-17
+
+### Fixed
+- bound the update gesture and tie the offer to its worker (#301)
+
 ## [1.108.1] - 2026-10-17
 
 ### Fixed
