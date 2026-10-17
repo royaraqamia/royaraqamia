@@ -135,18 +135,39 @@ export class SupabaseHabitRepository implements HabitRepository {
     // is what lets the rest of the graph reference a habit the server has never
     // seen: an offline `habit_logs.habit_id` and every habit update/delete use
     // the same UUID the device minted, so replay needs no id remapping (#164).
+    //
+    // The upsert is conditional on last-write-wins (ADR-0033): `upsert_habit`
+    // updates the stored row only when the replay's `updated_at` is not older,
+    // so a create whose response was lost cannot clobber a newer edit. A
+    // conflict that loses returns no row; the stored winner is read back so the
+    // stale replay is still a success.
     if (habit.clientId && this.userId) {
-      const { data, error } = await this.client
-        .from('habits')
-        .upsert({ ...row, id: habit.clientId }, { onConflict: 'user_id,client_id' })
-        .select()
-        .single();
+      const userId = this.userId;
+      const clientId = habit.clientId;
+
+      const { data, error } = await this.client.rpc('upsert_habit', {
+        p_id: clientId,
+        p_name: habit.name,
+        p_frequency: habit.frequency,
+        p_archived: false,
+        p_user_id: userId,
+        p_target: habit.target ?? null,
+        p_target_period: habit.targetPeriod ?? null,
+        p_reminder_time: habit.reminderTime ?? null,
+        p_client_id: clientId,
+        p_updated_at: habit.updatedAt ?? nowIso(),
+      });
 
       if (error) {
         throw error;
       }
 
-      return toHabit(data);
+      const inserted = data?.[0];
+      if (inserted) {
+        return toHabit(inserted as HabitRow);
+      }
+
+      return this.getHabitByClientId(clientId);
     }
 
     const { data, error } = await this.client.from('habits').insert(row).select().single();
@@ -156,6 +177,29 @@ export class SupabaseHabitRepository implements HabitRepository {
     }
 
     return toHabit(data);
+  }
+
+  /**
+   * The stored row for a client id, returned when a create replay loses the
+   * last-write-wins comparison — the write is a no-op success that reports the
+   * winner rather than surfacing an error.
+   */
+  private async getHabitByClientId(clientId: string): Promise<Habit> {
+    let query = this.client.from('habits').select('*').eq('client_id', clientId);
+
+    if (this.userId) {
+      query = query.eq('user_id', this.userId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    if (!data) {
+      throw new AppError('العادة غير موجودة', 404);
+    }
+    return toHabit(data as HabitRow);
   }
 
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {

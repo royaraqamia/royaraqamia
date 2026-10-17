@@ -73,9 +73,14 @@ class Builder {
   }
 }
 
-function makeClient(results: Record<string, Result | Result[]> = {}) {
+function makeClient(
+  results: Record<string, Result | Result[]> = {},
+  rpcResults: Result | Result[] = { data: null, error: null }
+) {
   const calls: string[] = [];
   const cursors: Record<string, number> = {};
+  const rpcCalls: { name: string; args: Record<string, unknown> }[] = [];
+  let rpcCursor = 0;
   const from = vi.fn((table: string) => {
     const entry = results[table];
     const next = (): Result => {
@@ -88,8 +93,20 @@ function makeClient(results: Record<string, Result | Result[]> = {}) {
     };
     return new Builder(table, calls, next);
   });
-  const client = { from } as unknown as SupabaseClient;
-  return { client, calls, from };
+  const rpc = vi.fn((name: string, args: Record<string, unknown>) => {
+    rpcCalls.push({ name, args });
+    const nextRpc = (): Result => {
+      if (Array.isArray(rpcResults)) {
+        const index = Math.min(rpcCursor, rpcResults.length - 1);
+        rpcCursor += 1;
+        return rpcResults[index]!;
+      }
+      return rpcResults;
+    };
+    return Promise.resolve(nextRpc());
+  });
+  const client = { from, rpc } as unknown as SupabaseClient;
+  return { client, calls, from, rpc, rpcCalls };
 }
 
 const habitRow = {
@@ -123,8 +140,11 @@ const logRow = {
 
 describe('SupabaseHabitRepository — offline write contract', () => {
   describe('createHabit', () => {
-    it('upserts on (user_id, client_id) when a client id is supplied', async () => {
-      const { client, calls } = makeClient({ habits: { data: habitRow, error: null } });
+    it('applies the create upsert through the last-write-wins RPC when a client id is supplied', async () => {
+      const { client, rpcCalls } = makeClient(
+        { habits: { data: habitRow, error: null } },
+        { data: [habitRow], error: null }
+      );
       const repo = new SupabaseHabitRepository(client, 'u-1');
 
       await repo.createHabit({
@@ -134,13 +154,58 @@ describe('SupabaseHabitRepository — offline write contract', () => {
         updatedAt: '2026-08-01T00:00:00.000Z',
       });
 
-      const upsertCall = calls.find((c) => c.includes('upsert'));
-      expect(upsertCall).toContain('"onConflict":"user_id,client_id"');
-      expect(upsertCall).toContain('"client_id":"11111111-1111-7111-8111-111111111111"');
-      expect(upsertCall).toContain('"updated_at":"2026-08-01T00:00:00.000Z"');
-      // The client id becomes the row's primary key, so an offline log can
-      // reference this habit by the same UUID the device minted (#164).
-      expect(upsertCall).toContain('"id":"11111111-1111-7111-8111-111111111111"');
+      expect(rpcCalls[0]?.name).toBe('upsert_habit');
+      expect(rpcCalls[0]?.args).toMatchObject({
+        // The client id becomes the row's primary key, so an offline log can
+        // reference this habit by the same UUID the device minted (#164).
+        p_id: '11111111-1111-7111-8111-111111111111',
+        p_client_id: '11111111-1111-7111-8111-111111111111',
+        p_user_id: 'u-1',
+        p_name: 'قراءة',
+        p_frequency: 'daily',
+        p_updated_at: '2026-08-01T00:00:00.000Z',
+      });
+    });
+
+    it('a stale create replay is a no-op that returns the stored winner', async () => {
+      const newerRow = {
+        ...habitRow,
+        name: 'قراءة يومية',
+        updated_at: '2026-08-05T00:00:00.000Z',
+      };
+      const { client, rpcCalls } = makeClient(
+        // The LWW RPC filtered the upsert (no row), then the winner is re-read.
+        { habits: { data: newerRow, error: null } },
+        { data: [], error: null }
+      );
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.createHabit({
+        name: 'اسم قديم',
+        frequency: 'daily',
+        clientId: '11111111-1111-7111-8111-111111111111',
+        updatedAt: '2026-08-01T00:00:00.000Z',
+      });
+
+      expect(rpcCalls[0]?.name).toBe('upsert_habit');
+      expect(result.name).toBe('قراءة يومية');
+      expect(result.updatedAt).toBe('2026-08-05T00:00:00.000Z');
+    });
+
+    it('a newer create replay still upserts idempotently', async () => {
+      const applied = { ...habitRow, updated_at: '2026-08-06T00:00:00.000Z' };
+      const { client, rpcCalls } = makeClient({}, { data: [applied], error: null });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.createHabit({
+        name: 'قراءة',
+        frequency: 'daily',
+        clientId: '11111111-1111-7111-8111-111111111111',
+        updatedAt: '2026-08-06T00:00:00.000Z',
+      });
+
+      expect(rpcCalls[0]?.name).toBe('upsert_habit');
+      expect(result.updatedAt).toBe('2026-08-06T00:00:00.000Z');
     });
 
     it('falls back to a plain insert without a client id', async () => {

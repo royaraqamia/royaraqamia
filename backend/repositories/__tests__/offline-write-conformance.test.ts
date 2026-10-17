@@ -69,9 +69,14 @@ describe('offline write conformance (ADR-0029)', () => {
     for (const file of OFFLINE_REPOSITORIES) {
       const source = read(file);
       if (!/clientId|client_id/.test(source)) continue;
-      // BlogPress posts key ownership on `author_id` and let the client mint the
-      // primary key, so they upsert on `id`; the others on `(user_id, client_id)`.
-      expect(source, file).toMatch(/onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'/);
+      // The owned creates route through a `SECURITY INVOKER` LWW upsert
+      // function (`rpc('upsert_*')`) so a replayed create cannot clobber a
+      // newer edit (ADR-0033). BlogPress posts still key ownership on
+      // `author_id` and let the client mint the primary key, so they upsert on
+      // `id` directly at the Data API.
+      expect(source, file).toMatch(
+        /onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'|rpc\(\s*'upsert_/
+      );
     }
   });
 });
