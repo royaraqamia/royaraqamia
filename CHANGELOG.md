@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.108.1] - 2026-10-17
+
+### Fixed
+- reserve the top band only where the bar renders (#300)
+
 ## [1.108.0] - 2026-10-17
 
 ### Added
