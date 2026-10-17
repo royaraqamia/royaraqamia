@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  isHttpUrl,
   TERMINAL_DOWNLOAD_STATUSES,
   type DownloadFormat,
   type DownloadJob,
@@ -20,6 +21,11 @@ function isTerminal(job: DownloadJob): boolean {
  * programmatic click downloads it instead of navigating away.
  */
 function triggerDownload(url: string, filename: string): void {
+  // Defence in depth: the link comes from an external provider. A programmatic
+  // click bypasses React's `javascript:` sanitisation, so refuse anything that is
+  // not http(s) here as well as at the schema and the call site.
+  if (!isHttpUrl(url)) return;
+
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
@@ -98,7 +104,12 @@ export function useDownloadJob() {
 
   /** A ready file saves automatically, once per job — no second button needed. */
   useEffect(() => {
-    if (job?.status === 'ready' && job.file && downloadedJobId.current !== job.id) {
+    if (
+      job?.status === 'ready' &&
+      job.file &&
+      isHttpUrl(job.file.url) &&
+      downloadedJobId.current !== job.id
+    ) {
       downloadedJobId.current = job.id;
       triggerDownload(job.file.url, job.file.filename);
     }

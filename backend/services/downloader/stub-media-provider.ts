@@ -43,13 +43,20 @@ export class StubMediaProvider implements MediaProvider {
     const hostname = new URL(url).hostname.replace(/^www\./, '');
     const expiresAt = new Date(this.now().getTime() + linkTtlSeconds * 1000).toISOString();
 
+    // Absolute, on the callback's own origin: the callback schema only accepts
+    // http(s) links, and a bare path is not one — a relative stub link would make
+    // the route answer 400 and leave a stub-backed job stuck in `running`.
+    const fileUrl = new URL('/downloader-sample.mp4', this.callbackUrl);
+    fileUrl.searchParams.set('exp', expiresAt);
+    fileUrl.searchParams.set('sig', 'stub');
+
     const body = {
       jobId,
       status: 'ready',
       platform: hostname,
       durationSeconds: 0,
       file: {
-        url: `/downloader-sample.mp4?exp=${encodeURIComponent(expiresAt)}&sig=stub`,
+        url: fileUrl.toString(),
         filename: `royaraqamia-${hostname.replace(/[^a-z0-9]+/gi, '-')}.mp4`,
         sizeBytes: 0,
         expiresAt,

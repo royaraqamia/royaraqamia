@@ -5,6 +5,7 @@ import {
   DOWNLOAD_FORMATS,
   DOWNLOAD_FORMAT_LABELS,
   DOWNLOAD_STATUS_LABELS,
+  isHttpUrl,
   MEDIA_KIND_LABELS,
   type DownloadFormat,
 } from '@/shared/contracts/downloader';
@@ -61,6 +62,14 @@ export function DownloaderPage() {
 
   const submitted = job !== null;
   const blockedByTurnstile = REQUIRES_TURNSTILE && !turnstileToken;
+
+  /**
+   * The job's file, but only when its link is an http(s) URL a browser can open.
+   * The link arrives from an external provider, and an `href` is a sink for
+   * `javascript:` — never render one that is not safe.
+   */
+  const readyFile = job?.file ?? null;
+  const recoveryFile = readyFile && isHttpUrl(readyFile.url) ? readyFile : null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -179,15 +188,15 @@ export function DownloaderPage() {
                 <p className="text-sm text-destructive">{job.error}</p>
               )}
 
-              {job.status === 'ready' && job.file && (
+              {job.status === 'ready' && recoveryFile && (
                 <div className="flex flex-col gap-1.5">
                   <p className="text-sm text-muted-foreground">
                     اكتمل التَّنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
                   </p>
                   {/* Recovery path: some mobile browsers ignore a programmatic save. */}
                   <a
-                    href={job.file.url}
-                    download={job.file.filename}
+                    href={recoveryFile.url}
+                    download={recoveryFile.filename}
                     className="text-sm font-bold text-primary hover:underline underline-offset-4"
                   >
                     لم يبدأ التَّنزيل؟ اضغط للحفظ

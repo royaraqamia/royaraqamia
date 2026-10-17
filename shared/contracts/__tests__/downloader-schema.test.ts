@@ -120,6 +120,17 @@ describe('download caps', () => {
 describe('DownloadCallbackSchema', () => {
   const jobId = '11111111-1111-4111-8111-111111111111';
 
+  /** A ready callback whose file link is the one field under test. */
+  function readyWithFile(url: string) {
+    return {
+      jobId,
+      status: 'ready',
+      platform: 'example.com',
+      durationSeconds: 12,
+      file: { url, filename: 'x.mp4', sizeBytes: 10, expiresAt: '2030-01-01T00:00:00.000Z' },
+    };
+  }
+
   it('accepts a ready result with a signed file', () => {
     const result = DownloadCallbackSchema.safeParse({
       jobId,
@@ -135,6 +146,27 @@ describe('DownloadCallbackSchema', () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it.each(['http://media.example.com/x.mp4', 'https://media.example.com/x.mp4'])(
+    'accepts the http(s) file link %s',
+    (url) => {
+      expect(DownloadCallbackSchema.safeParse(readyWithFile(url)).success).toBe(true);
+    }
+  );
+
+  /**
+   * The payload arrives from an external host, and the link ends up on a DOM
+   * anchor — so `z.string().url()` (which also accepts these) is not enough.
+   */
+  it.each([
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///etc/passwd',
+    'ftp://media.example.com/x.mp4',
+    '/downloader-sample.mp4?exp=x',
+  ])('rejects the file link %s', (url) => {
+    expect(DownloadCallbackSchema.safeParse(readyWithFile(url)).success).toBe(false);
   });
 
   it('accepts a failed result with a reason', () => {

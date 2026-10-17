@@ -41,4 +41,27 @@ describe('useDownloadJob', () => {
     expect(result.current.job?.status).toBe('ready');
     expect(click).toHaveBeenCalledTimes(1);
   });
+
+  /**
+   * The provider's link is untrusted, and a programmatic click bypasses React's
+   * `javascript:` sanitisation — so the auto-save refuses anything not http(s).
+   */
+  it.each(['javascript:alert(1)', 'data:text/html,<b>x</b>', 'ftp://host.example/x.mp4'])(
+    'never auto-saves the unsafe file link %s',
+    async (url) => {
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+      vi.mocked(createDownloadJob).mockResolvedValue({
+        ...READY_JOB,
+        file: { ...READY_JOB.file!, url },
+      });
+
+      const { result } = renderHook(() => useDownloadJob());
+      await act(async () => {
+        await result.current.start(READY_JOB.sourceUrl, 'video-720p');
+      });
+
+      expect(result.current.job?.status).toBe('ready');
+      expect(click).not.toHaveBeenCalled();
+    }
+  );
 });
