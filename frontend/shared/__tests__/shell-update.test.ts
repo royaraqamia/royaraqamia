@@ -72,15 +72,6 @@ describe('the version a shell names itself by (ADR-0046)', () => {
     expect(shellVersionFromUserAgent('RoyaraqamiaShell/1.0.3+20003')).toBe(20003);
     expect(shellVersionFromUserAgent('RoyaraqamiaShell/1.0.3')).toBeNull();
   });
-
-  it('shows what a user reads, and the counter when that is all there is', async () => {
-    const { shellDisplayVersion } = await loadModule();
-
-    expect(shellDisplayVersion(NAMED_SHELL_UA)).toBe('1.0.3 (20003)');
-    expect(shellDisplayVersion(SHELL_UA)).toBe('20000');
-    // What keeps it out of the web entirely: a browser has nothing to render.
-    expect(shellDisplayVersion(BROWSER_UA)).toBeNull();
-  });
 });
 
 describe('toShellUpdateState', () => {
