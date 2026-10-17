@@ -80,10 +80,14 @@ const socialLinks = [
  * The site's footer, at the foot of `/account` only: the brand line and the
  * social icons. The account rows carry the legal pages again as rows, so they
  * do not belong here twice.
+ *
+ * `data-flat-footer` opts this element out of the `@layer base` rule that fills
+ * an unmarked `<footer>` with `hsl(var(--card) / 0.5)` (`app/global.css`),
+ * which read as a band behind a footer that is just two centred lines.
  */
 export function Footer() {
   return (
-    <footer className="w-full transition-colors duration-300" dir="rtl">
+    <footer data-flat-footer className="w-full" dir="rtl">
       <div className="mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center space-y-6 text-center">
           {/* Social Links Bar */}

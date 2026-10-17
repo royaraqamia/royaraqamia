@@ -298,12 +298,14 @@
     border-color: hsl(var(--border));
   }
 
-  /* Catch-all nav/footer chrome. Excludes the app navbars, the mobile menu and
-     react-day-picker's `<nav>` (`.rdp-nav`), which sits over the month caption. */
+  /* Catch-all nav/footer chrome. Excludes the app navbars, the mobile menu,
+     react-day-picker's `<nav>` (`.rdp-nav`), which sits over the month caption,
+     and the `data-flat-*` opt-outs for a nav or footer that is layout rather
+     than chrome (a wizard's back/next row, the site footer under `/account`). */
   nav:not([data-app-navbar]):not([data-mobile-menu]):not([data-flat-nav]):not(.rdp-nav) {
     background-color: hsl(var(--background) / 0.95);
   }
-  footer:not([data-mobile-menu]) {
+  footer:not([data-mobile-menu]):not([data-flat-footer]) {
     background-color: hsl(var(--card) / 0.5);
   }
 

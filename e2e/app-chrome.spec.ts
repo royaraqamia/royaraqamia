@@ -13,6 +13,7 @@ const BOTTOM_BAR = '[data-bottom-tabbar]';
 const BACK_HEADER = '[data-secondary-header]';
 const NAVBAR_SPACER = '[data-navbar-spacer]';
 const ACCOUNT_FOOTER = '[data-account-footer]';
+const SITE_FOOTER = 'footer[data-flat-footer]';
 
 /**
  * The user agent an installed shell sends (ADR-0046): the name a user reads,
@@ -284,6 +285,21 @@ test.describe('the installed app’s version', () => {
     await page.goto('/account');
 
     await expect(page.locator(ACCOUNT_FOOTER)).toHaveCount(0);
+  });
+});
+
+/**
+ * The site footer under `/account` is two centred lines, not chrome. `@layer
+ * base` fills every unmarked `<footer>` with `hsl(var(--card) / 0.5)`, which
+ * read as a grey band behind those lines; `data-flat-footer` is the opt-out,
+ * and this is what losing the marker looks like.
+ */
+test.describe('the account site footer', () => {
+  test('paints no band of its own', async ({ page }) => {
+    await page.goto('/account');
+
+    await expect(page.locator(SITE_FOOTER)).toBeVisible();
+    await expect(page.locator(SITE_FOOTER)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   });
 });
 
