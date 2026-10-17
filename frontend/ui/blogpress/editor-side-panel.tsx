@@ -249,7 +249,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
         className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.18)]"
       >
         {/* Modal Header & Navigation Bar */}
-        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-6 pb-4">
+        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-[calc(1.5rem+var(--roy-safe-top))] pb-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <DialogTitle className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">

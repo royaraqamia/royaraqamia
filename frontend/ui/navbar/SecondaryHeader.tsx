@@ -36,7 +36,7 @@ export function SecondaryHeader() {
 
       <div
         data-secondary-header
-        className="safe-area-inset-top pointer-events-none fixed inset-s-3 top-3 z-50 print:hidden sm:inset-s-4 sm:top-4"
+        className="safe-area-inset-top safe-area-inset-x pointer-events-none fixed inset-s-3 top-3 z-50 print:hidden sm:inset-s-4 sm:top-4"
       >
         <BackButton className="pointer-events-auto size-11 rounded-full border-neutral-700/60 bg-neutral-900 text-neutral-100 shadow-lg shadow-neutral-950/50 hover:border-primary/40 hover:bg-neutral-800 hover:text-primary" />
       </div>

@@ -142,12 +142,21 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
       </a>
 
       {/* Flow space for the fixed bar below. Kept out of the layouts so it can
-          never outlive the bar on a secondary child. */}
-      {reserveSpace && <div data-navbar-spacer aria-hidden="true" className="h-16 lg:h-20" />}
+          never outlive the bar on a secondary child. The band the bar reserves
+          for the system bars is part of its height, so the spacer has to grow
+          with it — otherwise a page's first row lands under the bar instead of
+          below it. */}
+      {reserveSpace && (
+        <div
+          data-navbar-spacer
+          aria-hidden="true"
+          className="h-[calc(4rem+var(--roy-safe-top))] lg:h-[calc(5rem+var(--roy-safe-top))]"
+        />
+      )}
 
       <nav
         data-app-navbar
-        className={`fixed inset-x-0 top-0 z-50 transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+        className={`safe-area-inset-top safe-area-inset-x fixed inset-x-0 top-0 z-50 transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
           isVisible
             ? 'translate-y-0 opacity-100 navbar-visible'
             : '-translate-y-full opacity-0 pointer-events-none navbar-hidden'

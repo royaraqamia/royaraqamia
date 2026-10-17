@@ -47,7 +47,7 @@ function DropdownMenuContent({
             'z-11000 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl p-1.5',
             'contain-layout contain-style',
             RESPONSIVE_SHEET_CONTENT_CLASSES,
-            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,var(--roy-safe-bottom))]',
             className
           )}
           {...props}

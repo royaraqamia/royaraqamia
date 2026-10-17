@@ -189,6 +189,51 @@ Two consequences worth carrying:
 `npm run android:verify-bridge` re-checks all of the above on whatever device is
 connected, so none of it is carried forward on trust.
 
+### The system bar band
+
+The site's fixed chrome — the top bar, the back control, the bottom tab bar, the corner
+buttons — reserves the strip the system bars draw over. Nothing native guarantees that on
+every device, and `capacitor.config.ts`'s `StatusBar.overlaysWebView: false` cannot either:
+it works through the deprecated `SYSTEM_UI_FLAG_LAYOUT_*` set (`StatusBar.java:102`), which
+Android 15+ ignores for an app targeting SDK 36 — the shell targets 36
+(`android/variables.gradle:4`), so the platform draws the window edge-to-edge and the page
+is what has to make room.
+
+Capacitor 8 hands the inset to the page down one of two paths (`SystemBars.java:194`):
+
+- **WebView 140+ with `viewport-fit=cover`**: insets are forwarded to the WebView, the
+  DecorView is not padded, and `env(safe-area-inset-*)` is the real band — the page's own
+  chrome has to reserve it. The gate is Capacitor's (`WEBVIEW_VERSION_WITH_SAFE_AREA_FIX =
+140`), because Chromium did not map a WebView's insets into `env()` before it.
+- **Anything else**: the plugin pads the DecorView itself (`SystemBars.java:222`) and
+  consumes the insets, so the WebView starts below the bars and `env()` reads `0`. Reserving
+  the band on top of that padding would reserve it twice.
+
+So the page reads `env()` and nothing else. It is funnelled through the `--roy-safe-*` tokens
+in `app/global.css` — `--roy-safe-*-raw` holds `env()`, the token re-derives from it with a
+`0px` fallback — and the `.safe-area-inset-*` helpers, and those are the only source the
+fixed surfaces use. **Never** the shell's own injected `--safe-area-inset-*` custom
+properties: they carry the same numbers the DecorView padding has already spent.
+
+Measured on the API 30 emulator (WebView 83.0.4103.106, i.e. the second path), app pointed at
+a local dev server:
+
+| Probe                                       | Value                               |
+| ------------------------------------------- | ----------------------------------- |
+| `meta[name=viewport]`                       | `…, viewport-fit=cover`             |
+| `env(safe-area-inset-top, 99px)` inline     | `0px`                               |
+| `--roy-safe-top` (declared in `global.css`) | `"0px"` — valid, not empty          |
+| `padding-top: var(--roy-safe-top)`          | `0px`                               |
+| `height: calc(2rem + var(--roy-safe-top))`  | `32px` — the `calc()` survives      |
+| `window.innerHeight` / `screen.height`      | `751` / `851` CSS px (shell insets) |
+
+The last row is the point of the arrangement: on this device the WebView already sits inside
+the bars, so every band the page reserves stays `0` — the chrome renders exactly as it did
+before the band existed. The `calc()` row is why the token must not resolve _invalid_
+instead of `0`: an invalid token would not merely fail to grow a band, it would collapse the
+spacer that keeps a page's first row out from under the bar
+(`e2e/app-chrome.spec.ts`, "the system-bar band").
+
 ### Deep links
 
 Two filters are registered on `MainActivity`:

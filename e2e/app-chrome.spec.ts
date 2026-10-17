@@ -11,6 +11,7 @@ import { test, expect, type Page } from '@playwright/test';
 const TOP_NAV = '[data-app-navbar]';
 const BOTTOM_BAR = '[data-bottom-tabbar]';
 const BACK_HEADER = '[data-secondary-header]';
+const NAVBAR_SPACER = '[data-navbar-spacer]';
 const ACCOUNT_FOOTER = '[data-account-footer]';
 
 /**
@@ -240,6 +241,19 @@ test.describe('the floating control never covers page content', () => {
     await expectSecondaryChrome(page);
     expect(await coveredByControl(page)).toEqual([]);
   });
+
+  test('the band grows with the system bar', async ({ page }) => {
+    await page.goto('/hire');
+
+    // `env()` is a browser value no test can set, so the token every fixed
+    // surface funnels it through stands in for a device that reports one
+    // (`app/global.css`). The control moves down with the band; if the two read
+    // different sources, the control lands back on the card.
+    await page.addStyleTag({ content: ':root{--roy-safe-top:24px}' });
+
+    await expectSecondaryChrome(page);
+    expect(await coveredByControl(page)).toEqual([]);
+  });
 });
 
 /**
@@ -291,5 +305,83 @@ test.describe('phone widths', () => {
     await page.goto('/rates');
 
     await expectSecondaryChrome(page);
+  });
+});
+
+/**
+ * The system-bar band.
+ *
+ * A device that draws the page edge-to-edge hands the page the inset through
+ * `env()`; one that does not reports `0`, and the Android shell keeps the
+ * WebView below the bars itself (`docs/mobile/android-shell.md`). `env()` is a
+ * browser value no test can set, so the test sets the token every fixed surface
+ * funnels it through instead (`app/global.css`).
+ */
+test.describe('the system-bar band', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  /** A status bar the size of a phone's. */
+  const BAND = 24;
+  /** The bar's own row, at the phone width (`h-16`). */
+  const ROW = 64;
+
+  const withSystemBar = (page: Page) =>
+    page.addStyleTag({ content: `:root{--roy-safe-top:${BAND}px}` });
+
+  test('the top bar fills the band and pushes its row below it', async ({ page }) => {
+    await page.goto('/community');
+    await withSystemBar(page);
+
+    const nav = page.locator(TOP_NAV);
+    const bar = await nav.boundingBox();
+
+    // The surface still reaches the screen edge: the band is the bar's own
+    // background, not a gap above it.
+    expect(Math.round(bar?.y ?? -1)).toBe(0);
+    await expect(nav).toHaveCSS('padding-top', `${BAND}px`);
+
+    // ...and what the bar holds is clear of the clock.
+    const logo = await nav.getByRole('link', { name: /رؤيَة/ }).boundingBox();
+    expect(logo?.y ?? 0).toBeGreaterThanOrEqual(BAND);
+
+    // The flow space the fixed bar reserves in the page grows with the band, so
+    // a page's first row still lands below the bar.
+    const spacer = await page.locator(NAVBAR_SPACER).boundingBox();
+    expect(Math.round(spacer?.height ?? 0)).toBe(ROW + BAND);
+  });
+
+  test('the lone back control clears the band', async ({ page }) => {
+    await page.goto('/rates');
+    await withSystemBar(page);
+
+    const back = await backControl(page).boundingBox();
+
+    // `top-3` (12px) below the band.
+    expect(Math.round(back?.y ?? -1)).toBe(BAND + 12);
+  });
+
+  test('a device that reports no insets reserves nothing', async ({ page }) => {
+    await page.goto('/community');
+
+    const nav = page.locator(TOP_NAV);
+    await expect(nav).toHaveCSS('padding-top', '0px');
+
+    const spacer = await page.locator(NAVBAR_SPACER).boundingBox();
+    expect(Math.round(spacer?.height ?? 0)).toBe(ROW);
+  });
+
+  test('an engine that cannot resolve the inset keeps the reserved band', async ({ page }) => {
+    await page.goto('/community');
+
+    // Some Android WebViews give back an invalid value rather than `0`. The
+    // band then has to collapse to nothing, not take the `calc()`s that consume
+    // it down with it — a spacer that loses its base height puts the page's
+    // first row back under the bar, on the devices least able to be tested.
+    await page.addStyleTag({ content: ':root{--roy-safe-top-raw:initial}' });
+
+    await expect(page.locator(TOP_NAV)).toHaveCSS('padding-top', '0px');
+
+    const spacer = await page.locator(NAVBAR_SPACER).boundingBox();
+    expect(Math.round(spacer?.height ?? 0)).toBe(ROW);
   });
 });

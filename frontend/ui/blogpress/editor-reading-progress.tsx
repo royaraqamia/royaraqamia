@@ -33,7 +33,7 @@ export function EditorReadingProgress({
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-60 h-0.75 bg-transparent pointer-events-none"
+      className="safe-area-offset-top fixed left-0 right-0 z-60 h-0.75 bg-transparent pointer-events-none"
       aria-hidden="true"
     >
       <div
