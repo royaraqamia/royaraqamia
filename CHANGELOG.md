@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.3] - 2026-10-17
+
+### Changed
+- match the FAQ page title and flatten the footer (#305)
+
 ## [1.109.2] - 2026-10-17
 
 ### Changed
