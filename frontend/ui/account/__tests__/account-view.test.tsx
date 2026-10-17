@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
   session: {
@@ -51,7 +51,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AccountView', () => {
-  it('shows a sign-in prompt and public rows for guests', () => {
+  it('shows every action row to guests, with admin and logout hidden', () => {
     render(<AccountView />);
 
     expect(screen.getByText('سجِّل الدُّخول إلى حسابك')).toBeInTheDocument();
@@ -60,8 +60,27 @@ describe('AccountView', () => {
       '/auth/login?redirect=/account'
     );
     expect(screen.getByText('تواصل معنا')).toBeInTheDocument();
-    expect(screen.queryByText('طلباتي')).not.toBeInTheDocument();
+
+    // Gated rows are visible, but as buttons rather than links.
+    for (const label of ['طلباتي', 'المنشورات', 'الرَّوابط المختصَرة', 'التَّطبيقات المتَّصلة']) {
+      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
+    }
+
+    expect(screen.queryByText('الإدارة')).not.toBeInTheDocument();
     expect(screen.queryByText('تسجيل الخروج')).not.toBeInTheDocument();
+  });
+
+  it('prompts guests to sign in and returns them to the row they picked', async () => {
+    render(<AccountView />);
+
+    fireEvent.click(screen.getByRole('button', { name: /التَّطبيقات المتَّصلة/ }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=%2Faccount%2Fconnected-apps'
+    );
   });
 
   it('shows the profile and account rows for signed-in users', () => {
