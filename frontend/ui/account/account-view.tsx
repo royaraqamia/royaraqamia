@@ -10,6 +10,7 @@ import {
   Plug,
   ShieldCheck,
   LogOut,
+  HelpCircle,
   MessageCircle,
   Lock,
 } from 'lucide-react';
@@ -137,6 +138,18 @@ export function AccountView() {
         )}
 
         <InstallSection />
+
+        {/* Public, so it is a plain link for guests and members alike — unlike
+            the rows above, it has nothing to gate. */}
+        <Link href="/account/faq" className={rowClasses}>
+          <span className="flex items-center gap-2.5">
+            <HelpCircle className="w-4 h-4 shrink-0 text-primary" />
+            <span>الأسئلة الشَّائعة</span>
+          </span>
+          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+            ←
+          </span>
+        </Link>
 
         <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className={rowClasses}>
           <span className="flex items-center gap-2.5">

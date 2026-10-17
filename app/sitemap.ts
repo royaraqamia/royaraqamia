@@ -66,6 +66,13 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.6,
   },
   {
+    // Public FAQ copy that lives under `/account`, which `robots.ts` otherwise
+    // disallows — this entry is the only way a crawler reaches it.
+    path: '/account/faq',
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  },
+  {
     path: '/app-info',
     changeFrequency: 'yearly',
     priority: 0.3,
