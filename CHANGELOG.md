@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.5] - 2026-10-17
+
+### Fixed
+- stop the dark theme painting a band behind the account footer (#308)
+
 ## [1.109.4] - 2026-10-17
 
 ### Fixed
