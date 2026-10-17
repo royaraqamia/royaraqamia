@@ -110,7 +110,7 @@ function SelectContent({
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 duration-200 ease-out',
             'contain-layout contain-style',
             RESPONSIVE_SHEET_CONTENT_CLASSES,
-            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,var(--roy-safe-bottom))]',
             position === 'popper' &&
               'data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1.5 data-[side=right]:translate-x-1.5 data-[side=top]:-translate-y-1.5',
             className

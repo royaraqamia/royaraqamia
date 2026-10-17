@@ -1120,8 +1120,10 @@
 /* Base */
 .whatsapp-float {
   position: fixed;
-  right: var(--wa-gap);
-  bottom: var(--wa-gap);
+  /* Clear of the gesture/home-indicator area: the button sits in the corner a
+     thumb reaches, which is also where the system bar reserves its band. */
+  right: calc(var(--wa-gap) + var(--roy-safe-right));
+  bottom: calc(var(--wa-gap) + var(--roy-safe-bottom));
   width: var(--wa-size);
   height: var(--wa-size);
   display: inline-grid;
@@ -1153,9 +1155,9 @@
 /* Mobile placement */
 @media (max-width: 768px) {
   .whatsapp-float {
-    left: var(--wa-gap);
+    left: calc(var(--wa-gap) + var(--roy-safe-left));
     right: auto;
-    bottom: calc(var(--wa-gap) - 4px);
+    bottom: calc(var(--wa-gap) - 4px + var(--roy-safe-bottom));
   }
 }
 
@@ -1183,8 +1185,8 @@
 /* Go Up Button - Optimized for Performance & Accessibility */
 .go-up-btn {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: calc(20px + var(--roy-safe-right));
+  bottom: calc(20px + var(--roy-safe-bottom));
   width: 48px;
   height: 48px;
   background: hsl(var(--card));
@@ -1255,8 +1257,8 @@
 /* Compose FAB — social-style "new post" button on the public community */
 .compose-fab-btn {
   position: fixed;
-  left: 20px;
-  bottom: 20px;
+  left: calc(20px + var(--roy-safe-left));
+  bottom: calc(20px + var(--roy-safe-bottom));
   width: 56px;
   height: 56px;
   background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #4f46e5 100%);
@@ -1457,28 +1459,73 @@
 /* Noise Texture Overlay — removed (ADR 0004): the feTurbulence layer is an
    expensive one-time raster and a per-scroll composite with mix-blend-mode. */
 
-/* Safe Area Insets for Mobile Devices */
+/* Safe Area Insets for Mobile Devices.
+
+   One source of truth for the system bar / display cutout band, so every fixed
+   surface can reserve the strip it would otherwise be drawn under. The tokens
+   read `env()` — the value an edge-to-edge WebView or an installed iOS PWA
+   reports, and `0` everywhere else (desktop, a plain browser tab, and the
+   Android shell on a WebView old enough that Capacitor keeps the WebView below
+   the bars itself instead of forwarding the insets; see
+   `docs/mobile/android-shell.md`). They are custom properties rather than raw
+   `env()` calls so a test can stand in for a device that reports insets.
+
+   Do NOT feed these from the shell's own injected `--safe-area-inset-*`: on an
+   old WebView the shell pads the WebView natively *and* injects the same
+   numbers, so consuming those would reserve the band twice.
+
+   `-raw` is what `env()` feeds; the public token re-derives from it with a
+   `0px` fallback. That way an engine which cannot resolve `env()` in a custom
+   property leaves the band at `0` instead of making the token invalid — and an
+   invalid token takes every `calc()` consuming it down with it, which would
+   collapse the reserved bands (and drop the fixed corner buttons to their
+   static position) rather than merely not growing. */
+:root {
+  --roy-safe-top-raw: env(safe-area-inset-top, 0px);
+  --roy-safe-right-raw: env(safe-area-inset-right, 0px);
+  --roy-safe-bottom-raw: env(safe-area-inset-bottom, 0px);
+  --roy-safe-left-raw: env(safe-area-inset-left, 0px);
+
+  --roy-safe-top: var(--roy-safe-top-raw, 0px);
+  --roy-safe-right: var(--roy-safe-right-raw, 0px);
+  --roy-safe-bottom: var(--roy-safe-bottom-raw, 0px);
+  --roy-safe-left: var(--roy-safe-left-raw, 0px);
+}
+
 .safe-area-inset {
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: var(--roy-safe-left);
+  padding-right: var(--roy-safe-right);
+  padding-top: var(--roy-safe-top);
+  padding-bottom: var(--roy-safe-bottom);
 }
 
 .safe-area-inset-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--roy-safe-top);
 }
 
 .safe-area-inset-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--roy-safe-bottom);
 }
 
 .safe-area-inset-left {
-  padding-left: env(safe-area-inset-left);
+  padding-left: var(--roy-safe-left);
 }
 
 .safe-area-inset-right {
-  padding-right: env(safe-area-inset-right);
+  padding-right: var(--roy-safe-right);
+}
+
+/* Horizontal pair: a bar that spans the viewport width still has to clear a
+   cutout when the device is held sideways. */
+.safe-area-inset-x {
+  padding-left: var(--roy-safe-left);
+  padding-right: var(--roy-safe-right);
+}
+
+/* Pins something that hugs the top edge — a progress hairline, not a padded
+   surface — below the system bars. */
+.safe-area-offset-top {
+  top: var(--roy-safe-top);
 }
 
 /* ========================================
@@ -1486,7 +1533,7 @@
    ======================================== */
 /* Reserve space so the fixed tab bar never occludes page content. */
 body:has([data-bottom-tabbar]) {
-  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(3.5rem + var(--roy-safe-bottom));
 }
 
 /* Flush bar (< lg): lift the floating utilities clear of it. Only where the bar
@@ -1494,7 +1541,7 @@ body:has([data-bottom-tabbar]) {
 @media (max-width: 1023px) {
   body:has([data-bottom-tabbar]) .go-up-btn,
   body:has([data-bottom-tabbar]) .compose-fab-btn {
-    bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
+    bottom: calc(3.5rem + var(--roy-safe-bottom) + 0.75rem);
   }
 }
 
@@ -1503,7 +1550,7 @@ body:has([data-bottom-tabbar]) {
    pill is centred and never reaches them. */
 @media (min-width: 1024px) {
   body:has([data-bottom-tabbar]) {
-    padding-bottom: calc(3.5rem + 1.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(3.5rem + 1.5rem + var(--roy-safe-bottom));
   }
 }
 
@@ -1516,14 +1563,16 @@ body:has([data-bottom-tabbar]) {
    starts flush in that corner (a publisher chip, a profile card, a form heading)
    ends up underneath it. Reserve the band it occupies, the way the tab bar
    reserves the bottom. A margin, not a padding: it adds to whatever top space
-   the shell already keeps rather than overriding it. */
+   the shell already keeps rather than overriding it. The system bar is the same
+   token the control's own `safe-area-inset-top` padding reads, so the band and
+   the control cannot drift apart. */
 body:has([data-secondary-header]) #main-content {
-  margin-top: calc(3.5rem + env(safe-area-inset-top));
+  margin-top: calc(3.5rem + var(--roy-safe-top));
 }
 
 @media (min-width: 640px) {
   body:has([data-secondary-header]) #main-content {
-    margin-top: calc(4rem + env(safe-area-inset-top));
+    margin-top: calc(4rem + var(--roy-safe-top));
   }
 }
 

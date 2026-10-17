@@ -295,7 +295,7 @@ export function EditorToolbar({
   return (
     <nav
       aria-label="شريط أدوات المُحرِّر"
-      className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 py-1.5 transition-colors sm:px-3.5"
+      className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 pt-[calc(0.375rem+var(--roy-safe-top))] pb-1.5 transition-colors sm:px-3.5"
     >
       <div className="flex items-center gap-0.5 overflow-x-auto py-0.5 scrollbar-none touch-pan-x select-none">
         {render()}

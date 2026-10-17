@@ -52,7 +52,7 @@ function PopoverContent({
             'focus-visible:outline-none',
             'contain-layout contain-style',
             RESPONSIVE_SHEET_CONTENT_CLASSES,
-            'max-lg:pb-[max(1rem,env(safe-area-inset-bottom))]',
+            'max-lg:pb-[max(1rem,var(--roy-safe-bottom))]',
             className
           )}
           {...props}
