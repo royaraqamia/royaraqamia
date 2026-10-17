@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.4] - 2026-10-17
+
+### Fixed
+- keep the fixed chrome clear of the system bars (#306)
+
 ## [1.109.3] - 2026-10-17
 
 ### Changed
