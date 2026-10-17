@@ -1,7 +1,4 @@
-import { MapPin, Mail } from 'lucide-react';
-import Link from 'next/link';
 import { formatHijriDate } from '@/frontend/shared/format';
-import { FooterLogoButton } from './FooterLogoButton';
 
 const TelegramIcon = ({
   size = '1em',
@@ -21,7 +18,7 @@ const TelegramIcon = ({
 const InstagramIcon = ({
   size = '1em',
   ...props
-}: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
+}: React.SVGProps<SVGSVGElement> & { size?: number | string; weight?: string }) => (
   <svg viewBox="0 0 24 24" height={size} width={size} {...props} xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="instagram-gradient" cx="30%" cy="107%" r="150%">
@@ -45,7 +42,7 @@ const InstagramIcon = ({
 const LinkedinIcon = ({
   size = '1em',
   ...props
-}: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
+}: React.SVGProps<SVGSVGElement> & { size?: number | string; weight?: string }) => (
   <svg viewBox="0 0 24 24" height={size} width={size} {...props} xmlns="http://www.w3.org/2000/svg">
     <path
       fill="#0A66C2"
@@ -79,6 +76,12 @@ const socialLinks = [
   },
 ];
 
+/**
+ * The site's footer, at the foot of `/account` only: the brand line and the
+ * social icons. The homepage carries the legal links on their own
+ * (`HomeFooter`) and the account rows carry them again as rows, so neither
+ * belongs here twice.
+ */
 export function Footer() {
   return (
     <footer
@@ -91,30 +94,8 @@ export function Footer() {
         className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10">
-        <div className="flex flex-col items-center text-center space-y-8 md:space-y-10">
-          {/* Brand & Metadata Section */}
-          <div className="flex flex-col items-center space-y-4 max-w-md mx-auto">
-            {/* Interactive Logo + Brand Name (client island) */}
-            <FooterLogoButton />
-
-            {/* Location & Contact Information Pills */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm pt-1">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/90 text-muted-foreground transition-colors hover:border-border hover:bg-muted">
-                <MapPin className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
-                <span>حَلَب، سوريا</span>
-              </span>
-
-              <a
-                href="mailto:contact@royaraqamia.com"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/90 text-muted-foreground transition-[background-color,border-color,color] duration-300 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
-              >
-                <Mail className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
-                <span dir="ltr">contact@royaraqamia.com</span>
-              </a>
-            </div>
-          </div>
-
+      <div className="mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center space-y-6 text-center">
           {/* Social Links Bar */}
           <div className="flex items-center justify-center gap-3">
             {socialLinks.map((social, index) => {
@@ -135,41 +116,7 @@ export function Footer() {
             })}
           </div>
 
-          {/* Navigation Link Items */}
-          <nav
-            aria-label="روابط سريعة"
-            style={{ backgroundColor: 'transparent' }}
-            className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground"
-          >
-            <Link
-              href="/privacy"
-              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-            >
-              الخصوصيَّة
-            </Link>
-            <span className="text-border/60 select-none" aria-hidden="true">
-              |
-            </span>
-            <Link
-              href="/terms"
-              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-            >
-              الشُّروط
-            </Link>
-            <span className="text-border/60 select-none" aria-hidden="true">
-              |
-            </span>
-            <Link
-              href="/security"
-              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-            >
-              الأمان
-            </Link>
-          </nav>
-        </div>
-
-        {/* Bottom Copyright Divider */}
-        <div className="border-t border-border/50 mt-10 pt-6">
+          {/* Copyright */}
           <p className="text-xs sm:text-sm text-muted-foreground font-medium text-center leading-relaxed">
             © {formatHijriDate(new Date(), { year: 'numeric', month: undefined, day: undefined })}
             <span className="mx-2 text-primary/40" aria-hidden="true">

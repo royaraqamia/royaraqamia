@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 
 import { shellVersionNameFromUserAgent } from '@/frontend/shared/shell-update';
 import { AccountFooter } from '@/frontend/ui/account/account-footer';
+import { AccountSiteFooter } from '@/frontend/ui/account/account-site-footer';
 import { Navbar } from '@/frontend/ui/Navbar';
 
 export const metadata: Metadata = {
@@ -19,6 +20,10 @@ export const metadata: Metadata = {
  * shell's state does: in the shell's own user agent (ADR-0046), so only a shell
  * sends it and a browser has nothing to render. This layout only reads it;
  * `AccountFooter` decides whether the page under it is one that shows it.
+ *
+ * The site footer sits below the content rather than inside it, and both
+ * footers gate on the route themselves — a layout cannot tell which page it is
+ * wrapping.
  */
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const shellVersion = shellVersionNameFromUserAgent((await headers()).get('user-agent') ?? '');
@@ -29,6 +34,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <main id="main-content" className="flex-1 pt-6">
         <div className="container mx-auto max-w-3xl px-4 pb-16">{children}</div>
       </main>
+      <AccountSiteFooter />
       <AccountFooter version={shellVersion} />
     </div>
   );
