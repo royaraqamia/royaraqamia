@@ -54,6 +54,19 @@ export const HabitWriteSchema = z.object({
 });
 export type HabitWrite = z.infer<typeof HabitWriteSchema>;
 
+/**
+ * Write payload for a Habit edit. The Outbox replay keys on the row `id` (the
+ * same UUID the device minted at create time) rather than a `clientId`, so the
+ * id is required while every edited field stays optional — a replay may carry
+ * only the fields that changed, including an undo's `archived`/`deletedAt`.
+ */
+export const HabitUpdateSchema = HabitWriteSchema.partial().extend({
+  id: z.string().uuid(),
+  archived: z.boolean().optional(),
+  deletedAt: z.string().datetime().nullable().optional(),
+});
+export type HabitUpdate = z.infer<typeof HabitUpdateSchema>;
+
 /** Write payload for a HabitLog upsert (idempotent on {habit_id, date}). */
 export const HabitLogWriteSchema = z.object({
   clientId: z.string().uuid(),
@@ -65,6 +78,24 @@ export const HabitLogWriteSchema = z.object({
   updatedAt: z.string().datetime().optional(),
 });
 export type HabitLogWrite = z.infer<typeof HabitLogWriteSchema>;
+
+/** The kind mutation: the kind determines `completed`, so it is not carried. */
+export const HabitLogKindWriteSchema = HabitLogWriteSchema.omit({
+  completed: true,
+  note: true,
+}).extend({
+  kind: z.enum(['complete', 'skip', 'miss', 'none']),
+});
+export type HabitLogKindWrite = z.infer<typeof HabitLogKindWriteSchema>;
+
+/** The note mutation: `note` is the payload and may be cleared with null. */
+export const HabitLogNoteWriteSchema = HabitLogWriteSchema.omit({
+  completed: true,
+  kind: true,
+}).extend({
+  note: z.string().max(500).nullable(),
+});
+export type HabitLogNoteWrite = z.infer<typeof HabitLogNoteWriteSchema>;
 
 export interface HabitRepository {
   getHabits(): Promise<Habit[]>;

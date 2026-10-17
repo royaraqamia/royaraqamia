@@ -3,7 +3,13 @@ import { createHabitBackupService, createHabitService } from '@/backend/config/h
 import { errorResult } from '@/backend/middleware/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
-import type { Habit } from '@/shared/contracts/habitflow';
+import type {
+  HabitLogKindWrite,
+  HabitLogNoteWrite,
+  HabitLogWrite,
+  HabitUpdate,
+  HabitWrite,
+} from '@/shared/contracts/habitflow';
 
 export async function getHabits(): Promise<HttpResult> {
   return withAuthenticatedUser(
@@ -32,7 +38,7 @@ export async function getHabitSync(): Promise<HttpResult> {
   );
 }
 
-export async function createHabit(body: Partial<Habit>): Promise<HttpResult> {
+export async function createHabit(body: HabitWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { service, mode } = createHabitService(userId, supabase);
@@ -43,12 +49,12 @@ export async function createHabit(body: Partial<Habit>): Promise<HttpResult> {
   );
 }
 
-export async function updateHabit(body: Record<string, unknown>): Promise<HttpResult> {
+export async function updateHabit(body: HabitUpdate): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { id, ...data } = body;
       const { service, mode } = createHabitService(userId, supabase);
-      const habit = await service.updateHabit(id as string, data as Partial<Habit>);
+      const habit = await service.updateHabit(id, data);
       return jsonResult(200, { habit, mode });
     },
     { mapError: errorResult }
@@ -80,17 +86,16 @@ export async function getLogs(
   );
 }
 
-export async function toggleLog(body: Record<string, unknown>): Promise<HttpResult> {
+export async function toggleLog(body: HabitLogWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, completed, clientId, updatedAt } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.toggleHabitLog({
-        habitId: habitId as string,
-        date: date as string,
-        completed: completed as boolean,
-        clientId: typeof clientId === 'string' ? clientId : undefined,
-        updatedAt: typeof updatedAt === 'string' ? updatedAt : undefined,
+        habitId: body.habitId,
+        date: body.date,
+        completed: body.completed,
+        clientId: body.clientId,
+        updatedAt: body.updatedAt,
       });
 
       return jsonResult(200, { log, mode });
@@ -99,17 +104,16 @@ export async function toggleLog(body: Record<string, unknown>): Promise<HttpResu
   );
 }
 
-export async function setHabitLogNote(body: Record<string, unknown>): Promise<HttpResult> {
+export async function setHabitLogNote(body: HabitLogNoteWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, note, clientId, updatedAt } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.setHabitLogNote({
-        habitId: habitId as string,
-        date: date as string,
-        note: (note as string | null | undefined) ?? null,
-        clientId: typeof clientId === 'string' ? clientId : undefined,
-        updatedAt: typeof updatedAt === 'string' ? updatedAt : undefined,
+        habitId: body.habitId,
+        date: body.date,
+        note: body.note,
+        clientId: body.clientId,
+        updatedAt: body.updatedAt,
       });
 
       return jsonResult(200, { log, mode });
@@ -118,17 +122,16 @@ export async function setHabitLogNote(body: Record<string, unknown>): Promise<Ht
   );
 }
 
-export async function setHabitLogKind(body: Record<string, unknown>): Promise<HttpResult> {
+export async function setHabitLogKind(body: HabitLogKindWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, kind, clientId, updatedAt } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.setHabitLogKind({
-        habitId: habitId as string,
-        date: date as string,
-        kind: kind as 'complete' | 'skip' | 'miss' | 'none',
-        clientId: typeof clientId === 'string' ? clientId : undefined,
-        updatedAt: typeof updatedAt === 'string' ? updatedAt : undefined,
+        habitId: body.habitId,
+        date: body.date,
+        kind: body.kind,
+        clientId: body.clientId,
+        updatedAt: body.updatedAt,
       });
 
       return jsonResult(200, { log, mode });
