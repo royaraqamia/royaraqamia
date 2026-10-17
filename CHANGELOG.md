@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.106.1] - 2026-10-17
+
+### Fixed
+- validate write payloads at the API boundary (#295)
+
 ## [1.106.0] - 2026-10-17
 
 ### Added
