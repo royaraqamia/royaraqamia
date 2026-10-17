@@ -64,6 +64,10 @@ describe('sw-routing predicates', () => {
     for (const path of [
       '/api/auth/login',
       '/api/admin/users',
+      // The admin certificate list and detail carry student names and codes;
+      // a cached response would outlive the admin session (ADR-0031).
+      '/api/certificates?page=1',
+      '/api/certificates/9f1c2b3a-0000-4000-8000-000000000000',
       '/api/push/subscribe',
       '/api/me/retainers',
       '/api/notifications/unread-count',

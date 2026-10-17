@@ -290,4 +290,30 @@ describe('service worker routing wiring', () => {
     expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/admin'))).toBe(true);
     expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/community/x'))).toBe(false);
   });
+
+  it('never reads or writes the admin certificates API through Cache Storage', async () => {
+    const { caches, dispatch, state } = await boot();
+    const cache = await caches.open('royaraqamia-test-v1');
+    const key = '/api/certificates?page=1';
+    const stale = { ok: true, status: 200, body: 'stale-admin-list' };
+    await cache.put(key, stale);
+
+    const event = new FakeEvent('fetch');
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    event.request = {
+      method: 'GET',
+      mode: 'cors',
+      url: `https://site.example${key}`,
+      headers: { get: () => null },
+    };
+    dispatch('fetch', event);
+
+    // Online: the live response, not the cached admin list the last session left.
+    expect(state.fetchCalls).toHaveLength(1);
+    expect(await event.response).not.toBe(stale);
+    // And nothing was written over it: the stale entry is untouched.
+    expect(await caches.match(key)).toBe(stale);
+  });
 });

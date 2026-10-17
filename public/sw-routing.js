@@ -58,6 +58,7 @@
   const NEVER_CACHE_PREFIXES = [
     '/api/auth',
     '/api/admin',
+    '/api/certificates',
     '/api/push',
     '/api/me',
     '/api/notifications',
