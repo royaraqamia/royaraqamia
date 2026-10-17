@@ -59,6 +59,32 @@ test.describe('primary pages', () => {
     // it replaced (`rounded-2xl`, 16px) would not clear half the bar's height.
     expect(radius).toBeGreaterThan(height / 2);
   });
+
+  test('a primary shell keeps its content clear of the fixed bar', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/community');
+
+    const main = await page.locator('#main-content').boundingBox();
+
+    // The bar is 5rem tall at `lg`; the shell reserves that much flow space.
+    expect(main?.y).toBeGreaterThanOrEqual(64);
+  });
+});
+
+test.describe('a secondary child of a primary shell', () => {
+  // `/account/faq` sits under `app/account/layout.tsx`, which is primary for
+  // `/account`. The band that layout reserves belongs to the fixed top nav, and
+  // this page has no nav — so the band has to go with it, or the page keeps an
+  // empty strip where a bar would have been.
+  test('drops the reserved band along with the nav', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/account/faq');
+
+    await expectSecondaryChrome(page);
+
+    const main = await page.locator('#main-content').boundingBox();
+    expect(main?.y).toBeLessThan(32);
+  });
 });
 
 test.describe('secondary pages', () => {

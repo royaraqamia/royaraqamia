@@ -24,8 +24,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const shellVersion = shellVersionNameFromUserAgent((await headers()).get('user-agent') ?? '');
 
   return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col pt-16 lg:pt-20">
-      <Navbar />
+    <div className="min-h-dvh bg-background text-foreground flex flex-col">
+      <Navbar reserveSpace />
       <main id="main-content" className="flex-1 pt-6">
         <div className="container mx-auto max-w-3xl px-4 pb-16">{children}</div>
       </main>

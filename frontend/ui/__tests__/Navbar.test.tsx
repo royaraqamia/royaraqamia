@@ -58,4 +58,24 @@ describe('Navbar', () => {
     expect(screen.queryByRole('navigation', { name: 'القائمة الرئيسية' })).not.toBeInTheDocument();
     expect(screen.queryByText('تخطي إلى المحتوى الرئيسي')).not.toBeInTheDocument();
   });
+
+  it('reserves the fixed bar its flow space when the shell asks for it', () => {
+    const { container } = renderWithProviders(<Navbar reserveSpace />);
+
+    expect(container.querySelector('[data-navbar-spacer]')).not.toBeNull();
+  });
+
+  it('reserves nothing by default, so content can sit under the bar', () => {
+    const { container } = renderWithProviders(<Navbar />);
+
+    expect(container.querySelector('[data-navbar-spacer]')).toBeNull();
+  });
+
+  it('reserves nothing on a secondary route even when asked', () => {
+    mockPathname.mockReturnValue('/community/some-post');
+
+    const { container } = renderWithProviders(<Navbar reserveSpace />);
+
+    expect(container.querySelector('[data-navbar-spacer]')).toBeNull();
+  });
 });
