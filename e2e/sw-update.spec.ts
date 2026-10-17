@@ -210,6 +210,71 @@ test('a waiting worker is announced, and the prompt is how a document takes it',
 });
 
 /**
+ * ADR-0055: the offer names a worker, and the gesture is bounded.
+ *
+ * A `SKIP_WAITING` posted to a worker the browser has already superseded
+ * activates nothing and reports nothing — no event, no error. The button's label
+ * is component state that only the document unloading clears, so without a
+ * deadline the client sits on «جاري التحديث...» for good. Simulated by dropping
+ * the message, which is what silence looks like from the page.
+ */
+test('a gesture that lands nowhere still moves the document', async ({ browser }) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+
+  await context.addInitScript(() => {
+    const probe = { loads: Number(window.name || 0) + 1 };
+    window.name = String(probe.loads);
+    (window as unknown as { __swProbe: { loads: number } }).__swProbe = probe;
+  });
+
+  const page = await context.newPage();
+  const warns: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warns.push(message.text());
+  });
+  const loads = () =>
+    page
+      .evaluate(() => (window as unknown as { __swProbe: { loads: number } }).__swProbe.loads)
+      .catch(() => -1);
+
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
+    timeout: 30_000,
+  });
+  await page.waitForTimeout(7_000);
+  const settled = await loads();
+
+  writeFileSync(
+    VERSION_SCRIPT,
+    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
+
+  await page.evaluate(() => {
+    ServiceWorker.prototype.postMessage = function dropped() {
+      // The message a superseded worker never receives.
+    };
+  });
+  await page.getByRole('button', { name: 'تحديث الآن' }).click();
+
+  // The label was honest only while something was happening; the document moves
+  // itself forward instead of staying on a dead gesture.
+  await expect.poll(loads, { timeout: 30_000 }).toBe(settled + 1);
+  expect(warns.some((line) => line.includes('gesture never landed'))).toBe(true);
+
+  // A reload does not release a waiting worker (ADR-0039), so the update is still
+  // on offer — what the deadline buys is that the offer is live again instead of a
+  // frozen label, and that the failure left a trace.
+  await expect(page.getByRole('button', { name: 'تحديث الآن' })).toBeVisible();
+
+  await context.close();
+});
+
+/**
  * One offer at a time (ADR-0043). Inside the shell a newer APK is announced
  * natively, so the page holds its own reload offer back while the shell's is
  * pending. To the page the shell is two things and nothing else: a token in its
