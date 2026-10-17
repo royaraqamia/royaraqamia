@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.105.1] - 2026-10-17
+
+### Fixed
+- keep the admin certificates API out of Cache Storage (#291)
+
 ## [1.105.0] - 2026-10-17
 
 ### Changed
