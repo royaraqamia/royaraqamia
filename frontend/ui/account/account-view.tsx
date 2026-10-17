@@ -11,13 +11,22 @@ import {
   ShieldCheck,
   LogOut,
   MessageCircle,
+  Lock,
 } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
+import { AccountRow } from '@/frontend/ui/account/account-row';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
@@ -37,6 +46,8 @@ function AccountSkeleton() {
 export function AccountView() {
   const { user, isLoading, isAdmin, profileName, profileAvatarUrl, signOut } = useSession();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  /** The destination a guest picked; also what the sign-in prompt returns them to. */
+  const [promptHref, setPromptHref] = useState<string | null>(null);
 
   if (isLoading) {
     return <AccountSkeleton />;
@@ -55,6 +66,7 @@ export function AccountView() {
   // it, so we must not fall back to auth metadata or "delete avatar" could not
   // take effect for OAuth accounts.
   const avatarUrl = profileAvatarUrl?.trim() || null;
+  const loginHref = `/auth/login?redirect=${encodeURIComponent(promptHref ?? '/account')}`;
 
   return (
     <div className="space-y-6">
@@ -81,55 +93,36 @@ export function AccountView() {
       {/* Public handle editor — signed-in members only */}
       {user && <UsernameEditor />}
 
-      {/* Account actions */}
+      {/* Account actions — every row is public; the ones behind a session open the
+          sign-in prompt instead of navigating. */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
-        {user && (
-          <Link href="/account/submissions" className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
-              <span>طلباتي</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        )}
+        <AccountRow
+          href="/account/submissions"
+          icon={ClipboardList}
+          label="طلباتي"
+          onRequireAuth={setPromptHref}
+        />
 
-        {user && (
-          <Link href="/account/posts" className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <FileText className="w-4 h-4 shrink-0 text-primary" />
-              <span>المنشورات</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        )}
+        <AccountRow
+          href="/account/posts"
+          icon={FileText}
+          label="المنشورات"
+          onRequireAuth={setPromptHref}
+        />
 
-        {user && (
-          <Link href="/account/links" className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <Link2 className="w-4 h-4 shrink-0 text-primary" />
-              <span>الرَّوابط المختصَرة</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        )}
+        <AccountRow
+          href="/account/links"
+          icon={Link2}
+          label="الرَّوابط المختصَرة"
+          onRequireAuth={setPromptHref}
+        />
 
-        {user && (
-          <Link href="/account/connected-apps" className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <Plug className="w-4 h-4 shrink-0 text-primary" />
-              <span>التَّطبيقات المتَّصلة</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        )}
+        <AccountRow
+          href="/account/connected-apps"
+          icon={Plug}
+          label="التَّطبيقات المتَّصلة"
+          onRequireAuth={setPromptHref}
+        />
 
         {isAdmin && (
           <Link href="/admin" className={rowClasses}>
@@ -187,6 +180,37 @@ export function AccountView() {
         onCancel={() => setIsLogoutDialogOpen(false)}
         variant="danger"
       />
+
+      {/* Guest gate for the rows above — the same nudge the community FAB and the
+          notification bell give, aimed at the page they picked. */}
+      <Dialog
+        open={promptHref !== null}
+        onOpenChange={(next) => {
+          if (!next) setPromptHref(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
+              <Lock size={24} />
+            </div>
+            <div className="space-y-1.5">
+              <DialogTitle className="leading-snug!">سجِّل الدُّخول للمتابعة</DialogTitle>
+              <DialogDescription className="text-pretty">
+                هذا القسم يتبع حسابك. سجِّل الدُّخول لعرضه ومزامنته على كلِّ أجهزتك.
+              </DialogDescription>
+            </div>
+          </div>
+
+          <DialogActions onCancel={() => setPromptHref(null)}>
+            <SignInCta
+              href={loginHref}
+              onClick={() => setPromptHref(null)}
+              className="w-full sm:w-auto"
+            />
+          </DialogActions>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
