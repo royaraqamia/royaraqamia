@@ -11,6 +11,14 @@ import { test, expect, type Page } from '@playwright/test';
 const TOP_NAV = '[data-app-navbar]';
 const BOTTOM_BAR = '[data-bottom-tabbar]';
 const BACK_HEADER = '[data-secondary-header]';
+const ACCOUNT_FOOTER = '[data-account-footer]';
+
+/**
+ * The user agent an installed shell sends (ADR-0046): the name a user reads,
+ * then the counter the update check compares. A browser sends no token at all.
+ */
+const SHELL_UA =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 RoyaraqamiaShell/1.0.7+20007';
 
 const backControl = (page: Page) => page.locator(BACK_HEADER).getByRole('button', { name: 'رجوع' });
 
@@ -105,6 +113,37 @@ test.describe('secondary pages', () => {
 
     // In-app history wins over the URL walk, which would answer `/`.
     await expect(page).toHaveURL(/\/account$/);
+  });
+});
+
+/**
+ * The version line is the installed app's own number, so it appears only where
+ * the app is being set up — `/account` itself, not the pages behind it — and only
+ * inside the shell, the one client whose user agent names a version (ADR-0046).
+ */
+test.describe('the installed app’s version', () => {
+  test.describe('inside the shell', () => {
+    test.use({ userAgent: SHELL_UA });
+
+    test('names the app on the account area’s front page', async ({ page }) => {
+      await page.goto('/account');
+
+      // The name alone: the counter is what the update check compares, not what
+      // a user is reading.
+      await expect(page.locator(ACCOUNT_FOOTER)).toHaveText('1.0.7');
+    });
+
+    test('stays off the pages behind the front one', async ({ page }) => {
+      await page.goto('/account/faq');
+
+      await expect(page.locator(ACCOUNT_FOOTER)).toHaveCount(0);
+    });
+  });
+
+  test('a browser shows no version at all', async ({ page }) => {
+    await page.goto('/account');
+
+    await expect(page.locator(ACCOUNT_FOOTER)).toHaveCount(0);
   });
 });
 

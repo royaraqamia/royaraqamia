@@ -471,10 +471,10 @@ it — `1.<minor>.<patch>` from `(counter − 20000)`, so counter 20003 is versi
 two disagree, and publishing refuses an APK whose own `versionName` is not the derived name, so Gradle and
 the script cannot drift. It reaches a user in two places, both only inside the app (ADR-0046):
 
-| Where                     | How                                                                                                              |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Android's app info screen | the APK's `versionName`, so the platform shows it for free                                                       |
-| The account area's footer | the shell's user agent, `RoyaraqamiaShell/1.0.3+20003` — a browser sends no token, so the footer renders nothing |
+| Where                     | How                                                                                                                                                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Android's app info screen | the APK's `versionName`, so the platform shows it for free                                                                                                                                                            |
+| `/account`'s footer       | the shell's user agent, `RoyaraqamiaShell/1.0.3+20003` — the name alone, on the account area's front page only; a browser sends no token, and a shell built before it carried a name has none, so both render nothing |
 
 The user agent carries both facts on purpose: the counter is what the update check compares, and every shell
 already installed sends the older spelling (`RoyaraqamiaShell/20003`) and always will, because a phone can

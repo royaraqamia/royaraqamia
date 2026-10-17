@@ -55,6 +55,11 @@ never mistaken for it. A browser sends no token, renders no footer, and has no
 app version: the number is simply absent from the web, which is what keeps it
 about the app.
 
+The footer's shape has since narrowed: it shows the name alone — the counter was
+never what a user was reading — and only on `/account` itself rather than across
+the account area, which is where a shell gets set up rather than where it is
+used.
+
 ## Considered Options
 
 - **Keeping the channel release with per-version asset names** (ADR-0045's shape).

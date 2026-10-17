@@ -79,18 +79,6 @@ export function shellVersionNameFromUserAgent(userAgent: string): string | null 
   return match?.[1] ?? null;
 }
 
-/**
- * What the app calls itself where a user can read it: `1.0.3 (20003)`, or just
- * the counter for a shell built before it carried a name. Null in a browser,
- * which is what keeps this out of the web entirely.
- */
-export function shellDisplayVersion(userAgent: string): string | null {
-  const code = shellVersionFromUserAgent(userAgent);
-  if (code === null) return null;
-  const name = shellVersionNameFromUserAgent(userAgent);
-  return name ? `${name} (${code})` : String(code);
-}
-
 const asCode = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) ? value : 0;
 
