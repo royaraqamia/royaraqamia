@@ -390,9 +390,11 @@ A device does not use that URL. It downloads the same bytes from our own origin,
 - `GET /api/version` returns `version` (the unchanged deployment fingerprint), plus `releaseVersion`, `commit`, `ref`, `env`, and `releasedAt`.
 - `frontend/shared/sw-update.ts` re-checks for a new worker while the document is visible and announces
   it: `frontend/ui/shared/update-prompt.tsx` offers «تحديث الآن» / «لاحقًا» while a build is downloaded
-  and waiting (ADR-0042). A swapped worker still replaces the document once (ADR-0039), and a swap waits
-  for the previous worker's clients to go away — so a client that never accepts the offer moves to a new
-  deploy on its next launch (inside the Android shell, its next cold start), not on a refresh.
+  and waiting (ADR-0042). The offer belongs to the worker it names, and the gesture is bounded — a
+  `SKIP_WAITING` that activates nothing falls back to a reload rather than leaving the button on
+  «جاري التحديث...» (ADR-0055). A swapped worker still replaces the document once (ADR-0039), and a swap
+  waits for the previous worker's clients to go away — so a client that never accepts the offer moves to
+  a new deploy on its next launch (inside the Android shell, its next cold start), not on a refresh.
 - Sentry releases are tagged with `releaseVersion` (server, edge, and client).
 
 ### Commands

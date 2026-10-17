@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyWorkerUpdate,
   watchWorkerUpdates,
+  UPDATE_APPLY_DEADLINE_MS,
   UPDATE_CHECK_INTERVAL_MS,
 } from '@/frontend/shared/sw-update';
 
@@ -290,9 +291,63 @@ describe('watchWorkerUpdates', () => {
 
     dispose();
   });
+
+  it('takes the announcement back when the worker it named goes away instead', async () => {
+    // The offer is true of one worker, not of a boolean: Activating a worker the
+    // browser superseded leaves the registration with nothing waiting while the
+    // prompt still says an update is ready to take — a gesture that lands nowhere.
+    // The offer has to come down with the worker it named.
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    const onUpdateAvailable = vi.fn();
+
+    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
+    await flush();
+    expect(onUpdateAvailable).toHaveBeenLastCalledWith(true);
+
+    sw.registration.waiting = null;
+    window.dispatchEvent(new Event('focus'));
+    await flush();
+
+    expect(onUpdateAvailable).toHaveBeenLastCalledWith(false);
+
+    dispose();
+  });
+
+  it('announces a replacement worker as its own offer', async () => {
+    const { worker: first } = createWorker();
+    const { worker: second } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(first);
+    const onUpdateAvailable = vi.fn();
+
+    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
+    await flush();
+    expect(onUpdateAvailable).toHaveBeenCalledTimes(1);
+
+    // A newer install superseded the announced one between two probes. The value
+    // is the same, but it is a different build on offer.
+    sw.setWaiting(second);
+    window.dispatchEvent(new Event('focus'));
+    await flush();
+
+    expect(onUpdateAvailable).toHaveBeenCalledTimes(2);
+    expect(onUpdateAvailable).toHaveBeenLastCalledWith(true);
+
+    dispose();
+  });
 });
 
 describe('applyWorkerUpdate', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('asks the waiting worker to take over, and leaves the reload to the swap', async () => {
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
@@ -326,5 +381,40 @@ describe('applyWorkerUpdate', () => {
     await applyWorkerUpdate(sw.container, reload);
 
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads anyway when the posted gesture never lands', async () => {
+    // The worker the offer named can be superseded before the tap, and a message
+    // to a worker that is no longer waiting activates nothing and reports
+    // nothing. Without the deadline the document would sit on «جاري التحديث...».
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    const reload = vi.fn();
+
+    await applyWorkerUpdate(sw.container, reload);
+    expect(reload).not.toHaveBeenCalled();
+
+    // No swap: the controller serving this document is still the same worker.
+    await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain('gesture never landed');
+    warn.mockRestore();
+  });
+
+  it('leaves a landed swap to do its own reloading', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    const reload = vi.fn();
+
+    await applyWorkerUpdate(sw.container, reload);
+    // The swap: the controller this document is served by has changed.
+    sw.swapTo({});
+    await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
+
+    expect(reload).not.toHaveBeenCalled();
   });
 });

@@ -28,6 +28,12 @@ import { logger } from './logger';
  * document is not reading a prompt — but dismissal is per document, so the next
  * launch still applies what this one declined (ADR-0042).
  *
+ * Neither half is allowed to strand the document. The offer is tied to the worker
+ * that made it, so a build that is superseded or activated takes its offer down
+ * with it (`waitingUpdate`), and the gesture is bounded: whatever a
+ * `SKIP_WAITING` that activates nothing would otherwise leave on screen, there is
+ * a reload behind it (`applyWorkerUpdate`, ADR-0055).
+ *
  * Both halves depend on `CACHE_VERSION` changing per deployment —
  * `scripts/generate-icons.mjs` bakes the deployment id into `sw-version.js`,
  * which is what makes even a content-only deploy install a new worker. If that
@@ -35,6 +41,18 @@ import { logger } from './logger';
  * for content-only deploys.
  */
 export const UPDATE_CHECK_INTERVAL_MS = 15 * 60_000;
+
+/**
+ * How long a posted `SKIP_WAITING` is given to replace this document's controller
+ * before the gesture gives up on it and reloads instead.
+ *
+ * It only has to outlast the swap, which is a frame's work; the reload the swap
+ * causes is not this timer's business, because the document it replaces goes away
+ * with the timer still in it. A gesture that lands nowhere cannot be recognisable
+ * any other way: the browser reports nothing at all for a worker that has already
+ * been superseded, so silence has to be given a deadline.
+ */
+export const UPDATE_APPLY_DEADLINE_MS = 5_000;
 
 function isVisible(): boolean {
   return document.visibilityState === 'visible';
@@ -46,17 +64,23 @@ function waitingWorker(registration: ServiceWorkerRegistration | null | undefine
 }
 
 /**
- * Whether this document is served by an older build with a newer one waiting:
- * the state the prompt is for. A missing controller means there is no previous
+ * The worker this document should be told about: a waiting build, when an older
+ * one is serving the document. A missing controller means there is no previous
  * build to be behind — the first install is not an update.
+ *
+ * The worker itself is returned rather than a boolean, so the announcement can be
+ * tied to the build it describes. An offer is only true of one worker: the one the
+ * probe named can be replaced or activated while the offer is on screen, and a
+ * boolean would go on claiming it.
  */
-async function hasUpdateWaiting(serviceWorker: ServiceWorkerContainer): Promise<boolean> {
+async function waitingUpdate(serviceWorker: ServiceWorkerContainer): Promise<ServiceWorker | null> {
   try {
     const registration = await serviceWorker.getRegistration();
-    return Boolean(waitingWorker(registration) && serviceWorker.controller);
+    const waiting = waitingWorker(registration);
+    return waiting && serviceWorker.controller ? waiting : null;
   } catch (error) {
     logger.warn('Service worker update probe failed', { error: String(error) });
-    return false;
+    return null;
   }
 }
 
@@ -72,10 +96,31 @@ export type Reload = () => void;
  * the reload is the same single guarded reload as any other swap. With nothing
  * waiting there is nothing to skip to, so the gesture falls back to a plain
  * reload — a button that did nothing would be worse than a redundant load.
+ *
+ * That fallback is a deadline, not just a branch for the missing worker, because
+ * the offer names a worker that was waiting when it was probed: by the time the
+ * user taps, a newer install can have superseded it, and the browser answers a
+ * message to a worker that is no longer waiting by doing nothing at all — no
+ * event, no error, no swap. The gesture would then leave the document on
+ * «جاري التحديث...» for good (ADR-0055). Two things the deadline covers:
+ *
+ * - A swap that landed without replacing this document. `applySwap` holds the
+ *   reload until the document is visible, so a backgrounded tab — whose timers
+ *   the browser may have frozen along with it — can sit on a build whose caches
+ *   `activate` has already purged. This reload is the one that was owed.
+ * - A message that activated nothing. Silence is all the browser reports, so the
+ *   deadline is the only way to notice it. The reload then puts the offer back in
+ *   the user's hands rather than leaving a frozen label: the update is still
+ *   waiting, so the prompt returns with a live button, and a tap then names
+ *   whatever worker is waiting at that moment.
+ *
+ * What it does not do is install the update. Only `SKIP_WAITING` can, and when
+ * the message lands nowhere a cold start is still the release ADR-0039 describes.
  */
 export async function applyWorkerUpdate(
   serviceWorker: ServiceWorkerContainer,
-  reload: Reload = () => window.location.reload()
+  reload: Reload = () => window.location.reload(),
+  deadlineMs: number = UPDATE_APPLY_DEADLINE_MS
 ): Promise<void> {
   try {
     const registration = await serviceWorker.getRegistration();
@@ -84,6 +129,14 @@ export async function applyWorkerUpdate(
       reload();
       return;
     }
+    // A landed swap replaces the controller, so the controller's identity is the
+    // one honest answer to "did the gesture do anything?".
+    const controller = serviceWorker.controller;
+    window.setTimeout(() => {
+      if (serviceWorker.controller !== controller) return;
+      logger.warn('Service worker update gesture never landed', { deadlineMs });
+      reload();
+    }, deadlineMs);
     waiting.postMessage({ type: 'SKIP_WAITING' });
   } catch (error) {
     logger.warn('Service worker update apply failed', { error: String(error) });
@@ -114,17 +167,20 @@ export function watchWorkerUpdates(
   let swapPending = false;
   let disposed = false;
   // Only report a change: the probe runs on every focus and every interval, and
-  // the prompt should not re-render 96 times a day to say the same thing.
-  let reported = false;
+  // the prompt should not re-render 96 times a day to say the same thing. The
+  // unit of change is the *worker*, not the boolean — a different worker is a
+  // different offer, and a worker that has gone is an offer to take back, which a
+  // boolean cannot express.
+  let reported: ServiceWorker | null = null;
 
-  const report = (available: boolean) => {
-    if (disposed || !onUpdateAvailable || available === reported) return;
-    reported = available;
-    onUpdateAvailable(available);
+  const report = (waiting: ServiceWorker | null) => {
+    if (disposed || !onUpdateAvailable || waiting === reported) return;
+    reported = waiting;
+    onUpdateAvailable(waiting !== null);
   };
 
   const reportAvailability = () => {
-    void hasUpdateWaiting(serviceWorker).then(report);
+    void waitingUpdate(serviceWorker).then(report);
   };
 
   const applySwap = () => {
@@ -141,7 +197,7 @@ export function watchWorkerUpdates(
     controller = next;
     // Whoever is in control now is the build this document will be reloaded
     // onto, so there is nothing left to offer.
-    report(false);
+    report(null);
     applySwap();
   };
 
