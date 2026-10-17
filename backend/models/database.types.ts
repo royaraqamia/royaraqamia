@@ -1723,6 +1723,135 @@ export type Database = {
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
       transliterate_arabic: { Args: { raw: string }; Returns: string };
+      upsert_category: {
+        Args: {
+          p_client_id: string;
+          p_color_hex: string;
+          p_id: string;
+          p_name: string;
+          p_updated_at: string;
+          p_user_id: string;
+        };
+        Returns: {
+          client_id: string | null;
+          color_hex: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          is_default: boolean;
+          name: string;
+          updated_at: string;
+          user_id: string | null;
+        }[];
+      };
+      upsert_expense: {
+        Args: {
+          p_amount: number;
+          p_category_id: string;
+          p_client_id: string;
+          p_currency: string | null;
+          p_date: string;
+          p_description: string | null;
+          p_id: string;
+          p_updated_at: string;
+          p_user_id: string;
+        };
+        Returns: {
+          amount: number;
+          category_id: string;
+          client_id: string | null;
+          created_at: string;
+          currency: string | null;
+          date: string;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_habit: {
+        Args: {
+          p_archived: boolean;
+          p_client_id: string;
+          p_frequency: string;
+          p_id: string;
+          p_name: string;
+          p_reminder_time: string | null;
+          p_target: number | null;
+          p_target_period: string | null;
+          p_updated_at: string;
+          p_user_id: string;
+        };
+        Returns: {
+          archived: boolean;
+          client_id: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          frequency: string;
+          id: string;
+          name: string;
+          reminder_time: string | null;
+          target: number | null;
+          target_period: string | null;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_recurring_expense: {
+        Args: {
+          p_active: boolean;
+          p_amount: number;
+          p_category_id: string;
+          p_client_id: string;
+          p_day_of_month: number;
+          p_description: string | null;
+          p_id: string;
+          p_start_month: string;
+          p_updated_at: string;
+          p_user_id: string;
+        };
+        Returns: {
+          active: boolean;
+          amount: number;
+          category_id: string;
+          client_id: string | null;
+          created_at: string;
+          day_of_month: number;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          start_month: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_short_link: {
+        Args: {
+          p_client_id: string;
+          p_code: string;
+          p_created_at: string;
+          p_deleted_at: string | null;
+          p_expires_at: string | null;
+          p_is_blocked: boolean;
+          p_original_url: string;
+          p_password_hash: string | null;
+          p_updated_at: string;
+          p_user_id: string;
+        };
+        Returns: {
+          client_id: string | null;
+          code: string;
+          created_at: string;
+          deleted_at: string | null;
+          expires_at: string | null;
+          is_blocked: boolean;
+          original_url: string;
+          password_hash: string | null;
+          updated_at: string;
+          user_id: string | null;
+        }[];
+      };
     };
     Enums: {
       post_status: 'draft' | 'published' | 'scheduled';

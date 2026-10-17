@@ -100,18 +100,39 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     // A client-minted id makes a replayed write an idempotent upsert keyed on
     // (user_id, client_id) (ADR-0029, ticket #167). A legacy/online create with
     // no client id falls back to a plain insert.
+    //
+    // `upsert_short_link` applies last-write-wins (ADR-0033): a replay older
+    // than the stored row returns no row and leaves it untouched, so a lost
+    // create response cannot clobber a newer edit made on another device.
     if (link.clientId && link.userId) {
-      const { data, error } = await supabase
-        .from('short_links')
-        .upsert(row, { onConflict: 'user_id,client_id' })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('upsert_short_link', {
+        p_code: row.code,
+        p_original_url: row.original_url,
+        p_user_id: link.userId,
+        p_created_at: row.created_at,
+        p_updated_at: row.updated_at,
+        p_is_blocked: row.is_blocked,
+        p_expires_at: row.expires_at,
+        p_password_hash: row.password_hash,
+        p_client_id: link.clientId,
+        p_deleted_at: row.deleted_at,
+      });
 
       if (error) {
         throw new Error(`Failed to create short link: ${error.message}`);
       }
 
-      return this.toDomain(data as ShortLinkDbRow);
+      const inserted = data?.[0];
+      if (inserted) {
+        return this.toDomain(inserted as ShortLinkDbRow);
+      }
+
+      // Stale replay: read the stored winner so the replay is a success.
+      const current = await this.findByClientId(link.userId, link.clientId);
+      if (!current) {
+        throw new Error('Failed to create short link: not found after replay');
+      }
+      return current;
     }
 
     const { data, error } = await supabase.from('short_links').insert(row).select().single();

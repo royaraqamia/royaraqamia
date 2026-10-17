@@ -22,6 +22,9 @@ class Builder {
   select() {
     return this.log('select');
   }
+  insert(row: unknown) {
+    return this.log(`insert ${JSON.stringify(row)}`);
+  }
   update(row: unknown) {
     return this.log(`update ${JSON.stringify(row)}`);
   }
@@ -53,13 +56,21 @@ class Builder {
   }
 }
 
-function makeClient(results: Record<string, Result> = {}) {
+function makeClient(
+  results: Record<string, Result> = {},
+  rpcResult: Result = { data: null, error: null }
+) {
   const calls: string[] = [];
+  const rpcCalls: { name: string; args: Record<string, unknown> }[] = [];
   const from = vi.fn(
     (table: string) =>
       new Builder(table, calls, () => results[table] ?? { data: null, error: null })
   );
-  return { client: { from } as unknown as SupabaseClient, calls };
+  const rpc = vi.fn((name: string, args: Record<string, unknown>) => {
+    rpcCalls.push({ name, args });
+    return Promise.resolve(rpcResult);
+  });
+  return { client: { from, rpc } as unknown as SupabaseClient, calls, rpcCalls };
 }
 
 const linkRow = {
@@ -128,5 +139,66 @@ describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
     expect(calls).not.toContain('short_links:is deleted_at=null');
     expect(calls).toContain('short_links:eq user_id=u-1');
     expect(links[0]?.deletedAt).toEqual(new Date(deletedAt));
+  });
+
+  describe('create — replayed create is last-write-wins', () => {
+    const link = {
+      code: 'abc123',
+      originalUrl: 'https://x.example',
+      userId: 'u-1',
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: '11111111-1111-7111-8111-111111111111',
+      deletedAt: null,
+    };
+
+    it('a newer create applies through the LWW RPC', async () => {
+      const { client, rpcCalls } = makeClient({}, { data: [linkRow], error: null });
+      const repo = new SupabaseShortLinkRepository(client);
+
+      const result = await repo.create(link);
+
+      expect(rpcCalls[0]?.name).toBe('upsert_short_link');
+      expect(rpcCalls[0]?.args).toMatchObject({
+        p_code: 'abc123',
+        p_user_id: 'u-1',
+        p_client_id: '11111111-1111-7111-8111-111111111111',
+        p_updated_at: '2026-08-01T00:00:00.000Z',
+      });
+      expect(result.code).toBe('abc123');
+    });
+
+    it('a stale create replay returns the stored winner', async () => {
+      const newer = {
+        ...linkRow,
+        original_url: 'https://newer.example',
+        updated_at: '2026-08-06T00:00:00.000Z',
+      };
+      const { client } = makeClient(
+        { short_links: { data: newer, error: null } },
+        { data: [], error: null }
+      );
+      const repo = new SupabaseShortLinkRepository(client);
+
+      const result = await repo.create(link);
+
+      expect(result.originalUrl).toBe('https://newer.example');
+      expect(result.updatedAt).toEqual(new Date('2026-08-06T00:00:00.000Z'));
+    });
+
+    it('falls back to a plain insert without a client id', async () => {
+      const { client, calls, rpcCalls } = makeClient({
+        short_links: { data: linkRow, error: null },
+      });
+      const repo = new SupabaseShortLinkRepository(client);
+
+      await repo.create({ ...link, clientId: null });
+
+      expect(rpcCalls).toEqual([]);
+      expect(calls.some((c) => c.startsWith('short_links:insert'))).toBe(true);
+    });
   });
 });

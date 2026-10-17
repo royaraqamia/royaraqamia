@@ -318,22 +318,35 @@ export function createSpendtrackRepository(
       // A client-minted id makes a replayed write an idempotent upsert, and
       // adopting it as the primary key lets offline splits/updates reference a
       // row the server has never seen (ADR-0029, ticket #162/#166).
+      //
+      // `upsert_expense` applies last-write-wins (ADR-0033): a replay older
+      // than the stored row returns no row and leaves it untouched, so a lost
+      // create response cannot resurrect the original columns over a newer
+      // edit. `applied` is what gates the split replacement below.
       let expenseId: string;
+      let applied = true;
       if (clientId && input.user_id) {
-        const { data, error } = await supabase
-          .from('expenses')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
-          .select('id')
-          .single();
+        const { data, error } = await supabase.rpc('upsert_expense', {
+          p_id: clientId,
+          p_user_id: input.user_id,
+          p_amount: expense.amount,
+          p_category_id: expense.category_id,
+          p_date: expense.date,
+          p_description: expense.description,
+          p_currency: expense.currency ?? null,
+          p_client_id: clientId,
+          p_updated_at: row.updated_at,
+        });
         if (error) throw new Error(error.message);
-        expenseId = data.id;
+        applied = (data ?? []).length > 0;
+        expenseId = data?.[0]?.id ?? clientId;
       } else {
         const { data, error } = await supabase.from('expenses').insert(row).select('id').single();
         if (error) throw new Error(error.message);
         expenseId = data.id;
       }
 
-      if (splits !== undefined) {
+      if (splits !== undefined && applied) {
         // Replace-all so a replay converges on the same split set.
         const { error: delError } = await supabase
           .from('expense_splits')
@@ -592,13 +605,35 @@ export function createSpendtrackRepository(
         'id, amount, category_id, description, day_of_month, start_month, active, client_id, updated_at, deleted_at';
 
       if (clientId) {
-        const { data, error } = await supabase
-          .from('recurring_expenses')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
-          .select(columns)
-          .single();
+        const { data, error } = await supabase.rpc('upsert_recurring_expense', {
+          p_id: clientId,
+          p_user_id: userId,
+          p_amount: row.amount,
+          p_category_id: row.category_id,
+          p_description: row.description,
+          p_day_of_month: row.day_of_month,
+          p_start_month: row.start_month,
+          p_active: true,
+          p_client_id: clientId,
+          p_updated_at: row.updated_at,
+        });
         if (error) throw new Error(error.message);
-        return withOfflineFields(data as Record<string, unknown>) as RecurringExpense;
+        const inserted = data?.[0];
+        if (inserted) {
+          return withOfflineFields(inserted as Record<string, unknown>) as RecurringExpense;
+        }
+
+        // Stale replay: `upsert_recurring_expense` applied last-write-wins and
+        // returned no row, so read the stored winner and report success.
+        const { data: current, error: currentError } = await supabase
+          .from('recurring_expenses')
+          .select(columns)
+          .eq('user_id', userId)
+          .eq('client_id', clientId)
+          .maybeSingle();
+        if (currentError) throw new Error(currentError.message);
+        if (!current) throw new Error('Failed to load recurring expense after replay');
+        return withOfflineFields(current as Record<string, unknown>) as RecurringExpense;
       }
 
       const { data, error } = await supabase
@@ -686,9 +721,14 @@ export function createSpendtrackRepository(
       };
 
       if (clientId && input.user_id) {
-        const { error } = await supabase
-          .from('categories')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' });
+        const { error } = await supabase.rpc('upsert_category', {
+          p_id: clientId,
+          p_user_id: input.user_id,
+          p_name: row.name,
+          p_color_hex: colorHex,
+          p_client_id: clientId,
+          p_updated_at: row.updated_at,
+        });
         if (error) throw new Error(error.message);
         return;
       }
