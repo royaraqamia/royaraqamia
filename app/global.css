@@ -1508,6 +1508,33 @@ body:has([data-bottom-tabbar]) {
 }
 
 /* ========================================
+   FLOATING BACK CONTROL
+   ======================================== */
+/* Secondary pages wear one floating back control in the top corner instead of a
+   bar (`frontend/ui/navbar/SecondaryHeader.tsx`): 2.75rem tall, 0.75rem from the
+   top — 1rem at `sm`. It floats, so it does not push anything, and content that
+   starts flush in that corner (a publisher chip, a profile card, a form heading)
+   ends up underneath it. Reserve the band it occupies, the way the tab bar
+   reserves the bottom. A margin, not a padding: it adds to whatever top space
+   the shell already keeps rather than overriding it. */
+body:has([data-secondary-header]) #main-content {
+  margin-top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 640px) {
+  body:has([data-secondary-header]) #main-content {
+    margin-top: calc(4rem + env(safe-area-inset-top));
+  }
+}
+
+/* The control itself is `print:hidden`; the band goes with it. */
+@media print {
+  body:has([data-secondary-header]) #main-content {
+    margin-top: 0;
+  }
+}
+
+/* ========================================
    RESPONSIVE DROPDOWNS → BOTTOM SHEETS (< lg)
    Radix floats popover/menu/select panels by writing inline styles on its own
    `[data-radix-popper-content-wrapper]` node, which components cannot reach.
