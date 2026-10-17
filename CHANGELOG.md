@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.108.0] - 2026-10-17
+
+### Added
+- show the shell's version only on /account (#299)
+
 ## [1.107.0] - 2026-10-17
 
 ### Added
