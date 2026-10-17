@@ -42,7 +42,8 @@ const TABS: BottomTab[] = [
  * fully rounded pill.
  *
  * Secondary pages render nothing: a real app drops its tab bar the moment you
- * step into a detail screen, and the `SecondaryHeader` back row replaces it.
+ * step into a detail screen, and the `SecondaryHeader` floating back control
+ * replaces it.
  */
 export function BottomTabBar() {
   const pathname = usePathname();

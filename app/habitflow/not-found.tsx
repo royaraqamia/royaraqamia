@@ -4,7 +4,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 export default function NotFound() {
   return (
     <div className="min-h-dvh bg-background">
-      <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-24">
+      <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-6">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
           <svg
             className="w-8 h-8 text-destructive"

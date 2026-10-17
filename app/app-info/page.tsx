@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export default function AppInfoPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <main id="main-content" className="flex-1 pt-24" dir="rtl">
+      <main id="main-content" className="flex-1 pt-6" dir="rtl">
         <div className="mx-auto max-w-3xl px-6 py-12 md:py-20">
           <header className="mb-10">
             <div className="flex items-center gap-4 mb-6">

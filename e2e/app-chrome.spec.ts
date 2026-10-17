@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 /**
  * The app-chrome split: the three primary routes keep the top nav and the
- * bottom tab bar, and every other page swaps both for one back header.
+ * bottom tab bar, and every other page drops both for a floating back control.
  *
  * The chrome pieces are marked rather than classed — `data-app-navbar`,
  * `data-bottom-tabbar` and `data-secondary-header` — because a fixed bar's
@@ -62,14 +62,17 @@ test.describe('secondary pages', () => {
     });
   }
 
-  test('the header stays slim and names the page', async ({ page }) => {
+  test('the back control floats in the corner instead of a full-width bar', async ({ page }) => {
     await page.goto('/rates');
 
     const header = page.locator(BACK_HEADER);
-    const box = await header.boundingBox();
+    await expect(header).toBeVisible();
 
-    expect(box?.height).toBeLessThan(80);
-    await expect(header).toContainText('أسعار الصَّرف');
+    // A corner control, not the edge-to-edge bar it replaced.
+    const box = await header.boundingBox();
+    expect(box?.width).toBeLessThan(80);
+
+    await expect(header.getByRole('button', { name: 'رجوع' })).toBeVisible();
   });
 
   test('back goes up to the section when the page was opened cold', async ({ page }) => {

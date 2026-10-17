@@ -68,7 +68,7 @@ export default async function RatesPage() {
 
   return (
     <div className="relative min-h-dvh bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
-      <main id="main-content" dir="rtl" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24">
+      <main id="main-content" dir="rtl" className="flex-1 pt-6 pb-16 md:pb-24">
         <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">
             <SectionTitle as="h1">

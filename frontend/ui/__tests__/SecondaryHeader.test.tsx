@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 const { mockPathname, mockBack, mockPush } = vi.hoisted(() => ({
   mockPathname: vi.fn(() => '/'),
@@ -48,25 +48,15 @@ describe('SecondaryHeader', () => {
     expect(screen.getByRole('button', { name: 'رجوع' })).toBeInTheDocument();
   });
 
-  it('shows the page title without the site-name template suffix', () => {
+  it('is a floating control with no bar and no page title', () => {
     mockPathname.mockReturnValue('/rates');
     document.title = `أسعار الصَّرف | ${SITE_TITLE}`;
 
     render(<SecondaryHeader />);
 
-    expect(screen.getByText('أسعار الصَّرف')).toBeInTheDocument();
-  });
-
-  it('follows a title that arrives after the route', async () => {
-    mockPathname.mockReturnValue('/community/some-post');
-    document.title = SITE_TITLE;
-
-    render(<SecondaryHeader />);
-    await act(async () => {
-      document.title = `منشور | ${SITE_TITLE}`;
-    });
-
-    expect(screen.getByText('منشور')).toBeInTheDocument();
+    // The chrome is the back control alone: the page names itself elsewhere.
+    expect(screen.queryByText('أسعار الصَّرف')).not.toBeInTheDocument();
+    expect(header()?.querySelector('header')).toBeNull();
   });
 
   it('keeps the skip link that the top nav owns on primary pages', () => {
