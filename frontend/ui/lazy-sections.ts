@@ -11,7 +11,6 @@ export const HOME_SECTION_IDS = [
   'verify',
   'consultations-cards',
   'why-us',
-  'faq',
   'cta',
   'hero-visual',
 ] as const;
@@ -27,7 +26,6 @@ export const HOME_SECTIONS = {
   verify: () => import('./VerifySection').then((m) => m.VerifySection),
   'consultations-cards': () => import('./ConsultationCards').then((m) => m.ConsultationCards),
   'why-us': () => import('./WhyUs').then((m) => m.WhyUs),
-  faq: () => import('./FAQ').then((m) => m.FAQ),
   cta: () => import('./CTA').then((m) => m.CTA),
   'hero-visual': () => import('./HeroVisual').then((m) => m.HeroVisual),
 } as const satisfies Record<HomeSectionId, () => Promise<ComponentType>>;

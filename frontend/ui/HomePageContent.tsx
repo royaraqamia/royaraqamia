@@ -8,7 +8,6 @@ import { TrainingCourses } from './TrainingCourses';
 import { Certificate } from './Certificate';
 import { VerifySection } from './VerifySection';
 import { ConsultationCards } from './ConsultationCards';
-import { FAQ } from './FAQ';
 
 export function HomePageContent() {
   return (
@@ -35,7 +34,6 @@ export function HomePageContent() {
       </section>
 
       {/* <WhyUs /> */}
-      <FAQ />
       {/* <CTA /> */}
     </main>
   );

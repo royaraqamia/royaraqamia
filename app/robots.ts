@@ -19,13 +19,21 @@ const DISALLOWED_PATHS = [
   '/blogpress',
 ];
 
+/**
+ * Crawlable exceptions inside a disallowed prefix. `/account/faq` is public
+ * marketing copy (the FAQ that used to sit on the home page), so it is the one
+ * path under `/account` a crawler may read — longest match wins, and it is
+ * listed in `sitemap.ts` so the sitemap is still how it is found.
+ */
+const ALLOWED_EXCEPTIONS = ['/account/faq'];
+
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getCanonicalOrigin();
 
   return {
     rules: {
       userAgent: '*',
-      allow: ['/', '/mcp/guide'],
+      allow: ['/', '/mcp/guide', ...ALLOWED_EXCEPTIONS],
       disallow: DISALLOWED_PATHS,
     },
     sitemap: `${baseUrl}/sitemap.xml`,

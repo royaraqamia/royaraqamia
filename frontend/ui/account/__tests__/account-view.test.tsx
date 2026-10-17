@@ -61,6 +61,12 @@ describe('AccountView', () => {
     );
     expect(screen.getByText('تواصل معنا')).toBeInTheDocument();
 
+    // The FAQ row is public: a guest gets a link, not the sign-in prompt.
+    expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
+      'href',
+      '/account/faq'
+    );
+
     // Gated rows are visible, but as buttons rather than links.
     for (const label of ['طلباتي', 'المنشورات', 'الرَّوابط المختصَرة', 'التَّطبيقات المتَّصلة']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
@@ -95,6 +101,10 @@ describe('AccountView', () => {
     expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة/ })).toHaveAttribute(
       'href',
       '/account/connected-apps'
+    );
+    expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
+      'href',
+      '/account/faq'
     );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
