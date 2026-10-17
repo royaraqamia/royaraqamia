@@ -78,9 +78,8 @@ const socialLinks = [
 
 /**
  * The site's footer, at the foot of `/account` only: the brand line and the
- * social icons. The homepage carries the legal links on their own
- * (`HomeFooter`) and the account rows carry them again as rows, so neither
- * belongs here twice.
+ * social icons. The account rows carry the legal pages again as rows, so they
+ * do not belong here twice.
  */
 export function Footer() {
   return (

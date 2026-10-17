@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { SITE_DESCRIPTION } from '@/frontend/shared/metadata';
 import { Navbar } from '../frontend/ui/Navbar';
 import { HomePageContent } from '../frontend/ui/HomePageContent';
-import { HomeFooter } from '../frontend/ui/HomeFooter';
 
 export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
@@ -14,7 +13,6 @@ export default function HomePage() {
       {/* SkipToContent moved to Navbar */}
       <Navbar />
       <HomePageContent />
-      <HomeFooter />
     </div>
   );
 }
