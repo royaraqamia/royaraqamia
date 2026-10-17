@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.105.0] - 2026-10-17
+
+### Changed
+- publish shell 1.0.7 (20007)
+
+### Added
+- show every account row to guests, prompt on the gated ones (#290)
+
 ## [1.104.0] - 2026-10-16
 
 ### Changed
