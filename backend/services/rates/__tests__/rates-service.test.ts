@@ -301,17 +301,17 @@ describe('RatesService.getBoard', () => {
 });
 
 describe('RatesService.getSeries', () => {
-  it('returns a dated series for a known currency', async () => {
+  it('returns a series dated by the provider quote date, not the fetch time', async () => {
     const repository = makeRepo({
       getLatestSnapshot: vi.fn().mockResolvedValue(snapshot({ rates: { SAR: 3.75 } })),
       getSnapshotsSince: vi.fn().mockResolvedValue([
         snapshot({
-          fetched_at: '2026-10-01T06:00:00.000Z',
+          fetched_at: '2026-10-02T06:00:00.000Z',
           provider_quote_date: '2026-10-01',
           rates: { SAR: 3.7 },
         }),
         snapshot({
-          fetched_at: '2026-10-02T06:00:00.000Z',
+          fetched_at: '2026-10-05T06:00:00.000Z',
           provider_quote_date: '2026-10-02',
           rates: { SAR: 3.75 },
         }),
@@ -327,6 +327,36 @@ describe('RatesService.getSeries', () => {
       { date: '2026-10-01', value: 3.7 },
       { date: '2026-10-02', value: 3.75 },
     ]);
+  });
+
+  it('collapses fetches that share a quote date to one point', async () => {
+    const repository = makeRepo({
+      getLatestSnapshot: vi.fn().mockResolvedValue(snapshot({ rates: { SAR: 3.8 } })),
+      getSnapshotsSince: vi.fn().mockResolvedValue([
+        snapshot({
+          fetched_at: '2026-10-02T06:00:00.000Z',
+          provider_quote_date: '2026-10-01',
+          rates: { SAR: 3.7 },
+        }),
+        // Friday's quote refetched across the weekend: same quote date, newer
+        // fetch — the later snapshot must win and the days must not accumulate.
+        snapshot({
+          fetched_at: '2026-10-03T06:00:00.000Z',
+          provider_quote_date: '2026-10-01',
+          rates: { SAR: 3.75 },
+        }),
+        snapshot({
+          fetched_at: '2026-10-04T06:00:00.000Z',
+          provider_quote_date: '2026-10-01',
+          rates: { SAR: 3.8 },
+        }),
+      ]),
+    });
+    const { service } = makeService(repository);
+
+    const series = await service.getSeries('sar', '1M');
+
+    expect(series?.points).toEqual([{ date: '2026-10-01', value: 3.8 }]);
   });
 
   it('returns null for an unknown code', async () => {

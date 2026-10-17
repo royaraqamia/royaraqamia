@@ -255,7 +255,11 @@ export class RatesService {
         : upper === snapshot.base_currency
           ? 1
           : variantRate(snapshot, upper, basis);
-      if (value !== undefined) byDate.set(snapshot.fetched_at.slice(0, 10), value);
+      // Date a point by the provider's quote date, not the fetch time: a
+      // weekend of identical Friday quotes must not become Sat/Sun/Mon points,
+      // and a failed fetch must not punch a hole in an otherwise flat series.
+      // Snapshots arrive oldest-first, so a later fetch wins for a quote date.
+      if (value !== undefined) byDate.set(snapshot.provider_quote_date, value);
     }
 
     const points: RateSeriesPoint[] = Array.from(byDate.entries())
