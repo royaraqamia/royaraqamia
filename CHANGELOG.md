@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.2] - 2026-10-17
+
+### Changed
+- drop the homepage legal-links footer (#304)
+
 ## [1.109.1] - 2026-10-17
 
 ### Fixed
