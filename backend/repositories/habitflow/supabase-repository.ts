@@ -135,18 +135,39 @@ export class SupabaseHabitRepository implements HabitRepository {
     // is what lets the rest of the graph reference a habit the server has never
     // seen: an offline `habit_logs.habit_id` and every habit update/delete use
     // the same UUID the device minted, so replay needs no id remapping (#164).
+    //
+    // The upsert is last-write-wins (ADR-0033, #287): `upsert_habit_lww` only
+    // applies the incoming row when its `updated_at` is at least the stored
+    // one, so a replay whose response was lost cannot discard a newer edit made
+    // on another device. An empty result means the stored row won — return it
+    // rather than erroring, because the replayed create is still a success.
     if (habit.clientId && this.userId) {
-      const { data, error } = await this.client
-        .from('habits')
-        .upsert({ ...row, id: habit.clientId }, { onConflict: 'user_id,client_id' })
-        .select()
-        .single();
+      const { data, error } = await this.client.rpc('upsert_habit_lww', {
+        p_row: { ...row, id: habit.clientId },
+      });
 
       if (error) {
         throw error;
       }
 
-      return toHabit(data);
+      if (data && data.length > 0) {
+        return toHabit(data[0] as HabitRow);
+      }
+
+      const { data: current, error: readError } = await this.client
+        .from('habits')
+        .select('*')
+        .eq('user_id', this.userId)
+        .eq('client_id', habit.clientId)
+        .maybeSingle();
+
+      if (readError) {
+        throw readError;
+      }
+      if (!current) {
+        throw new AppError('العادة غير موجودة', 404);
+      }
+      return toHabit(current as HabitRow);
     }
 
     const { data, error } = await this.client.from('habits').insert(row).select().single();

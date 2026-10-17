@@ -53,13 +53,17 @@ class Builder {
   }
 }
 
-function makeClient(results: Record<string, Result> = {}) {
+function makeClient(results: Record<string, Result> = {}, rpcResults: Record<string, Result> = {}) {
   const calls: string[] = [];
   const from = vi.fn(
     (table: string) =>
       new Builder(table, calls, () => results[table] ?? { data: null, error: null })
   );
-  return { client: { from } as unknown as SupabaseClient, calls };
+  const rpc = vi.fn((name: string, args: unknown) => {
+    calls.push(`rpc:${name} ${JSON.stringify(args)}`);
+    return Promise.resolve(rpcResults[name] ?? { data: [], error: null });
+  });
+  return { client: { from, rpc } as unknown as SupabaseClient, calls };
 }
 
 const linkRow = {
@@ -76,6 +80,67 @@ const linkRow = {
 };
 
 describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
+  it('create replays through the last-write-wins upsert', async () => {
+    const { client, calls } = makeClient(
+      {},
+      { upsert_short_link_lww: { data: [linkRow], error: null } }
+    );
+    const repo = new SupabaseShortLinkRepository(client);
+
+    const created = await repo.create({
+      code: 'abc123',
+      originalUrl: 'https://x.example',
+      userId: 'u-1',
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: '11111111-1111-7111-8111-111111111111',
+      deletedAt: null,
+    });
+
+    const rpcCall = calls.find((c) => c.startsWith('rpc:upsert_short_link_lww'));
+    expect(rpcCall).toBeDefined();
+    expect(rpcCall).toContain('"client_id":"11111111-1111-7111-8111-111111111111"');
+    expect(calls.some((c) => c.startsWith('short_links:upsert'))).toBe(false);
+    expect(created.code).toBe('abc123');
+  });
+
+  it('a stale create replay leaves the newer stored row untouched', async () => {
+    const newerRow = {
+      ...linkRow,
+      code: 'newer1',
+      original_url: 'https://newer.example',
+      updated_at: '2026-08-05T00:00:00.000Z',
+    };
+    const { client, calls } = makeClient(
+      { short_links: { data: newerRow, error: null } },
+      // The LWW predicate filtered the upsert: nothing came back.
+      { upsert_short_link_lww: { data: [], error: null } }
+    );
+    const repo = new SupabaseShortLinkRepository(client);
+
+    const created = await repo.create({
+      code: 'abc123',
+      originalUrl: 'https://x.example',
+      userId: 'u-1',
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: '11111111-1111-7111-8111-111111111111',
+      deletedAt: null,
+    });
+
+    expect(created.code).toBe('newer1');
+    expect(created.updatedAt).toEqual(new Date('2026-08-05T00:00:00.000Z'));
+    expect(calls.some((c) => c.includes('eq client_id=11111111-1111-7111-8111-111111111111'))).toBe(
+      true
+    );
+  });
+
   it('update is guarded by updated_at (a stale replay cannot revive a newer delete)', async () => {
     const { client, calls } = makeClient({ short_links: { data: [linkRow], error: null } });
     const repo = new SupabaseShortLinkRepository(client);

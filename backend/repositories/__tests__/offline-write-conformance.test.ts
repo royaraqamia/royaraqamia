@@ -12,8 +12,10 @@ import { describe, it, expect } from 'vitest';
  *   2. No camelCase domain field spread into a DB update payload: PostgREST
  *      rejects unknown columns (PGRST204) and the sync engine then marks the
  *      write a permanent failure.
- *   3. Creates upsert on `(user_id, client_id)` so a replayed write is
- *      idempotent instead of a duplicate.
+ *   3. Creates upsert on `(user_id, client_id)` — directly, or through the
+ *      `upsert_*_lww` SQL function that applies the same key with a
+ *      last-write-wins conflict predicate — so a replayed write is idempotent
+ *      instead of a duplicate and cannot discard a newer edit (#287).
  *
  * This is a source tripwire, not a proof. Adding a product means appending its
  * repository below so it gets the same guardrails.
@@ -70,8 +72,11 @@ describe('offline write conformance (ADR-0029)', () => {
       const source = read(file);
       if (!/clientId|client_id/.test(source)) continue;
       // BlogPress posts key ownership on `author_id` and let the client mint the
-      // primary key, so they upsert on `id`; the others on `(user_id, client_id)`.
-      expect(source, file).toMatch(/onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'/);
+      // primary key, so they upsert on `id`; the others on `(user_id, client_id)`
+      // — via the plain PostgREST upsert or the last-write-wins SQL function.
+      expect(source, file).toMatch(
+        /onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'|rpc\(\s*'upsert_\w+_lww'/
+      );
     }
   });
 });

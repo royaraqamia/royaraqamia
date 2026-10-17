@@ -4,7 +4,7 @@ import {
 } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/backend/models/database.types';
+import type { Database, Json } from '@/backend/models/database.types';
 
 // Database row interface matching public.short_links in supabase_schema.sql
 interface ShortLinkDbRow {
@@ -100,18 +100,39 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     // A client-minted id makes a replayed write an idempotent upsert keyed on
     // (user_id, client_id) (ADR-0029, ticket #167). A legacy/online create with
     // no client id falls back to a plain insert.
+    //
+    // The upsert is last-write-wins (ADR-0033, #287): `upsert_short_link_lww`
+    // only applies the incoming row when its `updated_at` is at least the
+    // stored one, so a replay whose response was lost cannot discard a newer
+    // edit made on another device. An empty result means the stored row won —
+    // return it rather than erroring, because the replayed create is a success.
     if (link.clientId && link.userId) {
-      const { data, error } = await supabase
-        .from('short_links')
-        .upsert(row, { onConflict: 'user_id,client_id' })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('upsert_short_link_lww', {
+        p_row: row as unknown as Json,
+      });
 
       if (error) {
         throw new Error(`Failed to create short link: ${error.message}`);
       }
 
-      return this.toDomain(data as ShortLinkDbRow);
+      if (data && data.length > 0) {
+        return this.toDomain(data[0] as ShortLinkDbRow);
+      }
+
+      const { data: current, error: readError } = await supabase
+        .from('short_links')
+        .select('*')
+        .eq('user_id', link.userId)
+        .eq('client_id', link.clientId)
+        .maybeSingle();
+
+      if (readError) {
+        throw new Error(`Failed to create short link: ${readError.message}`);
+      }
+      if (!current) {
+        throw new Error('Failed to create short link: not found after replay');
+      }
+      return this.toDomain(current as ShortLinkDbRow);
     }
 
     const { data, error } = await supabase.from('short_links').insert(row).select().single();

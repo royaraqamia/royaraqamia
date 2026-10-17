@@ -1723,6 +1723,85 @@ export type Database = {
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
       transliterate_arabic: { Args: { raw: string }; Returns: string };
+      upsert_category_lww: {
+        Args: { p_row: Json };
+        Returns: {
+          client_id: string | null;
+          color_hex: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          is_default: boolean;
+          name: string;
+          updated_at: string;
+          user_id: string | null;
+        }[];
+      };
+      upsert_expense_lww: {
+        Args: { p_row: Json };
+        Returns: {
+          amount: number;
+          category_id: string;
+          client_id: string | null;
+          created_at: string;
+          currency: string | null;
+          date: string;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_habit_lww: {
+        Args: { p_row: Json };
+        Returns: {
+          archived: boolean;
+          client_id: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          frequency: string;
+          id: string;
+          name: string;
+          reminder_time: string | null;
+          target: number | null;
+          target_period: string | null;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_recurring_expense_lww: {
+        Args: { p_row: Json };
+        Returns: {
+          active: boolean;
+          amount: number;
+          category_id: string;
+          client_id: string | null;
+          created_at: string;
+          day_of_month: number;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          start_month: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      upsert_short_link_lww: {
+        Args: { p_row: Json };
+        Returns: {
+          client_id: string | null;
+          code: string;
+          created_at: string;
+          deleted_at: string | null;
+          expires_at: string | null;
+          is_blocked: boolean;
+          original_url: string;
+          password_hash: string | null;
+          updated_at: string;
+          user_id: string | null;
+        }[];
+      };
     };
     Enums: {
       post_status: 'draft' | 'published' | 'scheduled';

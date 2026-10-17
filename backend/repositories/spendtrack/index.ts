@@ -318,22 +318,40 @@ export function createSpendtrackRepository(
       // A client-minted id makes a replayed write an idempotent upsert, and
       // adopting it as the primary key lets offline splits/updates reference a
       // row the server has never seen (ADR-0029, ticket #162/#166).
+      //
+      // `upsert_expense_lww` is last-write-wins (ADR-0033, #287): a replay older
+      // than the stored row matches nothing, so the splits below are only
+      // replaced when the parent row actually won. An empty result is still a
+      // success — the stored row is newer, so keep it and its splits.
       let expenseId: string;
+      let applied = true;
       if (clientId && input.user_id) {
-        const { data, error } = await supabase
-          .from('expenses')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
-          .select('id')
-          .single();
+        const { data, error } = await supabase.rpc('upsert_expense_lww', {
+          p_row: { ...row, id: clientId },
+        });
         if (error) throw new Error(error.message);
-        expenseId = data.id;
+
+        const winner = data && data.length > 0 ? data[0] : null;
+        if (winner) {
+          expenseId = winner.id;
+        } else {
+          applied = false;
+          const { data: current, error: readError } = await supabase
+            .from('expenses')
+            .select('id')
+            .eq('user_id', input.user_id)
+            .eq('client_id', clientId)
+            .maybeSingle();
+          if (readError) throw new Error(readError.message);
+          expenseId = current?.id ?? clientId;
+        }
       } else {
         const { data, error } = await supabase.from('expenses').insert(row).select('id').single();
         if (error) throw new Error(error.message);
         expenseId = data.id;
       }
 
-      if (splits !== undefined) {
+      if (splits !== undefined && applied) {
         // Replace-all so a replay converges on the same split set.
         const { error: delError } = await supabase
           .from('expense_splits')
@@ -592,13 +610,28 @@ export function createSpendtrackRepository(
         'id, amount, category_id, description, day_of_month, start_month, active, client_id, updated_at, deleted_at';
 
       if (clientId) {
-        const { data, error } = await supabase
-          .from('recurring_expenses')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
-          .select(columns)
-          .single();
+        // Last-write-wins on the replayed create (ADR-0033, #287): an older
+        // replay matches nothing, so the stored row is the winner.
+        const { data, error } = await supabase.rpc('upsert_recurring_expense_lww', {
+          p_row: { ...row, id: clientId },
+        });
         if (error) throw new Error(error.message);
-        return withOfflineFields(data as Record<string, unknown>) as RecurringExpense;
+
+        if (data && data.length > 0) {
+          return withOfflineFields(
+            data[0] as unknown as Record<string, unknown>
+          ) as RecurringExpense;
+        }
+
+        const { data: current, error: readError } = await supabase
+          .from('recurring_expenses')
+          .select(columns)
+          .eq('user_id', userId)
+          .eq('client_id', clientId)
+          .maybeSingle();
+        if (readError) throw new Error(readError.message);
+        if (!current) throw new Error('Recurring expense not found after replay');
+        return withOfflineFields(current as Record<string, unknown>) as RecurringExpense;
       }
 
       const { data, error } = await supabase
@@ -686,9 +719,11 @@ export function createSpendtrackRepository(
       };
 
       if (clientId && input.user_id) {
-        const { error } = await supabase
-          .from('categories')
-          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' });
+        // Last-write-wins on the replayed create (ADR-0033, #287): an empty
+        // result means the stored row is newer, which is still a success.
+        const { error } = await supabase.rpc('upsert_category_lww', {
+          p_row: { ...row, id: clientId },
+        });
         if (error) throw new Error(error.message);
         return;
       }
