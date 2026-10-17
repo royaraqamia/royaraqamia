@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.1] - 2026-10-17
+
+### Fixed
+- reserve the band the floating back control occupies (#303)
+
 ## [1.109.0] - 2026-10-17
 
 ### Added
