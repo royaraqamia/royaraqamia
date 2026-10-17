@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.106.0] - 2026-10-17
+
+### Added
+- move the home FAQ onto its own /account/faq page (#294)
+
+### Fixed
+- accept only http(s) callback file links (#293)
+
 ## [1.105.2] - 2026-10-17
 
 ### Fixed
