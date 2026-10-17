@@ -9,6 +9,8 @@ import {
   Link2,
   Plug,
   ShieldCheck,
+  Shield,
+  ScrollText,
   LogOut,
   HelpCircle,
   MessageCircle,
@@ -32,6 +34,13 @@ import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
+
+/** The legal pages, public like the FAQ row — a plain link for guests and members. */
+const legalRows = [
+  { href: '/privacy', icon: Lock, label: 'سياسة الخصوصيَّة' },
+  { href: '/terms', icon: ScrollText, label: 'شروط الاستخدام' },
+  { href: '/security', icon: Shield, label: 'سياسة الأمان' },
+];
 
 function AccountSkeleton() {
   return (
@@ -160,6 +169,19 @@ export function AccountView() {
             ←
           </span>
         </a>
+
+        {/* Legal pages — public, so plain links for guests and members alike. */}
+        {legalRows.map(({ href, icon: Icon, label }) => (
+          <Link key={href} href={href} className={rowClasses}>
+            <span className="flex items-center gap-2.5">
+              <Icon className="w-4 h-4 shrink-0 text-primary" />
+              <span>{label}</span>
+            </span>
+            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+              ←
+            </span>
+          </Link>
+        ))}
 
         {user && (
           <button

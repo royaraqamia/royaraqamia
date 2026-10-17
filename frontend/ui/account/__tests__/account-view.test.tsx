@@ -67,6 +67,19 @@ describe('AccountView', () => {
       '/account/faq'
     );
 
+    // The legal rows are public too — plain links for a guest.
+    for (const [label, href] of [
+      ['سياسة الخصوصيَّة', '/privacy'],
+      ['شروط الاستخدام', '/terms'],
+      ['سياسة الأمان', '/security'],
+    ] as const) {
+      expect(screen.getByRole('link', { name: new RegExp(label) })).toHaveAttribute('href', href);
+    }
+
+    // The site footer itself belongs to the layout, outside `<main>`, and has
+    // its own suite.
+    expect(screen.queryByText('جميع الحقوق محفوظة')).not.toBeInTheDocument();
+
     // Gated rows are visible, but as buttons rather than links.
     for (const label of ['طلباتي', 'المنشورات', 'الرَّوابط المختصَرة', 'التَّطبيقات المتَّصلة']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
@@ -108,5 +121,24 @@ describe('AccountView', () => {
     );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
+  });
+
+  it('sits the legal rows between تواصل معنا and تسجيل الخروج', () => {
+    mocks.session.user = { id: 'u1', email: 'user@example.com' };
+    render(<AccountView />);
+
+    const nav = screen.getByRole('navigation', { name: 'إجراءات الحساب' });
+    const order = Array.from(nav.querySelectorAll('a, button')).map((element) =>
+      Array.from(element.children)[0]?.textContent?.trim()
+    );
+
+    expect(order.slice(-6)).toEqual([
+      'الأسئلة الشَّائعة',
+      'تواصل معنا',
+      'سياسة الخصوصيَّة',
+      'شروط الاستخدام',
+      'سياسة الأمان',
+      'تسجيل الخروج',
+    ]);
   });
 });
