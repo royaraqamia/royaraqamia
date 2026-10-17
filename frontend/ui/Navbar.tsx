@@ -14,17 +14,23 @@ import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/fron
  * The check lives here rather than in each layout because the primary layouts
  * also wrap their own sub-routes: `app/community/layout.tsx` renders this on
  * both `/community` (primary, keeps the nav) and `/community/[slug]`
- * (secondary, gets the back header instead).
+ * (secondary, gets the floating back control instead).
+ *
+ * `reserveSpace` answers a shell whose content should start *below* the fixed
+ * bar (`/community`, `/account`). It rides along with the route check on
+ * purpose: the space and the bar it clears appear and disappear together, so a
+ * secondary child of the same layout gets neither. Left off where content is
+ * meant to sit under the bar, like the home hero.
  */
-export function Navbar() {
+export function Navbar({ reserveSpace = false }: { reserveSpace?: boolean } = {}) {
   const pathname = usePathname();
 
   if (!isPrimaryRoute(pathname)) return null;
 
-  return <PrimaryNavbar />;
+  return <PrimaryNavbar reserveSpace={reserveSpace} />;
 }
 
-function PrimaryNavbar() {
+function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
   const { isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -134,6 +140,10 @@ function PrimaryNavbar() {
       >
         تخطي إلى المحتوى الرئيسي
       </a>
+
+      {/* Flow space for the fixed bar below. Kept out of the layouts so it can
+          never outlive the bar on a secondary child. */}
+      {reserveSpace && <div data-navbar-spacer aria-hidden="true" className="h-16 lg:h-20" />}
 
       <nav
         data-app-navbar
