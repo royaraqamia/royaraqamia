@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.113.0] - 2026-10-18
+
+### Added
+- vendor the recitation into R2 as published (#336)
+
 ## [1.112.5] - 2026-10-18
 
 ### Changed
