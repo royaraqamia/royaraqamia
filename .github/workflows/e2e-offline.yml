@@ -13,19 +13,22 @@ name: 'E2E: Offline'
 # specs sign in with a dummy token against this throwaway server. Setting the
 # secret turns this job red — do not "fix" it that way.
 #
-# The owned-data spec needs the Playwright test account that
-# `e2e/setup-test-user.ts` creates; its credentials live in the `E2E_TEST_EMAIL`
-# and `E2E_TEST_PASSWORD` secrets. Without them that spec stays skipped rather
-# than failing, so the check is honest about what it covered.
+# The owned-data specs need the Playwright test account that
+# `e2e/setup-test-user.ts` creates — both halves of it: the `auth.users` row and
+# the `public.users` profile the schema's foreign keys point at. Its credentials
+# live in the `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` secrets. Without them those
+# specs stay skipped rather than failing, so the check is honest about what it
+# covered.
 #
-# Two specs are NOT wired in yet because they fail for reasons that predate this
-# workflow — they had never run anywhere, so nothing caught the drift:
-#   - `e2e/linksnap-offline.spec.ts` — both tests time out; the create flow never
-#     reaches `اختصار الرَّابط`, and the list test waits on a response the worker
-#     serves from cache, so no `response` event ever fires.
-#   - `e2e/blogpress-offline.spec.ts` — the sign-in assertion fails.
-# `e2e/lead-offline.spec.ts` is left out on purpose: it writes a Project Request
-# the suite has no way to remove, and the Supabase project here is the live one.
+# Every offline spec is wired in except `e2e/lead-offline.spec.ts`, which is left
+# out on purpose: it writes a Project Request the suite has no way to remove, and
+# the Supabase project here is the live one.
+#
+# `--workers=1` is not a workaround for flakiness, it is the shape of this suite:
+# every test signs in as the same account, and the login endpoint allows five
+# attempts per email per minute (`backend/services/auth/auth-service.ts`). Run in
+# parallel the specs rate-limit each other, and the failure looks like an
+# unrelated assertion at the sign-in step.
 #
 # NOTE: a path-filtered workflow reports no check when nothing matches, so this
 # must not be made a required status check on `main`.
@@ -39,10 +42,16 @@ on:
       - 'frontend/shared/persistent-storage.ts'
       - 'frontend/state/**'
       - 'frontend/api/spendtrack/**'
+      - 'frontend/api/blogpress/**'
       - 'frontend/ui/shared/lazy-chunk.ts'
+      - 'frontend/ui/linksnap/**'
+      - 'app/blogpress/**'
+      - 'e2e/setup-test-user.ts'
       - 'e2e/public-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'
+      - 'e2e/linksnap-offline.spec.ts'
+      - 'e2e/blogpress-offline.spec.ts'
       - 'playwright.config.ts'
       - '.github/workflows/e2e-offline.yml'
   workflow_dispatch:
@@ -80,19 +89,25 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      # One invocation, so one production build. The public spec needs no account;
-      # the owned-data flags are set only when the account is configured.
+      # One invocation, so one production build, and serial so the specs do not
+      # rate-limit each other's sign-in. The public spec needs no account; the
+      # owned-data flags are set only when the account is configured.
       - name: Offline suite
         run: >
           npx playwright test
           e2e/public-offline.spec.ts
           e2e/spendtrack-offline.spec.ts
           e2e/habitflow-sync-resume.spec.ts
+          e2e/linksnap-offline.spec.ts
+          e2e/blogpress-offline.spec.ts
           --project=existing-tests
+          --workers=1
         env:
           PUBLIC_OFFLINE_E2E: '1'
           SPENDTRACK_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           HABITFLOW_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          LINKSNAP_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          BLOGPRESS_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
 
       - name: Upload failure artifacts
         if: failure()

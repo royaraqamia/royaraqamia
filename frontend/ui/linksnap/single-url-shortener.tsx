@@ -281,7 +281,12 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             </m.div>
           )}
 
-          <HeroCtaButton type="submit" className="w-full" disabled={loading || !originalUrl}>
+          <HeroCtaButton
+            id="btn-shorten-url"
+            type="submit"
+            className="w-full"
+            disabled={loading || !originalUrl}
+          >
             {loading ? (
               <>
                 <div
