@@ -31,12 +31,27 @@ connection who taps an Ayah should fetch the few hundred kilobytes of that Ayah,
 and a listener who stops after twenty Ayat should have paid for twenty Ayat. Ayah files also make
 highlighting exact with no dataset to ship: **the Ayah being played is the file being played**.
 
-**Where the bytes live.** The public Supabase Storage bucket the APK already uses, rewritten behind our
-own origin exactly as ADR-0047 describes. One Reciter at 64 kbps is ~818 MiB, which fits the free 1 GB
-with the APK and some room; a second Reciter does not, and that is the deliberate decision point —
-Supabase Pro, or Cloudflare R2, which ADR-0047 deferred rather than rejected ("free egress and a real
-CDN") and which becomes worth its new provider, new secrets and new DNS the moment streaming egress is
-the constraint or a second Reciter is wanted. Until then, this costs nothing and adds nothing new.
+**Where the bytes live.** Cloudflare R2, behind a custom domain of ours —
+`audio.royaraqamia.com` — which is where ADR-0047 left the question ("free egress and a real CDN") and
+deferred it as scope for a file fetched a few hundred times a month. This is the first asset whose size
+and streaming make that cost worth paying, and the numbers are not close. Supabase's free plan carries
+1 GB of storage and ~5 GB of egress a month, shared with the APK install path: one Reciter is 818 MiB,
+so it holds exactly one and no more, and a second Reciter ends it at $25 a month. R2 carries 10 GB-month
+of storage — twelve Reciters at 64 kbps — free egress, and ten million Class B reads a month, for
+nothing, after which the meter is requests rather than bandwidth. The APK's rewrite is therefore
+deliberately _not_ the pattern here: audio is served straight from R2, never proxied through Vercel,
+whose Hobby transfer budget cannot carry a stream.
+
+Two things make that work, and they are configuration rather than code. `.mp3` is already on Cloudflare's
+default cached-extension list, and the objects carry `Cache-Control: public, max-age=31536000, immutable`,
+so the edge absorbs the reads without a cache rule. And the bucket's CORS policy allows `GET` from
+`https://royaraqamia.com`, which the offline download needs; plain playback would not.
+
+Getting there meant moving `royaraqamia.com` onto Cloudflare's nameservers: Cloudflare's partial (CNAME)
+setup, which leaves DNS where it is, is Business and Enterprise only, so the alternative was a one-off
+nameserver move on the free plan or no custom domain at all. The site stays proxied to Vercel and
+unchanged, and the email records — Titan's MX and SPF, DMARC at `p=reject`, Resend's DKIM and send
+subdomain — were verified from outside afterwards, because a record lost there fails silently.
 
 **What is committed is the manifest, not the audio.** `public/quran/audio/<edition>/index.json` names
 the editions with their bitrate, sample rate and the attribution their licence requires, and
@@ -47,10 +62,11 @@ Surah), and a Surah's files live under one prefix (`<edition>/<surah>/<ayah>.mp3
 CDN's 1–6236 global Ayah numbering, which our vendored index already reconciles.
 
 **A takedown is one commit.** The licence contemplates removal — "they may ask you to remove the
-content" — so the manifest names a revision that every request carries, and a removal or a replacement
-is a new revision: a new key in every cache and every downloaded copy, with no bucket rename and no
-invalidation choreography. Because audio is never precached, we hold no copy the reader did not ask
-for, and the removal of an edition is a commit that deletes its manifest.
+content" — so every request carries the file's own hash as a `v` query, taken from the manifest, and an
+`immutable` URL is then truthful: a replacement is a new `v`, which is a new key in every cache and in
+every downloaded copy, with no bucket rename and no invalidation choreography. Because audio is never
+precached, we hold no copy the reader did not ask for, and removing an edition is a commit that deletes
+its manifest.
 
 ## Considered Options
 
@@ -75,10 +91,20 @@ for, and the removal of an edition is a commit that deletes its manifest.
   downloaded and used for personal use free of charge… you may not use these files for commercial
   purposes", and Quran.com's terms forbid redistribution and, separately, the scraping a vendoring run
   is.
-- **A second Reciter at 32 kbps.** Deferred: `ar.hudhaify` is published at 32 kbps, so two Reciters
-  would fit the free storage the way one fits at 64. One good recitation beats two dull ones, and a
-  Reciter is a data addition rather than a redesign.
-- **Cloudflare R2 now.** Deferred rather than rejected, as above.
+- **A second Reciter at 32 kbps.** Deferred: `ar.hudhaify` is published at 32 kbps, which would halve
+  what it stores — but R2 has room for a second Reciter at 64, so there is no reason to trade fidelity
+  for bytes. One good recitation beats two dull ones, and a Reciter is a data addition rather than a
+  redesign.
+- **Supabase free, which this ADR first chose.** Rejected: 1 GB of storage is one Reciter with no room
+  for a second, ~5 GB of egress a month is shared with the APK install path — so audio's success would
+  break app installs — and the second Reciter ends the free plan at $25 a month, where R2 is the same
+  $0 at twelve.
+- **Cloudflare's partial (CNAME) setup, keeping DNS at Vercel.** Rejected: it is available on Business
+  and Enterprise only, so it would cost more per month than the whole storage bill.
+- **The `r2.dev` public development URL.** Rejected: Cloudflare documents it as rate-limited, intended
+  for non-production, and an unsupported access path.
+- **Proxying R2 through a Vercel rewrite, as the APK does.** Rejected: the bytes would cross Hobby's
+  10 GB a month of Fast Data Transfer, which is the one thing streamed audio cannot do.
 
 ## Consequences
 
@@ -89,10 +115,13 @@ for, and the removal of an edition is a commit that deletes its manifest.
   their estate's, and this reader sits on a site that also sells services. A courtesy note to Islamic
   Network goes out before the first Reciter ships — a note, not a permission request, because the grant
   is already public.
-- Vendoring is an operator action: `scripts/vendor-quran-audio.mjs` runs by hand with the bucket
-  credential — idempotent, resumable and checksummed, fetching the published files, verifying that the
-  set is uniform, and writing the manifests — and then the manifests are committed. The audio never
-  enters git.
+- Audio is served from a host of ours but not from our origin, so the site's CSP has to name it: there
+  is no `media-src` today, so `default-src 'self'` blocks third-party audio outright, and the offline
+  download needs `connect-src` as well.
+- Vendoring is an operator action: `scripts/vendor-quran-audio.mjs` runs by hand against the bucket's S3
+  endpoint (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`) — idempotent,
+  resumable and checksummed, fetching the published files, verifying that the set is uniform, and
+  writing the manifests — and then the manifests are committed. The audio never enters git.
 - No timing dataset is needed for Ayah highlighting, so `quran-align` (CC BY 4.0) stays out of the
   build: one fewer asset and one fewer licence obligation.
 - The acceptance test is **a device in Syria playing one Surah over mobile data**. Nothing on this
