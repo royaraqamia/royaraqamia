@@ -3,6 +3,7 @@ import babelParser from '@babel/eslint-parser';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
 import heavyEffects from './eslint-rules/no-heavy-effects.mjs';
+import noNonNfc from './eslint-rules/no-non-nfc.mjs';
 
 // Formatting is owned by Prettier (`prettier --check .` in CI), so
 // `eslint-config-prettier` is spread last to disable conflicting rules.
@@ -43,6 +44,7 @@ export default [
     plugins: {
       'react-hooks': reactHooksPlugin,
       local: heavyEffects,
+      unicode: noNonNfc,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -62,6 +64,7 @@ export default [
       'no-unused-vars': 'off',
       'no-undef': 'off',
       'local/no-heavy-effects': 'error',
+      'unicode/no-non-nfc': 'error',
 
       // Ported from the retired .eslintrc.json (rules that are real and
       // additive over `js.configs.recommended`).
@@ -76,6 +79,18 @@ export default [
       'no-eval': 'error',
       'no-new-func': 'error',
       'no-implicit-globals': 'error',
+    },
+  },
+  // `public/quran/**` is vendored as published and is never normalised: for that
+  // text NFC composes marks instead of reordering them, which would rewrite what
+  // ships (ADR 0062). The repo-wide gate skips the same tree
+  // (`scripts/check-arabic-order.mjs`); no JS lives there today, and this keeps
+  // the two in step if any ever does — otherwise the rule would fail on a file
+  // its fixer refuses to touch.
+  {
+    files: ['public/quran/**'],
+    rules: {
+      'unicode/no-non-nfc': 'off',
     },
   },
   {

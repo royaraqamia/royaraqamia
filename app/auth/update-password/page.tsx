@@ -158,7 +158,7 @@ function UpdatePasswordForm() {
               {isPending ? (
                 <>
                   <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
-                  <span>جاري التَّحديث...</span>
+                  <span>جاري التَّحديث...</span>
                 </>
               ) : (
                 'تحديث كلمة المرور'

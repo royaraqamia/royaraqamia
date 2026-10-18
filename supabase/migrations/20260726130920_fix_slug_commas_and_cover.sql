@@ -1,6 +1,6 @@
 -- Fix remaining slug with Arabic comma (post a0f34fdc)
 UPDATE public.posts 
-SET slug = 'تخيَّل-أن-تدفع-آلاف-الدُّولارات-لبناء-تطبيق-ثمَّ-تكتشف-أنَّه-غير-قابل-للتَّطوير',
+SET slug = 'تخيَّل-أن-تدفع-آلاف-الدُّولارات-لبناء-تطبيق-ثمَّ-تكتشف-أنَّه-غير-قابل-للتَّطوير',
     updated_at = NOW()
 WHERE id = 'a0f34fdc-ab7b-49fb-8db6-22272332e9ee'
   AND slug LIKE '%،%';

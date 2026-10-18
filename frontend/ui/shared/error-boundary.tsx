@@ -75,10 +75,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             {/* Typography Stack */}
             <div className="space-y-2">
               <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                حدث خطأ غير مُتوقَّع
+                حدث خطأ غير مُتوقَّع
               </h2>
               <p className="mx-auto max-w-xs text-sm font-normal leading-relaxed text-muted-foreground sm:text-base">
-                عذرًا، حدث خطأ أثناء تحميل الصَّفحة. يُرجَى المحاولة مرَّة أخرى.
+                عذرًا، حدث خطأ أثناء تحميل الصَّفحة. يُرجَى المحاولة مرَّة أخرى.
               </p>
             </div>
 
@@ -109,7 +109,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             {IS_DEVELOPMENT && this.state.error && (
               <details className="group mt-6 border-t border-border/40 pt-4 text-left">
                 <summary className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <span>تفاصيل الخطأ (للتَّطوير فقط)</span>
+                  <span>تفاصيل الخطأ (للتَّطوير فقط)</span>
                   <svg
                     className="h-4 w-4 transition-transform duration-200 group-open:rotate-180"
                     fill="none"

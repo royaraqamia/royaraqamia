@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'التَّسجيل في التَّدريب',
+  title: 'التَّسجيل في التَّدريب',
   description:
     'قدّم طلبك للالتحاق بدورة تطوير وإدارة المنتجات الرَّقميَّة: املأ النَّموذج وسنتواصل معك عبر واتساب.',
 };

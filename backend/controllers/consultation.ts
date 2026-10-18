@@ -48,7 +48,7 @@ function bookingErrorResponse(error: unknown): HttpResult | null {
   if (error instanceof PackageInUseError) {
     return jsonResult(409, {
       success: false,
-      error: 'لا يمكن حذف باقة مرتبطة بحجوزات سابقة. عطِّلها بدلًا من حذفها.',
+      error: 'لا يمكن حذف باقة مرتبطة بحجوزات سابقة. عطِّلها بدلًا من حذفها.',
     });
   }
   if (error instanceof SlotReservedError) {

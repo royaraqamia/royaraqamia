@@ -42,7 +42,7 @@ export default function VerifyPage() {
       const data = await verifyCertificate(code);
       setResult(data);
     } catch {
-      setResult({ success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' });
+      setResult({ success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' });
     } finally {
       setLoading(false);
     }

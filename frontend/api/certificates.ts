@@ -93,6 +93,6 @@ export async function verifyCertificate(code: string): Promise<VerifyResult> {
       body: JSON.stringify({ code }),
     });
   } catch {
-    return { success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' };
+    return { success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' };
   }
 }

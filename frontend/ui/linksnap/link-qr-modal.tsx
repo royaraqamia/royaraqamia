@@ -92,13 +92,13 @@ export const LinkQrModal = memo(function LinkQrModal({
                   رمز الـ QR
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  امسح الرَّمز لعرض الرَّابط
+                  امسح الرَّمز لعرض الرَّابط
                 </DialogDescription>
               </div>
             </div>
 
             <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-xs">
-              <span className="text-muted-foreground shrink-0 font-medium">الرَّابط:</span>
+              <span className="text-muted-foreground shrink-0 font-medium">الرَّابط:</span>
               <span
                 dir="ltr"
                 className="font-mono text-xs font-bold text-foreground truncate max-w-60 text-left select-all hover:text-primary transition-colors"
@@ -124,9 +124,9 @@ export const LinkQrModal = memo(function LinkQrModal({
                     <AlertCircle className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-destructive">تعذَّر إنشاء رمز الـ QR</p>
+                    <p className="text-xs font-bold text-destructive">تعذَّر إنشاء رمز الـ QR</p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      حدث خطأ غير مُتوقَّع أثناء إعداد الرَّمز، يُرجَى المحاولة مرَّة أخرى.
+                      حدث خطأ غير مُتوقَّع أثناء إعداد الرَّمز، يُرجَى المحاولة مرَّة أخرى.
                     </p>
                   </div>
                   <button
@@ -169,9 +169,9 @@ export const LinkQrModal = memo(function LinkQrModal({
                 type="button"
                 onClick={handleDownload}
                 className="w-full sm:w-auto"
-                aria-label="تحميل الرَّمز بصيغة SVG"
+                aria-label="تحميل الرَّمز بصيغة SVG"
               >
-                <span>تحميل الرَّمز (SVG)</span>
+                <span>تحميل الرَّمز (SVG)</span>
               </HeroCtaButton>
             )}
           </DialogActions>

@@ -4,8 +4,8 @@ import type { Metadata } from 'next';
 // The root layout's `title.template` appends the site name, so a top-level title
 // must not carry it as well — that double-branded this page's tab and og:title.
 export const metadata: Metadata = {
-  title: '404 - الصَّفحة غير موجودة',
-  description: 'عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها.',
+  title: '404 - الصَّفحة غير موجودة',
+  description: 'عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها.',
 };
 
 export default function NotFound() {
@@ -51,10 +51,10 @@ export default function NotFound() {
               404
             </h1>
             <h2 className="mb-4 text-2xl font-bold tracking-tight text-primary sm:text-3xl">
-              الصَّفحة غير موجودة
+              الصَّفحة غير موجودة
             </h2>
             <p className="mx-auto mb-8 max-w-sm text-sm font-medium leading-relaxed text-muted-foreground sm:max-w-md sm:text-base">
-              عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها.
+              عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها.
             </p>
 
             {/* Interactive Primary Action Button */}
@@ -63,7 +63,7 @@ export default function NotFound() {
                 href="/"
                 className="group/btn relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-safe duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
               >
-                <span>العودة إلى الرَّئيسيَّة</span>
+                <span>العودة إلى الرَّئيسيَّة</span>
                 <svg
                   className="h-4 w-4 transition-transform duration-300 group-hover/btn:-translate-x-1 rtl:rotate-180"
                   fill="none"

@@ -40,7 +40,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
       <div
         className="group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border/70 bg-card/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-card/60"
         role="img"
-        aria-label="لا توجد بيانات إنفاق يوميَّة"
+        aria-label="لا توجد بيانات إنفاق يوميَّة"
       >
         <div className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-b from-primary/15 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 transition-safe duration-500 group-hover:scale-110 group-hover:ring-primary/30">
           <svg
@@ -61,7 +61,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
         <div className="max-w-xs space-y-1.5">
           <p className="text-base font-bold text-foreground tracking-tight">لا توجد بيانات</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            أضِف مصاريف لرؤية الاتِّجاهات اليوميَّة
+            أضِف مصاريف لرؤية الاتِّجاهات اليوميَّة
           </p>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
     <div
       className="relative w-full overflow-hidden rounded-3xl border border-border/60 bg-linear-to-b from-card/80 to-card/40 p-4 sm:p-6 shadow-xl transition-safe duration-300 hover:border-border/90"
       role="img"
-      aria-label="رسم بياني أعمدة يُوضِّح الإنفاق اليومي"
+      aria-label="رسم بياني أعمدة يُوضِّح الإنفاق اليومي"
     >
       <div className="h-70 sm:h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -86,7 +86,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
               axisLine={{ stroke: 'var(--color-border)', strokeOpacity: 0.3 }}
               dy={8}
               label={{
-                value: 'التَّاريخ',
+                value: 'التَّاريخ',
                 position: 'insideBottomRight',
                 offset: -4,
                 style: { fontSize: 11, fill: 'var(--color-muted-foreground)', fontWeight: 500 },

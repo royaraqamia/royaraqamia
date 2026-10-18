@@ -54,8 +54,8 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
     return (
       <div className="text-center py-12 space-y-2">
         <CalendarClock className="size-10 text-muted-foreground/50 mx-auto" aria-hidden="true" />
-        <p className="font-bold text-foreground">لا توجد مواعيد مُتاحة حاليًّا</p>
-        <p className="text-sm text-muted-foreground">تُضاف مواعيد جديدة دوريًّا — جرِّب لاحقًا.</p>
+        <p className="font-bold text-foreground">لا توجد مواعيد مُتاحة حاليًّا</p>
+        <p className="text-sm text-muted-foreground">تُضاف مواعيد جديدة دوريًّا — جرِّب لاحقًا.</p>
       </div>
     );
   }
@@ -71,7 +71,7 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
         )}
         role="status"
       >
-        اختر {requiredCount} {requiredCount === 1 ? 'موعدًا' : 'مواعيد'} — تمَّ اختيار{' '}
+        اختر {requiredCount} {requiredCount === 1 ? 'موعدًا' : 'مواعيد'} — تمَّ اختيار{' '}
         {selectedIds.length} من {requiredCount}
       </p>
 

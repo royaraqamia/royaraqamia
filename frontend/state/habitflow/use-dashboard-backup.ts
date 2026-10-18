@@ -83,7 +83,7 @@ export function useDashboardBackup(
 
     try {
       if (!store) {
-        toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+        toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
         return;
       }
       const text = await file.text();

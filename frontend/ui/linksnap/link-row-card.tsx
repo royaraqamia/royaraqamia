@@ -162,7 +162,7 @@ export const LinkRowCard = memo(function LinkRowCard({
         },
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.';
+      const msg = err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.';
       toast.error(msg);
     }
   };
@@ -372,7 +372,7 @@ export const LinkRowCard = memo(function LinkRowCard({
             <DropdownMenuContent align="end" className="w-48 font-medium">
               <DropdownMenuItem onClick={() => setEditing(true)} className="cursor-pointer">
                 <Pencil className="me-2 h-4 w-4" />
-                <span>تعديل الرَّابط</span>
+                <span>تعديل الرَّابط</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowQr(true)} className="cursor-pointer">
                 <QrCode className="me-2 h-4 w-4" />
@@ -385,7 +385,7 @@ export const LinkRowCard = memo(function LinkRowCard({
                 className="cursor-pointer text-rose-600 focus:bg-rose-50 dark:text-rose-400 dark:focus:bg-rose-950/40"
               >
                 <Trash2 className="me-2 h-4 w-4" />
-                <span>حذف الرَّابط</span>
+                <span>حذف الرَّابط</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -426,7 +426,7 @@ export const LinkRowCard = memo(function LinkRowCard({
       <ConfirmDialog
         open={showDeleteConfirm}
         title="حذف الرَّابط"
-        message="هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟ هذا الإجراء دائم."
+        message="هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟ هذا الإجراء دائم."
         confirmLabel="حذف الرَّابط"
         cancelLabel="إلغاء"
         icon={Trash2}

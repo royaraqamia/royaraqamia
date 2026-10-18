@@ -65,7 +65,7 @@ function CountryPicker({ selectedIso, onSelect }: CountryPickerProps) {
       defaultValue={selectedIso}
       className="rounded-none border-0 bg-transparent shadow-none"
     >
-      <CommandInput placeholder="ابحث عن الدَّولة أو رمز الاتِّصال..." className="h-12" />
+      <CommandInput placeholder="ابحث عن الدَّولة أو رمز الاتِّصال..." className="h-12" />
       <CommandList className={PICKER_LIST_CLASSNAME}>
         <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
         <CommandGroup>
@@ -164,7 +164,7 @@ export function CountryPhoneInput({
   const handleSelect = (nextCountry: CountryDialCode) => {
     emit(nextCountry, national);
     setOpen(false);
-    setAnnouncement(`تمَّ اختيار ${nextCountry.nameAr} +${nextCountry.dial}`);
+    setAnnouncement(`تمَّ اختيار ${nextCountry.nameAr} +${nextCountry.dial}`);
     // Desktop: hand focus back to the number field so typing continues instantly.
     if (!isMobile) {
       requestAnimationFrame(() => inputRef.current?.focus());
@@ -175,7 +175,7 @@ export function CountryPhoneInput({
     <button
       type="button"
       disabled={disabled}
-      aria-label={`رمز الدَّولة المُحدَّد: ${country.nameAr} (+${country.dial}). اضغط لتغيير الدَّولة`}
+      aria-label={`رمز الدَّولة المُحدَّد: ${country.nameAr} (+${country.dial}). اضغط لتغيير الدَّولة`}
       aria-haspopup={isMobile ? 'dialog' : 'listbox'}
       className={cn(
         'flex h-full min-h-11 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-s-xl ps-3 pe-2.5',

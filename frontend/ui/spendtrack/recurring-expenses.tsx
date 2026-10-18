@@ -66,7 +66,7 @@ export function RecurringExpenses({
   return (
     <Card
       className="group/card relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 shadow-sm transition-safe duration-300 hover:border-border/80 hover:shadow-md"
-      aria-label="المصاريف المُتكرِّرة"
+      aria-label="المصاريف المُتكرِّرة"
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 p-5 sm:p-6 pb-4 border-b border-border/40">
         <div className="flex items-center gap-3 min-w-0">
@@ -75,10 +75,10 @@ export function RecurringExpenses({
           </div>
           <div className="min-w-0">
             <CardTitle className="text-base font-bold tracking-tight text-foreground truncate">
-              المصاريف المُتكرِّرة
+              المصاريف المُتكرِّرة
             </CardTitle>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              جدولة واشتراكات تلقائيَّة
+              جدولة واشتراكات تلقائيَّة
             </p>
           </div>
         </div>
@@ -100,9 +100,9 @@ export function RecurringExpenses({
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
             </div>
-            <p className="text-sm font-bold text-foreground">لا توجد مصاريف مُتكرِّرة بعد</p>
+            <p className="text-sm font-bold text-foreground">لا توجد مصاريف مُتكرِّرة بعد</p>
             <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed text-balance">
-              أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.
+              أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.
             </p>
           </div>
         ) : (
@@ -120,7 +120,7 @@ export function RecurringExpenses({
                   </span>
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="truncate text-sm font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
-                      {item.description || cat?.name || 'مصروف مُتكرِّر'}
+                      {item.description || cat?.name || 'مصروف مُتكرِّر'}
                     </p>
                     {cat && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
@@ -147,7 +147,7 @@ export function RecurringExpenses({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="تعديل المصروف المُتكرِّر"
+                          aria-label="تعديل المصروف المُتكرِّر"
                           className="size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring transition-safe cursor-pointer"
                         >
                           <Pencil className="size-3.5" />
@@ -157,7 +157,7 @@ export function RecurringExpenses({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="حذف المصروف المُتكرِّر"
+                      aria-label="حذف المصروف المُتكرِّر"
                       className="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive transition-safe cursor-pointer"
                       onClick={() => handleDelete(item)}
                     >
@@ -260,7 +260,7 @@ function RecurringDialog({
         className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card border border-border/80 rounded-3xl shadow-2xl"
       >
         <DialogTitle className="sr-only">
-          {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
+          {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
         </DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -288,7 +288,7 @@ function RecurringDialog({
                 htmlFor="rec-day"
                 className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
               >
-                يوم الشَّهر
+                يوم الشَّهر
               </Label>
               <Input
                 id="rec-day"
@@ -305,7 +305,7 @@ function RecurringDialog({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-bold tracking-wide text-foreground/80 uppercase">
-              التَّصنيف
+              التَّصنيف
             </Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe w-full">

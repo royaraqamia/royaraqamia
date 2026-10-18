@@ -4,12 +4,12 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 export const metadata: Metadata = {
   title: 'شروط الاستخدام',
   description:
-    'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
+    'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
   alternates: { canonical: '/terms' },
   openGraph: {
     title: 'شُروط الاستخدام | رؤيَة رقَميَّة',
     description:
-      'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
+      'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
     url: '/terms',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'شروط الاستخدام | رؤيَة رقَميَّة',
     description:
-      'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
+      'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
     images: ['/OG Image.webp'],
   },
 };
@@ -57,8 +57,8 @@ export default function TermsPage() {
             </div>
             <p className="leading-relaxed text-muted-foreground sm:text-lg">
               مرحبًا بك في <strong className="font-bold text-foreground">رؤيَة رقَميَّة</strong>{' '}
-              (&quot;نحنُ&quot; أو &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنَّك توافق
-              على الالتزام بهذه الشُّروط. إذا لم توافق على أيٍّ من هذه الشُروط، يُرجَى عدم استخدام
+              (&quot;نحنُ&quot; أو &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنَّك توافق
+              على الالتزام بهذه الشُّروط. إذا لم توافق على أيٍّ من هذه الشُروط، يُرجَى عدم استخدام
               خدماتنا.
             </p>
           </section>
@@ -108,15 +108,15 @@ export default function TermsPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                    <span>يجب تقديم معلومات دقيقة ومُحدَّثَة أثناء التَّسجيل.</span>
+                    <span>يجب تقديم معلومات دقيقة ومُحدَّثَة أثناء التَّسجيل.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                    <span>أنت مسؤول عن الحفاظ على سرِّيَّة كلمة المرور الخاصَّة بك.</span>
+                    <span>أنت مسؤول عن الحفاظ على سرِّيَّة كلمة المرور الخاصَّة بك.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                    <span>أنت مسؤول عن جميع الأنشطة التي تتمُّ تحت حسابك.</span>
+                    <span>أنت مسؤول عن جميع الأنشطة التي تتمُّ تحت حسابك.</span>
                   </li>
                 </ul>
               </div>
@@ -130,7 +130,7 @@ export default function TermsPage() {
                 </h3>
                 <p className="text-muted-foreground">
                   عند استخدام ميزة الدُّخول بحساب Google، أنت تمنحنا إذنًا بالوصول إلى معلومات حسابك
-                  الأساسيَّة (الاسم والبريد الإلكتروني وصورة الملف الشَّخصي) وِفقًا لإعدادات
+                  الأساسيَّة (الاسم والبريد الإلكتروني وصورة الملف الشَّخصي) وِفقًا لإعدادات
                   الخُصوصيَّة في حسابك على Google.
                 </p>
               </div>
@@ -143,7 +143,7 @@ export default function TermsPage() {
                   إلغاء الحساب
                 </h3>
                 <p className="text-muted-foreground">
-                  يمكنك طلب إلغاء حسابك في أيِّ وقت عن طريق التَّواصل معنا عبر البريد الإلكتروني.
+                  يمكنك طلب إلغاء حسابك في أيِّ وقت عن طريق التَّواصل معنا عبر البريد الإلكتروني.
                   سنقوم بمعالجة طلبك خلال يومًا.
                 </p>
               </div>
@@ -172,7 +172,7 @@ export default function TermsPage() {
                 'نشر محتوى ضار أو مُسيء أو مُخالف',
                 'تعطيل أو إعاقة عمل الخدمات أو الخوادم',
                 'جمع أو تخزين بيانات المستخدمين الآخرين بدون إذنهم',
-                'استخدام الخدمات للتَّنافس معنا بطريقة غير عادلة',
+                'استخدام الخدمات للتَّنافس معنا بطريقة غير عادلة',
               ].map((item, idx) => (
                 <li
                   key={idx}
@@ -197,7 +197,7 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 05. المحتوى والملكيَّة الفكريَّة */}
+          {/* 05. المحتوى والملكيَّة الفكريَّة */}
           <section
             id="section-5"
             className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
@@ -207,7 +207,7 @@ export default function TermsPage() {
                 05
               </div>
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                . المحتوى والملكيَّة الفكريَّة
+                . المحتوى والملكيَّة الفكريَّة
               </h2>
             </div>
 
@@ -221,7 +221,7 @@ export default function TermsPage() {
                 </h3>
                 <p className="text-muted-foreground">
                   جميع المحتويات المتاحة على منصَّتنا (نصوص، صور، فيديوهات، تصاميم، شهادات، وأكواد
-                  برمجيَّة) هي ملكيَّة فكريَّة خاصَّة برؤيَة رقَميَّة أو مُورِّديها. لا يُسمَح بنسخ
+                  برمجيَّة) هي ملكيَّة فكريَّة خاصَّة برؤيَة رقَميَّة أو مُورِّديها. لا يُسمَح بنسخ
                   أو تعديل أو توزيع أو إعادة استخدام أي محتوى دون إذن كتابي مُسبَق.
                 </p>
               </div>
@@ -241,7 +241,7 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* 06. الدَّفع والاسترداد */}
+          {/* 06. الدَّفع والاسترداد */}
           <section
             id="section-6"
             className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
@@ -251,7 +251,7 @@ export default function TermsPage() {
                 06
               </div>
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                . الدَّفع والاسترداد
+                . الدَّفع والاسترداد
               </h2>
             </div>
 
@@ -271,7 +271,7 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  بعض الخدمات قد تتطلَّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عمليَّة شراء.
+                  بعض الخدمات قد تتطلَّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عمليَّة شراء.
                 </span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
@@ -289,7 +289,7 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  في حالة وجود سياسة استرداد مُحدَّدة لدورة أو خدمة مُعيَّنة، ستُعرَض عند الشِّراء.
+                  في حالة وجود سياسة استرداد مُحدَّدة لدورة أو خدمة مُعيَّنة، ستُعرَض عند الشِّراء.
                 </span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
@@ -306,7 +306,7 @@ export default function TermsPage() {
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span>نحتفظ بحقِّ تغيير الأسعار مع إخطار مُسبَق عبر الموقع.</span>
+                <span>نحتفظ بحقِّ تغيير الأسعار مع إخطار مُسبَق عبر الموقع.</span>
               </li>
             </ul>
           </section>
@@ -357,7 +357,7 @@ export default function TermsPage() {
                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                   />
                 </svg>
-                <span>لا نضمن أنَّ الخدمات ستكون غير منقطعة أو خالية من الأخطاء.</span>
+                <span>لا نضمن أنَّ الخدمات ستكون غير منقطعة أو خالية من الأخطاء.</span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
                 <svg
@@ -374,7 +374,7 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  لا نتحمَّل المسؤوليَّة عن أيِّ أضرار غير مباشرة أو عرضيَّة أو تبعيَّة ناتجة عن
+                  لا نتحمَّل المسؤوليَّة عن أيِّ أضرار غير مباشرة أو عرضيَّة أو تبعيَّة ناتجة عن
                   استخدام الخدمات.
                 </span>
               </li>
@@ -393,14 +393,14 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًّا لنا خلال الاثني عشر
-                  () شهرًا السَّابقة للحدث المُسبِّب للمسؤوليَّة.
+                  مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًّا لنا خلال الاثني عشر
+                  () شهرًا السَّابقة للحدث المُسبِّب للمسؤوليَّة.
                 </span>
               </li>
             </ul>
           </section>
 
-          {/* 08. تعديلات الشُّروط */}
+          {/* 08. تعديلات الشُّروط */}
           <section
             id="section-8"
             className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
@@ -409,11 +409,11 @@ export default function TermsPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                 08
               </div>
-              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. تعديلات الشُّروط</h2>
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. تعديلات الشُّروط</h2>
             </div>
             <p className="text-muted-foreground">
-              نحتفظ بحقِّ تعديل هذه الشُّروط في أيِّ وقت. سنُعلن عن التَّعديلات الجوهريَّة عبر
-              الموقع أو عبر البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أيِّ تعديلات يُشكِّل
+              نحتفظ بحقِّ تعديل هذه الشُّروط في أيِّ وقت. سنُعلن عن التَّعديلات الجوهريَّة عبر
+              الموقع أو عبر البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أيِّ تعديلات يُشكِّل
               قبولًا لها.
             </p>
           </section>
@@ -430,8 +430,8 @@ export default function TermsPage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. الإنهاء</h2>
             </div>
             <p className="text-muted-foreground">
-              يمكننا تعليق أو إنهاء حسابك أو وصولك إلى الخدمات في أيِّ وقت، سواءً بسبب انتهاك هذه
-              الشُّروط أو لأيِّ سببٍ آخر، مع أو بدون إخطار مُسبَق.
+              يمكننا تعليق أو إنهاء حسابك أو وصولك إلى الخدمات في أيِّ وقت، سواءً بسبب انتهاك هذه
+              الشُّروط أو لأيِّ سببٍ آخر، مع أو بدون إخطار مُسبَق.
             </p>
           </section>
 
@@ -447,8 +447,8 @@ export default function TermsPage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. القانون الحاكم</h2>
             </div>
             <p className="text-muted-foreground">
-              تخضع هذه الشُّروط لقوانين الجمهوريَّة العربيَّة السُّوريَّة. أي نزاعات ناشئة عن هذه
-              الشُّروط أو استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
+              تخضع هذه الشُّروط لقوانين الجمهوريَّة العربيَّة السُّوريَّة. أي نزاعات ناشئة عن هذه
+              الشُّروط أو استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
             </p>
           </section>
 
@@ -474,7 +474,7 @@ export default function TermsPage() {
               <li className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                 <span>
-                  يقتصر على المحتوى العام غير المحميِّ بـ DRM؛ ويُحرَّم استخدامه لتنزيل محتوى لا
+                  يقتصر على المحتوى العام غير المحميِّ بـ DRM؛ ويُحرَّم استخدامه لتنزيل محتوى لا
                   تملك حقَّ تنزيله.
                 </span>
               </li>
@@ -501,7 +501,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 12. التَّواصل معنا */}
+          {/* 12. التَّواصل معنا */}
           <section
             id="section-12"
             className="group rounded-3xl border border-primary/30 bg-linear-to-br from-primary/10 via-card to-primary/5 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
@@ -510,11 +510,11 @@ export default function TermsPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground shadow-sm">
                 12
               </div>
-              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. التَّواصل معنا</h2>
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. التَّواصل معنا</h2>
             </div>
 
             <p className="mb-6 text-muted-foreground">
-              لأيِّ استفسارات أو طلبات تتعلَّق بشُروط الاستخدام هذه، يُرجَى التَّواصل عبر:
+              لأيِّ استفسارات أو طلبات تتعلَّق بشُروط الاستخدام هذه، يُرجَى التَّواصل عبر:
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

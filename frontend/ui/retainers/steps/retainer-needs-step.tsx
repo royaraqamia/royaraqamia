@@ -38,7 +38,7 @@ export function RetainerNeedsStep({
           rows={5}
           maxLength={RETAINER_NEEDS_MAX}
           showCount
-          placeholder="حدِّد ما تريد أن نتولَّاه شهريًّا: صيانة، إصلاح أعطال، إضافة ميِّزات، متابعة وإدارة."
+          placeholder="حدِّد ما تريد أن نتولَّاه شهريًّا: صيانة، إصلاح أعطال، إضافة ميِّزات، متابعة وإدارة."
           {...register('needs')}
           error={Boolean(errors.needs)}
           aria-describedby={errors.needs ? 'needs-error' : undefined}

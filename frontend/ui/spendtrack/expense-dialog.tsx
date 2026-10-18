@@ -38,8 +38,8 @@ const expenseSchema = z.object({
   amount: z
     .string()
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'يجب أن يكون المبلغ موجباً'),
-  category_id: z.string().min(1, 'التَّصنيف مطلوب'),
-  date: z.string().min(1, 'التَّاريخ مطلوب'),
+  category_id: z.string().min(1, 'التَّصنيف مطلوب'),
+  date: z.string().min(1, 'التَّاريخ مطلوب'),
   description: z.string().optional(),
   currency: z.string().optional(),
   splits: z
@@ -332,7 +332,7 @@ function ExpenseForm({
           className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
         >
           <Tag className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-          <span>التَّصنيف</span>
+          <span>التَّصنيف</span>
           <span className="text-rose-500 font-bold" aria-hidden="true">
             *
           </span>
@@ -384,7 +384,7 @@ function ExpenseForm({
       <div className="space-y-2">
         <Label className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
           <Calendar className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-          <span>التَّاريخ</span>
+          <span>التَّاريخ</span>
           <span className="text-rose-500 font-bold" aria-hidden="true">
             *
           </span>
@@ -396,7 +396,7 @@ function ExpenseForm({
             <DatePicker
               value={field.value}
               onChange={field.onChange}
-              placeholder="اختر التَّاريخ"
+              placeholder="اختر التَّاريخ"
               className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none"
               aria-invalid={errors.date ? true : undefined}
               aria-describedby={errors.date ? 'date-error' : undefined}

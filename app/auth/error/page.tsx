@@ -34,7 +34,7 @@ export default function AuthErrorPage() {
         {/* Message Content */}
         <div className="space-y-2">
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed tracking-wide">
-            حدث خطأ أثناء المصادقة. يُرجَى المحاولة مرَّة أخرى.
+            حدث خطأ أثناء المصادقة. يُرجَى المحاولة مرَّة أخرى.
           </p>
         </div>
 
@@ -44,7 +44,7 @@ export default function AuthErrorPage() {
             <Link href="/auth/login">
               <HeroCtaSheen />
               <span className="relative z-10 inline-flex items-center justify-center gap-2">
-                تسجيل الدُّخول
+                تسجيل الدُّخول
               </span>
             </Link>
           </HeroCtaButton>

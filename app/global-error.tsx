@@ -36,7 +36,7 @@ export default function GlobalError({
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
               </span>
-              <span>خطأ غير مُتوقَّع</span>
+              <span>خطأ غير مُتوقَّع</span>
             </div>
 
             {/* Glowing Icon Container Badge */}
@@ -60,10 +60,10 @@ export default function GlobalError({
 
             {/* Typography Hierarchy */}
             <h1 className="mb-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              حدث خطأ غير مُتوقَّع
+              حدث خطأ غير مُتوقَّع
             </h1>
             <p className="mx-auto mb-6 max-w-xs text-sm leading-relaxed text-zinc-400 sm:text-base">
-              عذرًا، حدث خطأ جذري في التَّطبيق. يُرجَى تحديث الصَّفحة أو إعادة المحاولة.
+              عذرًا، حدث خطأ جذري في التَّطبيق. يُرجَى تحديث الصَّفحة أو إعادة المحاولة.
             </p>
 
             {/* Dynamic Error Digest Metadata Pill */}
@@ -119,13 +119,13 @@ export default function GlobalError({
                     d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
                   />
                 </svg>
-                <span>تحديث الصَّفحة</span>
+                <span>تحديث الصَّفحة</span>
               </button>
             </div>
 
             {/* Secondary Support Context */}
             <p className="mt-8 text-xs text-zinc-500">
-              إذا استمرَّت المشكلة، يُرجَى التَّواصل مع الدَّعم الفنِّي.
+              إذا استمرَّت المشكلة، يُرجَى التَّواصل مع الدَّعم الفنِّي.
             </p>
           </div>
         </main>

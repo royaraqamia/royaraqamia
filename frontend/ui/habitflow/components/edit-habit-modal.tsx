@@ -107,7 +107,7 @@ export const EditHabitModal = memo(function EditHabitModal({
 
           {/* Tracking Frequency Section */}
           <fieldset className="space-y-2.5 border-0 p-0 mx-0">
-            <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
+            <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
             <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner">
               <button
                 type="button"
@@ -119,7 +119,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                يوميَّة
+                يوميَّة
               </button>
               <button
                 type="button"
@@ -131,7 +131,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                أسبوعيَّة
+                أسبوعيَّة
               </button>
             </div>
           </fieldset>
@@ -182,10 +182,10 @@ export const EditHabitModal = memo(function EditHabitModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
-                  <span>جاري التَّطبيق...</span>
+                  <span>جاري التَّطبيق...</span>
                 </>
               ) : (
-                'تطبيق التَّغييرات'
+                'تطبيق التَّغييرات'
               )}
             </HeroCtaButton>
           </DialogActions>

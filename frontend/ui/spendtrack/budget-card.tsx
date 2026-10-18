@@ -89,12 +89,12 @@ export function BudgetCard({
   return (
     <Card
       className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-xs transition-safe duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
-      aria-label="ميزانيَّة الشَّهر"
+      aria-label="ميزانيَّة الشَّهر"
     >
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <div className="space-y-0.5">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
-            ميزانيَّة الشَّهر
+            ميزانيَّة الشَّهر
           </CardTitle>
           {month && (
             <p className="text-xs font-medium text-muted-foreground/60 capitalize">{month}</p>
@@ -109,7 +109,7 @@ export function BudgetCard({
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-3 min-h-45">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-xs text-muted-foreground/80 font-medium">جاري التَّحميل...</span>
+            <span className="text-xs text-muted-foreground/80 font-medium">جاري التَّحميل...</span>
           </div>
         ) : (
           <>
@@ -118,13 +118,13 @@ export function BudgetCard({
               <div className="flex items-baseline justify-between gap-2">
                 <div>
                   <span className="text-xs font-medium text-muted-foreground/80 block mb-1">
-                    الميزانيَّة الحاليَّة
+                    الميزانيَّة الحاليَّة
                   </span>
                   <p
                     className={`text-3xl font-extrabold tracking-tight text-foreground ${budget != null ? 'font-mono' : ''}`}
                     aria-live="polite"
                   >
-                    {budget != null ? formatMoney(budget, currency) : 'غير مُحدَّدَة'}
+                    {budget != null ? formatMoney(budget, currency) : 'غير مُحدَّدَة'}
                   </p>
                 </div>
 
@@ -154,7 +154,7 @@ export function BudgetCard({
                   </div>
                   <div className="flex justify-between items-center text-[11px] text-muted-foreground font-medium">
                     <span>المصروف: {formatMoney(total, currency)}</span>
-                    <span>المُتبقِّي: {formatMoney(Math.max(0, budget - total), currency)}</span>
+                    <span>المُتبقِّي: {formatMoney(Math.max(0, budget - total), currency)}</span>
                   </div>
                 </div>
               )}
@@ -165,12 +165,12 @@ export function BudgetCard({
                   {exceeded ? (
                     <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive font-bold">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span>تجاوزت الميزانيَّة هذا الشَّهر</span>
+                      <span>تجاوزت الميزانيَّة هذا الشَّهر</span>
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <span>المصروف هذا الشَّهر: {formatMoney(total, currency)}</span>
+                      <span>المصروف هذا الشَّهر: {formatMoney(total, currency)}</span>
                     </p>
                   )}
                 </div>
@@ -180,7 +180,7 @@ export function BudgetCard({
             {/* Form Section */}
             <form onSubmit={handleSave} className="space-y-3 pt-3 border-t border-border/40">
               <Label htmlFor="budget" className="text-xs font-bold text-foreground/80 block">
-                حدِّد ميزانيَّة شهريَّة ({getCurrencySymbol(currency)})
+                حدِّد ميزانيَّة شهريَّة ({getCurrencySymbol(currency)})
               </Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">

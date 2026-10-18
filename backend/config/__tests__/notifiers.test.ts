@@ -137,7 +137,7 @@ describe('notification producer adapters', () => {
 
     expect(fanout.mock.calls[0]?.[0]).toEqual({
       type: 'certificate_issued',
-      title: 'تمَّ إصدار شهادة لك',
+      title: 'تمَّ إصدار شهادة لك',
       body: 'شهادة "إدارة المتاجر الإلكترونية" باسم سارة العلي صادرة عن رؤيَة رقَميَّة.',
       metadata: {
         certificateId: 'cert-1',
@@ -232,7 +232,7 @@ describe('certificate-issued burst', () => {
       expect(call[1]).toEqual(recipients);
       expect(call[0]).toEqual({
         type: 'certificate_issued',
-        title: 'تمَّ إصدار شهادة لك',
+        title: 'تمَّ إصدار شهادة لك',
         body: 'شهادة "إدارة المتاجر الإلكترونية" باسم سارة العلي صادرة عن رؤيَة رقَميَّة.',
         metadata: {
           certificateId: 'cert-1',
@@ -246,7 +246,7 @@ describe('certificate-issued burst', () => {
       // Type, title and the /verify/<code> deep-link are unchanged.
       expect(call[1]).toMatchObject({
         type: 'certificate_issued',
-        title: 'تمَّ إصدار شهادة لك',
+        title: 'تمَّ إصدار شهادة لك',
         url: '/verify/COMP-2026-ABCDEFGH',
       });
     }

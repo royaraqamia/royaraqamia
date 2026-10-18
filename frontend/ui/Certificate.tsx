@@ -59,7 +59,7 @@ export function Certificate() {
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-white">اعتماد رسمي من قِبَلنا</p>
                   <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                    مُزوَّدَة برقم مُعرِّف تسلسلي خاص
+                    مُزوَّدَة برقم مُعرِّف تسلسلي خاص
                   </p>
                 </div>
               </div>
@@ -69,9 +69,9 @@ export function Certificate() {
                   <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-white">رمز تحقُّق إلكتروني</p>
+                  <p className="text-xs sm:text-sm font-bold text-white">رمز تحقُّق إلكتروني</p>
                   <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                    للتَّحقُّق السَّريع من جدارة صاحبها
+                    للتَّحقُّق السَّريع من جدارة صاحبها
                   </p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export function Certificate() {
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-white">جاهزة للمشاركة</p>
                   <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                    بصيغة عالية الدِّقَّة لمنصَّة LinkedIn
+                    بصيغة عالية الدِّقَّة لمنصَّة LinkedIn
                   </p>
                 </div>
               </div>

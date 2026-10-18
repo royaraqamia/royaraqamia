@@ -61,7 +61,7 @@ export const NotesDialog = memo(function NotesDialog({
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground/80 mt-1.5 font-medium leading-relaxed sm:truncate">
-                سجِّل انطباعاتك ومُفكِّرة إنجازك لهذا اليوم
+                سجِّل انطباعاتك ومُفكِّرة إنجازك لهذا اليوم
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const NotesDialog = memo(function NotesDialog({
                   onChange={(e) => {
                     if (e.target.value.length <= maxLength) setNote(e.target.value);
                   }}
-                  placeholder="اكتب عن شعورك تجاه هذه العادة اليوم... تسجيل المشاعر يُقوِّي الالتزام بمرور الوقت."
+                  placeholder="اكتب عن شعورك تجاه هذه العادة اليوم... تسجيل المشاعر يُقوِّي الالتزام بمرور الوقت."
                   rows={5}
                   maxLength={maxLength}
                   autoFocus

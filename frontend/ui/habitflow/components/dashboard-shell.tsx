@@ -169,7 +169,7 @@ export function DashboardShell({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDateShift(-1)}
-                  aria-label="اليوم السَّابق"
+                  aria-label="اليوم السَّابق"
                   id="btn-prev-day"
                   className="size-10 sm:size-9 shrink-0 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
@@ -191,7 +191,7 @@ export function DashboardShell({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDateShift(1)}
-                  aria-label="اليوم التَّالي"
+                  aria-label="اليوم التَّالي"
                   id="btn-next-day"
                   className="size-10 sm:size-9 shrink-0 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
@@ -224,12 +224,12 @@ export function DashboardShell({
           </m.header>
 
           {/* Stats Section */}
-          <section aria-label="إحصائيَّات العادات" className="w-full">
+          <section aria-label="إحصائيَّات العادات" className="w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <StatsCard
                 index={0}
                 icon={TrendingUp}
-                label="الاستمراريَّة (%)"
+                label="الاستمراريَّة (%)"
                 value={`${activeStats.averageCompletionRate}%`}
               />
               <StatsCard
@@ -247,7 +247,7 @@ export function DashboardShell({
               <StatsCard
                 index={3}
                 icon={Heart}
-                label="مُعدَّل الإكمال اليومي"
+                label="مُعدَّل الإكمال اليومي"
                 value={`${activeStats.completedPercentageToday}%`}
               />
             </div>
@@ -353,10 +353,10 @@ export function DashboardShell({
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                    النَّسخ الاحتياطي وإدارة البيانات
+                    النَّسخ الاحتياطي وإدارة البيانات
                   </h3>
                   <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-                    تصدير أو استعادة جميع بيانات عاداتك وسجلاتك السَّابقة بأمان
+                    تصدير أو استعادة جميع بيانات عاداتك وسجلاتك السَّابقة بأمان
                   </p>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export function DashboardShell({
                   type="file"
                   accept=".json"
                   className="hidden"
-                  aria-label="استيراد نسخة احتياطيَّة"
+                  aria-label="استيراد نسخة احتياطيَّة"
                   onChange={(e) => {
                     if (e.target.files?.[0]) handleImportBackupFile(e.target.files[0]);
                     e.target.value = '';
@@ -463,7 +463,7 @@ export function DashboardShell({
           <ConfirmDialog
             open={!!confirmArchiveHabitId}
             title="أرشفة العادة"
-            message="هل أنت متأكِّد من رغبتك في أرشفة هذه العادة؟ سيتمُّ الاحتفاظ بسجلاتك السَّابقة."
+            message="هل أنت متأكِّد من رغبتك في أرشفة هذه العادة؟ سيتمُّ الاحتفاظ بسجلاتك السَّابقة."
             confirmLabel="أرشفة"
             cancelLabel="إلغاء"
             onConfirm={confirmArchive}
@@ -473,7 +473,7 @@ export function DashboardShell({
           <ConfirmDialog
             open={showLogoutConfirm}
             title="تسجيل الخروج"
-            message="هل أنت متأكِّد من رغبتك في تسجيل الخروج؟"
+            message="هل أنت متأكِّد من رغبتك في تسجيل الخروج؟"
             confirmLabel={isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
             cancelLabel="إلغاء"
             onConfirm={signOut}
@@ -482,8 +482,8 @@ export function DashboardShell({
 
           <ConfirmDialog
             open={showImportConfirm}
-            title="استعادة النُّسخة الاحتياطيَّة"
-            message="استعادة نسخة احتياطيَّة ستحلُّ محلَّ جميع العادات والسِّجلات الحاليَّة. هذا الإجراء لا يمكن التَّراجع عنه. هل أنت متأكِّد؟"
+            title="استعادة النُّسخة الاحتياطيَّة"
+            message="استعادة نسخة احتياطيَّة ستحلُّ محلَّ جميع العادات والسِّجلات الحاليَّة. هذا الإجراء لا يمكن التَّراجع عنه. هل أنت متأكِّد؟"
             confirmLabel="استعادة"
             cancelLabel="إلغاء"
             onConfirm={confirmImport}

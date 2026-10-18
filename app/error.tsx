@@ -43,7 +43,7 @@ export default function Error({
           <span className="relative flex h-2 w-2">
             <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
           </span>
-          <span>خطأ في النِّظام</span>
+          <span>خطأ في النِّظام</span>
         </div>
 
         {/* Layered Glowing Alert Icon */}
@@ -67,10 +67,10 @@ export default function Error({
 
         {/* Content Typography */}
         <h1 className="mb-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          حدث خطأ غير مُتوقَّع
+          حدث خطأ غير مُتوقَّع
         </h1>
         <p className="mx-auto mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground sm:text-base">
-          عذرًا، حدث خطأ أثناء تحميل الصَّفحة. يُرجَى المحاولة مرَّة أخرى.
+          عذرًا، حدث خطأ أثناء تحميل الصَّفحة. يُرجَى المحاولة مرَّة أخرى.
         </p>
 
         {/* Dynamic Error Digest Reference Badge (Renders when digest exists) */}
@@ -86,8 +86,8 @@ export default function Error({
               type="button"
               onClick={handleCopyDigest}
               className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-              title="نسخ مُعرِّف الخطأ"
-              aria-label="نسخ مُعرِّف الخطأ"
+              title="نسخ مُعرِّف الخطأ"
+              aria-label="نسخ مُعرِّف الخطأ"
             >
               {copied ? (
                 <svg
@@ -144,7 +144,7 @@ export default function Error({
             href="/"
             className="inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl border border-border/70 bg-background/50 px-6 py-3 text-sm font-bold text-foreground transition-safe duration-200 hover:bg-muted hover:border-border active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
           >
-            <span>الرَّئيسيَّة</span>
+            <span>الرَّئيسيَّة</span>
           </a>
         </div>
       </main>

@@ -35,7 +35,7 @@ export function PageLoader() {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-500 transition-colors duration-500 group-hover:bg-violet-400" />
             </span>
             <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-violet-300/80 transition-colors duration-500 group-hover:text-violet-300 sm:text-xs">
-              جاري التَّهيئة
+              جاري التَّهيئة
             </span>
           </div>
 

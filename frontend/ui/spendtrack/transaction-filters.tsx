@@ -17,15 +17,15 @@ import { ChevronDown, X, Search, Calendar, Tag, ArrowUpDown, RotateCcw, Check } 
 import type { Category } from '@/shared/contracts/spendtrack';
 
 const datePresets = [
-  { label: 'هذا الشَّهر', value: 'this_month' },
-  { label: 'آخر 7 أيَّام', value: 'last_7' },
+  { label: 'هذا الشَّهر', value: 'this_month' },
+  { label: 'آخر 7 أيَّام', value: 'last_7' },
   { label: 'آخر 30 يومًا', value: 'last_30' },
   { label: 'الكل', value: 'all' },
 ] as const;
 
 const sortOptions = [
-  { label: 'الأحدث أوَّلًا', value: 'date_desc' },
-  { label: 'الأقدم أوَّلًا', value: 'date_asc' },
+  { label: 'الأحدث أوَّلًا', value: 'date_desc' },
+  { label: 'الأقدم أوَّلًا', value: 'date_asc' },
   { label: 'الأعلى مبلغًا', value: 'amount_desc' },
   { label: 'الأقل مبلغًا', value: 'amount_asc' },
 ] as const;
@@ -88,7 +88,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
               <SelectTrigger
                 className="h-10 sm:h-11 w-full sm:w-auto min-w-32.5 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs flex items-center justify-between gap-2"
-                aria-label="نطاق التَّاريخ"
+                aria-label="نطاق التَّاريخ"
               >
                 <div className="flex items-center gap-2 truncate">
                   <Calendar className="size-4 text-muted-foreground shrink-0" />
@@ -123,7 +123,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     router.push(`${pathname}?${params.toString()}`);
                   }}
                   className="w-full sm:w-60 h-10 sm:h-11 rounded-xl border-border/60 shadow-xs"
-                  aria-label="الفترة الزَّمنيَّة"
+                  aria-label="الفترة الزَّمنيَّة"
                 />
               </div>
             )}
@@ -138,14 +138,14 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                       ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15'
                       : 'bg-background/80 hover:bg-accent/40 text-foreground'
                   }`}
-                  aria-label={`التَّصنيفات${selectedCount > 0 ? ` (${selectedCount} مُحدَّدَة)` : ''}`}
+                  aria-label={`التَّصنيفات${selectedCount > 0 ? ` (${selectedCount} مُحدَّدَة)` : ''}`}
                 >
                   <span className="flex items-center gap-2 truncate">
                     <Tag
                       className={`size-4 shrink-0 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
                     />
                     <span>
-                      {selectedCount > 0 ? `التَّصنيفات (${selectedCount})` : 'جميع التَّصنيفات'}
+                      {selectedCount > 0 ? `التَّصنيفات (${selectedCount})` : 'جميع التَّصنيفات'}
                     </span>
                   </span>
                   <ChevronDown className="size-4 opacity-50 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />

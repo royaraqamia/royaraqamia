@@ -40,7 +40,7 @@ export function useDashboardToggle(
   const handleToggleLog = async (habitId: string) => {
     if (togglingHabitId === habitId) return;
     if (!store) {
-      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
     setTogglingHabitId(habitId);
@@ -77,7 +77,7 @@ export function useDashboardToggle(
   const handleSkipHabit = async (habitId: string) => {
     if (skippingHabitId === habitId) return;
     if (!store) {
-      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
     setSkippingHabitId(habitId);
@@ -112,7 +112,7 @@ export function useDashboardToggle(
 
   const handleSaveNote = async (habitId: string, note: string) => {
     if (!store) {
-      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
     try {

@@ -33,17 +33,17 @@ export function VerifyErrorState({
             </div>
             <div>
               <h2 className="font-bold text-lg text-destructive">
-                {rateLimited ? 'تجاوز عدد المحاولات المسموحة' : 'خطأ في التَّحقُّق'}
+                {rateLimited ? 'تجاوز عدد المحاولات المسموحة' : 'خطأ في التَّحقُّق'}
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {rateLimited
-                  ? 'الرَّجاء الانتظار بضع دقائق قبل المحاولة مرَّة أخرى'
-                  : 'تعذَّر العثور على شهادة بهذا الرَّمز في سجلاتنا'}
+                  ? 'الرَّجاء الانتظار بضع دقائق قبل المحاولة مرَّة أخرى'
+                  : 'تعذَّر العثور على شهادة بهذا الرَّمز في سجلاتنا'}
               </p>
             </div>
           </div>
           <Badge variant="destructive" className="px-3 py-1 text-xs rounded-full">
-            {rateLimited ? 'محدود المؤقت' : 'غير مُسجَّلَة'}
+            {rateLimited ? 'محدود المؤقت' : 'غير مُسجَّلَة'}
           </Badge>
         </div>
         <CardContent className="p-6 sm:p-8">
@@ -59,7 +59,7 @@ export function VerifyErrorState({
               className="gap-2 rounded-xl border-border hover:bg-muted cursor-pointer transition-safe"
             >
               <RotateCcw className="size-4" />
-              <span>المحاولة مرَّة أخرى</span>
+              <span>المحاولة مرَّة أخرى</span>
             </Button>
           </div>
         </CardContent>

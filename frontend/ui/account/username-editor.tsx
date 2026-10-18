@@ -82,15 +82,15 @@ export function UsernameEditor() {
     try {
       const result = await updateUsername(parsed.data);
       if (!result.success || !result.username) {
-        setError(result.error ?? 'تعذَّر تحديث المعرِّف');
+        setError(result.error ?? 'تعذَّر تحديث المعرِّف');
         return;
       }
       setSaved(result.username);
       setValue(result.username);
       setDialogOpen(false);
-      toast.success('تمَّ تحديث المعرِّف العام');
+      toast.success('تمَّ تحديث المعرِّف العام');
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذَّر تحديث المعرِّف');
+      setError(caught instanceof Error ? caught.message : 'تعذَّر تحديث المعرِّف');
     } finally {
       setSaving(false);
     }
@@ -101,7 +101,7 @@ export function UsernameEditor() {
       <button type="button" onClick={openDialog} className={rowClasses} aria-haspopup="dialog">
         <span className="flex items-center gap-2.5">
           <AtSign className="w-4 h-4 shrink-0 text-primary" aria-hidden="true" />
-          <span>المعرِّف العام</span>
+          <span>المعرِّف العام</span>
         </span>
         <span className="flex items-center gap-2">
           <span dir="ltr" className="text-xs font-medium text-muted-foreground sm:text-sm">
@@ -117,7 +117,7 @@ export function UsernameEditor() {
           aria-describedby={undefined}
           className={cn(dialogClassName, 'gap-0')}
         >
-          <DialogTitle className="sr-only">المعرِّف العام</DialogTitle>
+          <DialogTitle className="sr-only">المعرِّف العام</DialogTitle>
 
           <form onSubmit={handleSave} className="space-y-3">
             <div className="space-y-2.5">
@@ -125,7 +125,7 @@ export function UsernameEditor() {
                 htmlFor="username"
                 className="block text-[13px] font-medium text-foreground/80"
               >
-                المعرِّف العام
+                المعرِّف العام
               </label>
               <div className="relative">
                 <span
@@ -147,7 +147,7 @@ export function UsernameEditor() {
                   maxLength={30}
                   autoFocus
                   error={Boolean(shownError)}
-                  aria-label="المعرِّف العام"
+                  aria-label="المعرِّف العام"
                   aria-describedby={feedback ? 'username-feedback' : undefined}
                   className="ps-8 font-medium"
                 />

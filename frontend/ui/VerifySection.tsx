@@ -68,14 +68,14 @@ export function VerifySection() {
 
                     {/* Certificate Code Input Mock */}
                     <div className="w-full max-w-md space-y-2">
-                      <p className="text-xs sm:text-sm text-slate-400 font-medium">رمز الشَّهادة</p>
+                      <p className="text-xs sm:text-sm text-slate-400 font-medium">رمز الشَّهادة</p>
                       <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2.5">
                         <div className="h-11 px-4 sm:px-6 rounded-xl bg-slate-950/90 border border-indigo-500/30 text-indigo-200 font-mono text-xs sm:text-sm tracking-widest flex items-center justify-center shadow-inner flex-1 min-w-50">
                           <span className="select-all">COMP-2026-A1B2C3D4</span>
                         </div>
                         <button
                           type="button"
-                          aria-label="نسخ رمز الشَّهادة"
+                          aria-label="نسخ رمز الشَّهادة"
                           className="h-11 w-11 rounded-xl bg-white/9 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-indigo-500/35 hover:border-indigo-500/40 active:scale-95 transition-safe duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 group/copy"
                         >
                           <Copy className="w-4 h-4 group-hover/copy:scale-110 transition-transform" />
@@ -86,7 +86,7 @@ export function VerifySection() {
                     {/* Quick Verification Status Pill */}
                     <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl bg-indigo-500/14 border border-indigo-500/20 text-indigo-300 text-xs sm:text-sm font-medium">
                       <ScanLine className="w-4 h-4 text-indigo-400" />
-                      <span>تحقُّق فوري متاح</span>
+                      <span>تحقُّق فوري متاح</span>
                     </div>
                   </div>
                 </div>
@@ -102,20 +102,20 @@ export function VerifySection() {
               {
                 icon: FileText,
                 step: '01',
-                label: 'أدخِل رمز الشَّهادة',
-                sub: 'مُكوَّن من 16 حرفًا',
+                label: 'أدخِل رمز الشَّهادة',
+                sub: 'مُكوَّن من 16 حرفًا',
               },
               {
                 icon: ScanLine,
                 step: '02',
-                label: 'تحقُّق فوري',
+                label: 'تحقُّق فوري',
                 sub: 'من قاعدة البيانات',
               },
               {
                 icon: CheckCircle,
                 step: '03',
-                label: 'احصل على النَّتيجة',
-                sub: 'مُوثَّقة ومُوقَّعة',
+                label: 'احصل على النَّتيجة',
+                sub: 'مُوثَّقة ومُوقَّعة',
               },
             ].map((step, i) => (
               <div
