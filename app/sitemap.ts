@@ -61,6 +61,13 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    // The index only. The 114 sura pages are reachable from it and are not
+    // listed individually, the way a feed's pages are not either.
+    path: '/quran',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
     path: '/verify',
     changeFrequency: 'monthly',
     priority: 0.6,

@@ -1,7 +1,7 @@
 {
   "source": "Tanzil Project (https://tanzil.net)",
   "license": "Creative Commons Attribution 3.0",
-  "notice": "public/quran/NOTICE.txt",
+  "notice": "public/quran/meta/NOTICE.txt",
   "rivayah": "Hafs ʿan ʿAsim, Uthmani",
   "ayahCount": 6236,
   "surahs": [

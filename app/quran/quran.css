@@ -1,0 +1,8 @@
+/* Scoped to the Quran reader, not to the whole site: the display font's bytes
+   belong to the routes that render the text (see frontend/ui/quran/font.ts).
+
+   The Arabic sans is the fallback so anything Amiri Quran does not cover —
+   Latin digits, punctuation — does not fall to a default serif. */
+.font-quran {
+  font-family: var(--font-quran), var(--font-arabic), serif;
+}

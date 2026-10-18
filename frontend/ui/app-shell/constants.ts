@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   CalendarCheck,
   CheckSquare,
   Coins,
@@ -23,6 +24,7 @@ export type AppProduct =
   | 'training'
   | 'downloader'
   | 'scan'
+  | 'quran'
   | 'community';
 
 export interface AppProductDef {
@@ -76,6 +78,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/scan',
     landingPath: '/scan',
     icon: ScanBarcode,
+  },
+  {
+    id: 'quran',
+    label: 'القرآن الكريم',
+    appPath: '/quran',
+    landingPath: '/quran',
+    icon: BookOpen,
   },
   {
     id: 'linksnap',
