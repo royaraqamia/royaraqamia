@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { tolerateChunkFailure } from './shared/lazy-chunk';
 
 /**
  * Root-layout floats mounted off the critical path.
@@ -14,10 +15,12 @@ import { useEffect, useState } from 'react';
  * the lazily-imported Supabase browser client) still downloads as a
  * non-blocking <script async> in prerendered HTML; execution stays deferred.
  */
-const GoUpButton = dynamic(() => import('./GoUpButton').then((m) => m.GoUpButton), {
-  ssr: false,
-  loading: () => null,
-});
+const GoUpButton = dynamic(
+  tolerateChunkFailure('go-up button', () =>
+    import('./GoUpButton').then((m) => ({ default: m.GoUpButton }))
+  ),
+  { ssr: false, loading: () => null }
+);
 
 export function FloatingActions() {
   const [mounted, setMounted] = useState(false);

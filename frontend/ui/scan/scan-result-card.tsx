@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import {
   Check,
   Contact,
@@ -39,8 +40,11 @@ import {
  * Scanner's first paint, which the route's budget enforces.
  */
 const CertificateResultCard = dynamic(
-  () =>
-    import('@/frontend/ui/verify/certificate-result-card').then((mod) => mod.CertificateResultCard),
+  tolerateChunkFailure('certificate result card', () =>
+    import('@/frontend/ui/verify/certificate-result-card').then((mod) => ({
+      default: mod.CertificateResultCard,
+    }))
+  ),
   { ssr: false }
 );
 

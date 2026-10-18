@@ -26,6 +26,15 @@ function preloadSection(id: HomeSectionId): Promise<ComponentType> {
   });
 }
 
+/**
+ * Preload fires on the click path and on a `#hash` entry, neither of which can
+ * await it: an offline miss would surface as an unhandled rejection. The mount
+ * path below is the one that owns the failure.
+ */
+function preloadSectionQuietly(id: HomeSectionId) {
+  void preloadSection(id).catch(() => undefined);
+}
+
 function attachAnchorPreload() {
   if (anchorListenerAttached) return;
   anchorListenerAttached = true;
@@ -36,7 +45,7 @@ function attachAnchorPreload() {
     const id = anchor.getAttribute('href')?.slice(1);
     if (id && (HOME_SECTION_IDS as readonly string[]).includes(id)) {
       event.preventDefault();
-      preloadSection(id as HomeSectionId);
+      preloadSectionQuietly(id as HomeSectionId);
       scrollToLazySection(id);
     }
   });
@@ -93,7 +102,7 @@ export function LazySection({ id, className }: { id: HomeSectionId; className?: 
     attachAnchorPreload();
 
     if (window.location.hash === `#${id}`) {
-      preloadSection(id);
+      preloadSectionQuietly(id);
     }
 
     let cancelled = false;

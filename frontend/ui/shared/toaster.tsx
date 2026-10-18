@@ -1,7 +1,7 @@
 'use client';
 
-import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
-import { logger } from '@/frontend/shared/logger';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { tolerateChunkFailure } from './lazy-chunk';
 
 /**
  * Lazy-mount gate for the sonner `<Toaster/>`.
@@ -15,31 +15,16 @@ import { logger } from '@/frontend/shared/logger';
  *
  * The chunk is *fetched* on mount, though, not at the first interaction. This
  * sits in the root layout, so deferring the request means a tap with the radio
- * off asks for a chunk that was never cached: the rejected import lands in the
- * page's error boundary and the whole route is replaced by an error card
- * (docs/specs/offline-first.md). Loading it while online costs nothing visible.
+ * off asks for a chunk that was never cached. `tolerateChunkFailure` keeps that
+ * from costing the page; preloading it while online costs nothing visible.
  */
 const loadToasterCore = () => import('./toaster-core');
 
-/**
- * Resolves the toaster chunk, degrading to a component that renders nothing if
- * it cannot be fetched — offline before it was ever cached. A toaster is never
- * worth the page, and the rejection would otherwise reach the error boundary;
- * `LazySection` handles its own chunks the same way. The loader is injectable so
- * the fallback is testable without a real chunk failure.
- */
-export function loadToasterModule(
-  load: () => Promise<{ RoyaToasterCore: ComponentType }> = loadToasterCore
-): Promise<{ default: ComponentType }> {
-  return load()
-    .then((m) => ({ default: m.RoyaToasterCore }))
-    .catch((error) => {
-      logger.warn('The toaster chunk could not be loaded', { error: String(error) });
-      return { default: () => null };
-    });
-}
+const loadToasterModule = tolerateChunkFailure('toaster', () =>
+  loadToasterCore().then((m) => ({ default: m.RoyaToasterCore }))
+);
 
-const LazyToaster = lazy(() => loadToasterModule());
+const LazyToaster = lazy(loadToasterModule);
 
 const MOUNT_DELAY_MS = 2500;
 

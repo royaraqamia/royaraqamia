@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react';
 import dynamic from 'next/dynamic';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import {
   Camera,
   Flashlight,
@@ -42,7 +43,9 @@ type Status = 'idle' | 'starting' | 'scanning' | 'result';
  * the Scanner's first paint — the same reason the decoder itself is lazy.
  */
 const ScanResultCard = dynamic(
-  () => import('./scan-result-card').then((mod) => mod.ScanResultCard),
+  tolerateChunkFailure('scan result card', () =>
+    import('./scan-result-card').then((mod) => ({ default: mod.ScanResultCard }))
+  ),
   { ssr: false }
 );
 

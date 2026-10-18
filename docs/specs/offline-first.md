@@ -78,11 +78,11 @@ Honest list of what stands between us and the bar, each with the file that shows
 3. **The offline e2e suite has barely run, and has drifted.** Every spec is `test.skip(!ENABLED)`
    behind its own env flag, and no workflow set one — so the suite was verified only by manual runs,
    and nothing caught the drift that followed. The `E2E: Offline` workflow now runs
-   `public-offline` and `spendtrack-offline` on the paths that can break them; four specs still need
-   repair before they can join it — `habitflow-sync-resume` (the dashboard reaches its error boundary
-   when a habit is created with the radio off), both `linksnap-offline` tests, and `blogpress-offline`
-   (its sign-in assertion fails). `lead-offline` stays out because it writes a row the suite cannot
-   remove.
+   `public-offline`, `spendtrack-offline` and the `habitflow-sync-resume` sync-resume proof, which only
+   passes now that a missing chunk no longer takes the page down; the owned-data specs need the
+   `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` secrets to run instead of skipping. `linksnap-offline` (both
+   tests) and `blogpress-offline` (its sign-in assertion fails) still need repair before they can join,
+   and `lead-offline` stays out because it writes a row the suite cannot remove.
 
 ## Architecture
 
@@ -143,6 +143,14 @@ Owned data renders from the Local Store: hydrate IndexedDB → paint → refresh
 background, on a sync hint or on focus. Server loaders remain the initial seed and warm path. Shared
 and public data stays RSC, served from the SW cache.
 
+**A missing chunk costs the component, never the page.** Every lazy boundary (`next/dynamic`,
+`React.lazy`, the below-the-fold sections) loads through `tolerateChunkFailure`
+(`frontend/ui/shared/lazy-chunk.ts`), so a chunk that cannot be fetched — a first tap with the radio
+off, a `setTimeout 0` mount, an aborted prefetch — renders nothing where it would have been rather
+than rejecting. A rejected import is a **render error**: React hands it to the nearest error boundary,
+and for the root-layout floats that boundary is the route, so the user used to lose the page they were
+reading because of a chunk they never asked for (#332).
+
 ## Identity & auth
 
 - Network failure is **never** a logout; the cached session keeps the shell signed in, and only
@@ -188,9 +196,9 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 - **Offline e2e in CI:** the `E2E: Offline` workflow runs `context.setOffline(true)` with
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
-  server state correct). It covers `public-offline` and `spendtrack-offline` today; every repaired spec
-  joins it, and the goal is a sync-resume proof per product family rather than the flag-gated status
-  quo.
+  server state correct). It covers `public-offline`, `spendtrack-offline` and the HabitFlow sync-resume
+  proof today; every repaired spec joins it, and the goal is a sync-resume proof per product family
+  rather than the flag-gated status quo.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
