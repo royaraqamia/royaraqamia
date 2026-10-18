@@ -49,7 +49,7 @@ export const portfolioItems: PortfolioItem[] = [
     title: 'موقع عيادة أسنان',
   },
   {
-    title: 'تطبيق إلكترونيَّات وكهربائيَّات',
+    title: 'تطبيق إلكترونيَّات وكهربائيَّات',
   },
   {
     title: 'موقع تحليل بيانات',
@@ -58,13 +58,13 @@ export const portfolioItems: PortfolioItem[] = [
     title: 'تطبيق عطور',
   },
   {
-    title: 'تطبيق إلكترونيَّات وكهربائيَّات',
+    title: 'تطبيق إلكترونيَّات وكهربائيَّات',
   },
   {
     title: 'Dashboard لمتجر إلكتروني',
   },
   {
-    title: 'تطبيق سيَّارات',
+    title: 'تطبيق سيَّارات',
   },
   {
     title: 'واجهة المحادثة لمتجر إلكتروني',
@@ -73,10 +73,10 @@ export const portfolioItems: PortfolioItem[] = [
     title: 'لوحة تصميم إشعارات',
   },
   {
-    title: 'تطبيق سفريَّات',
+    title: 'تطبيق سفريَّات',
   },
   {
-    title: 'تطبيق استشارات قانونيَّة',
+    title: 'تطبيق استشارات قانونيَّة',
   },
   {
     title: 'هوية علامة مياه',

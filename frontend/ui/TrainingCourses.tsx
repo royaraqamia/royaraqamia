@@ -20,7 +20,7 @@ export function TrainingCourses() {
       icon: Sparkle,
       label: 'مشروع جاهز للبيع',
       description: 'لا نخرج بمجرَّد واجهة، بل بمنتج رقمي كامل.',
-      badge: 'الهدف الرَّئيسي',
+      badge: 'الهدف الرَّئيسي',
     },
     {
       icon: Trophy,
@@ -97,7 +97,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="text-[11px] text-purple-300/70 mt-1.5 font-medium flex items-center justify-center md:justify-start gap-1">
                         <Wallet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>الدَّفع بالتَّقسيط مُتاح</span>
+                        <span>الدَّفع بالتَّقسيط مُتاح</span>
                       </div>
                     </div>
                   </div>
@@ -124,7 +124,7 @@ export function TrainingCourses() {
                         >
                           {isFeatured && (
                             <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-linear-to-r from-purple-600 to-violet-600 text-[10px] font-bold text-white shadow-xs">
-                              {highlight.badge || 'الهدف الرَّئيسي'}
+                              {highlight.badge || 'الهدف الرَّئيسي'}
                             </div>
                           )}
 
@@ -157,7 +157,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          المدرِّب
+                          المدرِّب
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.trainer}
@@ -172,7 +172,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          عدد السَّاعات
+                          عدد السَّاعات
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.duration}
@@ -206,12 +206,12 @@ export function TrainingCourses() {
                     >
                       <Link
                         href="/training/apply"
-                        aria-label={`قدِّم طلبك للالتحاق بدورة ${course.title}`}
+                        aria-label={`قدِّم طلبك للالتحاق بدورة ${course.title}`}
                       >
                         {/* Animated Light Shimmer Beam */}
                         <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-                        <span>قدِّم طلبك الآن</span>
+                        <span>قدِّم طلبك الآن</span>
                       </Link>
                     </Button>
                   ) : (

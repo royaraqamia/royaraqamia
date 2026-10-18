@@ -157,7 +157,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                 </div>
 
                 <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                  أدخِل رابطًا إنجليزيًّا قصيرًا (مثل: my-first-post)
+                  أدخِل رابطًا إنجليزيًّا قصيرًا (مثل: my-first-post)
                 </p>
               </div>
             </section>
@@ -305,7 +305,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   name="meta_title"
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder={excerpt || 'عنوان SEO مُخصَّص'}
+                  placeholder={excerpt || 'عنوان SEO مُخصَّص'}
                   maxLength={70}
                   className="text-sm transition-safe duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
                 />
@@ -344,7 +344,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                     )}
                     {isDescOverLimit && (
                       <span className="text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
-                        <AlertTriangle className="size-3" /> تمَّ الوصول للحدِّ الأقصى
+                        <AlertTriangle className="size-3" /> تمَّ الوصول للحدِّ الأقصى
                       </span>
                     )}
                     <span

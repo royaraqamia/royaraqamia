@@ -100,7 +100,7 @@ export function CategoryPieChart({
       <div
         className="group relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-border/80 bg-slate-50/50 dark:bg-neutral-900/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-slate-50 dark:hover:bg-neutral-900/60"
         role="img"
-        aria-label="لا توجد بيانات إنفاق حسب التَّصنيف"
+        aria-label="لا توجد بيانات إنفاق حسب التَّصنيف"
       >
         <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 ring-8 ring-primary/5 transition-transform duration-300 group-hover:scale-110">
           <svg
@@ -123,7 +123,7 @@ export function CategoryPieChart({
             لا توجد بيانات
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            أضِف مصاريف لرؤية توزيع الإنفاق حسب التَّصنيف
+            أضِف مصاريف لرؤية توزيع الإنفاق حسب التَّصنيف
           </p>
         </div>
       </div>
@@ -155,12 +155,12 @@ export function CategoryPieChart({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-            توزيع الإنفاق حسب التَّصنيف
+            توزيع الإنفاق حسب التَّصنيف
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {selectedCategories.length > 0
-              ? `تمَّ تحديد ${selectedCategories.length} من أصل ${data.length} تصنيفات`
-              : 'اضغط على أيِّ تصنيف للتَّصفية والمقارنة'}
+              ? `تمَّ تحديد ${selectedCategories.length} من أصل ${data.length} تصنيفات`
+              : 'اضغط على أيِّ تصنيف للتَّصفية والمقارنة'}
           </p>
         </div>
         <div className="self-start sm:self-auto flex items-center gap-2 rounded-2xl bg-muted/60 px-3 py-1.5 border border-border/40">
@@ -175,7 +175,7 @@ export function CategoryPieChart({
       <div
         className="relative"
         role="img"
-        aria-label="رسم بياني يُوضِّح توزيع الإنفاق حسب التَّصنيف"
+        aria-label="رسم بياني يُوضِّح توزيع الإنفاق حسب التَّصنيف"
       >
         <div className="relative h-70 sm:h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -273,7 +273,7 @@ export function CategoryPieChart({
       </div>
 
       {/* Accessible Screen Reader List */}
-      <div className="sr-only" role="list" aria-label="التَّصنيفات">
+      <div className="sr-only" role="list" aria-label="التَّصنيفات">
         {data.map((entry, index) => (
           <div key={index} role="listitem">
             {entry.name}: {formatMoney(entry.total, currency)}

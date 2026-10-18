@@ -15,7 +15,7 @@ export type ConsultationBookingStatus = (typeof CONSULTATION_BOOKING_STATUSES)[n
 
 export const CONSULTATION_BOOKING_STATUS_LABELS: Record<ConsultationBookingStatus, string> = {
   pending: 'قيد المراجعة',
-  confirmed: 'مُؤكَّد',
+  confirmed: 'مُؤكَّد',
   rejected: 'مرفوض',
   cancelled: 'مُلغَى',
 };
@@ -114,7 +114,7 @@ export const BookingContactSchema = z.object({
     .string()
     .trim()
     .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
-    .max(120, 'الاسم طويل جدًّا'),
+    .max(120, 'الاسم طويل جدًّا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
   topic_description: z
     .string()
@@ -167,7 +167,7 @@ export type UpdateBookingInput = z.infer<typeof UpdateBookingSchema>;
 export const PackageUpsertSchema = z.object({
   name: z.string().trim().min(2, 'اسم الباقة مطلوب').max(160),
   description: z.string().trim().max(1000).optional().nullable(),
-  price_usd: z.coerce.number().positive('السِّعر يجب أن يكون أكبر من صفر').max(100000),
+  price_usd: z.coerce.number().positive('السِّعر يجب أن يكون أكبر من صفر').max(100000),
   duration_minutes: z.coerce.number().int().min(15).max(480),
   sessions_count: z.coerce.number().int().min(1).max(20).default(1),
   is_active: z.boolean().default(true),
@@ -181,7 +181,7 @@ export const SlotCreateSchema = z
     ends_at: z.string().datetime({ offset: true }),
   })
   .refine((v) => new Date(v.ends_at).getTime() > new Date(v.starts_at).getTime(), {
-    message: 'وقت النِّهاية يجب أن يكون بعد وقت البداية',
+    message: 'وقت النِّهاية يجب أن يكون بعد وقت البداية',
     path: ['ends_at'],
   });
 export type SlotCreateInput = z.infer<typeof SlotCreateSchema>;
@@ -210,15 +210,15 @@ export const SETTINGS_KEYS = ['booking_whatsapp_url'] as const;
 // ------------------------------------------------------------
 
 export const BOOKING_ERROR_MESSAGES: Record<string, string> = {
-  PACKAGE_NOT_FOUND: 'الباقة المطلوبة غير متوفِّرة حاليًّا.',
+  PACKAGE_NOT_FOUND: 'الباقة المطلوبة غير متوفِّرة حاليًّا.',
   SLOT_COUNT_MISMATCH: 'عدد المواعيد المُختارة لا يُطابق الباقة.',
   SLOT_UNAVAILABLE: 'أحد المواعيد المُختارة لم يعد متاحًا، اختر مواعيد أخرى.',
   SLOT_TAKEN: 'نأسف، سبقك شخص آخر إلى أحد هذه المواعيد. اختر مواعيد جديدة.',
-  BOOKING_NOT_PENDING: 'لا يُمكن تنفيذ الطَّلب على هذا الحجز في حالته الحاليَّة.',
+  BOOKING_NOT_PENDING: 'لا يُمكن تنفيذ الطَّلب على هذا الحجز في حالته الحاليَّة.',
 };
 
 export function toBookingErrorMessage(code: string): string {
-  return BOOKING_ERROR_MESSAGES[code] ?? 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.';
+  return BOOKING_ERROR_MESSAGES[code] ?? 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.';
 }
 
 // ------------------------------------------------------------

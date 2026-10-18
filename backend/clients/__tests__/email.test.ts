@@ -48,7 +48,7 @@ describe('ResendEmailClient', () => {
     expect(payload).toMatchObject({
       from: 'رؤيَة رقَميَّة <no-reply@royaraqamia.com>',
       to: 'user@example.com',
-      subject: 'رمز التَّحقُّق',
+      subject: 'رمز التَّحقُّق',
     });
     expect(String(payload.html)).toContain('123456');
     expect(String(payload.html)).toContain('dir="rtl"');

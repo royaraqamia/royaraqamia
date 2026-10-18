@@ -4,12 +4,12 @@ import { SectionTitle, SectionTitleHighlight } from '../../frontend/ui/shared/se
 export const metadata: Metadata = {
   title: 'سياسة الأمان',
   description:
-    'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+    'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
   alternates: { canonical: '/security' },
   openGraph: {
     title: 'سياسة الأمان | رؤيَة رقَميَّة',
     description:
-      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     url: '/security',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'سياسة الأمان | رؤيَة رقَميَّة',
     description:
-      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     images: ['/OG Image.webp'],
   },
 };
@@ -66,7 +66,7 @@ export default function SecurityPage() {
                 48 ساعة
               </div>
               <p className="text-xs text-muted-foreground">
-                نتعهَّد بتأكيد استلام التَّقرير خلال هذه المدة.
+                نتعهَّد بتأكيد استلام التَّقرير خلال هذه المدة.
               </p>
             </div>
 
@@ -91,7 +91,7 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mb-1">
-                5 أيَّام عمل
+                5 أيَّام عمل
               </div>
               <p className="text-xs text-muted-foreground">
                 تقديم تحديث عن حالة التقييم والمعالجة.
@@ -121,7 +121,7 @@ export default function SecurityPage() {
                   </svg>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  1. الإبلاغ عن الثَّغرات الأمنيَّة
+                  1. الإبلاغ عن الثَّغرات الأمنيَّة
                 </h2>
               </header>
 
@@ -180,7 +180,7 @@ export default function SecurityPage() {
                       </svg>
                     </div>
                     <span className="text-foreground/90">
-                      اجعل عنوان الرِّسالة يبدأ بالبادئة:{' '}
+                      اجعل عنوان الرِّسالة يبدأ بالبادئة:{' '}
                       <code className="px-2 py-0.5 rounded bg-muted text-foreground text-xs font-mono font-bold dir-ltr inline-block border border-border/60">
                         [SECURITY]
                       </code>
@@ -201,7 +201,7 @@ export default function SecurityPage() {
                       </svg>
                     </div>
                     <span className="text-foreground/90">
-                      قدِّم، إن أمكن: خطوات إعادة الإنتاج، الأثر المُحتمَل، والاقتراح العلاجي إن
+                      قدِّم، إن أمكن: خطوات إعادة الإنتاج، الأثر المُحتمَل، والاقتراح العلاجي إن
                       وُجِد.
                     </span>
                   </li>
@@ -224,15 +224,15 @@ export default function SecurityPage() {
                       </svg>
                     </div>
                     <span className="text-foreground/90">
-                      لا تشارك بيانات مستخدمين حقيقيِّين داخل التَّقرير.
+                      لا تشارك بيانات مستخدمين حقيقيِّين داخل التَّقرير.
                     </span>
                   </li>
                 </ul>
 
                 <p className="mt-4 pt-3 border-t border-border/40 text-sm">
-                  نتعهَّد بتأكيد استلام التَّقرير خلال{' '}
+                  نتعهَّد بتأكيد استلام التَّقرير خلال{' '}
                   <strong className="text-foreground font-bold">48 ساعة</strong>، وتقديم تحديث عن
-                  الحالة خلال <strong className="text-foreground font-bold">5 أيَّام عمل</strong>.
+                  الحالة خلال <strong className="text-foreground font-bold">5 أيَّام عمل</strong>.
                 </p>
               </div>
             </article>
@@ -257,17 +257,17 @@ export default function SecurityPage() {
                   </svg>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  2. نطاق التَّغطية
+                  2. نطاق التَّغطية
                 </h2>
               </header>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { text: 'التَّنفيذ البرمجي عن بُعد', badge: 'RCE' },
-                  { text: 'حقن البرمجة النَّصِّيَّة عبر المواقع', badge: 'XSS' },
-                  { text: 'تزوير الطَّلبات عبر المواقع', badge: 'CSRF' },
+                  { text: 'التَّنفيذ البرمجي عن بُعد', badge: 'RCE' },
+                  { text: 'حقن البرمجة النَّصِّيَّة عبر المواقع', badge: 'XSS' },
+                  { text: 'تزوير الطَّلبات عبر المواقع', badge: 'CSRF' },
                   { text: 'تجاوز المصادقة أو التَّفويض', badge: 'Auth Bypass' },
-                  { text: 'كشف البيانات الحسَّاسة', badge: 'Data Exposure' },
+                  { text: 'كشف البيانات الحسَّاسة', badge: 'Data Exposure' },
                 ].map((item, idx) => (
                   <div
                     key={idx}
@@ -305,14 +305,14 @@ export default function SecurityPage() {
                   </svg>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  3. خارج النِّطاق
+                  3. خارج النِّطاق
                 </h2>
               </header>
 
               <ul className="space-y-3">
                 {[
-                  'الثَّغرات في المكتبات الخارجيَّة التي تُغطِّيها برامج الإفصاح الخاصَّة بها.',
-                  'هجمات الهندسة الاجتماعيَّة ضدَّ المُشغِّل.',
+                  'الثَّغرات في المكتبات الخارجيَّة التي تُغطِّيها برامج الإفصاح الخاصَّة بها.',
+                  'هجمات الهندسة الاجتماعيَّة ضدَّ المُشغِّل.',
                   'تعرُّض ذاتي (Self-XSS) دون أثر مُثبَت.',
                 ].map((item, idx) => (
                   <li
@@ -366,9 +366,9 @@ export default function SecurityPage() {
               </header>
 
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                نلتزم بحماية بياناتك الشَّخصيَّة وِفق أفضل الممارسات: التَّشفير أثناء النَّقل
-                (HTTPS/TLS) وعند التَّخزين، وتطبيق مبدأ الحدّ الأدنى من جمع البيانات، واحترام حقوق
-                الوصول والتَّصحيح والحذف. للمزيد، راجع{' '}
+                نلتزم بحماية بياناتك الشَّخصيَّة وِفق أفضل الممارسات: التَّشفير أثناء النَّقل
+                (HTTPS/TLS) وعند التَّخزين، وتطبيق مبدأ الحدّ الأدنى من جمع البيانات، واحترام حقوق
+                الوصول والتَّصحيح والحذف. للمزيد، راجع{' '}
                 <a
                   href="/privacy"
                   className="font-bold text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
@@ -401,7 +401,7 @@ export default function SecurityPage() {
                       </svg>
                     </div>
                     <h2 className="text-xl font-bold text-foreground tracking-tight">
-                      5. التَّواصل
+                      5. التَّواصل
                     </h2>
                   </div>
                   <p className="text-sm text-muted-foreground">

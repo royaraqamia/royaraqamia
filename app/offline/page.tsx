@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'غير متَّصل',
-  description: 'أنت غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.',
+  title: 'غير متَّصل',
+  description: 'أنت غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.',
 };
 
 export default function OfflinePage() {
@@ -50,10 +50,10 @@ export default function OfflinePage() {
           {/* Primary Typography & Status Header */}
           <div className="text-center">
             <SectionTitle as="h1">
-              غير <SectionTitleHighlight>متَّصل</SectionTitleHighlight>
+              غير <SectionTitleHighlight>متَّصل</SectionTitleHighlight>
             </SectionTitle>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
-              يبدو أنَّك غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.
+              يبدو أنَّك غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.
             </p>
           </div>
 

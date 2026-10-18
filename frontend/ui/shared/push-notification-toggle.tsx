@@ -145,7 +145,7 @@ export function PushNotificationToggle() {
     return (
       <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/60">
         <Ban size={14} className="shrink-0" />
-        <span>الإشعارات غير مدعومة في هذا المتصفِّح</span>
+        <span>الإشعارات غير مدعومة في هذا المتصفِّح</span>
       </div>
     );
   }
@@ -156,8 +156,8 @@ export function PushNotificationToggle() {
         <Ban size={14} className="shrink-0" />
         <span>
           {native
-            ? 'الإشعارات محظورة في النظام — فعِّلها من إعدادات التطبيق'
-            : 'الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع'}
+            ? 'الإشعارات محظورة في النظام — فعِّلها من إعدادات التطبيق'
+            : 'الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع'}
         </span>
       </div>
     );

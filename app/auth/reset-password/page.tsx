@@ -10,7 +10,7 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
-const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
+const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -34,7 +34,7 @@ function ResetPasswordForm() {
   return (
     <AuthCard
       title="إعادة تعيين كلمة المرور"
-      description="أدخِل بريدك الإلكتروني وسنُرسل لك رابطًا لإعادة التَّعيين"
+      description="أدخِل بريدك الإلكتروني وسنُرسل لك رابطًا لإعادة التَّعيين"
     >
       <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
         <div className="space-y-2 text-start">
@@ -89,7 +89,7 @@ function ResetPasswordForm() {
               <span>جاري الإرسال...</span>
             </>
           ) : (
-            'إرسال رابط إعادة التَّعيين'
+            'إرسال رابط إعادة التَّعيين'
           )}
         </HeroCtaButton>
       </form>

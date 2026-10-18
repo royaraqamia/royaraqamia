@@ -58,7 +58,7 @@ export function ExpenseList({
         icon={Receipt}
         title={hasFilters ? 'لا توجد نتائج تُطابق الفلترة' : 'لا توجد مصاريف بعد'}
         description={
-          hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف'
+          hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف'
         }
       />
     );
@@ -83,7 +83,7 @@ export function ExpenseList({
             className="group relative inline-flex items-center justify-center h-10 px-6 text-xs font-medium tracking-wide transition-safe duration-300 ease-out border rounded-full border-border/70 bg-background/80 hover:bg-accent hover:text-accent-foreground hover:border-border hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
           >
             {loading ? <Loader2 className="ms-2 size-3.5 animate-spin text-primary" /> : null}
-            <span>{loading ? 'جاري التَّحميل...' : 'تحميل المزيد'}</span>
+            <span>{loading ? 'جاري التَّحميل...' : 'تحميل المزيد'}</span>
           </Button>
         </div>
       )}
@@ -203,7 +203,7 @@ function ExpenseRow({
               <DialogHeader className="space-y-2 text-start">
                 <DialogTitle className="text-lg font-bold text-foreground">حذف المصروف</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                  هل أنت متأكِّد من حذف هذا المصروف؟ لا يمكن التَّراجع عن هذا الإجراء.
+                  هل أنت متأكِّد من حذف هذا المصروف؟ لا يمكن التَّراجع عن هذا الإجراء.
                 </DialogDescription>
               </DialogHeader>
 

@@ -32,15 +32,15 @@ export function CertificateResultCard({
   const details = [
     {
       icon: <Hash className="size-4" />,
-      label: 'رمز الشَّهادة',
+      label: 'رمز الشَّهادة',
       value: certificate.certificate_code,
       highlight: true,
       copyable: true,
     },
-    { icon: <User className="size-4" />, label: 'اسم الطَّالب', value: certificate.student_name },
+    { icon: <User className="size-4" />, label: 'اسم الطَّالب', value: certificate.student_name },
     {
       icon: <GraduationCap className="size-4" />,
-      label: 'اسم الدَّورة',
+      label: 'اسم الدَّورة',
       value: certificate.course_name,
     },
     {
@@ -62,7 +62,7 @@ export function CertificateResultCard({
       ? [
           {
             icon: <Trophy className="size-4" />,
-            label: 'الدَّرجة / الحالة',
+            label: 'الدَّرجة / الحالة',
             value: certificate.grade_or_status,
           } as const,
         ]
@@ -90,11 +90,11 @@ export function CertificateResultCard({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-                تمَّ التَّحقُّق بنجاح
+                تمَّ التَّحقُّق بنجاح
               </h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤيَة رقَميَّة
+              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤيَة رقَميَّة
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export function CertificateResultCard({
                 }`}
               />
             </span>
-            {isExpired ? 'شهادة منتهية' : 'شهادة صالحة ومُوثَّقة'}
+            {isExpired ? 'شهادة منتهية' : 'شهادة صالحة ومُوثَّقة'}
           </Badge>
         </m.div>
       </m.div>
@@ -132,7 +132,7 @@ export function CertificateResultCard({
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <User className="size-3.5 text-primary" />
-                <span>اسم الطَّالب / الحاصل على الشَّهادة</span>
+                <span>اسم الطَّالب / الحاصل على الشَّهادة</span>
               </div>
               <p className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-snug">
                 {certificate.student_name}
@@ -190,12 +190,12 @@ export function CertificateResultCard({
                   type="button"
                   onClick={() => onCopy(detail.value ?? '')}
                   className="relative inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-border/60 bg-muted/50 px-2 py-1.5 text-xs font-medium text-muted-foreground transition-safe duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary cursor-pointer active:scale-95 sm:px-2.5"
-                  aria-label="نسخ رمز الشَّهادة"
+                  aria-label="نسخ رمز الشَّهادة"
                 >
                   {copied ? (
                     <>
                       <Check className="size-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-bold">تمَّ النَّسخ</span>
+                      <span className="text-emerald-500 font-bold">تمَّ النَّسخ</span>
                     </>
                   ) : (
                     <>

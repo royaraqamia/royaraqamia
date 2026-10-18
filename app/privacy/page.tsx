@@ -4,12 +4,12 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 export const metadata: Metadata = {
   title: 'سياسة الخصوصيَّة',
   description:
-    'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+    'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
   alternates: { canonical: '/privacy' },
   openGraph: {
     title: 'سياسة الخصوصيَّة | رؤيَة رقَميَّة',
     description:
-      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
     url: '/privacy',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'سياسة الخصوصيَّة | رؤيَة رقَميَّة',
     description:
-      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
     images: ['/OG Image.webp'],
   },
 };
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
             <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
               مرحبًا بك في <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong>{' '}
               (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
-              كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
-              إلكترونيًّا.
+              كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
+              إلكترونيًّا.
             </p>
           </section>
 
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
               {/* Card 2.A */}
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
                 <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                  <span className="text-primary font-mono">أ)</span> معلومات التَّسجيل والدُّخول
+                  <span className="text-primary font-mono">أ)</span> معلومات التَّسجيل والدُّخول
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
                   عند إنشاء حساب أو تسجيل الدُّخول، نجمع:
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
                   {[
                     'الاسم الكامل',
                     'البريد الإلكتروني',
-                    'كلمة المرور المُشفَّرة (لا نُخزِّن كلمات المرور بنسختها الأصليَّة)',
+                    'كلمة المرور المُشفَّرة (لا نُخزِّن كلمات المرور بنسختها الأصليَّة)',
                   ].map((item, idx) => (
                     <li
                       key={idx}
@@ -121,14 +121,14 @@ export default function PrivacyPage() {
                   <span className="text-primary font-mono">ب)</span> معلومات الدُّخول عبر Google
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
-                  عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من
+                  عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من
                   Google وِفقًا لتصريح خصوصيَّتك في حسابك:
                 </p>
                 <ul className="space-y-2.5 mb-4">
                   {[
                     'الاسم الكامل المرتبط بحساب Google',
                     'عنوان البريد الإلكتروني',
-                    'صورة الملف الشَّخصي (إن وُجِدت)',
+                    'صورة الملف الشَّخصي (إن وُجِدت)',
                   ].map((item, idx) => (
                     <li
                       key={idx}
@@ -163,14 +163,14 @@ export default function PrivacyPage() {
                   <span className="text-primary font-mono">ج)</span> معلومات الاستخدام
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
-                  قد نجمع تلقائيًّا معلومات معيَّنة عند استخدامك للمنصَّة، منها:
+                  قد نجمع تلقائيًّا معلومات معيَّنة عند استخدامك للمنصَّة، منها:
                 </p>
                 <ul className="space-y-2.5">
                   {[
                     'عنوان IP',
-                    'نوع المتصفِّح ونظام التَّشغيل',
-                    'صفحات الموقع التي تزورها ووقت الزِّيارة',
-                    'البيانات التي تُدخلها في نماذج التَّواصل',
+                    'نوع المتصفِّح ونظام التَّشغيل',
+                    'صفحات الموقع التي تزورها ووقت الزِّيارة',
+                    'البيانات التي تُدخلها في نماذج التَّواصل',
                   ].map((item, idx) => (
                     <li
                       key={idx}
@@ -211,13 +211,13 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <p className="text-muted-foreground text-sm sm:text-base mb-6">
-              نستخدم المعلومات التي نجمعها للأغراض التَّالية:
+              نستخدم المعلومات التي نجمعها للأغراض التَّالية:
             </p>
             <div className="grid sm:grid-cols-2 gap-3.5">
               {[
-                'توفير وتشغيل خدماتنا (الدَّورات التَّدريبيَّة، الشَّهادات، التَّطبيقات)',
+                'توفير وتشغيل خدماتنا (الدَّورات التَّدريبيَّة، الشَّهادات، التَّطبيقات)',
                 'المُصادقة وتأمين حسابك',
-                'التَّواصل معك بخصوص حسابك أو خدماتنا',
+                'التَّواصل معك بخصوص حسابك أو خدماتنا',
                 'تحسين تجربتك على المنصَّة',
                 'الامتثال للالتزامات القانونيَّة',
                 'منع الاحتيال وسوء الاستخدام',
@@ -247,8 +247,8 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <p className="text-foreground/80 text-base sm:text-lg mb-6 leading-relaxed">
-              نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
-              التَّالية:
+              نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
+              التَّالية:
             </p>
             <div className="space-y-4">
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 leading-relaxed">
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
                   الالتزامات القانونيَّة:
                 </strong>
                 <span className="text-foreground/80 text-sm sm:text-base">
-                  قد نكشف معلوماتك إذا طُلِب ذلك قانونيًّا أو ردًّا على إجراءات قانونيَّة صالحة.
+                  قد نكشف معلوماتك إذا طُلِب ذلك قانونيًّا أو ردًّا على إجراءات قانونيَّة صالحة.
                 </span>
               </div>
             </div>
@@ -281,13 +281,13 @@ export default function PrivacyPage() {
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 05
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. الأمان والتَّخزين</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. الأمان والتَّخزين</h2>
             </div>
             <div className="space-y-3">
               {[
                 'نتَّبع إجراءات أمنيَّة معقولة لحماية معلوماتك من الوصول غير المُصرَّح به أو استخدامها أو تعديلها أو إتلافها.',
-                'تُخزَّن بياناتك على خوادم مُزوِّدي الخدمات الموثوقين مع تشفير أثناء النَّقل (TLS/SSL) وعند التَّخزين.',
-                'نحتفظ بمعلوماتك الشَّخصيَّة فقط للمدَّة اللازمة لتحقيق الأغراض التي جُمِعت من أجلها، أو كما يقتضي القانون.',
+                'تُخزَّن بياناتك على خوادم مُزوِّدي الخدمات الموثوقين مع تشفير أثناء النَّقل (TLS/SSL) وعند التَّخزين.',
+                'نحتفظ بمعلوماتك الشَّخصيَّة فقط للمدَّة اللازمة لتحقيق الأغراض التي جُمِعت من أجلها، أو كما يقتضي القانون.',
               ].map((item, idx) => (
                 <div
                   key={idx}
@@ -324,23 +324,23 @@ export default function PrivacyPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-foreground">. حقوقك</h2>
             </div>
             <p className="text-muted-foreground text-sm sm:text-base mb-6">
-              لك حقوق فيما يتعلَّق بمعلوماتك الشَّخصيَّة:
+              لك حقوق فيما يتعلَّق بمعلوماتك الشَّخصيَّة:
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
               {[
                 {
-                  title: 'حقُّ الوصول:',
-                  desc: 'يمكنك طلب نسخة من معلوماتك الشَّخصيَّة المُخزَّنة لدينا.',
+                  title: 'حقُّ الوصول:',
+                  desc: 'يمكنك طلب نسخة من معلوماتك الشَّخصيَّة المُخزَّنة لدينا.',
                 },
-                { title: 'حقُّ التَّصحيح:', desc: 'يمكنك طلب تصحيح أي معلومات غير دقيقة.' },
+                { title: 'حقُّ التَّصحيح:', desc: 'يمكنك طلب تصحيح أي معلومات غير دقيقة.' },
                 {
-                  title: 'حقُّ الحذف:',
-                  desc: 'يمكنك طلب حذف معلوماتك الشَّخصيَّة، شريطة أن لا يكون لدينا التزام قانوني للاحتفاظ بها.',
+                  title: 'حقُّ الحذف:',
+                  desc: 'يمكنك طلب حذف معلوماتك الشَّخصيَّة، شريطة أن لا يكون لدينا التزام قانوني للاحتفاظ بها.',
                 },
                 {
-                  title: 'حقُّ الاعتراض:',
-                  desc: 'يمكنك الاعتراض على معالجة معلوماتك في ظروف مُعيَّنة.',
+                  title: 'حقُّ الاعتراض:',
+                  desc: 'يمكنك الاعتراض على معالجة معلوماتك في ظروف مُعيَّنة.',
                 },
               ].map((right, idx) => (
                 <div
@@ -356,7 +356,7 @@ export default function PrivacyPage() {
             </div>
 
             <p className="text-foreground/80 text-sm sm:text-base pt-4 border-t border-border/50">
-              لممارسة أيٍّ من هذه الحقوق، يُرجَى التَّواصل معنا عبر البريد الإلكتروني:{' '}
+              لممارسة أيٍّ من هذه الحقوق، يُرجَى التَّواصل معنا عبر البريد الإلكتروني:{' '}
               <a
                 href="mailto:contact@royaraqamia.com"
                 className="inline-flex items-center gap-1 text-primary font-medium underline underline-offset-4 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
@@ -375,12 +375,12 @@ export default function PrivacyPage() {
                   07
                 </span>
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                  . ملفَّات تعريف الارتباط (Cookies)
+                  . ملفَّات تعريف الارتباط (Cookies)
                 </h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
-                ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
+                نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
+                ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
               </p>
             </section>
 
@@ -393,7 +393,7 @@ export default function PrivacyPage() {
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">. خصوصيَّة الأحداث</h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry
+                قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry
                 لتحسين أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد
                 الهويَّة.
               </p>
@@ -412,7 +412,7 @@ export default function PrivacyPage() {
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
                 خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا
-                علمنا أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
+                علمنا أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
               </p>
             </section>
 
@@ -423,7 +423,7 @@ export default function PrivacyPage() {
                   10
                 </span>
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                  . التَّغييرات على هذه السِّياسة
+                  . التَّغييرات على هذه السِّياسة
                 </h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
@@ -442,10 +442,10 @@ export default function PrivacyPage() {
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/20 border border-primary/40 text-primary text-xs font-mono font-bold">
                 11
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. التَّواصل معنا</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. التَّواصل معنا</h2>
             </div>
             <p className="text-foreground/80 text-sm sm:text-base mb-6 leading-relaxed">
-              لأيِّ استفسارات أو طلبات تتعلَّق بسياسة الخصوصيَّة هذه، يُرجَى التَّواصل عبر:
+              لأيِّ استفسارات أو طلبات تتعلَّق بسياسة الخصوصيَّة هذه، يُرجَى التَّواصل عبر:
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">

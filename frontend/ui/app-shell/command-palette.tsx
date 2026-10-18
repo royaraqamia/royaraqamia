@@ -124,13 +124,13 @@ export const CommandPalette = memo(function CommandPalette({
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        title="البحث السَّريع"
-        description="تنقَّل بسرعة بين المنتجات والصَّفحات"
+        title="البحث السَّريع"
+        description="تنقَّل بسرعة بين المنتجات والصَّفحات"
       >
         {/* Search Input */}
         <div className="relative border-b border-border/40 px-2">
           <CommandInput
-            placeholder="اكتب للبحث في المنتجات والصَّفحات…"
+            placeholder="اكتب للبحث في المنتجات والصَّفحات…"
             className="h-12 border-0 bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:ring-0 focus:outline-none"
           />
         </div>
@@ -141,16 +141,16 @@ export const CommandPalette = memo(function CommandPalette({
           <CommandEmpty className="py-10 text-center text-sm">
             <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <Search className="size-8 stroke-[1.5] text-muted-foreground/30" />
-              <p className="font-bold text-foreground/80">لم يتمَّ العثور على نتائج</p>
+              <p className="font-bold text-foreground/80">لم يتمَّ العثور على نتائج</p>
               <p className="text-xs text-muted-foreground/60">
-                جرِّب البحث عن كلمات أخرى مثل "مجتمع" أو "شهادة"
+                جرِّب البحث عن كلمات أخرى مثل "مجتمع" أو "شهادة"
               </p>
             </div>
           </CommandEmpty>
 
           {/* Apps Section */}
           <CommandGroup
-            heading="التَّطبيقات"
+            heading="التَّطبيقات"
             className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
             {APP_PRODUCTS.filter((p) => !p.hidden).map((product) => {
@@ -281,7 +281,7 @@ export const CommandPalette = memo(function CommandPalette({
               <kbd className="rounded border border-border/60 bg-background/80 px-1 py-0.5 font-mono text-[10px] shadow-2xs">
                 ↓
               </kbd>
-              <span>للتَّنقُّل</span>
+              <span>للتَّنقُّل</span>
             </span>
             <span className="inline-flex items-center gap-1">
               <kbd className="rounded border border-border/60 bg-background/80 px-1.5 py-0.5 font-mono text-[10px] shadow-2xs">

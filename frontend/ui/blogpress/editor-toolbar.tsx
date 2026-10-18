@@ -72,12 +72,12 @@ const toolbarButtons: {
   { action: 'redo', icon: Redo2, label: 'إعادة', group: 'history' },
   { action: 'bold', icon: Bold, label: 'عريض', group: 'format' },
   { action: 'italic', icon: Italic, label: 'مائل', group: 'format' },
-  { action: 'strike', icon: Strikethrough, label: 'يتوسَّط', group: 'format' },
+  { action: 'strike', icon: Strikethrough, label: 'يتوسَّط', group: 'format' },
   { action: 'h1', icon: Heading1, label: 'عنوان 1', group: 'heading' },
   { action: 'h2', icon: Heading2, label: 'عنوان 2', group: 'heading' },
   { action: 'h3', icon: Heading3, label: 'عنوان 3', group: 'heading' },
-  { action: 'list', icon: List, label: 'قائمة نقطيَّة', group: 'list' },
-  { action: 'orderedList', icon: ListOrdered, label: 'قائمة مُرقَّمة', group: 'list' },
+  { action: 'list', icon: List, label: 'قائمة نقطيَّة', group: 'list' },
+  { action: 'orderedList', icon: ListOrdered, label: 'قائمة مُرقَّمة', group: 'list' },
   { action: 'quote', icon: TextQuote, label: 'اقتباس', group: 'block' },
   { action: 'code', icon: Code2, label: 'كود', group: 'block' },
   { action: 'hr', icon: Minus, label: 'فاصل', group: 'insert' },
@@ -294,7 +294,7 @@ export function EditorToolbar({
 
   return (
     <nav
-      aria-label="شريط أدوات المُحرِّر"
+      aria-label="شريط أدوات المُحرِّر"
       className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 pt-[calc(0.375rem+var(--roy-safe-top))] pb-1.5 transition-colors sm:px-3.5"
     >
       <div className="flex items-center gap-0.5 overflow-x-auto py-0.5 scrollbar-none touch-pan-x select-none">

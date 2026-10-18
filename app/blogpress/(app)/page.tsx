@@ -10,7 +10,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  description: 'لوحة تحكُّم BlogPress – إدارة المنشورات وإنشاء محتوى جديد.',
+  description: 'لوحة تحكُّم BlogPress – إدارة المنشورات وإنشاء محتوى جديد.',
 };
 
 interface DashboardSearchParams {

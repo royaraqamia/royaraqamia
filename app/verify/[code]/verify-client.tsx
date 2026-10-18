@@ -80,7 +80,7 @@ function NotFoundState({ code }: { code: string }) {
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
-              خطأ في التَّحقُّق
+              خطأ في التَّحقُّق
             </span>
           </m.div>
 
@@ -108,7 +108,7 @@ function NotFoundState({ code }: { code: string }) {
             variants={fadeUp}
             className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-lg leading-relaxed mb-8"
           >
-            لم يتمَّ العثور على أي بيانات مسجَّلة برمز الشهادة:{' '}
+            لم يتمَّ العثور على أي بيانات مسجَّلة برمز الشهادة:{' '}
             <span
               dir="ltr"
               className="inline-block font-mono font-bold text-neutral-900 dark:text-neutral-100 bg-neutral-200/60 dark:bg-neutral-800/80 px-2.5 py-0.5 rounded-md border border-neutral-300 dark:border-neutral-700"
@@ -127,10 +127,10 @@ function NotFoundState({ code }: { code: string }) {
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته
+                      الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال:
+                      تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال:
                       COMP-2024-XXXXXX).
                     </p>
                   </div>
@@ -145,7 +145,7 @@ function NotFoundState({ code }: { code: string }) {
                   >
                     <Link href="/verify">
                       <ArrowRight className="size-4" />
-                      المحاولة مرَّة أخرى
+                      المحاولة مرَّة أخرى
                     </Link>
                   </Button>
                   <Button
@@ -154,7 +154,7 @@ function NotFoundState({ code }: { code: string }) {
                     size="lg"
                     className="w-full sm:w-auto min-w-40 gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-safe duration-300 hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <Link href="/">الصَّفحة الرَّئيسيَّة</Link>
+                    <Link href="/">الصَّفحة الرَّئيسيَّة</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -181,18 +181,18 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
   const details = [
     {
       icon: <Hash className="size-4" />,
-      label: 'رمز الشَّهادة',
+      label: 'رمز الشَّهادة',
       value: certificate.certificate_code,
       isCode: true,
     },
     {
       icon: <User className="size-4" />,
-      label: 'اسم الطَّالب',
+      label: 'اسم الطَّالب',
       value: certificate.student_name,
     },
     {
       icon: <GraduationCap className="size-4" />,
-      label: 'اسم الدَّورة',
+      label: 'اسم الدَّورة',
       value: certificate.course_name,
     },
     {
@@ -214,7 +214,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
       ? [
           {
             icon: <Trophy className="size-4" />,
-            label: 'الدَّرجة / الحالة',
+            label: 'الدَّرجة / الحالة',
             value: certificate.grade_or_status,
           },
         ]
@@ -290,7 +290,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               variants={fadeUp}
               className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-neutral-900 dark:text-neutral-50"
             >
-              تمَّ التَّحقُّق{' '}
+              تمَّ التَّحقُّق{' '}
               <span className="bg-linear-to-r from-primary via-accent-indigo to-accent-purple bg-clip-text text-transparent">
                 بنجاح
               </span>
@@ -300,7 +300,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               variants={fadeUp}
               className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-md leading-relaxed"
             >
-              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤيَة رقَميَّة.
+              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤيَة رقَميَّة.
             </m.p>
           </div>
 
@@ -322,7 +322,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                     </div>
                     <div>
                       <h2 className="font-bold text-base md:text-lg text-neutral-900 dark:text-neutral-100">
-                        شهادة مُوثَّقَة
+                        شهادة مُوثَّقَة
                       </h2>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         صادرة عن رؤيَة رقَميَّة
@@ -341,7 +341,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         }`}
                       />
                     </span>
-                    {isExpired ? 'منتهية الصَّلاحيَّة' : 'صالحة ومُعتمَدَة'}
+                    {isExpired ? 'منتهية الصَّلاحيَّة' : 'صالحة ومُعتمَدَة'}
                   </Badge>
                 </div>
 
@@ -424,7 +424,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             transition={reduce ? undefined : { delay: 0.5, duration: 0.4 }}
           >
             <span className="sr-only" role="status" aria-live="polite">
-              {copied ? 'تمَّ نسخ رابط التَّحقُّق' : ''}
+              {copied ? 'تمَّ نسخ رابط التَّحقُّق' : ''}
             </span>
             <Button
               asChild
@@ -434,7 +434,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             >
               <Link href="/verify">
                 <Search className="size-4" />
-                التَّحقُّق من شهادة أخرى
+                التَّحقُّق من شهادة أخرى
               </Link>
             </Button>
 
@@ -449,7 +449,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               ) : (
                 <Copy className="size-4" />
               )}
-              {copied ? 'تمَّ النَّسخ' : 'نسخ رابط التَّحقُّق'}
+              {copied ? 'تمَّ النَّسخ' : 'نسخ رابط التَّحقُّق'}
             </Button>
 
             <Button

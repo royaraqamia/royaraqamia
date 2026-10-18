@@ -28,9 +28,9 @@ function LoginForm() {
   const oauthFailed = searchParams.get('error') === 'oauth_failed';
   const [message, setMessage] = useState<string | null>(
     sessionExpired
-      ? 'انتهت صلاحيَّة الجلسة. يُرجَى تسجيل الدُّخول مرَّة أخرى.'
+      ? 'انتهت صلاحيَّة الجلسة. يُرجَى تسجيل الدُّخول مرَّة أخرى.'
       : oauthFailed
-        ? 'فشل تسجيل الدُّخول عبر Google. يُرجَى المحاولة مرَّة أخرى.'
+        ? 'فشل تسجيل الدُّخول عبر Google. يُرجَى المحاولة مرَّة أخرى.'
         : null
   );
   const [isPending, setIsPending] = useState(false);
@@ -125,10 +125,10 @@ function LoginForm() {
           {isPending ? (
             <>
               <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
-              <span>جاري الدُّخول...</span>
+              <span>جاري الدُّخول...</span>
             </>
           ) : (
-            'تسجيل الدُّخول'
+            'تسجيل الدُّخول'
           )}
         </HeroCtaButton>
       </form>
@@ -158,7 +158,7 @@ function LoginForm() {
               await signInWithGoogle(redirectTo);
             } catch (e) {
               if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
-                setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
+                setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
               }
             } finally {
               setGoogleLoading(false);
@@ -167,7 +167,7 @@ function LoginForm() {
           className="w-full h-11 sm:h-12 rounded-full text-sm sm:text-base font-medium border border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border text-foreground transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] flex items-center justify-center gap-2.5 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <GoogleLogo size={20} className="shrink-0" />
-          <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>
+          <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>
         </Button>
 
         {googleError && (

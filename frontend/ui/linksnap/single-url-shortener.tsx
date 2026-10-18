@@ -147,7 +147,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               htmlFor="original-url"
               className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
             >
-              الرَّابط
+              الرَّابط
             </label>
             <input
               id="original-url"
@@ -185,7 +185,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 htmlFor="custom-code"
                 className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
               >
-                رمز مُخصَّص (اختياري)
+                رمز مُخصَّص (اختياري)
               </label>
               <div
                 className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full transition-safe"
@@ -260,7 +260,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="يُطلَب من الزَّائر قبل فتح الرَّابط"
+                  placeholder="يُطلَب من الزَّائر قبل فتح الرَّابط"
                   autoComplete="new-password"
                   className="w-full px-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
                 />
@@ -296,7 +296,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 <span>جاري الاختصار...</span>
               </>
             ) : (
-              <span>اختصار الرَّابط</span>
+              <span>اختصار الرَّابط</span>
             )}
           </HeroCtaButton>
         </m.form>
@@ -352,12 +352,12 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               {copied ? (
                 <>
                   <Check aria-hidden="true" className="w-4 h-4 text-success" />
-                  <span className="text-success font-bold">تمَّ النَّسخ!</span>
+                  <span className="text-success font-bold">تمَّ النَّسخ!</span>
                 </>
               ) : (
                 <>
                   <Copy aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
-                  <span>نسخ الرَّابط</span>
+                  <span>نسخ الرَّابط</span>
                 </>
               )}
             </button>
@@ -367,7 +367,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-safe flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               <Share2 aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
-              <span>مشاركة الرَّابط</span>
+              <span>مشاركة الرَّابط</span>
             </button>
 
             <button
@@ -382,7 +382,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 aria-hidden="true"
                 className={`w-4 h-4 ${showQr ? 'text-primary' : 'text-muted-foreground'}`}
               />
-              <span>رمز الاستجابة السَّريعة</span>
+              <span>رمز الاستجابة السَّريعة</span>
             </button>
           </div>
 
@@ -404,7 +404,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   />
                 )}
                 <p className="text-xs text-primary font-bold mt-2.5">
-                  امسح لعرض الرَّابط المُختصَر
+                  امسح لعرض الرَّابط المُختصَر
                 </p>
               </m.div>
             )}

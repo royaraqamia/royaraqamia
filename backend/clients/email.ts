@@ -118,7 +118,7 @@ export class ResendEmailClient implements EmailClient {
     await this.resend.emails.send({
       from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
-      subject: 'رمز التَّحقُّق',
+      subject: 'رمز التَّحقُّق',
       html: layout(
         `
         <div style="padding:32px 32px 32px;">
@@ -132,7 +132,7 @@ export class ResendEmailClient implements EmailClient {
         </div>
         ${cardFooter(`صالح لمدَّة ${formatMinutes(this.validity.otpMinutes)}`)}
       `,
-        'رمز التَّحقُّق - أدخِل الرَّمز لإكمال التَّحقُّق'
+        'رمز التَّحقُّق - أدخِل الرَّمز لإكمال التَّحقُّق'
       ),
     });
   }

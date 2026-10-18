@@ -467,7 +467,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                   <SeoCheck
                     passed={words > 50}
                     label="أكثر من 50 كلمة"
-                    hint={`${words} كلمة حاليًّا`}
+                    hint={`${words} كلمة حاليًّا`}
                   />
                   <SeoCheck
                     passed={imagesMissingAlt === 0}

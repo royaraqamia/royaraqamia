@@ -51,7 +51,7 @@ export const AddHabitModal = memo(function AddHabitModal({
         hideClose
         className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 gap-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
       >
-        <DialogTitle className="sr-only">إنشاء عادة روتينيَّة</DialogTitle>
+        <DialogTitle className="sr-only">إنشاء عادة روتينيَّة</DialogTitle>
 
         <form onSubmit={onSubmit} className="px-6 sm:px-8 pt-8 pb-8 space-y-6 text-start" dir="rtl">
           {formError && (
@@ -91,7 +91,7 @@ export const AddHabitModal = memo(function AddHabitModal({
               onChange={(e) => {
                 if (e.target.value.length <= 50) onNameChange(e.target.value);
               }}
-              placeholder="مثال: أذكار الصَّباح، القراءة..."
+              placeholder="مثال: أذكار الصَّباح، القراءة..."
               required
               maxLength={50}
               id="input-add-habit-name"
@@ -103,7 +103,7 @@ export const AddHabitModal = memo(function AddHabitModal({
 
           {/* Tracking Frequency Section */}
           <fieldset className="space-y-2.5 border-0 p-0 mx-0">
-            <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
+            <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
             <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner">
               <button
                 type="button"
@@ -115,7 +115,7 @@ export const AddHabitModal = memo(function AddHabitModal({
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                يوميَّة
+                يوميَّة
               </button>
               <button
                 type="button"
@@ -127,7 +127,7 @@ export const AddHabitModal = memo(function AddHabitModal({
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
-                أسبوعيَّة
+                أسبوعيَّة
               </button>
             </div>
           </fieldset>

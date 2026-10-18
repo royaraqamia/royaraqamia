@@ -19,10 +19,10 @@ export function VerifyLoadingState() {
       </div>
       <div className="mt-6 space-y-2">
         <h3 className="text-base font-bold text-foreground">
-          جاري التَّحقُّق من أصالة الشَّهادة...
+          جاري التَّحقُّق من أصالة الشَّهادة...
         </h3>
         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          يتمُّ مطابقة السِّجلات الرَّقميَّة المُشفَّرة والتَّحقُّق من التَّوقيع المُعتمَد
+          يتمُّ مطابقة السِّجلات الرَّقميَّة المُشفَّرة والتَّحقُّق من التَّوقيع المُعتمَد
         </p>
       </div>
       <div className="mt-6 flex justify-center gap-1.5">

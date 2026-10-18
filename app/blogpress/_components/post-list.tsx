@@ -76,7 +76,7 @@ interface PostListProps {
 
 const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'الكل', value: 'all' },
-  { label: 'مسودَّة', value: 'draft' },
+  { label: 'مسودَّة', value: 'draft' },
   { label: 'مجدولة', value: 'scheduled' },
   { label: 'منشور', value: 'published' },
 ];
@@ -300,8 +300,8 @@ export const PostList = memo(function PostList({
                 searchQuery
                   ? 'لم نعثر على منشورات تُطابق بحثك.'
                   : activeFilter === 'all'
-                    ? 'أنشِئ منشورك الأوَّل للبدء في الكتابة.'
-                    : 'لا توجد منشورات في هذا التَّصنيف.'
+                    ? 'أنشِئ منشورك الأوَّل للبدء في الكتابة.'
+                    : 'لا توجد منشورات في هذا التَّصنيف.'
               }
               action={
                 !searchQuery && activeFilter === 'all' ? (
@@ -432,9 +432,9 @@ const PostRow = memo(function PostRow({
             {post.featured && (
               <span
                 className="inline-flex items-center shrink-0 p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20"
-                title="مُثبَّت"
+                title="مُثبَّت"
               >
-                <Pin className="size-3 fill-amber-500/20" aria-label="مُثبَّت" />
+                <Pin className="size-3 fill-amber-500/20" aria-label="مُثبَّت" />
               </span>
             )}
             <Link
@@ -510,7 +510,7 @@ const PostRow = memo(function PostRow({
             ? 'منشور'
             : post.status === 'scheduled'
               ? 'مجدولة'
-              : 'مسودَّة'}
+              : 'مسودَّة'}
         </span>
 
         <DropdownMenu>
@@ -578,7 +578,7 @@ const PostRow = memo(function PostRow({
                     router.refresh();
                   } catch {
                     toast.error(
-                      post.status === 'scheduled' ? 'فشل النَّشر الآن' : 'فشل إلغاء النَّشر'
+                      post.status === 'scheduled' ? 'فشل النَّشر الآن' : 'فشل إلغاء النَّشر'
                     );
                   }
                 }}
@@ -598,7 +598,7 @@ const PostRow = memo(function PostRow({
                   await setPostFeatured(post.id, !post.featured);
                   router.refresh();
                 } catch {
-                  toast.error('فشل تحديث التَّثبيت');
+                  toast.error('فشل تحديث التَّثبيت');
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
@@ -608,7 +608,7 @@ const PostRow = memo(function PostRow({
               ) : (
                 <Pin className="size-4 text-neutral-500 me-2" />
               )}
-              <span>{post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}</span>
+              <span>{post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
@@ -670,7 +670,7 @@ const PostRow = memo(function PostRow({
                     حذف المنشور
                   </DialogTitle>
                   <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                    هل أنت متأكِّد من حذف &ldquo;{label}&rdquo;؟ لا يمكن التَّراجع عن هذا الإجراء.
+                    هل أنت متأكِّد من حذف &ldquo;{label}&rdquo;؟ لا يمكن التَّراجع عن هذا الإجراء.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogActions onCancel={() => setDeleteOpen(false)} className="mt-6">

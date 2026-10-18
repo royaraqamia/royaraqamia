@@ -74,7 +74,7 @@ export function DetailsStep({ contact, onChange, onBlurField, fieldErrors }: Det
 
       <div className="form-field">
         <Label htmlFor="booking-topic" className="form-label">
-          موضوع الاستشارة — ماذا تُريد أن تُحقِّق؟{' '}
+          موضوع الاستشارة — ماذا تُريد أن تُحقِّق؟{' '}
           <span className="text-destructive" aria-hidden="true">
             *
           </span>
@@ -90,12 +90,12 @@ export function DetailsStep({ contact, onChange, onBlurField, fieldErrors }: Det
           maxLength={TOPIC_DESCRIPTION_MAX}
           showCount
           aria-describedby={topicDescribedBy}
-          placeholder="اشرح هدفك أو المشكلة التي تُريد حلَّها حتَّى نُجهِّز لك أفضل استشارة ممكنة إن شاء الله..."
+          placeholder="اشرح هدفك أو المشكلة التي تُريد حلَّها حتَّى نُجهِّز لك أفضل استشارة ممكنة إن شاء الله..."
           className="bg-muted border-border rounded-xl focus-ring"
         />
         <p id="booking-topic-hint" className="form-help-text">
-          {TOPIC_DESCRIPTION_MIN} {arabicCharCountNoun(TOPIC_DESCRIPTION_MIN)} على الأقل — كُلَّما
-          وضَّحت أكثر، كانت الاستشارة أدق.
+          {TOPIC_DESCRIPTION_MIN} {arabicCharCountNoun(TOPIC_DESCRIPTION_MIN)} على الأقل — كُلَّما
+          وضَّحت أكثر، كانت الاستشارة أدق.
         </p>
         {topicError && (
           <p id="booking-topic-error" className="text-sm text-destructive mt-1">

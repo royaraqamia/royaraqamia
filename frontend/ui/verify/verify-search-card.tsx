@@ -49,7 +49,7 @@ export function VerifySearchCard({
                 maxLength={30}
                 autoFocus
                 required
-                aria-label="رمز الشَّهادة"
+                aria-label="رمز الشَّهادة"
               />
               {isValidFormat === true && (
                 <div className="pointer-events-none absolute inset-y-0 inset-e-0 flex items-center pe-4">
@@ -65,7 +65,7 @@ export function VerifySearchCard({
               className="h-13 min-h-13 px-8 rounded-2xl bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-600/25 hover:shadow-xl hover:shadow-purple-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-safe duration-300 sm:w-auto w-full gap-2 shrink-0 cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!loading && <Search className="size-5" />}
-              <span>تحقُّق</span>
+              <span>تحقُّق</span>
             </Button>
           </form>
 
@@ -76,7 +76,7 @@ export function VerifySearchCard({
               className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
             >
               <ScanLine className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
-              <span>مثال للتَّجربة:</span>
+              <span>مثال للتَّجربة:</span>
               <code className="font-mono font-bold text-primary transition-underline group-hover:underline">
                 COMP-2026-UHVW9SG5
               </code>
@@ -97,7 +97,7 @@ export function VerifySearchCard({
                 className="inline-flex items-center gap-1.5 font-medium text-destructive bg-destructive/10 px-3 py-1 rounded-lg border border-destructive/20 text-xs"
               >
                 <AlertCircle className="size-3.5 shrink-0" />
-                <span>الصِّيغة الصَّحيحة: COMP-YYYY-XXXXXXXX</span>
+                <span>الصِّيغة الصَّحيحة: COMP-YYYY-XXXXXXXX</span>
               </m.div>
             )}
           </div>

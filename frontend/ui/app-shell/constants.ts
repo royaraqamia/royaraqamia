@@ -39,14 +39,14 @@ export interface AppProductDef {
 export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'training',
-    label: 'التَّسجيل في التَّدريب',
+    label: 'التَّسجيل في التَّدريب',
     appPath: '/training/apply',
     landingPath: '/training/apply',
     icon: GraduationCap,
   },
   {
     id: 'verify',
-    label: 'التَّحقُّق من الشَّهادة',
+    label: 'التَّحقُّق من الشَّهادة',
     appPath: '/verify',
     landingPath: '/verify',
     icon: ScanLine,

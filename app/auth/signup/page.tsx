@@ -193,7 +193,7 @@ function SignupForm() {
                 await signInWithGoogle(redirectTo);
               } catch (e) {
                 if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
-                  setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
+                  setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
                 }
               } finally {
                 setGoogleLoading(false);
@@ -202,7 +202,7 @@ function SignupForm() {
             className="w-full h-11 sm:h-12 rounded-full font-medium border border-border/80 bg-background hover:bg-muted/50 hover:border-border hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out flex items-center justify-center gap-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
           >
             <GoogleLogo size={20} className="shrink-0" />
-            <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
+            <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
           </Button>
 
           {googleError && (
@@ -221,7 +221,7 @@ function SignupForm() {
             href={authLink('/auth/login', redirectTo)}
             className="text-primary font-bold hover:text-primary/80 underline-offset-4 hover:underline transition-safe duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
           >
-            تسجيل الدُّخول
+            تسجيل الدُّخول
           </Link>
         </p>
       </AuthCard>

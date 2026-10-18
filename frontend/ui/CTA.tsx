@@ -32,7 +32,7 @@ export function CTA() {
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                 </span>
-                <span className="tracking-wide text-slate-200">متاحون للرَّد 24/7</span>
+                <span className="tracking-wide text-slate-200">متاحون للرَّد 24/7</span>
               </div>
 
               {/* Headline */}

@@ -81,7 +81,7 @@ export type ProjectRequestTimeline = (typeof PROJECT_REQUEST_TIMELINES)[number];
 export const PROJECT_REQUEST_TIMELINE_LABELS: Record<ProjectRequestTimeline, string> = {
   'within-a-month': 'خلال شهر',
   'one-to-three-months': 'شهر – ثلاثة أشهر',
-  'three-to-six-months': 'ثلاثة أشهر - ستَّة أشهر',
+  'three-to-six-months': 'ثلاثة أشهر - ستَّة أشهر',
   flexible: 'مرن',
 };
 
@@ -90,8 +90,8 @@ export type ProjectRequestStatus = (typeof PROJECT_REQUEST_STATUSES)[number];
 
 export const PROJECT_REQUEST_STATUS_LABELS: Record<ProjectRequestStatus, string> = {
   new: 'جديد',
-  contacted: 'تمَّ التواصل',
-  quoted: 'تمَّ إرسال العرض',
+  contacted: 'تمَّ التواصل',
+  quoted: 'تمَّ إرسال العرض',
   won: 'مكسوب',
   lost: 'خسارة',
 };
@@ -166,8 +166,8 @@ export const ProjectRequestSchema = z.object({
       PROJECT_REQUEST_DESCRIPTION_MAX,
       `الوصف طويل جدًّا (${PROJECT_REQUEST_DESCRIPTION_MAX.toLocaleString('en-US')} حرف كحد أقصى)`
     ),
-  budget_range: z.enum(PROJECT_REQUEST_BUDGET_RANGES, 'الميزانيَّة غير صحيحة').optional(),
-  timeline: z.enum(PROJECT_REQUEST_TIMELINES, 'المدَّة غير صحيحة').optional(),
+  budget_range: z.enum(PROJECT_REQUEST_BUDGET_RANGES, 'الميزانيَّة غير صحيحة').optional(),
+  timeline: z.enum(PROJECT_REQUEST_TIMELINES, 'المدَّة غير صحيحة').optional(),
   existing_url: z
     .string()
     .trim()

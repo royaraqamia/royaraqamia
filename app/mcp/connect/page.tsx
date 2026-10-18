@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'ربط MCP',
-  description: 'السَّماح لتطبيق خارجي بالوصول إلى بياناتك في رؤيَة رقَميَّة عبر بروتوكول MCP.',
+  description: 'السَّماح لتطبيق خارجي بالوصول إلى بياناتك في رؤيَة رقَميَّة عبر بروتوكول MCP.',
 };
 
 interface ConnectSearchParams {
@@ -75,7 +75,7 @@ export default async function ConnectPage({
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>
-            <SectionTitleHighlight>السَّماح بالوصول</SectionTitleHighlight>
+            <SectionTitleHighlight>السَّماح بالوصول</SectionTitleHighlight>
           </CardTitle>
           <CardDescription>
             يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤيَة رقَميَّة.
@@ -90,7 +90,7 @@ export default async function ConnectPage({
             <input type="hidden" name="code_challenge" value={codeChallenge} />
             <input type="hidden" name="code_challenge_method" value={codeChallengeMethod} />
             <HeroCtaButton type="submit" name="action" value="approve" className="w-full">
-              السَّماح
+              السَّماح
             </HeroCtaButton>
             <Button type="submit" name="action" value="deny" className="w-full" variant="outline">
               رفض

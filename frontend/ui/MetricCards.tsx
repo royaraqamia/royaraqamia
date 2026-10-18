@@ -8,7 +8,7 @@ const metrics = [
     numericValue: 7,
     suffix: '+',
     label: 'سنوات من الخبرة',
-    description: 'في السُّوق الرَّقمي',
+    description: 'في السُّوق الرَّقمي',
     colorKey: 'purple' as const,
   },
   {
@@ -21,8 +21,8 @@ const metrics = [
   {
     numericValue: 400,
     suffix: '+',
-    label: 'ساعة إجماليَّة',
-    description: 'في التَّدريب وتقديم الاستشارات',
+    label: 'ساعة إجماليَّة',
+    description: 'في التَّدريب وتقديم الاستشارات',
     colorKey: 'indigo' as const,
   },
 ];

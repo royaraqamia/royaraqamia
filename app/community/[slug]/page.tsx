@@ -101,7 +101,7 @@ export async function generateMetadata(props: {
   if (!post) {
     return {
       title: 'المنشور غير موجود',
-      description: 'عذرًا، المنشور الذي تبحث عنه غير موجود أو تمَّ حذفه.',
+      description: 'عذرًا، المنشور الذي تبحث عنه غير موجود أو تمَّ حذفه.',
     };
   }
 

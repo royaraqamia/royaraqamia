@@ -14,7 +14,7 @@ import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 export function WebDevService() {
   const benefits = [
     'مشروع يَظهر في Google ومُحرِّكات الـ AI.',
-    'تجربة مُريحة تُحوِّل الزَّائر إلى زبون.',
+    'تجربة مُريحة تُحوِّل الزَّائر إلى زبون.',
     'نبني ما تحتاجه بالضَّبط: من صفحة واحدة إلى منصَّة كاملة.',
     'تسليم في أسابيع، وكود تملكه بالكامل.',
     'لوحة تحكُّم عربيَّة تُدير بها محتواك بنفسك.',
@@ -93,7 +93,7 @@ export function WebDevService() {
                     {`$${PROJECT_REQUEST_WEBSITE_START_PRICE_USD}`}
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    الدَّفع بالتَّقسيط مُتاح
+                    الدَّفع بالتَّقسيط مُتاح
                   </div>
                 </div>
               </div>
@@ -119,7 +119,7 @@ export function WebDevService() {
                     {`$${PROJECT_REQUEST_APP_START_PRICE_USD}`}
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    الدَّفع بالتَّقسيط مُتاح
+                    الدَّفع بالتَّقسيط مُتاح
                   </div>
                 </div>
               </div>
@@ -141,7 +141,7 @@ export function WebDevService() {
                 </div>
                 <div className="text-end shrink-0 flex flex-col items-end">
                   <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
-                    فقط شهريًّا
+                    فقط شهريًّا
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
                     {`$${RETAINER_DEFAULT_MONTHLY_FEE_USD}`}

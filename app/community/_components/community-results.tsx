@@ -36,7 +36,7 @@ export function CommunityResults({
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 border-b border-border hover:border-foreground pb-0.5"
           >
             <X className="size-3.5" />
-            إلغاء التَّصفية
+            إلغاء التَّصفية
           </Link>
         </div>
       )}
@@ -52,7 +52,7 @@ export function CommunityResults({
           <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
             {query
               ? 'لم نعثر على منشورات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
-              : 'لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.'}
+              : 'لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.'}
           </p>
           {query && (
             <Link href="/community">

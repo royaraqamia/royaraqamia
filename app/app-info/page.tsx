@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { LazyImage } from '../../frontend/ui/LazyImage';
 
 export const metadata: Metadata = {
-  title: 'معلومات الشَّركة',
+  title: 'معلومات الشَّركة',
   description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
   alternates: { canonical: '/app-info' },
   openGraph: {
-    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
+    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
     description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
     url: '/app-info',
     siteName: 'رؤيَة رقَميَّة',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
+    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
     description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
     images: ['/OG Image.webp'],
   },
@@ -48,7 +48,7 @@ export default function AppInfoPage() {
 
           <div className="space-y-8 text-base leading-relaxed text-foreground/90">
             <section>
-              <h2 className="mb-3 text-xl font-bold">عن الشَّركة</h2>
+              <h2 className="mb-3 text-xl font-bold">عن الشَّركة</h2>
               <p>
                 <strong>رؤيَة رقَميَّة</strong> منصَّة عربيَّة متخصِّصة في التدريب والتطوير الرقمي.
                 نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم

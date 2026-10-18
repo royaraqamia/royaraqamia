@@ -32,11 +32,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       robots: { index: false, follow: true },
       title: 'شهادة غير موجودة',
-      description: 'لم يتمَّ العثور على شهادة بهذا الرَّمز.',
+      description: 'لم يتمَّ العثور على شهادة بهذا الرَّمز.',
     };
   }
 
-  const title = `التَّحقُّق من شهادة ${certificate.student_name}`;
+  const title = `التَّحقُّق من شهادة ${certificate.student_name}`;
   const description = `شهادة ${certificate.course_name} صادرة لـ ${certificate.student_name} في ${formatDateArabic(certificate.issue_date)}. تم التحقق من أصالة هذه الشهادة عبر منصة رؤيَة رقَميَّة.`;
 
   return {
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // shared certificate links still render rich cards.
     robots: { index: false, follow: true },
     openGraph: {
-      title: `التَّحقُّق من شهادة ${certificate.student_name} | رؤيَة رقَميَّة`,
+      title: `التَّحقُّق من شهادة ${certificate.student_name} | رؤيَة رقَميَّة`,
       description,
       url: `${getCanonicalOrigin()}/verify/${certificate.certificate_code}`,
       siteName: 'رؤيَة رقَميَّة',
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: `✓ تمَّ التَّحقُّق - ${certificate.student_name}`,
+      title: `✓ تمَّ التَّحقُّق - ${certificate.student_name}`,
       description,
       images: ['/OG Image.webp'],
     },

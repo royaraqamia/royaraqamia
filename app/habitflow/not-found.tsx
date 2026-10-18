@@ -20,11 +20,11 @@ export default function NotFound() {
             />
           </svg>
         </div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">404 - الصَّفحة غير موجودة</h1>
-        <p className="text-muted-foreground mb-8">الصَّفحة التي تبحث عنها غير موجودة.</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">404 - الصَّفحة غير موجودة</h1>
+        <p className="text-muted-foreground mb-8">الصَّفحة التي تبحث عنها غير موجودة.</p>
         <Link href="/habitflow">
           <Button variant="default" className="touch-target btn-press focus-ring">
-            العودة إلى الرَّئيسيَّة
+            العودة إلى الرَّئيسيَّة
           </Button>
         </Link>
       </main>

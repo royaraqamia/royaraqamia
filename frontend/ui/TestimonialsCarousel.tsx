@@ -127,7 +127,7 @@ const TestimonialCard = memo(function TestimonialCard({
 
         {/* Read More Inline Link / Action */}
         <div className="inline-flex items-center gap-1.5 text-violet-400 group-hover/card:text-violet-300 text-xs sm:text-sm font-medium mt-4 transition-colors">
-          <span>قراءة التَّقييم بالكامل</span>
+          <span>قراءة التَّقييم بالكامل</span>
           <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover/card:-translate-x-1" />
         </div>
       </div>
@@ -214,8 +214,8 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           onScroll={scroll}
           canScrollLeft={canScrollLeft}
           canScrollRight={canScrollRight}
-          ariaLabelLeft="التَّالي"
-          ariaLabelRight="السَّابق"
+          ariaLabelLeft="التَّالي"
+          ariaLabelRight="السَّابق"
         />
 
         {/* Scrollable Track */}
@@ -256,7 +256,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
             <DialogScrollArea className="p-6 sm:p-8 flex flex-col justify-between">
               <DialogTitle className="sr-only">تقييم من {activeReview.name}</DialogTitle>
               <DialogDescription className="sr-only">
-                التَّقييم الكامل من {activeReview.name}
+                التَّقييم الكامل من {activeReview.name}
               </DialogDescription>
 
               {/* Expanded Review Content */}
