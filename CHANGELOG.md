@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.9] - 2026-10-18
+
+### Changed
+- record the Quran Reader's reading state and vendored content (#321)
+
 ## [1.109.8] - 2026-10-18
 
 ### Fixed
