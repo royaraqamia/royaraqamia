@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.114.1] - 2026-10-18
+
+### Fixed
+- retry bucket requests and skip what a resume already uploaded (#342)
+
 ## [1.114.0] - 2026-10-18
 
 ### Added
