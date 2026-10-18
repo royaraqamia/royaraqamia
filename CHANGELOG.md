@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.112.5] - 2026-10-18
+
+### Changed
+- repair and wire in the LinkSnap and BlogPress specs (#338)
+
 ## [1.112.4] - 2026-10-18
 
 ### Fixed
