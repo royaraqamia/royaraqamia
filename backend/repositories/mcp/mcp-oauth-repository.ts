@@ -131,6 +131,18 @@ export interface McpOAuthRepository {
     expiresAt: Date;
   }): Promise<void>;
   getTokenByHash(tokenHash: string): Promise<McpTokenRecord | null>;
+  /**
+   * Whether a hash still names a usable *access* row: present, `kind =
+   * 'access'`, not revoked, not expired. The data plane runs this on every
+   * context-cache hit, because that cache is process-local and a revoke or
+   * rotation processed by another instance is visible only in the row.
+   *
+   * One probe of the unique `token_hash` index, fetching no column but `id`, so
+   * it can sit on the hot path beside the cached user-scoped client. A read
+   * error is reported as not-live, matching `getTokenByHash`: the caller
+   * answers 401 instead of failing open on a row it could not verify.
+   */
+  isAccessTokenLive(tokenHash: string, now: Date): Promise<boolean>;
   getAccessTokenByRefreshHash(refreshTokenHash: string): Promise<McpTokenRecord | null>;
   touchTokenLastUsed(id: string): Promise<void>;
   updateTokenSessionEnc(id: string, sessionEnc: string): Promise<void>;
@@ -277,6 +289,20 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
         .maybeSingle();
       if (!data) return null;
       return data as McpTokenRecord;
+    },
+
+    async isAccessTokenLive(tokenHash, now) {
+      const { data, error } = await (supabase as any)
+        .from(TOKENS_TABLE)
+        .select('id')
+        .eq('token_hash', tokenHash)
+        .eq('kind', 'access')
+        .is('revoked_at', null)
+        .gt('expires_at', now.toISOString())
+        .maybeSingle();
+      // No throw: an unverifiable row is not an authorized one.
+      if (error) return false;
+      return data !== null;
     },
 
     async getAccessTokenByRefreshHash(refreshTokenHash) {

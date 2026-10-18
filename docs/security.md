@@ -49,8 +49,10 @@ dump **plus** the key means an attacker can mint real Supabase sessions for MCP-
 users, but blast radius stays bounded by:
 
 - RLS (native, user-scoped clients — never service-role impersonation),
-- token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
-  stored bridge ciphertext and signs out the Supabase session the grant minted. A signed-in user
+- token revocation (`/mcp/revoke`; the access row is re-read on every `/mcp` request, cache hit
+  included, so neither `revoked_at` nor a rotation can be outrun by a process-local cache on
+  another serverless instance), which also shreds the row's stored bridge ciphertext and signs out
+  the Supabase session the grant minted. A signed-in user
   can revoke without holding a client secret from the account area (`/account/connected-apps`,
   `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which is also `revokeAllUserTokens`'s
   production caller and drops the client's live authorization codes, because a code carries a

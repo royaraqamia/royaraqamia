@@ -147,10 +147,12 @@ async function buildUserScopedClient(
 
 /**
  * Resolve an MCP access token to a McpUserContext.
- * Caches the context per token until the access token expires.
- * Returns null for invalid/revoked/expired tokens, and for tokens whose bridge
- * session is dead — in which case the grant is revoked first so the client
- * re-authorizes instead of looping on 401.
+ * Caches the context per token until the access token expires, but re-verifies
+ * the token row on every request — the cache only saves rebuilding the
+ * user-scoped client, it never decides authorization. Returns null for
+ * invalid/revoked/expired tokens, and for tokens whose bridge session is dead —
+ * in which case the grant is revoked first so the client re-authorizes instead
+ * of looping on 401.
  */
 export async function resolveMcpContext(
   bearerToken: string | null | undefined
@@ -160,12 +162,24 @@ export async function resolveMcpContext(
   const tokenHash = (await import('@/backend/repositories/mcp/mcp-token-crypto')).hashToken(
     bearerToken
   );
+  const repo = createMcpOAuthRepository();
+
   const cached = getCachedContext(tokenHash);
   if (cached) {
-    return cached;
+    // The cache is process-local and the MCP routes are serverless functions, so
+    // a revoke or rotation processed by a sibling instance never reaches this
+    // Map (and this instance may hold an entry the revoker already made stale).
+    // Re-read the row on every hit rather than trusting the entry: one probe of
+    // the unique token_hash index, with the cached user-scoped client still
+    // reused, keeps the happy path cheap while making revocation authoritative
+    // on the very next request, wherever it landed.
+    if (await repo.isAccessTokenLive(tokenHash, new Date())) return cached;
+    // Dead here (revoked, rotated, expired or swept) — drop the entry so no
+    // later request consults it, and fall through to the 401.
+    invalidateTokenCache(tokenHash);
+    return null;
   }
 
-  const repo = createMcpOAuthRepository();
   const tokenRow = await repo.getTokenByHash(tokenHash);
 
   if (!tokenRow || tokenRow.kind !== 'access') return null;

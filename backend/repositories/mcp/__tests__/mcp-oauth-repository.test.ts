@@ -209,6 +209,68 @@ describe('createMcpOAuthRepository.revokeAllUserTokens', () => {
 });
 
 /**
+ * The check the data plane runs on every context-cache hit. The cache is
+ * process-local, so the row is the only thing that can carry a revocation or a
+ * rotation across serverless instances: one probe of the unique `token_hash`
+ * index for a present, unrevoked, unexpired *access* row, selecting nothing but
+ * `id` so it stays cheap beside the cached user-scoped client.
+ */
+function makeTokenLiveClient(result: { data: { id: string } | null; error?: Error | null }) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data: result.data, error: result.error ?? null });
+  const gt = vi.fn(() => ({ maybeSingle }));
+  const is = vi.fn(() => ({ gt }));
+  const kindEq = vi.fn(() => ({ is }));
+  const hashEq = vi.fn(() => ({ eq: kindEq }));
+  const select = vi.fn(() => ({ eq: hashEq }));
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_tokens') throw new Error(`unexpected table: ${table}`);
+    return { select };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, from, select, hashEq, kindEq, is, gt, maybeSingle };
+}
+
+describe('createMcpOAuthRepository.isAccessTokenLive', () => {
+  const NOW = new Date('2026-10-18T00:00:00.000Z');
+
+  it('probes the token hash for a live access row', async () => {
+    const { client, from, select, hashEq, kindEq, is, gt } = makeTokenLiveClient({
+      data: { id: 'tok-1' },
+    });
+
+    await expect(createMcpOAuthRepository(client).isAccessTokenLive('hash-1', NOW)).resolves.toBe(
+      true
+    );
+
+    expect(from).toHaveBeenCalledWith('mcp_oauth_tokens');
+    // `id` alone: the hot path must not drag `session_enc` off the row.
+    expect(select).toHaveBeenCalledWith('id');
+    expect(hashEq).toHaveBeenCalledWith('token_hash', 'hash-1');
+    // A refresh row never authorizes a request, even with a matching hash.
+    expect(kindEq).toHaveBeenCalledWith('kind', 'access');
+    expect(is).toHaveBeenCalledWith('revoked_at', null);
+    expect(gt).toHaveBeenCalledWith('expires_at', NOW.toISOString());
+  });
+
+  it('reports a revoked, rotated-away or expired row as not live', async () => {
+    const { client } = makeTokenLiveClient({ data: null });
+
+    await expect(createMcpOAuthRepository(client).isAccessTokenLive('hash-1', NOW)).resolves.toBe(
+      false
+    );
+  });
+
+  it('reports a read error as not live rather than failing open', async () => {
+    const { client } = makeTokenLiveClient({ data: { id: 'tok-1' }, error: new Error('down') });
+
+    await expect(createMcpOAuthRepository(client).isAccessTokenLive('hash-1', NOW)).resolves.toBe(
+      false
+    );
+  });
+});
+
+/**
  * The read side of the account surface: one grant per connected client, folded
  * from that user's live token rows — the refresh rows date it, the access rows
  * show its use — plus the client registration's name.

@@ -5,10 +5,12 @@ import type { McpUserContext } from './session';
  *
  * `resolveMcpContext` populates it so a burst of requests bearing the same
  * bearer token does not rebuild the user-scoped Supabase client per request.
- * The cache is deliberately tiny and short-lived, but it must never outlive a
- * revocation: the OAuth revoke/rotate paths call the invalidators below so a
- * revoked or rotated access token is rejected on the very next request instead
- * of up to 5 minutes later.
+ * It is a *performance* layer only: the cache never decides whether a request is
+ * authorized. Every hit is re-verified against `mcp_oauth_tokens` first, so a
+ * revocation, expiry or rotation is authoritative on the very next request even
+ * when another serverless instance processed it — the one thing a per-process
+ * `Map` cannot observe. The invalidators below are a local optimization on top
+ * of that: the instance that handled a revoke drops its own entries eagerly.
  */
 
 const TOKEN_CACHE = new Map<string, { ctx: McpUserContext; expiresAt: number }>();
