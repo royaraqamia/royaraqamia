@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.115.2] - 2026-10-18
+
+### Changed
+- drop the unused RECEIPT_TTL_MS import (#350)
+
 ## [1.115.1] - 2026-10-18
 
 ### Changed
