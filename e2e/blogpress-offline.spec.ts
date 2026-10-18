@@ -68,18 +68,24 @@ test('an offline draft edit reaches the server after reconnect', async ({ browse
   // Give the 1.2s autosave debounce time to queue the Outbox intent.
   await page.waitForTimeout(2000);
 
-  // Radio back on: the `online` trigger flushes the Outbox to the server.
+  // Radio back on: the `online` trigger flushes the Outbox, and the replayed
+  // edit is a PATCH to the post. Asserting the replay is the only honest proof
+  // that the edit reached the server: the editor paints its body from the Local
+  // Store, so a reload shows the edit whether or not the server ever got it.
+  // (This spec used to reload the editor in a loop and read it back. That is
+  // doubly unsound — the read proves nothing — and it also failed hard: the
+  // predicate's `waitFor` has no budget of its own, so the first reload the
+  // worker could not serve burned the whole poll timeout on the offline
+  // fallback page, which has no `data-blogpress-ready` marker.)
+  const replay = page.waitForResponse(
+    (res) => res.url().includes(`/api/blogpress/posts/${id}`) && res.request().method() === 'PATCH',
+    { timeout: 60_000 }
+  );
   await context.setOffline(false);
-  await expect
-    .poll(
-      async () => {
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        await page.locator('[data-blogpress-ready="true"]').waitFor();
-        return page.locator('.ProseMirror').innerText();
-      },
-      { timeout: 30_000 }
-    )
-    .toContain(body);
+  const response = await replay;
+  expect(response.ok()).toBeTruthy();
+  const replayed = JSON.parse(response.request().postData() ?? '{}') as { content?: string };
+  expect(replayed.content).toContain(body);
 
   // Clean up so the suite stays idempotent.
   await context.request.fetch(`${baseURL}/api/blogpress/posts/${id}`, { method: 'DELETE' });

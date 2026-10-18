@@ -62,6 +62,14 @@ stated limit.
 - **"Instant" is perceived latency, not a benchmark.** The property is that owned data paints from the
   Local Store with no network wait and a write applies on tap. It is not a claim that every route
   renders in zero milliseconds.
+- **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`, `/spendtrack`,
+  `/linksnap`, `/blogpress` and `/account` are in the worker's never-cache list (ADR-0031: their
+  documents are server-rendered per user, so caching them risks leaking one session's data to the next
+  on a shared device). In-session navigation still paints from the Local Store — that is the measured
+  behaviour, and where it is not, it is a gap — but a reload or a deep link with the radio off has no
+  document to serve. Closing it needs a data-free shell for those routes plus a client-side gate that
+  paints the Local Store into it: a design step, not a one-line change, so it is recorded here rather
+  than promised.
 
 ## Where we are today
 
@@ -75,14 +83,17 @@ Honest list of what stands between us and the bar, each with the file that shows
    `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
    backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
    reopens the app.
-3. **The offline e2e suite has barely run, and has drifted.** Every spec is `test.skip(!ENABLED)`
+3. **The offline e2e suite had barely run, and had drifted badly.** Every spec is `test.skip(!ENABLED)`
    behind its own env flag, and no workflow set one — so the suite was verified only by manual runs,
-   and nothing caught the drift that followed. The `E2E: Offline` workflow now runs
-   `public-offline`, `spendtrack-offline` and the `habitflow-sync-resume` sync-resume proof, which only
-   passes now that a missing chunk no longer takes the page down; the owned-data specs need the
-   `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` secrets to run instead of skipping. `linksnap-offline` (both
-   tests) and `blogpress-offline` (its sign-in assertion fails) still need repair before they can join,
-   and `lead-offline` stays out because it writes a row the suite cannot remove.
+   and nothing caught what followed. The `E2E: Offline` workflow now runs every offline spec except
+   `lead-offline`, which stays out because it writes a row the suite cannot remove; it runs them
+   serially, because they all sign in as one account and the login endpoint allows five attempts per
+   email per minute. What the repairs had accumulated is the argument for keeping it wired: a failed
+   lazy chunk replaced the whole HabitFlow route with an error card; LinkSnap's spec clicked a button
+   whose Arabic label it spelled differently from the component, and waited for a menu item spelled
+   differently from the one the component renders; BlogPress could not create a draft at all against a
+   test account that had no `public.users` profile row — and proved convergence by reloading a page
+   that paints from the Local Store either way. Each was invisible to every other check in the repo.
 
 ## Architecture
 
@@ -196,8 +207,8 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 - **Offline e2e in CI:** the `E2E: Offline` workflow runs `context.setOffline(true)` with
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
-  server state correct). It covers `public-offline`, `spendtrack-offline` and the HabitFlow sync-resume
-  proof today; every repaired spec joins it, and the goal is a sync-resume proof per product family
+  server state correct) across the public shell, SpendTrack, HabitFlow, LinkSnap and BlogPress. Every
+  offline spec is wired in; the goal beyond that is a sync-resume proof per remaining product family
   rather than the flag-gated status quo.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.

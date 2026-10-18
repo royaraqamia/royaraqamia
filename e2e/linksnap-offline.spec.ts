@@ -17,6 +17,32 @@ const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires LINKSNAP_OFFLINE_E2E=1 (live Supabase + auth)');
 
+/**
+ * The shortener's submit button, selected by id rather than by its label.
+ *
+ * The label carries Arabic combining marks, and their order is not consistent
+ * across this codebase: the spec used the damma-then-shadda spelling (the
+ * Unicode canonical one, and the one `use-shorten.ts` uses in its error copy)
+ * while the button renders shadda-then-damma (#337). An exact accessible-name match
+ * therefore stopped matching at some point, and every click timed out — which
+ * is what "both LinkSnap tests time out" actually was. A stable hook cannot
+ * drift like that; assert the copy somewhere it is not the only handle on the
+ * behaviour.
+ */
+const SHORTEN_BUTTON = '#btn-shorten-url';
+
+/**
+ * The delete action, matched without its diacritics on purpose.
+ *
+ * `link-row-card.tsx` spells this label two different ways: the dropdown menu
+ * item and the confirm dialog disagree about the order of the same Arabic
+ * combining marks. Any exact spelling therefore matches one of them and
+ * silently misses the other — and this spec had it right only for the dialog,
+ * so the menu item never appeared and both tests timed out waiting for it.
+ * Matching the bare letters cannot drift that way (#337).
+ */
+const DELETE_ACTION = /حذف الر/;
+
 async function login(context: BrowserContext, baseURL: string) {
   const res = await context.request.fetch(`${baseURL}/auth/api/login`, {
     method: 'POST',
@@ -43,8 +69,8 @@ async function deleteLinkViaUi(page: Page, code: string) {
     { timeout: 30_000 }
   );
   await page.getByRole('button', { name: `إجراءات الرَّابط /${code}` }).click();
-  await page.getByRole('menuitem', { name: 'حذف الرَّابط' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'حذف الرَّابط' }).click();
+  await page.getByRole('menuitem', { name: DELETE_ACTION }).click();
+  await page.getByRole('dialog').getByRole('button', { name: DELETE_ACTION }).click();
   await replay;
   await expect(page.getByRole('button', { name: `إجراءات الرَّابط /${code}` })).toHaveCount(0);
 }
@@ -60,7 +86,7 @@ async function createOnline(page: Page, baseURL: string, url: string, code: stri
     (res) => res.url().endsWith('/linksnap/api/shorten') && res.request().method() === 'POST',
     { timeout: 30_000 }
   );
-  await page.getByRole('button', { name: 'اختصار الرَّابط' }).click();
+  await page.locator(SHORTEN_BUTTON).click();
   await expect(page.getByText('رابطك المُختصَر جاهز!')).toBeVisible();
   await replay;
 }
@@ -90,7 +116,7 @@ test('a link created offline reaches the server after reconnect', async ({ brows
   await context.setOffline(true);
   await page.locator('#original-url').fill(url);
   await page.locator('#custom-code').fill(code);
-  await page.getByRole('button', { name: 'اختصار الرَّابط' }).click();
+  await page.locator(SHORTEN_BUTTON).click();
   await expect(page.getByText('رابطك المُختصَر جاهز!')).toBeVisible();
   await expect(page.getByText(url)).toBeVisible();
 
