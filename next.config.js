@@ -11,6 +11,7 @@ script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudfla
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: https: blob: https://*.supabase.co;
+media-src 'self' https://audio.royaraqamia.com;
 worker-src 'self' blob:;
 connect-src 'self' https://api.royaraqamia.com https://royaraqamia.com https://*.supabase.co https://challenges.cloudflare.com wss: ws:;
 frame-src https://challenges.cloudflare.com;

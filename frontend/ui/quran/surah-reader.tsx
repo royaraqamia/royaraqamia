@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SectionTitle } from '@/frontend/ui/shared/section-title';
 import { QuranAttribution } from './attribution';
 import { ReadingSession } from './reading-session';
+import { SurahAudioPlayer } from './audio-player';
 import { revelationLabel, toArabicDigits } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
@@ -15,6 +16,8 @@ interface SurahReaderProps {
   summary: SurahSummary;
   previous: SurahSummary | null;
   next: SurahSummary | null;
+  /** Null when this sura has no vendored Recitation (ADR-0062). */
+  audio: { ayahCount: number; bytes: number } | null;
 }
 
 /**
@@ -29,7 +32,7 @@ interface SurahReaderProps {
  * Deliberately verse-by-verse rather than a Mushaf page: page and line breaks are
  * a separate view of the same text (P5), not the base rendering.
  */
-export function SurahReader({ surah, summary, previous, next }: SurahReaderProps) {
+export function SurahReader({ surah, summary, previous, next, audio }: SurahReaderProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-8 sm:py-12">
       <header className="flex flex-col items-center gap-2 text-center">
@@ -46,6 +49,12 @@ export function SurahReader({ surah, summary, previous, next }: SurahReaderProps
           {revelationLabel(summary.revelation)} · {toArabicDigits(summary.ayahCount)} آية
         </p>
       </header>
+
+      {audio && (
+        <div className="mt-6">
+          <SurahAudioPlayer surah={summary.n} ayahCount={audio.ayahCount} bytes={audio.bytes} />
+        </div>
+      )}
 
       {surah.bismillah && (
         <p className="font-quran mt-8 text-center text-2xl leading-[2.4] text-foreground sm:text-3xl">
