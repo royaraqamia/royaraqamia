@@ -5,6 +5,7 @@ import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport
 import { ApiClient } from '@/frontend/api/habitflow/habit-api';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { logger } from '@/frontend/shared/logger';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 export interface HabitSyncState extends SyncStatus {
@@ -81,7 +82,7 @@ export function useHabitSync(
     const unsubscribe = store.subscribeWrites(() => {
       requestPersistentStorageOnce();
       void refresh();
-      void engineRef.current?.flush();
+      flushOutbox(engineRef.current);
     });
     void refresh();
     return () => {

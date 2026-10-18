@@ -1,4 +1,5 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { gotoUnderWorkerControl } from './worker-control';
 /**
  * Offline read/write/resume for LinkSnap (#167): the link list renders from the
  * Local Store with the radio off, a link created offline lands in the Outbox and
@@ -77,7 +78,7 @@ async function deleteLinkViaUi(page: Page, code: string) {
 
 /** Creates a short link through the public shortener while online. */
 async function createOnline(page: Page, baseURL: string, url: string, code: string) {
-  await page.goto(`${baseURL}/linksnap`, { waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
   await waitReady(page);
   await expect(page.locator('#custom-code')).toBeVisible();
   await page.locator('#original-url').fill(url);
@@ -104,13 +105,9 @@ test('a link created offline reaches the server after reconnect', async ({ brows
   const url = `https://example.com/${code}`;
 
   const page = await context.newPage();
-  await page.goto(`${baseURL}/linksnap`, { waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
   await waitReady(page);
   await expect(page.locator('#custom-code')).toBeVisible();
-
-  // Reload once online so the service worker caches the app chunks.
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await waitReady(page);
 
   // Radio off: the write must land in the Local Store and render from there.
   await context.setOffline(true);
@@ -155,9 +152,7 @@ test('the link list renders from the Local Store offline', async ({ browser, bas
   await createOnline(page, baseURL!, url, code);
 
   // Open the dashboard online so the Local Store is seeded and cached.
-  await page.goto(`${baseURL}/account/links`, { waitUntil: 'domcontentloaded' });
-  await waitReady(page);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/account/links`);
   await waitReady(page);
   await expect(page.getByText(url)).toBeVisible();
 

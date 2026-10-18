@@ -70,20 +70,25 @@ stated limit.
   document to serve. Closing it needs a data-free shell for those routes plus a client-side gate that
   paints the Local Store into it: a design step, not a one-line change, so it is recorded here rather
   than promised.
+- **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
+  there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
+  says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
+  Android shell covers the same ground natively (ADR-0059).
+- **LinkSnap's Outbox cannot be drained by the worker.** Its API authenticates with a bearer token
+  rather than the session cookie, and a service worker can read neither the cookie nor the token — so a
+  drain would replay `link.*` intents with no credential, or worse, with whichever credential it could
+  find. LinkSnap flushes from the page only, and it is the one product the drain registry leaves out.
 
 ## Where we are today
 
 Honest list of what stands between us and the bar, each with the file that shows it:
 
-1. **No web Background Sync.** `public/sw.js` has no `sync` event listener and nothing calls
-   `registration.sync.register`, so a closed Chromium tab flushes nothing — even though the ADR-0029
-   note implies Background Sync is in use.
-2. **The Android shell has no background path.** It is a remote-URL WebView (ADR-0036) whose manifest
+1. **The Android shell has no background path.** It is a remote-URL WebView (ADR-0036) whose manifest
    declares no `<service>`, no `<receiver>`, and none of `FOREGROUND_SERVICE`,
    `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
    backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
    reopens the app.
-3. **The offline e2e suite had barely run, and had drifted badly.** Every spec is `test.skip(!ENABLED)`
+2. **The offline e2e suite had barely run, and had drifted badly.** Every spec is `test.skip(!ENABLED)`
    behind its own env flag, and no workflow set one — so the suite was verified only by manual runs,
    and nothing caught what followed. The `E2E: Offline` workflow now runs every offline spec except
    `lead-offline`, which stays out because it writes a row the suite cannot remove; it runs them
@@ -104,14 +109,19 @@ Honest list of what stands between us and the bar, each with the file that shows
    upserts, tombstones for deletes, exponential backoff + jitter, surfaced permanent failures. It is
    the **only** writer to the server; nothing else in this spec is allowed to become a second one.
 3. **Service worker** (`public/sw.js`, grown not replaced) — cache tiers + the never-cache list, plus
-   the `sync` handler for web Background Sync. `activate` touches Cache Storage only, never
-   IndexedDB.
+   the `sync` handler that answers Background Sync. The handler is glue; the drain itself is the app's
+   own code, bundled by `scripts/build-sw-outbox.mjs` into a git-ignored `public/sw-outbox.js` and
+   loaded with `importScripts`, so the worker replays through the same engine, the same transports and
+   the same Outbox access as the page rather than a second implementation of them. `activate` touches
+   Cache Storage only, never IndexedDB.
 4. **Sync coordination** — Web Locks leader for flushing; BroadcastChannel for cross-tab
    invalidation. Triggers are now three tiers, in the order they are worth relying on:
    1. **In-page** — `online` / `visibilitychange` / focus / manual retry. Present today, and the
       fallback everywhere.
    2. **Web Background Sync** — a Chromium tab's service worker flushes with the tab closed
-      (ADR-0058). Absent in Safari and Firefox, where tier 1 is the whole story.
+      (ADR-0058). The page registers the tag only when its own flush left intents queued, so a write it
+      already delivered never wakes the worker. Absent in Safari and Firefox, where tier 1 is the whole
+      story.
    3. **Native Android** — a silent high-priority FCM data message wakes a WorkManager job that drains
       the Outbox (ADR-0059). This is the only tier that works with the app killed.
 5. **Sync hints** (ADR-0060) — server→client signals that there is new data to pull: Supabase Realtime
@@ -214,6 +224,14 @@ moment it matters — with the reason stated, since the request is otherwise opa
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
   backoff, the SW `sync` handler, and the FCM wake payload.
+- **Background Sync itself cannot be driven from Playwright.** Playwright's Chromium launches with
+  Background Sync disabled: the API is present but inert, so `register` rejects and even `getTags()`
+  answers "Background Sync is disabled". No e2e can cover the tier — not the registration and not the
+  event — which is why it is covered where it can be: unit tests for the drain's identity rules and the
+  page's registration condition, and a sandboxed test for the worker's listener. The code degrades to
+  `false` when the API refuses, which is the branch the suites actually exercise. What the offline
+  suite proves is the _fallback_ — flush-on-open — which is why it stays a real gate rather than a
+  gesture. The device matrix in phase 7 is where a real background flush gets exercised.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase
   that regresses `perf/budget.json` does not land — the budget is a gate, not a report.

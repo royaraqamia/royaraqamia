@@ -3,14 +3,12 @@ import type { Budget, Category, Expense, RecurringExpense } from '@/shared/contr
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { getSyncSnapshot } from '@/frontend/api/spendtrack';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
+import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
-
-const SPENDTRACK_SYNC_LOCK = 'spendtrack-sync';
-const SPENDTRACK_SYNC_CHANNEL = 'spendtrack-sync';
-const SYNCED_MESSAGE = 'spendtrack:synced';
 
 export interface SpendtrackSeed {
   categories: readonly Category[];
@@ -135,23 +133,15 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         store.subscribeWrites(() => {
           requestPersistentStorageOnce();
           if (!cancelled) void readIntoState(store).catch(() => {});
-          void engineRef.current?.flush();
+          flushOutbox(engineRef.current);
         });
 
-        engine = new SyncEngine(
-          {
-            store,
-            transport: createSpendtrackHttpSyncTransport(),
-            isSignedIn: () => isSignedIn,
-            onStatus: (next) => setStatus(next),
-          },
-          {
-            lockName: SPENDTRACK_SYNC_LOCK,
-            channelName: SPENDTRACK_SYNC_CHANNEL,
-            logLabel: 'SpendTrack',
-            syncedMessage: SYNCED_MESSAGE,
-          }
-        );
+        engine = new SpendtrackSyncEngine({
+          store,
+          transport: createSpendtrackHttpSyncTransport(),
+          isSignedIn: () => isSignedIn,
+          onStatus: (next) => setStatus(next),
+        });
         engineRef.current = engine;
         engine.onSync(() => {
           void readIntoState(store);

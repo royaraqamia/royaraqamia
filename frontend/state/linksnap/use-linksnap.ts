@@ -13,6 +13,7 @@ import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-tr
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 const LINKSNAP_SYNC_LOCK = 'linksnap-sync';
@@ -145,7 +146,7 @@ export function useLinksnap({
         store.subscribeWrites(() => {
           requestPersistentStorageOnce();
           if (!cancelled) void readIntoState(store).catch(() => {});
-          void engineRef.current?.flush();
+          flushOutbox(engineRef.current);
         });
 
         engine = new SyncEngine(

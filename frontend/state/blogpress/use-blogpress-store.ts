@@ -11,6 +11,7 @@ import {
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 export interface BlogpressSyncState extends SyncStatus {
@@ -137,7 +138,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
     // reaches the server promptly instead of waiting for the next focus event.
     const unsubscribeWrites = store.subscribeWrites(() => {
       requestPersistentStorageOnce();
-      void engine.flush();
+      flushOutbox(engine);
     });
     void runSync();
 

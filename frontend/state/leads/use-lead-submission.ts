@@ -14,15 +14,13 @@ import {
   leadKindForIntent,
   type LeadFormKind,
 } from '@/frontend/api/leads/sync-transport';
+import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import { logger } from '@/frontend/shared/logger';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
-
-const LEADS_SYNC_LOCK = 'leads-sync';
-const LEADS_SYNC_CHANNEL = 'leads-sync';
-const SYNCED_MESSAGE = 'leads:synced';
 
 /** The submit payload for one lead form; `client_id` is minted by the hook. */
 export type LeadSubmitInput =
@@ -121,27 +119,19 @@ export function useLeadSubmission(): LeadSubmissionState {
         const unsubscribe = store.subscribeWrites(() => {
           requestPersistentStorageOnce();
           void refreshEntries(store);
-          void engineRef.current?.flush();
+          flushOutbox(engineRef.current);
         });
         void refreshEntries(store);
 
-        engine = new SyncEngine(
-          {
-            store,
-            transport: createLeadHttpSyncTransport(),
-            isSignedIn: () => true,
-            onStatus: (next) => {
-              setStatus(next);
-              void refreshEntries(store);
-            },
+        engine = new LeadsSyncEngine({
+          store,
+          transport: createLeadHttpSyncTransport(),
+          isSignedIn: () => true,
+          onStatus: (next) => {
+            setStatus(next);
+            void refreshEntries(store);
           },
-          {
-            lockName: LEADS_SYNC_LOCK,
-            channelName: LEADS_SYNC_CHANNEL,
-            logLabel: 'LeadOutbox',
-            syncedMessage: SYNCED_MESSAGE,
-          }
-        );
+        });
         engineRef.current = engine;
         engine.onSync(() => void refreshEntries(store));
 

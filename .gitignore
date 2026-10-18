@@ -67,6 +67,7 @@ $RECYCLE.BIN/
 # auto-generated
 public/sw-version.js
 public/sw-push-config.js
+public/sw-outbox.js
 # Copied out of node_modules by scripts/sync-zxing-wasm.mjs so it always matches
 # the installed zxing-wasm version (ADR-0035).
 public/zxing_reader.wasm

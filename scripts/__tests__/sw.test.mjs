@@ -282,6 +282,72 @@ describe('service worker pushsubscriptionchange handling', () => {
   });
 });
 
+describe('service worker Background Sync wiring', () => {
+  const OUTBOX_TAG = 'outbox-flush';
+
+  function bridge(tag = OUTBOX_TAG, drain = vi.fn(async () => [])) {
+    return { tag, drain };
+  }
+
+  function syncEvent(tag) {
+    const event = new FakeEvent('sync');
+    event.tag = tag;
+    return event;
+  }
+
+  it('drains the Outbox through the generated bridge', async () => {
+    const { sandbox, dispatch } = await boot();
+    // A raw clone has no generated `sw-outbox.js`; the bridge is what the build
+    // hands the worker, so the test sets the same shape.
+    expect(sandbox.SWOutbox).toBeNull();
+    const outbox = bridge();
+    sandbox.SWOutbox = outbox;
+
+    const event = dispatch('sync', syncEvent(OUTBOX_TAG));
+    await Promise.all(event.waitUntilCalls);
+
+    expect(outbox.drain).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes the tag from the bridge rather than naming it a second time', async () => {
+    const { sandbox, dispatch } = await boot();
+    const outbox = bridge('a-tag-the-worker-was-handed');
+    sandbox.SWOutbox = outbox;
+
+    const foreign = dispatch('sync', syncEvent(OUTBOX_TAG));
+    expect(foreign.waitUntilCalls).toHaveLength(0);
+    expect(outbox.drain).not.toHaveBeenCalled();
+
+    const owned = dispatch('sync', syncEvent('a-tag-the-worker-was-handed'));
+    await Promise.all(owned.waitUntilCalls);
+    expect(outbox.drain).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a no-op when the drain script never loaded', async () => {
+    const { dispatch } = await boot();
+
+    const event = dispatch('sync', syncEvent(OUTBOX_TAG));
+
+    expect(event.waitUntilCalls).toHaveLength(0);
+  });
+
+  it('keeps the registration pending when the drain rejects', async () => {
+    const { sandbox, dispatch } = await boot();
+    sandbox.SWOutbox = bridge(
+      OUTBOX_TAG,
+      vi.fn(async () => {
+        throw new Error('still queued');
+      })
+    );
+
+    const event = dispatch('sync', syncEvent(OUTBOX_TAG));
+
+    // Rejecting is how the worker asks the browser for another attempt; a
+    // resolved event would retire the registration with work still queued.
+    await expect(event.waitUntilCalls[0]).rejects.toThrow('still queued');
+  });
+});
+
 describe('service worker routing wiring', () => {
   it('exposes the extracted routing module to the worker realm', async () => {
     const { sandbox } = await boot();

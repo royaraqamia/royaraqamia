@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoUnderWorkerControl } from './worker-control';
 
 /**
  * Public-content offline read (#170): a previously visited public route paints
@@ -30,12 +31,9 @@ test('a visited public page paints from cache offline and shows its age', async 
   });
   const page = await context.newPage();
 
-  // First load registers the worker; the reload brings the page under its control.
-  await page.goto(`${baseURL}/rates`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
-    timeout: 30_000,
-  });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  // First load registers the worker and the app replaces the document when it
+  // claims the page; the helper returns with that reload already applied.
+  await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
 
   // Radio off: the reload must be served from the service-worker cache.
