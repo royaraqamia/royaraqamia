@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.6] - 2026-10-18
+
+### Fixed
+- re-verify the access row on every context-cache hit (#316)
+- keep the sync cursor behind rows a pending write skipped (#314)
+- refuse SVG uploads to the public post-images bucket (#315)
+
 ## [1.109.5] - 2026-10-17
 
 ### Fixed
