@@ -29,6 +29,7 @@ const supabaseMocks = vi.hoisted(() => ({
 
 const mockRepo = {
   getTokenByHash: vi.fn(),
+  isAccessTokenLive: vi.fn(),
   touchTokenLastUsed: vi.fn(),
   updateTokenSessionEnc: vi.fn(),
   revokeToken: vi.fn(),
@@ -90,10 +91,19 @@ vi.mock('@/backend/shared/logger', () => ({
 
 import { logger } from '@/backend/shared/logger';
 
+/**
+ * Every test starts from an empty context cache: an entry left behind by an
+ * earlier test is live under these tests' real (or mocked) clock and would be
+ * indistinguishable from a fresh resolve in the ones that only count DB reads.
+ */
+beforeEach(() => {
+  clearAllTokenCache();
+});
+
 describe('resolveMcpContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearAllTokenCache();
+    mockRepo.isAccessTokenLive.mockResolvedValue(true);
     supabaseMocks.refreshSession.mockResolvedValue({
       data: {
         session: {
@@ -183,14 +193,55 @@ describe('resolveMcpContext', () => {
     );
   });
 
-  it('caches the context and returns cached on second call', async () => {
+  it('reuses the cached client on the happy path while re-checking the row', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    await resolveMcpContext('valid-token');
-    await resolveMcpContext('valid-token');
+    const first = await resolveMcpContext('valid-token');
+    const second = await resolveMcpContext('valid-token');
 
-    // repo.getTokenByHash should only be called once due to caching
+    // The expensive part — the user-scoped Supabase client — is built once...
+    expect(supabaseMocks.refreshSession).toHaveBeenCalledTimes(1);
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(1);
+    expect(second).toBe(first);
+    // ...because what authorizes the second request is the row, not the entry.
+    expect(mockRepo.isAccessTokenLive).toHaveBeenCalledTimes(1);
+    expect(mockRepo.isAccessTokenLive).toHaveBeenCalledWith('hash-valid-token', expect.any(Date));
+  });
+
+  /**
+   * The cache is process-local and the MCP routes are serverless functions, so a
+   * revoke/rotate served by one instance is invisible to every other warm one.
+   * These tests never call an invalidator: the DB row alone has to refuse the
+   * token, which is the only thing a sibling instance can rely on.
+   */
+  it('rejects a token another instance revoked, without this instance clearing its cache', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+    expect(await resolveMcpContext('valid-token')).not.toBeNull();
+
+    // A sibling instance served POST /mcp/revoke: the row flipped and only *that*
+    // instance's Map was cleared. This one's entry is untouched and stale.
+    mockRepo.isAccessTokenLive.mockResolvedValue(false);
+    mockRepo.getTokenByHash.mockResolvedValue({
+      ...mockTokenRecord,
+      revoked_at: '2026-01-01T00:00:00Z',
+    });
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+    // The dead entry was dropped, so the third call takes the full path again.
+    expect(mockRepo.isAccessTokenLive).toHaveBeenCalledTimes(1);
+    expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a bearer whose row is gone — rotation or sweep — even while cached', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+    expect(await resolveMcpContext('valid-token')).not.toBeNull();
+
+    // Rotation revoked the superseded access row and the daily sweep deleted it;
+    // the retired bearer still has a cached context on this instance.
+    mockRepo.isAccessTokenLive.mockResolvedValue(false);
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
   });
 
   it('respects admin gating: admin scope stripped if user not in ADMIN_EMAILS', async () => {
@@ -312,19 +363,18 @@ describe('invalidateTokenCache', () => {
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
   });
 
-  it('rejects a token revoked after it was cached, without waiting for the TTL', async () => {
+  it('force-rebuilds the context instead of probing the dropped entry', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
-    expect(await resolveMcpContext('token')).not.toBeNull();
 
-    // Simulate POST /mcp/revoke: the row is now revoked and the cache entry is
-    // dropped, so the very next request re-reads the DB instead of the cache.
-    mockRepo.getTokenByHash.mockResolvedValue({
-      ...mockTokenRecord,
-      revoked_at: '2026-01-01T00:00:00Z',
-    });
+    await resolveMcpContext('token');
     invalidateTokenCache('hash-token');
+    await resolveMcpContext('token');
 
-    expect(await resolveMcpContext('token')).toBeNull();
+    // A dropped entry is rebuilt from scratch, client and all: the invalidators
+    // are a local optimization on top of the per-request row check, never the
+    // thing that makes a revocation stick.
+    expect(supabaseMocks.refreshSession).toHaveBeenCalledTimes(2);
+    expect(mockRepo.isAccessTokenLive).not.toHaveBeenCalled();
   });
 });
 

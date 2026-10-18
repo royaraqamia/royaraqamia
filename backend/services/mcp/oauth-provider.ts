@@ -323,11 +323,12 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       }
 
       // Rotation: revoke the superseded access row, then issue a brand-new pair.
-      // Drop any cached context for the superseded access token so it stops
-      // authorizing requests immediately, not up to 5 minutes later. Both rows
-      // were read before anything was revoked on purpose — the claim and the
-      // revoke shred `session_enc`, and `issueTokenPair` below still needs the
-      // encrypted session to carry forward.
+      // Retiring the old bearer is the revoke's job — the data plane re-verifies
+      // every cache hit against the row — and dropping the cache entry is a
+      // local tidy-up on top of that. Both rows were read before anything was
+      // revoked on purpose — the claim and the revoke shred `session_enc`, and
+      // `issueTokenPair` below still needs the encrypted session to carry
+      // forward.
       if (accessRow) {
         await repo.revokeToken(accessRow.id);
         invalidateTokenCache(accessRow.token_hash);
@@ -368,7 +369,8 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       const accessRow =
         row.kind === 'refresh' ? await repo.getAccessTokenByRefreshHash(row.token_hash) : null;
       await repo.revokeToken(row.id);
-      // A cached context for this token must not keep authorizing requests.
+      // Local tidy-up only: the data plane re-checks the row on every cache hit,
+      // so no instance is left authorizing this token by the write above.
       invalidateTokenCache(row.token_hash);
       if (accessRow) {
         await repo.revokeToken(accessRow.id);
@@ -401,9 +403,10 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       await repo.revokeUserClientTokens(userId, clientId);
       await repo.deleteUserClientAuthCodes(userId, clientId);
       // Coarse on purpose. Dropping every cached context this user holds costs
-      // their other clients one re-resolve and cannot leave a revoked context
-      // authorizing a request; a per-client invalidator would buy nothing but a
-      // narrower filter here.
+      // their other clients one re-resolve, and it cannot leave this instance
+      // holding a context for a token the write above just revoked — though the
+      // per-request row check, not this call, is what makes that true for every
+      // other instance.
       invalidateUserCache(userId);
       await revokeOwnedBridgeSessions(bridgeSessions, sessionEncs);
     },
