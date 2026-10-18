@@ -45,3 +45,33 @@ export interface Surah {
   /** The ayat in order, so `ayahs[i]` is ayah `i + 1`. Verbatim. */
   ayahs: string[];
 }
+
+/**
+ * Where a reader stopped (ADR-0056).
+ *
+ * One per reader, so it carries no identity of its own — that is also why it is
+ * the one synced record whose key is derived rather than minted.
+ */
+export interface ReadingPosition {
+  /** Tanzil's sura number. */
+  surah: number;
+  /** 1-based ayah number within that sura. */
+  ayah: number;
+  /** ISO instant; the last-write-wins key once this syncs (ADR-0029). */
+  updatedAt: string;
+}
+
+/** One ayah a reader marked. Keyed by the client-minted id it keeps everywhere. */
+export interface Bookmark {
+  clientId: string;
+  surah: number;
+  ayah: number;
+  createdAt: string;
+  updatedAt: string;
+  /**
+   * Removing a Bookmark is a tombstone, never a delete (ADR-0033): the row has
+   * to survive long enough to tell another device the mark is gone. Marking the
+   * same ayah again clears it, so one ayah holds one row for good.
+   */
+  deletedAt: string | null;
+}

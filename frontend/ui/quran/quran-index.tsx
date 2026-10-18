@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranAttribution } from './attribution';
+import { ReadingPanel } from './reading-panel';
 import { revelationLabel, toArabicDigits } from './format';
 import type { QuranIndex } from '@/shared/contracts/quran';
 
@@ -10,6 +11,9 @@ import type { QuranIndex } from '@/shared/contracts/quran';
  * A server component with no interactivity on purpose — the list is static, so
  * it renders as HTML and needs no client bundle. Filtering by name is a
  * separate concern from searching the text (P4) and is not part of this.
+ *
+ * The one interactive piece is `ReadingPanel`, which shows a returning reader
+ * where they stopped; nothing else here depends on it.
  */
 export function QuranIndexPage({ index }: { index: QuranIndex }) {
   return (
@@ -23,6 +27,8 @@ export function QuranIndexPage({ index }: { index: QuranIndex }) {
           بالإنترنت بعد أوَّل زيارة.
         </p>
       </header>
+
+      <ReadingPanel names={index.surahs.map((surah) => surah.name)} />
 
       <nav aria-label="فهرس السُّوَر" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {index.surahs.map((surah) => (
