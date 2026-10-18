@@ -1,0 +1,23 @@
+{
+  "source": "AlQuran Cloud / Islamic Network (https://alquran.cloud)",
+  "license": "Licensed to AlQuran Cloud / Islamic Network by the reciters or their estates for free, non-commercial redistribution at the bitrates they publish.",
+  "attribution": "مشاري راشد العفاسي · AlQuran Cloud (https://alquran.cloud)",
+  "editions": [
+    {
+      "id": "ar.alafasy",
+      "reciter": "مشاري راشد العفاسي",
+      "reciterLatin": "Mishary Rashid Alafasy",
+      "style": "Murattal",
+      "bitrateKbps": 64,
+      "container": "mp3",
+      "baseUrl": "https://audio.royaraqamia.com",
+      "sourceUrl": "https://cdn.islamic.network/quran/audio/64/ar.alafasy/{ayah}.mp3",
+      "attribution": "مشاري راشد العفاسي · AlQuran Cloud (https://alquran.cloud)",
+      "license": "Licensed to AlQuran Cloud / Islamic Network by the reciters or their estates for free, non-commercial redistribution at the bitrates they publish.",
+      "suras": 1,
+      "ayat": 7,
+      "bytes": 381489,
+      "complete": false
+    }
+  ]
+}

@@ -128,22 +128,65 @@ function loadEnvFile(path) {
 function requireCredentials() {
   const names = ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET'];
   const missing = names.filter((name) => !process.env[name]);
-  // The endpoint is taken verbatim when it is set, because it is the one value a
-  // human copies out of the dashboard and a derived account id is one typo away
-  // from a handshake that fails with no useful error.
-  const endpoint = (
-    process.env.R2_ENDPOINT?.trim() ||
-    (process.env.R2_ACCOUNT_ID
-      ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-      : '')
-  ).replace(/\/+$/, '');
-  if (!endpoint) missing.push('R2_ENDPOINT or R2_ACCOUNT_ID');
+
+  // The dashboard's copy button hands out the *bucket's* URL, bucket name and
+  // all, so only the origin is kept: every key already carries its bucket, and a
+  // path left in place is signed once and sent twice, which fails as a signature
+  // mismatch that reads like a wrong secret.
+  const origin = (() => {
+    const raw = (process.env.R2_ENDPOINT ?? '').trim();
+    if (raw) {
+      let url;
+      try {
+        url = new URL(raw);
+      } catch {
+        // The value is never echoed: this file's whole point is that env values
+        // are secrets, and only the operator knows what they set.
+        throw new Error('R2_ENDPOINT is not a URL');
+      }
+      // This script only ever talks to R2, so the endpoint is pinned rather than
+      // trusted: an https origin under r2.cloudflarestorage.com. Anything else
+      // is a typo, or an environment trying to make the upload go elsewhere.
+      if (url.protocol !== 'https:' || !url.hostname.endsWith('.r2.cloudflarestorage.com')) {
+        throw new Error('R2_ENDPOINT must be an https URL under r2.cloudflarestorage.com');
+      }
+      if (url.pathname !== '/' && url.pathname !== '') {
+        // The copy button's URL names the bucket in its path, and every key
+        // already carries the bucket, so the path is dropped. Said out loud,
+        // because the alternative is a signature mismatch that reads like a
+        // wrong secret key.
+        console.warn(
+          'R2_ENDPOINT named a path; the bucket is added to every key, so only the origin is used'
+        );
+      }
+      return url.origin;
+    }
+    const accountId = (process.env.R2_ACCOUNT_ID ?? '').trim();
+    if (!accountId) return '';
+    // A Cloudflare account id is 32 hexadecimal characters. A truncated one is a
+    // hostname that resolves and then cannot complete a handshake, which is the
+    // least actionable failure there is, so it is refused here instead.
+    if (!/^[0-9a-f]{32}$/i.test(accountId)) {
+      throw new Error(
+        'R2_ACCOUNT_ID is not 32 hex characters — copy the bucket’s S3 endpoint ' +
+          'into R2_ENDPOINT instead'
+      );
+    }
+    return `https://${accountId}.r2.cloudflarestorage.com`;
+  })();
+
+  if (!origin) missing.push('R2_ENDPOINT or R2_ACCOUNT_ID');
   if (missing.length > 0) {
-    throw new Error(`Missing ${missing.join(', ')} — put them in .env or the environment`);
+    // The names are spelled out rather than echoed from the environment, because
+    // this message ends up in a log.
+    throw new Error(
+      'Set R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET and R2_ENDPOINT ' +
+        '(or R2_ACCOUNT_ID) in .env or the environment'
+    );
   }
   return {
-    endpoint,
-    host: new URL(endpoint).host,
+    endpoint: origin,
+    host: new URL(origin).host,
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     bucket: process.env.R2_BUCKET,
@@ -295,22 +338,24 @@ async function r2Request(credentials, { method, key, body, contentType, cacheCon
   if (contentType) headers['content-type'] = contentType;
   if (cacheControl) headers['cache-control'] = cacheControl;
 
+  // The URL actually fetched, not the path that was signed: when those two
+  // disagree, the message is the only place the disagreement can be seen.
+  const url = `${credentials.endpoint}${path}`;
   let response;
   try {
-    response = await fetch(`${credentials.endpoint}${path}`, { method, headers, body });
+    response = await fetch(url, { method, headers, body });
   } catch (error) {
-    // A TLS or DNS failure here is the sandbox, not the code: say what the
-    // socket said rather than "fetch failed".
+    // A TLS or DNS failure here is the network, not the code: say what the
+    // socket said rather than "fetch failed". The origin is deliberately not
+    // echoed — it comes from the environment, and env values do not get logged.
     const cause = error.cause
       ? `${error.cause.code ?? ''} ${error.cause.message ?? ''}`.trim()
       : '';
-    throw new Error(
-      `${method} ${host}${path} failed: ${error.message}${cause ? ` (${cause})` : ''}`
-    );
+    throw new Error(`${method} ${key} failed: ${error.message}${cause ? ` (${cause})` : ''}`);
   }
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
-    throw new Error(`${method} ${path} -> ${response.status} ${detail.slice(0, 300)}`);
+    throw new Error(`${method} ${key} -> ${response.status} ${detail.slice(0, 300)}`);
   }
   return response;
 }
