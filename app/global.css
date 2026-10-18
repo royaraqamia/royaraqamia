@@ -21,13 +21,6 @@
   font-family: var(--font-heading);
 }
 
-/* The Quran text. Falls back to the site's Arabic sans for anything Amiri Quran
-   does not cover (Latin digits, punctuation), so a mixed run never renders in a
-   default serif. */
-.font-quran {
-  font-family: var(--font-quran), var(--font-arabic), serif;
-}
-
 @layer base {
   :root {
     --background: 240 10% 8%;
