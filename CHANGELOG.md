@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.111.0] - 2026-10-18
+
+### Changed
+- plan WhatsApp-parity background delivery (#326)
+
+### Added
+- add the reader at /quran and list it in the services menu (#325)
+
 ## [1.110.0] - 2026-10-18
 
 ### Added
