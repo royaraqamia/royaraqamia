@@ -1,7 +1,3 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-
 /**
  * The reference code a public form last issued, remembered on the device.
  *
@@ -14,6 +10,13 @@ import { useEffect, useState } from 'react';
  * It is a UI convenience only: it carries no authority, and the code is never
  * trusted for editing, which still requires the account. Nothing secret is
  * stored — the reference code is already shown on screen and quoted on WhatsApp.
+ *
+ * **This module must stay free of React.** The Outbox transports write a receipt
+ * when a queued submission finally lands, and the worker realm reads one when a
+ * background flush does — neither is a component. A single `import` of a hook
+ * here would pull React into every one of them (and into the generated
+ * service-worker bundle, where `scripts/build-sw-outbox.mjs` refuses to ship it).
+ * The hook that renders this lives in `use-submission-receipt.ts`.
  */
 export const SUBMISSION_RECEIPT_KEYS = {
   consultation: 'rr:receipt:consultation',
@@ -38,7 +41,7 @@ export const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
  */
 export const SUBMISSION_RECEIPT_EVENT = 'rr:submission-receipt';
 
-interface SubmissionReceiptEventDetail {
+export interface SubmissionReceiptEventDetail {
   kind: SubmissionKind;
   code: string;
 }
@@ -113,46 +116,4 @@ export function clearSubmissionReceipt(kind: SubmissionKind): void {
   } catch {
     // Nothing to do.
   }
-}
-
-/**
- * The remembered receipt for one form, read once on mount. Returns `null` on
- * the server and on the first client render so hydration matches, then the
- * stored code on the effect pass.
- *
- * A stored receipt is treated as stale once it is older than {@link RECEIPT_TTL_MS}:
- * a code from months ago is noise, not a confirmation the visitor is looking
- * for. The write stamps the time so the read can drop it.
- */
-export function useSubmissionReceipt(kind: SubmissionKind): {
-  referenceCode: string | null;
-  remember: (referenceCode: string) => void;
-  dismiss: () => void;
-} {
-  const [referenceCode, setReferenceCode] = useState<string | null>(null);
-
-  useEffect(() => {
-    setReferenceCode(readSubmissionReceipt(kind));
-
-    // A queued submission is delivered by the Outbox Sync Engine after this hook
-    // mounted; the transport writes the receipt and announces it here.
-    const onReceipt = (event: Event) => {
-      const detail = (event as CustomEvent<SubmissionReceiptEventDetail>).detail;
-      if (detail?.kind === kind) setReferenceCode(detail.code);
-    };
-    window.addEventListener(SUBMISSION_RECEIPT_EVENT, onReceipt);
-    return () => window.removeEventListener(SUBMISSION_RECEIPT_EVENT, onReceipt);
-  }, [kind]);
-
-  return {
-    referenceCode,
-    remember: (code: string) => {
-      writeSubmissionReceipt(kind, code);
-      setReferenceCode(code);
-    },
-    dismiss: () => {
-      clearSubmissionReceipt(kind);
-      setReferenceCode(null);
-    },
-  };
 }

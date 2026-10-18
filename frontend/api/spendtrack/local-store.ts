@@ -15,6 +15,8 @@ import {
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
 import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
+import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import {
   OUTBOX_STORE,
@@ -98,6 +100,7 @@ export function budgetKey(month: string, categoryId: string | null): string {
  */
 export class SpendtrackLocalStore {
   private readonly connection: LocalStoreConnection;
+  private readonly outbox: OutboxStore;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
@@ -105,6 +108,7 @@ export class SpendtrackLocalStore {
     readonly identity: LocalIdentity
   ) {
     this.connection = new LocalStoreConnection(db);
+    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
   subscribeWrites(listener: () => void): () => void {
@@ -655,36 +659,23 @@ export class SpendtrackLocalStore {
   }
 
   // --- Outbox ---------------------------------------------------------------
+  // Data access is shared with the worker realm (`outbox-access.ts`); this store
+  // contributes only its write notification.
 
-  async getOutbox(): Promise<OutboxEntry[]> {
-    return this.readAll<OutboxEntry>(OUTBOX_STORE);
+  getOutbox(): Promise<OutboxEntry[]> {
+    return this.outbox.getOutbox();
   }
 
-  async removeOutbox(seq: number): Promise<void> {
-    const removed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
-      transaction.objectStore(OUTBOX_STORE).delete(seq);
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (removed) this.notifyWrites();
+  removeOutbox(seq: number): Promise<void> {
+    return this.outbox.removeOutbox(seq);
   }
 
-  async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
-    const existing = await this.getOne<OutboxEntry>(OUTBOX_STORE, seq);
-    if (!existing) return;
-    await this.commit([[OUTBOX_STORE, { ...existing, ...patch }]]);
+  patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
+    return this.outbox.patchOutbox(seq, patch);
   }
 
-  async retryFailedOutbox(): Promise<void> {
-    const failed = (await this.getOutbox()).filter((entry) => entry.status === 'failed');
-    if (failed.length === 0) return;
-    await this.commit(
-      failed.map<[string, OutboxEntry]>((entry) => [
-        OUTBOX_STORE,
-        { ...entry, status: 'pending', attempts: 0, nextAttemptAt: 0, lastError: null },
-      ])
-    );
+  retryFailedOutbox(): Promise<void> {
+    return this.outbox.retryFailedOutbox();
   }
 
   // --- Sync cursor ----------------------------------------------------------

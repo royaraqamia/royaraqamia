@@ -9,7 +9,7 @@ import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizar
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
 import { getOpenTrainingCohorts } from '@/frontend/api/training';
-import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useSubmissionReceipt } from '@/frontend/shared/use-submission-receipt';
 import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 import {
   TRAINING_COURSE,
