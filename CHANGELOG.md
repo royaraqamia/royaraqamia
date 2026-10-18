@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.112.0] - 2026-10-18
+
+### Added
+- remember the reader's place and their marks (#328)
+
+### Fixed
+- ask for durable storage on a real save, not only on install (#329)
+
 ## [1.111.1] - 2026-10-18
 
 ### Fixed
