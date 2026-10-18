@@ -66,6 +66,53 @@ describe('BlogpressMediaService.uploadImage', () => {
     expect(repository.uploadImage).not.toHaveBeenCalled();
   });
 
+  it('rejects a file declared as image/svg+xml', async () => {
+    const { repository, service } = makeRepo();
+    const file = makeFile({ name: 'icon.svg', type: 'image/svg+xml' });
+    const result = await service.uploadImage(buildForm(file), 'user-123');
+    expect(result).toEqual({ error: 'صيغة الصُّورة غير مدعومة' });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('rejects an .svg name even when the declared type claims a raster format', async () => {
+    const { repository, service } = makeRepo();
+    const file = makeFile({ name: 'icon.svg', type: 'image/png' });
+    const result = await service.uploadImage(buildForm(file), 'user-123');
+    expect(result).toEqual({ error: 'صيغة الصُّورة غير مدعومة' });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('rejects an .svgz name', async () => {
+    const { repository, service } = makeRepo();
+    const file = makeFile({ name: 'icon.svgz', type: 'image/png' });
+    const result = await service.uploadImage(buildForm(file), 'user-123');
+    expect(result).toEqual({ error: 'صيغة الصُّورة غير مدعومة' });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('rejects an SVG whatever the casing', async () => {
+    const { repository, service } = makeRepo();
+    const file = makeFile({ name: 'icon.SVG', type: 'image/SVG+XML' });
+    const result = await service.uploadImage(buildForm(file), 'user-123');
+    expect(result).toEqual({ error: 'صيغة الصُّورة غير مدعومة' });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it.each(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif'])(
+    'still accepts %s',
+    async (type) => {
+      const { repository, service } = makeRepo();
+      (repository.uploadImage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        url: 'https://cdn',
+      });
+      const extension = type.replace('image/', '');
+      const file = makeFile({ name: `photo.${extension}`, type });
+      const result = await service.uploadImage(buildForm(file), 'user-123');
+      expect(result).toEqual({ url: 'https://cdn' });
+      expect(repository.uploadImage).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it('rejects a file exactly over the 5MB limit', async () => {
     const { repository, service } = makeRepo();
     const file = makeFile({ size: 5 * 1024 * 1024 + 1 });
