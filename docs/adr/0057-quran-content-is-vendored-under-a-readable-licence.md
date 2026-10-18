@@ -1,5 +1,8 @@
 # The Quran content is vendored under a licence we can read
 
+> **Amended by [ADR 0062](0062-the-quran-recitation-is-vendored-as-published.md)**, which names the
+> audio source, fixes the bitrate it ships at, and adds the two obligations its licence carries.
+
 The reader is offline-first (ADR-0027), and the Quran's text is the one dataset in the product
 family that is fixed, public and small: the Uthmani text of Hafs ʿan ʿAsim is 1.27 MiB raw and
 0.25 MiB compressed, and a normalized search index over it is under 200 KiB. So the text, the
