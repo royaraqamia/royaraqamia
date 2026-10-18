@@ -10,18 +10,38 @@ Recitation audio is too large to bundle (818 MiB per Reciter at 64 kbps), so it 
 rather than hotlinked**: downloaded once from a provider whose terms we can read, into storage we
 control, and served from our own origin. It is never precached and never served from Vercel.
 
-The rule that governs every asset here is that **nothing ships without a licence we can read**.
-That is not a preference about provenance; it is the only thing that makes the rest of this ADR
-checkable. Two assets fail it and are therefore blocked rather than assumed: **التفسير المختصر**,
-whose publisher permits personal, non-commercial use only, and **QUL's line-exact KFGQPC Mushaf
-layout**, whose copyright status QUL itself declines to resolve.
+The rule that governs every asset here is that **nothing ships without a licence we can read** —
+either a grant the rights holder published, or text whose copyright has expired. It is the only
+thing that makes the rest of this ADR checkable, and it rules out a source that looks open but is
+not: **QUL publishes no licence for any of its resources** — every Arabic Tafsir's copyright panel
+is empty — so its MIT covers its code and not its data, and neither it nor a repackaging of it is a
+licence source for what it carries. One asset fails the rule outright and is blocked rather than
+assumed: **QUL's line-exact KFGQPC Mushaf layout**, whose copyright status QUL itself declines to
+resolve.
+
+التفسير comes from **Tafsir Center for Quranic Studies' own corpus**, published CC BY 4.0 — "share,
+adapt, use commercially", with attribution to `Tafsir Center for Quranic Studies
+(https://tafsir.net)` — which is a first-party grant over the editions it compiles. **الميسر** ships
+first, with its residual doubt recorded rather than hidden: the KFGQPC terms page was unreachable,
+so this rests on Tafsir Center's grant and not on the publisher's own. **التفسير المختصر** stays
+blocked, because its publisher permits personal, non-commercial use only and Tafsir Center is a
+different body from دار المختصر — a grant over another publisher's work is not a clearance of it.
+One Tafsir is vendored, keyed by slug, so a second is a data addition rather than a redesign.
 
 ## Considered Options
 
 - **A Quran API at read time, or a server-side snapshot of one.** Rejected: it puts a third party in
   the path of every page view and makes a first load without a network impossible (ADR-0027). The
-  Quran Foundation's Content API also imposes OAuth, a 7-day re-sync obligation and a 1-week cache
-  cap, which is offline-first inverted.
+  Quran Foundation's Content API also restricts content to personal, non-commercial use and forbids
+  compiling its data — offline-first inverted twice over.
+- **The QUL / spa5k Tafsir chain.** Rejected: the underlying texts are public domain, but the files
+  travel through sources whose redistribution terms cannot be read. Public-domain words inside an
+  unreadable pipeline are not a licence anyone can point at.
+- **Every Tafsir in the corpus.** Rejected: Tafsir Center's database is ~214 MB; one edition is a
+  few MB and is the thing a reader opens.
+- **Shipping الجامع الوجيز instead.** Deferred rather than rejected — it carries the cleanest single
+  grant of any candidate (CC BY-ND 4.0, from a living author) — but it is modern and the least
+  established, and الميسر is the closer match. It remains available as the second edition.
 - **Hotlinking someone else's audio CDN.** Rejected: it makes an asset we ship depend on terms we
   cannot read, and it makes offline Recitation permanently impossible — the two providers with the
   best coverage publish no licence at all, and the one that does publish terms sends no CORS header,
@@ -38,15 +58,18 @@ layout**, whose copyright status QUL itself declines to resolve.
 ## Consequences
 
 - Attribution is a shipped surface, not a comment: the Tanzil text requires the project named, a
-  link to tanzil.net and its notice reproduced in every derived file, which means a colophon on the
-  reader. The display font is Amiri Quran (SIL OFL) rather than a KFGQPC font.
+  link to tanzil.net and its notice reproduced in every derived file, and the Tafsir requires Tafsir
+  Center named. Both mean a colophon on the reader. The display font is Amiri Quran (SIL OFL) rather
+  than a KFGQPC font.
 - The text is verbatim by licence — "changing it is not allowed" — so no normalization, no
   shortening and no reformatting is ever applied to the stored text. Search indexes a separate,
   normalized copy.
+- A Tafsir taken from a classical source is checked for modern editor apparatus before it ships:
+  bracketed footnote material is a contemporary contribution with its own copyright.
 - Audio is vendored out of band, so a Reciter is added by an operator action and a commit, not by a
   deploy of the app; storage is ~818 MiB per Reciter at 64 kbps.
-- Two planned phases cannot be committed to a date: التفسير المختصر is blocked pending written
-  permission from its publisher, and line-exact Mushaf pages are blocked pending clarification of
-  the KFGQPC layout's licence. Search has no such blocker and lands before the Tafsir.
+- Tafsir before Search: with the Tafsir's blocker gone the phases return to their original order,
+  and the only two blocked items left — **التفسير المختصر** and **line-exact Mushaf pages** — are
+  both gated on a written permission and neither is on the path to a first release.
 - A text or layout correction is a commit and a cache-name bump, not an admin action. That is the
   deliberate no: there is no admin surface for this product.
