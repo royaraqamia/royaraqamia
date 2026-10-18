@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.11] - 2026-10-18
+
+### Changed
+- unblock the Quran Tafsir on Tafsir Center's CC BY 4.0 corpus (#323)
+
 ## [1.109.10] - 2026-10-18
 
 ### Changed
