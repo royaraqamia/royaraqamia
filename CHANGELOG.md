@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.113.2] - 2026-10-18
+
+### Fixed
+- take the S3 origin from the endpoint and say which URL failed (#339)
+
 ## [1.113.1] - 2026-10-18
 
 ### Changed
