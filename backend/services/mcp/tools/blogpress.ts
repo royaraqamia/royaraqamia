@@ -583,7 +583,10 @@ export async function deletePostHandler(
     return params.format === 'json'
       ? structuredResponse(jsonText(output), output)
       : structuredResponse(
-          `# Post Deleted\n\nPost \`${params.id}\` (\`/${slug}\`) was deleted.`,
+          // A replayed delete of a row that is already gone carries no slug.
+          slug
+            ? `# Post Deleted\n\nPost \`${params.id}\` (\`/${slug}\`) was deleted.`
+            : `# Post Deleted\n\nPost \`${params.id}\` was deleted.`,
           output
         );
   } catch (error) {

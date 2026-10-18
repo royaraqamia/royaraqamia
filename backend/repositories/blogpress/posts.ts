@@ -132,7 +132,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select(POST_SUMMARY_COLUMNS, { count: 'exact' })
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('community_visible', true);
+        .eq('community_visible', true)
+        .is('deleted_at', null);
 
       if (postIds) {
         queryBuilder = queryBuilder.in('id', postIds);
@@ -181,7 +182,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select(POST_SUMMARY_COLUMNS)
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('community_visible', true);
+        .eq('community_visible', true)
+        .is('deleted_at', null);
 
       if (authorId) {
         queryBuilder = queryBuilder.eq('author_id', authorId);
@@ -227,7 +229,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select('slug')
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('community_visible', true);
+        .eq('community_visible', true)
+        .is('deleted_at', null);
 
       if (error) throw repositoryFailure('blogpress.getPublishedPostSlugs', error);
 
@@ -239,7 +242,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select('slug, updated_at')
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('community_visible', true);
+        .eq('community_visible', true)
+        .is('deleted_at', null);
 
       if (error) throw repositoryFailure('blogpress.getPublishedPostSitemapEntries', error);
 
@@ -253,6 +257,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .eq('slug', slug)
         .or(PUBLISHED_POSTS_FILTER)
         .eq('community_visible', true)
+        .is('deleted_at', null)
         .single();
 
       if (error) {
@@ -324,7 +329,11 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]> {
-      let queryBuilder = supabase.from('posts').select('*').eq('author_id', authorId);
+      let queryBuilder = supabase
+        .from('posts')
+        .select('*')
+        .eq('author_id', authorId)
+        .is('deleted_at', null);
 
       if (categorySlug) {
         const { data: category, error: categoryError } = await supabase
@@ -360,6 +369,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select('content, meta_desc')
         .eq('id', id)
+        .is('deleted_at', null)
         .single();
 
       if (error) {
@@ -376,6 +386,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('*')
         .eq('id', id)
         .eq('author_id', userId)
+        .is('deleted_at', null)
         .single();
 
       if (error) {
@@ -542,18 +553,31 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { slug: data.slug };
     },
 
-    async deletePost(postId: string, authorId: string): Promise<{ slug: string }> {
+    async deletePost(
+      postId: string,
+      authorId: string,
+      updatedAt?: string
+    ): Promise<{ slug: string | null }> {
+      // Tombstone, not a hard delete (ADR-0029): a replayed delete resolves as
+      // success instead of PGRST116 → 500 → an Outbox entry that retries
+      // forever, and the row identity survives so the write stays replayable.
+      // Reads exclude the row via `deleted_at is null`.
+      const stamp = updatedAt ?? new Date().toISOString();
       const { data, error } = await supabase
         .from('posts')
-        .delete()
+        .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', postId)
         .eq('author_id', authorId)
+        // LWW: an older replayed delete must not re-stamp a newer row.
+        .lte('updated_at', stamp)
         .select('slug')
-        .single();
+        .maybeSingle();
 
       if (error) throw new Error('فشل حذف المنشور');
 
-      return { slug: data.slug };
+      // Already gone, or beaten by a newer write: the delete still succeeded and
+      // there is no slug left to revalidate.
+      return { slug: data?.slug ?? null };
     },
 
     async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
@@ -736,11 +760,15 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       action: 'publish' | 'unpublish' | 'delete'
     ): Promise<{ affected: number; slugs: string[] }> {
       if (action === 'delete') {
+        // Same tombstone + LWW guard as a single delete, so a replay cannot
+        // re-stamp a newer row and a bulk delete stays idempotent.
+        const stamp = new Date().toISOString();
         const { data: deleted, error } = await supabase
           .from('posts')
-          .delete()
+          .update({ deleted_at: stamp, updated_at: stamp })
           .in('id', postIds)
           .eq('author_id', authorId)
+          .lte('updated_at', stamp)
           .select('slug');
         if (error) throw new Error('فشل حذف المنشورات');
         return { affected: deleted.length, slugs: deleted.map((row) => row.slug) };
