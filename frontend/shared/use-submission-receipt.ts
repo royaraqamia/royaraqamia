@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import {
   clearSubmissionReceipt,
   readSubmissionReceipt,
-  RECEIPT_TTL_MS,
   SUBMISSION_RECEIPT_EVENT,
   writeSubmissionReceipt,
   type SubmissionKind,
@@ -17,9 +16,10 @@ import {
  * the server and on the first client render so hydration matches, then the
  * stored code on the effect pass.
  *
- * A stored receipt is treated as stale once it is older than {@link RECEIPT_TTL_MS}:
- * a code from months ago is noise, not a confirmation the visitor is looking
- * for. The write stamps the time so the read can drop it.
+ * A stored receipt is treated as stale once it is older than `RECEIPT_TTL_MS`
+ * (see `submission-receipt.ts`): a code from months ago is noise, not a
+ * confirmation the visitor is looking for. The write stamps the time so the read
+ * can drop it.
  *
  * The hook is split out from the storage module it reads: the Outbox transports
  * and the service worker write receipts without a React tree, so
