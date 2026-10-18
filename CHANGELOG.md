@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.114.0] - 2026-10-18
+
+### Added
+- play the recitation one Ayah at a time (#341)
+
 ## [1.113.2] - 2026-10-18
 
 ### Fixed
