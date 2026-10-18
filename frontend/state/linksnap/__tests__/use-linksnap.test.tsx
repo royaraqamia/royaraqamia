@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 
 // The signed-in background pull hits the network; keep it local and empty.
 vi.mock('@/frontend/api/linksnap', async (importOriginal) => {
@@ -106,5 +106,18 @@ describe('useLinksnap', () => {
     const store = await LinksnapLocalStore.open(userIdentity('u-1'));
     expect(await store.getOutbox()).toHaveLength(1);
     store.close();
+  });
+
+  it('flushes a write made after mount without waiting for a focus event', async () => {
+    const { result } = renderHook(() => useLinksnap({ token: 'test-token', user: { id: 'u-1' } }));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+
+    // Nothing is queued at mount, so the write itself is the only thing that can
+    // send — no focus, online or visibility event is dispatched.
+    await act(async () => {
+      await result.current.createLink({ originalUrl: 'https://example.com/a' });
+    });
+
+    await waitFor(() => expect(sentTypes).toContain('link.create'));
   });
 });

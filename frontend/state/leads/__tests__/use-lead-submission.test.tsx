@@ -95,7 +95,7 @@ describe('useLeadSubmission', () => {
     );
   });
 
-  it('queues rather than losing the submission when the request never reaches the server', async () => {
+  it('replays a failed online submission from the Outbox without waiting for a focus event', async () => {
     // `status` absent means the fetch threw before any HTTP status was seen.
     submitTrainingApplication.mockResolvedValue({ success: false, error: 'Failed to fetch' });
 
@@ -107,9 +107,14 @@ describe('useLeadSubmission', () => {
       outcome = await result.current.submit({ kind: 'training', value: VALUE });
     });
 
+    // The submission is durably queued and reported as such to the caller, then
+    // the queued write is itself a flush trigger — the replay does not wait for
+    // the next focus event.
     expect(outcome).toEqual({ status: 'queued' });
+    await waitFor(() => expect(sentTypes).toContain('training.submit'));
+
     const store = await LeadsLocalStore.open();
-    expect(await store.getOutbox()).toHaveLength(1);
+    await waitFor(async () => expect(await store.getOutbox()).toHaveLength(0));
     store.close();
   });
 
