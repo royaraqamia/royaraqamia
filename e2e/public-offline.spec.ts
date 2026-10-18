@@ -47,9 +47,11 @@ test('a visited public page paints from cache offline and shows its age', async 
   await expect(offlineIndicator).toContainText('نسخة محفوظة');
 
   // Rates are a live-fed snapshot (ADR-0031): the board is read-only offline, and
-  // nothing offers to refresh it. The page renders no refresh control at all today
-  // — `frontend/ui/rates/rates-refresh.tsx` exists but is not wired in — so what is
-  // held here is the absence of the affordance, not a disabled button.
+  // nothing offers to refresh it. The page renders no refresh control at all — by
+  // design, not by omission: refreshing is server-owned (the cron route plus
+  // refresh-on-read), so what is held here is the absence of the affordance, not a
+  // disabled button. The offline state itself is the shared ConnectivityIndicator
+  // asserted above.
   await expect(page.locator('#main-content').getByRole('button', { name: /تحديث/ })).toHaveCount(0);
 
   await context.close();
