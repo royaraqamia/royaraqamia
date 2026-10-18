@@ -55,3 +55,18 @@ describe('requestPersistentStorage', () => {
     await expect(requestPersistentStorage()).resolves.toBe(false);
   });
 });
+
+describe('requestPersistentStorageOnce', () => {
+  it('asks at most once per page session', async () => {
+    vi.resetModules();
+    const persist = vi.fn(async () => true);
+    setStorage({ persisted: vi.fn(async () => false), persist });
+
+    const { requestPersistentStorageOnce } = await import('../persistent-storage');
+
+    requestPersistentStorageOnce();
+    requestPersistentStorageOnce();
+
+    await vi.waitFor(() => expect(persist).toHaveBeenCalledTimes(1));
+  });
+});
