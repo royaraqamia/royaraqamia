@@ -1,0 +1,807 @@
+{
+  "source": "Tanzil Project (https://tanzil.net)",
+  "license": "Creative Commons Attribution 3.0",
+  "notice": "public/quran/NOTICE.txt",
+  "rivayah": "Hafs ʿan ʿAsim, Uthmani",
+  "ayahCount": 6236,
+  "surahs": [
+    {
+      "n": 1,
+      "name": "الفاتحة",
+      "ayahCount": 7,
+      "revelation": "Meccan",
+      "revelationOrder": 5
+    },
+    {
+      "n": 2,
+      "name": "البقرة",
+      "ayahCount": 286,
+      "revelation": "Medinan",
+      "revelationOrder": 87
+    },
+    {
+      "n": 3,
+      "name": "آل عمران",
+      "ayahCount": 200,
+      "revelation": "Medinan",
+      "revelationOrder": 89
+    },
+    {
+      "n": 4,
+      "name": "النساء",
+      "ayahCount": 176,
+      "revelation": "Medinan",
+      "revelationOrder": 92
+    },
+    {
+      "n": 5,
+      "name": "المائدة",
+      "ayahCount": 120,
+      "revelation": "Medinan",
+      "revelationOrder": 112
+    },
+    {
+      "n": 6,
+      "name": "الأنعام",
+      "ayahCount": 165,
+      "revelation": "Meccan",
+      "revelationOrder": 55
+    },
+    {
+      "n": 7,
+      "name": "الأعراف",
+      "ayahCount": 206,
+      "revelation": "Meccan",
+      "revelationOrder": 39
+    },
+    {
+      "n": 8,
+      "name": "الأنفال",
+      "ayahCount": 75,
+      "revelation": "Medinan",
+      "revelationOrder": 88
+    },
+    {
+      "n": 9,
+      "name": "التوبة",
+      "ayahCount": 129,
+      "revelation": "Medinan",
+      "revelationOrder": 113
+    },
+    {
+      "n": 10,
+      "name": "يونس",
+      "ayahCount": 109,
+      "revelation": "Meccan",
+      "revelationOrder": 51
+    },
+    {
+      "n": 11,
+      "name": "هود",
+      "ayahCount": 123,
+      "revelation": "Meccan",
+      "revelationOrder": 52
+    },
+    {
+      "n": 12,
+      "name": "يوسف",
+      "ayahCount": 111,
+      "revelation": "Meccan",
+      "revelationOrder": 53
+    },
+    {
+      "n": 13,
+      "name": "الرعد",
+      "ayahCount": 43,
+      "revelation": "Medinan",
+      "revelationOrder": 96
+    },
+    {
+      "n": 14,
+      "name": "ابراهيم",
+      "ayahCount": 52,
+      "revelation": "Meccan",
+      "revelationOrder": 72
+    },
+    {
+      "n": 15,
+      "name": "الحجر",
+      "ayahCount": 99,
+      "revelation": "Meccan",
+      "revelationOrder": 54
+    },
+    {
+      "n": 16,
+      "name": "النحل",
+      "ayahCount": 128,
+      "revelation": "Meccan",
+      "revelationOrder": 70
+    },
+    {
+      "n": 17,
+      "name": "الإسراء",
+      "ayahCount": 111,
+      "revelation": "Meccan",
+      "revelationOrder": 50
+    },
+    {
+      "n": 18,
+      "name": "الكهف",
+      "ayahCount": 110,
+      "revelation": "Meccan",
+      "revelationOrder": 69
+    },
+    {
+      "n": 19,
+      "name": "مريم",
+      "ayahCount": 98,
+      "revelation": "Meccan",
+      "revelationOrder": 44
+    },
+    {
+      "n": 20,
+      "name": "طه",
+      "ayahCount": 135,
+      "revelation": "Meccan",
+      "revelationOrder": 45
+    },
+    {
+      "n": 21,
+      "name": "الأنبياء",
+      "ayahCount": 112,
+      "revelation": "Meccan",
+      "revelationOrder": 73
+    },
+    {
+      "n": 22,
+      "name": "الحج",
+      "ayahCount": 78,
+      "revelation": "Medinan",
+      "revelationOrder": 103
+    },
+    {
+      "n": 23,
+      "name": "المؤمنون",
+      "ayahCount": 118,
+      "revelation": "Meccan",
+      "revelationOrder": 74
+    },
+    {
+      "n": 24,
+      "name": "النور",
+      "ayahCount": 64,
+      "revelation": "Medinan",
+      "revelationOrder": 102
+    },
+    {
+      "n": 25,
+      "name": "الفرقان",
+      "ayahCount": 77,
+      "revelation": "Meccan",
+      "revelationOrder": 42
+    },
+    {
+      "n": 26,
+      "name": "الشعراء",
+      "ayahCount": 227,
+      "revelation": "Meccan",
+      "revelationOrder": 47
+    },
+    {
+      "n": 27,
+      "name": "النمل",
+      "ayahCount": 93,
+      "revelation": "Meccan",
+      "revelationOrder": 48
+    },
+    {
+      "n": 28,
+      "name": "القصص",
+      "ayahCount": 88,
+      "revelation": "Meccan",
+      "revelationOrder": 49
+    },
+    {
+      "n": 29,
+      "name": "العنكبوت",
+      "ayahCount": 69,
+      "revelation": "Meccan",
+      "revelationOrder": 85
+    },
+    {
+      "n": 30,
+      "name": "الروم",
+      "ayahCount": 60,
+      "revelation": "Meccan",
+      "revelationOrder": 84
+    },
+    {
+      "n": 31,
+      "name": "لقمان",
+      "ayahCount": 34,
+      "revelation": "Meccan",
+      "revelationOrder": 57
+    },
+    {
+      "n": 32,
+      "name": "السجدة",
+      "ayahCount": 30,
+      "revelation": "Meccan",
+      "revelationOrder": 75
+    },
+    {
+      "n": 33,
+      "name": "الأحزاب",
+      "ayahCount": 73,
+      "revelation": "Medinan",
+      "revelationOrder": 90
+    },
+    {
+      "n": 34,
+      "name": "سبإ",
+      "ayahCount": 54,
+      "revelation": "Meccan",
+      "revelationOrder": 58
+    },
+    {
+      "n": 35,
+      "name": "فاطر",
+      "ayahCount": 45,
+      "revelation": "Meccan",
+      "revelationOrder": 43
+    },
+    {
+      "n": 36,
+      "name": "يس",
+      "ayahCount": 83,
+      "revelation": "Meccan",
+      "revelationOrder": 41
+    },
+    {
+      "n": 37,
+      "name": "الصافات",
+      "ayahCount": 182,
+      "revelation": "Meccan",
+      "revelationOrder": 56
+    },
+    {
+      "n": 38,
+      "name": "ص",
+      "ayahCount": 88,
+      "revelation": "Meccan",
+      "revelationOrder": 38
+    },
+    {
+      "n": 39,
+      "name": "الزمر",
+      "ayahCount": 75,
+      "revelation": "Meccan",
+      "revelationOrder": 59
+    },
+    {
+      "n": 40,
+      "name": "غافر",
+      "ayahCount": 85,
+      "revelation": "Meccan",
+      "revelationOrder": 60
+    },
+    {
+      "n": 41,
+      "name": "فصلت",
+      "ayahCount": 54,
+      "revelation": "Meccan",
+      "revelationOrder": 61
+    },
+    {
+      "n": 42,
+      "name": "الشورى",
+      "ayahCount": 53,
+      "revelation": "Meccan",
+      "revelationOrder": 62
+    },
+    {
+      "n": 43,
+      "name": "الزخرف",
+      "ayahCount": 89,
+      "revelation": "Meccan",
+      "revelationOrder": 63
+    },
+    {
+      "n": 44,
+      "name": "الدخان",
+      "ayahCount": 59,
+      "revelation": "Meccan",
+      "revelationOrder": 64
+    },
+    {
+      "n": 45,
+      "name": "الجاثية",
+      "ayahCount": 37,
+      "revelation": "Meccan",
+      "revelationOrder": 65
+    },
+    {
+      "n": 46,
+      "name": "الأحقاف",
+      "ayahCount": 35,
+      "revelation": "Meccan",
+      "revelationOrder": 66
+    },
+    {
+      "n": 47,
+      "name": "محمد",
+      "ayahCount": 38,
+      "revelation": "Medinan",
+      "revelationOrder": 95
+    },
+    {
+      "n": 48,
+      "name": "الفتح",
+      "ayahCount": 29,
+      "revelation": "Medinan",
+      "revelationOrder": 111
+    },
+    {
+      "n": 49,
+      "name": "الحجرات",
+      "ayahCount": 18,
+      "revelation": "Medinan",
+      "revelationOrder": 106
+    },
+    {
+      "n": 50,
+      "name": "ق",
+      "ayahCount": 45,
+      "revelation": "Meccan",
+      "revelationOrder": 34
+    },
+    {
+      "n": 51,
+      "name": "الذاريات",
+      "ayahCount": 60,
+      "revelation": "Meccan",
+      "revelationOrder": 67
+    },
+    {
+      "n": 52,
+      "name": "الطور",
+      "ayahCount": 49,
+      "revelation": "Meccan",
+      "revelationOrder": 76
+    },
+    {
+      "n": 53,
+      "name": "النجم",
+      "ayahCount": 62,
+      "revelation": "Meccan",
+      "revelationOrder": 23
+    },
+    {
+      "n": 54,
+      "name": "القمر",
+      "ayahCount": 55,
+      "revelation": "Meccan",
+      "revelationOrder": 37
+    },
+    {
+      "n": 55,
+      "name": "الرحمن",
+      "ayahCount": 78,
+      "revelation": "Medinan",
+      "revelationOrder": 97
+    },
+    {
+      "n": 56,
+      "name": "الواقعة",
+      "ayahCount": 96,
+      "revelation": "Meccan",
+      "revelationOrder": 46
+    },
+    {
+      "n": 57,
+      "name": "الحديد",
+      "ayahCount": 29,
+      "revelation": "Medinan",
+      "revelationOrder": 94
+    },
+    {
+      "n": 58,
+      "name": "المجادلة",
+      "ayahCount": 22,
+      "revelation": "Medinan",
+      "revelationOrder": 105
+    },
+    {
+      "n": 59,
+      "name": "الحشر",
+      "ayahCount": 24,
+      "revelation": "Medinan",
+      "revelationOrder": 101
+    },
+    {
+      "n": 60,
+      "name": "الممتحنة",
+      "ayahCount": 13,
+      "revelation": "Medinan",
+      "revelationOrder": 91
+    },
+    {
+      "n": 61,
+      "name": "الصف",
+      "ayahCount": 14,
+      "revelation": "Medinan",
+      "revelationOrder": 109
+    },
+    {
+      "n": 62,
+      "name": "الجمعة",
+      "ayahCount": 11,
+      "revelation": "Medinan",
+      "revelationOrder": 110
+    },
+    {
+      "n": 63,
+      "name": "المنافقون",
+      "ayahCount": 11,
+      "revelation": "Medinan",
+      "revelationOrder": 104
+    },
+    {
+      "n": 64,
+      "name": "التغابن",
+      "ayahCount": 18,
+      "revelation": "Medinan",
+      "revelationOrder": 108
+    },
+    {
+      "n": 65,
+      "name": "الطلاق",
+      "ayahCount": 12,
+      "revelation": "Medinan",
+      "revelationOrder": 99
+    },
+    {
+      "n": 66,
+      "name": "التحريم",
+      "ayahCount": 12,
+      "revelation": "Medinan",
+      "revelationOrder": 107
+    },
+    {
+      "n": 67,
+      "name": "الملك",
+      "ayahCount": 30,
+      "revelation": "Meccan",
+      "revelationOrder": 77
+    },
+    {
+      "n": 68,
+      "name": "القلم",
+      "ayahCount": 52,
+      "revelation": "Meccan",
+      "revelationOrder": 2
+    },
+    {
+      "n": 69,
+      "name": "الحاقة",
+      "ayahCount": 52,
+      "revelation": "Meccan",
+      "revelationOrder": 78
+    },
+    {
+      "n": 70,
+      "name": "المعارج",
+      "ayahCount": 44,
+      "revelation": "Meccan",
+      "revelationOrder": 79
+    },
+    {
+      "n": 71,
+      "name": "نوح",
+      "ayahCount": 28,
+      "revelation": "Meccan",
+      "revelationOrder": 71
+    },
+    {
+      "n": 72,
+      "name": "الجن",
+      "ayahCount": 28,
+      "revelation": "Meccan",
+      "revelationOrder": 40
+    },
+    {
+      "n": 73,
+      "name": "المزمل",
+      "ayahCount": 20,
+      "revelation": "Meccan",
+      "revelationOrder": 3
+    },
+    {
+      "n": 74,
+      "name": "المدثر",
+      "ayahCount": 56,
+      "revelation": "Meccan",
+      "revelationOrder": 4
+    },
+    {
+      "n": 75,
+      "name": "القيامة",
+      "ayahCount": 40,
+      "revelation": "Meccan",
+      "revelationOrder": 31
+    },
+    {
+      "n": 76,
+      "name": "الانسان",
+      "ayahCount": 31,
+      "revelation": "Medinan",
+      "revelationOrder": 98
+    },
+    {
+      "n": 77,
+      "name": "المرسلات",
+      "ayahCount": 50,
+      "revelation": "Meccan",
+      "revelationOrder": 33
+    },
+    {
+      "n": 78,
+      "name": "النبإ",
+      "ayahCount": 40,
+      "revelation": "Meccan",
+      "revelationOrder": 80
+    },
+    {
+      "n": 79,
+      "name": "النازعات",
+      "ayahCount": 46,
+      "revelation": "Meccan",
+      "revelationOrder": 81
+    },
+    {
+      "n": 80,
+      "name": "عبس",
+      "ayahCount": 42,
+      "revelation": "Meccan",
+      "revelationOrder": 24
+    },
+    {
+      "n": 81,
+      "name": "التكوير",
+      "ayahCount": 29,
+      "revelation": "Meccan",
+      "revelationOrder": 7
+    },
+    {
+      "n": 82,
+      "name": "الإنفطار",
+      "ayahCount": 19,
+      "revelation": "Meccan",
+      "revelationOrder": 82
+    },
+    {
+      "n": 83,
+      "name": "المطففين",
+      "ayahCount": 36,
+      "revelation": "Meccan",
+      "revelationOrder": 86
+    },
+    {
+      "n": 84,
+      "name": "الإنشقاق",
+      "ayahCount": 25,
+      "revelation": "Meccan",
+      "revelationOrder": 83
+    },
+    {
+      "n": 85,
+      "name": "البروج",
+      "ayahCount": 22,
+      "revelation": "Meccan",
+      "revelationOrder": 27
+    },
+    {
+      "n": 86,
+      "name": "الطارق",
+      "ayahCount": 17,
+      "revelation": "Meccan",
+      "revelationOrder": 36
+    },
+    {
+      "n": 87,
+      "name": "الأعلى",
+      "ayahCount": 19,
+      "revelation": "Meccan",
+      "revelationOrder": 8
+    },
+    {
+      "n": 88,
+      "name": "الغاشية",
+      "ayahCount": 26,
+      "revelation": "Meccan",
+      "revelationOrder": 68
+    },
+    {
+      "n": 89,
+      "name": "الفجر",
+      "ayahCount": 30,
+      "revelation": "Meccan",
+      "revelationOrder": 10
+    },
+    {
+      "n": 90,
+      "name": "البلد",
+      "ayahCount": 20,
+      "revelation": "Meccan",
+      "revelationOrder": 35
+    },
+    {
+      "n": 91,
+      "name": "الشمس",
+      "ayahCount": 15,
+      "revelation": "Meccan",
+      "revelationOrder": 26
+    },
+    {
+      "n": 92,
+      "name": "الليل",
+      "ayahCount": 21,
+      "revelation": "Meccan",
+      "revelationOrder": 9
+    },
+    {
+      "n": 93,
+      "name": "الضحى",
+      "ayahCount": 11,
+      "revelation": "Meccan",
+      "revelationOrder": 11
+    },
+    {
+      "n": 94,
+      "name": "الشرح",
+      "ayahCount": 8,
+      "revelation": "Meccan",
+      "revelationOrder": 12
+    },
+    {
+      "n": 95,
+      "name": "التين",
+      "ayahCount": 8,
+      "revelation": "Meccan",
+      "revelationOrder": 28
+    },
+    {
+      "n": 96,
+      "name": "العلق",
+      "ayahCount": 19,
+      "revelation": "Meccan",
+      "revelationOrder": 1
+    },
+    {
+      "n": 97,
+      "name": "القدر",
+      "ayahCount": 5,
+      "revelation": "Meccan",
+      "revelationOrder": 25
+    },
+    {
+      "n": 98,
+      "name": "البينة",
+      "ayahCount": 8,
+      "revelation": "Medinan",
+      "revelationOrder": 100
+    },
+    {
+      "n": 99,
+      "name": "الزلزلة",
+      "ayahCount": 8,
+      "revelation": "Medinan",
+      "revelationOrder": 93
+    },
+    {
+      "n": 100,
+      "name": "العاديات",
+      "ayahCount": 11,
+      "revelation": "Meccan",
+      "revelationOrder": 14
+    },
+    {
+      "n": 101,
+      "name": "القارعة",
+      "ayahCount": 11,
+      "revelation": "Meccan",
+      "revelationOrder": 30
+    },
+    {
+      "n": 102,
+      "name": "التكاثر",
+      "ayahCount": 8,
+      "revelation": "Meccan",
+      "revelationOrder": 16
+    },
+    {
+      "n": 103,
+      "name": "العصر",
+      "ayahCount": 3,
+      "revelation": "Meccan",
+      "revelationOrder": 13
+    },
+    {
+      "n": 104,
+      "name": "الهمزة",
+      "ayahCount": 9,
+      "revelation": "Meccan",
+      "revelationOrder": 32
+    },
+    {
+      "n": 105,
+      "name": "الفيل",
+      "ayahCount": 5,
+      "revelation": "Meccan",
+      "revelationOrder": 19
+    },
+    {
+      "n": 106,
+      "name": "قريش",
+      "ayahCount": 4,
+      "revelation": "Meccan",
+      "revelationOrder": 29
+    },
+    {
+      "n": 107,
+      "name": "الماعون",
+      "ayahCount": 7,
+      "revelation": "Meccan",
+      "revelationOrder": 17
+    },
+    {
+      "n": 108,
+      "name": "الكوثر",
+      "ayahCount": 3,
+      "revelation": "Meccan",
+      "revelationOrder": 15
+    },
+    {
+      "n": 109,
+      "name": "الكافرون",
+      "ayahCount": 6,
+      "revelation": "Meccan",
+      "revelationOrder": 18
+    },
+    {
+      "n": 110,
+      "name": "النصر",
+      "ayahCount": 3,
+      "revelation": "Medinan",
+      "revelationOrder": 114
+    },
+    {
+      "n": 111,
+      "name": "المسد",
+      "ayahCount": 5,
+      "revelation": "Meccan",
+      "revelationOrder": 6
+    },
+    {
+      "n": 112,
+      "name": "الإخلاص",
+      "ayahCount": 4,
+      "revelation": "Meccan",
+      "revelationOrder": 22
+    },
+    {
+      "n": 113,
+      "name": "الفلق",
+      "ayahCount": 5,
+      "revelation": "Meccan",
+      "revelationOrder": 20
+    },
+    {
+      "n": 114,
+      "name": "الناس",
+      "ayahCount": 6,
+      "revelation": "Meccan",
+      "revelationOrder": 21
+    }
+  ]
+}
