@@ -9,8 +9,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return toNextResponse(result);
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const result = await deletePost(id);
+  // An Outbox replay carries the logical delete time; an online delete sends
+  // nothing and the delete is stamped with the server clock.
+  const body = await req.json().catch(() => null);
+  const result = await deletePost(id, body);
   return toNextResponse(result);
 }

@@ -77,16 +77,28 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
   );
 }
 
-export async function deletePost(id: string): Promise<HttpResult> {
+export async function deletePost(
+  id: string,
+  body?: Record<string, unknown> | null
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { repository } = createBlogpressPostsModule(supabase);
-      const { slug } = await repository.deletePost(id, userId);
+      // The Outbox delete intent carries the logical write time so the
+      // tombstone keeps write order (ADR-0029); an online delete has none and
+      // the repository stamps it with now.
+      const updatedAt = typeof body?.updatedAt === 'string' ? body.updatedAt : undefined;
+      const { slug } = await repository.deletePost(id, userId, updatedAt);
 
       return jsonResult(
         200,
         { success: true },
-        { revalidate: postRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
+        {
+          // A replay of an already-tombstoned row resolves without a slug;
+          // there is nothing left to revalidate then.
+          revalidate: slug ? postRevalidation(slug) : [],
+          tags: COMMUNITY_MUTATION_TAGS,
+        }
       );
     },
     { mapError: messageError(500, 'فشل حذف المنشور') }

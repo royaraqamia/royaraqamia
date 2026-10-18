@@ -28,6 +28,7 @@ function createClient(rows: unknown[], error: unknown = null) {
       orFilters.push(filter);
       return builder;
     }),
+    is: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     in: vi.fn(() => builder),
     order: vi.fn((column: string) => {

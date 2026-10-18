@@ -7,6 +7,7 @@ const mockPosts = {
 const mockRepository = {
   createPost: vi.fn(),
   updatePost: vi.fn(),
+  deletePost: vi.fn(),
   listTagsByAuthor: vi.fn(),
 };
 
@@ -27,7 +28,13 @@ vi.mock('@/backend/config/blogpress', () => ({
   createBlogpressMediaService: () => ({}),
 }));
 
-import { createPost, listBlogTags, publishPost, updatePost } from '@/backend/controllers/blogpress';
+import {
+  createPost,
+  deletePost,
+  listBlogTags,
+  publishPost,
+  updatePost,
+} from '@/backend/controllers/blogpress';
 
 describe('blogpress controller', () => {
   beforeEach(() => {
@@ -38,6 +45,7 @@ describe('blogpress controller', () => {
     });
     mockRepository.createPost.mockResolvedValue({ id: 'p-1' });
     mockRepository.updatePost.mockResolvedValue(undefined);
+    mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
   });
@@ -86,5 +94,38 @@ describe('blogpress controller', () => {
     const result = await listBlogTags();
 
     expect(result).toEqual(expect.objectContaining({ status: 500, body: { error: 'db down' } }));
+  });
+
+  it('threads the Outbox write time into the delete so the tombstone keeps order', async () => {
+    const result = await deletePost('p-1', { updatedAt: '2026-10-18T09:00:00.000Z' });
+
+    expect(mockRepository.deletePost).toHaveBeenCalledWith(
+      'p-1',
+      'u-1',
+      '2026-10-18T09:00:00.000Z'
+    );
+    expect(result).toMatchObject({
+      status: 200,
+      body: { success: true },
+      revalidate: [{ path: '/blogpress' }, { path: '/community/hello' }, { path: '/community' }],
+    });
+  });
+
+  it('replays an already-gone delete as success without a revalidation target', async () => {
+    mockRepository.deletePost.mockResolvedValue({ slug: null });
+
+    const result = await deletePost('p-1', { updatedAt: '2026-10-18T09:00:00.000Z' });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true }, revalidate: [] });
+  });
+
+  it('maps a delete failure to 500', async () => {
+    mockRepository.deletePost.mockRejectedValue(new Error('فشل حذف المنشور'));
+
+    const result = await deletePost('p-1', null);
+
+    expect(result).toEqual(
+      expect.objectContaining({ status: 500, body: { error: 'فشل حذف المنشور' } })
+    );
   });
 });

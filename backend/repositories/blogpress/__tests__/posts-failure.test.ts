@@ -17,7 +17,7 @@ vi.mock('@sentry/nextjs', () => ({ captureException }));
 function makeClient(result: unknown, rpcResult: unknown = { error: null }) {
   const builder: Record<string, unknown> = {};
   const chain = () => builder;
-  for (const method of ['select', 'eq', 'or', 'order', 'range', 'in']) {
+  for (const method of ['select', 'eq', 'or', 'order', 'range', 'in', 'is']) {
     builder[method] = vi.fn(chain);
   }
   builder.single = vi.fn(() => Promise.resolve(result));

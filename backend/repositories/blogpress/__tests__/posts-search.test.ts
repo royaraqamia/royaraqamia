@@ -11,6 +11,7 @@ function createClient() {
       if (filter.includes('ilike')) searchFilters.push(filter);
       return builder;
     }),
+    is: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     order: vi.fn(() => builder),
     range: vi.fn(() => ({ data: [], count: 0 })),
