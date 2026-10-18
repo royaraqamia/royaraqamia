@@ -244,6 +244,63 @@ of whether the feed is healthy, and the page falls back to the last good Snapsho
 fails.
 _Avoid_: Sync log, job run
 
+### Quran
+
+**Quran Reader**:
+The public tool that lets a reader read the Quran Surah by Surah and Ayah by Ayah, listen to a
+Recitation, read a Tafsir beside the text, and keep their place. Reading is free and anonymous;
+signing in only carries a reader's place to their other devices. A traffic utility, like the
+Scanner — not a paid offering.
+_Sold as_: القرآن الكريم
+_Avoid_: Quran app, Koran, mushaf app, Quran viewer
+
+**Surah**:
+One of the Quran's 114 chapters, identified by its number and its Arabic name. The unit a reader
+browses by.
+_Avoid_: Chapter, section, part, juz
+
+**Ayah**:
+One verse of a Surah, and the smallest addressable unit of the text — what a Reading position
+points at and what a Recitation is played against.
+_Avoid_: Verse, line, sentence
+
+**Riwayah**:
+A transmission of the Quranic reading, named for the chain it came through. The Quran Reader
+offers exactly one — Hafs ʿan ʿAsim — so the term names the choice rather than an option a reader
+picks.
+_Avoid_: Reading, version, edition, recension, qiraat
+
+**Reciter**:
+The person whose recorded voice a Recitation is.
+_Avoid_: Reader, shaykh, artist, performer
+
+**Recitation**:
+One Surah as recorded by one Reciter, in a single uninterrupted track — the unit a reader plays,
+and the only asset fetched from outside our own origin.
+_Avoid_: Audio, track, mp3, tilawa, sound file
+
+**Reading position**:
+The single Ayah a reader last reached, which the Quran Reader resumes from. A reader has one, not
+one per Surah, and it keeps no history of where they have been.
+_Avoid_: Last read, progress, cursor, bookmark
+
+**Bookmark**:
+A place in the text a reader saved deliberately so they can return to it. Distinct from a Reading
+position, which moves on its own as they read and is overwritten every time.
+_Avoid_: Favourite, mark, flag, saved verse, starred
+
+**Tafsir**:
+A scholarly explanation of the text, read beside an Ayah. The Quran Reader offers one —
+التفسير المختصر — and a Tafsir is deliberately not a Translation: the site serves the text in
+Arabic only.
+_Sold as_: التفسير المختصر
+_Avoid_: Commentary, exegesis, translation, footnote, explanation
+
+**Mushaf View**:
+The Quran Reader's alternate rendering of the text as it appears on a printed page, preserving the
+page and line breaks of the Madani Mushaf. A view over the same text, not a second copy of it.
+_Avoid_: Page mode, print layout, book view, مصحف
+
 ### Offline
 
 **Offline-first**:
