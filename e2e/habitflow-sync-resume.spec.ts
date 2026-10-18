@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoUnderWorkerControl } from './worker-control';
 /**
  * The sync-resume proof for #164: a write made with the network off lands in the
  * Local Store, and when the connection returns the Outbox replays it so the
@@ -39,7 +40,7 @@ test('an offline habit reaches the server after reconnect', async ({ browser, ba
   const name = `E2E-${Date.now()}`;
 
   const page = await context.newPage();
-  await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/habitflow`);
   await expect(page.locator('#btn-create-habit')).toBeVisible();
 
   // Radio off: the write must land in the Local Store and render from there.

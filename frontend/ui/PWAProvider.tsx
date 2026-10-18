@@ -46,8 +46,10 @@ export function PWAProvider({ children }: PWAProviderProps) {
         .register(SW_PATH, {
           scope: '/',
           // Never satisfy the worker script or its imports (`sw-version.js`,
-          // `sw-push-config.js`) from the HTTP cache: a stale version script
-          // would pin the asset version and hand back the previous icons.
+          // `sw-push-config.js`, `sw-outbox.js`) from the HTTP cache: a stale
+          // version script would pin the asset version and hand back the
+          // previous icons, and a stale drain would replay the Outbox with old
+          // endpoints.
           updateViaCache: 'none',
         })
         .then((registration) => registration.update())

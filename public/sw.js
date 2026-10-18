@@ -1,6 +1,7 @@
 try { importScripts('/sw-version.js'); } catch { self.CACHE_VERSION = 'royaraqamia-dev'; }
 try { importScripts('/sw-push-config.js'); } catch { self.PUSH_CONFIG = null; }
 try { importScripts('/sw-routing.js'); } catch { self.SWRouting = self.SWRouting || null; }
+try { importScripts('/sw-outbox.js'); } catch { self.SWOutbox = self.SWOutbox || null; }
 const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
@@ -205,6 +206,32 @@ self.addEventListener('message', (event) => {
       await cache.addAll(urls);
     }
   })());
+});
+
+/**
+ * Web Background Sync (ADR-0058).
+ *
+ * The page registers this tag when its own flush could not finish — a write made
+ * offline, or one the server refused — and the browser fires this event when the
+ * network comes back, usually with no page open at all. That case is the point:
+ * it is the only one a page cannot cover for itself. The drain lives in the
+ * generated `sw-outbox.js`, so the worker replays through the same engine, the
+ * same transports and the same Outbox access the page uses, and takes the same
+ * Web Lock an open tab would.
+ */
+self.addEventListener('sync', (event) => {
+  const outbox = self.SWOutbox;
+  if (!outbox || event.tag !== outbox.tag) return;
+
+  event.waitUntil(
+    outbox.drain().catch((error) => {
+      console.log('[sw] outbox drain failed', String(error));
+      // Rethrow: a rejected event leaves the registration pending, so the
+      // browser comes back for whatever is still queued. Resolving would retire
+      // it, and with no page open nothing else would come back at all.
+      throw error;
+    })
+  );
 });
 
 function urlBase64ToUint8Array(base64String) {

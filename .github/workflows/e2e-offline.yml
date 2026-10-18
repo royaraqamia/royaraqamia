@@ -30,6 +30,11 @@ name: 'E2E: Offline'
 # parallel the specs rate-limit each other, and the failure looks like an
 # unrelated assertion at the sign-in step.
 #
+# Background Sync itself is not what this job proves: Chromium gives no way to
+# fire a `sync` event on demand, so the drain is unit-tested (its identity rules,
+# the worker's listener) and what runs here is the fallback — the flush a page
+# does while it is open. See `docs/specs/offline-first.md` for that split.
+#
 # NOTE: a path-filtered workflow reports no check when nothing matches, so this
 # must not be made a required status check on `main`.
 
@@ -43,10 +48,18 @@ on:
       - 'frontend/state/**'
       - 'frontend/api/spendtrack/**'
       - 'frontend/api/blogpress/**'
+      - 'frontend/api/habitflow/**'
+      - 'frontend/api/leads/**'
+      - 'frontend/api/sync-products.ts'
+      - 'frontend/api/sw-outbox.ts'
+      - 'backend/controllers/session.ts'
+      - 'app/auth/api/session/**'
+      - 'scripts/build-sw-outbox.mjs'
       - 'frontend/ui/shared/lazy-chunk.ts'
       - 'frontend/ui/linksnap/**'
       - 'app/blogpress/**'
       - 'e2e/setup-test-user.ts'
+      - 'e2e/worker-control.ts'
       - 'e2e/public-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'

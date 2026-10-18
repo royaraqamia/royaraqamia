@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext } from '@playwright/test';
+import { gotoUnderWorkerControl } from './worker-control';
 /**
  * Offline drafts for BlogPress (#168): a draft body renders and edits from the
  * Local Store with the radio off, the edit queues in the Outbox, and it replays
@@ -51,9 +52,7 @@ test('an offline draft edit reaches the server after reconnect', async ({ browse
 
   const page = await context.newPage();
   // Open online so the app chunks and the seed are cached for the offline pass.
-  await page.goto(`${baseURL}/blogpress/editor/${id}`, { waitUntil: 'domcontentloaded' });
-  await page.locator('[data-blogpress-ready="true"]').waitFor();
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/blogpress/editor/${id}`);
   await page.locator('[data-blogpress-ready="true"]').waitFor();
 
   // Publish is online-gated: with the radio off it shows a needs-connection state.

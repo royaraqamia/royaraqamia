@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoUnderWorkerControl } from './worker-control';
 /**
  * Offline read/write/resume for SpendTrack (#166): an expense created with the
  * network off lands in the Local Store, renders from there, and the Outbox
@@ -39,17 +40,12 @@ test('an offline expense reaches the server after reconnect', async ({ browser, 
   const description = `E2E-${Date.now()}`;
 
   const page = await context.newPage();
-  await page.goto(`${baseURL}/spendtrack`, { waitUntil: 'domcontentloaded' });
+  await gotoUnderWorkerControl(page, `${baseURL}/spendtrack`);
 
   const addButton = page.getByRole('button', { name: 'إضافة مصروف' }).first();
   await expect(addButton).toBeVisible();
   // Wait until the Local Store is open before writing, so the write is queued
   // in the Outbox rather than falling back to the (offline) network.
-  await expect(page.locator('[data-spendtrack-ready="true"]')).toBeAttached();
-
-  // Reload once online so the service worker takes control and caches the app
-  // chunks; an offline lazy-chunk request in dev would otherwise crash the page.
-  await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-spendtrack-ready="true"]')).toBeAttached();
 
   // Warm the lazy chunks the dialog needs while still online.
