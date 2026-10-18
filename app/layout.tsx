@@ -22,7 +22,7 @@ import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
-import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
+import { amiriQuran, ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 
 const designTokensCss = (() => {
@@ -143,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="ar"
       dir={DIRECTION}
-      className={`dark ${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}
+      className={`dark ${ibmPlexSansArabic.variable} ${arefRuqaa.variable} ${amiriQuran.variable}`}
     >
       <head>
         {designTokensCss ? (

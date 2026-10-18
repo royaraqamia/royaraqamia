@@ -17,6 +17,10 @@
  * cache-name bump, never an admin action (ADR-0057), and re-running this script
  * is expected to reproduce it byte for byte.
  *
+ * Everything lands one directory down — `meta/` and `surah/` — never directly
+ * under `public/quran/`: the reader owns the `/quran/[surah]` route, so a bare
+ * `/quran/<file>` would be shadowed by it rather than served from `public/`.
+ *
  * Usage: node scripts/vendor-quran.mjs
  */
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -163,14 +167,15 @@ const surahs = reconcile(textSuras, metadataSuras);
 const copyright = notice(textExport);
 
 await mkdir(join(OUT_DIR, 'surah'), { recursive: true });
-await writeFile(join(OUT_DIR, 'NOTICE.txt'), copyright, 'utf8');
+await mkdir(join(OUT_DIR, 'meta'), { recursive: true });
+await writeFile(join(OUT_DIR, 'meta', 'NOTICE.txt'), copyright, 'utf8');
 await writeFile(
-  join(OUT_DIR, 'index.json'),
+  join(OUT_DIR, 'meta', 'index.json'),
   `${JSON.stringify(
     {
       source: 'Tanzil Project (https://tanzil.net)',
       license: 'Creative Commons Attribution 3.0',
-      notice: 'public/quran/NOTICE.txt',
+      notice: 'public/quran/meta/NOTICE.txt',
       rivayah: 'Hafs ʿan ʿAsim, Uthmani',
       ayahCount: surahs.reduce((total, sura) => total + sura.ayahCount, 0),
       surahs,

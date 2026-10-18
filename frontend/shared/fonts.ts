@@ -32,3 +32,22 @@ export const arefRuqaa = localFont({
   display: 'swap',
   adjustFontFallback: 'Arial',
 });
+
+/**
+ * The Quran text's own face. Amiri Quran is drawn for Uthmani script — the
+ * Quranic marks and the shapes of the ayat are the reason it exists — so it is
+ * used for the text and not for the surrounding chrome. SIL OFL 1.1; the licence
+ * ships beside it at `public/fonts/Amiri Quran/OFL.txt`.
+ */
+export const amiriQuran = localFont({
+  src: [
+    {
+      path: '../../public/fonts/Amiri Quran/AmiriQuran-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-quran',
+  display: 'swap',
+  adjustFontFallback: 'Arial',
+});

@@ -1,0 +1,28 @@
+import type { Metadata } from 'next';
+import { loadQuranIndex } from '@/backend/loaders/quran';
+import { QuranIndexPage } from '@/frontend/ui/quran/quran-index';
+
+// The text is vendored, so there is no server surface here: every sura is
+// rendered at build time and this route costs only static bytes (ADR-0057).
+export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: 'القرآن الكريم',
+  description:
+    'اقرأ القرآن الكريم كاملًا برواية حفصٍ عن عاصم، سورةً سورة، مع عدد الآيات ومكِّيَّة السُّورة أو مدنيَّتها. يعمل دون اتِّصال بالإنترنت بعد أوَّل زيارة.',
+  alternates: { canonical: '/quran' },
+  openGraph: {
+    title: 'القرآن الكريم',
+    description: 'اقرأ القرآن الكريم كاملًا برواية حفصٍ عن عاصم، سورةً سورة.',
+    url: '/quran',
+    siteName: 'رؤيَة رقَميَّة',
+    locale: 'ar_SY',
+    type: 'website',
+  },
+  twitter: { card: 'summary' },
+};
+
+export default async function QuranPage() {
+  const index = await loadQuranIndex();
+  return <QuranIndexPage index={index} />;
+}

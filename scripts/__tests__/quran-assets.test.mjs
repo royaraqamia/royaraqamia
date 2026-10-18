@@ -23,7 +23,7 @@ const DIR = resolve(ROOT, 'public', 'quran');
 const read = (path) => readFileSync(resolve(DIR, path), 'utf8');
 const readJson = (path) => JSON.parse(read(path));
 
-const index = readJson('index.json');
+const index = readJson('meta/index.json');
 const surahFiles = index.surahs.map((surah) =>
   readJson(`surah/${String(surah.n).padStart(3, '0')}.json`)
 );
@@ -39,8 +39,8 @@ describe('the vendored Quran text', () => {
   it('carries its source and licence', () => {
     expect(index.source).toContain('Tanzil');
     expect(index.license).toBe('Creative Commons Attribution 3.0');
-    expect(read('NOTICE.txt')).toContain('Creative Commons Attribution 3.0');
-    expect(read('NOTICE.txt')).toContain('CHANGING IT IS NOT ALLOWED');
+    expect(read('meta/NOTICE.txt')).toContain('Creative Commons Attribution 3.0');
+    expect(read('meta/NOTICE.txt')).toContain('CHANGING IT IS NOT ALLOWED');
   });
 
   it('is the whole text: 114 suras and 6236 ayat', () => {
