@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.113.1] - 2026-10-18
+
+### Changed
+- share the Outbox access and keep React out of the transports (#340)
+
 ## [1.113.0] - 2026-10-18
 
 ### Added
