@@ -1798,6 +1798,40 @@ export type Database = {
           user_id: string;
         }[];
       };
+      upsert_post: {
+        Args: {
+          p_author_id: string;
+          p_client_id: string;
+          p_content: string | null;
+          p_cover_image: string | null;
+          p_id: string;
+          p_meta_desc: string | null;
+          p_meta_title: string | null;
+          p_reading_time_minutes: number;
+          p_slug: string;
+          p_updated_at: string;
+        };
+        Returns: {
+          author_id: string;
+          client_id: string | null;
+          community_visible: boolean;
+          content: string | null;
+          cover_image: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          featured: boolean;
+          id: string;
+          meta_desc: string | null;
+          meta_title: string | null;
+          publish_at: string | null;
+          published_at: string | null;
+          reading_time_minutes: number;
+          slug: string;
+          status: Database['public']['Enums']['post_status'];
+          updated_at: string;
+          view_count: number;
+        }[];
+      };
       upsert_recurring_expense: {
         Args: {
           p_active: boolean;

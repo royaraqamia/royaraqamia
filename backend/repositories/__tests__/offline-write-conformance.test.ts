@@ -12,7 +12,8 @@ import { describe, it, expect } from 'vitest';
  *   2. No camelCase domain field spread into a DB update payload: PostgREST
  *      rejects unknown columns (PGRST204) and the sync engine then marks the
  *      write a permanent failure.
- *   3. Creates upsert on `(user_id, client_id)` so a replayed write is
+ *   3. Creates upsert on the client-supplied identity — `(user_id, client_id)`,
+ *      or `(author_id, client_id)` for BlogPress posts — so a replayed write is
  *      idempotent instead of a duplicate.
  *
  * This is a source tripwire, not a proof. Adding a product means appending its
@@ -65,18 +66,16 @@ describe('offline write conformance (ADR-0029)', () => {
     }
   });
 
-  it('every client-id-bearing create upserts idempotently', () => {
+  it('every client-id-bearing create routes through the LWW upsert function', () => {
     for (const file of OFFLINE_REPOSITORIES) {
       const source = read(file);
       if (!/clientId|client_id/.test(source)) continue;
-      // The owned creates route through a `SECURITY INVOKER` LWW upsert
-      // function (`rpc('upsert_*')`) so a replayed create cannot clobber a
-      // newer edit (ADR-0033). BlogPress posts still key ownership on
-      // `author_id` and let the client mint the primary key, so they upsert on
-      // `id` directly at the Data API.
-      expect(source, file).toMatch(
-        /onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'|rpc\(\s*'upsert_/
-      );
+      // The owned creates go through a `SECURITY INVOKER` LWW upsert function
+      // (`rpc('upsert_*')`) keyed on the client-supplied identity, so a replayed
+      // create cannot clobber a newer edit (ADR-0033). A Data API upsert is
+      // idempotent but carries no conflict predicate, so it is not accepted:
+      // BlogPress posts upserted on `id` that way and were the bug behind this.
+      expect(source, file).toMatch(/rpc\(\s*'upsert_/);
     }
   });
 });
