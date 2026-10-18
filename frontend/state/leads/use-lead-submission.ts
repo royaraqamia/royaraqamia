@@ -18,6 +18,7 @@ import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import { logger } from '@/frontend/shared/logger';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 const LEADS_SYNC_LOCK = 'leads-sync';
 const LEADS_SYNC_CHANNEL = 'leads-sync';
@@ -118,6 +119,7 @@ export function useLeadSubmission(): LeadSubmissionState {
         // A queued write is itself a flush trigger while online, so a submission
         // reaches the server promptly instead of waiting for a focus event.
         const unsubscribe = store.subscribeWrites(() => {
+          requestPersistentStorageOnce();
           void refreshEntries(store);
           void engineRef.current?.flush();
         });

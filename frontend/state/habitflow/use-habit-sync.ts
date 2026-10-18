@@ -5,6 +5,7 @@ import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport
 import { ApiClient } from '@/frontend/api/habitflow/habit-api';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { logger } from '@/frontend/shared/logger';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 export interface HabitSyncState extends SyncStatus {
   /** Whether the browser currently reports a connection (drives the pill). */
@@ -78,6 +79,7 @@ export function useHabitSync(
     // A completed local write is itself a flush trigger while online, so a
     // change reaches the server promptly instead of waiting for a focus event.
     const unsubscribe = store.subscribeWrites(() => {
+      requestPersistentStorageOnce();
       void refresh();
       void engineRef.current?.flush();
     });

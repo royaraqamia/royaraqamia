@@ -11,6 +11,7 @@ import {
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 export interface BlogpressSyncState extends SyncStatus {
   /** Whether the browser currently reports a connection (drives the pill/gate). */
@@ -134,7 +135,10 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
     });
     // A completed local save is itself a flush trigger while online, so an edit
     // reaches the server promptly instead of waiting for the next focus event.
-    const unsubscribeWrites = store.subscribeWrites(() => void engine.flush());
+    const unsubscribeWrites = store.subscribeWrites(() => {
+      requestPersistentStorageOnce();
+      void engine.flush();
+    });
     void runSync();
 
     return () => {

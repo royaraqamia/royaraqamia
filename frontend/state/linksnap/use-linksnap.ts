@@ -13,6 +13,7 @@ import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-tr
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 const LINKSNAP_SYNC_LOCK = 'linksnap-sync';
 const LINKSNAP_SYNC_CHANNEL = 'linksnap-sync';
@@ -142,6 +143,7 @@ export function useLinksnap({
         // A completed local write is itself a flush trigger while online, so a
         // change reaches the server promptly instead of waiting for a focus event.
         store.subscribeWrites(() => {
+          requestPersistentStorageOnce();
           if (!cancelled) void readIntoState(store).catch(() => {});
           void engineRef.current?.flush();
         });

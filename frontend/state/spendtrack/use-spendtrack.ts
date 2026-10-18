@@ -6,6 +6,7 @@ import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/syn
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 const SPENDTRACK_SYNC_LOCK = 'spendtrack-sync';
 const SPENDTRACK_SYNC_CHANNEL = 'spendtrack-sync';
@@ -132,6 +133,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         // A completed local write is itself a flush trigger while online, so a
         // change reaches the server promptly instead of waiting for a focus event.
         store.subscribeWrites(() => {
+          requestPersistentStorageOnce();
           if (!cancelled) void readIntoState(store).catch(() => {});
           void engineRef.current?.flush();
         });

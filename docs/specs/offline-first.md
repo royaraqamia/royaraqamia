@@ -75,9 +75,7 @@ Honest list of what stands between us and the bar, each with the file that shows
    `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
    backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
    reopens the app.
-3. **Durable storage is only requested on install.** `requestPersistentStorage()` is wired to
-   `appinstalled` alone (`use-pwa.ts`), so an ordinary tab user's Outbox stays evictable.
-4. **The offline e2e suite never runs in CI.** Every `e2e/*-offline.spec.ts` is `test.skip(!ENABLED)`
+3. **The offline e2e suite never runs in CI.** Every `e2e/*-offline.spec.ts` is `test.skip(!ENABLED)`
    behind its own env flag, and no workflow sets one — so sync-resume, the single property that
    matters most, is verified only by jsdom unit tests and manual runs.
 

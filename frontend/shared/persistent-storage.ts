@@ -21,3 +21,17 @@ export async function requestPersistentStorage(): Promise<boolean> {
     return false;
   }
 }
+
+/** Whether this page session has already asked; a second ask buys nothing. */
+let requestedOnce = false;
+
+/**
+ * Asks at most once per page session. Called from the write path, because a
+ * committed write is the "real save" gesture browsers weigh — asking on every
+ * write would only repeat a question the browser has already answered.
+ */
+export function requestPersistentStorageOnce(): void {
+  if (requestedOnce) return;
+  requestedOnce = true;
+  void requestPersistentStorage();
+}
