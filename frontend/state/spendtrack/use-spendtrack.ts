@@ -105,19 +105,16 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         await store.seedIfEmpty(seed);
         if (cancelled) return store.close();
 
-        // Reconcile with the full server snapshot on every open (LWW,
+        // Reconcile with the incremental server snapshot on every open (LWW,
         // pending-aware), including tombstones, so edits and deletes made on
         // another device land here instead of the store silently diverging.
-        // Guests own no server rows beyond the seeded defaults.
+        // The store only advances its cursor past rows it actually applied
+        // (#313). Guests own no server rows beyond the seeded defaults.
         if (isSignedIn) {
           try {
             const since = await store.getSyncCursor();
             const snapshot = await getSyncSnapshot(since);
-            if (!cancelled) {
-              await store.mergeServerData(snapshot);
-              // Advance the cursor so the next open fetches only newer rows.
-              if (snapshot.cursor) await store.setSyncCursor(snapshot.cursor);
-            }
+            if (!cancelled) await store.applySyncSnapshot(snapshot);
           } catch (error) {
             logger.error('Failed to reconcile SpendTrack data with the server', {
               error: String(error),

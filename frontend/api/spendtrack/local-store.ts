@@ -5,6 +5,7 @@ import type {
   ExpenseSplit,
   RecurringExpense,
   RecurringExpenseInput,
+  SpendtrackSyncSnapshot,
 } from '@/shared/contracts/spendtrack';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
@@ -556,50 +557,64 @@ export class SpendtrackLocalStore {
   // --- Server merge & guest claim -------------------------------------------
 
   /**
-   * Merges server rows into the store, last-write-wins on `updatedAt` with the
-   * server as the tiebreaker (ADR-0029). Rows with a queued local intent are
-   * left alone: the device's unflushed edit must not be clobbered by an older
-   * server copy.
+   * Merges an incremental sync page and advances the cursor, last-write-wins
+   * on `updatedAt` with the server as the tiebreaker (ADR-0029).
+   *
+   * Rows with a queued local intent are left alone: the device's unflushed
+   * write must not be clobbered by a server copy. The cursor must not move past
+   * one of those rows either (#313) — the local copy is authoritative until the
+   * intent flushes, and the next incremental page has to be able to re-fetch
+   * the row so the two sides converge. When nothing is skipped the cursor
+   * advances to the page cursor, so an uninterrupted sync never re-scans.
    */
-  async mergeServerData(server: {
+  async applySyncSnapshot(snapshot: SpendtrackSyncSnapshot): Promise<void> {
+    const skipped = await this.mergeServerPage(snapshot);
+    if (skipped > 0 || !snapshot.cursor) return;
+    await this.setSyncCursor(snapshot.cursor);
+  }
+
+  /** Merges a server page; returns how many rows a pending intent held back. */
+  private async mergeServerPage(server: {
     categories: readonly Category[];
     expenses: readonly Expense[];
     budgets: readonly Budget[];
     recurring: readonly RecurringExpense[];
-  }): Promise<void> {
+  }): Promise<number> {
     const [local, outbox] = await Promise.all([this.getLocalData(), this.getOutbox()]);
     const pending = pendingKeys(outbox);
 
     const writes: Array<[string, unknown]> = [];
-    mergeInto(
-      writes,
-      CATEGORIES_STORE,
-      server.categories,
-      local.categories,
-      pending.categories,
-      (r) => r.id
-    );
-    mergeInto(
-      writes,
-      EXPENSES_STORE,
-      server.expenses,
-      local.expenses,
-      pending.expenses,
-      (r) => r.id
-    );
-    mergeInto(
-      writes,
-      RECURRING_STORE,
-      server.recurring,
-      local.recurring,
-      pending.recurring,
-      (r) => r.id
-    );
-    mergeInto(writes, BUDGETS_STORE, server.budgets, local.budgets, pending.budgets, (r) =>
-      budgetKey(r.month, r.category_id)
-    );
+    const skipped =
+      mergeInto(
+        writes,
+        CATEGORIES_STORE,
+        server.categories,
+        local.categories,
+        pending.categories,
+        (r) => r.id
+      ) +
+      mergeInto(
+        writes,
+        EXPENSES_STORE,
+        server.expenses,
+        local.expenses,
+        pending.expenses,
+        (r) => r.id
+      ) +
+      mergeInto(
+        writes,
+        RECURRING_STORE,
+        server.recurring,
+        local.recurring,
+        pending.recurring,
+        (r) => r.id
+      ) +
+      mergeInto(writes, BUDGETS_STORE, server.budgets, local.budgets, pending.budgets, (r) =>
+        budgetKey(r.month, r.category_id)
+      );
 
     if (writes.length > 0) await this.commit(writes);
+    return skipped;
   }
 
   /**
@@ -776,16 +791,21 @@ function mergeInto<T extends OfflineRow>(
   localRows: readonly T[],
   pending: Set<string>,
   keyOf: (row: T) => string
-): void {
+): number {
   const localByKey = new Map(localRows.map((row) => [keyOf(row), row]));
+  let skipped = 0;
   for (const server of serverRows) {
     const key = keyOf(server);
-    if (pending.has(key)) continue;
+    if (pending.has(key)) {
+      skipped += 1;
+      continue;
+    }
     const local = localByKey.get(key);
     if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
       writes.push([store, { ...local, ...server, id: key, deletedAt: server.deletedAt ?? null }]);
     }
   }
+  return skipped;
 }
 
 function claimInto<T extends OfflineRow>(

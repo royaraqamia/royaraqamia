@@ -1,10 +1,23 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { Expense, SpendtrackSyncSnapshot } from '@/shared/contracts/spendtrack';
 import { SpendtrackLocalStore, budgetKey } from '@/frontend/api/spendtrack/local-store';
 import { GUEST_IDENTITY, userIdentity } from '@/frontend/shared/local-store/identity';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+type StampedExpense = Expense & { server_updated_at: string };
+
+/** The server's incremental page: `server_updated_at > since`, cursor = newest. */
+function snapshotSince(expenses: StampedExpense[], since: string | null): SpendtrackSyncSnapshot {
+  const page = since ? expenses.filter((row) => row.server_updated_at > since) : expenses;
+  const cursor = page.reduce<string | null>(
+    (max, row) => (max === null || row.server_updated_at > max ? row.server_updated_at : max),
+    since
+  );
+  return { categories: [], expenses: page, budgets: [], recurring: [], cursor };
+}
 
 let factory: IDBFactory;
 beforeEach(() => {
@@ -187,6 +200,72 @@ describe('SpendtrackLocalStore', () => {
     const [after] = await store.getOutbox();
     expect(after?.status).toBe('pending');
     expect(after?.lastError).toBeNull();
+    store.close();
+  });
+
+  it('does not advance the sync cursor past a row held back by a pending intent (#313)', async () => {
+    const store = await open(userIdentity('u-1'));
+    const t5 = '2026-10-02T00:00:00.000Z';
+    // The other device's edit must outrank the local delete's clock stamp;
+    // the delete happened "now", so put the server edit an hour ahead.
+    const t20 = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const base: StampedExpense = {
+      id: 'e-1',
+      clientId: 'e-1',
+      user_id: 'u-1',
+      category_id: 'c-1',
+      amount: 10,
+      description: null,
+      date: '2026-10-01',
+      created_at: t5,
+      updated_at: t5,
+      updatedAt: t5,
+      deletedAt: null,
+      server_updated_at: t5,
+    };
+
+    // Device A is caught up at t5 with the expense on screen.
+    await store.applySyncSnapshot(snapshotSince([base], null));
+    expect(await store.getSyncCursor()).toBe(t5);
+
+    // Device A deletes it offline at t10 (the delete intent is still queued).
+    await store.deleteExpense('e-1');
+    expect(await store.getExpenses()).toHaveLength(0);
+    const [intent] = await store.getOutbox();
+    expect(intent?.type).toBe('expense.delete');
+
+    // Device B edited the same expense at t20.
+    const edited: StampedExpense = {
+      ...base,
+      amount: 42,
+      updated_at: t20,
+      updatedAt: t20,
+      server_updated_at: t20,
+    };
+    const first = snapshotSince([edited], await store.getSyncCursor());
+    expect(first.expenses.map((row) => row.id)).toEqual(['e-1']);
+
+    await store.applySyncSnapshot(first);
+
+    // The row is held back and the cursor stays put, so the next page can
+    // fetch it again — advancing to t20 here would hide it forever.
+    expect(await store.getExpenses()).toHaveLength(0);
+    expect(await store.getSyncCursor()).toBe(t5);
+
+    // The pending delete flushes (the server's LWW guard no-ops it) and the
+    // intent leaves the outbox.
+    await store.removeOutbox(intent!.seq);
+    expect(await store.getOutbox()).toHaveLength(0);
+
+    // Next incremental sync re-fetches the same row and applies it now.
+    const next = snapshotSince([edited], await store.getSyncCursor());
+    expect(next.expenses.map((row) => row.id)).toEqual(['e-1']);
+    await store.applySyncSnapshot(next);
+
+    const [converged] = await store.getExpenses();
+    expect(converged?.amount).toBe(42);
+    expect(converged?.deletedAt).toBeNull();
+    expect(await store.getSyncCursor()).toBe(t20);
     store.close();
   });
 
