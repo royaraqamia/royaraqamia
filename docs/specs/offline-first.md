@@ -224,9 +224,12 @@ moment it matters — with the reason stated, since the request is otherwise opa
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
   backoff, the SW `sync` handler, and the FCM wake payload.
-- **Background Sync itself cannot be driven from Playwright.** Chromium exposes no public way to fire a
-  `sync` event, so the tier is covered where it can be: unit tests for the drain's identity rules and
-  the page's registration condition, and a sandboxed test for the worker's listener. What the offline
+- **Background Sync itself cannot be driven from Playwright.** Playwright's Chromium launches with
+  Background Sync disabled: the API is present but inert, so `register` rejects and even `getTags()`
+  answers "Background Sync is disabled". No e2e can cover the tier — not the registration and not the
+  event — which is why it is covered where it can be: unit tests for the drain's identity rules and the
+  page's registration condition, and a sandboxed test for the worker's listener. The code degrades to
+  `false` when the API refuses, which is the branch the suites actually exercise. What the offline
   suite proves is the _fallback_ — flush-on-open — which is why it stays a real gate rather than a
   gesture. The device matrix in phase 7 is where a real background flush gets exercised.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
