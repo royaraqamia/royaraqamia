@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.110.0] - 2026-10-18
+
+### Added
+- vendor the Uthmani text and its Tanzil metadata (#324)
+
 ## [1.109.11] - 2026-10-18
 
 ### Changed
