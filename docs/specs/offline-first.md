@@ -75,9 +75,14 @@ Honest list of what stands between us and the bar, each with the file that shows
    `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
    backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
    reopens the app.
-3. **The offline e2e suite never runs in CI.** Every `e2e/*-offline.spec.ts` is `test.skip(!ENABLED)`
-   behind its own env flag, and no workflow sets one — so sync-resume, the single property that
-   matters most, is verified only by jsdom unit tests and manual runs.
+3. **The offline e2e suite has barely run, and has drifted.** Every spec is `test.skip(!ENABLED)`
+   behind its own env flag, and no workflow set one — so the suite was verified only by manual runs,
+   and nothing caught the drift that followed. The `E2E: Offline` workflow now runs
+   `public-offline` and `spendtrack-offline` on the paths that can break them; four specs still need
+   repair before they can join it — `habitflow-sync-resume` (the dashboard reaches its error boundary
+   when a habit is created with the radio off), both `linksnap-offline` tests, and `blogpress-offline`
+   (its sign-in assertion fails). `lead-offline` stays out because it writes a row the suite cannot
+   remove.
 
 ## Architecture
 
@@ -181,9 +186,11 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 ## Verification
 
-- **Offline e2e in CI:** `context.setOffline(true)`, `serviceWorkers: 'allow'`, asserting cached read,
-  offline write and **sync-resume** (offline → mutate → reconnect → server state correct) — per product
-  family, not behind a flag that no workflow sets.
+- **Offline e2e in CI:** the `E2E: Offline` workflow runs `context.setOffline(true)` with
+  `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
+  server state correct). It covers `public-offline` and `spendtrack-offline` today; every repaired spec
+  joins it, and the goal is a sync-resume proof per product family rather than the flag-gated status
+  quo.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and

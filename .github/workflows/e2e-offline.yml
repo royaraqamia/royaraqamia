@@ -1,0 +1,101 @@
+name: 'E2E: Offline'
+
+# The offline suite is the only automated check that a write survives the network
+# and reaches the server afterwards, and that a visited public route paints from
+# the service-worker cache with the radio off (spec: docs/specs/offline-first.md).
+# It needs a production build — the worker is not registered in development — so
+# it runs on the surfaces that can break offline behaviour rather than on every
+# pull request, and Playwright's `webServer` performs the build because GitHub
+# sets CI.
+#
+# Turnstile is deliberately left unconfigured here: `backend/config/turnstile.ts`
+# skips verification when `TURNSTILE_SECRET_KEY` is absent, which is what lets the
+# specs sign in with a dummy token against this throwaway server. Setting the
+# secret turns this job red — do not "fix" it that way.
+#
+# The owned-data spec needs the Playwright test account that
+# `e2e/setup-test-user.ts` creates; its credentials live in the `E2E_TEST_EMAIL`
+# and `E2E_TEST_PASSWORD` secrets. Without them that spec stays skipped rather
+# than failing, so the check is honest about what it covered.
+#
+# Four specs are NOT wired in yet because they fail for reasons that predate this
+# workflow — they had never run anywhere, so nothing caught the drift:
+#   - `e2e/habitflow-sync-resume.spec.ts` — the dashboard hits its error boundary
+#     when a habit is created with the radio off.
+#   - `e2e/linksnap-offline.spec.ts` — both tests time out; the create flow never
+#     reaches `اختصار الرَّابط`, and the list test waits on a response the worker
+#     serves from cache, so no `response` event ever fires.
+#   - `e2e/blogpress-offline.spec.ts` — the sign-in assertion fails.
+# `e2e/lead-offline.spec.ts` is left out on purpose: it writes a Project Request
+# the suite has no way to remove, and the Supabase project here is the live one.
+#
+# NOTE: a path-filtered workflow reports no check when nothing matches, so this
+# must not be made a required status check on `main`.
+
+on:
+  pull_request:
+    paths:
+      - 'public/sw.js'
+      - 'public/sw-routing.js'
+      - 'frontend/shared/local-store/**'
+      - 'frontend/shared/persistent-storage.ts'
+      - 'frontend/state/**'
+      - 'frontend/api/spendtrack/**'
+      - 'e2e/public-offline.spec.ts'
+      - 'e2e/spendtrack-offline.spec.ts'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-offline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-offline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    name: Writes survive and resume
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # One invocation, so one production build. The public spec needs no account;
+      # the owned-data flag is set only when the account is configured.
+      - name: Offline suite
+        run: >
+          npx playwright test
+          e2e/public-offline.spec.ts
+          e2e/spendtrack-offline.spec.ts
+          --project=existing-tests
+        env:
+          PUBLIC_OFFLINE_E2E: '1'
+          SPENDTRACK_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-offline-failure
+          path: node_modules/.playwright/test-results/
+          retention-days: 7
