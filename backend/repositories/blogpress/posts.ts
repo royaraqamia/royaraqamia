@@ -91,6 +91,24 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     return result;
   }
 
+  /**
+   * The stored row for `(author_id, client_id)`, read back when a create replay
+   * loses the last-write-wins comparison: the write is a no-op success that
+   * reports the winner rather than surfacing an error.
+   */
+  async function getPostByClientId(authorId: string, clientId: string): Promise<Post | null> {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('author_id', authorId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (error) throw repositoryFailure('blogpress.getPostByClientId', error);
+
+    return (data as Post) ?? null;
+  }
+
   return {
     async getPublishedPosts(
       page: number,
@@ -374,29 +392,35 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       // on and a replayed write is an idempotent upsert, never a duplicate.
       const id = input?.id ?? input?.clientId ?? crypto.randomUUID();
       const clientId = input?.clientId ?? id;
-      const { data, error } = await supabase
-        .from('posts')
-        .upsert(
-          {
-            id,
-            author_id: authorId,
-            client_id: clientId,
-            slug: input?.slug ?? `post-${id.slice(0, 8)}`,
-            content: input?.content ?? null,
-            cover_image: input?.cover_image ?? null,
-            meta_title: input?.meta_title ?? null,
-            meta_desc: input?.meta_desc ?? null,
-            reading_time_minutes: input?.content ? estimateReadingTime(input.content) : 0,
-            updated_at: input?.updatedAt ?? new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        )
-        .select('id')
-        .single();
+
+      // `upsert_post` applies last-write-wins (ADR-0033) on the
+      // `(author_id, client_id)` identity, so a create whose response was lost
+      // and is replayed after another device edited the post does not write the
+      // original columns and the older `updated_at` back over the newer edit. A
+      // conflict that loses returns no row; the stored winner is read back below
+      // so the stale replay is still a success.
+      const { data, error } = await supabase.rpc('upsert_post', {
+        p_id: id,
+        p_author_id: authorId,
+        p_client_id: clientId,
+        p_slug: input?.slug ?? `post-${id.slice(0, 8)}`,
+        p_content: input?.content ?? null,
+        p_cover_image: input?.cover_image ?? null,
+        p_meta_title: input?.meta_title ?? null,
+        p_meta_desc: input?.meta_desc ?? null,
+        p_reading_time_minutes: input?.content ? estimateReadingTime(input.content) : 0,
+        p_updated_at: input?.updatedAt ?? new Date().toISOString(),
+      });
 
       if (error) throw new Error('فشل إنشاء المنشور');
 
-      return { id: data.id };
+      const stored = data?.[0];
+      if (stored) return { id: stored.id };
+
+      const winner = await getPostByClientId(authorId, clientId);
+      if (!winner) throw new Error('فشل إنشاء المنشور');
+
+      return { id: winner.id };
     },
 
     async updatePost(postId: string, authorId: string, data: PostInput): Promise<void> {
