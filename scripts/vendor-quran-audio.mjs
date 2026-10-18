@@ -60,6 +60,9 @@ const DEFAULTS = {
   attempts: 4,
 };
 
+/** How many times one bucket request is retried before the run gives up. */
+const R2_ATTEMPTS = 6;
+
 const CDN = 'https://cdn.islamic.network';
 const SOURCE_LICENSE =
   'Licensed to AlQuran Cloud / Islamic Network by the reciters or their estates for free, ' +
@@ -241,6 +244,9 @@ function describeFrame(frame) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Wait before the nth retry, capped so a long run is not stalled for minutes. */
+const retryDelay = (attempt) => sleep(Math.min(500 * 2 ** (attempt - 1), 8000));
+
 /**
  * Fetches one Ayah, retrying transient failures. The CDN asks for aggressive
  * caching rather than tolerance of a hot loop, so this is deliberately patient.
@@ -288,40 +294,28 @@ function hmac(key, data) {
 }
 
 /**
- * Signs and sends one request to R2's S3 endpoint.
- *
- * Signed by hand on purpose: the alternative is an AWS SDK, and this needs two
- * verbs against one bucket. Only `host`, the payload hash and the date are
- * signed; the cache headers ride along unsigned, which keeps the signature
- * stable whatever we decide to send as a cache directive.
+ * The headers for one signed request, recomputed for every attempt because the
+ * date is part of the signature and a retry can happen a few seconds later.
  */
-async function r2Request(credentials, { method, key, body, contentType, cacheControl }) {
-  if (!/^[A-Za-z0-9!_.*'()/-]+$/.test(key)) throw new Error(`Key needs escaping: ${key}`);
-
-  const { host, bucket } = credentials;
-  const path = `/${bucket}/${key}`;
+function signedHeaders(credentials, { method, path, payloadHash, contentType, cacheControl }) {
   const amzDate = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.slice(0, 8);
-  const payloadHash = sha256Hex(body ?? '');
 
   const signedHeaderValues = {
-    host,
+    host: credentials.host,
     'x-amz-content-sha256': payloadHash,
     'x-amz-date': amzDate,
   };
-  const signedHeaderNames = Object.keys(signedHeaderValues).sort();
-  const canonicalHeaders = signedHeaderNames
-    .map((name) => `${name}:${signedHeaderValues[name]}\n`)
-    .join('');
-  const signedHeaders = signedHeaderNames.join(';');
+  const names = Object.keys(signedHeaderValues).sort();
+  const canonicalHeaders = names.map((name) => `${name}:${signedHeaderValues[name]}\n`).join('');
+  const signedHeaderList = names.join(';');
 
-  const canonicalRequest = [method, path, '', canonicalHeaders, signedHeaders, payloadHash].join(
+  const canonicalRequest = [method, path, '', canonicalHeaders, signedHeaderList, payloadHash].join(
     '\n'
   );
 
   const scope = `${dateStamp}/auto/s3/aws4_request`;
   const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, sha256Hex(canonicalRequest)].join('\n');
-
   const signingKey = ['auto', 's3', 'aws4_request'].reduce(
     (key, part) => hmac(key, part),
     hmac(`AWS4${credentials.secretAccessKey}`, dateStamp)
@@ -331,33 +325,76 @@ async function r2Request(credentials, { method, key, body, contentType, cacheCon
   const headers = {
     authorization:
       `AWS4-HMAC-SHA256 Credential=${credentials.accessKeyId}/${scope}, ` +
-      `SignedHeaders=${signedHeaders}, Signature=${signature}`,
+      `SignedHeaders=${signedHeaderList}, Signature=${signature}`,
     'x-amz-content-sha256': payloadHash,
     'x-amz-date': amzDate,
   };
   if (contentType) headers['content-type'] = contentType;
   if (cacheControl) headers['cache-control'] = cacheControl;
+  return headers;
+}
 
+/**
+ * Sends one request to R2's S3 endpoint, retrying what is worth retrying: a
+ * socket that reset and a server-side 5xx. A 4xx is the service telling us the
+ * request itself is wrong, so it is reported at once rather than six thousand
+ * times.
+ *
+ * A whole-Quran run is six thousand uploads over a home connection; a reset in
+ * the middle is a fact of that connection, not a reason to lose the run.
+ *
+ * Signed by hand on purpose: the alternative is an AWS SDK, and this needs two
+ * verbs against one bucket. Only `host`, the payload hash and the date are
+ * signed; the cache headers ride along unsigned, which keeps the signature
+ * stable whatever we decide to send as a cache directive.
+ */
+async function r2Request(credentials, { method, key, body, contentType, cacheControl }) {
+  if (!/^[A-Za-z0-9!_.*'()/-]+$/.test(key)) throw new Error(`Key needs escaping: ${key}`);
+
+  const path = `/${credentials.bucket}/${key}`;
+  const payloadHash = sha256Hex(body ?? '');
   // The URL actually fetched, not the path that was signed: when those two
   // disagree, the message is the only place the disagreement can be seen.
   const url = `${credentials.endpoint}${path}`;
-  let response;
-  try {
-    response = await fetch(url, { method, headers, body });
-  } catch (error) {
-    // A TLS or DNS failure here is the network, not the code: say what the
-    // socket said rather than "fetch failed". The origin is deliberately not
-    // echoed — it comes from the environment, and env values do not get logged.
-    const cause = error.cause
-      ? `${error.cause.code ?? ''} ${error.cause.message ?? ''}`.trim()
-      : '';
-    throw new Error(`${method} ${key} failed: ${error.message}${cause ? ` (${cause})` : ''}`);
-  }
-  if (!response.ok) {
+
+  let lastError;
+  for (let attempt = 1; attempt <= R2_ATTEMPTS; attempt += 1) {
+    const headers = signedHeaders(credentials, {
+      method,
+      path,
+      payloadHash,
+      contentType,
+      cacheControl,
+    });
+
+    let response;
+    try {
+      response = await fetch(url, { method, headers, body });
+    } catch (error) {
+      // A TLS or DNS failure here is the network, not the code: say what the
+      // socket said rather than "fetch failed". The origin is deliberately not
+      // echoed — it comes from the environment, and env values do not get logged.
+      const cause = error.cause
+        ? `${error.cause.code ?? ''} ${error.cause.message ?? ''}`.trim()
+        : '';
+      lastError = new Error(
+        `${method} ${key} failed: ${error.message}${cause ? ` (${cause})` : ''}`
+      );
+      if (attempt < R2_ATTEMPTS) {
+        await retryDelay(attempt);
+        continue;
+      }
+      throw lastError;
+    }
+
+    if (response.ok) return response;
+
     const detail = await response.text().catch(() => '');
-    throw new Error(`${method} ${key} -> ${response.status} ${detail.slice(0, 300)}`);
+    lastError = new Error(`${method} ${key} -> ${response.status} ${detail.slice(0, 300)}`);
+    if (response.status < 500 && response.status !== 429) throw lastError;
+    if (attempt < R2_ATTEMPTS) await retryDelay(attempt);
   }
-  return response;
+  throw lastError;
 }
 
 /** True when the object is already in the bucket. */
@@ -454,24 +491,25 @@ async function vendorSurah(surah, options, credentials) {
     const key = `${options.edition}/${surahKey}/${String(ayah).padStart(3, '0')}.mp3`;
     const sha256 = sha256Hex(bytes);
     const previous = known.get(ayah);
-    const unchanged = previous && previous.sha256 === sha256 && previous.bytes === bytes.length;
+    const changed = previous ? previous.sha256 !== sha256 : false;
 
-    if (!options.dryRun) {
-      // Re-upload when the source changed, when asked, or when the object is
-      // missing — so a deleted object heals on the next run instead of leaving a
-      // manifest pointing at nothing.
-      const needsUpload = options.force || !unchanged || !(await objectExists(credentials, key));
-      if (needsUpload) {
-        await r2Request(credentials, {
-          method: 'PUT',
-          key,
-          body: bytes,
-          contentType: CONTENT_TYPE,
-          cacheControl: CACHE_CONTROL,
-        });
-      }
+    // Ask the bucket, not only the manifest: a resumed run has no manifest for
+    // the sura it was in the middle of, and re-sending forty megabytes because
+    // of that would be a poor way to resume. The manifest still decides whether
+    // a file that is already there needs replacing.
+    const present = options.dryRun ? false : await objectExists(credentials, key);
+    const upload = options.dryRun || options.force || !present || changed;
+
+    if (upload && !options.dryRun) {
+      await r2Request(credentials, {
+        method: 'PUT',
+        key,
+        body: bytes,
+        contentType: CONTENT_TYPE,
+        cacheControl: CACHE_CONTROL,
+      });
     }
-    return { ayah, key, bytes: bytes.length, sha256, skipped: Boolean(unchanged), frame };
+    return { ayah, key, bytes: bytes.length, sha256, upload, frame };
   });
 
   // One codec for the whole set, or the reader hears the seams (ADR-0062).
@@ -490,7 +528,7 @@ async function vendorSurah(surah, options, credentials) {
   };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  const uploaded = files.filter((file) => !file.skipped).length;
+  const uploaded = files.filter((file) => file.upload).length;
   console.log(
     `  surah ${surahKey} ${surah.name}: ${files.length} ayat, ` +
       `${(manifest.bytes / 1048576).toFixed(2)} MiB, ${uploaded} ` +
