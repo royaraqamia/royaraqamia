@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.115.1] - 2026-10-18
+
+### Changed
+- delete the unused RatesRefresh component (#344)
+
 ## [1.115.0] - 2026-10-18
 
 ### Added
