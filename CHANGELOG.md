@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.112.4] - 2026-10-18
+
+### Fixed
+- never let a missing chunk take the page down (#335)
+
 ## [1.112.3] - 2026-10-18
 
 ### Fixed
