@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SectionTitle } from '@/frontend/ui/shared/section-title';
 import { QuranAttribution } from './attribution';
+import { ReadingSession } from './reading-session';
 import { revelationLabel, toArabicDigits } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
@@ -21,8 +22,9 @@ interface SurahReaderProps {
  *
  * A server component: the text is vendored, so the whole sura renders into the
  * HTML at build time and reading it needs no client bundle. Each ayah is its own
- * block with a stable id, which is what a Bookmark and a Reading position will
- * point at once they exist.
+ * block with a stable id, which is what a Bookmark and a Reading position point
+ * at, and its ayah number doubles as the control that marks it — the verse
+ * numbering a reader already recognises, made pressable.
  *
  * Deliberately verse-by-verse rather than a Mushaf page: page and line breaks are
  * a separate view of the same text (P5), not the base rendering.
@@ -51,23 +53,32 @@ export function SurahReader({ surah, summary, previous, next }: SurahReaderProps
         </p>
       )}
 
-      <div className="mt-10 flex flex-col gap-6 sm:gap-7">
+      <ReadingSession surah={summary.n} className="mt-10 flex flex-col gap-6 sm:gap-7">
         {surah.ayahs.map((ayah, position) => {
           const number = position + 1;
           return (
             <p
               key={number}
               id={`ayah-${number}`}
+              data-ayah={number}
               className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
             >
               {ayah}
-              <span className="mx-1.5 inline-flex size-8 select-none items-center justify-center rounded-full border border-primary/25 bg-primary/5 align-middle text-xs font-bold text-primary">
+              <button
+                type="button"
+                data-bookmark-ayah={number}
+                aria-pressed="false"
+                disabled
+                aria-label={`علامة على الآية ${toArabicDigits(number)}`}
+                title="إضافة علامة أو إزالتها"
+                className="mx-1.5 inline-flex size-8 select-none items-center justify-center rounded-full border border-primary/25 bg-primary/5 align-middle text-xs font-bold text-primary transition-safe hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground disabled:opacity-60"
+              >
                 {toArabicDigits(number)}
-              </span>
+              </button>
             </p>
           );
         })}
-      </div>
+      </ReadingSession>
 
       <nav aria-label="التَّنقُّل بين السُّوَر" className="mt-12 grid grid-cols-2 gap-3">
         <SurahStep surah={previous} direction="previous" />
