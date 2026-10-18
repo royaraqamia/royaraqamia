@@ -13,12 +13,17 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 
-const PasswordStrength = lazy(() =>
-  import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+const PasswordStrength = lazy(
+  tolerateChunkFailure('password strength meter', () =>
+    import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+  )
 );
-const Turnstile = lazy(() =>
-  import('@/frontend/ui/shared/turnstile').then((m) => ({ default: m.Turnstile }))
+const Turnstile = lazy(
+  tolerateChunkFailure('Turnstile', () =>
+    import('@/frontend/ui/shared/turnstile').then((m) => ({ default: m.Turnstile }))
+  )
 );
 
 function SignupForm() {

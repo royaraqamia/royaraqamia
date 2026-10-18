@@ -18,10 +18,8 @@ name: 'E2E: Offline'
 # and `E2E_TEST_PASSWORD` secrets. Without them that spec stays skipped rather
 # than failing, so the check is honest about what it covered.
 #
-# Four specs are NOT wired in yet because they fail for reasons that predate this
+# Two specs are NOT wired in yet because they fail for reasons that predate this
 # workflow — they had never run anywhere, so nothing caught the drift:
-#   - `e2e/habitflow-sync-resume.spec.ts` — the dashboard hits its error boundary
-#     when a habit is created with the radio off.
 #   - `e2e/linksnap-offline.spec.ts` — both tests time out; the create flow never
 #     reaches `اختصار الرَّابط`, and the list test waits on a response the worker
 #     serves from cache, so no `response` event ever fires.
@@ -41,8 +39,10 @@ on:
       - 'frontend/shared/persistent-storage.ts'
       - 'frontend/state/**'
       - 'frontend/api/spendtrack/**'
+      - 'frontend/ui/shared/lazy-chunk.ts'
       - 'e2e/public-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
+      - 'e2e/habitflow-sync-resume.spec.ts'
       - 'playwright.config.ts'
       - '.github/workflows/e2e-offline.yml'
   workflow_dispatch:
@@ -81,16 +81,18 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # One invocation, so one production build. The public spec needs no account;
-      # the owned-data flag is set only when the account is configured.
+      # the owned-data flags are set only when the account is configured.
       - name: Offline suite
         run: >
           npx playwright test
           e2e/public-offline.spec.ts
           e2e/spendtrack-offline.spec.ts
+          e2e/habitflow-sync-resume.spec.ts
           --project=existing-tests
         env:
           PUBLIC_OFFLINE_E2E: '1'
           SPENDTRACK_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          HABITFLOW_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
 
       - name: Upload failure artifacts
         if: failure()

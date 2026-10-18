@@ -7,9 +7,12 @@ import { updatePassword } from '@/frontend/api/auth';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 
-const PasswordStrength = lazy(() =>
-  import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+const PasswordStrength = lazy(
+  tolerateChunkFailure('password strength meter', () =>
+    import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+  )
 );
 
 function UpdatePasswordForm() {

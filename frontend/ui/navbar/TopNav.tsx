@@ -5,12 +5,15 @@ import dynamic from 'next/dynamic';
 import NextImage from 'next/image';
 
 import { NavDropdown, type NavLink } from './NavDropdown';
+import { tolerateChunkFailure } from '../shared/lazy-chunk';
 
 // Splitted off the initial chunk — same pattern as Navbar/FloatingActions:
 // Supabase notifications, web-push, PWA context, portals and dialogs load on demand,
 // keeping the critical-path bundle lean (fewer long tasks / lower TBT).
 const NotificationDropdown = dynamic(
-  () => import('../shared/notification-dropdown').then((m) => m.NotificationDropdown),
+  tolerateChunkFailure('notification dropdown', () =>
+    import('../shared/notification-dropdown').then((m) => ({ default: m.NotificationDropdown }))
+  ),
   { ssr: false, loading: () => null }
 );
 
