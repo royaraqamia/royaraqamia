@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.115.3] - 2026-10-18
+
+### Fixed
+- fold combining marks into one canonical order (#351)
+
 ## [1.115.2] - 2026-10-18
 
 ### Changed
