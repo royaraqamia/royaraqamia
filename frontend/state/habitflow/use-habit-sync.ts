@@ -75,7 +75,12 @@ export function useHabitSync(
       const next = await store.getOutbox();
       if (active) setEntries(next);
     };
-    const unsubscribe = store.subscribeWrites(() => void refresh());
+    // A completed local write is itself a flush trigger while online, so a
+    // change reaches the server promptly instead of waiting for a focus event.
+    const unsubscribe = store.subscribeWrites(() => {
+      void refresh();
+      void engineRef.current?.flush();
+    });
     void refresh();
     return () => {
       active = false;

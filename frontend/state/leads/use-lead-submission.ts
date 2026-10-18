@@ -115,7 +115,12 @@ export function useLeadSubmission(): LeadSubmissionState {
         storeRef.current = store;
         setReady(true);
 
-        const unsubscribe = store.subscribeWrites(() => void refreshEntries(store));
+        // A queued write is itself a flush trigger while online, so a submission
+        // reaches the server promptly instead of waiting for a focus event.
+        const unsubscribe = store.subscribeWrites(() => {
+          void refreshEntries(store);
+          void engineRef.current?.flush();
+        });
         void refreshEntries(store);
 
         engine = new SyncEngine(

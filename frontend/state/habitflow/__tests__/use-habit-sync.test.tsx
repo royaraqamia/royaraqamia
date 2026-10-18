@@ -60,6 +60,22 @@ describe('useHabitSync', () => {
     store.close();
   });
 
+  it('flushes a signed-in write without waiting for a focus event', async () => {
+    const store = await HabitLocalStore.open(userIdentity('u-1'));
+    const { unmount } = renderHook(() => useHabitSync(store, true, vi.fn()));
+
+    // Nothing is queued at mount, so the write itself is the only thing that can
+    // send — no focus, online or visibility event is dispatched.
+    await act(async () => {
+      await store.createHabit({ name: 'قراءة', frequency: 'daily' });
+    });
+
+    await waitFor(() => expect(sent).toContain('habit.create'));
+    await waitFor(async () => expect(await store.getOutbox()).toHaveLength(0));
+    unmount();
+    store.close();
+  });
+
   it('never flushes a guest outbox', async () => {
     const store = await HabitLocalStore.open(userIdentity('u-1'));
     await store.createHabit({ name: 'قراءة', frequency: 'daily' });

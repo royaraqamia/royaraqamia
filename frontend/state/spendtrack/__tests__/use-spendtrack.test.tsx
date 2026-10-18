@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 
 // The reconcile pull hits the network on open; keep it local and empty.
 vi.mock('@/frontend/api/spendtrack', () => ({
@@ -112,5 +112,21 @@ describe('useSpendtrack', () => {
     const store = await SpendtrackLocalStore.open(userIdentity('u-1'));
     expect(await store.getOutbox()).toHaveLength(1);
     store.close();
+  });
+
+  it('flushes a write made after mount without waiting for a focus event', async () => {
+    const { result } = renderHook(() => useSpendtrack(SEED));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+
+    const store = result.current.store;
+    if (!store) throw new Error('SpendTrack Local Store is not ready');
+
+    // Nothing is queued at mount, so the write itself is the only thing that can
+    // send — no focus, online or visibility event is dispatched.
+    await act(async () => {
+      await store.createCategory({ name: 'طعام', colorHex: '#ff0000' });
+    });
+
+    await waitFor(() => expect(sentTypes).toContain('category.create'));
   });
 });

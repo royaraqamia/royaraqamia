@@ -139,8 +139,11 @@ export function useLinksnap({
         setStore(store);
         setReady(true);
 
+        // A completed local write is itself a flush trigger while online, so a
+        // change reaches the server promptly instead of waiting for a focus event.
         store.subscribeWrites(() => {
           if (!cancelled) void readIntoState(store).catch(() => {});
+          void engineRef.current?.flush();
         });
 
         engine = new SyncEngine(
