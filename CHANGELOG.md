@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.8] - 2026-10-18
+
+### Fixed
+- tombstone post deletes so a replayed delete is idempotent (#319)
+
 ## [1.109.7] - 2026-10-18
 
 ### Fixed
