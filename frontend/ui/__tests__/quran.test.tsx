@@ -69,7 +69,15 @@ describe('the sura reader', () => {
   const next = summary({ n: 3, name: 'التَّالية' });
 
   it('renders every ayah with an addressable id', () => {
-    render(<SurahReader surah={surah()} summary={summary()} previous={previous} next={next} />);
+    render(
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={null}
+      />
+    );
 
     expect(screen.getByText(/آية أولى/)).toBeInTheDocument();
     expect(screen.getByText(/آية ثانية/)).toBeInTheDocument();
@@ -79,7 +87,13 @@ describe('the sura reader', () => {
 
   it('shows the basmalah only when the sura has one', () => {
     const { unmount } = render(
-      <SurahReader surah={surah()} summary={summary()} previous={previous} next={next} />
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={null}
+      />
     );
     expect(screen.getByText('بسملة الاختبار')).toBeInTheDocument();
     unmount();
@@ -90,6 +104,7 @@ describe('the sura reader', () => {
         summary={summary()}
         previous={previous}
         next={next}
+        audio={null}
       />
     );
     expect(screen.queryByText('بسملة الاختبار')).not.toBeInTheDocument();
@@ -97,19 +112,62 @@ describe('the sura reader', () => {
 
   it('steps to the adjacent suras, and renders nothing where there is none', () => {
     const { unmount } = render(
-      <SurahReader surah={surah()} summary={summary()} previous={previous} next={next} />
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={null}
+      />
     );
     expect(screen.getByRole('link', { name: /السَّابقة/ })).toHaveAttribute('href', '/quran/1');
     expect(screen.getByRole('link', { name: /التَّالية/ })).toHaveAttribute('href', '/quran/3');
     unmount();
 
-    render(<SurahReader surah={surah()} summary={summary()} previous={null} next={null} />);
+    render(
+      <SurahReader surah={surah()} summary={summary()} previous={null} next={null} audio={null} />
+    );
     expect(screen.queryByRole('link', { name: /السَّابقة/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /التَّالية/ })).not.toBeInTheDocument();
   });
 
+  it('offers the recitation only where one is vendored', () => {
+    const { unmount } = render(
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={null}
+      />
+    );
+    expect(screen.queryByRole('button', { name: 'استمع للسُّورة' })).not.toBeInTheDocument();
+    unmount();
+
+    render(
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={{ ayahCount: 2, bytes: 2048 }}
+      />
+    );
+    // The size is stated up front: on mobile data it is part of the decision.
+    expect(screen.getByRole('button', { name: 'استمع للسُّورة' })).toBeInTheDocument();
+    expect(screen.getByText('٢ آية · ٢ ك.ب')).toBeInTheDocument();
+  });
+
   it('names the sura and states where it was revealed', () => {
-    render(<SurahReader surah={surah()} summary={summary()} previous={previous} next={next} />);
+    render(
+      <SurahReader
+        surah={surah()}
+        summary={summary()}
+        previous={previous}
+        next={next}
+        audio={null}
+      />
+    );
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('سورة الاختبار');
     expect(screen.getByText('مدنيَّة · \u0662 آية')).toBeInTheDocument();
   });

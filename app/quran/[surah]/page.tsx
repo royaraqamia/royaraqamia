@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { loadQuranIndex, loadSurah, loadSurahNumbers } from '@/backend/loaders/quran';
+import { loadSurahAudio } from '@/backend/loaders/quran-audio';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
 import { toArabicDigits } from '@/frontend/ui/quran/format';
 import type { SurahSummary } from '@/shared/contracts/quran';
@@ -37,7 +38,11 @@ export async function generateMetadata(props: {
 export default async function SurahPage(props: { params: Promise<{ surah: string }> }) {
   const { surah: param } = await props.params;
   const number = Number(param);
-  const [surah, index] = await Promise.all([loadSurah(number), loadQuranIndex()]);
+  const [surah, index, audio] = await Promise.all([
+    loadSurah(number),
+    loadQuranIndex(),
+    loadSurahAudio(number),
+  ]);
 
   if (!surah) notFound();
 
@@ -51,6 +56,7 @@ export default async function SurahPage(props: { params: Promise<{ surah: string
       summary={summary}
       previous={index.surahs[position - 1] ?? null}
       next={index.surahs[position + 1] ?? null}
+      audio={audio}
     />
   );
 }
