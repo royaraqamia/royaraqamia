@@ -5,7 +5,6 @@ import {
 } from '@/frontend/shared/local-store/identity';
 import {
   openLocalStore,
-  promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
@@ -16,6 +15,8 @@ import {
   type OutboxEntry,
 } from '@/frontend/shared/local-store/outbox';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
+import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 
 const PRODUCT = 'leads';
 
@@ -54,6 +55,7 @@ export const leadsStoreMigrations: readonly LocalStoreMigration[] = [
  */
 export class LeadsLocalStore {
   private readonly connection: LocalStoreConnection;
+  private readonly outbox: OutboxStore;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
@@ -61,6 +63,7 @@ export class LeadsLocalStore {
     readonly identity: LocalIdentity
   ) {
     this.connection = new LocalStoreConnection(db);
+    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
   subscribeWrites(listener: () => void): () => void {
@@ -91,13 +94,12 @@ export class LeadsLocalStore {
     this.connection.close();
   }
 
-  async getOutbox(): Promise<OutboxEntry[]> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(OUTBOX_STORE, 'readonly');
-      return promisifyRequest(
-        transaction.objectStore(OUTBOX_STORE).getAll() as IDBRequest<OutboxEntry[]>
-      );
-    }, []);
+  // --- Outbox ---------------------------------------------------------------
+  // Data access is shared with the worker realm (`outbox-access.ts`); this store
+  // contributes only its write notification.
+
+  getOutbox(): Promise<OutboxEntry[]> {
+    return this.outbox.getOutbox();
   }
 
   /** Durably queues one submission for replay. */
@@ -124,55 +126,14 @@ export class LeadsLocalStore {
   }
 
   async removeOutbox(seq: number): Promise<void> {
-    const removed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
-      transaction.objectStore(OUTBOX_STORE).delete(seq);
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (removed) this.notifyWrites();
+    await this.outbox.removeOutbox(seq);
   }
 
   async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
-    const patched = await this.connection.run(async (db) => {
-      // Two transactions: an IndexedDB transaction auto-commits as soon as it has
-      // no pending requests, so the read must finish in its own before the write.
-      const read = db.transaction(OUTBOX_STORE, 'readonly');
-      const existing = await promisifyRequest(
-        read.objectStore(OUTBOX_STORE).get(seq) as IDBRequest<OutboxEntry | undefined>
-      );
-      if (!existing) return false;
-
-      const write = db.transaction(OUTBOX_STORE, 'readwrite');
-      write.objectStore(OUTBOX_STORE).put({ ...existing, ...patch });
-      await transactionDone(write);
-      return true;
-    }, false);
-    if (patched) this.notifyWrites();
+    await this.outbox.patchOutbox(seq, patch);
   }
 
   async retryFailedOutbox(): Promise<void> {
-    const retried = await this.connection.run(async (db) => {
-      const read = db.transaction(OUTBOX_STORE, 'readonly');
-      const outbox = await promisifyRequest(
-        read.objectStore(OUTBOX_STORE).getAll() as IDBRequest<OutboxEntry[]>
-      );
-      const failed = outbox.filter((entry) => entry.status === 'failed');
-      if (failed.length === 0) return false;
-
-      const transaction = db.transaction(OUTBOX_STORE, 'readwrite');
-      for (const entry of failed) {
-        transaction.objectStore(OUTBOX_STORE).put({
-          ...entry,
-          status: 'pending',
-          attempts: 0,
-          nextAttemptAt: 0,
-          lastError: null,
-        });
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (retried) this.notifyWrites();
+    await this.outbox.retryFailedOutbox();
   }
 }

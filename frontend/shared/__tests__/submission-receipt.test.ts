@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
 
 import {
   clearSubmissionReceipt,
   readSubmissionReceipt,
   RECEIPT_TTL_MS,
   SUBMISSION_RECEIPT_KEYS,
-  useSubmissionReceipt,
   writeSubmissionReceipt,
 } from '../submission-receipt';
 
@@ -86,27 +84,5 @@ describe('submission receipts', () => {
     } finally {
       spy.mockRestore();
     }
-  });
-});
-
-describe('useSubmissionReceipt', () => {
-  it('restores a remembered code after mount', () => {
-    writeSubmissionReceipt('projectRequest', 'PRJ-2026-A7K2M9QX');
-
-    const { result } = renderHook(() => useSubmissionReceipt('projectRequest'));
-
-    expect(result.current.referenceCode).toBe('PRJ-2026-A7K2M9QX');
-  });
-
-  it('remembers and dismisses a code', () => {
-    const { result } = renderHook(() => useSubmissionReceipt('training'));
-
-    act(() => result.current.remember('TRN-2026-A7K2M9QX'));
-    expect(result.current.referenceCode).toBe('TRN-2026-A7K2M9QX');
-    expect(readSubmissionReceipt('training')).toBe('TRN-2026-A7K2M9QX');
-
-    act(() => result.current.dismiss());
-    expect(result.current.referenceCode).toBeNull();
-    expect(readSubmissionReceipt('training')).toBeNull();
   });
 });

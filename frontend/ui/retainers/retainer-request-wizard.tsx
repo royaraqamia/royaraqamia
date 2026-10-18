@@ -8,7 +8,7 @@ import type { z } from 'zod';
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
-import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useSubmissionReceipt } from '@/frontend/shared/use-submission-receipt';
 import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 import { RetainerSchema } from '@/shared/contracts/retainers';
 import { RetainerProjectsStep } from './steps/retainer-projects-step';

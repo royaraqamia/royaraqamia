@@ -12,7 +12,7 @@ import {
   fetchConsultationPackages,
   submitBooking,
 } from '@/frontend/api/consultation';
-import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useSubmissionReceipt } from '@/frontend/shared/use-submission-receipt';
 
 export const BOOKING_STEPS = ['package', 'slots', 'details'] as const;
 export type BookingStep = (typeof BOOKING_STEPS)[number];
