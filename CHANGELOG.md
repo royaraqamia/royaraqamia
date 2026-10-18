@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.109.7] - 2026-10-18
+
+### Fixed
+- apply last-write-wins to replayed post creates (#318)
+
 ## [1.109.6] - 2026-10-18
 
 ### Fixed
