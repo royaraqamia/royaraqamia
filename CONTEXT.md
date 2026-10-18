@@ -348,6 +348,26 @@ A write that is durable locally but not yet acknowledged by the server. Its coun
 user.
 _Avoid_: unsynced, dirty, queued change
 
+**Delivery state**:
+The lifecycle of a single write as the user sees it — queued, sent, or failed — shown where the write
+lives, not only as a count.
+_Avoid_: status, tick, progress
+
+**Background flush**:
+A replay of the Outbox that runs with no page open — the service worker under Background Sync on
+Chromium, or the Android shell's WorkManager job. It is what makes delivery outlive the app.
+_Avoid_: background sync, auto-sync, push sync
+
+**Sync hint**:
+A server-to-client signal that there is new Owned data to pull. It triggers a pull and is never itself
+the data, so it cannot become a second writer.
+_Avoid_: push, realtime event, notification
+
+**Launch screen**:
+The stateless first paint the Android shell draws before its WebView has a frame — the app's own chrome
+drawn as a skeleton, not a logo. Kept separate from the app so it needs no over-the-air update.
+_Avoid_: splash, loading screen, boot screen
+
 **Never-cache list**:
 The set of responses the service worker must never store — auth, mutations, admin, push and
 anything marked `no-store`/`private`.
