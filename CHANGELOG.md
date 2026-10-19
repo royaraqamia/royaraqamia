@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.117.0] - 2026-10-19
+
+### Added
+- the two owned tables the reader syncs through (#365)
+
 ## [1.116.5] - 2026-10-19
 
 ### Changed
