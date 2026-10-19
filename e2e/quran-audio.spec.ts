@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
 
@@ -19,6 +19,25 @@ const INDEX = JSON.parse(readFileSync(join(MANIFEST_DIR, 'index.json'), 'utf8'))
 const SURAH_ONE = JSON.parse(readFileSync(join(MANIFEST_DIR, '001.json'), 'utf8'));
 const FIRST = SURAH_ONE.files[0];
 const SECOND = SURAH_ONE.files[1];
+
+/**
+ * The highest-numbered Surah whose manifest is not on disk — the Surah to point
+ * the absence test at — or null once every Surah is vendored.
+ *
+ * `index.json` counts the vendored Suras but does not name them (ADR-0062), so
+ * the manifests are the only statement of which ones exist. Highest rather than
+ * lowest because the vendoring script works upward from Al-Fatiha: the first gap
+ * is the one about to be filled, and the last gap is filled only once every
+ * other Surah is already in.
+ */
+function highestSurahWithoutRecitation(): number | null {
+  for (let sura = 114; sura >= 1; sura -= 1) {
+    if (!existsSync(join(MANIFEST_DIR, `${String(sura).padStart(3, '0')}.json`))) return sura;
+  }
+  return null;
+}
+
+const unvendoredSura = highestSurahWithoutRecitation();
 
 // Each file is short and the queue plays the next one without a fresh gesture,
 // which Chromium's default autoplay policy is entitled to refuse.
@@ -90,7 +109,17 @@ test('plays a sura one Ayah file after another, from the host the manifest names
 });
 
 test('offers no player for a sura with no vendored recitation', async ({ page }) => {
-  await page.goto('/quran/2');
+  // Once the whole Quran is vendored there is no such Surah left to request, and
+  // the absence itself is still covered in `frontend/ui/__tests__/quran.test.tsx`
+  // (`SurahReader` with no Recitation renders neither control). What this spec
+  // adds is the wiring the unit test cannot see: the loader reading the manifest,
+  // the page passing it down, the reader honouring it.
+  test.skip(
+    unvendoredSura === null,
+    'every Surah has a vendored Recitation, so the absence cannot be served'
+  );
+
+  await page.goto(`/quran/${unvendoredSura}`);
 
   await expect(page.getByRole('region', { name: 'تلاوة السُّورة' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'استمع للسُّورة' })).toHaveCount(0);
