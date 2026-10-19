@@ -121,7 +121,11 @@ its manifest.
 - Vendoring is an operator action: `scripts/vendor-quran-audio.mjs` runs by hand against the bucket's S3
   endpoint (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`) — idempotent,
   resumable and checksummed, fetching the published files, verifying that the set is uniform, and
-  writing the manifests — and then the manifests are committed. The audio never enters git.
+  writing the manifests — and then the manifests are committed. The audio never enters git. A resume
+  may pass `--trust-manifests` to take a complete manifest's hashes and confirm each file with a bucket
+  `HEAD` instead of fetching the set again: restarting a long run is otherwise about as expensive as
+  starting it, which on a connection that drops is what leaves a partially vendored Quran stuck. The
+  default still re-fetches, so a source that re-published a file is caught by the run that asks.
 - No timing dataset is needed for Ayah highlighting, so `quran-align` (CC BY 4.0) stays out of the
   build: one fewer asset and one fewer licence obligation.
 - The acceptance test is **a device in Syria playing one Surah over mobile data**. Nothing on this
