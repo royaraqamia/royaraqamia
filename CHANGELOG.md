@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.115.5] - 2026-10-19
+
+### Changed
+- record the Dependabot copy of the service-role key (#352)
+
 ## [1.115.4] - 2026-10-19
 
 ### Changed
