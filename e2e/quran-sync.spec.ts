@@ -90,19 +90,22 @@ test('a mark made offline reaches the account after reconnect', async ({ browser
   const page = await context.newPage();
   await gotoUnderWorkerControl(page, `${baseURL}/quran/2`);
 
-  // The store is open, so a press has somewhere durable to land.
-  await expect(page.locator('[data-quran-ready="true"]')).toBeAttached();
+  // The store is open *and* the session has arrived, so the press has somewhere
+  // durable to land and it belongs to the account. Before the session resolves,
+  // the same press would go to the guest database and never reach the server.
+  const status = page.locator('[data-quran-ready="true"][data-quran-signed-in="true"]');
+  await expect(status).toBeAttached();
 
   const mark = page.getByRole('button', { name: 'علامة على الآية ٢٥٥' });
   await expect(mark).not.toBeDisabled();
   await expect(mark).toHaveAttribute('aria-pressed', 'false');
 
-  // Radio off: the press must land in the Local Store, paint, and say it is
-  // waiting — never fail because the network is gone.
+  // Radio off: the press must land in the Local Store, paint, and be owed — never
+  // fail because the network is gone.
   await context.setOffline(true);
   await mark.click();
   await expect(mark).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('[data-quran-ready="true"]').getByText(/عملية معلقة/)).toBeVisible();
+  await expect(status).toHaveAttribute('data-quran-pending', /[1-9]/);
 
   // Radio back on: the `online` trigger flushes the Outbox.
   await context.setOffline(false);
@@ -110,6 +113,9 @@ test('a mark made offline reaches the account after reconnect', async ({ browser
   await expect
     .poll(async () => (await serverMark(context.request, baseURL!)) !== null, { timeout: 30_000 })
     .toBe(true);
+
+  // ...and the queue it was counted in is empty again.
+  await expect(status).toHaveAttribute('data-quran-pending', '0');
 
   // Clean up so the suite is idempotent.
   await writeMark(context.request, baseURL!, new Date().toISOString());
