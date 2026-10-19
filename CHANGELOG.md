@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.115.4] - 2026-10-19
+
+### Changed
+- publish shell 1.0.8 (20008)
+- bump the minor-and-patch group across 1 directory with 58 updates (#349)
+- bump supabase/setup-cli from 1.7.3 to 3.0.1 (#348)
+- bump actions/setup-java from 4.9.1 to 6.1.0 (#347)
+- bump android-actions/setup-android from 3.2.2 to 4.0.4 (#346)
+- bump the minor-and-patch group with 3 updates (#345)
+
 ## [1.115.3] - 2026-10-18
 
 ### Fixed
