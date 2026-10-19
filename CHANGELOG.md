@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.122.2] - 2026-10-19
+
+### Fixed
+- clear the probe's own row before it asks for a hint (#379)
+
 ## [1.122.1] - 2026-10-19
 
 ### Changed
