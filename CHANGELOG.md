@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.124.0] - 2026-10-19
+
+### Added
+- set the reader in KFGQPC Hafs with ayah cards (#400)
+
 ## [1.123.0] - 2026-10-19
 
 ### Changed
