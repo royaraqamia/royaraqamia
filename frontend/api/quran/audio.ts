@@ -61,10 +61,20 @@ export function loadSurahAudio(surah: number): Promise<QuranSurahAudio | null> {
   const cached = manifests.get(surah);
   if (cached) return cached;
 
-  const pending = fetch(audioManifestUrl(surah))
-    .then(async (response) => (response.ok ? ((await response.json()) as QuranSurahAudio) : null))
-    .catch(() => null);
+  const pending = fetch(audioManifestUrl(surah)).then(async (response) => {
+    // A 404 is the honest, cacheable answer: the sura has no vendored
+    // Recitation. Any other status is a failure, not an absence.
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`audio manifest responded ${response.status}`);
+    return (await response.json()) as QuranSurahAudio;
+  });
 
-  manifests.set(surah, pending);
-  return pending;
+  const tracked = pending.catch((error) => {
+    // A failed load must not be remembered, or a retry can never succeed.
+    manifests.delete(surah);
+    throw error;
+  });
+
+  manifests.set(surah, tracked);
+  return tracked;
 }
