@@ -5,6 +5,8 @@ import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { createLeadHttpSyncTransport } from '@/frontend/api/leads/sync-transport';
+import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
+import { createQuranHttpSyncTransport } from '@/frontend/api/quran/sync-transport';
 import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import type {
@@ -41,8 +43,6 @@ import type { SyncTransport } from '@/frontend/shared/local-store/sync-transport
  *   worker drain would replay `link.*` intents with no credential and, worse,
  *   with whichever credential it could find. LinkSnap therefore flushes from the
  *   page only (spec: docs/specs/offline-first.md, "Limits of instant").
- * - **Quran.** Local-only by design (ADR-0056): its reader has no Outbox to
- *   replay, so there is nothing to drain.
  */
 
 /** The account's own stores, and no other: a guest namespace claims on sign-in. */
@@ -106,6 +106,12 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
       };
     },
     createEngine: (deps) => new BlogpressSyncEngine(deps),
+  },
+  {
+    product: 'quran',
+    identity: signedInIdentity,
+    open: openOutboxOnly('quran', createQuranHttpSyncTransport),
+    createEngine: (deps) => new QuranSyncEngine(deps),
   },
   {
     product: 'leads',

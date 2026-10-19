@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
+import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { DRAINABLE_PRODUCTS } from '@/frontend/api/sync-products';
 import { userIdentity } from '@/frontend/shared/local-store/identity';
@@ -24,6 +25,7 @@ const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () =
   habitflow: (factory) => HabitLocalStore.open(userIdentity(SESSION.userId), factory),
   spendtrack: (factory) => SpendtrackLocalStore.open(userIdentity(SESSION.userId), factory),
   blogpress: (factory) => BlogpressLocalStore.open(userIdentity(SESSION.userId), factory),
+  quran: (factory) => QuranLocalStore.open(userIdentity(SESSION.userId), factory),
   leads: (factory) => LeadsLocalStore.open(factory),
 };
 
