@@ -61,6 +61,29 @@ export function localVersions(dir = MIGRATIONS_DIR) {
 }
 
 /**
+ * Versions claimed by more than one file, with the files claiming them.
+ *
+ * `supabase db push` applies files in version order and records a version once,
+ * so the second file to arrive at a shared version fails on its history insert
+ * (`duplicate key value violates unique constraint "schema_migrations_pkey"`,
+ * 23505) *after* the first has been applied — the loser's SQL rolls back with
+ * it, and the repo ships schema production never got while the version list
+ * looks level. Two authors choosing the same rounded hour is how that happens
+ * (#365: `20261019140000` twice, the certificates index winning the race and
+ * the Quran's two tables silently not applying).
+ */
+export function duplicateVersions(dir = MIGRATIONS_DIR) {
+  const byVersion = new Map();
+  for (const { version, file } of localMigrations(dir)) {
+    byVersion.set(version, [...(byVersion.get(version) ?? []), file]);
+  }
+  return [...byVersion.entries()]
+    .filter(([, files]) => files.length > 1)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([version, files]) => ({ version, files: [...files].sort() }));
+}
+
+/**
  * Versions out of a Management API response. Accepts the documented shape
  * (`{ migrations: [{ version, name }] }`) and a bare array, because a shape
  * change here must fail loudly, not quietly compare against nothing.
@@ -117,6 +140,22 @@ export async function main({
 } = {}) {
   const token = env.SUPABASE_ACCESS_TOKEN;
   const projectRef = env.SUPABASE_PROJECT_REF;
+
+  // Checked before anything else, and before the network: a version two files
+  // claim is a repo-side collision that no project ref can explain away, and it
+  // is worth reporting even where the secrets are absent (a fork's pull
+  // request, a run without the token).
+  const collided = duplicateVersions(localDir);
+  if (collided.length > 0) {
+    log(
+      'ERROR: two migration files claim the same version, and `supabase db push` records a version ' +
+        'once. The second file to be applied fails on its history insert and its SQL rolls back with ' +
+        'it, so the repo would ship schema that production never received:'
+    );
+    for (const { version, files } of collided) log(`  - ${version}: ${files.join(', ')}`);
+    log('  Fix: renumber the later file to a version after every other one.');
+    return 1;
+  }
 
   if (!token || !projectRef) {
     log(
