@@ -6,7 +6,15 @@ import {
   requestOutboxFlush,
   requestShellFlush,
 } from '@/frontend/shared/local-store/background-sync';
+import { requestDeviceWake } from '@/frontend/shared/local-store/device-wake';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+
+// The wake is a request of its own (ADR-0060); what this file owes is the
+// *decision* to ask for it, so the requester is mocked and the real one is
+// covered by `device-wake.test.ts`.
+vi.mock('@/frontend/shared/local-store/device-wake', () => ({
+  requestDeviceWake: vi.fn(),
+}));
 
 function registration(sync: { register: (tag: string) => Promise<void> } | undefined) {
   return { sync } as unknown as ServiceWorkerRegistration;
@@ -44,6 +52,7 @@ async function settle() {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.clearAllMocks();
 });
 
 describe('requestOutboxFlush', () => {
@@ -140,6 +149,43 @@ describe('flushOutbox', () => {
     await settle();
 
     expect(register).toHaveBeenCalledWith(OUTBOX_SYNC_TAG);
+    vi.unstubAllGlobals();
+  });
+
+  it('tells the account’s other devices when the flush delivered something', async () => {
+    vi.stubGlobal('navigator', { serviceWorker: container(registration(undefined)) });
+    const delivering = engine({ pending: 2 });
+    (delivering.status as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        syncing: false,
+        pending: 2,
+        failed: 0,
+        lastError: null,
+        lastFailedType: null,
+      })
+      .mockResolvedValueOnce({
+        syncing: false,
+        pending: 0,
+        failed: 0,
+        lastError: null,
+        lastFailedType: null,
+      });
+
+    flushOutbox(delivering);
+    await settle();
+
+    expect(requestDeviceWake).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not wake anyone for a flush that delivered nothing', async () => {
+    vi.stubGlobal('navigator', { serviceWorker: container(registration(undefined)) });
+    const settled = engine({ pending: 0 });
+
+    flushOutbox(settled);
+    await settle();
+
+    expect(requestDeviceWake).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });

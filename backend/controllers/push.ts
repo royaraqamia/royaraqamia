@@ -3,7 +3,7 @@ import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
-import { createPushNotifier, runAfter } from '@/backend/config/push';
+import { createPushNotifier, createFcmPushService, runAfter } from '@/backend/config/push';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { mapWithConcurrency } from '@/backend/services/push/dispatch';
 import { env } from '@/backend/config/env';
@@ -12,6 +12,7 @@ import {
   PushDeviceUnregisterSchema,
   PushSubscriptionSchema,
   PushUnsubscribeSchema,
+  PushWakeSchema,
   PushWebhookSchema,
 } from '@/shared/contracts/push';
 import { isSameOrigin } from '@/backend/transport/http';
@@ -21,6 +22,8 @@ const SUBSCRIBE_RATE_LIMIT = 20;
 const SUBSCRIBE_RATE_WINDOW_MS = 3600_000;
 const DEVICE_RATE_LIMIT = 20;
 const DEVICE_RATE_WINDOW_MS = 3600_000;
+const WAKE_RATE_LIMIT = 60;
+const WAKE_RATE_WINDOW_MS = 3600_000;
 const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export async function subscribePush(body: unknown, headers: Headers): Promise<HttpResult> {
@@ -160,6 +163,49 @@ export async function unregisterDeviceToken(body: unknown, headers: Headers): Pr
     return jsonResult(200, { success: true });
   } catch {
     return jsonResult(500, { success: false, error: 'فشل إلغاء تسجيل الجهاز' });
+  }
+}
+
+/**
+ * Wakes the account's *other* devices so they pull (ADR-0059, ADR-0060).
+ *
+ * A device calls this at the one moment it knows the account moved: right after
+ * its own drain delivered a write. The wake carries no state and can only cause
+ * the receiver to pull, so the worst a caller can do with this endpoint is spend
+ * their own devices' battery — which is why the guard is a per-user rate limit
+ * rather than a role, and why it never fans out to anyone but the caller.
+ */
+export async function wakeDevices(body: unknown, headers: Headers): Promise<HttpResult> {
+  try {
+    const { user } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+    }
+    if (!isSameOrigin(headers)) {
+      return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+    }
+
+    const parsed = PushWakeSchema.safeParse(body ?? {});
+    if (!parsed.success) {
+      return jsonResult(400, { success: false, error: 'بيانات غير صحيحة' });
+    }
+
+    const allowed = await checkRateLimit(
+      `push:wake:${user.id}`,
+      WAKE_RATE_LIMIT,
+      WAKE_RATE_WINDOW_MS
+    );
+    if (!allowed) {
+      return jsonResult(429, { success: false, error: 'تم تجاوز حد التنبيه' });
+    }
+
+    runAfter(() => {
+      void createFcmPushService().sendWakeToUser(user.id, { excludeToken: parsed.data.token });
+    });
+
+    return jsonResult(202, { success: true });
+  } catch {
+    return jsonResult(500, { success: false, error: 'فشل إرسال التنبيه' });
   }
 }
 

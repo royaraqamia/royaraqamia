@@ -5,6 +5,7 @@ import {
   createServiceAccountAssertion,
   isDeadTokenError,
   FCM_CHANNEL_ID,
+  FCM_SYNC_WAKE,
   type FcmSendError,
 } from '@/backend/services/push/fcm-client';
 import type { PushPayload } from '@/shared/contracts/push';
@@ -105,6 +106,41 @@ describe('createFcmAdapter', () => {
         data: { url: '/verify/COMP-1', type: 'certificate_issued', notificationId: 'n-1' },
         android: { priority: 'high', notification: { channel_id: FCM_CHANNEL_ID } },
       },
+    });
+  });
+
+  it('sends a wake as a data-only, high-priority message with no notification', async () => {
+    const { adapter, fetchMock } = makeAdapter((url) =>
+      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, { name: 'm/2' })
+    );
+
+    await adapter.sendData('device-token-1', { type: FCM_SYNC_WAKE });
+
+    const [sendUrl, sendInit] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
+    expect(sendUrl).toBe('https://fcm.googleapis.com/v1/projects/roya-raqamia/messages:send');
+    expect(JSON.parse(sendInit.body as string)).toEqual({
+      message: {
+        token: 'device-token-1',
+        data: { type: 'sync' },
+        // High priority is what lets a data-only message reach an app that is
+        // backgrounded or closed; the absent `notification` block is what keeps
+        // a wake silent.
+        android: { priority: 'high' },
+      },
+    });
+  });
+
+  it('prunes a wake the same way it prunes a notification', async () => {
+    const { adapter } = makeAdapter((url) =>
+      url.includes('oauth2.googleapis.com')
+        ? tokenOk()
+        : jsonResponse(404, {
+            error: { status: 'NOT_FOUND', details: [{ errorCode: 'UNREGISTERED' }] },
+          })
+    );
+
+    await expect(adapter.sendData('dead-token', { type: FCM_SYNC_WAKE })).rejects.toMatchObject({
+      errorCode: 'UNREGISTERED',
     });
   });
 

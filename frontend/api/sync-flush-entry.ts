@@ -1,4 +1,5 @@
-import { DRAINABLE_PRODUCTS } from '@/frontend/api/sync-products';
+import { DRAINABLE_PRODUCTS, PULLABLE_PRODUCTS } from '@/frontend/api/sync-products';
+import { requestDeviceWake } from '@/frontend/shared/local-store/device-wake';
 import { listExistingDatabases, readDrainSession } from '@/frontend/shared/local-store/drain-entry';
 import {
   drainOutboxes,
@@ -6,6 +7,11 @@ import {
   type DrainOutboxesInput,
   type DrainSession,
 } from '@/frontend/shared/local-store/drain-outbox';
+import {
+  refreshProducts,
+  type RefreshOutcome,
+  type RefreshProductsInput,
+} from '@/frontend/shared/local-store/refresh-products';
 import { errorMessage } from '@/frontend/shared/local-store/sync-transport';
 
 /**
@@ -20,13 +26,17 @@ import { errorMessage } from '@/frontend/shared/local-store/sync-transport';
  * implementation of the queue, which is the property ADR-0059 refuses to trade.
  *
  * Nothing here decides *when* to drain; that is the worker's business. This runs
- * the same registry the service worker drains (ADR-0058) — `DRAINABLE_PRODUCTS`,
- * `drainOutboxes` — so the two tiers cannot drift about what "the queue" is.
+ * the same registries the service worker drains and the surfaces pull
+ * (ADR-0058, ADR-0060) — `DRAINABLE_PRODUCTS`, `drainOutboxes`,
+ * `PULLABLE_PRODUCTS`, `refreshProducts` — so the tiers cannot drift about what
+ * "the queue" or "the pull" is.
  */
 
 /** What the worker needs to know: is there anything left, and did it fail. */
 export interface SyncFlushReport {
   outcomes: DrainOutcome[];
+  /** What the background refresh pulled, per product (ADR-0060). */
+  refreshed: RefreshOutcome[];
   /** Intents still queued across every product: the worker comes back for these. */
   pending: number;
   /** Intents the server refused permanently, for the worker's log line. */
@@ -39,12 +49,16 @@ export interface SyncFlushDeps {
   session?: () => Promise<DrainSession | null>;
   databases?: () => Promise<readonly string[] | null>;
   drain?: (input: DrainOutboxesInput) => Promise<DrainOutcome[]>;
+  refresh?: (input: RefreshProductsInput) => Promise<RefreshOutcome[]>;
+  /** The "this device just committed" ping (ADR-0060); a seam for tests. */
+  wake?: () => void;
 }
 
 /** Totals across products, which is the only shape the worker acts on. */
 export function summarizeOutcomes(outcomes: DrainOutcome[]): SyncFlushReport {
   return {
     outcomes,
+    refreshed: [],
     pending: outcomes.reduce((total, outcome) => total + outcome.pending, 0),
     failed: outcomes.reduce((total, outcome) => total + outcome.failed, 0),
     error: outcomes.find((outcome) => outcome.error)?.error ?? null,
@@ -52,27 +66,50 @@ export function summarizeOutcomes(outcomes: DrainOutcome[]): SyncFlushReport {
 }
 
 /**
- * Drains every product's Outbox for whoever the cookies say is signed in, and
- * answers a report rather than throwing.
+ * Drains every product's Outbox for whoever the cookies say is signed in, pulls
+ * each product that can be pulled, and answers a report rather than throwing.
  *
  * The failure answer matters as much as the success one: a drain that threw
  * would leave the worker waiting for a report that never comes, and a page that
  * reported success would retire a queue that was never replayed. So a session
  * lookup that fails, or a realm that cannot list databases, becomes `error` —
  * which the worker treats as "come back later", never as "nothing to do".
+ *
+ * The pull runs *after* the drain, which is the order the app reconciles in: a
+ * queue that still owed the server a write is replayed before the server's own
+ * state is read back into the store. A pull that fails is not an `error` — it
+ * leaves nothing owed, because the next wake, open or focus pulls again.
  */
 export async function runSyncFlushPage(deps: SyncFlushDeps = {}): Promise<SyncFlushReport> {
   const session = deps.session ?? readDrainSession;
   const databases = deps.databases ?? listExistingDatabases;
   const drain = deps.drain ?? drainOutboxes;
+  const refresh = deps.refresh ?? refreshProducts;
+  const wake = deps.wake ?? requestDeviceWake;
 
   try {
     const [current, existingDatabases] = await Promise.all([session(), databases()]);
-    return summarizeOutcomes(
-      await drain({ session: current, products: DRAINABLE_PRODUCTS, existingDatabases })
-    );
+    const outcomes = await drain({
+      session: current,
+      products: DRAINABLE_PRODUCTS,
+      existingDatabases,
+    });
+
+    // A delivered write is the one moment this device knows the account moved,
+    // and a closed shell cannot read a Realtime hint (ADR-0060) — so this is
+    // where the account's other devices are told. Asked for before the pull,
+    // because a wake is about what this device committed, not what it learns.
+    if (outcomes.some((outcome) => outcome.replayed > 0)) wake();
+
+    const refreshed = await refresh({
+      session: current,
+      products: PULLABLE_PRODUCTS,
+      existingDatabases,
+    });
+
+    return { ...summarizeOutcomes(outcomes), refreshed };
   } catch (error) {
-    return { outcomes: [], pending: 0, failed: 0, error: errorMessage(error) };
+    return { outcomes: [], refreshed: [], pending: 0, failed: 0, error: errorMessage(error) };
   }
 }
 

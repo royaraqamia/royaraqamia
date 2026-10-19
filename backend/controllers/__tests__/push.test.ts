@@ -7,6 +7,7 @@ const mockRemoveByEndpoint = vi.fn();
 const mockDeviceUpsert = vi.fn();
 const mockDeviceRemoveByToken = vi.fn();
 const mockSendToUsers = vi.fn();
+const mockSendWake = vi.fn();
 const mockEnv: { baseUrl: string; pushWebhookToken?: string } = {
   baseUrl: 'https://royaraqamia.com',
   pushWebhookToken: 'webhook-secret',
@@ -50,6 +51,7 @@ vi.mock('@/backend/config/env', () => ({
 
 vi.mock('@/backend/config/push', () => ({
   createPushNotifier: () => ({ sendToUsers: mockSendToUsers }),
+  createFcmPushService: () => ({ sendWakeToUser: mockSendWake }),
   runAfter: (fn: () => void) => void fn(),
 }));
 
@@ -83,6 +85,7 @@ describe('push controller', () => {
     mockRemoveByEndpoint.mockResolvedValue(undefined);
     mockDeviceUpsert.mockResolvedValue(undefined);
     mockDeviceRemoveByToken.mockResolvedValue(undefined);
+    mockSendWake.mockResolvedValue(undefined);
   });
 
   describe('subscribePush', () => {
@@ -213,6 +216,71 @@ describe('push controller', () => {
 
       expect(result.status).toBe(200);
       expect(mockRemoveByEndpoint).toHaveBeenCalledWith('u-1', validBody.endpoint);
+    });
+  });
+
+  describe('wakeDevices', () => {
+    it('returns 401 when unauthenticated', async () => {
+      mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+      const { wakeDevices } = await importControllers();
+
+      const result = await wakeDevices({}, sameOriginHeaders());
+
+      expect(result.status).toBe(401);
+      expect(mockSendWake).not.toHaveBeenCalled();
+    });
+
+    it('rejects cross-site requests with 403', async () => {
+      const { wakeDevices } = await importControllers();
+
+      const result = await wakeDevices({}, crossOriginHeaders());
+
+      expect(result.status).toBe(403);
+      expect(mockSendWake).not.toHaveBeenCalled();
+    });
+
+    it('wakes the caller’s own account, leaving the writer out', async () => {
+      const { wakeDevices } = await importControllers();
+
+      const result = await wakeDevices({ token: 'device-a' }, sameOriginHeaders());
+
+      expect(result.status).toBe(202);
+      expect(mockCheckRateLimit).toHaveBeenCalledWith('push:wake:u-1', 60, 3600_000);
+      expect(mockSendWake).toHaveBeenCalledWith('u-1', { excludeToken: 'device-a' });
+    });
+
+    it('accepts a body with no token, which is how a browser tab wakes the account', async () => {
+      const { wakeDevices } = await importControllers();
+
+      const result = await wakeDevices({}, sameOriginHeaders());
+
+      expect(result.status).toBe(202);
+      expect(mockSendWake).toHaveBeenCalledWith('u-1', { excludeToken: undefined });
+    });
+
+    it('returns 400 for a malformed token', async () => {
+      const { wakeDevices } = await importControllers();
+
+      expect((await wakeDevices({ token: '' }, sameOriginHeaders())).status).toBe(400);
+      expect((await wakeDevices({ token: 42 }, sameOriginHeaders())).status).toBe(400);
+      expect(mockSendWake).not.toHaveBeenCalled();
+    });
+
+    it('refuses a device that wakes the account too often', async () => {
+      mockCheckRateLimit.mockResolvedValue(false);
+      const { wakeDevices } = await importControllers();
+
+      const result = await wakeDevices({}, sameOriginHeaders());
+
+      expect(result.status).toBe(429);
+      expect(mockSendWake).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 when the session lookup throws', async () => {
+      mockGetAuthUser.mockRejectedValue(new Error('supabase down'));
+      const { wakeDevices } = await importControllers();
+
+      expect((await wakeDevices({}, sameOriginHeaders())).status).toBe(500);
     });
   });
 

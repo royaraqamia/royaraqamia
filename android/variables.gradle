@@ -11,6 +11,12 @@ ext {
     // the only Android background component this shell has; 2.10.x is the line
     // that still runs on `minSdkVersion 24`.
     androidxWorkVersion = '2.10.5'
+    // The shell's own FCM receiver (ADR-0059, ADR-0060) extends
+    // `FirebaseMessagingService`, and a plugin project's dependencies are not
+    // transitive, so the app module declares the artifact itself. The pin is the
+    // version `@capacitor/push-notifications` defaults to, so declaring it here
+    // keeps the plugin and the shell on one version instead of two.
+    firebaseMessagingVersion = '25.0.1'
     coreSplashScreenVersion = '1.2.0'
     androidxWebkitVersion = '1.14.0'
     junitVersion = '4.13.2'

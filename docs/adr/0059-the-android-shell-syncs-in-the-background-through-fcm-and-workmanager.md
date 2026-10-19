@@ -30,3 +30,9 @@ and the FCM sender already exist (ADR-0038, ADR-0050) and this reuses them. The 
 silent and must never carry the work itself — it names a pull, it does not become a second source of
 truth. Background delivery is also why the exemption prompt exists: in doze, an unbattered FCM wake is
 deferred like anything else, and a user who is told why may grant it.
+
+The wake is asked for by the device that delivered the write (`POST /api/push/wake`, session-scoped and
+limited per user) rather than observed by the server: sync writes arrive through per-product endpoints,
+so a central change feed would be a second description of the same traffic, and it could not tell which
+device wrote. The message stays a hint — one `type`, no payload — and the receiver's only action is to
+enqueue the drain it would have run anyway.

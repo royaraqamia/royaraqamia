@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { HabitSyncEngine, type SyncStatus } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
-import { ApiClient } from '@/frontend/api/habitflow/habit-api';
+import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
@@ -117,8 +117,9 @@ export function useHabitSync(
     const pull = async () => {
       if (!isOnline()) return;
       try {
-        const data = await ApiClient.fetchSyncData();
-        await store.mergeServerData(data.habits, data.logs);
+        // The same pull the background tier runs (ADR-0060): this hook owns
+        // *when*, `pullHabitData` owns *how*.
+        await pullHabitData(store);
         refreshRef.current();
       } catch (error) {
         logger.warn('HabitFlow pull failed', { error: String(error) });

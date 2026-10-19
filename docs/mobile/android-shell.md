@@ -133,22 +133,23 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                               | State                                                                                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| capability                                      | where                                                               | state                                                                                                                                    |
-| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                                   |
-| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                                  |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                          |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                           |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                                  |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                                   |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                                  |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                        |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                        |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                            |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below        |
-| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                   |
-| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`        | Working — WorkManager loads the drain page in a headless WebView and replays the Outbox; the FCM data wake is still open (spec phase 5b) |
+| Capability                                      | Where                                                               | State                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                      | where                                                               | state                                                                                                                             |
+| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                            |
+| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                           |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                   |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                    |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                           |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                            |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                           |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                 |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                 |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                     |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
+| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                            |
+| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`        | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                        |
+| Background wake (FCM)                           | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`      | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor |
 
 ### The native bridge on a remote origin
 
@@ -239,6 +240,37 @@ the shell at `http://10.0.2.2:3000` therefore fails to load the app's own script
 connectivity also never reaches `VALIDATED` on a network as flaky as this one, which WorkManager's
 `CONNECTED` request includes — the jobs sit at `Unsatisfied constraints: CONNECTIVITY`. On a real device
 with working DNS neither applies.
+
+### The wake
+
+The drain answers "what this device still owes". The wake answers the other half of ADR-0060: "this
+account moved somewhere else", for the app that would hear that over Realtime if it were open.
+
+- **Who asks.** The device that just _delivered_ a write — the one moment a device knows the account
+  moved. `requestDeviceWake()` runs from the page's flush driver, the service worker's drain and the
+  drain page, so a laptop commit reaches a phone and a phone commit reaches a laptop. A _pull_ never
+  asks: two devices that pulled would wake each other forever.
+- **What travels.** A data-only, high-priority FCM message with one field, `{ type: "sync" }`. No
+  `notification` block, so it draws nothing; no payload, so a receiver cannot mistake a hint for state.
+  `POST /api/push/wake` reaches the caller's own account and nobody else's — session, same origin, a
+  per-user limit — and it takes the caller's FCM token so the writer is not woken by its own commit.
+- **What receives it.** `SyncMessagingService` replaces `@capacitor/push-notifications`'
+  `MessagingService` in the manifest (`tools:node="remove"`). Firebase delivers `MESSAGING_EVENT` to
+  exactly one service, and leaving both declared would be a coin toss — including for the visible
+  notifications the bell depends on. The plugin's two jobs (a message's data for the page, a rotated
+  token) are delegated back to its static entry points; ours is to call `SyncScheduler.flushSoon()`.
+  Checking the _merged_ manifest is the proof that exactly one receiver listens.
+- **What it may not do.** Make the app do work it cannot do. FCM does not deliver to an app the user
+  _force-stopped_ (Android blocks it until the next launch), so the 15-minute floor is not redundant — it
+  is what covers that case. A wake is an accelerator, never the guarantee.
+
+To watch one land, and to check the receiver wiring after any plugin bump:
+
+```powershell
+adb logcat -s RoySyncFlush:*   # what the worker did with the wake, or with its floor
+# Exactly one MESSAGING_EVENT service, and it is com.royaraqamia.app.SyncMessagingService:
+Select-String -Path android/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml -Pattern 'MESSAGING_EVENT'
+```
 
 ### The system bar band
 
@@ -401,8 +433,8 @@ through the bridge rather than an npm import.
    `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
    its newlines escaped as `\n` — that is how the downloaded JSON already carries it, and
    `backend/config/env.ts` normalises it back. With any of the three missing the channel is
-   a no-op rather than an error. The same service account is what a silent high-priority _data_ message
-   will use for the shell's background wake (spec phase 5b); the drain itself does not need it.
+   a no-op rather than an error. The same service account sends the shell's silent high-priority
+   _data_ wake (see "The wake"); the drain itself does not need it.
 3. **A rebuild** of the APK/AAB so the shell picks up the messaging SDK.
 
 The service-account JSON itself must never be committed or dropped next to the keystore

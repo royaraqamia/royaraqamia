@@ -28,6 +28,17 @@ export const PushDeviceUnregisterSchema = z.object({
   token: z.string().trim().min(1).max(4096),
 });
 
+/**
+ * A sync wake (ADR-0059, ADR-0060): "this account just moved — tell my other
+ * devices". The one field is the caller's own device token, so the device that
+ * wrote is not woken by its own commit; a browser tab has none and leaves it out.
+ *
+ * Nothing else travels: a hint may only cause a pull, never carry state.
+ */
+export const PushWakeSchema = z.object({
+  token: z.string().trim().min(1).max(4096).optional(),
+});
+
 export const PushWebhookSchema = z.object({
   user_ids: z.array(z.string().uuid()).min(1).max(10000),
 });
@@ -36,6 +47,7 @@ export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 export type PushWebhookInput = z.infer<typeof PushWebhookSchema>;
 export type PushDeviceTokenInput = z.infer<typeof PushDeviceTokenSchema>;
 export type PushDeviceUnregisterInput = z.infer<typeof PushDeviceUnregisterSchema>;
+export type PushWakeInput = z.infer<typeof PushWakeSchema>;
 
 export interface PushPayload {
   title: string;

@@ -22,6 +22,16 @@ const server = readFileSync(
   'utf8'
 );
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+const wake = readFileSync(
+  'android/app/src/main/java/com/royaraqamia/app/ShellSyncWake.java',
+  'utf8'
+);
+const messagingService = readFileSync(
+  'android/app/src/main/java/com/royaraqamia/app/SyncMessagingService.java',
+  'utf8'
+);
+const fcmClient = readFileSync('backend/services/push/fcm-client.ts', 'utf8');
+const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
 
 describe('the shell drain page', () => {
   it('loads the bundle the build script writes', () => {
@@ -58,5 +68,21 @@ describe('the shell drain page', () => {
     const javaName = bridge.match(/NAME = "([^"]+)"/)?.[1];
     expect(javaName).toBeTruthy();
     expect(entry).toContain(`SHELL_SYNC_BRIDGE = '${javaName}'`);
+  });
+
+  it('uses the wake type the server sends, on both sides', () => {
+    const javaType = wake.match(/TYPE = "([^"]+)"/)?.[1];
+    expect(javaType).toBeTruthy();
+    expect(fcmClient).toContain(`FCM_SYNC_WAKE = '${javaType}'`);
+  });
+
+  it('receives a wake in the shell rather than in the plugin service', () => {
+    expect(manifest).toContain('android:name=".SyncMessagingService"');
+    expect(manifest).toContain('tools:node="remove"');
+    expect(messagingService).toContain('ShellSyncWake.isWake');
+    // The plugin's own two jobs must survive the takeover, or a visible push
+    // stops reaching the page and a rotated token stops being registered.
+    expect(messagingService).toContain('PushNotificationsPlugin.sendRemoteMessage');
+    expect(messagingService).toContain('PushNotificationsPlugin.onNewToken');
   });
 });

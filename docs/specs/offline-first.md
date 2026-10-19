@@ -85,13 +85,17 @@ stated limit.
 
 Honest list of what stands between us and the bar, each with the file that shows it:
 
-1. **The Android shell's background path is half built.** The drain exists: a WorkManager job — a
-   15-minute floor plus a one-shot the page asks for through `RoyShellSync.schedule()` — loads
-   `/sync-flush.html` in a headless WebView and replays the Outbox there, through the same engine and
-   transports a tab uses (ADR-0059, [the shell notes](../mobile/android-shell.md)). What is still missing
-   is the _wake_: a silent high-priority FCM data message when a user's data moves on another device, the
-   battery-optimization prompt, and delivery badges in the shell. So a write now survives the app closing;
-   a change made elsewhere still waits for the floor to reach a closed shell.
+1. **The Android shell's background path exists, and its reach is narrower than its mechanism.** A write
+   survives the app closing: a WorkManager job - a 15-minute floor plus a one-shot the page asks for
+   through `RoyShellSync.schedule()` - loads `/sync-flush.html` in a headless WebView, replays the Outbox
+   there, and only then pulls (ADR-0059, [the shell notes](../mobile/android-shell.md)). A change made
+   elsewhere reaches a closed shell too: the device that delivered it asks the server for a silent
+   high-priority FCM wake, and the receiver enqueues that same drain. What is still open is the
+   battery-optimization prompt and delivery badges in the shell; and the background _pull_ covers only
+   the products whose pull a background realm can run - HabitFlow and SpendTrack today, because LinkSnap
+   needs a bearer token, BlogPress has no client pull to reuse, and Quran's pull is not wired to its
+   surface yet. So a laptop write refreshes a phone's habits and expenses before the phone is opened; a
+   post, a link or a Quran position still waits for the app.
 2. **The offline e2e suite runs, but its owned-data half still skips in CI.** Every spec is
    `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow now sets them for every
    spec except `lead-offline`, which stays out because it writes a row the suite cannot remove, and runs
@@ -237,8 +241,11 @@ the server is unreachable, and the [Verification](#verification) section for wha
    and give each ADR-0031 surface a legible needs-connection state.
 5. **Android background sync** — _5a, landed:_ the drain — a WorkManager job (a 15-minute floor plus a
    one-shot the page asks for through `RoyShellSync.schedule()`) loads `/sync-flush.html` in a headless
-   WebView and replays the Outbox there (ADR-0059). _5b, open:_ the FCM data wake, the battery-exemption
-   prompt, and delivery badges in the shell.
+   WebView, replays the Outbox and then pulls what it can (ADR-0059). _5b, landed:_ the FCM data wake —
+   a device that delivered a write asks the server to wake the account's other devices, a silent
+   high-priority data message reaches `SyncMessagingService`, and the receiver enqueues the same drain;
+   the background pull covers HabitFlow and SpendTrack (`PULLABLE_PRODUCTS`). _5c, open:_ the
+   battery-exemption prompt and delivery badges in the shell.
 6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
    as content arriving, staying stateless and OTA-free (ADR-0061).
 7. **Verify and harden** — the device matrix below, chaos tests, and the offline suite as a CI gate.
@@ -290,7 +297,18 @@ the server is unreachable, and the [Verification](#verification) section for wha
 - **The drain's own scheduling** is pinned on the JVM: `SyncFlushResultTest` holds the worker's only
   decision (an unreadable report, a failed session lookup or pending work all mean "come back", never
   "nothing to do"), and `ShellServerTest` holds the URL arithmetic the update check and the drain share.
-  What no test can hold is WorkManager actually waking a killed app — that is a device result.
+  What no test can hold is WorkManager actually waking a killed app - that is a device result.
+- **The wake, short of the phone.** The FCM client's wake is pinned to a data-only, high-priority
+  message with no `notification` block; the service sends it to every token but the caller's; the
+  controller owns the same three guards as the device registry (session, same origin, a per-user limit)
+  and fans out to nobody but the caller. On the JVM, `ShellSyncWakeTest` holds what counts as a wake and
+  the manifest wiring that leaves one receiver, and `scripts/__tests__/sync-flush-page.test.mjs` holds
+  the type string to the server's. What none of that can hold is an FCM delivery to a closed app - that
+  is a device result, and [the shell notes](../mobile/android-shell.md) name where it stands.
+- **The background pull** is the drain page's second half: it runs `PULLABLE_PRODUCTS` after the queue
+  (`refresh-products.test.ts`, `sync-flush-entry.test.ts`, and each product's pull module through the
+  hook that now shares it). Its coverage is the honest part: two products today, with the reason each
+  absent one is absent written in `sync-products.ts`.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase
   that regresses `perf/budget.json` does not land — the budget is a gate, not a report.

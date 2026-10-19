@@ -1,12 +1,16 @@
 import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
+import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
+import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { createLeadHttpSyncTransport } from '@/frontend/api/leads/sync-transport';
 import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
 import { createQuranHttpSyncTransport } from '@/frontend/api/quran/sync-transport';
+import { pullSpendtrackData } from '@/frontend/api/spendtrack/pull';
+import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import type {
@@ -15,6 +19,7 @@ import type {
   OpenedProduct,
   OpenProductDeps,
 } from '@/frontend/shared/local-store/drain-outbox';
+import type { PullableProduct } from '@/frontend/shared/local-store/refresh-products';
 import {
   GUEST_IDENTITY,
   localStoreName,
@@ -123,5 +128,56 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
     identity: () => GUEST_IDENTITY,
     open: openOutboxOnly('leads', createLeadHttpSyncTransport),
     createEngine: (deps) => new LeadsSyncEngine(deps),
+  },
+];
+
+/**
+ * The products a background refresh can pull (ADR-0060).
+ *
+ * Same composition root as the drain, for the same reason: this is the only
+ * module that knows every product at once, and only the background tiers import
+ * it — the app bundle never does.
+ *
+ * **Not here, on purpose:**
+ *
+ * - **LinkSnap.** Its reads authenticate with a bearer token taken from the
+ *   Supabase session in React state, never the cookie, and a background realm
+ *   has neither — the same reason it is out of `DRAINABLE_PRODUCTS`.
+ * - **BlogPress.** There is no client pull to reuse: the store has
+ *   `mergeServerData` and nothing that calls it, so the product has no transport
+ *   a background realm could run. Its posts arrive from the server through the
+ *   route's own seeding instead.
+ * - **Quran.** `pullQuranSync` exists but nothing in the app calls it yet, so a
+ *   background refresh would be the *only* pull the product has — new behaviour
+ *   for the reader, smuggled in through the back door. It waits for the surface
+ *   to pull first.
+ * - **Leads.** Delivered, not owned: submissions have no server rows to merge.
+ */
+export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
+  {
+    product: 'habitflow',
+    identity: signedInIdentity,
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('habitflow', identity))) return 0;
+      const store = await HabitLocalStore.open(identity, factory);
+      try {
+        return await pullHabitData(store);
+      } finally {
+        store.close();
+      }
+    },
+  },
+  {
+    product: 'spendtrack',
+    identity: signedInIdentity,
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('spendtrack', identity))) return 0;
+      const store = await SpendtrackLocalStore.open(identity, factory);
+      try {
+        return await pullSpendtrackData(store);
+      } finally {
+        store.close();
+      }
+    },
   },
 ];

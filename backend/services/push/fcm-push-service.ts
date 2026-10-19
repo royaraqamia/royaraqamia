@@ -12,7 +12,11 @@ import {
   mapWithConcurrency,
   sleep,
 } from '@/backend/services/push/dispatch';
-import { isDeadTokenError, type FcmAdapter } from '@/backend/services/push/fcm-client';
+import {
+  isDeadTokenError,
+  FCM_SYNC_WAKE,
+  type FcmAdapter,
+} from '@/backend/services/push/fcm-client';
 
 export interface FcmPushServiceOptions {
   repository: DevicePushTokenRepository;
@@ -20,6 +24,16 @@ export interface FcmPushServiceOptions {
   adapter?: FcmAdapter;
   maxConcurrency?: number;
   retryDelayMs?: number;
+}
+
+/** Who to leave out of a wake, and why the caller's own token is one of them. */
+export interface FcmWakeOptions {
+  /**
+   * The FCM token of the device that just wrote. A commit wakes the account's
+   * *other* devices; waking the writer as well would cost it a drain to learn
+   * something it already knows.
+   */
+  excludeToken?: string;
 }
 
 /**
@@ -42,6 +56,9 @@ export class FcmPushService {
     this.retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
     this.adapter = options.adapter ?? {
       async send() {
+        throw new Error('FcmPushService requires a configured FCM adapter');
+      },
+      async sendData() {
         throw new Error('FcmPushService requires a configured FCM adapter');
       },
     };
@@ -73,16 +90,48 @@ export class FcmPushService {
     }
   }
 
+  /**
+   * Wakes the account's devices so they pull (ADR-0059, ADR-0060).
+   *
+   * This is the background twin of the Realtime hint: a silent, data-only,
+   * high-priority message that says only "something moved" and is answered by
+   * the same pull a focus event answers. It carries no work and no payload a
+   * receiver could mistake for state, so a wake can only ever cost a request.
+   *
+   * Never throws to callers, exactly like the notification path: a wake the
+   * network refused is late, never lost — the device's own floor and the next
+   * foreground both still run.
+   */
+  async sendWakeToUser(userId: string, options: FcmWakeOptions = {}): Promise<void> {
+    if (!this.enabled) return;
+    try {
+      const tokens = await this.repository.findByUserId(userId);
+      const targets = options.excludeToken
+        ? tokens.filter((record) => record.token !== options.excludeToken)
+        : tokens;
+      await mapWithConcurrency(targets, this.maxConcurrency, async (record) => {
+        await this.sendWithRetry(record, () =>
+          this.adapter.sendData(record.token, { type: FCM_SYNC_WAKE })
+        );
+      });
+    } catch (error) {
+      logger.error('Failed to wake devices for user', {
+        userId,
+        error: String(error),
+      });
+    }
+  }
+
   private async dispatch(tokens: DevicePushTokenRecord[], payload: PushPayload) {
     await mapWithConcurrency(tokens, this.maxConcurrency, async (record) => {
-      await this.sendWithRetry(record, payload);
+      await this.sendWithRetry(record, () => this.adapter.send(record.token, payload));
     });
   }
 
-  private async sendWithRetry(record: DevicePushTokenRecord, payload: PushPayload) {
+  private async sendWithRetry(record: DevicePushTokenRecord, deliver: () => Promise<void>) {
     for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
       try {
-        await this.adapter.send(record.token, payload);
+        await deliver();
         return;
       } catch (error) {
         if (isDeadTokenError(error)) {

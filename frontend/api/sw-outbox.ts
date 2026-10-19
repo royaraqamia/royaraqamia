@@ -1,5 +1,6 @@
 import { DRAINABLE_PRODUCTS } from '@/frontend/api/sync-products';
 import { OUTBOX_SYNC_TAG } from '@/frontend/shared/local-store/background-sync';
+import { requestDeviceWake } from '@/frontend/shared/local-store/device-wake';
 import { listExistingDatabases, readDrainSession } from '@/frontend/shared/local-store/drain-entry';
 import { drainOutboxes, type DrainOutcome } from '@/frontend/shared/local-store/drain-outbox';
 
@@ -39,6 +40,12 @@ export async function drain(): Promise<DrainOutcome[]> {
   });
 
   console.log('[sw] outbox drain', JSON.stringify(outcomes));
+
+  // A drain that delivered something is a commit, and a commit is the one thing
+  // the account's other devices want to know about (ADR-0060). Asked for before
+  // the pending check below, because the wake is worth sending even when this
+  // drain has to ask the browser for another attempt.
+  if (outcomes.some((outcome) => outcome.replayed > 0)) requestDeviceWake();
 
   if (outcomes.some((outcome) => outcome.pending > 0)) {
     throw new Error('outbox still has pending intents');
