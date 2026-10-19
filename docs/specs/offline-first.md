@@ -145,11 +145,12 @@ Honest list of what stands between us and the bar, each with the file that shows
    last-write-wins every other pull runs. `frontend/api/sync-hints.ts` owns the subscription — one
    channel per table, filtered to `user_id`, dropped while the document is hidden, and a burst of
    changes folded into one pull. It listens only to tables whose surface has a pull to trigger
-   (HabitFlow's `habits`/`habit_logs`, SpendTrack's four, LinkSnap's `short_links`), published by
-   `supabase/migrations/20261019120000_publish_owned_tables_for_realtime_hints.sql`; BlogPress and the
-   lead forms read on the server through their loader, so they have nothing to pull and are not
-   published. A tab that was hidden catches up through its own focus pull — the subscription is gone by
-   then, which is why a hint never has to be replayed.
+   (HabitFlow's `habits`/`habit_logs`, SpendTrack's four, LinkSnap's `short_links`, the Quran Reader's
+   `quran_reading_positions`/`quran_bookmarks`), published by
+   `supabase/migrations/*_publish_*_realtime_hints.sql` — one file per slice that adds tables, because
+   an applied migration never runs again; BlogPress and the lead forms read on the server through their
+   loader, so they have nothing to pull and are not published. A tab that was hidden catches up through
+   its own focus pull — the subscription is gone by then, which is why a hint never has to be replayed.
 
 ### Cache tiers
 
@@ -246,9 +247,9 @@ the server is unreachable, and the [Verification](#verification) section for wha
 
 - **Offline e2e in CI:** the `E2E: Offline` workflow runs `context.setOffline(true)` with
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
-  server state correct) across the public shell, SpendTrack, HabitFlow, LinkSnap and BlogPress. Every
-  offline spec is wired in; the goal beyond that is a sync-resume proof per remaining product family
-  rather than the flag-gated status quo.
+  server state correct) across the public shell, SpendTrack, HabitFlow, LinkSnap, BlogPress and the
+  Quran Reader. Every offline spec is wired in; the goal beyond that is a sync-resume proof per
+  remaining product family rather than the flag-gated status quo.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Needs-connection states are asserted where they were missing.** Consultation's availability and

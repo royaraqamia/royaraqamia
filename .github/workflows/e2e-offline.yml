@@ -50,6 +50,7 @@ on:
       - 'frontend/api/blogpress/**'
       - 'frontend/api/habitflow/**'
       - 'frontend/api/leads/**'
+      - 'frontend/api/quran/**'
       - 'frontend/api/sync-products.ts'
       - 'frontend/api/sw-outbox.ts'
       - 'frontend/api/sync-flush.ts'
@@ -71,6 +72,7 @@ on:
       - 'e2e/sync-flush.spec.ts'
       - 'e2e/linksnap-offline.spec.ts'
       - 'e2e/blogpress-offline.spec.ts'
+      - 'e2e/quran-sync.spec.ts'
       - 'playwright.config.ts'
       - '.github/workflows/e2e-offline.yml'
   workflow_dispatch:
@@ -119,6 +121,7 @@ jobs:
           e2e/habitflow-sync-resume.spec.ts
           e2e/linksnap-offline.spec.ts
           e2e/blogpress-offline.spec.ts
+          e2e/quran-sync.spec.ts
           --project=existing-tests
           --workers=1
         env:
@@ -128,6 +131,7 @@ jobs:
           LINKSNAP_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           BLOGPRESS_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           SYNC_FLUSH_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          QURAN_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
 
       - name: Upload failure artifacts
         if: failure()

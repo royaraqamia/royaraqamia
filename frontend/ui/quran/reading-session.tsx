@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
+import { QuranSyncStatus } from './sync-status';
 import { observeReadingLine } from './reading-line';
 
 /** How long the reader rests on an ayah before it is worth writing down. */
@@ -24,7 +25,8 @@ interface ReadingSessionProps {
  * exactly one client component, and reading it needs no JavaScript at all.
  */
 export function ReadingSession({ surah, className, children }: ReadingSessionProps) {
-  const { ready, bookmarks, savePosition, toggleBookmark } = useQuranReader();
+  const reader = useQuranReader();
+  const { ready, bookmarks, savePosition, toggleBookmark } = reader;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pendingRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -107,6 +109,7 @@ export function ReadingSession({ surah, className, children }: ReadingSessionPro
 
   return (
     <div ref={containerRef} onClick={onClick} className={className}>
+      <QuranSyncStatus reader={reader} />
       {children}
     </div>
   );

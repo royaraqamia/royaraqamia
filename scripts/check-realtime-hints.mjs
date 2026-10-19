@@ -12,8 +12,9 @@
  * One table per product is enough. What the migration turns on is
  * `postgres_changes` for a table plus the RLS and filter that decide *whose*
  * changes arrive, and neither is table-specific: `habits` proves HabitFlow's
- * entry, `expenses` SpendTrack's, `short_links` LinkSnap's. The rows it writes
- * are its own and it deletes them again.
+ * entry, `expenses` SpendTrack's, `short_links` LinkSnap's and
+ * `quran_bookmarks` the Quran Reader's. The rows it writes are its own and it
+ * deletes them again.
  *
  *   node --env-file=.env scripts/check-realtime-hints.mjs
  *
@@ -69,6 +70,15 @@ const PROBES = [
       code: `hint${Date.now().toString(36)}`,
       original_url: 'https://example.com/realtime-hint-check',
     }),
+  },
+  {
+    product: 'Quran Reader',
+    table: 'quran_bookmarks',
+    idColumn: 'id',
+    // A mark on Ayat al-Kursi; the row is deleted again below. The reader's other
+    // table is published by the same migration and the same guard, so one probe
+    // stands for both.
+    row: () => ({ surah: 2, ayah: 255 }),
   },
 ];
 
