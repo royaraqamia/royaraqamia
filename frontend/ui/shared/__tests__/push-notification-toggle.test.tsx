@@ -134,6 +134,31 @@ describe('PushNotificationToggle auto-heal', () => {
       expect(mocks.unsubscribeFromPush).toHaveBeenCalledTimes(1);
     });
   });
+
+  /**
+   * ADR-0031: the surface names the connection. It used to report the same
+   * "notifications are blocked in your browser — enable them in site settings"
+   * message it shows for a real permission denial, which sent the user to a
+   * setting that was never the problem and offered no retry.
+   */
+  it('names the connection when the server cannot be reached, and stays retryable', async () => {
+    mocks.subscribeToPush.mockResolvedValue('unreachable');
+    render(<PushNotificationToggle />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/تعذَّر تفعيل الإشعارات/)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/محظورة/)).not.toBeInTheDocument();
+
+    // The toggle itself is the retry; the server being unreachable is a moment,
+    // not a setting.
+    const button = screen.getByRole('button');
+    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(mocks.subscribeToPush).toHaveBeenCalledTimes(2);
+    });
+  });
 });
 
 describe('PushNotificationToggle inside the native shell', () => {

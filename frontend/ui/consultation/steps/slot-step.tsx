@@ -10,6 +10,7 @@ import {
   sessionDayKeyLocal,
 } from '@/frontend/shared/consultation-time';
 import { cn } from '@/frontend/shared/cn';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 interface SlotStepProps {
   slots: AvailabilitySlot[];
@@ -17,6 +18,9 @@ interface SlotStepProps {
   selectedIds: string[];
   requiredCount: number;
   onToggle: (slotId: string) => void;
+  /** The availability read failed; shown instead of the "none open" state. */
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 interface DayGroup {
@@ -25,7 +29,15 @@ interface DayGroup {
   slots: AvailabilitySlot[];
 }
 
-export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle }: SlotStepProps) {
+export function SlotStep({
+  slots,
+  loading,
+  selectedIds,
+  requiredCount,
+  onToggle,
+  error,
+  onRetry,
+}: SlotStepProps) {
   const grouped = useMemo(() => {
     const byDay = new Map<string, DayGroup>();
     for (const slot of slots) {
@@ -50,6 +62,12 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
     );
   }
 
+  // A failed request is not an empty calendar (ADR-0031): the server was never
+  // asked, so "no appointments are open" cannot be said.
+  if (slots.length === 0 && error) {
+    return <NeedsConnection message={error} onRetry={onRetry} />;
+  }
+
   if (slots.length === 0) {
     return (
       <div className="text-center py-12 space-y-2">
@@ -62,6 +80,17 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
 
   return (
     <div className="space-y-4">
+      {error && (
+        // The list still works — the submit path runs its own live conflict
+        // check — but it is not the current one, and saying so is cheaper than
+        // hiding a usable list behind a failure.
+        <p
+          role="status"
+          className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+        >
+          تعذَّر تحديث المواعيد — قد لا تعكس القائمة المعروضة أحدث المواعيد المُتاحة.
+        </p>
+      )}
       <p
         className={cn(
           'text-sm font-bold rounded-xl px-4 py-2.5 border',

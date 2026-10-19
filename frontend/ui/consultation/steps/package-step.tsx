@@ -3,14 +3,23 @@
 import { CheckCircle, Clock } from 'lucide-react';
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import { cn } from '@/frontend/shared/cn';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 interface PackageStepProps {
   packages: ConsultationPackage[];
   selectedId: string | null;
   onSelect: (packageId: string) => void;
+  /** The package read failed; shown instead of the "none available" state. */
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-export function PackageStep({ packages, selectedId, onSelect }: PackageStepProps) {
+export function PackageStep({ packages, selectedId, onSelect, error, onRetry }: PackageStepProps) {
+  // A failed request is not an empty catalogue (ADR-0031).
+  if (packages.length === 0 && error) {
+    return <NeedsConnection message={error} onRetry={onRetry} />;
+  }
+
   if (packages.length === 0) {
     return (
       <p className="text-center text-muted-foreground py-10">

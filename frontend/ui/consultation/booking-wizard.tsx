@@ -36,6 +36,8 @@ export function BookingWizard({ flow }: BookingWizardProps) {
           packages={flow.packages}
           selectedId={flow.selectedPackage?.id ?? null}
           onSelect={flow.selectPackage}
+          error={flow.packagesError}
+          onRetry={flow.retryPackages}
         />
       )}
 
@@ -55,6 +57,8 @@ export function BookingWizard({ flow }: BookingWizardProps) {
           selectedIds={flow.selectedSlotIds}
           requiredCount={flow.requiredSessions}
           onToggle={flow.toggleSlot}
+          error={flow.slotsError}
+          onRetry={flow.retrySlots}
         />
       )}
     </FormWizard>

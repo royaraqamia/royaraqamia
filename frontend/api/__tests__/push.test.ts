@@ -101,6 +101,28 @@ describe('push disabled preference', () => {
     expect(result).toBe('denied');
     expect(isPushDisabledByUser()).toBe(false);
   });
+
+  /**
+   * A server that cannot be reached is not the browser refusing permission. It
+   * used to be reported as `denied`, which pointed the user at a browser setting
+   * that was never the problem and offered no retry (ADR-0031).
+   */
+  it('subscribeToPush reports an unreachable server, not a permission denial', async () => {
+    installPushGlobals();
+    mockRequest.mockRejectedValue(new Error('Failed to fetch'));
+
+    const result = await subscribeToPush();
+
+    expect(result).toBe('unreachable');
+    expect(isPushDisabledByUser()).toBe(false);
+  });
+
+  it('subscribeToPush still reports the browser refusing permission as denied', async () => {
+    installPushGlobals({ permission: 'denied' });
+    mockRequest.mockRejectedValue(new Error('Failed to fetch'));
+
+    expect(await subscribeToPush()).toBe('denied');
+  });
 });
 
 describe('applicationServerKeyMatches', () => {

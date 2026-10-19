@@ -96,7 +96,15 @@ export function applicationServerKeyMatches(
   return true;
 }
 
-export type PushSubscribeResult = 'subscribed' | 'denied' | 'unsupported';
+/**
+ * `denied` is the browser refusing permission and nothing else. A subscription
+ * that could not be registered because the server was unreachable is
+ * `unreachable`: reporting it as a permission denial told the user to change a
+ * browser setting that was never the problem, and left no way to retry
+ * (ADR-0031 — a server-owned surface names the connection, not a cause it
+ * invented).
+ */
+export type PushSubscribeResult = 'subscribed' | 'denied' | 'unsupported' | 'unreachable';
 
 async function postSubscription(subscription: PushSubscription): Promise<void> {
   await request('/api/push/subscribe', {
@@ -149,7 +157,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
     // Only revoke a subscription we just created; a pre-existing one may
     // still be valid server-side and will be pruned on 404/410 if not.
     if (created) await subscription.unsubscribe();
-    return 'denied';
+    return 'unreachable';
   }
 }
 

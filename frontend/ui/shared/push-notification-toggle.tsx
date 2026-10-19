@@ -9,6 +9,7 @@ import {
   refreshSubscriptionLiveness,
   subscribeToPush,
   unsubscribeFromPush,
+  type PushSubscribeResult,
 } from '@/frontend/api/push';
 import {
   hasNativePushToken,
@@ -25,8 +26,22 @@ type PushToggleState =
   | { kind: 'checking' }
   | { kind: 'unsupported' }
   | { kind: 'denied' }
+  /** The registration could not reach the server; the toggle stays for a retry. */
+  | { kind: 'unreachable' }
   | { kind: 'enabled' }
   | { kind: 'disabled' };
+
+/**
+ * What a refused `subscribeToPush()` means for the toggle. A permission denial is
+ * the browser's answer and stands until the user changes it in browser settings;
+ * an unreachable server is this moment's answer, so the toggle stays live as its
+ * own retry and the copy names the connection instead of a setting.
+ */
+function toFailureState(result: PushSubscribeResult): PushToggleState {
+  if (result === 'denied') return { kind: 'denied' };
+  if (result === 'unreachable') return { kind: 'unreachable' };
+  return { kind: 'disabled' };
+}
 
 export function PushNotificationToggle() {
   const [state, setState] = useState<PushToggleState>({ kind: 'checking' });
@@ -102,7 +117,7 @@ export function PushNotificationToggle() {
         await existing.unsubscribe();
       }
       const result = await subscribeToPush();
-      setState(result === 'subscribed' ? { kind: 'enabled' } : { kind: 'disabled' });
+      setState(result === 'subscribed' ? { kind: 'enabled' } : toFailureState(result));
     })();
   }, []);
 
@@ -130,8 +145,7 @@ export function PushNotificationToggle() {
       }
       const result = await subscribeToPush();
       if (result === 'subscribed') setState({ kind: 'enabled' });
-      else if (result === 'denied') setState({ kind: 'denied' });
-      else setState({ kind: 'disabled' });
+      else setState(toFailureState(result));
     } finally {
       setBusy(false);
     }
@@ -166,24 +180,37 @@ export function PushNotificationToggle() {
   const isEnabled = state.kind === 'enabled';
 
   return (
-    <button
-      onClick={() => void handleToggle()}
-      disabled={busy}
-      aria-pressed={isEnabled}
-      className={cn(
-        'flex w-full items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-safe duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        isEnabled
-          ? 'bg-primary/8 text-primary hover:bg-primary/[0.14] dark:bg-primary/10'
-          : 'bg-muted/60 text-foreground/80 hover:bg-muted'
+    <div className="flex flex-col">
+      {/* The toggle below is the retry: an unreachable server is the one failure
+          the user can fix by trying again (ADR-0031). */}
+      {state.kind === 'unreachable' && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="px-3 pt-2.5 text-[11px] text-muted-foreground/70"
+        >
+          تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+        </p>
       )}
-    >
-      {isEnabled ? (
-        <BellRing size={15} className="shrink-0" />
-      ) : (
-        <BellOff size={15} className="shrink-0" />
-      )}
-      <span>{busy ? '...' : isEnabled ? 'إيقاف إشعارات الجهاز' : 'تفعيل إشعارات الجهاز'}</span>
-    </button>
+      <button
+        onClick={() => void handleToggle()}
+        disabled={busy}
+        aria-pressed={isEnabled}
+        className={cn(
+          'flex w-full items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-safe duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          isEnabled
+            ? 'bg-primary/8 text-primary hover:bg-primary/[0.14] dark:bg-primary/10'
+            : 'bg-muted/60 text-foreground/80 hover:bg-muted'
+        )}
+      >
+        {isEnabled ? (
+          <BellRing size={15} className="shrink-0" />
+        ) : (
+          <BellOff size={15} className="shrink-0" />
+        )}
+        <span>{busy ? '...' : isEnabled ? 'إيقاف إشعارات الجهاز' : 'تفعيل إشعارات الجهاز'}</span>
+      </button>
+    </div>
   );
 }
