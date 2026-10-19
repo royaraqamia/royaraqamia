@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, Pause, Play, Square } from 'lucide-react';
 import { audioFileUrl, loadAudioEdition, loadSurahAudio } from '@/frontend/api/quran/audio';
+import { Button } from '@/frontend/ui/primitives/button';
 import type { QuranSurahAudio } from '@/shared/contracts/quran-audio';
-import { toArabicDigits } from './format';
 
 type Status = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
@@ -151,11 +151,17 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes }: SurahAudioPlayerPr
         <div className="min-w-0">
           <p className="text-sm font-bold text-foreground">تلاوة السُّورة</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground" aria-live="polite">
-            {isPlaying || status === 'paused'
-              ? `الآية ${toArabicDigits(ayah)} من ${toArabicDigits(ayahCount)}`
-              : `${toArabicDigits(ayahCount)} آية · ${toArabicDigits(
-                  Math.max(1, Math.round(bytes / 1024))
-                )} ك.ب`}
+            {isPlaying || status === 'paused' ? (
+              <>
+                الآية <span className="font-heading">{ayah}</span> من{' '}
+                <span className="font-heading">{ayahCount}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-heading">{ayahCount}</span> آيات ·{' '}
+                <span className="font-heading">{Math.max(1, Math.round(bytes / 1024))}</span> ك.ب
+              </>
+            )}
           </p>
         </div>
 
@@ -171,15 +177,17 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes }: SurahAudioPlayerPr
               <Square aria-hidden="true" className="size-3.5" />
             </button>
           )}
-          <button
+          <Button
             type="button"
+            variant="hero"
+            size="sm"
             onClick={() => void toggle()}
             disabled={isBusy}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70"
+            className="gap-1.5 px-4 text-xs font-bold"
           >
             <Icon aria-hidden="true" className={`size-3.5 ${isBusy ? 'animate-spin' : ''}`} />
             {label}
-          </button>
+          </Button>
         </div>
       </div>
 

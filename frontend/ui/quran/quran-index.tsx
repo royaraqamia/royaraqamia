@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { QuranAttribution } from './attribution';
 import { ReadingPanel } from './reading-panel';
-import { revelationLabel, toArabicDigits } from './format';
+import { revelationLabel } from './format';
 import type { QuranIndex } from '@/shared/contracts/quran';
 
 /**
@@ -22,10 +21,6 @@ export function QuranIndexPage({ index }: { index: QuranIndex }) {
         <SectionTitle as="h1">
           <SectionTitleHighlight>القرآن الكريم</SectionTitleHighlight>
         </SectionTitle>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          اقرأ القرآن الكريم برواية حفصٍ عن عاصم، سورةً سورة. النَّصُّ كاملٌ، ويُقرأ دون اتِّصال
-          بالإنترنت بعد أوَّل زيارة.
-        </p>
       </header>
 
       <ReadingPanel names={index.surahs.map((surah) => surah.name)} />
@@ -39,23 +34,22 @@ export function QuranIndexPage({ index }: { index: QuranIndex }) {
           >
             <span
               aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary transition-colors group-hover:bg-primary/15"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-heading text-sm font-bold text-primary transition-colors group-hover:bg-primary/15"
             >
-              {toArabicDigits(surah.n)}
+              {surah.n}
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="truncate font-bold text-foreground transition-colors group-hover:text-primary">
                 {surah.name}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {revelationLabel(surah.revelation)} · {toArabicDigits(surah.ayahCount)} آية
+                {revelationLabel(surah.revelation)} ·{' '}
+                <span className="font-heading">{surah.ayahCount}</span> آيات
               </span>
             </span>
           </Link>
         ))}
       </nav>
-
-      <QuranAttribution />
     </div>
   );
 }

@@ -1,5 +1,8 @@
 # The Quran recitation is vendored as published
 
+> **Amended by [ADR 0065](0065-the-quran-pages-carry-no-colophon.md)**, which removes the colophon
+> from the Quran pages.
+
 The reader has its text (ADR-0057) and its reading state (ADR-0056); the missing piece is the
 recitation. The rule that governs every asset in this product is that **nothing ships without a
 licence we can read**, and exactly one source of Ayah-level Quran audio publishes terms that cover
@@ -110,7 +113,8 @@ its manifest.
 
 - The colophon grows: alongside Tanzil and the Tafsir Center it must name **Alafasy and Islamic
   Network**, which is what the grant asks for and the minimum courtesy both sources ask of anyone
-  republishing.
+  republishing. ADR 0065 removes that visible colophon; the obligation is now unmet and recorded
+  there.
 - **Residual doubt, recorded rather than hidden.** The grant is Islamic Network's, not the reciter's or
   their estate's, and this reader sits on a site that also sells services. A courtesy note to Islamic
   Network goes out before the first Reciter ships — a note, not a permission request, because the grant

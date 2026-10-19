@@ -1,0 +1,9 @@
+KFGQPC HAFS Uthmanic Script, Regular, Version 0.18
+Copyright (c) 2010 King Fahd Glorious Quran Printing Complex.
+
+Vendored from the quran-data-kfgqpc mirror:
+https://cdn.jsdelivr.net/gh/thetruetruth/quran-data-kfgqpc@main/hafs/font/hafs.18.woff2
+
+sha256 8c00e7a7d5f773bcfb1642fdcfba505dbd81975fef39f14718827a32d075020c
+
+The file is unmodified. The licence is in EULA.txt beside it.

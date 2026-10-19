@@ -96,7 +96,7 @@ test('a mark made offline reaches the account after reconnect', async ({ browser
   const status = page.locator('[data-quran-ready="true"][data-quran-signed-in="true"]');
   await expect(status).toBeAttached();
 
-  const mark = page.getByRole('button', { name: 'علامة على الآية ٢٥٥' });
+  const mark = page.getByRole('button', { name: 'علامة على الآية 255' });
   await expect(mark).not.toBeDisabled();
   await expect(mark).toHaveAttribute('aria-pressed', 'false');
 
