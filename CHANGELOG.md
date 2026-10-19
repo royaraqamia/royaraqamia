@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.119.0] - 2026-10-19
+
+### Added
+- serve the reader's position and bookmarks to a signed-in account (#373)
+
 ## [1.118.1] - 2026-10-19
 
 ### Fixed
