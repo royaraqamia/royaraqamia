@@ -2,6 +2,10 @@
 
 > **Amended by [ADR 0062](0062-the-quran-recitation-is-vendored-as-published.md)**, which names the
 > audio source, fixes the bitrate it ships at, and adds the two obligations its licence carries.
+> **Amended by [ADR 0064](0064-the-quran-is-set-in-the-kfgqpc-uthmani-hafs-face.md)**, which changes
+> the reader's display face from Amiri Quran to KFGQPC Uthmani Hafs.
+> **Amended by [ADR 0065](0065-the-quran-pages-carry-no-colophon.md)**, which removes the colophon
+> from the Quran pages.
 
 The reader is offline-first (ADR-0027), and the Quran's text is the one dataset in the product
 family that is fixed, public and small: the Uthmani text of Hafs ʿan ʿAsim is 1.27 MiB raw and
@@ -60,10 +64,11 @@ One Tafsir is vendored, keyed by slug, so a second is a data addition rather tha
 
 ## Consequences
 
-- Attribution is a shipped surface, not a comment: the Tanzil text requires the project named, a
+- Attribution is a licence condition, not a comment: the Tanzil text requires the project named, a
   link to tanzil.net and its notice reproduced in every derived file, and the Tafsir requires Tafsir
-  Center named. Both mean a colophon on the reader. The display font is Amiri Quran (SIL OFL) rather
-  than a KFGQPC font.
+  Center named. The reader used to carry that colophon; ADR 0065 removes it at the product owner's
+  request and records the unmet obligation. The display font is the KFGQPC Uthmani Hafs face
+  (ADR 0064), whose own EULA grants free use and distribution.
 - The text is verbatim by licence — "changing it is not allowed" — so no normalization, no
   shortening and no reformatting is ever applied to the stored text. Search indexes a separate,
   normalized copy.

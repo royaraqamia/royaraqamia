@@ -96,9 +96,7 @@ async function whenReady(control: HTMLElement): Promise<ControllableObserver> {
 }
 
 function renderSurah() {
-  return render(
-    <SurahReader surah={surah} summary={summary} previous={null} next={null} audio={null} />
-  );
+  return render(<SurahReader surah={surah} summary={summary} audio={null} />);
 }
 
 beforeEach(() => {
@@ -120,12 +118,12 @@ describe('marking an ayah', () => {
     // store is open could not be saved — and a control that silently does
     // nothing is worse than one that says it cannot.
     renderSurah();
-    expect(screen.getByRole('button', { name: 'علامة على الآية ١' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'علامة على الآية 1' })).toBeDisabled();
   });
 
   it('marks an ayah when its number is pressed, and stores it', async () => {
     renderSurah();
-    const button = screen.getByRole('button', { name: 'علامة على الآية ٢' });
+    const button = screen.getByRole('button', { name: 'علامة على الآية 2' });
 
     await whenReady(button);
     expect(button).toHaveAttribute('aria-pressed', 'false');
@@ -140,7 +138,7 @@ describe('marking an ayah', () => {
 
   it('takes the mark off when the same number is pressed again', async () => {
     renderSurah();
-    const button = screen.getByRole('button', { name: 'علامة على الآية ١' });
+    const button = screen.getByRole('button', { name: 'علامة على الآية 1' });
 
     await whenReady(button);
     fireEvent.click(button);
@@ -157,7 +155,7 @@ describe('marking an ayah', () => {
     globalThis.indexedDB = undefined as unknown as IDBFactory;
 
     renderSurah();
-    const button = screen.getByRole('button', { name: 'علامة على الآية ١' });
+    const button = screen.getByRole('button', { name: 'علامة على الآية 1' });
     fireEvent.click(button);
 
     expect(button).toBeDisabled();
@@ -169,7 +167,7 @@ describe('marking an ayah', () => {
 describe('remembering where the reader stopped', () => {
   it('writes the ayah on the reading line, once the reader settles on it', async () => {
     renderSurah();
-    const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية ١' }));
+    const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية 1' }));
     const ayah = document.getElementById('ayah-2')!;
 
     await act(async () => {
@@ -195,7 +193,7 @@ describe('remembering where the reader stopped', () => {
     const closed = vi.spyOn(IDBDatabase.prototype, 'close');
 
     const { unmount } = renderSurah();
-    const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية ١' }));
+    const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية 1' }));
     const ayah = document.getElementById('ayah-2')!;
 
     await act(async () => {
@@ -225,9 +223,9 @@ describe('the index panel', () => {
 
     const resume = await screen.findByRole('link', { name: /أكمل القراءة/ });
     expect(resume).toHaveAttribute('href', '/quran/2#ayah-2');
-    expect(resume).toHaveTextContent('السُّورة 2 · الآية ٢');
+    expect(resume).toHaveTextContent('السُّورة 2 · الآية 2');
     expect(screen.getByRole('region', { name: 'علاماتي' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'السُّورة 2 · ٢' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'السُّورة 2 · 2' })).toHaveAttribute(
       'href',
       '/quran/2#ayah-2'
     );

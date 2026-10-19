@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { BookMarked, BookOpenCheck, X } from 'lucide-react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
 import { QuranSyncStatus } from './sync-status';
-import { toArabicDigits } from './format';
 
 interface ReadingPanelProps {
   /**
@@ -42,7 +41,8 @@ export function ReadingPanel({ names }: ReadingPanelProps) {
           <span className="flex min-w-0 flex-col">
             <span className="text-[11px] text-muted-foreground">أكمل القراءة</span>
             <span className="truncate font-bold text-foreground">
-              {nameOf(readingPosition.surah)} · الآية {toArabicDigits(readingPosition.ayah)}
+              {nameOf(readingPosition.surah)} · الآية{' '}
+              <span className="font-heading">{readingPosition.ayah}</span>
             </span>
           </span>
         </Link>
@@ -57,7 +57,7 @@ export function ReadingPanel({ names }: ReadingPanelProps) {
             <BookMarked aria-hidden="true" className="size-4 text-primary" />
             علاماتي
             <span className="font-normal text-muted-foreground">
-              ({toArabicDigits(bookmarks.length)})
+              (<span className="font-heading">{bookmarks.length}</span>)
             </span>
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
@@ -70,14 +70,12 @@ export function ReadingPanel({ names }: ReadingPanelProps) {
                   href={`/quran/${bookmark.surah}#ayah-${bookmark.ayah}`}
                   className="px-2.5 py-1.5 text-xs font-bold text-foreground transition-safe hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
                 >
-                  {nameOf(bookmark.surah)} · {toArabicDigits(bookmark.ayah)}
+                  {nameOf(bookmark.surah)} · <span className="font-heading">{bookmark.ayah}</span>
                 </Link>
                 <button
                   type="button"
                   onClick={() => void removeBookmark(bookmark.clientId)}
-                  aria-label={`إزالة علامة ${nameOf(bookmark.surah)} الآية ${toArabicDigits(
-                    bookmark.ayah
-                  )}`}
+                  aria-label={`إزالة علامة ${nameOf(bookmark.surah)} الآية ${bookmark.ayah}`}
                   className="rounded-md p-1 text-muted-foreground transition-safe hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <X aria-hidden="true" className="size-3.5" />

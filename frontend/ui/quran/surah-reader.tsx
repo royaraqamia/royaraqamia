@@ -1,10 +1,7 @@
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { SectionTitle } from '@/frontend/ui/shared/section-title';
-import { QuranAttribution } from './attribution';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { ReadingSession } from './reading-session';
 import { SurahAudioPlayer } from './audio-player';
-import { revelationLabel, toArabicDigits } from './format';
+import { revelationLabel } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
 interface SurahReaderProps {
@@ -14,8 +11,6 @@ interface SurahReaderProps {
    * ayah count, and the text file carries neither, so it comes from the index.
    */
   summary: SurahSummary;
-  previous: SurahSummary | null;
-  next: SurahSummary | null;
   /** Null when this sura has no vendored Recitation (ADR-0062). */
   audio: { ayahCount: number; bytes: number } | null;
 }
@@ -25,28 +20,25 @@ interface SurahReaderProps {
  *
  * A server component: the text is vendored, so the whole sura renders into the
  * HTML at build time and reading it needs no client bundle. Each ayah is its own
- * block with a stable id, which is what a Bookmark and a Reading position point
- * at, and its ayah number doubles as the control that marks it — the verse
- * numbering a reader already recognises, made pressable.
+ * card with a stable id, which is what a Bookmark and a Reading position point
+ * at, and its ayah number doubles as the control that marks it.
+ *
+ * The card is the seam for the next phase: Tafsir will sit in the reserved slot
+ * below each ayah's text, without rearranging the reading surface.
  *
  * Deliberately verse-by-verse rather than a Mushaf page: page and line breaks are
  * a separate view of the same text (P5), not the base rendering.
  */
-export function SurahReader({ surah, summary, previous, next, audio }: SurahReaderProps) {
+export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-8 sm:py-12">
       <header className="flex flex-col items-center gap-2 text-center">
-        <Link
-          href="/quran"
-          className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition-safe hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          فهرس السُّوَر
-        </Link>
-        <SectionTitle as="h1" className="font-heading">
-          {summary.name}
+        <SectionTitle as="h1">
+          <SectionTitleHighlight>{summary.name}</SectionTitleHighlight>
         </SectionTitle>
         <p className="text-xs text-muted-foreground">
-          {revelationLabel(summary.revelation)} · {toArabicDigits(summary.ayahCount)} آية
+          {revelationLabel(summary.revelation)} ·{' '}
+          <span className="font-heading">{summary.ayahCount}</span> آيات
         </p>
       </header>
 
@@ -62,69 +54,43 @@ export function SurahReader({ surah, summary, previous, next, audio }: SurahRead
         </p>
       )}
 
-      <ReadingSession surah={summary.n} className="mt-10 flex flex-col gap-6 sm:gap-7">
+      <ReadingSession surah={summary.n} className="mt-10 flex flex-col gap-4">
         {surah.ayahs.map((ayah, position) => {
           const number = position + 1;
           return (
-            <p
+            <article
               key={number}
-              id={`ayah-${number}`}
-              data-ayah={number}
-              className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+              data-ayah-card={number}
+              className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
             >
-              {ayah}
-              <button
-                type="button"
-                data-bookmark-ayah={number}
-                aria-pressed="false"
-                disabled
-                aria-label={`علامة على الآية ${toArabicDigits(number)}`}
-                title="إضافة علامة أو إزالتها"
-                className="mx-1.5 inline-flex size-8 select-none items-center justify-center rounded-full border border-primary/25 bg-primary/5 align-middle text-xs font-bold text-primary transition-safe hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground disabled:opacity-60"
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  data-bookmark-ayah={number}
+                  aria-pressed="false"
+                  disabled
+                  aria-label={`علامة على الآية ${number}`}
+                  title="إضافة علامة أو إزالتها"
+                  className="inline-flex size-8 select-none items-center justify-center rounded-full border border-primary/25 bg-primary/5 font-heading text-sm font-bold text-primary transition-safe hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground disabled:opacity-60"
+                >
+                  {number}
+                </button>
+              </div>
+
+              <p
+                id={`ayah-${number}`}
+                data-ayah={number}
+                className="font-quran mt-3 scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
               >
-                {toArabicDigits(number)}
-              </button>
-            </p>
+                {ayah}
+              </p>
+
+              {/* The Tafsir slot is reserved now, so the next phase only fills it. */}
+              <div data-tafsir-slot={number} />
+            </article>
           );
         })}
       </ReadingSession>
-
-      <nav aria-label="التَّنقُّل بين السُّوَر" className="mt-12 grid grid-cols-2 gap-3">
-        <SurahStep surah={previous} direction="previous" />
-        <SurahStep surah={next} direction="next" />
-      </nav>
-
-      <QuranAttribution />
     </div>
-  );
-}
-
-function SurahStep({
-  surah,
-  direction,
-}: {
-  surah: SurahSummary | null;
-  direction: 'previous' | 'next';
-}) {
-  if (!surah) return <span aria-hidden="true" />;
-
-  const isNext = direction === 'next';
-  const Icon = isNext ? ChevronRight : ChevronLeft;
-
-  return (
-    <Link
-      href={`/quran/${surah.n}`}
-      className={`flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-2.5 transition-safe hover:border-border/90 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
-        isNext ? 'justify-end text-end' : ''
-      }`}
-    >
-      <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[11px] text-muted-foreground">
-          {isNext ? 'السُّورة التَّالية' : 'السُّورة السَّابقة'}
-        </span>
-        <span className="truncate text-sm font-bold text-foreground">{surah.name}</span>
-      </span>
-    </Link>
   );
 }

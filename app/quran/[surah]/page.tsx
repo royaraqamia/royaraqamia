@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { loadQuranIndex, loadSurah, loadSurahNumbers } from '@/backend/loaders/quran';
 import { loadSurahAudio } from '@/backend/loaders/quran-audio';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
-import { toArabicDigits } from '@/frontend/ui/quran/format';
 import type { SurahSummary } from '@/shared/contracts/quran';
 
 // One static page per sura, generated at build time from the vendored text.
@@ -28,9 +27,7 @@ export async function generateMetadata(props: {
 
   return {
     title: `سورة ${summary.name}`,
-    description: `اقرأ سورة ${summary.name} كاملةً برواية حفصٍ عن عاصم: ${toArabicDigits(
-      summary.ayahCount
-    )} آية.`,
+    description: `اقرأ سورة ${summary.name} كاملةً برواية حفصٍ عن عاصم: ${summary.ayahCount} آيات.`,
     alternates: { canonical: `/quran/${summary.n}` },
   };
 }
@@ -46,19 +43,10 @@ export default async function SurahPage(props: { params: Promise<{ surah: string
 
   if (!surah) notFound();
 
-  const position = index.surahs.findIndex((candidate) => candidate.n === number);
-  const summary = index.surahs[position];
+  const summary = index.surahs.find((candidate) => candidate.n === number);
   if (!summary) notFound();
 
-  return (
-    <SurahReader
-      surah={surah}
-      summary={summary}
-      previous={index.surahs[position - 1] ?? null}
-      next={index.surahs[position + 1] ?? null}
-      audio={audio}
-    />
-  );
+  return <SurahReader surah={surah} summary={summary} audio={audio} />;
 }
 
 async function summaryFor(number: number): Promise<SurahSummary | null> {
