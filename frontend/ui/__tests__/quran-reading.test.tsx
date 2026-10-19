@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { ReadingPanel } from '@/frontend/ui/quran/reading-panel';
@@ -110,6 +110,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   for (const store of opened) store.close();
 });
 
@@ -185,6 +186,32 @@ describe('remembering where the reader stopped', () => {
       },
       { timeout: 5_000 }
     );
+  });
+
+  it('writes it anyway when the reader leaves inside the debounce window', async () => {
+    // Closing the connection is what must *not* be skipped for the sake of the
+    // flush: `LocalStoreConnection.close()` refuses any operation that starts
+    // after it, so a teardown that ran first would drop this write entirely.
+    const closed = vi.spyOn(IDBDatabase.prototype, 'close');
+
+    const { unmount } = renderSurah();
+    const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية ١' }));
+    const ayah = document.getElementById('ayah-2')!;
+
+    await act(async () => {
+      observer.enter(ayah);
+    });
+
+    // Leaving the sura is the last chance to record this ayah: the debounce has
+    // not fired, so only the cleanup's flush can write it.
+    unmount();
+
+    await waitFor(() => expect(closed).toHaveBeenCalled());
+
+    expect(await (await readerStore()).getReadingPosition()).toMatchObject({
+      surah: 2,
+      ayah: 2,
+    });
   });
 });
 
