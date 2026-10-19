@@ -1,0 +1,33 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 106,
+  "name": "قريش",
+  "ayahCount": 4,
+  "bytes": 269728,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/106/001.mp3",
+      "bytes": 38436,
+      "sha256": "8fa99c616ef61b926946dee7589dce8900a051b87956f0b8bbc450fce9552759"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/106/002.mp3",
+      "bytes": 72291,
+      "sha256": "35a3fef3ed9a6a74393a7ad007fb5298dd2990032faf41088cb479a9680c5cd9"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/106/003.mp3",
+      "bytes": 49094,
+      "sha256": "08d1b2ec2cd7deb6baf47580cd7d5ce8167b889bebed696c1522fdd55117be33"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/106/004.mp3",
+      "bytes": 109907,
+      "sha256": "a4ca3d6a98d585a82ba9b6aa91e342e2a1523c40befd6e1399cc26ce9b56b2d3"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 103,
+  "name": "العصر",
+  "ayahCount": 3,
+  "bytes": 165251,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/103/001.mp3",
+      "bytes": 15656,
+      "sha256": "e26832ec3cb9e74af0d3887b1e3e21b0ff33ff6973be37fd3e22a579963a78f3"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/103/002.mp3",
+      "bytes": 47839,
+      "sha256": "9ec6802a04f5824020e56150f89f83fb7b116d926a147a21e95a8405b346df38"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/103/003.mp3",
+      "bytes": 101756,
+      "sha256": "877d733747c1528d11910addefac1409c94c698a5be7a6e3191bad5360af617d"
+    }
+  ]
+}

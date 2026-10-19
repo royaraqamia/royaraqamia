@@ -126,6 +126,11 @@ its manifest.
   `HEAD` instead of fetching the set again: restarting a long run is otherwise about as expensive as
   starting it, which on a connection that drops is what leaves a partially vendored Quran stuck. The
   default still re-fetches, so a source that re-published a file is caught by the run that asks.
+- Vendoring finished on 2026-10-19: **114 Suras, 6236 Ayat, 820.56 MiB**, and `index.json` reads
+  `complete: true`. The manifests for all of them are committed — a SHA-256 and a size per Ayah — and the
+  audio still is not. Spot checks across the range answer from `audio.royaraqamia.com` with the byte
+  length their manifest claims and `Cache-Control: public, max-age=31536000, immutable`, so the e2e
+  spec's "no Recitation" case now skips itself: no Surah lacks one.
 - No timing dataset is needed for Ayah highlighting, so `quran-align` (CC BY 4.0) stays out of the
   build: one fewer asset and one fewer licence obligation.
 - The acceptance test is **a device in Syria playing one Surah over mobile data**. Nothing on this

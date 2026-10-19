@@ -1,0 +1,75 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 100,
+  "name": "العاديات",
+  "ayahCount": 11,
+  "bytes": 497030,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/100/001.mp3",
+      "bytes": 27782,
+      "sha256": "7b120082e50c26cf8201d71d3f1fe600a105c19e8d086ffbc7293d3f517d2c93"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/100/002.mp3",
+      "bytes": 27573,
+      "sha256": "dbee08add47aa997ba861165376a0af286241c1874b8f4406a0c6b32891b2d3d"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/100/003.mp3",
+      "bytes": 26110,
+      "sha256": "a57292d8b4b45e3d80a14891a8cf059feddc740c6f40864be220e429cc74cc47"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/100/004.mp3",
+      "bytes": 26110,
+      "sha256": "ca8f18fecb68030ddcb52003bc9a9fd69804bdb195546c54b7a3745b8ede8ac6"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/100/005.mp3",
+      "bytes": 27991,
+      "sha256": "0aae60dc0f1515290cb6ad28d7e229ce8501cd2ff51d9f5ce0f0f17a1043ff3c"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/100/006.mp3",
+      "bytes": 62890,
+      "sha256": "7b75d66751dd4db876319d778530ba7535f3c5f0cee58423ceb9b3895d2830a5"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/100/007.mp3",
+      "bytes": 55576,
+      "sha256": "fcaebae850477ad5cfd78669a31db0854a49d53b70984e6eaea4d941de17ab69"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/100/008.mp3",
+      "bytes": 58293,
+      "sha256": "971fceed268c83b3c3b4022b59bb0840c5dcb6f05461800ba7250164b192a470"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/100/009.mp3",
+      "bytes": 58293,
+      "sha256": "be3eaf647b115d2c258c33bd7a8f7e2fb78d2f783ecd9bfdca1e032db8bbea81"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/100/010.mp3",
+      "bytes": 40532,
+      "sha256": "360890d28cfabab3e7da5e3738b912d3cfc716ad3db49fb893e1bea100016bbf"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/100/011.mp3",
+      "bytes": 85880,
+      "sha256": "032d4b6f82542785311c32b8615ca5c8dde655c0f9a122a4886a2008c582df58"
+    }
+  ]
+}

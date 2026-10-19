@@ -1,0 +1,39 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 105,
+  "name": "الفيل",
+  "ayahCount": 5,
+  "bytes": 322995,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/105/001.mp3",
+      "bytes": 64975,
+      "sha256": "d06dd52b162226492c4f54762179fc247bd9ecd23d974892457bdc6c4d9f5c8e"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/105/002.mp3",
+      "bytes": 51601,
+      "sha256": "e65a2e884c9e1a12d6dd2cabe8c7e93f46f30497d003479dc323a8c7ad62b733"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/105/003.mp3",
+      "bytes": 56616,
+      "sha256": "4cb6eef0569499d31e107591a0c54dec5632cbf6818811fb07c07935ad1d5099"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/105/004.mp3",
+      "bytes": 76051,
+      "sha256": "8b2f8ee095c185fa38db19a786dcd9a04cfc3a0d08cfd0504445aa47ec2a7610"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/105/005.mp3",
+      "bytes": 73752,
+      "sha256": "927fafd1200b1468be02c200bc17053ca67822dcb2be32e71d1e449fd1be2bef"
+    }
+  ]
+}

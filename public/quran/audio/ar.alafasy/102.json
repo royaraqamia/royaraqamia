@@ -1,0 +1,57 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 102,
+  "name": "التكاثر",
+  "ayahCount": 8,
+  "bytes": 434168,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/102/001.mp3",
+      "bytes": 28828,
+      "sha256": "78d753e9e059b2b5010d774a846a27ecbb18e0376c9663c203d6e885781122e6"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/102/002.mp3",
+      "bytes": 33634,
+      "sha256": "66099447be1d3f5b92eba0dc55b815ba4a3f1d44f4c67acf76fcb54c78043f43"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/102/003.mp3",
+      "bytes": 44501,
+      "sha256": "36e74752e5f23b9f80624762955fddcddfb7c79e162e6bf4b10605a0440094db"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/102/004.mp3",
+      "bytes": 55368,
+      "sha256": "e043fa7556f5127c795515c17ebc8af7415625229dffb3db096a1154a71353e6"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/102/005.mp3",
+      "bytes": 54114,
+      "sha256": "dae06dc859e83cada4a844fbaa594355e992735f1beb33b3bae1866014c8e40f"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/102/006.mp3",
+      "bytes": 50144,
+      "sha256": "e25ed688dc0447762cb5bdc3d7a063e8c2f21c0bbb2b397fd1c884e2df4854dc"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/102/007.mp3",
+      "bytes": 65817,
+      "sha256": "d157bee3d6bdc8c2a650c8dfc1c75fcf3827ced5cdcd46bb7b305ef48546affb"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/102/008.mp3",
+      "bytes": 101762,
+      "sha256": "3a6bc6f59bc9c1c22da63cb642a277ad9ed8d99012f6117dd18c5eae890be161"
+    }
+  ]
+}

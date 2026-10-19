@@ -1,0 +1,75 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 62,
+  "name": "الجمعة",
+  "ayahCount": 11,
+  "bytes": 1683165,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/062/001.mp3",
+      "bytes": 87338,
+      "sha256": "ad33c3b1655b0cfa5d693fd428d90f40aa6260d82b78bdc47c1478b614edd519"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/062/002.mp3",
+      "bytes": 191619,
+      "sha256": "d4783c23554be1d5a7f4eadddcf8ff6d74c5f32dd31f9604405fc5bb9970e4b6"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/062/003.mp3",
+      "bytes": 77307,
+      "sha256": "a55df86aafbbcd5965964fe6b2c37c99b35a05f17eb82976cb973b2c3a08ba7f"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/062/004.mp3",
+      "bytes": 94234,
+      "sha256": "176d26f113abdb7a760dc44ef8855dfa2d3f535a91148f30355211674e4f9495"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/062/005.mp3",
+      "bytes": 190365,
+      "sha256": "2cc877bf83b107754539c55c2270ec9d1b71c7262d08c6ca2440726fef50c8a6"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/062/006.mp3",
+      "bytes": 203949,
+      "sha256": "c919546b5d3b621c9ac26c44a5b82e0f2e540aa76bf1828383e6c8668fe0edd4"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/062/007.mp3",
+      "bytes": 119730,
+      "sha256": "7035eb359f493e36d052c2fed106fefe0bff9ff5e473652f7a938a98f96ab8e0"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/062/008.mp3",
+      "bytes": 175109,
+      "sha256": "fe14c13c3fc98f973f8cbdfe1b5033d75408bbf363cad78bf7d4e430cb2f4741"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/062/009.mp3",
+      "bytes": 204785,
+      "sha256": "f5d31fcc65474159a6a572845518aa066bac30e26855c5792a418ed59b08f720"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/062/010.mp3",
+      "bytes": 120777,
+      "sha256": "deb67106cff432356ee381cbbe4d1dae6054d7ace892ad5f69e969f5a7df93f0"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/062/011.mp3",
+      "bytes": 217952,
+      "sha256": "0bb9e631fecfd21e830c7a76c9a83c1ea7878e506a5e81e55c61b07de6b74b15"
+    }
+  ]
+}

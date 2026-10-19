@@ -1,0 +1,39 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 113,
+  "name": "الفلق",
+  "ayahCount": 5,
+  "bytes": 197827,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/113/001.mp3",
+      "bytes": 29242,
+      "sha256": "0b3865259abc4db182e6be01c06ea17b948b5454c3fd1b044de349d94e94e772"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/113/002.mp3",
+      "bytes": 30496,
+      "sha256": "8e1e8facb7649baab42e1d0449f498c9c00fa4ea8fcfefd8519f1807de383934"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/113/003.mp3",
+      "bytes": 41780,
+      "sha256": "86bf26d123f6a7be5105cfd7e6a209aab0eea4ede91f79200bd01067e64d2eb5"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/113/004.mp3",
+      "bytes": 49513,
+      "sha256": "41a91b4be0091f5e59ed9c91b07ea2c6eb2e98edb51dd99ff5d0974aaaaa662b"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/113/005.mp3",
+      "bytes": 46796,
+      "sha256": "a0b994c2f7142abcba3dbe64402d94ed6ff764991e7a7732b2e7609a0f86ae46"
+    }
+  ]
+}

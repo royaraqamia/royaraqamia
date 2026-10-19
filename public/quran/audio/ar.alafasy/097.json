@@ -1,0 +1,39 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 97,
+  "name": "القدر",
+  "ayahCount": 5,
+  "bytes": 293738,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/097/001.mp3",
+      "bytes": 65184,
+      "sha256": "a6e198ab729784e0c56a356bd1cc2e887d1acaaac23ef4c6c34e6ec7158e9a85"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/097/002.mp3",
+      "bytes": 49511,
+      "sha256": "30d361efb3930eb2b7883934a0cb066b9e578dba84b864af4cd88992ce422393"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/097/003.mp3",
+      "bytes": 45749,
+      "sha256": "cc5a69500e341b0c58bfdad65851eccb8bd9839859abaf6e9b02beb1cd919732"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/097/004.mp3",
+      "bytes": 90053,
+      "sha256": "4f96c83b17332a111fee97522291557cad884df1b3a53895d9bb0fadb9a6c468"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/097/005.mp3",
+      "bytes": 43241,
+      "sha256": "6c8e80e4982858ab4554fe58deffec9b80562c4611f5bf99d5bd6b90bfd4de1d"
+    }
+  ]
+}

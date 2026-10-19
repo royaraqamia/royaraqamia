@@ -1,0 +1,27 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 110,
+  "name": "النصر",
+  "ayahCount": 3,
+  "bytes": 205587,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/110/001.mp3",
+      "bytes": 56826,
+      "sha256": "1812ee5a959adc1c39c93f8bf3c8299b511dbd594d031c65cb6662d40dfa885b"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/110/002.mp3",
+      "bytes": 66857,
+      "sha256": "1b9b09e56f6b3fcaa514068c407371029f6fa7291578e9e72f27bc666d52e6a3"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/110/003.mp3",
+      "bytes": 81904,
+      "sha256": "bc0ecf357b4d89ddbc0b42bc8b269b33df25440b3152d37a1e7b6006fefbcc29"
+    }
+  ]
+}

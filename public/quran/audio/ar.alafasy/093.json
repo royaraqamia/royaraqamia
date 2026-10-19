@@ -1,0 +1,75 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 93,
+  "name": "الضحى",
+  "ayahCount": 11,
+  "bytes": 455620,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/093/001.mp3",
+      "bytes": 16285,
+      "sha256": "7f41dbd54cec58ab92b9f48e2f13ab4ec3bfc4498af54577f6332c98a1316019"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/093/002.mp3",
+      "bytes": 25689,
+      "sha256": "b4e625e3dbcd2eb95666ec334d70087cf8a63567d7a25b33ecb71506efc54619"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/093/003.mp3",
+      "bytes": 36765,
+      "sha256": "0c1d67536290d3a17d1e8108acf39fc6df59e9d7acf3078b4992e25be532f64c"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/093/004.mp3",
+      "bytes": 42825,
+      "sha256": "8e5b56ffd90443d0e8be2e672c1475f91daf54ea606b5f8aac593c78afdd7aa4"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/093/005.mp3",
+      "bytes": 41572,
+      "sha256": "2208eff0b6dc765764320a9ed29768e57298fc769dc0f2cf9db3666baa0a6f97"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/093/006.mp3",
+      "bytes": 43243,
+      "sha256": "c300ad93d5fa980c415e9a2c4e748de41c656b8f0b918fc57aff77743f3c598d"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/093/007.mp3",
+      "bytes": 58290,
+      "sha256": "7b9090a86b162d0cf8c5592c3df56b62003f5cffc6db3032559668480ac664c9"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/093/008.mp3",
+      "bytes": 50349,
+      "sha256": "8542ed774b81f619b3ccc00522bdf6ac23de366fc5c36b234ed1006d730885be"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/093/009.mp3",
+      "bytes": 40736,
+      "sha256": "ed68f87e56b1711e4f0a2fdb76925fcb9c9ad49d1d64a34cda4d072c4f8dbb80"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/093/010.mp3",
+      "bytes": 51396,
+      "sha256": "6f3c2ca18d7b924050c296f7f0f016c8390a2e548c7a48772f1fd1c45deeffb7"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/093/011.mp3",
+      "bytes": 48470,
+      "sha256": "e6e0360d9bddcb0dc6eada3857cf905e0c1bf0545157e67a5c77a56b87154ace"
+    }
+  ]
+}
