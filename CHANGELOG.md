@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.123.0] - 2026-10-19
+
+### Changed
+- publish shell 1.0.10 (20010)
+
+### Added
+- wake a closed shell when the account moves (#380)
+
 ## [1.122.2] - 2026-10-19
 
 ### Fixed
