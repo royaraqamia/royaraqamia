@@ -39,3 +39,15 @@ and a first sign-in **Claims** what the device already holds rather than startin
   an unmark are one write with two payloads, and the earlier payload is not recoverable from the later
   one. A Bookmark's local row is keyed by the write that made it, so accepting a server copy removes
   the local row first; one Ayah keeps one row on both sides.
+- The client half is the reader's own hook, and the session chooses the store: `guest` until one
+  arrives, the account's after, with the guest's records Claimed across on the way (ADR-0027). Every
+  wake-up path — open, reconnect, focus and a Realtime hint — runs the same pending-aware pull, and a
+  write flushes as it lands rather than waiting for a focus event. A guest's Outbox is queued and never
+  flushed, because there is nowhere to send it: the Claim re-homes it, which is also why the plugin
+  leaves the guest database alone.
+- The two tables are published for Realtime hints
+  (`20261019170000_publish_quran_tables_for_realtime_hints.sql`), so a mark made on another device
+  arrives while the reader is looking at the page instead of at the next focus (ADR-0060). The
+  publication waited for the consumer on purpose: a channel nobody subscribes to is a stream nobody
+  reads, and `scripts/__tests__/realtime-hint-tables.test.ts` now pins the reader's two table names
+  against it.

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { BookMarked, BookOpenCheck, X } from 'lucide-react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
+import { QuranSyncStatus } from './sync-status';
 import { toArabicDigits } from './format';
 
 interface ReadingPanelProps {
@@ -23,13 +24,15 @@ interface ReadingPanelProps {
  * it.
  */
 export function ReadingPanel({ names }: ReadingPanelProps) {
-  const { ready, readingPosition, bookmarks, removeBookmark } = useQuranReader();
+  const reader = useQuranReader();
+  const { ready, readingPosition, bookmarks, removeBookmark } = reader;
   if (!ready || (!readingPosition && bookmarks.length === 0)) return null;
 
   const nameOf = (surah: number) => names[surah - 1] ?? '';
 
   return (
     <div className="flex flex-col gap-3">
+      <QuranSyncStatus reader={reader} />
       {readingPosition ? (
         <Link
           href={`/quran/${readingPosition.surah}#ayah-${readingPosition.ayah}`}
