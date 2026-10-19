@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.122.0] - 2026-10-19
+
+### Changed
+- publish shell 1.0.9 (20009)
+
+### Added
+- publish the reader's tables and follow the hint (ADR-0060) (#377)
+
 ## [1.121.0] - 2026-10-19
 
 ### Added
