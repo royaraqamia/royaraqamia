@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.121.0] - 2026-10-19
+
+### Added
+- drain the shell's Outbox with the app closed (#376)
+
 ## [1.120.1] - 2026-10-19
 
 ### Changed
