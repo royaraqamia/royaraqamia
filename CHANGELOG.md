@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.116.1] - 2026-10-19
+
+### Changed
+- Quran audio manifest: stop caching failures.
+
 ## [1.116.0] - 2026-10-19
 
 ### Added
