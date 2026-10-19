@@ -11,7 +11,7 @@ import {
 } from '@/frontend/shared/local-store/idb';
 import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
-import type { Bookmark, ReadingPosition } from '@/shared/contracts/quran';
+import { QURAN_SURAH_COUNT, type Bookmark, type ReadingPosition } from '@/shared/contracts/quran';
 
 const PRODUCT = 'quran';
 const READING_POSITION_STORE = 'readingPosition';
@@ -24,8 +24,11 @@ const BOOKMARKS_STORE = 'bookmarks';
  */
 const POSITION_KEY = 'current';
 
-/** The number of suras, so a ref outside the text is a bug rather than a record. */
-export const SURAH_COUNT = 114;
+/**
+ * The number of suras, so a ref outside the text is a bug rather than a record.
+ * The sync contract validates the same range on the server.
+ */
+export const SURAH_COUNT = QURAN_SURAH_COUNT;
 
 /**
  * Forward-only schema. v1 is exactly the two records the reader owns (ADR-0056);

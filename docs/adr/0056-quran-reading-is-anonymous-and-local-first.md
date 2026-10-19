@@ -28,3 +28,8 @@ and a first sign-in **Claims** what the device already holds rather than startin
   `deleted_at` like every other owned record.
 - Sign-out must not delete the Local Store (it survives sign-out by design), so a reader's local
   place outlives their session and is re-Claimed if they sign back in.
+- The server half is three routes under `/quran/api`: a pull (`GET /quran/api/sync?since=<cursor>`)
+  returning the position, every Bookmark including tombstones, and the next cursor, plus two
+  idempotent writes (`POST /quran/api/position`, `POST /quran/api/bookmarks`). Both tables key on the
+  natural identity — `(user_id)` and `(user_id, surah, ayah)` — so a replay can never accumulate rows,
+  and `client_id` records the last writer instead of being the replay key.

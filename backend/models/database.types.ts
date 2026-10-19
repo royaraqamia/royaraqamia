@@ -1228,6 +1228,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      quran_bookmarks: {
+        Row: {
+          ayah: number;
+          client_id: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          server_updated_at: string;
+          surah: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          ayah: number;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          server_updated_at?: string;
+          surah: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          ayah?: number;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          server_updated_at?: string;
+          surah?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      quran_reading_positions: {
+        Row: {
+          ayah: number;
+          client_id: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          server_updated_at: string;
+          surah: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          ayah: number;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          server_updated_at?: string;
+          surah: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          ayah?: number;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          server_updated_at?: string;
+          surah?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       rate_snapshots: {
         Row: {
           base_currency: string;
