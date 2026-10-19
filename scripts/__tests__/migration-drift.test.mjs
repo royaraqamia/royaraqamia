@@ -5,6 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import {
   diffMigrations,
+  duplicateVersions,
   localMigrations,
   localVersions,
   main,
@@ -52,6 +53,40 @@ describe('localMigrations', () => {
       { version: '20260102000000', file: '20260102000000_second.sql' },
     ]);
     expect(localVersions(dir)).toEqual(['20260101000000', '20260102000000']);
+  });
+});
+
+describe('duplicateVersions', () => {
+  it('names a version two files claim, and the files claiming it', () => {
+    const dir = migrationsDir([
+      '20260101000000_first.sql',
+      '20260102000000_second.sql',
+      '20260102000000_other.sql',
+      '20260103000000_third.sql',
+    ]);
+
+    expect(duplicateVersions(dir)).toEqual([
+      {
+        version: '20260102000000',
+        files: ['20260102000000_other.sql', '20260102000000_second.sql'],
+      },
+    ]);
+  });
+
+  it('is empty when every version is claimed once', () => {
+    const dir = migrationsDir(['20260101000000_first.sql', '20260102000000_second.sql']);
+
+    expect(duplicateVersions(dir)).toEqual([]);
+  });
+});
+
+describe('main with a version collision', () => {
+  it('refuses it before it looks at the network, even with no project configured', async () => {
+    const dir = migrationsDir(['20260101000000_a.sql', '20260101000000_b.sql']);
+    const { lines, log } = collect();
+
+    expect(await main({ env: {}, log, localDir: dir })).toBe(1);
+    expect(lines.join('\n')).toContain('20260101000000_a.sql');
   });
 });
 

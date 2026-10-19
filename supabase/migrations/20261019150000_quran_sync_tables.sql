@@ -26,7 +26,13 @@
 -- whose clock runs ahead must not win every conflict forever. The Quran's rows
 -- want both, so they reuse that trigger rather than growing a second one.
 --
--- Additive: two new tables, nothing existing is altered.
+-- Additive: two new tables, nothing existing is altered. Every statement is
+-- written to re-run harmlessly — tables, indexes and triggers are `if not
+-- exists`/`create or replace`, and a policy is dropped before it is recreated —
+-- so this file can be applied by hand after a failed run without a guard on
+-- what is already in place. (It carries a later version than the file it shared
+-- a timestamp with, `20261019140000_certificates_recipient_user_ids_gin.sql`,
+-- whose apply won that race.)
 --
 -- Rollback:
 --   drop table if exists public.quran_bookmarks;
@@ -74,43 +80,55 @@ create index if not exists idx_quran_bookmarks_server_updated_at
 alter table public.quran_reading_positions enable row level security;
 alter table public.quran_bookmarks enable row level security;
 
+drop policy if exists "Users can view their own reading position"
+  on public.quran_reading_positions;
 create policy "Users can view their own reading position"
   on public.quran_reading_positions for select
   to authenticated
   using ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can insert their own reading position"
+  on public.quran_reading_positions;
 create policy "Users can insert their own reading position"
   on public.quran_reading_positions for insert
   to authenticated
   with check ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can update their own reading position"
+  on public.quran_reading_positions;
 create policy "Users can update their own reading position"
   on public.quran_reading_positions for update
   to authenticated
   using ( (select auth.uid()) = user_id )
   with check ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can delete their own reading position"
+  on public.quran_reading_positions;
 create policy "Users can delete their own reading position"
   on public.quran_reading_positions for delete
   to authenticated
   using ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can view their own bookmarks" on public.quran_bookmarks;
 create policy "Users can view their own bookmarks"
   on public.quran_bookmarks for select
   to authenticated
   using ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can insert their own bookmarks" on public.quran_bookmarks;
 create policy "Users can insert their own bookmarks"
   on public.quran_bookmarks for insert
   to authenticated
   with check ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can update their own bookmarks" on public.quran_bookmarks;
 create policy "Users can update their own bookmarks"
   on public.quran_bookmarks for update
   to authenticated
   using ( (select auth.uid()) = user_id )
   with check ( (select auth.uid()) = user_id );
 
+drop policy if exists "Users can delete their own bookmarks" on public.quran_bookmarks;
 create policy "Users can delete their own bookmarks"
   on public.quran_bookmarks for delete
   to authenticated
