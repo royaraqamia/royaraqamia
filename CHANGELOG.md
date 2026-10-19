@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.118.0] - 2026-10-19
+
+### Added
+- let a resumed vendoring run trust what the manifests already say (#371)
+
 ## [1.117.1] - 2026-10-19
 
 ### Fixed
