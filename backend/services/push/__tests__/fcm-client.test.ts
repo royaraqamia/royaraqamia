@@ -55,6 +55,16 @@ function makeAdapter(
 
 const tokenOk = () => jsonResponse(200, { access_token: 'access-1', expires_in: 3600 });
 
+/**
+ * The mocked transport answers two hosts: the OAuth endpoint and the send
+ * endpoint. They are matched on the *parsed* host rather than on a substring of
+ * the URL, so a handler cannot be talked into the token response by a path that
+ * merely contains "oauth2.googleapis.com".
+ */
+function isTokenUrl(url: string): boolean {
+  return new URL(url).hostname === 'oauth2.googleapis.com';
+}
+
 describe('createServiceAccountAssertion', () => {
   it('signs a verifiable RS256 JWT with the messaging scope', () => {
     const jwt = createServiceAccountAssertion({
@@ -90,7 +100,7 @@ describe('createFcmAdapter', () => {
 
   it('posts the message to the project endpoint with a bearer token', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, { name: 'm/1' })
+      isTokenUrl(url) ? tokenOk() : jsonResponse(200, { name: 'm/1' })
     );
 
     await adapter.send('device-token-1', payload);
@@ -111,7 +121,7 @@ describe('createFcmAdapter', () => {
 
   it('sends a wake as a data-only, high-priority message with no notification', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, { name: 'm/2' })
+      isTokenUrl(url) ? tokenOk() : jsonResponse(200, { name: 'm/2' })
     );
 
     await adapter.sendData('device-token-1', { type: FCM_SYNC_WAKE });
@@ -132,7 +142,7 @@ describe('createFcmAdapter', () => {
 
   it('prunes a wake the same way it prunes a notification', async () => {
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
+      isTokenUrl(url)
         ? tokenOk()
         : jsonResponse(404, {
             error: { status: 'NOT_FOUND', details: [{ errorCode: 'UNREGISTERED' }] },
@@ -146,7 +156,7 @@ describe('createFcmAdapter', () => {
 
   it('exchanges the service account for a token with the jwt-bearer grant', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, {})
+      isTokenUrl(url) ? tokenOk() : jsonResponse(200, {})
     );
 
     await adapter.send('t', payload);
@@ -160,7 +170,7 @@ describe('createFcmAdapter', () => {
 
   it('omits the body and defaults the tap target when the payload has neither', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, {})
+      isTokenUrl(url) ? tokenOk() : jsonResponse(200, {})
     );
 
     await adapter.send('t', { title: 'عنوان' });
@@ -176,15 +186,13 @@ describe('createFcmAdapter', () => {
 
   it('reuses the cached access token across sends', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, {})
+      isTokenUrl(url) ? tokenOk() : jsonResponse(200, {})
     );
 
     await adapter.send('t-1', payload);
     await adapter.send('t-2', payload);
 
-    const tokenCalls = fetchMock.mock.calls.filter((call) =>
-      String(call[0]).includes('oauth2.googleapis.com')
-    );
+    const tokenCalls = fetchMock.mock.calls.filter((call) => isTokenUrl(String(call[0])));
     expect(tokenCalls).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
@@ -192,7 +200,7 @@ describe('createFcmAdapter', () => {
   it('re-authenticates once the cached token is inside the refresh skew', async () => {
     let clock = 1_700_000_000_000;
     const { adapter, fetchMock } = makeAdapter(
-      (url) => (url.includes('oauth2.googleapis.com') ? tokenOk() : jsonResponse(200, {})),
+      (url) => (isTokenUrl(url) ? tokenOk() : jsonResponse(200, {})),
       () => clock
     );
 
@@ -203,25 +211,19 @@ describe('createFcmAdapter', () => {
     clock += 200_000;
     await adapter.send('t-3', payload);
 
-    const tokenCalls = fetchMock.mock.calls.filter((call) =>
-      String(call[0]).includes('oauth2.googleapis.com')
-    );
+    const tokenCalls = fetchMock.mock.calls.filter((call) => isTokenUrl(String(call[0])));
     expect(tokenCalls).toHaveLength(2);
   });
 
   it('drops the cached token when FCM rejects it with 401', async () => {
     const { adapter, fetchMock } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
-        ? tokenOk()
-        : jsonResponse(401, { error: { status: 'UNAUTHENTICATED' } })
+      isTokenUrl(url) ? tokenOk() : jsonResponse(401, { error: { status: 'UNAUTHENTICATED' } })
     );
 
     await expect(adapter.send('t', payload)).rejects.toThrow();
     await expect(adapter.send('t', payload)).rejects.toThrow();
 
-    const tokenCalls = fetchMock.mock.calls.filter((call) =>
-      String(call[0]).includes('oauth2.googleapis.com')
-    );
+    const tokenCalls = fetchMock.mock.calls.filter((call) => isTokenUrl(String(call[0])));
     expect(tokenCalls).toHaveLength(2);
   });
 
@@ -233,7 +235,7 @@ describe('createFcmAdapter', () => {
 
   it('maps an UNREGISTERED token to a prunable error', async () => {
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
+      isTokenUrl(url)
         ? tokenOk()
         : jsonResponse(404, {
             error: {
@@ -262,9 +264,7 @@ describe('createFcmAdapter', () => {
 
   it('falls back to the error status when FCM sends no error code', async () => {
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
-        ? tokenOk()
-        : jsonResponse(403, { error: { status: 'SENDER_ID_MISMATCH' } })
+      isTokenUrl(url) ? tokenOk() : jsonResponse(403, { error: { status: 'SENDER_ID_MISMATCH' } })
     );
 
     let caught: unknown;
@@ -280,7 +280,7 @@ describe('createFcmAdapter', () => {
 
   it('does NOT treat INVALID_ARGUMENT as a dead token', async () => {
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
+      isTokenUrl(url)
         ? tokenOk()
         : jsonResponse(400, {
             error: { status: 'INVALID_ARGUMENT', details: [{ errorCode: 'INVALID_ARGUMENT' }] },
@@ -303,7 +303,7 @@ describe('createFcmAdapter', () => {
     // is narrower than "400 means dead": the field violation is what tells a
     // broken token apart from a broken message.
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
+      isTokenUrl(url)
         ? tokenOk()
         : jsonResponse(400, {
             error: {
@@ -342,7 +342,7 @@ describe('createFcmAdapter', () => {
 
   it('does not prune when INVALID_ARGUMENT names another field', async () => {
     const { adapter } = makeAdapter((url) =>
-      url.includes('oauth2.googleapis.com')
+      isTokenUrl(url)
         ? tokenOk()
         : jsonResponse(400, {
             error: {
