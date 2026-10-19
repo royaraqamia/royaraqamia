@@ -1,10 +1,10 @@
 {
-  "versionCode": 20009,
-  "versionName": "1.0.9",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.9.apk",
-  "sha256": "ffa0d23685fecfc654e1eb2398444f29bbec654f756fa166a60af551681dc130",
-  "sizeBytes": 7936993,
+  "versionCode": 20010,
+  "versionName": "1.0.10",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.10.apk",
+  "sha256": "575094e068ba88d451a2be42cd6af82353ed39c8bfcb31f9e75979a14387d713",
+  "sizeBytes": 7936981,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(offline): drain the shell's Outbox with the app closed (#376)",
+  "notes": "feat(offline): wake a closed shell when the account moves (#380)",
   "releasedAt": "2026-10-15"
 }
