@@ -20,7 +20,8 @@
 
 ## GitHub Actions secrets
 
-Repository secrets, not environment variables. `shell-release.yml` is the only workflow that uses these.
+Repository secrets, not environment variables. `shell-release.yml` is the only workflow that uses the
+keystore secrets below.
 
 - `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` —
   the Android shell's upload keystore. It is the one credential that cannot be re-derived: a device with
@@ -28,6 +29,14 @@ Repository secrets, not environment variables. `shell-release.yml` is the only w
   copy in `D:\Projects\royaraqamia-android-keys` means the app can never be updated again. Rotating it
   means changing the secret and `public/.well-known/assetlinks.json` together, and every installed shell
   has to be replaced by hand (ADR-0045, `docs/mobile/android-shell.md`).
+
+- `SUPABASE_SERVICE_ROLE_KEY` — a copy of the deployment's, because `code-quality.yml`'s `build` job and
+  `bundle-size.yml` both run `npm run build`, and that build prerenders routes which read through the
+  admin client (`backend/loaders/spendtrack.ts`, `backend/loaders/rates.ts`). It exists in **two scopes**,
+  and rotating one does not move the other: **Actions** (pushes, manual runs) and **Dependabot**. A
+  Dependabot pull request is handed no Actions secrets at all, so without the Dependabot copy both
+  workflows die at `Missing env var: SUPABASE_SERVICE_ROLE_KEY` — which is what every Dependabot pull
+  request did until 2026-10-19 (Settings → Secrets and variables → Dependabot).
 
 ## Security baseline
 
