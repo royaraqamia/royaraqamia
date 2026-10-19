@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.120.1] - 2026-10-19
+
+### Changed
+- commit the whole recitation's manifests (#375)
+
 ## [1.120.0] - 2026-10-19
 
 ### Added
