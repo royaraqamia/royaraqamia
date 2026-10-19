@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.116.3] - 2026-10-19
+
+### Fixed
+- let the last reading position be written on unmount (#362)
+
 ## [1.116.2] - 2026-10-19
 
 ### Fixed
