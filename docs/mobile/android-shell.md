@@ -133,21 +133,22 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                               | State                                                                                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| capability                                      | where                                                               | state                                                                                                                             |
-| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                            |
-| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                           |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                   |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                    |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                           |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                            |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                           |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                 |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                 |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                     |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
-| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                            |
+| Capability                                      | Where                                                               | State                                                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                      | where                                                               | state                                                                                                                                    |
+| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                                   |
+| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                                  |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                          |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                           |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                                  |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                                   |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                                  |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                        |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                        |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                            |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below        |
+| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                   |
+| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`        | Working — WorkManager loads the drain page in a headless WebView and replays the Outbox; the FCM data wake is still open (spec phase 5b) |
 
 ### The native bridge on a remote origin
 
@@ -188,6 +189,56 @@ Two consequences worth carrying:
 
 `npm run android:verify-bridge` re-checks all of the above on whatever device is
 connected, so none of it is carried forward on trust.
+
+### The background drain
+
+The shell is a remote-URL WebView with no native background components, so a write queued while the app
+is not in front used to wait for the next open. `SyncFlushWorker` is what comes back for it (ADR-0059):
+
+- **When.** Two schedules, and only two. The page asks when it knows: `flushOutbox`'s pending count is the
+  same condition that registers a Background Sync tag on the web, and in the shell it also runs
+  `RoyShellSync.schedule()` through the bridge `MainActivity` installs. A 15-minute periodic job is the
+  floor — for the cases the signal cannot cover (a shell built before the signal, a process killed before
+  it could ask, a drain that gave up).
+- **What.** The worker loads `/sync-flush.html` — the shell's own page, served by the site and built by
+  `scripts/build-sync-flush.mjs` — in a second, headless WebView. That WebView is the same profile as the
+  app's, so the session cookie and the Outbox are simply there, and the page replays the queue through
+  `frontend/api/sync-flush-entry.ts`: the same `DRAINABLE_PRODUCTS` registry and the same `drainOutboxes`
+  the service worker runs. The Outbox keeps one implementation; the shell never becomes a second writer.
+- **How it reports.** The worker injects `RoyShellSync.report(json)` before the page loads, waits for it
+  (60s), and treats anything other than a clean report as "come back": pending intents, a session lookup
+  that failed, a page that never answered. After five attempts it gives up — the queue is durable and
+  still flushes on open, so that is the end of a schedule, not a lost write.
+
+Both schedules are constrained to `NETWORK_CONNECTED`: a drain that wakes with no network would burn an
+attempt, and WorkManager's answer — wait for connectivity — is exactly when the queue should move.
+
+```powershell
+adb logcat -s RoySyncFlush:*            # one line per attempt: what the page said, or why it said nothing
+adb shell dumpsys jobscheduler | Select-String 'com.royaraqamia.app'   # both requests, and their constraints
+```
+
+Measured on the API 30 emulator (`Pixel_API_30`), with the site served locally and the shell pointed at
+`http://localhost:3000` through `adb reverse` (see the two limits below for why not `10.0.2.2`):
+
+| What the device showed              | Evidence                                                                                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Both schedules registered           | `dumpsys jobscheduler`: two jobs on `androidx.work…SystemJobService`, `initial backoff +30s`                                                  |
+| The bridge is live in the page      | from the page itself: `typeof window.RoyShellSync.schedule === 'function'`                                                                    |
+| An attempt loads the drain page     | the worker's WebView appears as a `sync-flush.html` target in `adb forward …/json`, and `logcat` carries its `page: …` console line           |
+| A page that says nothing comes back | `RoySyncFlush: queued another attempt: the page reported nothing (the drain page did not report within 60000ms)`                              |
+| A clean report ends the attempt     | `e2e/sync-flush.spec.ts` loads the same page against a production build and gets `pending: 0`, one replayed intent, and the row on the server |
+
+**Two limits of this drill, and both are environmental.** The image's WebView is 83.0.4103.106, and the
+site's bundles use syntax it cannot parse (`SyntaxError: Unexpected token '='`), so the app _renders_ but
+never hydrates on that image — a real device's WebView is years newer, which is why the drain was verified
+against a production build in Chromium and the wake belongs on real hardware. And the site's CSP sends
+`upgrade-insecure-requests`, which upgrades every subresource of a cleartext document to https: pointing
+the shell at `http://10.0.2.2:3000` therefore fails to load the app's own scripts, while `localhost`
+(reached with `adb reverse tcp:3000 tcp:3000`) is a trustworthy origin and is exempt. The emulator's
+connectivity also never reaches `VALIDATED` on a network as flaky as this one, which WorkManager's
+`CONNECTED` request includes — the jobs sit at `Unsatisfied constraints: CONNECTIVITY`. On a real device
+with working DNS neither applies.
 
 ### The system bar band
 
@@ -350,7 +401,8 @@ through the bridge rather than an npm import.
    `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
    its newlines escaped as `\n` — that is how the downloaded JSON already carries it, and
    `backend/config/env.ts` normalises it back. With any of the three missing the channel is
-   a no-op rather than an error.
+   a no-op rather than an error. The same service account is what a silent high-priority _data_ message
+   will use for the shell's background wake (spec phase 5b); the drain itself does not need it.
 3. **A rebuild** of the APK/AAB so the shell picks up the messaging SDK.
 
 The service-account JSON itself must never be committed or dropped next to the keystore

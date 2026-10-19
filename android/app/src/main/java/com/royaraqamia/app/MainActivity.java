@@ -55,6 +55,31 @@ public class MainActivity extends BridgeActivity {
         announceShellVersion();
         shellUpdate = new ShellUpdatePrompt(this, getBridge() != null ? getBridge().getServerUrl() : null);
         shellUpdate.maybeCheck(true);
+        // The background drain (ADR-0059): the page signals through the bridge
+        // when a flush leaves work behind, and the periodic floor covers what the
+        // signal cannot — a shell that was killed before it could ask.
+        installSyncBridge(getBridge());
+        SyncScheduler.ensurePeriodic(this);
+    }
+
+    /**
+     * Exposes `RoyShellSync.schedule()` to the page.
+     *
+     * The shell is the only tier that comes back for a queued write once the app is
+     * closed, and it has to be *told* the queue is non-empty: the page knows (it
+     * just tried to flush), the native side does not. The interface carries no data
+     * and cannot touch the queue, so a document in this WebView can do nothing with
+     * it beyond asking the shell to drain — and navigation out of our own origin is
+     * already what Capacitor's `allowNavigation` refuses.
+     */
+    private void installSyncBridge(@Nullable Bridge bridge) {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) return;
+
+        webView.addJavascriptInterface(
+            ShellSyncBridge.forApp(() -> SyncScheduler.flushSoon(getApplicationContext())),
+            ShellSyncBridge.NAME
+        );
     }
 
     /**

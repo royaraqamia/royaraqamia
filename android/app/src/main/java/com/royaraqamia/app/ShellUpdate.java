@@ -88,16 +88,13 @@ final class ShellUpdate {
      * The manifest URL for the origin the shell was configured with. Returns null
      * when the configured URL is not a URL at all, which the caller reports
      * rather than guessing an origin.
+     *
+     * The arithmetic lives in `ShellServer`, beside the drain page that needs the
+     * same origin: two spellings of "our origin" would be two chances to disagree
+     * about which site this shell talks to.
      */
     static String manifestUrl(String serverUrl) {
-        if (serverUrl == null || serverUrl.isEmpty()) return null;
-        try {
-            URL url = new URL(serverUrl);
-            int port = url.getPort();
-            return url.getProtocol() + "://" + url.getHost() + (port == -1 ? "" : ":" + port) + MANIFEST_PATH;
-        } catch (MalformedURLException e) {
-            return null;
-        }
+        return ShellServer.pageUrl(serverUrl, MANIFEST_PATH);
     }
 
     /**

@@ -85,11 +85,13 @@ stated limit.
 
 Honest list of what stands between us and the bar, each with the file that shows it:
 
-1. **The Android shell has no background path.** It is a remote-URL WebView (ADR-0036) whose manifest
-   declares no `<service>`, no `<receiver>`, and none of `FOREGROUND_SERVICE`,
-   `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
-   backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
-   reopens the app.
+1. **The Android shell's background path is half built.** The drain exists: a WorkManager job — a
+   15-minute floor plus a one-shot the page asks for through `RoyShellSync.schedule()` — loads
+   `/sync-flush.html` in a headless WebView and replays the Outbox there, through the same engine and
+   transports a tab uses (ADR-0059, [the shell notes](../mobile/android-shell.md)). What is still missing
+   is the _wake_: a silent high-priority FCM data message when a user's data moves on another device, the
+   battery-optimization prompt, and delivery badges in the shell. So a write now survives the app closing;
+   a change made elsewhere still waits for the floor to reach a closed shell.
 2. **The offline e2e suite runs, but its owned-data half still skips in CI.** Every spec is
    `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow now sets them for every
    spec except `lead-offline`, which stays out because it writes a row the suite cannot remove, and runs
@@ -232,8 +234,10 @@ the server is unreachable, and the [Verification](#verification) section for wha
 3. **Sync hints** — Realtime for owned data while foregrounded, pulling on a hint (ADR-0060).
 4. **Remaining surfaces** — audit every route against the table; bring the feasible leftovers offline
    and give each ADR-0031 surface a legible needs-connection state.
-5. **Android background sync** — FCM data wake, WorkManager drain, battery-exemption UX, delivery
-   badges in the shell (ADR-0059).
+5. **Android background sync** — _5a, landed:_ the drain — a WorkManager job (a 15-minute floor plus a
+   one-shot the page asks for through `RoyShellSync.schedule()`) loads `/sync-flush.html` in a headless
+   WebView and replays the Outbox there (ADR-0059). _5b, open:_ the FCM data wake, the battery-exemption
+   prompt, and delivery badges in the shell.
 6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
    as content arriving, staying stateless and OTA-free (ADR-0061).
 7. **Verify and harden** — the device matrix below, chaos tests, and the offline suite as a CI gate.
@@ -276,6 +280,16 @@ the server is unreachable, and the [Verification](#verification) section for wha
   `false` when the API refuses, which is the branch the suites actually exercise. What the offline
   suite proves is the _fallback_ — flush-on-open — which is why it stays a real gate rather than a
   gesture. The device matrix in phase 7 is where a real background flush gets exercised.
+- **The Android drain page, where a browser can reach it.** `e2e/sync-flush.spec.ts` (gated on
+  `SYNC_FLUSH_E2E=1`) queues a write with the radio off, closes the app's page, restores the network, and
+  only then loads `/sync-flush.html` with the shell's `RoyShellSync` bridge stubbed — the page reports
+  `pending: 0` with the product's intent replayed, and the server has the write. That is exactly the page
+  the shell's WorkManager job loads, so the spec covers the half a browser can reach; the wake itself is
+  native and is measured in [the shell notes](../mobile/android-shell.md).
+- **The drain's own scheduling** is pinned on the JVM: `SyncFlushResultTest` holds the worker's only
+  decision (an unreadable report, a failed session lookup or pending work all mean "come back", never
+  "nothing to do"), and `ShellServerTest` holds the URL arithmetic the update check and the drain share.
+  What no test can hold is WorkManager actually waking a killed app — that is a device result.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase
   that regresses `perf/budget.json` does not land — the budget is a gate, not a report.
