@@ -14,7 +14,10 @@
  * changes arrive, and neither is table-specific: `habits` proves HabitFlow's
  * entry, `expenses` SpendTrack's, `short_links` LinkSnap's and
  * `quran_bookmarks` the Quran Reader's. The rows it writes are its own and it
- * deletes them again.
+ * deletes them again; where a table's own keys leave no room for a second row for
+ * the same place — the Quran keeps one mark per Ayah, tombstone included — the
+ * probe clears that place first, so a collision is never reported as a missing
+ * publication.
  *
  *   node --env-file=.env scripts/check-realtime-hints.mjs
  *
@@ -75,9 +78,14 @@ const PROBES = [
     product: 'Quran Reader',
     table: 'quran_bookmarks',
     idColumn: 'id',
-    // A mark on Ayat al-Kursi; the row is deleted again below. The reader's other
-    // table is published by the same migration and the same guard, so one probe
-    // stands for both.
+    // The table keeps one row per (user, surah, ayah) — tombstones included, so a
+    // mark on this Ayah that was removed is still there — and the probe needs an
+    // INSERT. Clear the row it is about to write, or a previous run's mark (or a
+    // Reader who marked Ayat al-Kursi) makes the insert collide instead of
+    // reaching the table. The reader's other table is published by the same
+    // migration and the same guard, so one probe stands for both.
+    prepare: (service, userId) =>
+      service.from('quran_bookmarks').delete().eq('user_id', userId).eq('surah', 2).eq('ayah', 255),
     row: () => ({ surah: 2, ayah: 255 }),
   },
 ];
@@ -158,12 +166,17 @@ async function probe(config, { url, publishableKey, serviceKey }, userId, token)
   const row = await config.row(service, userId);
   const key = config.idColumn === 'code' ? row.code : id;
   const inserted = subscribed
-    ? await service
-        .from(config.table)
-        .insert(
-          config.idColumn === 'id' ? { id, user_id: userId, ...row } : { user_id: userId, ...row }
-        )
-        .select(config.idColumn)
+    ? await (async () => {
+        // A row the probe cannot insert is not a statement about the publication,
+        // so anything the table's own keys would collide with is cleared first.
+        await config.prepare?.(service, userId);
+        return service
+          .from(config.table)
+          .insert(
+            config.idColumn === 'id' ? { id, user_id: userId, ...row } : { user_id: userId, ...row }
+          )
+          .select(config.idColumn);
+      })()
     : null;
 
   const arrived =
