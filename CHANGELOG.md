@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.118.1] - 2026-10-19
+
+### Fixed
+- make the server-owned surfaces say why they cannot work (#372)
+
 ## [1.118.0] - 2026-10-19
 
 ### Added
