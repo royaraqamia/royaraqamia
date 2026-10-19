@@ -1,6 +1,7 @@
 import { request } from '@/frontend/transport/http';
 import { isNativeApp, nativePlatform, nativePlugin } from '@/frontend/shared/native-shell';
 import { isPushDisabledByUser, setPushDisabledByUser } from '@/frontend/api/push';
+import { readNativePushToken, writeNativePushToken } from '@/frontend/shared/native-push-token';
 import { logger } from '@/frontend/shared/logger';
 
 /**
@@ -13,7 +14,6 @@ import { logger } from '@/frontend/shared/logger';
  * sign-out can unregister it even after the app was restarted and the in-memory
  * copy is gone.
  */
-const TOKEN_KEY = 'royaraqamia.push.native.token';
 /** FCM hands the token back a beat after `register()`; this bounds the wait. */
 const REGISTRATION_TIMEOUT_MS = 15_000;
 
@@ -52,20 +52,11 @@ export function isNativePushSupported(): boolean {
 }
 
 function readStoredToken(): string | null {
-  try {
-    return window.localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return readNativePushToken() ?? null;
 }
 
 function storeToken(token: string | null): void {
-  try {
-    if (token) window.localStorage.setItem(TOKEN_KEY, token);
-    else window.localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    return;
-  }
+  writeNativePushToken(token);
 }
 
 /** Whether this device has a token registered with the server. */

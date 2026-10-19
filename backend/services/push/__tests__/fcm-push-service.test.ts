@@ -4,7 +4,11 @@ import type {
   DevicePushTokenRecord,
   DevicePushTokenRepository,
 } from '@/backend/repositories/push/device-push-tokens-repository';
-import type { FcmAdapter, FcmSendError } from '@/backend/services/push/fcm-client';
+import {
+  FCM_SYNC_WAKE,
+  type FcmAdapter,
+  type FcmSendError,
+} from '@/backend/services/push/fcm-client';
 import type { PushPayload } from '@/shared/contracts/push';
 
 const { loggerWarn, loggerError } = vi.hoisted(() => ({
@@ -58,7 +62,10 @@ function makeService(
   } = {}
 ) {
   const repository = overrides.repository ?? makeRepo();
-  const adapter: FcmAdapter = overrides.adapter ?? { send: vi.fn(async () => undefined) };
+  const adapter: FcmAdapter = overrides.adapter ?? {
+    send: vi.fn(async () => undefined),
+    sendData: vi.fn(async () => undefined),
+  };
   const service = new FcmPushService({
     repository,
     enabled: overrides.enabled ?? true,
@@ -192,6 +199,78 @@ describe('FcmPushService', () => {
     await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
     expect(loggerError).toHaveBeenCalledWith(
       'Failed to prune dead device push token',
+      expect.objectContaining({ userId: 'u-1' })
+    );
+  });
+});
+
+/**
+ * The wake is the background half of a sync hint (ADR-0059, ADR-0060). It takes
+ * the notification path's dispatch, retry and prune, and differs in exactly two
+ * ways worth pinning: it sends no payload a receiver could mistake for state, and
+ * it leaves out the device that committed the write.
+ */
+describe('FcmPushService.sendWakeToUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('is a no-op when the service account is not configured', async () => {
+    const { repository, adapter, service } = makeService({ enabled: false });
+    (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+
+    await service.sendWakeToUser('u-1');
+
+    expect(repository.findByUserId).not.toHaveBeenCalled();
+    expect(adapter.sendData).not.toHaveBeenCalled();
+  });
+
+  it('sends a typed, silent wake to every device the account registered', async () => {
+    const { repository, adapter, service } = makeService();
+    (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([
+      makeRecord(),
+      makeRecord({ id: 'token-2', token: 'second-token' }),
+    ]);
+
+    await service.sendWakeToUser('u-1');
+
+    expect(adapter.sendData).toHaveBeenCalledTimes(2);
+    expect(adapter.sendData).toHaveBeenNthCalledWith(1, 'test-token', { type: FCM_SYNC_WAKE });
+    expect(adapter.sendData).toHaveBeenNthCalledWith(2, 'second-token', { type: FCM_SYNC_WAKE });
+    // A wake is not a notification: the visible path is untouched.
+    expect(adapter.send).not.toHaveBeenCalled();
+  });
+
+  it('leaves out the device that asked, so a writer is not woken by its own commit', async () => {
+    const { repository, adapter, service } = makeService();
+    (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([
+      makeRecord(),
+      makeRecord({ id: 'token-2', token: 'second-token' }),
+    ]);
+
+    await service.sendWakeToUser('u-1', { excludeToken: 'test-token' });
+
+    expect(adapter.sendData).toHaveBeenCalledTimes(1);
+    expect(adapter.sendData).toHaveBeenCalledWith('second-token', { type: FCM_SYNC_WAKE });
+  });
+
+  it('prunes a token FCM reports as gone while waking', async () => {
+    const { repository, adapter, service } = makeService();
+    (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+    (adapter.sendData as ReturnType<typeof vi.fn>).mockRejectedValue(fcmError(404, 'UNREGISTERED'));
+
+    await service.sendWakeToUser('u-1');
+
+    expect(repository.removeToken).toHaveBeenCalledWith('test-token');
+  });
+
+  it('never throws when the token lookup fails', async () => {
+    const { repository, service } = makeService();
+    (repository.findByUserId as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db down'));
+
+    await expect(service.sendWakeToUser('u-1')).resolves.toBeUndefined();
+    expect(loggerError).toHaveBeenCalledWith(
+      'Failed to wake devices for user',
       expect.objectContaining({ userId: 'u-1' })
     );
   });

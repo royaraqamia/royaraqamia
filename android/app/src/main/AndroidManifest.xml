@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -60,6 +61,26 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default" />
+
+        <!--
+          The shell's FCM receiver (ADR-0059, ADR-0060). Firebase delivers
+          MESSAGING_EVENT to exactly one service, so the plugin's is removed
+          rather than left beside ours, and `SyncMessagingService` delegates the
+          plugin's own two jobs (a message's data for the page, a rotated token)
+          back to it. Leaving both declared would be a coin toss over which one
+          receives a push — including the visible ones the notification bell
+          depends on.
+        -->
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
+        <service
+            android:name=".SyncMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

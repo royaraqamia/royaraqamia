@@ -1,4 +1,5 @@
 import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
+import { requestDeviceWake } from '@/frontend/shared/local-store/device-wake';
 
 /**
  * The page half of web Background Sync (ADR-0058).
@@ -119,12 +120,23 @@ async function requestWake(): Promise<void> {
 }
 
 async function flushThenRequestWake(engine: SyncEngine): Promise<void> {
+  let delivered = 0;
   try {
+    const before = await engine.status();
     await engine.flush();
-    if ((await engine.status()).pending > 0) await requestWake();
+    const after = await engine.status();
+    delivered = Math.max(0, before.pending - after.pending);
+    if (after.pending > 0) await requestWake();
   } catch {
     // A flush can throw when a store is torn down mid-replay. The Outbox is
     // still the record of what is owed, so the wake request is still worth it.
     await requestWake();
   }
+
+  // A delivered write is the one moment this device knows the account moved, so
+  // it is also the moment to tell the *other* devices (ADR-0060): they cannot
+  // read a Realtime hint if they are not open, and a closed shell has no other
+  // way to learn. A pull deliberately does not do this — only a commit does,
+  // which is what stops two devices waking each other in a loop.
+  if (delivered > 0) requestDeviceWake();
 }

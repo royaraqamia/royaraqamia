@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Budget, Category, Expense, RecurringExpense } from '@/shared/contracts/spendtrack';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
-import { getSyncSnapshot } from '@/frontend/api/spendtrack';
+import { pullSpendtrackData } from '@/frontend/api/spendtrack/pull';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
@@ -109,9 +109,9 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
     async (target: SpendtrackLocalStore) => {
       if (!isSignedIn) return;
       try {
-        const since = await target.getSyncCursor();
-        const snapshot = await getSyncSnapshot(since);
-        await target.applySyncSnapshot(snapshot);
+        // The same pull the background tier runs (ADR-0060): this hook owns
+        // *when*, `pullSpendtrackData` owns *how*.
+        await pullSpendtrackData(target);
       } catch (error) {
         logger.error('Failed to reconcile SpendTrack data with the server', {
           error: String(error),

@@ -22,8 +22,23 @@ export interface FcmSendError extends Error {
   invalidToken?: boolean;
 }
 
+/** Every FCM data value is a string, so a wake is a string map. */
+export type FcmData = Record<string, string>;
+
+/**
+ * The `type` a silent sync wake carries (ADR-0059, ADR-0060).
+ *
+ * Nothing else about the message is read: a hint may only cause a pull, so it
+ * carries no work. `SyncMessagingService` matches this constant on the Java
+ * side, and `scripts/__tests__/sync-flush-page.test.mjs` holds the two to each
+ * other, so the halves cannot drift about what a wake is.
+ */
+export const FCM_SYNC_WAKE = 'sync';
+
 export interface FcmAdapter {
   send(token: string, payload: PushPayload): Promise<void>;
+  /** A silent, data-only, high-priority message: the background sync wake. */
+  sendData(token: string, data: FcmData): Promise<void>;
 }
 
 export interface FcmClientOptions {
@@ -144,6 +159,23 @@ function buildMessage(
 }
 
 /**
+ * A wake carries no `notification` block on purpose: a hint must never draw a
+ * notification, because there is nothing to tell the user — the app answers it
+ * by pulling. High priority is what makes that work on a backgrounded app:
+ * a normal-priority data-only message would wait for the next foreground, which
+ * is the wait this is here to remove.
+ */
+function buildWakeMessage(token: string, data: FcmData): Record<string, unknown> {
+  return {
+    message: {
+      token,
+      data,
+      android: { priority: 'high' },
+    },
+  };
+}
+
+/**
  * FCM HTTP v1 adapter. Authenticates with the Firebase service account (JWT →
  * OAuth access token, cached for its lifetime) and posts one message per token.
  * Never used by the browser: the shell's tokens arrive through the push plugin.
@@ -192,30 +224,37 @@ export function createFcmAdapter(options: FcmClientOptions): FcmAdapter {
     return cachedToken.value;
   }
 
+  async function post(message: Record<string, unknown>): Promise<void> {
+    const bearer = await accessToken();
+    const response = await fetchImpl(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${bearer}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      const error = toSendError(response.status, errorBody);
+      // A rejected access token is worth one silent retry: the cached value
+      // may have been revoked (key rotation) while this instance kept it.
+      if (response.status === 401) cachedToken = null;
+      logger.warn('FCM rejected a message', {
+        status: error.statusCode ?? null,
+        errorCode: error.errorCode ?? null,
+      });
+      throw error;
+    }
+  }
+
   return {
     async send(token, payload) {
-      const bearer = await accessToken();
-      const response = await fetchImpl(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${bearer}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(buildMessage(token, payload, channelId)),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const error = toSendError(response.status, body);
-        // A rejected access token is worth one silent retry: the cached value
-        // may have been revoked (key rotation) while this instance kept it.
-        if (response.status === 401) cachedToken = null;
-        logger.warn('FCM rejected a message', {
-          status: error.statusCode ?? null,
-          errorCode: error.errorCode ?? null,
-        });
-        throw error;
-      }
+      await post(buildMessage(token, payload, channelId));
+    },
+    async sendData(token, data) {
+      await post(buildWakeMessage(token, data));
     },
   };
 }
