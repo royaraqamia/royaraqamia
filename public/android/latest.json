@@ -1,10 +1,10 @@
 {
-  "versionCode": 20007,
-  "versionName": "1.0.7",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.7.apk",
-  "sha256": "0b46c99bea4453269b023e997c87d26fe4fbcf822201f8bc16fbd68c32f11cd1",
+  "versionCode": 20008,
+  "versionName": "1.0.8",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.8.apk",
+  "sha256": "03811fc7868ba28d5eff3c65ecf101332995b74537c10e2b36646db6bc10cc52",
   "sizeBytes": 7606788,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(android): make the shell's update dialogs look like the product (#284)",
+  "notes": "chore(deps): bump the minor-and-patch group across 1 directory with 58 updates (#349)",
   "releasedAt": "2026-10-15"
 }
