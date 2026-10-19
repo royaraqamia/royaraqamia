@@ -5,10 +5,27 @@ import { getSyncSnapshot } from '@/frontend/api/spendtrack';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
-import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
+import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
+import {
+  GUEST_IDENTITY,
+  identityFromUser,
+  identityUserId,
+} from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
+
+/**
+ * Tables whose changes mean this surface's data moved on another device
+ * (ADR-0060). Published to Realtime by
+ * `supabase/migrations/20261019120000_publish_owned_tables_for_realtime_hints.sql`.
+ */
+export const SYNC_HINT_TABLES = [
+  'expenses',
+  'categories',
+  'budgets',
+  'recurring_expenses',
+] as const;
 
 export interface SpendtrackSeed {
   categories: readonly Category[];
@@ -78,6 +95,40 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
     setRecurring(data.recurring.filter((row) => !row.deletedAt));
   }, []);
 
+  /**
+   * Reconciles the store with the server's incremental snapshot (LWW,
+   * pending-aware), including tombstones, so edits and deletes made on another
+   * device land here instead of the store silently diverging. The store only
+   * advances its cursor past rows it actually applied (#313). Guests own no
+   * server rows beyond the seeded defaults.
+   *
+   * Every wake-up path runs this — open, reconnect, focus and a Realtime hint —
+   * so there is one reconciliation to reason about (ADR-0060).
+   */
+  const pullServer = useCallback(
+    async (target: SpendtrackLocalStore) => {
+      if (!isSignedIn) return;
+      try {
+        const since = await target.getSyncCursor();
+        const snapshot = await getSyncSnapshot(since);
+        await target.applySyncSnapshot(snapshot);
+      } catch (error) {
+        logger.error('Failed to reconcile SpendTrack data with the server', {
+          error: String(error),
+        });
+      }
+    },
+    [isSignedIn]
+  );
+
+  /** Pulls from the server and repaints from the store. */
+  const pull = useCallback(async () => {
+    const target = storeRef.current;
+    if (!target) return;
+    await pullServer(target);
+    await readIntoState(target);
+  }, [pullServer, readIntoState]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let cancelled = false;
@@ -104,22 +155,9 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         await store.seedIfEmpty(seed);
         if (cancelled) return store.close();
 
-        // Reconcile with the incremental server snapshot on every open (LWW,
-        // pending-aware), including tombstones, so edits and deletes made on
-        // another device land here instead of the store silently diverging.
-        // The store only advances its cursor past rows it actually applied
-        // (#313). Guests own no server rows beyond the seeded defaults.
-        if (isSignedIn) {
-          try {
-            const since = await store.getSyncCursor();
-            const snapshot = await getSyncSnapshot(since);
-            if (!cancelled) await store.applySyncSnapshot(snapshot);
-          } catch (error) {
-            logger.error('Failed to reconcile SpendTrack data with the server', {
-              error: String(error),
-            });
-          }
-        }
+        // Reconcile with the server on every open, the same way a hint or a
+        // wake-up does.
+        await pullServer(store);
         if (cancelled) return store.close();
 
         storeRef.current = store;
@@ -167,14 +205,31 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
   }, [identity]);
 
   useEffect(() => {
+    if (!ready || !isSignedIn) return;
+    const userId = identityUserId(identity);
+    if (!userId) return;
+
+    // Another device's write arrives as a hint and is answered by the same pull
+    // the page runs on open, focus and reconnect (ADR-0060).
+    return subscribeToSyncHints(userSyncHints(SYNC_HINT_TABLES, userId), () => void pull());
+  }, [ready, isSignedIn, identity, pull]);
+
+  useEffect(() => {
     setOnline(typeof navigator === 'undefined' ? true : navigator.onLine);
 
     const onOnline = () => {
       setOnline(true);
       void engineRef.current?.flush();
+      void pull();
     };
     const onOffline = () => setOnline(false);
-    const onWake = () => void engineRef.current?.flush();
+    // Coming back to the page reconciles with the server as well as flushing: a
+    // change made on another device while this tab was hidden is exactly what
+    // the hint subscription could not deliver.
+    const onWake = () => {
+      void engineRef.current?.flush();
+      void pull();
+    };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
@@ -186,7 +241,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
       window.removeEventListener('focus', onWake);
       document.removeEventListener('visibilitychange', onWake);
     };
-  }, []);
+  }, [pull]);
 
   const refresh = useCallback(async () => {
     if (storeRef.current) await readIntoState(storeRef.current);

@@ -3,10 +3,19 @@ import type { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { HabitSyncEngine, type SyncStatus } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { ApiClient } from '@/frontend/api/habitflow/habit-api';
+import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
+import { identityUserId } from '@/frontend/shared/local-store/identity';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
+
+/**
+ * Tables whose changes mean this surface's data moved on another device
+ * (ADR-0060). Published to Realtime by
+ * `supabase/migrations/20261019120000_publish_owned_tables_for_realtime_hints.sql`.
+ */
+export const SYNC_HINT_TABLES = ['habits', 'habit_logs'] as const;
 
 export interface HabitSyncState extends SyncStatus {
   /** Whether the browser currently reports a connection (drives the pill). */
@@ -130,6 +139,13 @@ export function useHabitSync(
     document.addEventListener('visibilitychange', onVisibility);
     engine.onSync(() => void pull());
 
+    // Another device's write arrives as a hint, and a hint is answered by the
+    // same pull this effect runs on focus and reconnect (ADR-0060).
+    const userId = identityUserId(store.identity);
+    const stopHints = userId
+      ? subscribeToSyncHints(userSyncHints(SYNC_HINT_TABLES, userId), () => void pull())
+      : null;
+
     // Every status emit is a chance for the Outbox mirror to change (a flush
     // removed or re-armed entries), so refresh it alongside the counts.
     const unsubscribe = engine.subscribe((next) => {
@@ -140,6 +156,7 @@ export function useHabitSync(
 
     return () => {
       unsubscribe();
+      stopHints?.();
       window.removeEventListener('online', runSync);
       window.removeEventListener('focus', runSync);
       document.removeEventListener('visibilitychange', onVisibility);

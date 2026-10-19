@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   GUEST_IDENTITY,
   identityFromUser,
+  identityUserId,
   localStoreName,
   userIdentity,
 } from '@/frontend/shared/local-store/identity';
@@ -22,5 +23,12 @@ describe('local store identity', () => {
   it('builds one database name per product and identity', () => {
     expect(localStoreName('habitflow', GUEST_IDENTITY)).toBe('habitflow__guest');
     expect(localStoreName('habitflow', userIdentity('abc'))).toBe('habitflow__user:abc');
+  });
+
+  it('reads the account id back out of an identity', () => {
+    expect(identityUserId(userIdentity('abc'))).toBe('abc');
+    expect(identityUserId(GUEST_IDENTITY)).toBeNull();
+    // Round-trips whatever the id holds, an id that itself contains a colon included.
+    expect(identityUserId(userIdentity(userIdentity('abc') as string))).toBe('user:abc');
   });
 });
