@@ -33,3 +33,9 @@ and a first sign-in **Claims** what the device already holds rather than startin
   idempotent writes (`POST /quran/api/position`, `POST /quran/api/bookmarks`). Both tables key on the
   natural identity — `(user_id)` and `(user_id, surah, ayah)` — so a replay can never accumulate rows,
   and `client_id` records the last writer instead of being the replay key.
+- The device's place is a singleton and so is the intent that carries it: a second position write
+  replaces the queued one instead of leaving a place per settled Ayah behind a long read, since an
+  older place holds nothing a newer one does not. A Bookmark queues one intent per toggle — a mark and
+  an unmark are one write with two payloads, and the earlier payload is not recoverable from the later
+  one. A Bookmark's local row is keyed by the write that made it, so accepting a server copy removes
+  the local row first; one Ayah keeps one row on both sides.
