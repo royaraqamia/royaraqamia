@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.116.2] - 2026-10-19
+
+### Fixed
+- derive the unvendored Surah in the audio e2e spec (#361)
+
 ## [1.116.1] - 2026-10-19
 
 ### Changed
