@@ -1,0 +1,39 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 111,
+  "name": "المسد",
+  "ayahCount": 5,
+  "bytes": 261356,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/111/001.mp3",
+      "bytes": 60589,
+      "sha256": "6be4ccb0a481af4db4b64b9b37da7b4cc7edf73198fc1c41e373ffa72ddec28e"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/111/002.mp3",
+      "bytes": 58708,
+      "sha256": "bde65e87c940510561617f915843e62670291fe6a7b06067126184ead0fd04a8"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/111/003.mp3",
+      "bytes": 42825,
+      "sha256": "4d110996e5a67ac36279b37670f2701079079a8bcadf0e5118708063d9ab85d9"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/111/004.mp3",
+      "bytes": 46169,
+      "sha256": "a49b41a7fc707dee92b41e9de129f1f39e673ef2c443234580dfb8c15fd7254a"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/111/005.mp3",
+      "bytes": 53065,
+      "sha256": "280461feade74938be371c909f3fbfecd8eeba15fb73f0d5f665f7a05262d4b5"
+    }
+  ]
+}

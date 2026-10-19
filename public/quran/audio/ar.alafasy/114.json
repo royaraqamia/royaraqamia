@@ -1,0 +1,45 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 114,
+  "name": "الناس",
+  "ayahCount": 6,
+  "bytes": 335940,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/114/001.mp3",
+      "bytes": 50348,
+      "sha256": "c715a6dc7b2eb6765ee74c2efcbaee296f5cc570ef9df9f2012ec4968097b1f6"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/114/002.mp3",
+      "bytes": 43660,
+      "sha256": "d58b22c5aeddb9899b67a36d8692df2fe688e77f4a575b53156a7833fe80b0ca"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/114/003.mp3",
+      "bytes": 44287,
+      "sha256": "f91710dcc92f42f4658acde67d8cd81118ea7b58e43d1c28b518b86e26e6a367"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/114/004.mp3",
+      "bytes": 65394,
+      "sha256": "c1db79df0be024b9943d51885d629956773c002a8d44a2789448cf354d8c98f2"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/114/005.mp3",
+      "bytes": 64767,
+      "sha256": "06e4163302e545bd51441e777b8a45e4738bad0c532640176979be937cfe3029"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/114/006.mp3",
+      "bytes": 67484,
+      "sha256": "9819c3154c4252118f743091056e88f54cc465a4962ebd59cfbd1ee399dc2d42"
+    }
+  ]
+}

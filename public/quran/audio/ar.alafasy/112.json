@@ -1,0 +1,33 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 112,
+  "name": "الإخلاص",
+  "ayahCount": 4,
+  "bytes": 112586,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/112/001.mp3",
+      "bytes": 25273,
+      "sha256": "b979fc8158df6e87ce205efbe7d47aa1eb7bd9818461cf28d880f7fb8c3e6a23"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/112/002.mp3",
+      "bytes": 21720,
+      "sha256": "533af01da814319a1084605c2ca2f2fde908f66716b6ebb931542273c34ed42e"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/112/003.mp3",
+      "bytes": 25273,
+      "sha256": "c2bb772b953d92ab124ab797d86381f0aa84c6916d7aa7a836eafa7c0c94c598"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/112/004.mp3",
+      "bytes": 40320,
+      "sha256": "f464621bbcfef038fa0021df1757f1ca2373edc0fc5ae342453a3ab65ed7f63e"
+    }
+  ]
+}

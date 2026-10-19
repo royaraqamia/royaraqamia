@@ -1,0 +1,141 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 85,
+  "name": "البروج",
+  "ayahCount": 22,
+  "bytes": 1474666,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/085/001.mp3",
+      "bytes": 68530,
+      "sha256": "4e31111dd9d9fa02fc092cbe9fadaf84e1eee296d35f23914247578103b219ab"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/085/002.mp3",
+      "bytes": 43661,
+      "sha256": "bfcbbc061df2b9d18ae4e4614c8a7327f0ca7073d9e8f9bf673a963feb659996"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/085/003.mp3",
+      "bytes": 55573,
+      "sha256": "02d2d8035515f5294507c192e2dc7fe7a1540de28dc9f116c800a591fdec419e"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/085/004.mp3",
+      "bytes": 49513,
+      "sha256": "250fc2bc870ce79f59cd0716e2662fd2ca2faadff8642eddb761ab2a0074d827"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/085/005.mp3",
+      "bytes": 55573,
+      "sha256": "dad092bb88f03487fcd03a0fec11b9e3b4da1b97bfc63b9d91db04988d521d61"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/085/006.mp3",
+      "bytes": 45333,
+      "sha256": "fe3ced96c3ebc66ca573867a1639d692e8f81bedd6419d1a0bae3456218d707b"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/085/007.mp3",
+      "bytes": 70202,
+      "sha256": "17dcbc3ec68f0748b1702b33b8d1514c996f65e85c925f27108a49a4bb2a7de1"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/085/008.mp3",
+      "bytes": 100086,
+      "sha256": "5cfc8579f1f39373a0169d994e42b4617f1067d4bc67cc2571c2ce1e22a40b1f"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/085/009.mp3",
+      "bytes": 109699,
+      "sha256": "17f4c461e99c7ebb3b00926603f5b31b78829ebacd1a941bd469f3eb6648716b"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/085/010.mp3",
+      "bytes": 145645,
+      "sha256": "2724795b255e5e05f7a2106caedff7867e9f3b5b375ae303a70a6619ecbc218b"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/085/011.mp3",
+      "bytes": 175738,
+      "sha256": "5199b21e9ffff73f4b23a8d68732a988206126a71569a75650a8e5aa46c250f8"
+    },
+    {
+      "ayah": 12,
+      "key": "ar.alafasy/085/012.mp3",
+      "bytes": 53903,
+      "sha256": "669c33f0b6d6010a6dd11c150a6307998081ac39389c3f56eabc5d9ea0a23188"
+    },
+    {
+      "ayah": 13,
+      "key": "ar.alafasy/085/013.mp3",
+      "bytes": 59546,
+      "sha256": "e60867965016170f501b976977446fb0d224bef9db8ebc551a3c5496b5944a6d"
+    },
+    {
+      "ayah": 14,
+      "key": "ar.alafasy/085/014.mp3",
+      "bytes": 45335,
+      "sha256": "2f89c1ed62199a8cde6bf75ea346f69b69546cadc89b90987c310a846f5d96eb"
+    },
+    {
+      "ayah": 15,
+      "key": "ar.alafasy/085/015.mp3",
+      "bytes": 39275,
+      "sha256": "6ccce6742f66688e229828131172c639b88656121a248311db0b5a4c1f6523ef"
+    },
+    {
+      "ayah": 16,
+      "key": "ar.alafasy/085/016.mp3",
+      "bytes": 40529,
+      "sha256": "68c5c26da122a98833f59c4c4b9d5d9230a7b53fe4cfbcd035ba3cd218665d86"
+    },
+    {
+      "ayah": 17,
+      "key": "ar.alafasy/085/017.mp3",
+      "bytes": 44917,
+      "sha256": "4b52c46f4a3d23846498802c76ce6be5b53ff14ff58e72520f52eb3013878092"
+    },
+    {
+      "ayah": 18,
+      "key": "ar.alafasy/085/018.mp3",
+      "bytes": 39693,
+      "sha256": "11e2dd62e1898db2368790ae96f38079958703e3750d25299d1eb6532d5ae57a"
+    },
+    {
+      "ayah": 19,
+      "key": "ar.alafasy/085/019.mp3",
+      "bytes": 49515,
+      "sha256": "8aaf0df74523b19d54ccc606f13f36324d6457989485812c36caa098e29b4087"
+    },
+    {
+      "ayah": 20,
+      "key": "ar.alafasy/085/020.mp3",
+      "bytes": 71040,
+      "sha256": "ad17cbd6ce1bd9e3fa987807d5ad0de9ef7514fe495b75ac1f805f5af998f7e9"
+    },
+    {
+      "ayah": 21,
+      "key": "ar.alafasy/085/021.mp3",
+      "bytes": 50560,
+      "sha256": "9d03463ff50f98ca8c3a0c35df074e48d6d7714f23815a599e1587c5c6f2a776"
+    },
+    {
+      "ayah": 22,
+      "key": "ar.alafasy/085/022.mp3",
+      "bytes": 60800,
+      "sha256": "7e7037fa448166f6fb8f42680031835015cdc096578e30db3d4c2418a9209c48"
+    }
+  ]
+}

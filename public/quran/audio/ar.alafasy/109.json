@@ -1,0 +1,45 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 109,
+  "name": "الكافرون",
+  "ayahCount": 6,
+  "bytes": 365020,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/109/001.mp3",
+      "bytes": 61638,
+      "sha256": "cb6c46c0492724f4cf35c8bd51d19738b10be19ea6cf5e976a6f041bc29cf40a"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/109/002.mp3",
+      "bytes": 61011,
+      "sha256": "50857bdd391e8c2028a15786a807d572896df182974ddae4c14e1d6307e370e0"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/109/003.mp3",
+      "bytes": 67280,
+      "sha256": "807b113aee673f49581b42ee7d542dde291771bd45150be01d84ea018ede81b8"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/109/004.mp3",
+      "bytes": 54741,
+      "sha256": "e18e026da04a2e75b05113383d65c03654b09e2afbcadc4bf938dd475f6e2020"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/109/005.mp3",
+      "bytes": 68952,
+      "sha256": "85c29897c02230b6d8802241025e814d73ee18a35f95d7460ce231048a1a91a1"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/109/006.mp3",
+      "bytes": 51398,
+      "sha256": "17ba42286758581b698bb31ac387052788482f6fc9951b95435939bc80b2fc38"
+    }
+  ]
+}

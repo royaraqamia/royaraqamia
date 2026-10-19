@@ -1,0 +1,135 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 92,
+  "name": "الليل",
+  "ayahCount": 21,
+  "bytes": 828680,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/092/001.mp3",
+      "bytes": 27986,
+      "sha256": "e49690cf442c0a09488d0a0bf35fc55fd3d0bda5fcf2eebf1fadb6c08ecc0cdf"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/092/002.mp3",
+      "bytes": 36763,
+      "sha256": "26acd8da78dac1d0bccc480073383be8baeddfe2d3eca8785bec7160043b791e"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/092/003.mp3",
+      "bytes": 41570,
+      "sha256": "95f52661071abeb15528e360795d87f2e99609b82863b93de684b02b23a31ad7"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/092/004.mp3",
+      "bytes": 35718,
+      "sha256": "c9700021a109463bca59d026cccc9845bd58174a504771f1f50197b2eaa4c174"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/092/005.mp3",
+      "bytes": 39689,
+      "sha256": "caa05e578765423c4aff698721926e968c8591c37df9edd1054047bc39e4d615"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/092/006.mp3",
+      "bytes": 25060,
+      "sha256": "af94e9613b6bc5ebeb83571f286aa31c5b6f66612057f09ea3bfa2753f63e550"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/092/007.mp3",
+      "bytes": 31747,
+      "sha256": "653a8f91056e8c4ea726abe30aee38f23b5d15f0939d7046e1b5b1e201bbfa18"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/092/008.mp3",
+      "bytes": 41152,
+      "sha256": "fb5f73437e5630e062d40c19ae11e4d2f4f7447c7aa91c67b3fdfa29cb4d49aa"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/092/009.mp3",
+      "bytes": 24433,
+      "sha256": "059bb7238de2c0dd80bda0606acb3ead18583f87ccb58f1fa9d7c321df3d2ee2"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/092/010.mp3",
+      "bytes": 30287,
+      "sha256": "094205f27afced62c4a6b991a1ba9efb89b197621fad396997448d44758c4452"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/092/011.mp3",
+      "bytes": 57245,
+      "sha256": "636edb2693287a7f6a0926047cc4205c2e77d450402131005c43d79d5d4ba415"
+    },
+    {
+      "ayah": 12,
+      "key": "ar.alafasy/092/012.mp3",
+      "bytes": 31749,
+      "sha256": "4e9cb94d32b612d329f3180dc678ba3f93af4037e429a835b00e88f055173859"
+    },
+    {
+      "ayah": 13,
+      "key": "ar.alafasy/092/013.mp3",
+      "bytes": 47005,
+      "sha256": "b15a02af57c7cf0cb6c939bec15788de2339ee5c09a04b31efac3e28320be688"
+    },
+    {
+      "ayah": 14,
+      "key": "ar.alafasy/092/014.mp3",
+      "bytes": 47632,
+      "sha256": "c3cb3c08f4907fd4771cfe646d63709ec989b5d13e4378fdd8941740d4c60fd0"
+    },
+    {
+      "ayah": 15,
+      "key": "ar.alafasy/092/015.mp3",
+      "bytes": 46169,
+      "sha256": "aca3f337c3b8fb8624635b902bfc129e505ccd4c5f0d70c83bf4eec27d33581d"
+    },
+    {
+      "ayah": 16,
+      "key": "ar.alafasy/092/016.mp3",
+      "bytes": 33839,
+      "sha256": "53feebf0f065fb72d581357427e62202c4cf6b1d9df71f8421e6569ef98fa64c"
+    },
+    {
+      "ayah": 17,
+      "key": "ar.alafasy/092/017.mp3",
+      "bytes": 38437,
+      "sha256": "4a8ad92fbc91cc26ecadce6c34aaa57a3010b13df6a1a3d9d17c80d59c90bd31"
+    },
+    {
+      "ayah": 18,
+      "key": "ar.alafasy/092/018.mp3",
+      "bytes": 40945,
+      "sha256": "d0f75433fe865df4a799f47531f43b2fe6671b32d95554816d3bde6cc2dfc6a4"
+    },
+    {
+      "ayah": 19,
+      "key": "ar.alafasy/092/019.mp3",
+      "bytes": 64559,
+      "sha256": "a5359d6ceef2d223a99070bcfb7243cce78283beba6d7f53fd848cebc63e3015"
+    },
+    {
+      "ayah": 20,
+      "key": "ar.alafasy/092/020.mp3",
+      "bytes": 52856,
+      "sha256": "499734eff8a0a801ed9570f477a8c54bc7abdc167891c692ecc2aa2e5462ddd2"
+    },
+    {
+      "ayah": 21,
+      "key": "ar.alafasy/092/021.mp3",
+      "bytes": 33839,
+      "sha256": "790b661d0ac23272bdf63d13a42ee741f45b2266866bc414a1eb99feb3d01bef"
+    }
+  ]
+}

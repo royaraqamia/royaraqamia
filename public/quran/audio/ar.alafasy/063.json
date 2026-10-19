@@ -1,0 +1,75 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 63,
+  "name": "المنافقون",
+  "ayahCount": 11,
+  "bytes": 2031381,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/063/001.mp3",
+      "bytes": 180548,
+      "sha256": "c431845f2bb4f31df88075cdf9609f7b2a0f22513e475a469c89dffebdfbaca2"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/063/002.mp3",
+      "bytes": 166128,
+      "sha256": "d335bbc3730a1f62aadb781988a4ef1bae7c69fa8cd48dbf1f85f6844c04f25f"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/063/003.mp3",
+      "bytes": 107823,
+      "sha256": "37a185535590cf581cf00e78303743a12769f06d883e017bf8f9da8e55aa3c18"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/063/004.mp3",
+      "bytes": 253064,
+      "sha256": "20c4b2868f9726f9c18c6dceb39c664ad3510e0a1b95fb5390a45961aee4eaff"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/063/005.mp3",
+      "bytes": 152963,
+      "sha256": "186a6c548111596e43718c1e749ee42357898befb33e4507f50611586adbd15e"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/063/006.mp3",
+      "bytes": 162158,
+      "sha256": "fa48693d29cc2db5bf53b9b211bb185dba71257d58932032e4b2453625895c0b"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/063/007.mp3",
+      "bytes": 208760,
+      "sha256": "74c220b92a9900c8ddb987f8c3f430a15637b7c103d5a94adec4b5039049294a"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/063/008.mp3",
+      "bytes": 192878,
+      "sha256": "c3891d49863991f647ae27d5b20a37cd02295ea649d81d30ec663b17721f2895"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/063/009.mp3",
+      "bytes": 208969,
+      "sha256": "5dedccdcf32b97eb6a66acd2399c8fefcfba230dbbd979b3a84b21781caab709"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/063/010.mp3",
+      "bytes": 265396,
+      "sha256": "3392b94831db6279f52d6b90c69421f41d3ce6bdaf7e61bdebc8f7d5fcc2640c"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/063/011.mp3",
+      "bytes": 132694,
+      "sha256": "ceaff55b6f4314ec53494aa0190b287666ffb9511b130e8a486799f966d4011a"
+    }
+  ]
+}

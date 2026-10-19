@@ -1,0 +1,27 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 108,
+  "name": "الكوثر",
+  "ayahCount": 3,
+  "bytes": 128482,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/108/001.mp3",
+      "bytes": 55157,
+      "sha256": "a9fe00f8e9a8124a9e67579890bb9b0d06ad1cc231abc638278db906124a5f8f"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/108/002.mp3",
+      "bytes": 29871,
+      "sha256": "cf839eafa856b194efffafd11b767c4d26e40fffafd453838312aa1d5e0c0ded"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/108/003.mp3",
+      "bytes": 43454,
+      "sha256": "dd3ae79ef5a6af125485c575259e34afdf8394e3c0d5e075ab39801aeac2a71a"
+    }
+  ]
+}

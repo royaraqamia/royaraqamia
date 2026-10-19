@@ -1,0 +1,141 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 58,
+  "name": "المجادلة",
+  "ayahCount": 22,
+  "bytes": 4872112,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/058/001.mp3",
+      "bytes": 152334,
+      "sha256": "cc99f9862be23ff2a6b9156f0d37aa362f529430e61b47885fbce834def3c556"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/058/002.mp3",
+      "bytes": 271661,
+      "sha256": "25c6db3a9b4c07eb952f6fc39ee7166bada73edb298213d23b344d992e3a2e02"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/058/003.mp3",
+      "bytes": 245539,
+      "sha256": "f9e6c1929162df8de7a99350069999cf0ff0f189c5dd6464d081c923f69fb27d"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/058/004.mp3",
+      "bytes": 247628,
+      "sha256": "2c0faeac76836afd6b4ba755a8a360ee387f5702fd451bb54fc787e0a92e051a"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/058/005.mp3",
+      "bytes": 218162,
+      "sha256": "0e6c98d85e1e5cfe21ff6fc802c8220c10dc3a3b26494e6d14b58b41477519d3"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/058/006.mp3",
+      "bytes": 158812,
+      "sha256": "afb08a7a2ba7815836e1b491451dd614c7aa69bc4993dfe45d95effe7b1458ce"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/058/007.mp3",
+      "bytes": 351282,
+      "sha256": "529899b99e4ef8d6cee5fd39a84c71e7b30615e62fe94b4b2eb26859f34c0637"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/058/008.mp3",
+      "bytes": 363612,
+      "sha256": "7835eb368e2f67a1dc5b8c86edde409fbf884aa215eb5b5b95cd9878317362b8"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/058/009.mp3",
+      "bytes": 203116,
+      "sha256": "2d8ad5cbe960cdd22cd220d0924eb3e20de8d2159ff9e42b6ff62605d6a78169"
+    },
+    {
+      "ayah": 10,
+      "key": "ar.alafasy/058/010.mp3",
+      "bytes": 188489,
+      "sha256": "622ae95df66a9cfdba2dcef18ad0a77b10b015e6ba2c754ea34ec361ad3132d8"
+    },
+    {
+      "ayah": 11,
+      "key": "ar.alafasy/058/011.mp3",
+      "bytes": 278141,
+      "sha256": "362253a0de363ab7a87e04dd9e33cfc22d8c6378c04c4665760b07e82486e6dc"
+    },
+    {
+      "ayah": 12,
+      "key": "ar.alafasy/058/012.mp3",
+      "bytes": 206879,
+      "sha256": "363193ea70e8a145f8ae287c50dafef46127e3fd51587f0800970ed2cb1f14d4"
+    },
+    {
+      "ayah": 13,
+      "key": "ar.alafasy/058/013.mp3",
+      "bytes": 216910,
+      "sha256": "79729c5890f4e25b3227e351b73ca3cd3b4306a57ab446e4e2341cf7c8fd634f"
+    },
+    {
+      "ayah": 14,
+      "key": "ar.alafasy/058/014.mp3",
+      "bytes": 142932,
+      "sha256": "275007e644673722c4cd6537b82199b3b70f489a559d0bad0debc1a7c23a7bb4"
+    },
+    {
+      "ayah": 15,
+      "key": "ar.alafasy/058/015.mp3",
+      "bytes": 106151,
+      "sha256": "332600b0a22250a4da041132e8f94134dd3f9153f4f83e6186bec124dfd92a00"
+    },
+    {
+      "ayah": 16,
+      "key": "ar.alafasy/058/016.mp3",
+      "bytes": 119317,
+      "sha256": "ccd7882bb749a2639668e45d9de4f01cea4458de9c765523d4586bbc11073e55"
+    },
+    {
+      "ayah": 17,
+      "key": "ar.alafasy/058/017.mp3",
+      "bytes": 163830,
+      "sha256": "ee56446bc3092b4fafab8e8a321b86dc988e17cc70840b22df8cc348b20dc46a"
+    },
+    {
+      "ayah": 18,
+      "key": "ar.alafasy/058/018.mp3",
+      "bytes": 184937,
+      "sha256": "afb85db0cecea0f6d93c37b030b0a1ddfbd270d1f6388aaa4ffe73a861c0022c"
+    },
+    {
+      "ayah": 19,
+      "key": "ar.alafasy/058/019.mp3",
+      "bytes": 199356,
+      "sha256": "daa40078602fd4d8b4ea6ed575dbbaffb2da95bf7b4f81ce3d48bd2427293d49"
+    },
+    {
+      "ayah": 20,
+      "key": "ar.alafasy/058/020.mp3",
+      "bytes": 131647,
+      "sha256": "91ddeeba4e9c81380acd1f6e0a308161a906fafe124dfa22059789bba48d01b2"
+    },
+    {
+      "ayah": 21,
+      "key": "ar.alafasy/058/021.mp3",
+      "bytes": 90687,
+      "sha256": "2a3e59dd76de90f26e7bc38aa793dda1d3a102027792368eb04be58598f29661"
+    },
+    {
+      "ayah": 22,
+      "key": "ar.alafasy/058/022.mp3",
+      "bytes": 630690,
+      "sha256": "e5a9f2dc557090607d7b0c6c5dfc032ba9ecfc8043e953ec070d7fcb7b42e3fc"
+    }
+  ]
+}

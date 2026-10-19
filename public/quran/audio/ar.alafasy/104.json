@@ -1,0 +1,63 @@
+{
+  "edition": "ar.alafasy",
+  "surah": 104,
+  "name": "الهمزة",
+  "ayahCount": 9,
+  "bytes": 394424,
+  "files": [
+    {
+      "ayah": 1,
+      "key": "ar.alafasy/104/001.mp3",
+      "bytes": 38229,
+      "sha256": "9c38453731a446ebc209024b183d48c7eb771f309f4d994c9b875cdd0f30e07d"
+    },
+    {
+      "ayah": 2,
+      "key": "ar.alafasy/104/002.mp3",
+      "bytes": 44498,
+      "sha256": "a99caab593fb5e8a9121cadfbf497a32a301e6284a93dbb7ab48dbca7fd949bf"
+    },
+    {
+      "ayah": 3,
+      "key": "ar.alafasy/104/003.mp3",
+      "bytes": 54738,
+      "sha256": "65450c97108b047b6e977b1c0929f8fecb7d53b30039f51e25654cd3230beed6"
+    },
+    {
+      "ayah": 4,
+      "key": "ar.alafasy/104/004.mp3",
+      "bytes": 55365,
+      "sha256": "418c8d0fbad9d9ab0f8ce909a6b9337e9958877c53dabc6389da43836280c155"
+    },
+    {
+      "ayah": 5,
+      "key": "ar.alafasy/104/005.mp3",
+      "bytes": 41573,
+      "sha256": "e61c345ba4055168ec80b93052387a750c962c9fc3b13bb2887ea837a2cf8d79"
+    },
+    {
+      "ayah": 6,
+      "key": "ar.alafasy/104/006.mp3",
+      "bytes": 29452,
+      "sha256": "125856a59b5d38897aca2f17e07cbe37038596e702ef75da0f8da338d7ce7f8b"
+    },
+    {
+      "ayah": 7,
+      "key": "ar.alafasy/104/007.mp3",
+      "bytes": 36975,
+      "sha256": "fef049abcbd75bd9e4d37bacbdd40441371fad6a03e53f09ceed082bf5394ba1"
+    },
+    {
+      "ayah": 8,
+      "key": "ar.alafasy/104/008.mp3",
+      "bytes": 46797,
+      "sha256": "88c540f9d75921c58b95a28ba3bb74dcfa6e218effea2fa0ce3725a67784d154"
+    },
+    {
+      "ayah": 9,
+      "key": "ar.alafasy/104/009.mp3",
+      "bytes": 46797,
+      "sha256": "e8bb6900013e680ed7ba0392452deb98ea82d9a062714c3606c34b098d14b9f5"
+    }
+  ]
+}
