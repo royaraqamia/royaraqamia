@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.120.0] - 2026-10-19
+
+### Added
+- give the reader an Outbox, a sync cursor and a guest claim (#374)
+
 ## [1.119.0] - 2026-10-19
 
 ### Added
