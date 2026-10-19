@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.116.4] - 2026-10-19
+
+### Changed
+- index rate_sync_runs by status and finished_at (#363)
+
 ## [1.116.3] - 2026-10-19
 
 ### Fixed
