@@ -67,9 +67,27 @@ export function useQuranReader(): QuranReaderState {
     return () => {
       cancelled = true;
       unsubscribe?.();
-      opened?.close();
-      storeRef.current = null;
       setReady(false);
+
+      // A session's cleanup flushes where the reader stopped through
+      // `savePosition`, which reads `storeRef` — and React runs passive-effect
+      // destroys in definition order. This hook is called before the effect that
+      // owns that flush, so this cleanup ran first and used to clear the ref and
+      // close the store out from under the flush: the last Ayah of every sura the
+      // reader left was dropped, unless a tab hide had already persisted it
+      // (#355).
+      //
+      // A microtask is enough to fix the order. The unmount pass is synchronous,
+      // so the flush has already run — and started its transaction — by the time
+      // this lands. `close()` then waits for that operation to settle before
+      // closing for real (`LocalStoreConnection`), so the write is never yanked
+      // and the connection is still closed by the end of the task.
+      const store = opened;
+      opened = null;
+      queueMicrotask(() => {
+        storeRef.current = null;
+        store?.close();
+      });
     };
   }, []);
 
