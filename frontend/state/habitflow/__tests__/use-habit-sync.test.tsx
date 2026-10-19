@@ -23,7 +23,32 @@ vi.mock('@/frontend/api/habitflow/sync-transport', async (importOriginal) => {
 vi.mock('@/frontend/api/habitflow/habit-api', () => ({
   ApiClient: {
     fetchInitialData: async () => ({ habits: [], logs: [], mode: 'supabase' }),
-    fetchSyncData: async () => ({ habits: [], logs: [], mode: 'supabase' }),
+    fetchSyncData: async () => {
+      syncPulls += 1;
+      return { habits: [], logs: [], mode: 'supabase' };
+    },
+  },
+}));
+
+let syncPulls = 0;
+/** The sources and hint callbacks the surface subscribed with (ADR-0060). */
+let hintSources: unknown = null;
+const hintCallbacks: Array<() => void> = [];
+
+vi.mock('@/frontend/api/sync-hints', () => ({
+  userSyncHints: (tables: readonly string[], userId: string) =>
+    tables.map((table) => ({
+      table,
+      channel: `${table}_sync_hints`,
+      filter: `user_id=eq.${userId}`,
+    })),
+  subscribeToSyncHints: (sources: unknown, onHint: () => void) => {
+    hintSources = sources;
+    hintCallbacks.push(onHint);
+    return () => {
+      const index = hintCallbacks.indexOf(onHint);
+      if (index >= 0) hintCallbacks.splice(index, 1);
+    };
   },
 }));
 
@@ -47,6 +72,9 @@ describe('useHabitSync', () => {
     globalThis.indexedDB = new IDBFactory();
     sent.length = 0;
     sendGate = null;
+    syncPulls = 0;
+    hintSources = null;
+    hintCallbacks.length = 0;
   });
 
   it('flushes the account outbox on mount', async () => {
@@ -113,6 +141,40 @@ describe('useHabitSync', () => {
     const store = await HabitLocalStore.open(userIdentity('u-1'));
     const { result } = renderHook(() => useHabitSync(store, false, vi.fn()));
     expect(result.current.online).toBe(true);
+    store.close();
+  });
+
+  // ADR-0060: another device's write arrives as a Realtime hint, and the surface
+  // answers it with the same pull it already runs on mount, focus and reconnect.
+  it('pulls when a Realtime hint says another device wrote', async () => {
+    const store = await HabitLocalStore.open(userIdentity('u-1'));
+    renderHook(() => useHabitSync(store, true, vi.fn()));
+
+    await waitFor(() => expect(hintCallbacks).toHaveLength(1));
+    await waitFor(() => expect(syncPulls).toBeGreaterThanOrEqual(1));
+
+    // This surface's own tables, scoped to this account: RLS decides what may
+    // arrive, and the filter keeps another account's writes off the wire.
+    expect(hintSources).toEqual([
+      { table: 'habits', channel: 'habits_sync_hints', filter: 'user_id=eq.u-1' },
+      { table: 'habit_logs', channel: 'habit_logs_sync_hints', filter: 'user_id=eq.u-1' },
+    ]);
+
+    const pullsBefore = syncPulls;
+    await act(async () => {
+      for (const hint of [...hintCallbacks]) hint();
+    });
+
+    await waitFor(() => expect(syncPulls).toBe(pullsBefore + 1));
+    store.close();
+  });
+
+  it('holds no hint subscription for a guest', async () => {
+    const store = await HabitLocalStore.open(userIdentity('u-1'));
+    renderHook(() => useHabitSync(store, false, vi.fn()));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(hintCallbacks).toHaveLength(0);
     store.close();
   });
 

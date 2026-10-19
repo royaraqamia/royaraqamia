@@ -18,6 +18,15 @@ export function identityFromUser(user: unknown): LocalIdentity {
   return typeof id === 'string' && id.length > 0 ? userIdentity(id) : GUEST_IDENTITY;
 }
 
+/**
+ * The account id inside a `user:<id>` identity, or `null` for a guest. The
+ * inverse of {@link userIdentity}, for the places that hold an identity and need
+ * the id itself — a `user_id=eq.…` Realtime filter, for one (ADR-0060).
+ */
+export function identityUserId(identity: LocalIdentity): string | null {
+  return identity.startsWith('user:') ? identity.slice('user:'.length) : null;
+}
+
 /** `<product>__<identity>` — one durable database per product, per identity. */
 export function localStoreName(product: string, identity: LocalIdentity): string {
   return `${product}__${identity}`;

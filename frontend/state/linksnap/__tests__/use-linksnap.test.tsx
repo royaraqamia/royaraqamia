@@ -16,6 +16,27 @@ vi.mock('@/frontend/api/linksnap', async (importOriginal) => {
 let sendGate: Promise<void> | null = null;
 const sentTypes: string[] = [];
 
+/** The sources and hint callbacks the surface subscribed with (ADR-0060). */
+let hintSources: unknown = null;
+const hintCallbacks: Array<() => void> = [];
+
+vi.mock('@/frontend/api/sync-hints', () => ({
+  userSyncHints: (tables: readonly string[], userId: string) =>
+    tables.map((table) => ({
+      table,
+      channel: `${table}_sync_hints`,
+      filter: `user_id=eq.${userId}`,
+    })),
+  subscribeToSyncHints: (sources: unknown, onHint: () => void) => {
+    hintSources = sources;
+    hintCallbacks.push(onHint);
+    return () => {
+      const index = hintCallbacks.indexOf(onHint);
+      if (index >= 0) hintCallbacks.splice(index, 1);
+    };
+  },
+}));
+
 vi.mock('@/frontend/api/linksnap/sync-transport', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/frontend/api/linksnap/sync-transport')>();
   return {
@@ -29,6 +50,7 @@ vi.mock('@/frontend/api/linksnap/sync-transport', async (importOriginal) => {
   };
 });
 
+import { listLinksIncludingDeleted } from '@/frontend/api/linksnap';
 import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
 import { userIdentity } from '@/frontend/shared/local-store/identity';
 import { useLinksnap } from '@/frontend/state/linksnap/use-linksnap';
@@ -38,6 +60,29 @@ describe('useLinksnap', () => {
     globalThis.indexedDB = new IDBFactory();
     sendGate = null;
     sentTypes.length = 0;
+    hintSources = null;
+    hintCallbacks.length = 0;
+  });
+
+  // ADR-0060: a hint from another device runs the same pull the page runs on
+  // open, focus and reconnect.
+  it('pulls when a Realtime hint says another device wrote', async () => {
+    const listLinks = vi.mocked(listLinksIncludingDeleted);
+
+    const { result } = renderHook(() => useLinksnap({ token: 'test-token', user: { id: 'u-1' } }));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    await waitFor(() => expect(hintCallbacks).toHaveLength(1));
+
+    expect(hintSources).toEqual([
+      { table: 'short_links', channel: 'short_links_sync_hints', filter: 'user_id=eq.u-1' },
+    ]);
+
+    const pullsBefore = listLinks.mock.calls.length;
+    await act(async () => {
+      for (const hint of [...hintCallbacks]) hint();
+    });
+
+    await waitFor(() => expect(listLinks.mock.calls.length).toBe(pullsBefore + 1));
   });
 
   // The engine owns the channel now (#200); the hook's job is to dispose it.

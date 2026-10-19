@@ -18,6 +18,27 @@ vi.mock('@/frontend/api/spendtrack', () => ({
 let sendGate: Promise<void> | null = null;
 const sentTypes: string[] = [];
 
+/** The sources and hint callbacks the surface subscribed with (ADR-0060). */
+let hintSources: unknown = null;
+const hintCallbacks: Array<() => void> = [];
+
+vi.mock('@/frontend/api/sync-hints', () => ({
+  userSyncHints: (tables: readonly string[], userId: string) =>
+    tables.map((table) => ({
+      table,
+      channel: `${table}_sync_hints`,
+      filter: `user_id=eq.${userId}`,
+    })),
+  subscribeToSyncHints: (sources: unknown, onHint: () => void) => {
+    hintSources = sources;
+    hintCallbacks.push(onHint);
+    return () => {
+      const index = hintCallbacks.indexOf(onHint);
+      if (index >= 0) hintCallbacks.splice(index, 1);
+    };
+  },
+}));
+
 vi.mock('@/frontend/api/spendtrack/sync-transport', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/frontend/api/spendtrack/sync-transport')>();
   return {
@@ -31,6 +52,7 @@ vi.mock('@/frontend/api/spendtrack/sync-transport', async (importOriginal) => {
   };
 });
 
+import { getSyncSnapshot } from '@/frontend/api/spendtrack';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { userIdentity } from '@/frontend/shared/local-store/identity';
 import { useSpendtrack } from '@/frontend/state/spendtrack/use-spendtrack';
@@ -48,6 +70,37 @@ describe('useSpendtrack', () => {
     globalThis.indexedDB = new IDBFactory();
     sendGate = null;
     sentTypes.length = 0;
+    hintSources = null;
+    hintCallbacks.length = 0;
+  });
+
+  // ADR-0060: a hint from another device runs the same incremental reconcile the
+  // open, focus and reconnect paths run, so a second device's edit lands without
+  // a reload.
+  it('reconciles with the server when a Realtime hint says another device wrote', async () => {
+    const snapshots = vi.mocked(getSyncSnapshot);
+
+    const { result } = renderHook(() => useSpendtrack(SEED));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    await waitFor(() => expect(hintCallbacks).toHaveLength(1));
+
+    expect(hintSources).toEqual([
+      { table: 'expenses', channel: 'expenses_sync_hints', filter: 'user_id=eq.u-1' },
+      { table: 'categories', channel: 'categories_sync_hints', filter: 'user_id=eq.u-1' },
+      { table: 'budgets', channel: 'budgets_sync_hints', filter: 'user_id=eq.u-1' },
+      {
+        table: 'recurring_expenses',
+        channel: 'recurring_expenses_sync_hints',
+        filter: 'user_id=eq.u-1',
+      },
+    ]);
+
+    const pullsBefore = snapshots.mock.calls.length;
+    await act(async () => {
+      for (const hint of [...hintCallbacks]) hint();
+    });
+
+    await waitFor(() => expect(snapshots.mock.calls.length).toBe(pullsBefore + 1));
   });
 
   // The engine owns the channel now (#200); the hook's job is to dispose it.

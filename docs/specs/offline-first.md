@@ -124,9 +124,18 @@ Honest list of what stands between us and the bar, each with the file that shows
       story.
    3. **Native Android** — a silent high-priority FCM data message wakes a WorkManager job that drains
       the Outbox (ADR-0059). This is the only tier that works with the app killed.
-5. **Sync hints** (ADR-0060) — server→client signals that there is new data to pull: Supabase Realtime
-   `postgres_changes` while foregrounded, and the FCM data message while backgrounded. A hint triggers
-   a **pull**, never a blind merge; conflict resolution stays last-write-wins on `updated_at`.
+5. **Sync hints** (ADR-0060) — a server→client signal that there is new data to pull: Supabase Realtime
+   `postgres_changes` while foregrounded, and the FCM data message while backgrounded. A hint triggers a
+   **pull**, never a blind merge: the payload is ignored beyond "something changed", so our own write
+   echoed back costs one wasted request, and the merge that follows is the same pending-aware
+   last-write-wins every other pull runs. `frontend/api/sync-hints.ts` owns the subscription — one
+   channel per table, filtered to `user_id`, dropped while the document is hidden, and a burst of
+   changes folded into one pull. It listens only to tables whose surface has a pull to trigger
+   (HabitFlow's `habits`/`habit_logs`, SpendTrack's four, LinkSnap's `short_links`), published by
+   `supabase/migrations/20261019120000_publish_owned_tables_for_realtime_hints.sql`; BlogPress and the
+   lead forms read on the server through their loader, so they have nothing to pull and are not
+   published. A tab that was hidden catches up through its own focus pull — the subscription is gone by
+   then, which is why a hint never has to be replayed.
 
 ### Cache tiers
 
@@ -224,6 +233,18 @@ moment it matters — with the reason stated, since the request is otherwise opa
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
   backoff, the SW `sync` handler, and the FCM wake payload.
+- **Realtime hints, and what their e2e cannot be.** The subscription's visibility rule, its burst
+  folding and its "a channel that cannot open costs latency, never the surface" behaviour are covered
+  against an injected subscriber, and each surface's wiring is covered by asserting that a hint runs
+  that surface's pull. That a subscribed table is also a _published_ one is pinned by a test, because a
+  subscription to an unpublished table fails silently.
+- **The publication itself is checked against the live project:**
+  `node --env-file=.env scripts/check-realtime-hints.mjs` subscribes as the test account, writes a row
+  through the service role, and fails when no change arrives — one table per subscribed product, since
+  the publication, the RLS and the filter are not table-specific. Run before the migration applies it
+  reports three misses, which is what makes it evidence rather than a formality. No Playwright test can
+  replace it: two devices cannot be driven from one browser because only one page is visible and a
+  hidden one holds no subscription, so the two-device case belongs to the device matrix in phase 7.
 - **Background Sync itself cannot be driven from Playwright.** Playwright's Chromium launches with
   Background Sync disabled: the API is present but inert, so `register` rejects and even `getTags()`
   answers "Background Sync is disabled". No e2e can cover the tier — not the registration and not the

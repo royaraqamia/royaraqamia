@@ -10,8 +10,13 @@ import {
   type LinkUpdateInput,
 } from '@/frontend/api/linksnap/local-store';
 import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
+import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
-import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
+import {
+  GUEST_IDENTITY,
+  identityFromUser,
+  identityUserId,
+} from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
@@ -19,6 +24,13 @@ import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-stora
 const LINKSNAP_SYNC_LOCK = 'linksnap-sync';
 const LINKSNAP_SYNC_CHANNEL = 'linksnap-sync';
 const SYNCED_MESSAGE = 'linksnap:synced';
+
+/**
+ * Tables whose changes mean this surface's data moved on another device
+ * (ADR-0060). Published to Realtime by
+ * `supabase/migrations/20261019120000_publish_owned_tables_for_realtime_hints.sql`.
+ */
+export const SYNC_HINT_TABLES = ['short_links'] as const;
 
 export interface LinksnapStoreState {
   ready: boolean;
@@ -213,6 +225,16 @@ export function useLinksnap({
   }, [ready, pull]);
 
   useEffect(() => {
+    if (!ready || !isSignedIn) return;
+    const userId = identityUserId(identity);
+    if (!userId) return;
+
+    // Another device's write arrives as a hint and is answered by the same pull
+    // the page runs on open, focus and reconnect (ADR-0060).
+    return subscribeToSyncHints(userSyncHints(SYNC_HINT_TABLES, userId), () => void pull());
+  }, [ready, isSignedIn, identity, pull]);
+
+  useEffect(() => {
     setOnline(typeof navigator === 'undefined' ? true : navigator.onLine);
 
     const onOnline = () => {
@@ -221,7 +243,13 @@ export function useLinksnap({
       void pull();
     };
     const onOffline = () => setOnline(false);
-    const onWake = () => void engineRef.current?.flush();
+    // Coming back to the page reconciles with the server as well as flushing: a
+    // change made on another device while this tab was hidden is exactly what
+    // the hint subscription could not deliver.
+    const onWake = () => {
+      void engineRef.current?.flush();
+      void pull();
+    };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
