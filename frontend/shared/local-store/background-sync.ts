@@ -66,27 +66,65 @@ export async function requestOutboxFlush(
 }
 
 /**
+ * The native tier: the same condition, a different waker (ADR-0059).
+ *
+ * Background Sync is the browser's promise to come back with no tab open, and an
+ * Android WebView cannot keep it: there is no browser process to keep, so a
+ * closed shell has nothing that fires. The shell therefore wakes itself —
+ * `RoyShellSync.schedule()` asks the app to enqueue its WorkManager drain, which
+ * loads the same drain in a headless WebView (`public/sync-flush.html`).
+ *
+ * This is a *signal*, never a second writer: it tells the shell that work exists,
+ * and the shell runs the one implementation of the queue. Called after our own
+ * flush has already left something behind, so the condition is identical to the
+ * one that registers the Background Sync tag — whichever tier the platform
+ * supports, the wakers are the same decision.
+ *
+ * Returns whether a shell was there to take the signal; a plain browser is not a
+ * failure, it is the tier above being the whole story.
+ */
+export function requestShellFlush(): boolean {
+  const shell = (globalThis as { RoyShellSync?: { schedule?: () => void } }).RoyShellSync;
+  if (typeof shell?.schedule !== 'function') return false;
+
+  try {
+    shell.schedule();
+    return true;
+  } catch {
+    // A bridge that throws is a shell that cannot be asked; the Inbox stays
+    // durable either way, and the next open flushes it.
+    return false;
+  }
+}
+
+/**
  * Flushes the Outbox and, if the queue is still not empty, asks the browser to
- * wake the worker later.
+ * wake the worker later — and the shell, where there is a shell.
  *
  * The condition is the point. Registering on every write would wake the worker
  * for work the page had already delivered; never registering leaves a closed tab
  * with a queue nothing will flush. What is left after our own attempt is exactly
- * the set the worker has to come back for — a write made offline, or one the
- * server refused.
+ * the set the other tiers have to come back for — a write made offline, or one
+ * the server refused.
  */
 export function flushOutbox(engine: SyncEngine | null | undefined): void {
   if (!engine) return;
   void flushThenRequestWake(engine);
 }
 
+/** Asks every tier that exists for another attempt. */
+async function requestWake(): Promise<void> {
+  await requestOutboxFlush();
+  requestShellFlush();
+}
+
 async function flushThenRequestWake(engine: SyncEngine): Promise<void> {
   try {
     await engine.flush();
-    if ((await engine.status()).pending > 0) await requestOutboxFlush();
+    if ((await engine.status()).pending > 0) await requestWake();
   } catch {
     // A flush can throw when a store is torn down mid-replay. The Outbox is
     // still the record of what is owed, so the wake request is still worth it.
-    await requestOutboxFlush();
+    await requestWake();
   }
 }

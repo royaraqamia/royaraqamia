@@ -52,6 +52,11 @@ on:
       - 'frontend/api/leads/**'
       - 'frontend/api/sync-products.ts'
       - 'frontend/api/sw-outbox.ts'
+      - 'frontend/api/sync-flush.ts'
+      - 'frontend/api/sync-flush-entry.ts'
+      - 'frontend/shared/local-store/drain-entry.ts'
+      - 'public/sync-flush.html'
+      - 'scripts/build-sync-flush.mjs'
       - 'backend/controllers/session.ts'
       - 'app/auth/api/session/**'
       - 'scripts/build-sw-outbox.mjs'
@@ -63,6 +68,7 @@ on:
       - 'e2e/public-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'
+      - 'e2e/sync-flush.spec.ts'
       - 'e2e/linksnap-offline.spec.ts'
       - 'e2e/blogpress-offline.spec.ts'
       - 'playwright.config.ts'
@@ -121,6 +127,7 @@ jobs:
           HABITFLOW_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           LINKSNAP_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           BLOGPRESS_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          SYNC_FLUSH_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
 
       - name: Upload failure artifacts
         if: failure()

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The Android shell's drain page (ADR-0059). The WorkManager job loads this
+      document in a headless WebView and waits for `RoyShellSync.report`; the
+      worker that answers is `/sync-flush.js`. It lives in `public/` rather than
+      as an app route so a WebView nobody looks at does not pull React, the
+      session provider and the site's chrome down the wire, and it is same-origin
+      with the app so the cookies and the Outbox are simply here.
+    -->
+    <meta name="robots" content="noindex" />
+    <title>مزامنة المسودَّات</title>
+    <style>
+      html {
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      body {
+        margin: 0;
+        padding: 1rem;
+        font-family: system-ui, sans-serif;
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="sync-flush-status">…</p>
+    <script src="/sync-flush.js" defer></script>
+  </body>
+</html>

@@ -4,6 +4,7 @@ import {
   flushOutbox,
   OUTBOX_SYNC_TAG,
   requestOutboxFlush,
+  requestShellFlush,
 } from '@/frontend/shared/local-store/background-sync';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 
@@ -139,6 +140,65 @@ describe('flushOutbox', () => {
     await settle();
 
     expect(register).toHaveBeenCalledWith(OUTBOX_SYNC_TAG);
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('requestShellFlush', () => {
+  it('does nothing in a browser, which has no shell to ask', () => {
+    expect(requestShellFlush()).toBe(false);
+  });
+
+  it('asks the shell to schedule its drain', () => {
+    const schedule = vi.fn();
+    vi.stubGlobal('RoyShellSync', { schedule });
+
+    expect(requestShellFlush()).toBe(true);
+    expect(schedule).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('reports false rather than throwing when the bridge refuses', () => {
+    vi.stubGlobal('RoyShellSync', {
+      schedule: () => {
+        throw new Error('no scheduler');
+      },
+    });
+
+    expect(requestShellFlush()).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
+  it('wakes the shell from flushOutbox when intents are still queued', async () => {
+    // The Android shell cannot rely on Background Sync (ADR-0059): nothing fires
+    // with the app closed, so the page has to hand the queue to the shell.
+    const schedule = vi.fn();
+    vi.stubGlobal('RoyShellSync', { schedule });
+    vi.stubGlobal('navigator', {
+      serviceWorker: container(registration(undefined)),
+    });
+    const queued = engine({ pending: 1 });
+
+    flushOutbox(queued);
+    await settle();
+
+    expect(queued.flush).toHaveBeenCalledTimes(1);
+    expect(schedule).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('leaves the shell alone when the page emptied the queue', async () => {
+    const schedule = vi.fn();
+    vi.stubGlobal('RoyShellSync', { schedule });
+    vi.stubGlobal('navigator', {
+      serviceWorker: container(registration(undefined)),
+    });
+    const settled = engine({ pending: 0 });
+
+    flushOutbox(settled);
+    await settle();
+
+    expect(schedule).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });
