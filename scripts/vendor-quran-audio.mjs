@@ -23,12 +23,19 @@
  * touching a single reader, and a takedown is a new revision rather than an
  * orchestrated cache purge.
  *
+ * A run pays for what it verifies: by default a Surah that already has a
+ * manifest is fetched from the source again so its hashes can be re-derived,
+ * which on a long run means every restart costs about what the first pass did.
+ * The `--trust-manifests` in the usage below is the other side of that trade for
+ * an interrupted run — see its own note.
+ *
  * Usage:
  *   node scripts/vendor-quran-audio.mjs                    # every Surah, uploads
  *   node scripts/vendor-quran-audio.mjs --surah 1           # one Surah
  *   node scripts/vendor-quran-audio.mjs --surah 1,114       # a few
  *   node scripts/vendor-quran-audio.mjs --dry-run           # fetch and verify, no upload
  *   node scripts/vendor-quran-audio.mjs --force             # re-upload everything
+ *   node scripts/vendor-quran-audio.mjs --trust-manifests   # resume: take what is up as it is
  *
  * Needs R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET in the environment
  * or in `.env`, plus the bucket's S3 endpoint as R2_ENDPOINT (or an R2_ACCOUNT_ID
@@ -38,7 +45,8 @@
 import { createHash, createHmac } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ENV_FILE = join(process.cwd(), '.env');
 const TEXT_INDEX = join(process.cwd(), 'public', 'quran', 'meta', 'index.json');
@@ -83,11 +91,19 @@ const CONTENT_TYPE = 'audio/mpeg';
 // --- Arguments --------------------------------------------------------------
 
 function parseArgs(argv) {
-  const options = { ...DEFAULTS, suras: null, dryRun: false, force: false, names: false };
+  const options = {
+    ...DEFAULTS,
+    suras: null,
+    dryRun: false,
+    force: false,
+    trustManifests: false,
+    names: false,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--force') options.force = true;
+    else if (arg === '--trust-manifests') options.trustManifests = true;
     else if (arg === '--edition') options.edition = argv[++i];
     else if (arg === '--bitrate') options.bitrate = Number(argv[++i]);
     else if (arg === '--concurrency') options.concurrency = Number(argv[++i]);
@@ -429,6 +445,46 @@ function readExistingManifests(edition) {
   return manifests;
 }
 
+/**
+ * The per-Ayah manifest entries a resumed run may reuse instead of re-fetching.
+ *
+ * Returns null when nothing may be trusted, and the caller falls back to the
+ * source. Trust is only for a manifest that describes exactly this Surah, in this
+ * edition, with a usable entry for every one of its Ayat: anything less is a
+ * partial run's manifest. The bucket is still asked about each file it claims, so
+ * a manifest cannot outlive the objects it describes.
+ *
+ * `--force` and `--dry-run` are deliberately outside this. Force means "do not
+ * believe the manifest". A dry run has no credentials, so it could not confirm
+ * the objects are there — and its job is to report what the source holds.
+ */
+export function trustedManifestEntries({ existing, surah, edition, trust, force, dryRun }) {
+  if (!trust || force || dryRun || !existing) return null;
+  if (existing.edition !== edition || existing.surah !== surah.n) return null;
+  if (existing.ayahCount !== surah.ayahCount) return null;
+  if (!Array.isArray(existing.files) || existing.files.length !== surah.ayahCount) return null;
+
+  const entries = new Map();
+  for (const file of existing.files) {
+    const usable =
+      Number.isInteger(file?.ayah) &&
+      Number.isInteger(file?.bytes) &&
+      file.bytes > 0 &&
+      typeof file.key === 'string' &&
+      file.key.length > 0 &&
+      typeof file.sha256 === 'string' &&
+      /^[0-9a-f]{64}$/.test(file.sha256);
+    // One unusable entry is enough to re-fetch the Surah: a manifest is trusted
+    // whole or not at all.
+    if (!usable) return null;
+    entries.set(file.ayah, file);
+  }
+  for (let ayah = 1; ayah <= surah.ayahCount; ayah += 1) {
+    if (!entries.has(ayah)) return null;
+  }
+  return entries;
+}
+
 async function writeIndex(edition, options, manifests) {
   const ayat = [...manifests.values()].reduce((total, m) => total + m.files.length, 0);
   const bytes = [...manifests.values()].reduce((total, m) => total + m.bytes, 0);
@@ -474,6 +530,14 @@ async function vendorSurah(surah, options, credentials) {
     // No manifest for this Surah yet: nothing to compare against.
     if (error.code !== 'ENOENT') throw error;
   }
+  const trusted = trustedManifestEntries({
+    existing,
+    surah,
+    edition: options.edition,
+    trust: options.trustManifests,
+    force: options.force,
+    dryRun: options.dryRun,
+  });
   const known = new Map((existing?.files ?? []).map((file) => [file.ayah, file]));
 
   const numbers = Array.from({ length: surah.ayahCount }, (_, index) => index + 1);
@@ -482,13 +546,35 @@ async function vendorSurah(surah, options, credentials) {
     if (!Number.isInteger(globalAyah) || globalAyah < 1 || globalAyah > AYAH_COUNT) {
       throw new Error(`Surah ${surah.n} Ayah ${ayah} falls outside the ${AYAH_COUNT}`);
     }
+    const key = `${options.edition}/${surahKey}/${String(ayah).padStart(3, '0')}.mp3`;
+    const recorded = trusted?.get(ayah);
+
+    // A resumed run has nothing to learn from the source for an Ayah it has
+    // already vendored: the manifest holds its hash, and the bucket is what
+    // confirms the object is still there. Fetching six thousand files again to
+    // re-derive hashes we already have is what makes an interrupted run expensive
+    // to restart — and on a bad connection it is what stops it finishing at all.
+    // An object that is gone falls through to the source below.
+    if (recorded) {
+      const alreadyThere = await objectExists(credentials, key);
+      if (alreadyThere) {
+        return {
+          ayah,
+          key,
+          bytes: recorded.bytes,
+          sha256: recorded.sha256,
+          upload: false,
+          frame: null,
+        };
+      }
+    }
+
     const url = `${CDN}/quran/audio/${options.bitrate}/${options.edition}/${globalAyah}.mp3`;
     const bytes = await fetchAyah(url, options.attempts);
 
     const frame = readFrameHeader(bytes);
     if (!frame) throw new Error(`${url}: no MPEG frame header — not an MP3`);
 
-    const key = `${options.edition}/${surahKey}/${String(ayah).padStart(3, '0')}.mp3`;
     const sha256 = sha256Hex(bytes);
     const previous = known.get(ayah);
     const changed = previous ? previous.sha256 !== sha256 : false;
@@ -512,10 +598,14 @@ async function vendorSurah(surah, options, credentials) {
     return { ayah, key, bytes: bytes.length, sha256, upload, frame };
   });
 
-  // One codec for the whole set, or the reader hears the seams (ADR-0062).
-  const descriptions = new Set(files.map((file) => describeFrame(file.frame)));
-  if (descriptions.size > 1) {
-    throw new Error(`Surah ${surah.n} is not a uniform set: ${[...descriptions].join(' | ')}`);
+  // One codec for the whole set, or the reader hears the seams (ADR-0062). Ayat
+  // taken on trust contribute no frame: they were checked when they were first
+  // fetched, and checking them again is the cost this flag exists to avoid.
+  const frames = new Set(
+    files.filter((file) => file.frame).map((file) => describeFrame(file.frame))
+  );
+  if (frames.size > 1) {
+    throw new Error(`Surah ${surah.n} is not a uniform set: ${[...frames].join(' | ')}`);
   }
 
   const manifest = {
@@ -529,11 +619,21 @@ async function vendorSurah(surah, options, credentials) {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   const uploaded = files.filter((file) => file.upload).length;
-  console.log(
-    `  surah ${surahKey} ${surah.name}: ${files.length} ayat, ` +
-      `${(manifest.bytes / 1048576).toFixed(2)} MiB, ${uploaded} ` +
-      `${options.dryRun ? 'to upload' : 'uploaded'} (${[...descriptions][0]})`
-  );
+  const reused = files.filter((file) => !file.frame).length;
+  if (frames.size === 0) {
+    console.log(
+      `  surah ${surahKey} ${surah.name}: ${files.length} ayat, ` +
+        `${(manifest.bytes / 1048576).toFixed(2)} MiB, already vendored ` +
+        `(${reused} files confirmed in the bucket)`
+    );
+  } else {
+    console.log(
+      `  surah ${surahKey} ${surah.name}: ${files.length} ayat, ` +
+        `${(manifest.bytes / 1048576).toFixed(2)} MiB, ${uploaded} ` +
+        `${options.dryRun ? 'to upload' : 'uploaded'}` +
+        `${reused ? `, ${reused} already vendored` : ''} (${[...frames][0]})`
+    );
+  }
   return manifest;
 }
 
@@ -550,6 +650,9 @@ async function main() {
         '  --concurrency 6       Parallel fetches',
         '  --dry-run             Fetch and verify, write manifests, upload nothing',
         '  --force               Re-upload even when unchanged',
+        '  --trust-manifests     Take a complete manifest for what was uploaded, and',
+        '                        confirm each file with a bucket HEAD instead of',
+        '                        fetching it again to re-derive its hash',
       ].join('\n')
     );
     return;
@@ -620,7 +723,14 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`\nvendor-quran-audio failed: ${error.message}`);
-  process.exitCode = 1;
-});
+// Exported so the trust rule can be tested, and run only when invoked as a
+// script — importing it must not start a vendoring run.
+const invokedDirectly =
+  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (invokedDirectly) {
+  main().catch((error) => {
+    console.error(`\nvendor-quran-audio failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
