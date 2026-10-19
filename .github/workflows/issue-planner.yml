@@ -288,8 +288,12 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: 'issue-implementer.yml',
+                // `ref` is required by the dispatch API; omitting it is a 422
+                // ("For 'links/0/schema', nil is not an object"), which is how the
+                // chained handoff silently never fired.
+                ref: context.ref || 'main',
               });
               core.info('Dispatched issue-implementer.yml.');
             } catch (err) {
-              core.warning('Could not dispatch the Issue Implementer: ' + err.message);
+              core.error('Could not dispatch the Issue Implementer: ' + err.message);
             }
