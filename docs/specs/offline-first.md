@@ -2,6 +2,8 @@
 
 **Status:** accepted.
 **Decisions:** ADR-0027 … ADR-0031, ADR-0058 … ADR-0061. Vocabulary: `CONTEXT.md` → _Offline_.
+**Surfaces audit:** [`offline-surfaces-audit.md`](offline-surfaces-audit.md) — every route against the
+scope table, and every ADR-0031 surface against the needs-connection state it promises (phase 4).
 
 ## Goal
 
@@ -30,14 +32,14 @@ messenger is_.
 
 ## Scope
 
-| Surface                                                               | Offline read                    | Offline write |
-| --------------------------------------------------------------------- | ------------------------------- | ------------- |
-| Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache                 | No            |
-| Scanner (decodes on the device; owns no server surface)               | Yes — once the engine is cached | No            |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store          | Yes — Outbox  |
-| Non-inventory leads — Training Application, Project Request, Retainer | n/a                             | Yes — Outbox  |
-| Consultation Booking (reserves Availability Slots)                    | cached availability read-only   | No            |
-| Auth, Push, Media Downloader, Rates refresh, MCP, Admin               | No                              | No            |
+| Surface                                                               | Offline read                                                    | Offline write |
+| --------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- |
+| Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache                                                 | No            |
+| Scanner (decodes on the device; owns no server surface)               | Yes — once the engine is cached                                 | No            |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store                                          | Yes — Outbox  |
+| Non-inventory leads — Training Application, Project Request, Retainer | n/a                                                             | Yes — Outbox  |
+| Consultation Booking (reserves Availability Slots)                    | No — a live read, refused offline with a needs-connection state | No            |
+| Auth, Push, Media Downloader, Rates refresh, MCP, Admin               | No                                                              | No            |
 
 Everything in the first and third rows must reach properties 1–3. The fourth row is the one addition
 worth revisiting per surface: drafting a lead offline is already supported, and any other write that
@@ -88,17 +90,27 @@ Honest list of what stands between us and the bar, each with the file that shows
    `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` or a battery-optimization exemption. When the app is
    backgrounded or killed, the WebView and its service worker stop, so nothing flushes until the user
    reopens the app.
-2. **The offline e2e suite had barely run, and had drifted badly.** Every spec is `test.skip(!ENABLED)`
-   behind its own env flag, and no workflow set one — so the suite was verified only by manual runs,
-   and nothing caught what followed. The `E2E: Offline` workflow now runs every offline spec except
-   `lead-offline`, which stays out because it writes a row the suite cannot remove; it runs them
-   serially, because they all sign in as one account and the login endpoint allows five attempts per
-   email per minute. What the repairs had accumulated is the argument for keeping it wired: a failed
-   lazy chunk replaced the whole HabitFlow route with an error card; LinkSnap's spec clicked a button
-   whose Arabic label it spelled differently from the component, and waited for a menu item spelled
-   differently from the one the component renders; BlogPress could not create a draft at all against a
-   test account that had no `public.users` profile row — and proved convergence by reloading a page
-   that paints from the Local Store either way. Each was invisible to every other check in the repo.
+2. **The offline e2e suite runs, but its owned-data half still skips in CI.** Every spec is
+   `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow now sets them for every
+   spec except `lead-offline`, which stays out because it writes a row the suite cannot remove, and runs
+   them serially, because they all sign in as one account and the login endpoint allows five attempts per
+   email per minute. LinkSnap and BlogPress still cannot run there: `E2E_TEST_EMAIL` /
+   `E2E_TEST_PASSWORD` are not provisioned as repository secrets, so those two resolve to `'0'`, skip,
+   and the job passes without growing its coverage — the one human step left in that tier. What the
+   repairs had accumulated is the argument for keeping it wired: a failed lazy chunk replaced the whole
+   HabitFlow route with an error card; LinkSnap's spec clicked a button whose Arabic label it spelled
+   differently from the component, and waited for a menu item spelled differently from the one the
+   component renders; BlogPress could not create a draft at all against a test account that had no
+   `public.users` profile row — and proved convergence by reloading a page that paints from the Local
+   Store either way. Each was invisible to every other check in the repo.
+3. **The surfaces audit left a short list, and none of it is a promise.**
+   [`offline-surfaces-audit.md`](offline-surfaces-audit.md) checked every route against the table above
+   and every ADR-0031 surface for the needs-connection state it promises. It closed the three that were
+   misreporting a connection failure — consultation availability, the media downloader, Web Push — and
+   filed the rest: the account diagnostics view and "Remove this device's copy" (#370), in-page states
+   for auth, admin and MCP (#368), and the silent read-failure of a pull (#369). The mechanical
+   leftovers (Community's read failures, an admin lookup, one raw error string) are recorded there with
+   the file that shows each.
 
 ## Architecture
 
@@ -208,6 +220,10 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 ## Phases
 
+Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
+section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when
+the server is unreachable, and the [Verification](#verification) section for what runs.
+
 0. **Baseline** — this spec, ADR-0058 … ADR-0061, and the `CONTEXT.md` vocabulary.
 1. **Close the web gaps** — flush-on-write in all five products, `persist()` on a real save, and the
    offline suite running in CI.
@@ -231,6 +247,13 @@ moment it matters — with the reason stated, since the request is otherwise opa
   rather than the flag-gated status quo.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
+- **Needs-connection states are asserted where they were missing.** Consultation's availability and
+  package reads carry a failure state and a retry instead of the "none available" empty state; the media
+  downloader renders the inspection failure it used to swallow and names the connection while offline;
+  Web Push distinguishes an unreachable server from a permission denial. The audit that found them
+  ([`offline-surfaces-audit.md`](offline-surfaces-audit.md)) is the record of what every route shows when
+  the server is unreachable, and what it left open is issues #368, #369 and #370 — filed rather than
+  listed, so a reader can tell the difference between a closed gap and a known one.
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
   backoff, the SW `sync` handler, and the FCM wake payload.
 - **Realtime hints, and what their e2e cannot be.** The subscription's visibility rule, its burst

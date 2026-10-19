@@ -23,6 +23,7 @@ import {
 } from '@/frontend/ui/primitives/select';
 import { Turnstile } from '@/frontend/ui/shared/turnstile';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { usePWAContext } from '@/frontend/ui/PWAProvider';
 import { useDownloadJob } from '@/frontend/state/downloader/use-download-job';
 import { useInspectDownloadLink } from '@/frontend/state/downloader/use-inspect-link';
 
@@ -34,6 +35,7 @@ export function DownloaderPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
   const { job, loading, error, start, reset } = useDownloadJob();
+  const { isOnline } = usePWAContext();
   const { result: probe, loading: probing } = useInspectDownloadLink(url);
 
   const inspectedFormats =
@@ -128,6 +130,16 @@ export function DownloaderPage() {
               </p>
             )}
 
+            {/* The inspection reached no verdict. Its own message is about the
+                link, so it only makes sense when the link is what failed — with
+                the radio off the connection is the answer, and that is stated
+                once, next to the button it disables (ADR-0031). */}
+            {probe?.status === 'unknown' && isOnline && (
+              <p className="text-sm text-muted-foreground" role="status">
+                {probe.message}
+              </p>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="downloader-format" className="text-sm font-medium text-foreground">
                 الصِّيغة
@@ -152,12 +164,23 @@ export function DownloaderPage() {
 
             {REQUIRES_TURNSTILE && <Turnstile key={turnstileKey} onToken={setTurnstileToken} />}
 
+            {!isOnline && (
+              <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+                يتطلَّب التَّنزيل اتصالًا بالإنترنت — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center justify-end gap-3">
               <Button
                 type="submit"
                 variant="hero"
                 isLoading={loading}
-                disabled={url.trim().length === 0 || blockedByTurnstile || probeRefusal !== null}
+                disabled={
+                  url.trim().length === 0 ||
+                  blockedByTurnstile ||
+                  probeRefusal !== null ||
+                  !isOnline
+                }
               >
                 ابدأ التَّنزيل
               </Button>

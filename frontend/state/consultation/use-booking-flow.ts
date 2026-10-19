@@ -35,6 +35,15 @@ const EMPTY_CONTACT: BookingContactDraft = {
 };
 
 /**
+ * Availability and packages are live reads. A request that never reached the
+ * server is not an empty calendar and not an empty catalogue, so a failure has
+ * its own message instead of the "none available" state those steps show for a
+ * genuine absence (ADR-0031).
+ */
+const SLOTS_UNAVAILABLE = 'تعذَّر تحميل المواعيد المُتاحة. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
+const PACKAGES_UNAVAILABLE = 'تعذَّر تحميل الباقات. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
+
+/**
  * Field-level validation delegated to the shared contract schema, so the
  * client never invents a rule the server does not enforce.
  */
@@ -47,6 +56,10 @@ export interface UseBookingFlowResult {
   stepIndex: number;
   step: BookingStep;
   packages: ConsultationPackage[];
+  /** Set when the package read failed; the step shows it instead of "none". */
+  packagesError: string | null;
+  /** Runs the package read again. */
+  retryPackages: () => void;
   selectedPackage: ConsultationPackage | null;
   selectPackage: (packageId: string) => void;
   contact: BookingContactDraft;
@@ -55,6 +68,10 @@ export interface UseBookingFlowResult {
   validateField: (field: keyof BookingContactDraft) => void;
   slots: AvailabilitySlot[];
   slotsLoading: boolean;
+  /** Set when the availability read failed; the step shows it instead of "none". */
+  slotsError: string | null;
+  /** Runs the availability read again. */
+  retrySlots: () => void;
   selectedSlotIds: string[];
   toggleSlot: (slotId: string) => void;
   clearSlots: () => void;
@@ -91,6 +108,9 @@ export function useBookingFlow(
   const [contact, setContact] = useState<BookingContactDraft>(EMPTY_CONTACT);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  /** Set when the availability read failed, so the step never claims emptiness. */
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [packagesError, setPackagesError] = useState<string | null>(null);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // Booking reserves an Availability Slot against a live conflict check, so it
@@ -117,29 +137,40 @@ export function useBookingFlow(
     };
   }, []);
 
+  const loadPackages = useCallback(async () => {
+    try {
+      const list = await fetchConsultationPackages();
+      setPackages(list);
+      setPackagesError(null);
+    } catch {
+      setPackagesError(PACKAGES_UNAVAILABLE);
+    }
+  }, []);
+
   useEffect(() => {
     // Packages are server-rendered into the page; only fetch when absent.
     if (hasInitialPackages) return;
-    let cancelled = false;
-    fetchConsultationPackages().then((list) => {
-      if (!cancelled) setPackages(list);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [hasInitialPackages]);
+    void loadPackages();
+  }, [hasInitialPackages, loadPackages]);
 
   const loadSlots = useCallback(async () => {
     setSlotsLoading(true);
     try {
       const fresh = await fetchAvailableSlots();
       setSlots(fresh);
+      setSlotsError(null);
       // Drop selections that disappeared (freed/deleted) while away.
       setSelectedSlotIds((ids) => {
         const available = new Set(fresh.map((s) => s.id));
         const kept = ids.filter((id) => available.has(id));
         return kept.length === ids.length ? ids : kept;
       });
+    } catch {
+      // Keep whatever is already selected: the submit path runs its own live
+      // conflict check, so a booking is still refused server-side if a slot was
+      // taken meanwhile. What must not happen is the step reading this as
+      // "nothing is open".
+      setSlotsError(SLOTS_UNAVAILABLE);
     } finally {
       setSlotsLoading(false);
     }
@@ -276,10 +307,14 @@ export function useBookingFlow(
     stepIndex,
     step,
     packages,
+    packagesError,
+    retryPackages: () => void loadPackages(),
     selectedPackage,
     selectPackage: (packageId) => {
       setSelectedPackageId(packageId);
       setSelectedSlotIds([]);
+      // A new package means new availability; the old failure was about the old one.
+      setSlotsError(null);
       setError(null);
     },
     contact,
@@ -287,6 +322,8 @@ export function useBookingFlow(
     validateField,
     slots,
     slotsLoading,
+    slotsError,
+    retrySlots: () => void loadSlots(),
     selectedSlotIds,
     toggleSlot,
     clearSlots: () => setSelectedSlotIds([]),
@@ -303,6 +340,8 @@ export function useBookingFlow(
       setSelectedPackageId(null);
       setSelectedSlotIds([]);
       setContact(EMPTY_CONTACT);
+      setSlotsError(null);
+      setPackagesError(null);
       setError(null);
       setFieldErrors({});
     },
