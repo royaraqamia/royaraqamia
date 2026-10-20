@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.127.0] - 2026-10-20
+
+### Added
+- bound Cache Storage and purge it on sign-out (#435)
+
+### Fixed
+- adopt a published version's bytes instead of rebuilding (#436)
+- escape backslashes in the matrix table's cells (#434)
+- bump hono past GHSA-5r4p-p66f-jhc7 (#433)
+
 ## [1.126.2] - 2026-10-20
 
 ### Changed
