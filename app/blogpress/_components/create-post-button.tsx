@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { createPost } from '@/frontend/api/blogpress';
+import { createPostOrReportFailure } from './create-post';
 
 export function CreatePostButton() {
   const [pending, startTransition] = useTransition();
@@ -13,12 +13,8 @@ export function CreatePostButton() {
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          try {
-            const { id } = await createPost();
-            window.location.assign(`/blogpress/editor/${id}`);
-          } catch {
-            // Navigation will not occur on failure
-          }
+          const id = await createPostOrReportFailure();
+          if (id !== null) window.location.assign(`/blogpress/editor/${id}`);
         })
       }
       aria-busy={pending}

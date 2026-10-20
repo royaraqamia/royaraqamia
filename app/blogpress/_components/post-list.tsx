@@ -47,11 +47,11 @@ import {
   deletePost,
   unpublishPost,
   publishPost,
-  createPost,
   setPostFeatured,
   duplicatePost,
   restorePost,
 } from '@/frontend/api/blogpress';
+import { createPostOrReportFailure } from './create-post';
 import { downloadPostAsFile } from '@/frontend/shared/blogpress/export-post';
 import { useBulkPosts } from '@/frontend/state/blogpress/use-bulk-posts';
 import type { Post, PostTag, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
@@ -310,12 +310,8 @@ export const PostList = memo(function PostList({
                     disabled={pending}
                     onClick={() =>
                       startTransition(async () => {
-                        try {
-                          const { id } = await createPost();
-                          router.push(`/blogpress/editor/${id}`);
-                        } catch {
-                          // Navigation will not occur on failure
-                        }
+                        const id = await createPostOrReportFailure();
+                        if (id !== null) router.push(`/blogpress/editor/${id}`);
                       })
                     }
                     aria-busy={pending}
