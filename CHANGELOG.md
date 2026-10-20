@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.126.0] - 2026-10-20
+
 ### Changed
+- publish shell 1.0.12 (20012)
 - render read-only numbers in Aref Ruqaa and keep every digit in the ASCII shape, including the Android update dialogs
+
+### Added
+- the shell drain drill as one script (#426)
+
+### Fixed
+- spell «جاري» with a final ya everywhere (#425)
+- draw the silent-letter marks as marks (#424)
+- wait for the release train on main, not on a run (#423)
+- make service-worker cache writes durable and recoverable (#393) (#422)
+- stamp the shell manifest with the publish date (#421)
 
 ## [1.125.1] - 2026-10-20
 
