@@ -31,7 +31,7 @@ Each route's client path was read rather than its intent:
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Public content — Community, Rates, Certificates, Showcase  | **Holds.** `/rates` renders the last snapshot with the staleness badge (`app/rates/page.tsx:94`); `/scan` and `/quran` are `force-static`; cached documents serve offline.                                          |
 | Scanner                                                    | **Holds.** A certificate lookup that cannot resolve degrades to a link rather than an error.                                                                                                                        |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress | **Holds**, with the two exceptions the spec already records: LinkSnap flushes from the page only, and BlogPress's list/calendar are server reads behind a publish gate.                                             |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress | **Holds**, with the exception the spec records: BlogPress's list/calendar are server reads behind a publish gate (LinkSnap joined the background drain in #385).                                                    |
 | Non-inventory leads — Training, Project Request, Retainer  | **Holds.** All three render `LeadQueuedPanel` when a lead is waiting and the pill for the count.                                                                                                                    |
 | Consultation Booking                                       | **Did not hold.** Booking was refused offline with a banner, but the availability read had no failure state: a request that never reached the server rendered as "no appointments are open". Closed in this change. |
 | Auth, Push, Media Downloader, Rates refresh, MCP, Admin    | **Partly.** Three of the six needed work; see the next table.                                                                                                                                                       |
@@ -111,4 +111,5 @@ Each is a fix in the file named rather than a decision, so none of them needs an
 
 The spec's [Limits of instant](specs/offline-first.md#limits-of-instant) is where the floor is stated —
 a never-visited route cannot render offline, a reload of an owned-data route lands on `/offline`, and
-LinkSnap's Outbox cannot drain in the worker. This audit found nothing there to correct.
+a product that invents a credential the browser will not attach cannot drain in the background (#385
+closed LinkSnap's case). This audit found nothing there to correct.

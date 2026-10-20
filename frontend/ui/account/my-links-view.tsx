@@ -24,7 +24,7 @@ export function MyLinksView() {
   }
 
   return (
-    <LinksnapProvider token={token} user={session?.user ?? null}>
+    <LinksnapProvider user={session?.user ?? null}>
       <LinkDashboard token={token} refreshTrigger={0} />
     </LinksnapProvider>
   );

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
+import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { DRAINABLE_PRODUCTS, PULLABLE_PRODUCTS } from '@/frontend/api/sync-products';
@@ -26,6 +27,7 @@ const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () =
   spendtrack: (factory) => SpendtrackLocalStore.open(userIdentity(SESSION.userId), factory),
   blogpress: (factory) => BlogpressLocalStore.open(userIdentity(SESSION.userId), factory),
   quran: (factory) => QuranLocalStore.open(userIdentity(SESSION.userId), factory),
+  linksnap: (factory) => LinksnapLocalStore.open(userIdentity(SESSION.userId), factory),
   leads: (factory) => LeadsLocalStore.open(factory),
 };
 
@@ -43,9 +45,9 @@ describe('DRAINABLE_PRODUCTS', () => {
     );
   });
 
-  it('keeps LinkSnap out, because its API takes a bearer token and not the cookie', () => {
-    // A worker cannot read either one, so a drain would replay with no credential.
-    expect(DRAINABLE_PRODUCTS.map((product) => product.product)).not.toContain('linksnap');
+  it('includes LinkSnap, whose routes accept the session cookie a worker presents', () => {
+    // Its transport carries no token: the browser attaches the cookie (#385).
+    expect(DRAINABLE_PRODUCTS.map((product) => product.product)).toContain('linksnap');
   });
 
   for (const product of DRAINABLE_PRODUCTS) {
@@ -85,15 +87,13 @@ describe('DRAINABLE_PRODUCTS', () => {
 describe('PULLABLE_PRODUCTS', () => {
   it('covers the products whose pull can run without the page', () => {
     expect(PULLABLE_PRODUCTS.map((product) => product.product).sort()).toEqual(
-      ['habitflow', 'quran', 'spendtrack'].sort()
+      ['habitflow', 'linksnap', 'quran', 'spendtrack'].sort()
     );
   });
 
-  it('keeps out the products a background realm cannot pull', () => {
-    // LinkSnap needs a bearer token and BlogPress has no client pull to reuse.
-    const products = PULLABLE_PRODUCTS.map((product) => product.product);
-    expect(products).not.toContain('linksnap');
-    expect(products).not.toContain('blogpress');
+  it('keeps out the product a background realm cannot pull', () => {
+    // BlogPress has no client pull to reuse; LinkSnap's read takes the cookie.
+    expect(PULLABLE_PRODUCTS.map((product) => product.product)).not.toContain('blogpress');
   });
 
   it('never creates a store the page has not opened', async () => {

@@ -10,15 +10,13 @@ const LinksnapContext = createContext<LinksnapStoreState | null>(null);
  * page. The shortener and the account dashboard write to the same Outbox.
  */
 export function LinksnapProvider({
-  token,
   user,
   children,
 }: {
-  token: string | null;
   user: { id: string } | null;
   children: ReactNode;
 }) {
-  const state = useLinksnap({ token, user });
+  const state = useLinksnap({ user });
   return <LinksnapContext.Provider value={state}>{children}</LinksnapContext.Provider>;
 }
 

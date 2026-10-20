@@ -7,19 +7,16 @@ import {
 /**
  * Replays LinkSnap Outbox intents against the existing endpoints. `clientId` is
  * the client-minted identity; the server upserts on `(user_id, client_id)`, so a
- * replayed write is idempotent and a replayed delete re-sets the tombstone. The
- * LinkSnap API authenticates with a bearer token (unlike the cookie-scoped
- * product APIs), so the session token is threaded in here.
+ * replayed write is idempotent and a replayed delete re-sets the tombstone.
+ *
+ * The routes accept the session cookie, which the browser attaches to these
+ * same-origin writes, so the transport carries no credential of its own — the
+ * same shape every other product's background transport has, and what lets a
+ * service worker or the shell's drain page replay the queue (ADR-0058).
  */
-export function createLinksnapHttpSyncTransport(getToken: () => string | null): SyncTransport {
-  const authHeaders = () => {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : undefined;
-  };
-
+export function createLinksnapHttpSyncTransport(): SyncTransport {
   return {
     async send(entry) {
-      const headers = authHeaders();
       switch (entry.type) {
         case 'link.create': {
           const { clientId, code, originalUrl, expiresAt, password, updatedAt } = entry.payload as {
@@ -32,7 +29,6 @@ export function createLinksnapHttpSyncTransport(getToken: () => string | null): 
           };
           await request('/linksnap/api/shorten', {
             method: 'POST',
-            headers,
             body: JSON.stringify({
               originalUrl,
               customCode: code,
@@ -57,7 +53,6 @@ export function createLinksnapHttpSyncTransport(getToken: () => string | null): 
             };
           await request('/linksnap/api/links', {
             method: 'PATCH',
-            headers,
             body: JSON.stringify({
               code,
               newCode,
@@ -74,7 +69,6 @@ export function createLinksnapHttpSyncTransport(getToken: () => string | null): 
           const { code, updatedAt } = entry.payload as { code: string; updatedAt?: string };
           await request(`/linksnap/api/links?code=${encodeURIComponent(code)}`, {
             method: 'DELETE',
-            headers,
             body: JSON.stringify({ updatedAt }),
           });
           return;

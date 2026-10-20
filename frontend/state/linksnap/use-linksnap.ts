@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { listLinksIncludingDeleted, type ShortenedLink } from '@/frontend/api/linksnap';
+import type { ShortenedLink } from '@/frontend/api/linksnap';
 import {
   LinksnapLocalStore,
   linkStatus,
@@ -9,9 +9,11 @@ import {
   type LinkRecord,
   type LinkUpdateInput,
 } from '@/frontend/api/linksnap/local-store';
+import { pullLinksnapData } from '@/frontend/api/linksnap/pull';
+import { LinksnapSyncEngine } from '@/frontend/api/linksnap/sync-engine';
 import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
-import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import {
   GUEST_IDENTITY,
   identityFromUser,
@@ -20,10 +22,6 @@ import {
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
-
-const LINKSNAP_SYNC_LOCK = 'linksnap-sync';
-const LINKSNAP_SYNC_CHANNEL = 'linksnap-sync';
-const SYNCED_MESSAGE = 'linksnap:synced';
 
 /**
  * Tables whose changes mean this surface's data moved on another device
@@ -74,33 +72,13 @@ function recordToLink(row: LinkRecord): ShortenedLink {
   };
 }
 
-function serverToRecord(link: ShortenedLink): LinkRecord {
-  return {
-    clientId: link.clientId ?? link.code,
-    code: link.code,
-    originalUrl: link.originalUrl,
-    createdAt: link.createdAt,
-    updatedAt: link.updatedAt ?? link.createdAt,
-    expiresAt: link.expiresAt,
-    isBlocked: link.isBlocked,
-    passwordProtected: Boolean(link.passwordProtected),
-    deletedAt: link.deletedAt ?? null,
-  };
-}
-
 /**
  * Opens the identity-scoped LinkSnap Local Store, seeds/merges it from the
  * server, then treats it as the source of truth the UI renders from. Writes go
  * to the store + Outbox; the Sync Engine replays them on reconnection (ADR-0027
  * / ADR-0029, ticket #167).
  */
-export function useLinksnap({
-  token,
-  user,
-}: {
-  token: string | null;
-  user: { id: string } | null;
-}): LinksnapStoreState {
+export function useLinksnap({ user }: { user: { id: string } | null }): LinksnapStoreState {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<LinksnapLocalStore | null>(null);
@@ -113,8 +91,6 @@ export function useLinksnap({
 
   const storeRef = useRef<LinksnapLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
-  const tokenRef = useRef(token);
-  tokenRef.current = token;
 
   const identity = identityFromUser(user);
   const isSignedIn = identity !== GUEST_IDENTITY;
@@ -161,20 +137,12 @@ export function useLinksnap({
           flushOutbox(engineRef.current);
         });
 
-        engine = new SyncEngine(
-          {
-            store,
-            transport: createLinksnapHttpSyncTransport(() => tokenRef.current),
-            isSignedIn: () => isSignedIn,
-            onStatus: (next) => setStatus(next),
-          },
-          {
-            lockName: LINKSNAP_SYNC_LOCK,
-            channelName: LINKSNAP_SYNC_CHANNEL,
-            logLabel: 'LinkSnap',
-            syncedMessage: SYNCED_MESSAGE,
-          }
-        );
+        engine = new LinksnapSyncEngine({
+          store,
+          transport: createLinksnapHttpSyncTransport(),
+          isSignedIn: () => isSignedIn,
+          onStatus: (next) => setStatus(next),
+        });
         engineRef.current = engine;
         engine.onSync(() => {
           void readIntoState(store);
@@ -203,13 +171,12 @@ export function useLinksnap({
   /** Pulls the server's links and merges them into the store (background refresh). */
   const pull = useCallback(async () => {
     const store = storeRef.current;
-    if (!store || !isSignedIn || !token) {
+    if (!store || !isSignedIn) {
       setLoading(false);
       return;
     }
     try {
-      const server = await listLinksIncludingDeleted(token);
-      await store.mergeServerData(server.map(serverToRecord));
+      await pullLinksnapData(store);
     } catch (error) {
       logger.error('Failed to refresh LinkSnap links from the server', {
         error: String(error),
@@ -217,7 +184,7 @@ export function useLinksnap({
     } finally {
       if (storeRef.current === store) setLoading(false);
     }
-  }, [isSignedIn, token]);
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (!ready) return;
