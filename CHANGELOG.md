@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.124.2] - 2026-10-20
+
+### Fixed
+- bound and rate-limit public search queries (#412)
+- read failures throw instead of returning empty data (#411)
+- make the notification menu keyboard-operable (#406) (#410)
+- speak Arabic when the network, not the server, fails (#409)
+
 ## [1.124.1] - 2026-10-20
 
 ### Changed
