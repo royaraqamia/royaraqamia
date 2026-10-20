@@ -65,6 +65,50 @@ export const SchedulePostSchema = z.object({
 
 export type SchedulePostInput = z.infer<typeof SchedulePostSchema>;
 
+/**
+ * Longest accepted public community query. Both the anonymous suggestions
+ * endpoint and the cached feed route are public, so the bound stops an overlong
+ * string from driving an arbitrarily large trigram scan and, on the feed, from
+ * becoming part of the `unstable_cache` key.
+ */
+export const COMMUNITY_SEARCH_QUERY_MAX_LENGTH = 80;
+
+/** Longest accepted opaque feed cursor; a real one is ~90 base64url characters. */
+export const COMMUNITY_INDEX_CURSOR_MAX_LENGTH = 200;
+
+const CommunityQuerySchema = z
+  .string()
+  .trim()
+  .max(
+    COMMUNITY_SEARCH_QUERY_MAX_LENGTH,
+    `عبارة البحث طويلة جداً: الحدّ الأقصى ${COMMUNITY_SEARCH_QUERY_MAX_LENGTH} حرفًا.`
+  );
+
+/**
+ * A blank `q` is valid and means "no search" — the search route short-circuits
+ * it to an empty result without touching the database; a real query is 1..80
+ * characters after trimming.
+ */
+export const CommunitySearchQuerySchema = z.object({
+  q: CommunityQuerySchema,
+});
+
+export type CommunitySearchQuery = z.infer<typeof CommunitySearchQuerySchema>;
+
+export const CommunityIndexQuerySchema = z.object({
+  q: CommunityQuerySchema,
+  cursor: z
+    .string()
+    .trim()
+    .max(COMMUNITY_INDEX_CURSOR_MAX_LENGTH, 'مرجع التصفّح غير صالح.')
+    .nullable()
+    // A blank cursor is the first page; normalise it so both spellings share one
+    // cache key instead of seeding a second entry for the same page.
+    .transform((value) => value || null),
+});
+
+export type CommunityIndexQuery = z.infer<typeof CommunityIndexQuerySchema>;
+
 /** Combined people + posts result for the community search combobox. */
 export interface CommunitySearchResult {
   people: PublicUser[];

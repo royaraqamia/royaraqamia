@@ -74,6 +74,21 @@ export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/**
+ * Shared by the public search suggestions and feed routes: both are anonymous
+ * and run a database query per request. A visitor types for a moment and then
+ * reads the feed, so one bucket at 60 requests/minute is ample while still
+ * capping a script.
+ */
+export function communitySearchRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `community-search:${ip}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: البحث في المجتمع محدود بـ 60 طلبًا في الدقيقة.',
+  };
+}
+
 export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `username-availability:${userId}`,
