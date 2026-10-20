@@ -50,8 +50,7 @@
  * Exit codes: 0 drained, 1 failed, 2 the environment cannot run the page half.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, closeSync, openSync, readFileSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -225,12 +224,9 @@ function npmSpawnSync(script, options) {
     : spawnSync('npm', args, options);
 }
 
-function tail(file, lines = 40) {
-  try {
-    return readFileSync(file, 'utf8').split(/\r?\n/).slice(-lines).join('\n');
-  } catch {
-    return '';
-  }
+/** The last few buffered lines of a child's output, for a failure message. */
+function lastLines(lines, count = 40) {
+  return lines.slice(-count).join('\n');
 }
 
 /** Retries `poll` until it returns something truthy or the deadline passes. */
@@ -385,14 +381,14 @@ export async function main({
   }
 
   const origin = `http://localhost:${options.port}`;
-  const workDir = tmpdir();
 
   const state = {
     emulator: null,
     device: null,
     bootOwned: false,
     server: null,
-    serverLog: null,
+    /** The dev server's last lines, kept in memory: no temp file to expose. */
+    serverLog: [],
     reverse: false,
     forward: false,
     page: null,
@@ -446,9 +442,6 @@ export async function main({
       return;
     }
 
-    const logFile = join(workDir, 'shell-drill-dev.log');
-    const out = openSync(logFile, 'w');
-    state.serverLog = logFile;
     state.server = npmSpawn('dev', {
       cwd: ROOT,
       // Turnstile is unconfigured for this process and this process alone, the
@@ -457,10 +450,24 @@ export async function main({
       // drill log in with a dummy token. `.env` is already loaded in the parent;
       // Next will not overwrite an existing key, including an empty one.
       env: { ...env, TURNSTILE_SECRET_KEY: '' },
-      stdio: ['ignore', out, out],
+      // Buffered in memory rather than written to a predictable file in the OS
+      // temp directory, which CodeQL flags (`js/insecure-temporary-file`) and
+      // which a `--keep` run would leave behind.
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    closeSync(out);
-    log(`[drill] starting the dev server at ${origin} (log: ${logFile})`);
+
+    const capture = (chunk) => {
+      for (const line of String(chunk).split(/\r?\n/)) {
+        if (line.trim()) state.serverLog.push(line);
+      }
+      if (state.serverLog.length > 200) {
+        state.serverLog.splice(0, state.serverLog.length - 200);
+      }
+    };
+    state.server.stdout?.on('data', capture);
+    state.server.stderr?.on('data', capture);
+
+    log(`[drill] starting the dev server at ${origin}`);
     log('[drill] Turnstile is unconfigured in that process only — never in a deployment');
 
     try {
@@ -468,7 +475,9 @@ export async function main({
         `the dev server on ${origin}`,
         async () => {
           if (state.server?.exitCode !== null) {
-            throw new Error(`npm run dev exited with ${state.server?.exitCode}\n${tail(logFile)}`);
+            throw new Error(
+              `npm run dev exited with ${state.server?.exitCode}\n${lastLines(state.serverLog)}`
+            );
           }
           return fetch(origin, { signal: AbortSignal.timeout(2_000) })
             .then(() => true)
@@ -477,7 +486,7 @@ export async function main({
         { timeoutMs: 180_000, intervalMs: 2_000 }
       );
     } catch (error) {
-      throw new DrillError(`${error.message}\n\n${tail(logFile)}`);
+      throw new DrillError(`${error.message}\n\n${lastLines(state.serverLog)}`);
     }
   }
 
@@ -824,7 +833,11 @@ export async function main({
           `flaky network: the jobs sit at "Unsatisfied constraints: CONNECTIVITY". That is\n` +
           `environmental, not a shell defect (docs/mobile/android-shell.md, "The drain drill").\n\n` +
           `jobscheduler for ${PACKAGE_ID}:\n${jobs || '  (no jobs found)'}\n\n` +
-          `dev server log: ${state.serverLog ?? '(not started by the drill)'}`
+          `dev server log (last 40 lines):\n${
+            state.server
+              ? lastLines(state.serverLog) || '(the dev server printed nothing)'
+              : '(not started by the drill)'
+          }`
       );
     }
   }

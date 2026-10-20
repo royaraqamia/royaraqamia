@@ -85,6 +85,14 @@ describe('deciding when the drill can run', () => {
     expect(OUTBOX_COUNT_EXPRESSION).toContain("objectStoreNames.contains('outbox')");
   });
 
+  it('keeps the dev server log in memory, not in a predictable temp file', () => {
+    // CodeQL's `js/insecure-temporary-file` flags a fixed name under os.tmpdir();
+    // the output is buffered and printed on failure instead.
+    expect(source).not.toMatch(/\btmpdir\s*\(/);
+    expect(source).not.toMatch(/\bopenSync\s*\(/);
+    expect(source).toContain("stdio: ['ignore', 'pipe', 'pipe']");
+  });
+
   it('prints usage without touching the SDK', async () => {
     const lines = [];
     const code = await main({ argv: ['--help'], env: {}, log: (line) => lines.push(line) });
