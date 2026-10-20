@@ -31,6 +31,11 @@ const config: CapacitorConfig = {
     url: serverUrl,
     cleartext: serverUrl.startsWith('http://'),
     allowNavigation: ['royaraqamia.com', '*.royaraqamia.com'],
+    // Capacitor loads this local page from `https://localhost/unavailable.html`
+    // when a main-frame navigation fails, and when the installed System WebView
+    // is below `minWebViewVersion` — before the site is requested at all. It is
+    // bundled through `webDir`, so it works in airplane mode (ADR-0067).
+    errorPath: 'unavailable.html',
   },
   android: {
     // The site is HTTPS with a strict CSP; allowing mixed content or cleartext
@@ -39,6 +44,12 @@ const config: CapacitorConfig = {
     captureInput: true,
     backgroundColor: '#0f172a',
     webContentsDebuggingEnabled: process.env.NODE_ENV !== 'production',
+    // The floor the site itself is built for: Next.js 16 supports Chrome 111+,
+    // and Tailwind 4 needs the same baseline. The shipped chunks also use
+    // ES2022 class fields and static blocks, which WebView 83 cannot parse
+    // (`docs/mobile/android-shell.md`). Below this, Capacitor loads
+    // `server.errorPath` instead of a page that would render but never hydrate.
+    minWebViewVersion: 111,
   },
   plugins: {
     // No splash plugin: the splash is the launch theme

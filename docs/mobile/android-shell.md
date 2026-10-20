@@ -133,23 +133,74 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                               | State                                                                                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| capability                                      | where                                                               | state                                                                                                                             |
-| ------------------------------------            | -----------------------------------------------------               | --------------------------------------------------------------------------------------                                            |
-| Load the live site                              | `capacitor.config.ts` `server.url`                                  | Working                                                                                                                           |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                              | Working — in-page, so it shows in the shell too                                                                                   |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                   | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                    |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                   | Working                                                                                                                           |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                           | Working — needs two Supabase allowlist entries (below)                                                                            |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                                                           |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed               | Installed, unused by app code yet                                                                                                 |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                       | Installed, unused by app code yet                                                                                                 |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                      | Scaffolding only, by decision                                                                                                     |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json` | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
-| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                            |
-| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`        | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                        |
-| Background wake (FCM)                           | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`      | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor |
+| Capability                                      | Where                                                                 | State                                                                                                                             |
+| ----------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                      | where                                                                 | state                                                                                                                             |
+| ------------------------------------            | -----------------------------------------------------                 | --------------------------------------------------------------------------------------                                            |
+| Load the live site                              | `capacitor.config.ts` `server.url`                                    | Working                                                                                                                           |
+| Offline / unsupported fallback                  | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion` | Working — a bundled page with retry or update copy (ADR-0067)                                                                     |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                                | Working — in-page, so it shows in the shell too                                                                                   |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                     | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                    |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                     | Working                                                                                                                           |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                             | Working — needs two Supabase allowlist entries (below)                                                                            |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`           | Working                                                                                                                           |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed                 | Installed, unused by app code yet                                                                                                 |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                         | Installed, unused by app code yet                                                                                                 |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                        | Scaffolding only, by decision                                                                                                     |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json`   | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below |
+| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                  | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                            |
+| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`          | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                        |
+| Background wake (FCM)                           | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`        | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor |
+
+### The local fallback, and the WebView floor
+
+Two values in `capacitor.config.ts` decide what a launch shows when the site cannot be the answer:
+`server.errorPath` names a page bundled in `capacitor-web/`, and `android.minWebViewVersion` is the
+oldest System WebView the shell will hand the site to. Capacitor loads that page on a main-frame
+navigation error (`BridgeWebViewClient.onReceivedError`) and, before the site is requested at all, when
+the installed WebView is below the floor (`Bridge.create` → `isMinimumWebViewInstalled` → `getErrorUrl`).
+Both paths resolve to `https://localhost/unavailable.html`, served from the assets `cap sync` copies
+into the APK. The page needs no network and, on Android, gets no Capacitor bridge — it does not need one.
+
+The floor is **111**, the site's own baseline rather than a shell-specific guess. Next.js 16 supports
+Chrome 111+ (`node_modules/next/dist/docs/03-architecture/supported-browsers.md`) and Tailwind CSS 4
+targets the same baseline. The shipped client chunks already require ES2022: parsing
+`.next/static/chunks/*.js` with acorn fails 29 files at ES2021 and passes at ES2022, on class fields and
+static blocks such as `class e extends Map{static{a(this,"OrderedDict")}#e;…}`. ES2022 syntax alone
+would name 94, but syntax is only the first failure; 111 is the documented runtime and CSS floor, and
+Chrome 111 implements the ES2022 syntax the bundles use. ADR-0067 records the decision and the options
+that were rejected.
+
+The page reads `Chrome/<major>` from its own user agent:
+
+- **below 111** — the update copy, with the installed and required versions and no retry: the site
+  cannot run until the WebView is updated.
+- **otherwise** — the offline copy and an «إعادة المحاولة» link to `https://royaraqamia.com`. A tap is
+  one navigation. If the site is still unreachable, Capacitor serves this page again — one attempt per
+  tap, not a loop. There is no timer, no `online` listener and no automatic `location` write.
+
+The inline script is **ES5** on purpose: the page is shown precisely on WebViews that cannot parse the
+site. Its two IBM Plex Sans Arabic `.woff2` files are the site's own, copied beside it, and the palette
+is the card's from `res/values/colors.xml`. `scripts/__tests__/shell-fallback.test.mjs` pins the config
+to the page, parses the script as ES5, refuses automatic navigation, and compares the bundled fonts with
+`public/fonts/`.
+
+The API 30 image's WebView is 83.0.4103.106, which is below the floor — the same image that used to
+render the site without hydrating. A launch there now shows the update card instead of that blank page.
+Measured with the debug APK at counter `20011`:
+
+| Step                                   | What the device showed                                                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Cold launch                            | WebView target `https://localhost/unavailable.html`; «يلزم تحديث عرض النظام»; «عرض النظام: 83 · المطلوب: 111 أو أحدث»; no retry action |
+| The card on the 320px image            | the heading, body and version line all fit inside the card's 320px gutter; the gradient wordmark is above it                           |
+| Offline attempt (UA overridden to 120) | `location.href` is `https://localhost/unavailable.html`; «تعذَّر فتح الموقع» and an «إعادة المحاولة» link are shown                    |
+| Four seconds later                     | URL still `https://localhost/unavailable.html` — one main-frame error produced one page load, not a reload loop                        |
+| Retry after reconnecting               | the «إعادة المحاولة» link navigated to `https://royaraqamia.com/`; the site's server-rendered text was present                         |
+
+The offline copy was exercised by overriding the running WebView's user agent to `Chrome/120` in
+DevTools, because the only installed image is 83 and would otherwise be stopped by the floor before a
+navigation was attempted; the engine stayed 83, which is enough to prove the page's branch, the link and
+the absence of a loop, not to claim the site hydrates on 83.
 
 ### The native bridge on a remote origin
 
@@ -164,7 +215,9 @@ app URL:
   `WebViewLocalServer.java:515-563`). This is the path an older WebView takes, because
   `DOCUMENT_START_SCRIPT` is unavailable there.
 
-Measured on the API 30 emulator, whose WebView is 83.0.4103.106 — i.e. the older path:
+Measured on the API 30 emulator, whose WebView is 83.0.4103.106 — i.e. the older path. That image is
+below the floor now (ADR-0067), so these rows record how the bridge behaves on the older path rather
+than a launch the shell still allows:
 
 | Page                                                  | Bridge                        |
 | ----------------------------------------------------- | ----------------------------- |
@@ -230,10 +283,12 @@ Measured on the API 30 emulator (`Pixel_API_30`), with the site served locally a
 | A page that says nothing comes back | `RoySyncFlush: queued another attempt: the page reported nothing (the drain page did not report within 60000ms)`                              |
 | A clean report ends the attempt     | `e2e/sync-flush.spec.ts` loads the same page against a production build and gets `pending: 0`, one replayed intent, and the row on the server |
 
-**Two limits of this drill, and both are environmental.** The image's WebView is 83.0.4103.106, and the
-site's bundles use syntax it cannot parse (`SyntaxError: Unexpected token '='`), so the app _renders_ but
-never hydrates on that image — a real device's WebView is years newer, which is why the drain was verified
-against a production build in Chromium and the wake belongs on real hardware. And the site's CSP sends
+**Two limits of this drill, and both are environmental.** The image's WebView is 83.0.4103.106, below the
+shell's floor of 111 (ADR-0067): the site's bundles use syntax it cannot parse (`SyntaxError: Unexpected
+token '='`), so that image used to _render_ the page without hydrating it, and now a launch there shows
+the local fallback instead. The drain page itself is ES2020 and still parses, which is why the worker half
+can be exercised on that image, but the page-driven `schedule()` signal cannot — so the drain was verified
+against a production build in Chromium, and the wake belongs on real hardware. And the site's CSP sends
 `upgrade-insecure-requests`, which upgrades every subresource of a cleartext document to https: pointing
 the shell at `http://10.0.2.2:3000` therefore fails to load the app's own scripts, while `localhost`
 (reached with `adb reverse tcp:3000 tcp:3000`) is a trustworthy origin and is exempt. The emulator's
@@ -298,7 +353,8 @@ in `app/global.css` — `--roy-safe-*-raw` holds `env()`, the token re-derives f
 fixed surfaces use. **Never** the shell's own injected `--safe-area-inset-*` custom
 properties: they carry the same numbers the DecorView padding has already spent.
 
-Measured on the API 30 emulator (WebView 83.0.4103.106, i.e. the second path), app pointed at
+Measured on the API 30 emulator (WebView 83.0.4103.106, i.e. the second path — below the floor since
+ADR-0067, so this is a historical probe of that path), app pointed at
 a local dev server:
 
 | Probe                                       | Value                               |
