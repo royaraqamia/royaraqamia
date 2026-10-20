@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.128.0] - 2026-10-20
+
+### Changed
+- Spec now asserts drain page pulls remote row into local store. (#438)
+- publish shell 1.0.13 (20013)
+
+### Added
+- accept the session cookie so a worker can drain and pull (#440)
+- inspect the Outbox and remove this device's copy (#439)
+
 ## [1.127.0] - 2026-10-20
 
 ### Added
