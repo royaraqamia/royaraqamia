@@ -1,8 +1,8 @@
 # Landing the work
 
-Every task runs the same loop, without being asked: start from the current remote, commit, push, open
-a pull request, merge once CI is green, delete the branch and the worktree it came from, and leave
-local `main` level with `origin/main`. `/land` runs it in one go.
+Every task runs the same loop, without being asked: start from the current remote, commit, push, and
+open a pull request. The loop stops there — the merge is the repository owner's manual step, and no
+agent merges. `/land` runs it in one go.
 
 Work from your own worktree, never the canonical checkout — the guard refuses `git commit` and
 `git push` there, and for good reason ([worktrees.md](worktrees.md)).
@@ -78,28 +78,30 @@ gh pr create --base main --fill
 ```
 
 `--fill` takes the title and body from the commits; edit the body so it says what changed and why,
-and link the issue it closes with `Closes #<n>` so the merge closes it. Body conventions: the `pr`
-skill.
+and link the issue it closes with `Closes #<n>` so the owner's merge closes it. Body conventions: the
+`pr` skill.
 
-## 6. Merge, once CI is green
+## 6. Stop at the open pull request
 
-```powershell
-gh pr checks <n> --watch     # idle wait; exits non-zero the moment a check fails
-gh pr merge <n> --squash --delete-branch
-```
+The pull request is the handoff. Report its URL and stop.
 
-`gh pr checks --watch` polls until every check settles, so the wait is GitHub's work, not local test
-time. If a check fails, stop: report the failing check, leave the pull request open, fix the cause,
-and start again from step 1. Never merge over a red check.
+Do **not** merge — not with `gh pr merge`, not with auto-merge, not with `--delete-branch` — and do not
+wait on CI to decide anything. The checks run on the pull request where the owner can see them; their
+result does not change what the agent does. The merge is the owner's manual step
+([ADR 0066](adr/0066-agents-stop-at-the-open-pull-request.md)).
 
-`--delete-branch` drops the remote branch, and `main` is also configured to delete it on merge.
+Leave the branch and the worktree exactly as they are. The pull request needs the branch, and the
+worktree is where the owner (or a later session they ask) finishes the job. Do not prune, do not
+`git branch -D`, and do not fast-forward the canonical checkout: local `main` is behind `origin/main`
+until the owner merges, and that is expected.
 
-A merge can also come back `Base branch was modified`, which means `main` moved between the check and
-the write — releasing a tag does that. Retry it once; the second attempt settles. The Issue
-Implementer's merge step retries the same failure for the same reason
-([ADR 0048](adr/0048-the-implementer-merges-its-own-pull-request.md)).
+A check that fails is still worth reporting — say which one — and the pull request stays open for the
+owner either way.
 
-## 7. Clean up and re-sync
+## 7. After the owner merges (manual)
+
+This half belongs to whoever merges. An agent runs it only when the owner asks it to clean up a
+merged branch. The canonical checkout is still behind `origin/main`; this is what closes the gap.
 
 Immediately after the merge. The worktree has to go from outside itself, so `session_move` the
 session to the canonical checkout first — or run this in a later session there:
@@ -113,9 +115,8 @@ git pull --ff-only                     # local main now equals origin/main
 git status -sb                         # no ahead/behind reported
 ```
 
-The last three lines are the point of the loop, not an epilogue: a landed task leaves the canonical
-checkout level with `origin/main`, so the next one starts from the current remote instead of from
-whatever the last one left behind.
+The last three lines are what leave the canonical checkout level with `origin/main`, so the next task
+starts from the current remote instead of from whatever the last one left behind.
 
 A worktree refuses removal while it is dirty. Check `git status` in it first, and force it
 (`git worktree remove --force` / `worktree_remove({ force: true })`) only after confirming nothing
