@@ -203,11 +203,7 @@ export function DeviceView() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          ما يحفظه هذا المتصفِّح على هذا الجهاز: ما ينتظر المزامنة، وما فشل منها، وكيف تُزيلها من
-          الجهاز. تُقرأ هذه الصَّفحة من التَّخزين المحلِّي وحده، فتعمل دون اتِّصال.
-        </p>
+      <header className="flex justify-center">
         <button
           type="button"
           onClick={() => {
