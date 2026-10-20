@@ -7,6 +7,7 @@ import { updatePassword } from '@/frontend/api/auth';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 
 const PasswordStrength = lazy(
@@ -21,6 +22,7 @@ function UpdatePasswordForm() {
   const email = searchParams.get('email') ?? '';
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [message, setMessage] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,6 +33,7 @@ function UpdatePasswordForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setOffline(false);
     setIsPending(true);
     try {
       const formData = new FormData(event.currentTarget);
@@ -46,6 +49,7 @@ function UpdatePasswordForm() {
         return;
       }
       setMessage(result.message);
+      setOffline(result.offline);
     } finally {
       setIsPending(false);
     }
@@ -140,17 +144,24 @@ function UpdatePasswordForm() {
             </div>
 
             {/* Server Error / API Response Message Banner */}
-            {message && (
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive shadow-sm">
-                <CircleAlert
-                  size={20}
-                  className="shrink-0 mt-0.5 text-destructive"
-                  aria-hidden="true"
-                />
-                <p role="alert" className="text-sm font-medium leading-relaxed">
-                  {message}
-                </p>
-              </div>
+            {offline ? (
+              <NeedsConnection
+                variant="inline"
+                message="لم يصل طلب تحديث كلمة المرور إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+              />
+            ) : (
+              message && (
+                <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive shadow-sm">
+                  <CircleAlert
+                    size={20}
+                    className="shrink-0 mt-0.5 text-destructive"
+                    aria-hidden="true"
+                  />
+                  <p role="alert" className="text-sm font-medium leading-relaxed">
+                    {message}
+                  </p>
+                </div>
+              )
             )}
 
             {/* Submit Action Button */}

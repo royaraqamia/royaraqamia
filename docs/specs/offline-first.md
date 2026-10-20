@@ -120,10 +120,11 @@ Honest list of what stands between us and the bar, each with the file that shows
    [`offline-surfaces-audit.md`](offline-surfaces-audit.md) checked every route against the table above
    and every ADR-0031 surface for the needs-connection state it promises. It closed the three that were
    misreporting a connection failure — consultation availability, the media downloader, Web Push — and
-   filed the rest: in-page states for auth, admin and MCP (#368) and the silent read-failure of a pull
-   (#369). The account diagnostics view and "Remove this device's copy" that it filed as #370 now live
-   in `/device` (ADR-0070). The mechanical leftovers (Community's read failures, an admin lookup, one
-   raw error string) are recorded there with the file that shows each.
+   filed the rest. In-page states for auth, admin and MCP (#368) have since landed, with the
+   per-surface decision recorded in the ADR-0031 amendment; the silent read-failure of a pull (#369)
+   remains open. The account diagnostics view and "Remove this device's copy" that it filed as #370 now
+   live in `/device` (ADR-0070). The mechanical leftovers (Community's read failures, one raw error
+   string) are recorded there with the file that shows each.
 
 ## Architecture
 

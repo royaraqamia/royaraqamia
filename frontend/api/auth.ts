@@ -1,4 +1,4 @@
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
@@ -10,6 +10,26 @@ export type { Session, User };
 export type AuthActionResult = { message?: string } | null;
 
 export type SessionChangeListener = (session: Session | null) => void;
+
+/** A failed auth call that knows whether the request ever reached the server. */
+export interface AuthFailure {
+  ok: false;
+  message: string;
+  /**
+   * True when `fetch` itself rejected. The forms name the connection instead of
+   * showing a permission/credential error (ADR-0031, #368): the credentials may
+   * be perfectly good — we simply could not ask.
+   */
+  offline: boolean;
+}
+
+function authFailure(error: unknown, fallback: string): AuthFailure {
+  return {
+    ok: false,
+    message: error instanceof Error ? error.message : fallback,
+    offline: error instanceof ApiError && error.isNetworkError,
+  };
+}
 
 export async function getSession(): Promise<Session | null> {
   const client = await createClient();
@@ -75,7 +95,7 @@ export async function login(data: {
 }): Promise<
   | { ok: true; redirectUrl: string }
   | { ok: true; needsOtp: true; redirectUrl: string }
-  | { ok: false; message: string }
+  | AuthFailure
 > {
   try {
     const res = await request<{ redirectUrl: string; needsOtp?: boolean }>('/auth/api/login', {
@@ -86,7 +106,7 @@ export async function login(data: {
       ? { ok: true, needsOtp: true, redirectUrl: res.redirectUrl }
       : { ok: true, redirectUrl: res.redirectUrl };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : 'فشل تسجيل الدخول' };
+    return authFailure(error, 'فشل تسجيل الدخول');
   }
 }
 
@@ -96,7 +116,7 @@ export async function signup(data: {
   password: string;
   redirectTo: string | null;
   turnstileToken: string;
-}): Promise<{ ok: true; redirectUrl: string } | { ok: false; message: string }> {
+}): Promise<{ ok: true; redirectUrl: string } | AuthFailure> {
   try {
     const res = await request<{ redirectUrl: string }>('/auth/api/signup', {
       method: 'POST',
@@ -104,7 +124,7 @@ export async function signup(data: {
     });
     return { ok: true, redirectUrl: res.redirectUrl };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : 'فشل إنشاء الحساب' };
+    return authFailure(error, 'فشل إنشاء الحساب');
   }
 }
 
@@ -112,7 +132,7 @@ export async function verifyOtp(data: {
   email: string;
   otp: string;
   redirectTo: string | null;
-}): Promise<{ ok: true; redirectUrl: string } | { ok: false; message: string }> {
+}): Promise<{ ok: true; redirectUrl: string } | AuthFailure> {
   try {
     const res = await request<{ redirectTo: string }>('/auth/api/verify-otp', {
       method: 'POST',
@@ -120,34 +140,36 @@ export async function verifyOtp(data: {
     });
     return { ok: true, redirectUrl: res.redirectTo };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : 'فشل التحقق' };
+    return authFailure(error, 'فشل التحقق');
   }
 }
 
-export async function resendOtp(email: string): Promise<{ message: string }> {
+export async function resendOtp(
+  email: string
+): Promise<{ ok: true; message: string } | AuthFailure> {
   try {
     const res = await request<{ message: string }>('/auth/api/resend-otp', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
-    return { message: res.message ?? '' };
+    return { ok: true, message: res.message ?? '' };
   } catch (error) {
-    return { message: error instanceof Error ? error.message : '' };
+    return authFailure(error, 'فشل إعادة إرسال الرمز');
   }
 }
 
 export async function resetPassword(
   email: string,
   redirectTo?: string | null
-): Promise<{ message: string }> {
+): Promise<{ ok: true; message: string } | AuthFailure> {
   try {
     const res = await request<{ message: string }>('/auth/api/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email, redirectTo: redirectTo ?? null }),
     });
-    return { message: res.message ?? '' };
+    return { ok: true, message: res.message ?? '' };
   } catch (error) {
-    return { message: error instanceof Error ? error.message : '' };
+    return authFailure(error, 'فشل إرسال رابط إعادة التَّعيين');
   }
 }
 
@@ -157,7 +179,7 @@ export async function updatePassword(data: {
   token: string;
   email: string;
   redirectTo: string | null;
-}): Promise<{ ok: true; redirectUrl: string } | { ok: false; message: string }> {
+}): Promise<{ ok: true; redirectUrl: string } | AuthFailure> {
   try {
     const res = await request<{ redirectUrl: string }>('/auth/api/update-password', {
       method: 'POST',
@@ -165,7 +187,7 @@ export async function updatePassword(data: {
     });
     return { ok: true, redirectUrl: res.redirectUrl };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : 'فشل تحديث كلمة المرور' };
+    return authFailure(error, 'فشل تحديث كلمة المرور');
   }
 }
 

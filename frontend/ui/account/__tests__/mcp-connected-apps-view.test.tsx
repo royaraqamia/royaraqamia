@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 
+import { ApiError } from '@/frontend/transport/http';
+
 const mocks = vi.hoisted(() => ({
   getMcpConnectedApps: vi.fn(),
   disconnectMcpConnectedApp: vi.fn(),
@@ -126,6 +128,22 @@ describe('McpConnectedAppsView', () => {
     render(<McpConnectedAppsView />);
 
     expect(await screen.findByText('تعذّر تحميل التَّطبيقات المتَّصلة.')).toBeInTheDocument();
+
+    mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE]);
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+
+    expect(await screen.findByText('Claude Code')).toBeInTheDocument();
+  });
+
+  it('names the connection when the request never reached the server', async () => {
+    mocks.getMcpConnectedApps.mockRejectedValue(
+      new ApiError('تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.')
+    );
+    render(<McpConnectedAppsView />);
+
+    const state = await screen.findByText('يتطلَّب الاتصال بالإنترنت');
+    expect(state).toBeInTheDocument();
+    expect(screen.getByText(/تعذّر تحميل التَّطبيقات المتَّصلة/)).toBeInTheDocument();
 
     mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE]);
     fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));

@@ -12,7 +12,10 @@ import {
   CommandList,
 } from '@/frontend/ui/primitives/command';
 import { Badge } from '@/frontend/ui/primitives/badge';
+import { Button } from '@/frontend/ui/primitives/button';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { searchUsers } from '@/frontend/api/admin/users';
+import { ApiError } from '@/frontend/transport/http';
 import type { AdminUser } from '@/shared/contracts/users';
 
 function useDebouncedValue<T>(value: T, delay = 300): T {
@@ -46,6 +49,8 @@ export function UserSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loadFailed, setLoadFailed] = useState<{ offline: boolean; message: string } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const debouncedQuery = useDebouncedValue(query);
 
   const selectedIds = useMemo(() => new Set(value), [value]);
@@ -53,15 +58,29 @@ export function UserSelect({
 
   useEffect(() => {
     let mounted = true;
+    setLoadFailed(null);
     searchUsers(debouncedQuery.trim())
       .then((results) => {
         if (mounted) setUsers(results);
       })
-      .catch(() => {});
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        // An unreachable server is not "no matching users": the picker says
+        // which one happened, and the retry re-runs this same lookup (#368).
+        setUsers([]);
+        setLoadFailed({
+          offline: error instanceof ApiError && error.isNetworkError,
+          message: error instanceof Error ? error.message : 'تعذّر تحميل المستخدمين.',
+        });
+      });
     return () => {
       mounted = false;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, reloadKey]);
+
+  function retry() {
+    setReloadKey((key) => key + 1);
+  }
 
   function toggle(userId: string) {
     const next = new Set(value);
@@ -115,7 +134,7 @@ export function UserSelect({
               placeholder="ابحث بالاسم أو البريد الإلكتروني..."
             />
             <CommandList>
-              <CommandEmpty>لا يوجد مستخدمون مطابقون</CommandEmpty>
+              {!loadFailed && <CommandEmpty>لا يوجد مستخدمون مطابقون</CommandEmpty>}
               <CommandGroup>
                 {users.map((user) => {
                   const selected = selectedIds.has(user.id);
@@ -141,6 +160,26 @@ export function UserSelect({
           </Command>
         </PopoverContent>
       </Popover>
+
+      {loadFailed &&
+        (loadFailed.offline ? (
+          <NeedsConnection
+            variant="inline"
+            className="mt-2"
+            message="تعذّر جلب المستخدمين: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            onRetry={retry}
+          />
+        ) : (
+          <div
+            role="alert"
+            className="border-destructive/20 bg-destructive/10 text-destructive mt-2 flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
+          >
+            <p className="text-xs font-medium leading-relaxed sm:text-sm">{loadFailed.message}</p>
+            <Button type="button" variant="outline" size="sm" onClick={retry}>
+              إعادة المحاولة
+            </Button>
+          </div>
+        ))}
 
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-1">

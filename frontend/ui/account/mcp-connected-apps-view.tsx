@@ -12,6 +12,8 @@ import {
 } from '@/frontend/api/mcp-connected-apps';
 import { calculateTimeAgo, formatHijriDate } from '@/frontend/shared/format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { ApiError } from '@/frontend/transport/http';
 
 /**
  * The MCP clients connected to the signed-in account.
@@ -23,16 +25,19 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 export function McpConnectedAppsView() {
   const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadOffline, setLoadOffline] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [target, setTarget] = useState<McpConnectedApp | 'all' | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
+    setLoadOffline(false);
     try {
       setConnectedApps(await getMcpConnectedApps());
-    } catch {
+    } catch (error) {
       setConnectedApps(null);
+      setLoadOffline(error instanceof ApiError && error.isNetworkError);
       setLoadFailed(true);
     }
   }, []);
@@ -64,6 +69,15 @@ export function McpConnectedAppsView() {
   };
 
   if (loadFailed) {
+    if (loadOffline) {
+      return (
+        <NeedsConnection
+          message="تعذّر تحميل التَّطبيقات المتَّصلة: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+          onRetry={() => void load()}
+        />
+      );
+    }
+
     return (
       <div className="space-y-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
         <p className="text-sm font-bold text-destructive sm:text-base">

@@ -1,5 +1,5 @@
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 
 export type AdminCertificate = Certificate;
 
@@ -17,20 +17,24 @@ export async function getCertificates(
 ): Promise<{ data: AdminCertificate[]; total: number }> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (search) params.set('search', search);
-  try {
-    return await request<{ data: AdminCertificate[]; total: number }>(
-      `/api/certificates?${params.toString()}`
-    );
-  } catch {
-    return { data: [], total: 0 };
-  }
+  // It throws rather than answering an empty page: an admin list that is empty
+  // because the request never arrived is the silent failure ADR-0031 forbids
+  // (#368).
+  return await request<{ data: AdminCertificate[]; total: number }>(
+    `/api/certificates?${params.toString()}`
+  );
 }
 
 export async function getCertificateById(id: string): Promise<AdminCertificate | null> {
   try {
     return await request<AdminCertificate>(`/api/certificates/${encodeURIComponent(id)}`);
-  } catch {
-    return null;
+  } catch (error) {
+    // A 404 is the answer "this certificate is not there". Anything else — the
+    // request never left, or the server answered with a failure — means we do
+    // not know, and the editor must say so rather than render an empty form
+    // (#368).
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { CircleAlert, Plus } from 'lucide-react';
 import {
   getCertificates,
   deleteCertificate,
@@ -10,6 +10,10 @@ import {
 } from '@/frontend/api/certificates';
 import { isCertificateExpired } from '@/frontend/shared/format';
 import { toast } from 'sonner';
+import { ApiError } from '@/frontend/transport/http';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { Button } from '@/frontend/ui/primitives/button';
 import {
   CertificatesFilterBar,
   type StatusFilter,
@@ -26,6 +30,9 @@ export default function CertificatesListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [loadFailure, setLoadFailure] = useState<{ offline: boolean; message: string } | null>(
+    null
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminCertificate | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -43,13 +50,18 @@ export default function CertificatesListPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setLoadFailure(null);
     try {
       const result = await getCertificates(page, pageSize, debouncedSearch);
       setCertificates(result.data);
       setTotal(result.total);
-    } catch {
+    } catch (error) {
       setCertificates([]);
       setTotal(0);
+      setLoadFailure({
+        offline: error instanceof ApiError && error.isNetworkError,
+        message: error instanceof Error ? error.message : 'تعذّر تحميل الشَّهادات.',
+      });
     } finally {
       setLoading(false);
     }
@@ -115,34 +127,57 @@ export default function CertificatesListPage() {
         }
       />
 
-      {/* Stats */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="text-muted-foreground">
-          إجمالي الشهادات: <span className="font-bold text-foreground">{total}</span>
-        </span>
-        {total > 0 && (
-          <span className="text-muted-foreground">
-            الصفحة {page} من {totalPages || 1}
-          </span>
-        )}
-      </div>
+      {loadFailure ? (
+        loadFailure.offline ? (
+          <NeedsConnection
+            message="تعذّر تحميل الشَّهادات: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            onRetry={() => void fetchData()}
+          />
+        ) : (
+          <EmptyState
+            variant="card"
+            icon={CircleAlert}
+            title="تعذّر تحميل الشَّهادات"
+            description={loadFailure.message}
+            action={
+              <Button type="button" onClick={() => void fetchData()} className="btn-hover-lift">
+                إعادة المحاولة
+              </Button>
+            }
+          />
+        )
+      ) : (
+        <>
+          {/* Stats */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">
+              إجمالي الشهادات: <span className="font-bold text-foreground">{total}</span>
+            </span>
+            {total > 0 && (
+              <span className="text-muted-foreground">
+                الصفحة {page} من {totalPages || 1}
+              </span>
+            )}
+          </div>
 
-      <CertificatesList
-        certificates={filtered}
-        loading={loading}
-        hasSearch={!!search}
-        deleting={deleting}
-        copiedId={copiedId}
-        deleteTarget={deleteTarget}
-        onCopy={copyCode}
-        onDeleteRequest={setDeleteTarget}
-        onDeleteDialogChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        onConfirmDelete={handleDelete}
-      />
+          <CertificatesList
+            certificates={filtered}
+            loading={loading}
+            hasSearch={!!search}
+            deleting={deleting}
+            copiedId={copiedId}
+            deleteTarget={deleteTarget}
+            onCopy={copyCode}
+            onDeleteRequest={setDeleteTarget}
+            onDeleteDialogChange={(open) => {
+              if (!open) setDeleteTarget(null);
+            }}
+            onConfirmDelete={handleDelete}
+          />
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
     </div>
   );
 }

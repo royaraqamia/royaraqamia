@@ -9,6 +9,7 @@ import { Input } from '@/frontend/ui/primitives/input';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
 
@@ -16,16 +17,19 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
   const [message, setMessage] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setOffline(false);
     setIsPending(true);
     try {
       const formData = new FormData(event.currentTarget);
       const result = await resetPassword(formData.get('email') as string, redirectTo);
       setMessage(result.message);
+      setOffline(!result.ok && result.offline);
     } finally {
       setIsPending(false);
     }
@@ -57,29 +61,36 @@ function ResetPasswordForm() {
           />
         </div>
 
-        {message && (
-          <div
-            className={`flex items-start gap-3 p-3.5 rounded-xl border transition-safe duration-200 ${
-              isSuccessMessage(message)
-                ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
-                : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
-            }`}
-          >
-            {isSuccessMessage(message) ? (
-              <CircleCheck size={20} className="shrink-0 mt-0.5 text-success" />
-            ) : (
-              <CircleAlert size={20} className="shrink-0 mt-0.5 text-destructive" />
-            )}
-            <p
-              id="reset-message"
-              role="alert"
-              className={`text-sm font-medium leading-relaxed ${
-                isSuccessMessage(message) ? 'text-success' : 'text-destructive'
+        {offline ? (
+          <NeedsConnection
+            variant="inline"
+            message="لم يصل طلب إعادة التَّعيين إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+          />
+        ) : (
+          message && (
+            <div
+              className={`flex items-start gap-3 p-3.5 rounded-xl border transition-safe duration-200 ${
+                isSuccessMessage(message)
+                  ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
+                  : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
               }`}
             >
-              {message}
-            </p>
-          </div>
+              {isSuccessMessage(message) ? (
+                <CircleCheck size={20} className="shrink-0 mt-0.5 text-success" />
+              ) : (
+                <CircleAlert size={20} className="shrink-0 mt-0.5 text-destructive" />
+              )}
+              <p
+                id="reset-message"
+                role="alert"
+                className={`text-sm font-medium leading-relaxed ${
+                  isSuccessMessage(message) ? 'text-success' : 'text-destructive'
+                }`}
+              >
+                {message}
+              </p>
+            </div>
+          )
         )}
 
         <HeroCtaButton type="submit" disabled={isPending} className="w-full">
