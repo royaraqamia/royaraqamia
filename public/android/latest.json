@@ -1,10 +1,10 @@
 {
-  "versionCode": 20012,
-  "versionName": "1.0.12",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.12.apk",
-  "sha256": "d2b27531a06b55bfdf01533be51e65edcaa43bcb20350311a926281b92fc4ab3",
-  "sizeBytes": 8046000,
+  "versionCode": 20013,
+  "versionName": "1.0.13",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.13.apk",
+  "sha256": "c9540eb99d4f200b426988534313b395dc142e890f9b2c1c9b1277e8b3fddfb4",
+  "sizeBytes": 8052296,
   "minSupportedVersionCode": 20000,
-  "notes": "fix(android): keep WebView debugging out of release builds (#419)",
+  "notes": "feat(ui): render numbers in Aref Ruqaa with ASCII digits (#427)",
   "releasedAt": "2026-10-20"
 }
