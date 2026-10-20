@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
+import { signIn } from './sign-in';
 /**
  * Offline read/write/resume for SpendTrack (#166): an expense created with the
  * network off lands in the Local Store, renders from there, and the Outbox
@@ -12,8 +13,6 @@ import { gotoUnderWorkerControl } from './worker-control';
  */
 
 const ENABLED = process.env.SPENDTRACK_OFFLINE_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires SPENDTRACK_OFFLINE_E2E=1 (live Supabase + auth)');
 
@@ -25,17 +24,7 @@ test('an offline expense reaches the server after reconnect', async ({ browser, 
     viewport: { width: 1280, height: 900 },
   });
 
-  const login = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(login.ok()).toBeTruthy();
+  await signIn(context, baseURL!);
 
   const description = `E2E-${Date.now()}`;
 

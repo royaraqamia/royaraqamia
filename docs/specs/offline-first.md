@@ -96,19 +96,22 @@ Honest list of what stands between us and the bar, each with the file that shows
    because LinkSnap needs a bearer token and BlogPress has no client pull to reuse. So a laptop write
    refreshes a phone's habits, expenses and Quran reading position before the phone is opened; a post or
    a link still waits for the app.
-2. **The offline e2e suite runs, but its owned-data half still skips in CI.** Every spec is
-   `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow now sets them for every
-   spec except `lead-offline`, which stays out because it writes a row the suite cannot remove, and runs
-   them serially, because they all sign in as one account and the login endpoint allows five attempts per
-   email per minute. LinkSnap and BlogPress still cannot run there: `E2E_TEST_EMAIL` /
-   `E2E_TEST_PASSWORD` are not provisioned as repository secrets, so those two resolve to `'0'`, skip,
-   and the job passes without growing its coverage — the one human step left in that tier. What the
-   repairs had accumulated is the argument for keeping it wired: a failed lazy chunk replaced the whole
-   HabitFlow route with an error card; LinkSnap's spec clicked a button whose Arabic label it spelled
-   differently from the component, and waited for a menu item spelled differently from the one the
-   component renders; BlogPress could not create a draft at all against a test account that had no
-   `public.users` profile row — and proved convergence by reloading a page that paints from the Local
-   Store either way. Each was invisible to every other check in the repo.
+2. **The offline e2e suite's owned-data half runs in CI, and the sign-in is paced to the product's
+   own limit.** Every spec is `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow
+   sets them for every wired spec except `lead-offline`, which stays out because it writes a row the
+   suite cannot remove, and runs them serially. Serial is necessary but not sufficient: the login
+   endpoint allows five attempts per email per minute and seven specs signed in inside half a minute, so
+   the sixth and seventh came back as a 400 whose message is the rate limit — red for a reason that
+   looked like the product and was the suite (#386). Every sign-in now goes through `e2e/sign-in.ts`,
+   which paces attempts to that window and waits it out when one is refused. `E2E_TEST_EMAIL` /
+   `E2E_TEST_PASSWORD` are repository secrets; without them the owned-data specs skip rather than fail,
+   so the job still says what it covered. What the repairs had accumulated is the argument for keeping
+   it wired: a failed lazy chunk replaced the whole HabitFlow route with an error card; LinkSnap's spec
+   clicked a button whose Arabic label it spelled differently from the component, and waited for a menu
+   item spelled differently from the one the component renders; BlogPress could not create a draft at
+   all against a test account that had no `public.users` profile row — and proved convergence by
+   reloading a page that paints from the Local Store either way. Each was invisible to every other
+   check in the repo.
 3. **The surfaces audit left a short list, and none of it is a promise.**
    [`offline-surfaces-audit.md`](offline-surfaces-audit.md) checked every route against the table above
    and every ADR-0031 surface for the needs-connection state it promises. It closed the three that were
@@ -259,12 +262,29 @@ the server is unreachable, and the [Verification](#verification) section for wha
 
 - **Offline e2e in CI:** the `E2E: Offline` workflow runs `context.setOffline(true)` with
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
-  server state correct) across the public shell, SpendTrack, HabitFlow, LinkSnap, BlogPress and the
-  Quran Reader. Every offline spec is wired in; the goal beyond that is a sync-resume proof per
-  remaining product family rather than the flag-gated status quo. The public pass also runs at each
-  web breakpoint — 320, 375, 428 and 768 px, one Playwright project per width
-  (`e2e/responsive-offline.spec.ts`) — including an image width first requested offline: the worker
-  answers with a cached rendering of the same source or a layout-stable placeholder, never a 503.
+  server state correct). Which surfaces have that proof, and which do not:
+
+  | Surface                    | Sync-resume proof                                                                                                                                                                                                      | Spec                                                   |
+  | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+  | SpendTrack                 | expense written offline, server row after reconnect                                                                                                                                                                    | `spendtrack-offline.spec.ts`                           |
+  | HabitFlow                  | habit written offline, server row after reconnect                                                                                                                                                                      | `habitflow-sync-resume.spec.ts`                        |
+  | LinkSnap                   | link created offline, server row after reconnect — and a second proof that the list paints from the Local Store offline; page flush only, the drain registry excludes it (see [Limits of instant](#limits-of-instant)) | `linksnap-offline.spec.ts`                             |
+  | BlogPress                  | draft edit made offline, server body after reconnect                                                                                                                                                                   | `blogpress-offline.spec.ts`                            |
+  | Quran Reader               | mark made offline, account row after reconnect                                                                                                                                                                         | `quran-sync.spec.ts`                                   |
+  | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503                                                                                                                                                                   | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
+
+  Two more specs prove a mechanism rather than a product: `sync-flush.spec.ts` queues a write, closes
+  the page and restores the network, so only the Android shell's drain page can deliver it; and
+  `sync-chaos.spec.ts` loses a create's acknowledgement and proves the replay is the same row.
+
+  What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
+  Request but is left out of the workflow because it writes a row the suite cannot remove against the
+  live project; consultation booking is online-only and its spec asserts the needs-connection state,
+  not a resume; and `spendtrack-multidevice.spec.ts` (a delete converging on a second device) is a
+  flag-gated local run, not a CI job, because two devices need the device matrix in phase 7. Sign-ins
+  are paced by `e2e/sign-in.ts` — five attempts per email per minute is a product limit the suite has
+  to live under, not a flag to switch off.
+
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Needs-connection states are asserted where they were missing.** Consultation's availability and

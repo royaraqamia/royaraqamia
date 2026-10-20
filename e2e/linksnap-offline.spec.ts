@@ -1,5 +1,6 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
+import { signIn } from './sign-in';
 /**
  * Offline read/write/resume for LinkSnap (#167): the link list renders from the
  * Local Store with the radio off, a link created offline lands in the Outbox and
@@ -13,8 +14,6 @@ import { gotoUnderWorkerControl } from './worker-control';
  */
 
 const ENABLED = process.env.LINKSNAP_OFFLINE_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires LINKSNAP_OFFLINE_E2E=1 (live Supabase + auth)');
 
@@ -43,20 +42,6 @@ const SHORTEN_BUTTON = '#btn-shorten-url';
  * Matching the bare letters cannot drift that way (#337).
  */
 const DELETE_ACTION = /حذف الر/;
-
-async function login(context: BrowserContext, baseURL: string) {
-  const res = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(res.ok()).toBeTruthy();
-}
 
 /** Waits until the Local Store is open and the signed-in shortener is ready. */
 async function waitReady(page: Page) {
@@ -99,7 +84,7 @@ test('a link created offline reaches the server after reconnect', async ({ brows
     serviceWorkers: 'allow',
     viewport: { width: 1280, height: 900 },
   });
-  await login(context, baseURL!);
+  await signIn(context, baseURL!);
 
   const code = `e2e${Date.now().toString(36)}`;
   const url = `https://example.com/${code}`;
@@ -143,7 +128,7 @@ test('the link list renders from the Local Store offline', async ({ browser, bas
     serviceWorkers: 'allow',
     viewport: { width: 1280, height: 900 },
   });
-  await login(context, baseURL!);
+  await signIn(context, baseURL!);
 
   const code = `e2e${Date.now().toString(36)}`;
   const url = `https://example.com/${code}`;

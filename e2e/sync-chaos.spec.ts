@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { signIn } from './sign-in';
 
 /**
  * The real-server half of the sync chaos suite (#388): a create is delivered,
@@ -21,8 +22,6 @@ import { test, expect } from '@playwright/test';
  */
 
 const ENABLED = process.env.SYNC_CHAOS_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires SYNC_CHAOS_E2E=1 (live Supabase + auth)');
 
@@ -33,17 +32,7 @@ test('a create whose acknowledgement was lost replays without duplicating the ro
   test.setTimeout(180_000);
 
   const context = await browser.newContext({ serviceWorkers: 'block' });
-  const login = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(login.ok()).toBeTruthy();
+  await signIn(context, baseURL!);
 
   const serverHabits = async (): Promise<Array<{ id: string; name: string }>> => {
     const response = await context.request.fetch(`${baseURL}/habitflow/api/habits`);

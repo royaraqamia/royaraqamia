@@ -1,5 +1,6 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
+import { signIn } from './sign-in';
 
 /**
  * Offline read/write/resume for the Quran Reader (ADR-0056): a mark made with
@@ -16,8 +17,6 @@ import { gotoUnderWorkerControl } from './worker-control';
  */
 
 const ENABLED = process.env.QURAN_SYNC_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires QURAN_SYNC_E2E=1 (live Supabase + auth)');
 
@@ -69,17 +68,7 @@ test('a mark made offline reaches the account after reconnect', async ({ browser
     viewport: { width: 1280, height: 900 },
   });
 
-  const login = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(login.ok()).toBeTruthy();
+  await signIn(context, baseURL!);
 
   // Start unmarked whatever an interrupted run left behind: the press toggles,
   // so a standing mark would make this run's press an unmark.

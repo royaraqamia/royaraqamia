@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
+import { signIn } from './sign-in';
 /**
  * Offline drafts for BlogPress (#168): a draft body renders and edits from the
  * Local Store with the radio off, the edit queues in the Outbox, and it replays
@@ -12,24 +13,8 @@ import { gotoUnderWorkerControl } from './worker-control';
  */
 
 const ENABLED = process.env.BLOGPRESS_OFFLINE_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires BLOGPRESS_OFFLINE_E2E=1 (live Supabase + auth)');
-
-async function login(context: BrowserContext, baseURL: string) {
-  const res = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(res.ok()).toBeTruthy();
-}
 
 /** Creates a draft through the real API and returns its id. */
 async function createDraft(context: BrowserContext, baseURL: string): Promise<string> {
@@ -46,7 +31,7 @@ test('an offline draft edit reaches the server after reconnect', async ({ browse
     serviceWorkers: 'allow',
     viewport: { width: 1280, height: 900 },
   });
-  await login(context, baseURL!);
+  await signIn(context, baseURL!);
   const id = await createDraft(context, baseURL!);
   const body = `E2E offline draft ${Date.now()}`;
 
