@@ -304,6 +304,81 @@ connectivity also never reaches `VALIDATED` on a network as flaky as this one, w
 `CONNECTED` request includes — the jobs sit at `Unsatisfied constraints: CONNECTIVITY`. On a real device
 with working DNS neither applies.
 
+### The drain drill
+
+`scripts/shell-drill.mjs` is that whole arrangement as one command (`npm run android:drill`). It exists
+because the first version of this section was four throwaway scripts (`.drill.mjs`, `.probe*.mjs`) and
+the next person wrote them again: the knowledge was here, the driver was not.
+
+1. Boots `Pixel_API_30` headless, or uses hardware with `--device <serial>`.
+2. Serves the site locally and builds the **debug** APK against `http://localhost:<port>`, then runs
+   `adb reverse tcp:<port> tcp:<port>`. `localhost` and not `10.0.2.2`, for the CSP reason above.
+3. Installs it, launches it, forwards the WebView DevTools socket and drives the page over raw CDP —
+   `Runtime.enable` **before** the first `Runtime.evaluate`, or the evaluation lands in the initial
+   empty context and returns `undefined` for an expression that is true in the page.
+4. Signs in, opens HabitFlow and its add-habit dialog while the network still works (the dialog's
+   chunk and handlers have to arrive online), turns the radio off, saves a habit, backgrounds the
+   app, `am kill`s it, restores the radio, and waits for `RoySyncFlush: drained (failed=0)`. It then
+   reads the habit back from the server through a second session on the host — which is also where
+   the cleanup `DELETE` happens, so a drill leaves nothing on the shared test account.
+5. Tears the emulator and the dev server down in a `finally`, even when a step failed. `--keep` leaves
+   both up to inspect.
+
+Three things it does, rather than leaving them to be rediscovered:
+
+- **Turnstile is unconfigured for the login.** A dev server the drill starts gets `TURNSTILE_SECRET_KEY`
+  empty in its own process, the state `.github/workflows/e2e-offline.yml` runs in, which is what makes
+  `backend/config/turnstile.ts` skip verification for the dummy token. A deployment is never touched,
+  and a server the drill did not start is only reported on: if that one has Turnstile configured the
+  login answers 4xx and the drill says so instead of implying the queue is broken. On Windows, setting
+  `$env:TURNSTILE_SECRET_KEY = ''` in PowerShell does **not** do this: PowerShell removes the variable
+  and `.env` restores the secret. The empty value has to be in the child's environment, which is what
+  the drill does and what `cross-env` does in the recipe below.
+- **`am kill`, never `am force-stop`.** Force-stop cancels scheduled work, which would destroy the very
+  job the drill exists to exercise.
+- **`am kill` needs a background app.** It kills only what Android considers killable, and a foreground
+  activity is not, so the drill sends `KEYCODE_HOME` first and then confirms `pidof` is empty before
+  restoring the radio — otherwise the page's own `online` listener could deliver the write while the
+  process is still alive, and the drill would prove nothing.
+
+Credentials are `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` in `.env` (the offline suite's account); the npm
+script loads it with `--env-file-if-exists`. It needs a server, an emulator and that account, so it is
+not a CI job.
+
+**It stops at the WebView floor, by design.** On `Pixel_API_30` the WebView is 83.0.4103.106, below the
+shell's floor of 111, so Capacitor loads `unavailable.html` and the site never hydrates — there is
+nothing to sign in with and nothing to queue. The drill measures the WebView before attempting the page
+half and exits `2` with that explanation, instead of replaying the dead end. Measured on 2026-10-20:
+`attached to https://localhost/unavailable.html`, `WebView 83 (… Chrome/83.0.4103.106 …, RoyaraqamiaShell/1.0.12+20012)`,
+exit `2`, emulator killed. The two paths that run the whole drill are **a real device** (`--device
+<serial>`, where the page-driven `schedule()` signal also works) and **the Chromium stand-in**
+(`SYNC_FLUSH_E2E=1 npx playwright test e2e/sync-flush.spec.ts`), which covers the page half but not the
+worker. No script can make the API 30 image do more than the worker half in the table above.
+
+**If the worker never runs**, the drill's timeout prints `dumpsys jobscheduler` for the package.
+`Unsatisfied constraints: CONNECTIVITY` is the environmental limit above, not a shell defect: the
+emulator's connectivity never reaches `VALIDATED`, which is part of what WorkManager's `CONNECTED`
+request means. On hardware with working DNS it does not apply.
+
+The numbered recipe is the fallback, for when the script itself is the broken thing — a device it
+cannot manage, or an account behind a server you did not start:
+
+```powershell
+npx cross-env TURNSTILE_SECRET_KEY= npm run dev   # unconfigured for this process only
+$env:CAPACITOR_SERVER_URL = 'http://localhost:3000'
+npm run android:apk
+adb install -r android\app\build\outputs\apk\debug\app-debug.apk
+adb reverse tcp:3000 tcp:3000
+adb shell am start -n com.royaraqamia.app/.MainActivity
+# sign in, open /habitflow and its add dialog, turn the radio off, save a habit:
+adb shell svc wifi disable; adb shell svc data disable
+adb shell input keyevent KEYCODE_HOME
+adb shell am kill com.royaraqamia.app
+adb logcat -c
+adb shell svc wifi enable; adb shell svc data enable
+adb logcat -s RoySyncFlush:*
+```
+
 ### The wake
 
 The drain answers "what this device still owes". The wake answers the other half of ADR-0060: "this
