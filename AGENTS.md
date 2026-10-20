@@ -37,6 +37,8 @@ taskkill /PID $p.Id /T /F
 
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
 
+**Arabic copy:** write «جاري» (final ya), never «جارٍ» (tanween). `npm run check:arabic` enforces it and `npm run fix:arabic` rewrites it; ADR 0054 records why.
+
 **Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, and open as a pull request. Do that without being asked, at the end of every task: sync → scoped gates → commit → push → `gh pr create`. **Never merge** — `gh pr merge`, auto-merge and `--delete-branch` are the repository owner's manual step, and an agent never runs them. Stop at the open pull request: leave the worktree and branch in place (the pull request needs the branch), do not delete anything, and do not touch local `main`; it is reconciled after the owner merges. Sequence and conventions: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.
 
 ## Detailed references

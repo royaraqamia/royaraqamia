@@ -4,12 +4,24 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { isNfc, nonNfcLines } from '../../eslint-rules/no-non-nfc.mjs';
-import { fix, isExcluded, scan } from '../check-arabic-order.mjs';
+import {
+  fix,
+  fixBanned,
+  isExcluded,
+  isSpellingAllowed,
+  scan,
+  scanBanned,
+} from '../check-arabic-order.mjs';
 
 // Built from escapes on purpose: written as literal Arabic, the reverse-order
 // fixtures would themselves be rewritten by the pass under test.
 const CANONICAL = '\u0627\u0644\u0631\u064E\u0651\u0627\u0628\u0637'; // fatha, then shadda
 const REVERSE = '\u0627\u0644\u0631\u0651\u064E\u0627\u0628\u0637'; // shadda, then fatha
+
+// The banned tanween spelling and the preferred final-ya spelling, likewise
+// escaped so this file passes the check it tests.
+const BANNED_SPELLING = '\u062C\u0627\u0631\u064D';
+const PREFERRED_SPELLING = '\u062C\u0627\u0631\u064A';
 
 const tempDirs = [];
 
@@ -91,6 +103,64 @@ describe('scan', () => {
   it('ignores a listed file that is no longer on disk', () => {
     const dir = tree({});
     expect(scan(['gone.ts'], dir)).toEqual([]);
+  });
+});
+
+describe('isSpellingAllowed', () => {
+  it('allowlists only the files that must name both spellings', () => {
+    expect(isSpellingAllowed('AGENTS.md')).toBe(true);
+    expect(isSpellingAllowed('CHANGELOG.md')).toBe(true);
+    expect(isSpellingAllowed('docs/conventions.md')).toBe(true);
+    expect(isSpellingAllowed('docs/adr/0054-the-shells-dialogs-look-like-the-product.md')).toBe(
+      true
+    );
+    expect(isSpellingAllowed('app/page.tsx')).toBe(false);
+  });
+});
+
+describe('scanBanned', () => {
+  it('reports the offending files with their line numbers', () => {
+    const dir = tree({
+      'app/page.tsx': `<h1>${BANNED_SPELLING} التحميل</h1>\n<p>${PREFERRED_SPELLING}</p>\n`,
+      'docs/notes.md': `ok\n${BANNED_SPELLING}\n`,
+      'data/clean.ts': `${PREFERRED_SPELLING}\n`,
+    });
+
+    expect(scanBanned(['app/page.tsx', 'docs/notes.md', 'data/clean.ts'], dir)).toEqual([
+      { file: 'app/page.tsx', lines: [1] },
+      { file: 'docs/notes.md', lines: [2] },
+    ]);
+  });
+
+  it('leaves the allowlisted files and the vendored Quran text alone', () => {
+    const dir = tree({
+      'CHANGELOG.md': `${BANNED_SPELLING}\n`,
+      'docs/conventions.md': `${BANNED_SPELLING}\n`,
+      'public/quran/surah/002.json': `${BANNED_SPELLING}\n`,
+    });
+
+    expect(
+      scanBanned(['CHANGELOG.md', 'docs/conventions.md', 'public/quran/surah/002.json'], dir)
+    ).toEqual([]);
+  });
+});
+
+describe('fixBanned', () => {
+  it('rewrites the offending files and reports which ones it changed', () => {
+    const dir = tree({
+      'app/page.tsx': `${BANNED_SPELLING}\n`,
+      'data/clean.ts': `${PREFERRED_SPELLING}\n`,
+    });
+
+    expect(fixBanned(['app/page.tsx', 'data/clean.ts'], dir)).toEqual(['app/page.tsx']);
+    expect(readFileSync(join(dir, 'app/page.tsx'), 'utf8')).toBe(`${PREFERRED_SPELLING}\n`);
+  });
+
+  it('never touches an allowlisted file', () => {
+    const dir = tree({ 'CHANGELOG.md': `${BANNED_SPELLING}\n` });
+
+    expect(fixBanned(['CHANGELOG.md'], dir)).toEqual([]);
+    expect(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')).toBe(`${BANNED_SPELLING}\n`);
   });
 });
 

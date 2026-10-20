@@ -64,7 +64,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
         <RefreshCw className="w-4 h-4 animate-spin" />
-        <span>جارٍ المزامنة…</span>
+        <span>جاري المزامنة…</span>
       </span>
     );
   }

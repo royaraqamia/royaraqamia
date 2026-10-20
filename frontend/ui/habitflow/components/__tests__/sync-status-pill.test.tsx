@@ -46,7 +46,7 @@ describe('SyncStatusPill', () => {
 
   it('shows syncing and pending states', () => {
     const { rerender } = render(<SyncStatusPill status={state({ syncing: true })} />);
-    expect(screen.getByText('جارٍ المزامنة…')).toBeInTheDocument();
+    expect(screen.getByText('جاري المزامنة…')).toBeInTheDocument();
 
     rerender(<SyncStatusPill status={state({ pending: 5 })} />);
     expect(screen.getByText(/بانتظار المزامنة \(5\)/)).toBeInTheDocument();
