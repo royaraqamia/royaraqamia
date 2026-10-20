@@ -205,10 +205,15 @@ export function isDrainSuccess(line) {
   return DRAIN_SUCCESS.test(String(line ?? ''));
 }
 
-/** A markdown table cell: one line, and pipes escaped so the row cannot split. */
+/**
+ * A markdown table cell: one line, and pipes escaped so the row cannot split.
+ * Backslashes are escaped first, or a `\|` in the input would emit `\\|` and
+ * read as an escaped backslash followed by a live pipe.
+ */
 function cell(value) {
   return String(value ?? '')
     .replace(/\r?\n/g, ' ')
+    .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|');
 }
 
