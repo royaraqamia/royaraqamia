@@ -54,3 +54,41 @@ describe('the manifest waits on main, not on a Release run', () => {
     expect(step).toContain('::warning title=The release train never finished');
   });
 });
+
+/**
+ * The wait reads `main` with a depth-1 fetch, and the checkout is depth 1 too, so
+ * both HEAD and `origin/main` are shallow roots. A rebase across that boundary has
+ * no merge base, so it replays the commit this run checked out as well as the
+ * manifest — and that commit conflicts with the release commit it is no longer
+ * below. Shell 1.0.13 failed exactly there, 2026-10-20: the asset was uploaded and
+ * the manifest never landed.
+ *
+ * The history the rebase assumes has to be restored first, and `--unshallow` has to
+ * stay conditional because it refuses a complete repository.
+ */
+describe('the manifest rebases on a history it can see', () => {
+  const workflow = readFileSync(
+    resolve(process.cwd(), '.github/workflows/shell-release.yml'),
+    'utf8'
+  );
+  const stepAt = workflow.indexOf('Land the manifest');
+  const step = workflow.slice(stepAt, workflow.indexOf('name: Summary'));
+
+  it('has the step it pins', () => {
+    expect(stepAt).toBeGreaterThan(-1);
+  });
+
+  it('restores the shallow history before rebasing onto main', () => {
+    const rebaseAt = step.indexOf('git rebase origin/main');
+    expect(rebaseAt).toBeGreaterThan(-1);
+    expect(step.slice(0, rebaseAt)).toContain(
+      'if [ "$(git rev-parse --is-shallow-repository)" = true ]'
+    );
+    expect(step.slice(0, rebaseAt)).toContain('git fetch origin main --unshallow');
+  });
+
+  it('lays only the manifest commit on top of main', () => {
+    expect(step).toContain('git add public/android/latest.json');
+    expect(step).toContain('git push origin HEAD:main');
+  });
+});
