@@ -430,7 +430,19 @@ jobs:
           # onto main before pushing, since a rejected push here would leave the
           # asset uploaded and nobody told about it. The two commits never touch
           # the same files (this one is the manifest alone).
+          #
+          # The checkout is depth 1 and the wait above fetches `main` the same way,
+          # so HEAD and origin/main are both shallow roots with no common ancestor:
+          # a rebase across that boundary replays this run's own base commit too,
+          # and that commit conflicts with the release commit it is no longer below
+          # (measured on shell 1.0.13, which lost `CHANGELOG.md`, `package.json`
+          # and the generated version to a three-way merge against itself).
+          # Restore the history the rebase is written for. The guard keeps a
+          # dispatch on a complete checkout from failing on `--unshallow`.
           git fetch origin main --quiet
+          if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+            git fetch origin main --unshallow --quiet
+          fi
           git rebase origin/main
           git push origin HEAD:main
 

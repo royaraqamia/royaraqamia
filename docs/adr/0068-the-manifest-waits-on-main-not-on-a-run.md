@@ -61,3 +61,14 @@ no longer identify, and a stalled or red train is `release-health.yml`'s alarm (
 
 `scripts/__tests__/shell-release-workflow.test.mjs` pins the signal and the cap, so a future edit that
 goes back to matching a run has to say why in that test.
+
+The depth-1 fetch that reads the tip has a side effect the first version missed: in a checkout that is
+already depth 1 it leaves `origin/main` a shallow root too, so HEAD and `origin/main` share no
+ancestor. `Land the manifest` rebases onto `main`, and a rebase across an empty merge base replays the
+commit the run checked out as well as the manifest. Shell 1.0.13 failed there, 2026-10-20: the rebase
+tried to apply the run's own base, `feat(ui): render numbers…`, on top of the release commit that had
+superseded it, conflicted on `CHANGELOG.md`, `package.json`, `package-lock.json` and
+`backend/config/generated/app-version.ts`, and the manifest never landed although the asset was
+already uploaded. A re-run would have failed the same way. The land step now unshallows `main` first —
+guarded, because `--unshallow` refuses a complete repository — so the replay is the manifest commit
+alone; the test file pins that order too.
