@@ -138,3 +138,7 @@ the same files — this one is the manifest alone — so the rebase is trivial. 
 cost is a shell release that takes a few minutes longer when a web release is in
 flight, which is the price of the manifest being the last writer rather than the
 loser of a race.
+
+_Amended by [ADR 0068](0068-the-manifest-waits-on-main-not-on-a-run.md)._ The manifest still waits its
+turn, and for the reason above; what it waits on is a release commit on `main`, because a `Release`
+run cannot be identified by the commit it tested.

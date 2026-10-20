@@ -13,8 +13,9 @@ name: 'Shell Release'
 #   3. builds and signs the release APK, stamping the manifest from the file
 #   4. creates this version's own release (`android-1.0.3`) and attaches the asset
 #   5. downloads it back and hashes it against the manifest
-#   6. waits for the release train (both write to main, and it will not push over a
-#      moved HEAD), then commits the manifest, so the site announces it
+#   6. waits for the release train's commit to land on main (both write there, and the
+#      manifest is the one that can wait), then commits the manifest, so the site
+#      announces it
 #
 # Failing at 3–5 leaves the published channel exactly as it was: nothing is
 # announced. Failing at 6 leaves the asset uploaded and the manifest stale — the
@@ -367,10 +368,18 @@ jobs:
       # 11:48:0x and the release train's push at 11:48:1x was rejected, so the web
       # version for that merge was never cut — its bump was local to the runner and
       # gone. The manifest is the one that can wait, so it does.
+      #
+      # What it waits on is `main`, not a run. It used to poll for a `Release` run
+      # whose `headSha` was its own commit, and that never matched once: a `Release`
+      # run is triggered by Code Quality and reports the branch tip as its `head_sha`,
+      # not the commit it tested. Measured on shell 1.0.12: the train for 34e145d ran
+      # as 0932f70, so the poll came back empty 44 times and held the job for the whole
+      # fifteen minutes it was allowed. The train pushes its release commit on top of
+      # whatever is on `main`, so a release commit at the tip means it has cut
+      # everything below it — this merge included — and no run has to be identified.
       - name: Let the release train finish first
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
         env:
-          GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -378,27 +387,24 @@ jobs:
           # must never be able to hold a shell release back.
           deadline=$((SECONDS + 900))
           while [ "$SECONDS" -lt "$deadline" ]; do
-            run=$(gh run list --workflow=release.yml --branch main --limit 20 --json headSha,status,conclusion \
-              --jq "[.[] | select(.headSha == \"$SHA\")][0] // empty")
-            if [ -z "$run" ]; then
-              echo "no release train run yet for ${SHA:0:8}; waiting for it to start"
+            # `--depth=1`: this checkout is shallow and the only thing wanted is the
+            # tip's subject. A failed fetch is a reason to try again, not to fail.
+            if git fetch origin main --depth=1 --quiet; then
+              subject=$(git log -1 --format=%s FETCH_HEAD)
             else
-              status=$(printf '%s' "$run" | jq -r .status)
-              if [ "$status" = "completed" ]; then
-                conclusion=$(printf '%s' "$run" | jq -r .conclusion)
-                if [ "$conclusion" != "success" ]; then
-                  # Not this workflow's failure to fix, but worth saying out loud:
-                  # a failed release train means a web version was not cut.
-                  echo "::warning title=The release train failed::it finished $conclusion for ${SHA:0:8}, so no web version was cut. Re-run it: gh workflow run release.yml --ref main"
-                fi
-                echo "the release train finished for ${SHA:0:8}; the manifest can be the last writer"
-                exit 0
-              fi
-              echo "the release train is $status for ${SHA:0:8}; waiting"
+              subject=""
+              echo "could not fetch main; trying again"
             fi
+            case "$subject" in
+              'chore(release): '*)
+                echo "the release train cut a version above ${SHA:0:8}; the manifest can be the last writer"
+                exit 0
+                ;;
+            esac
+            echo "no release commit on main above ${SHA:0:8} yet; waiting"
             sleep 20
           done
-          echo "::warning title=The release train never finished::waited 15 minutes for a Release run on ${SHA:0:8}. Pushing the manifest anyway — a manifest commit no longer blocks the train (scripts/release-guard.mjs), so a run that starts later still cuts this merge's version."
+          echo "::warning title=The release train never finished::waited 15 minutes for a release commit above ${SHA:0:8}. Pushing the manifest anyway — a manifest commit no longer blocks the train (scripts/release-guard.mjs), so a run that starts later still cuts this merge's version."
 
       - name: Land the manifest
         if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
