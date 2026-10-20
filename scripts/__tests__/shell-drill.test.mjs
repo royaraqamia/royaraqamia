@@ -2,8 +2,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
+  FORCE_STOP_WINDOW_MS,
+  formatMatrixTable,
   isDrainSuccess,
   main,
+  MATRIX_CASES,
   OUTBOX_COUNT_EXPRESSION,
   parseArgs,
   WEBVIEW_FLOOR,
@@ -36,14 +39,15 @@ describe('reading the options', () => {
       port: 3000,
       keep: false,
       skipBuild: false,
+      matrix: false,
       help: false,
     });
   });
 
-  it('takes a device, a port and a timeout', () => {
+  it('takes a device, a port, a timeout and the matrix', () => {
     expect(
-      parseArgs(['--device', 'emulator-5554', '--port', '3010', '--timeout', '60'])
-    ).toMatchObject({ device: 'emulator-5554', port: 3010, timeoutMs: 60_000 });
+      parseArgs(['--device', 'emulator-5554', '--port', '3010', '--timeout', '60', '--matrix'])
+    ).toMatchObject({ device: 'emulator-5554', port: 3010, timeoutMs: 60_000, matrix: true });
   });
 
   it('refuses a value that is missing or not a port', () => {
@@ -102,10 +106,18 @@ describe('deciding when the drill can run', () => {
 });
 
 describe('the constraints that cost a drill each when missed', () => {
-  it('kills with am kill, never a force-stop that would cancel the work', () => {
-    expect(source).toMatch(/'am',\s*'kill'/);
-    // The prose above may name the wrong command; the invoked one must not be it.
-    expect(source).not.toMatch(/'am',\s*'force-stop'/);
+  it('kills with am kill in the drain path, never a force-stop that would cancel the work', () => {
+    const killApp = /async function killApp\(\)[\s\S]*?\n  }\n/.exec(source)?.[0] ?? '';
+    expect(killApp).toContain("'am', 'kill'");
+    expect(killApp).not.toContain('force-stop');
+  });
+
+  it('force-stops only in the matrix case that exists to observe it', () => {
+    // The force-stop is a case, not a shortcut: it lives in its own function so
+    // the drain path cannot pick it up, and the docs say what it proves.
+    const forceStop = /async function forceStopApp\(\)[\s\S]*?\n  }\n/.exec(source)?.[0] ?? '';
+    expect(forceStop).toContain("'am', 'force-stop'");
+    expect(forceStop).toContain('pidOf()');
   });
 
   it('builds the shell against localhost and reaches it through adb reverse', () => {
@@ -150,5 +162,58 @@ describe('staying wired to the shell it drills', () => {
     // The dead end the script stops on, and why.
     expect(docs).toContain('83.0.4103.106');
     expect(docs).toContain('`unavailable.html`');
+  });
+
+  it('documents the matrix next to the drill it extends', () => {
+    expect(docs).toContain('--matrix');
+    expect(docs).toContain('The real-device matrix');
+    // The manual rows have to be visible as manual, not implied by a run.
+    expect(docs).toContain('FCM wake, backgrounded');
+    expect(docs).toContain('_(manual)_');
+  });
+});
+
+describe('the real-device matrix', () => {
+  it('runs the three cases the doc table names, in order', () => {
+    expect(MATRIX_CASES.map((entry) => entry.id)).toEqual(['force-stop', 'doze', 'mid-flush']);
+    for (const entry of MATRIX_CASES) {
+      expect(docs).toContain(entry.title);
+      expect(docs).toContain(entry.expected);
+    }
+  });
+
+  it('formats an observation as a table row a reader can paste', () => {
+    const table = formatMatrixTable([
+      {
+        title: 'Doze',
+        expected: 'deferred while idle, drains after release',
+        status: 'pass',
+        observation: 'idle (mState=IDLE), nothing for 60s',
+      },
+      {
+        title: 'Process death mid-flush',
+        expected: 'one habit, no duplicate',
+        status: 'skipped',
+        observation: 'run-as said "a | b"',
+      },
+    ]);
+    expect(table.split('\n')[0]).toBe('| Case | Expected | Observed |');
+    expect(table).toContain(
+      '| Doze | deferred while idle, drains after release | pass — idle (mState=IDLE), nothing for 60s |'
+    );
+    // A pipe in the device's own words must not split the row.
+    expect(table).toContain('skipped — run-as said "a \\| b"');
+  });
+
+  it('forces doze, unplugs, and kills the drain process with the commands the cases need', () => {
+    expect(source).toMatch(/'dumpsys',\s*'deviceidle',\s*'force-idle'/);
+    expect(source).toMatch(/'dumpsys',\s*'battery',\s*'unplug'/);
+    expect(source).toMatch(/'run-as',\s*PACKAGE_ID,\s*'kill',\s*'-9'/);
+  });
+
+  it('observes for its own window, not the drain timeout', () => {
+    expect(FORCE_STOP_WINDOW_MS).toBeGreaterThanOrEqual(30_000);
+    expect(source).toContain('FORCE_STOP_WINDOW_MS');
+    expect(source).toContain('DOZE_WINDOW_MS');
   });
 });
