@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './quran.css';
-import { kfgqpcHafs } from '@/frontend/ui/quran/font';
+import { amiriQuranMarks, kfgqpcHafs } from '@/frontend/ui/quran/font';
 
 /**
  * The reader's shell. Metadata that belongs to one page lives on that page — the
@@ -20,7 +20,9 @@ export const metadata: Metadata = {
 
 export default function QuranLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`min-h-dvh bg-background text-foreground flex flex-col ${kfgqpcHafs.variable}`}>
+    <div
+      className={`min-h-dvh bg-background text-foreground flex flex-col ${kfgqpcHafs.variable} ${amiriQuranMarks.variable}`}
+    >
       <main id="main-content" className="flex-1 pt-6">
         {children}
       </main>

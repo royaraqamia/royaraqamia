@@ -1,5 +1,9 @@
 # The Quran is set in the KFGQPC Uthmani Hafs face
 
+> **Amended by [ADR 0067](0067-the-qurans-silent-letter-marks-are-set-in-amiri-quran.md)**, which
+> sets three silent-letter marks in Amiri Quran because this face draws them as its ayah-number
+> rosette.
+
 The reader was set in Amiri Quran because [ADR 0057](0057-quran-content-is-vendored-under-a-readable-licence.md)
 rejected KFGQPC's glyph-encoded Uthmani **text**: its terms were unreachable, and a readable licence
 governs every asset. That rule still holds. What changed is the evidence: the font is not the text,
