@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.125.0] - 2026-10-20
+
+### Changed
+- publish shell 1.0.11 (20011)
+- Quran P2a: playing Ayah marked in text. (#401)
+- Chaos tests for offline sync replay. (#415)
+
+### Added
+- give the shell a legible local fallback (#417)
+
+### Fixed
+- surface load-more and search failures (#416)
+- hold offline rendering at every web breakpoint (#414)
+- surface and retry failed new-post creation (#413)
+- re-run Repo Checks after a title correction, and read the live title (#418)
+
 ## [1.124.2] - 2026-10-20
 
 ### Fixed
