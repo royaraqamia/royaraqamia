@@ -71,7 +71,9 @@ stated limit.
   behaviour, and where it is not, it is a gap — but a reload or a deep link with the radio off has no
   document to serve. Closing it needs a data-free shell for those routes plus a client-side gate that
   paints the Local Store into it: a design step, not a one-line change, so it is recorded here rather
-  than promised.
+  than promised. `/device` is the one place that design has been built (ADR-0070): the queue and the
+  device's copy are inspectable and removable with no network, precisely because that page renders no
+  account data on the server.
 - **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
   says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
@@ -116,10 +118,10 @@ Honest list of what stands between us and the bar, each with the file that shows
    [`offline-surfaces-audit.md`](offline-surfaces-audit.md) checked every route against the table above
    and every ADR-0031 surface for the needs-connection state it promises. It closed the three that were
    misreporting a connection failure — consultation availability, the media downloader, Web Push — and
-   filed the rest: the account diagnostics view and "Remove this device's copy" (#370), in-page states
-   for auth, admin and MCP (#368), and the silent read-failure of a pull (#369). The mechanical
-   leftovers (Community's read failures, an admin lookup, one raw error string) are recorded there with
-   the file that shows each.
+   filed the rest: in-page states for auth, admin and MCP (#368) and the silent read-failure of a pull
+   (#369). The account diagnostics view and "Remove this device's copy" that it filed as #370 now live
+   in `/device` (ADR-0070). The mechanical leftovers (Community's read failures, an admin lookup, one
+   raw error string) are recorded there with the file that shows each.
 
 ## Architecture
 
@@ -182,7 +184,8 @@ never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache
 Property 3 needs a per-item state a user can read at a glance, the way a messenger's clock and ticks
 work: **queued** (durable, not yet acknowledged), **sent** (server accepted), **failed** (permanent,
 with retry). The Outbox already distinguishes these; the work is to surface them per item everywhere,
-not only as a count.
+not only as a count. `/device` is where the queue itself is listed per item, with the last error and a
+retry; the in-place badge beside each write is still the product's own job.
 
 ### Data contract
 
@@ -218,7 +221,9 @@ reading because of a chunk they never asked for (#332).
   server-bound actions show "needs connection".
 - **Claim on sign-in:** guest rows move into the account namespace and are pushed (dedupe by
   `client_id`, LWW merge).
-- Sign-out keeps the account namespace on disk; `/account` offers **"Remove this device's copy"**.
+- Sign-out keeps the account namespace on disk; `/account` links to `/device`, where
+  **"Remove this device's copy"** says how many stores and unsynced writes it takes with it
+  (ADR-0070).
 - Token refresh is deferred until reconnection.
 
 ## Storage & telemetry
@@ -233,7 +238,8 @@ reading because of a chunk they never asked for (#332).
 
 Instant local render (no blocking spinners on owned data), optimistic mutations, a persistent
 online/offline + pending-count pill ("syncing…", "failed — retry"), per-item delivery badges, an
-outbox/diagnostics view under `/account`, and route View Transitions. On Android the same states must
+outbox/diagnostics view at `/device` — reachable from `/account`, cached so it works with the radio off
+(ADR-0070) — and route View Transitions. On Android the same states must
 survive the app being killed and relaunched, and a battery-optimization exemption is asked for at the
 moment it matters — with the reason stated, since the request is otherwise opaque.
 
@@ -296,10 +302,11 @@ the server is unreachable, and the [Verification](#verification) section for wha
   downloader renders the inspection failure it used to swallow and names the connection while offline;
   Web Push distinguishes an unreachable server from a permission denial. The audit that found them
   ([`offline-surfaces-audit.md`](offline-surfaces-audit.md)) is the record of what every route shows when
-  the server is unreachable, and what it left open is issues #368, #369 and #370 — filed rather than
-  listed, so a reader can tell the difference between a closed gap and a known one.
+  the server is unreachable, and what it left open is issues #368 and #369 — filed rather than
+  listed, so a reader can tell the difference between a closed gap and a known one. #370, the
+  diagnostics view, is closed by `/device` (ADR-0070).
 - **Unit tests:** Outbox, IndexedDB repositories, migration chains, the sync engine's ordering and
-  backoff, the SW `sync` handler, and the FCM wake payload.
+  backoff, the SW `sync` handler, the device-copy reader and the FCM wake payload.
 - **Realtime hints, and what their e2e cannot be.** The subscription's visibility rule, its burst
   folding and its "a channel that cannot open costs latency, never the surface" behaviour are covered
   against an injected subscriber, and each surface's wiring is covered by asserting that a hint runs

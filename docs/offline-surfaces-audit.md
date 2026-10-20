@@ -82,8 +82,9 @@ private spelling of the same state.
 
 ### Filed
 
-- **[#370](https://github.com/royaraqamia/royaraqamia/issues/370)** — the offline diagnostics view and
-  "Remove this device's copy" that the spec promises and the code does not have.
+- **[#370](https://github.com/royaraqamia/royaraqamia/issues/370)** — closed by `/device` (ADR-0070): the
+  queue is inspectable per item, retryable, and "Remove this device's copy" deletes the account namespace
+  and reports what it took.
 - **[#368](https://github.com/royaraqamia/royaraqamia/issues/368)** — in-page needs-connection states for
   auth, admin and MCP, and the admin reads that swallow their failures.
 - **[#369](https://github.com/royaraqamia/royaraqamia/issues/369)** — a failed pull leaves the sync pill

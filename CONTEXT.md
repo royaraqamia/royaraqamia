@@ -333,6 +333,12 @@ The ordered queue of a user's not-yet-synced writes, held inside the Local Store
 server until each is acknowledged.
 _Avoid_: write queue, sync queue, pending writes
 
+**Device copy**:
+The Local Store databases one identity holds on this device — data and Outbox together — and the
+`/device` page that inspects, retries and removes them. Sign-out keeps a copy; that page is how a
+shared device drops it.
+_Avoid_: local data, cache, account namespace
+
 **Claim**:
 The act of attaching a guest's Local Store records to an account on first sign-in, so work done
 before signing in is not lost.
