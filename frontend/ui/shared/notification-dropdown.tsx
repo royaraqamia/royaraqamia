@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, useId, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import {
@@ -46,16 +46,64 @@ const AUTH_PATHS = [
   '/auth/update-password',
 ];
 
+/** What the panel focuses first when it has no notification items to offer. */
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 export const NotificationDropdown = memo(function NotificationDropdown() {
   const { user } = useSession();
   const pathname = usePathname();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+  // Roving tabindex: exactly one menu item is in the tab order, and the arrow
+  // keys move both focus and the tab stop (WAI-ARIA menu pattern).
+  const [activeIndex, setActiveIndex] = useState(0);
+  const menuId = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { panelRef, style } = usePortalPopover(isOpen, ref, { width: 380, maxHeight: false });
+
+  function getMenuItems(): HTMLElement[] {
+    return Array.from(panelRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+  }
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    setActiveIndex(0);
+    // The panel is portaled outside the trigger's subtree, so focus has to be
+    // moved in explicitly or every keydown stays on the trigger.
+    const first =
+      panel.querySelector<HTMLElement>('[role="menuitem"]') ??
+      panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    first?.focus();
+  }, [isOpen, panelRef]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Focus can still be on the trigger when the menu is open, and the panel is
+    // portaled, so a document-level listener is the only reliable way to catch
+    // `Escape` in both places.
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -73,27 +121,41 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, panelRef]);
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') {
-      setIsOpen(false);
-      triggerRef.current?.focus();
-      return;
+  function handleMenuKeyDown(e: React.KeyboardEvent) {
+    const items = getMenuItems();
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(e.target as HTMLElement);
+    let nextIndex: number;
+    switch (e.key) {
+      case 'ArrowDown':
+        nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+        break;
+      case 'ArrowUp':
+        nextIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = items.length - 1;
+        break;
+      default:
+        return;
     }
 
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const items = listRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
-      if (!items || items.length === 0) return;
+    e.preventDefault();
+    items[nextIndex]?.focus();
+    setActiveIndex(nextIndex);
+  }
 
-      const currentIndex = Array.from(items).indexOf(
-        e.currentTarget.ownerDocument.activeElement as HTMLElement
-      );
-      const nextIndex =
-        e.key === 'ArrowDown'
-          ? Math.min(currentIndex + 1, items.length - 1)
-          : Math.max(currentIndex - 1, 0);
-      items[nextIndex]?.focus();
-    }
+  function handleMenuBlur(e: React.FocusEvent<HTMLDivElement>) {
+    const next = e.relatedTarget as Node | null;
+    // Focus moving within the panel (or back to the trigger, which is a toggle)
+    // is not a dismissal; anything else is, so `Tab` cannot leave a dangling
+    // open panel behind.
+    if (next && (panelRef.current?.contains(next) || ref.current?.contains(next))) return;
+    setIsOpen(false);
   }
 
   // Guests see the bell too (consistent chrome); the panel nudges them to sign in.
@@ -113,6 +175,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
         )}
         aria-label={`الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروء)` : ''}`}
         aria-haspopup="menu"
+        aria-controls={isOpen ? menuId : undefined}
         aria-expanded={isOpen}
       >
         <Bell
@@ -132,6 +195,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
             <ResponsiveSheetScrim />
             <div
               ref={panelRef}
+              id={menuId}
               data-glass-panel
               style={style}
               className={cn(
@@ -140,7 +204,8 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                 'animate-in fade-in-0 zoom-in-95 duration-200 ease-out',
                 'max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:slide-in-from-bottom-4'
               )}
-              onKeyDown={handleKeyDown}
+              onKeyDown={handleMenuKeyDown}
+              onBlur={handleMenuBlur}
               role="menu"
               aria-label="قائمة الإشعارات"
             >
@@ -199,8 +264,8 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                     </p>
                   </div>
                 ) : (
-                  <ul ref={listRef} className="divide-y divide-border/40" role="listbox">
-                    {notifications.map((notification) => (
+                  <ul className="divide-y divide-border/40" role="none">
+                    {notifications.map((notification, index) => (
                       <li
                         key={notification.id}
                         className={cn(
@@ -214,7 +279,9 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                           if (!notification.is_read) markAsRead(notification.id);
                         }}
                         role="menuitem"
-                        tabIndex={0}
+                        tabIndex={
+                          index === Math.min(activeIndex, notifications.length - 1) ? 0 : -1
+                        }
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
