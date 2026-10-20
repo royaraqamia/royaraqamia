@@ -20,6 +20,7 @@
  *   npm run android:publish                 # build the signed APK, then stamp the manifest
  *   npm run android:publish -- --apk <path> # stamp from an APK already built
  *   npm run android:publish -- --min 20005  # also raise the floor shells must meet
+ *   npm run android:publish -- --released-at 2026-10-20 # the date to announce (UTC today by default)
  *   npm run android:publish -- --notes "…"  # what the dialog's body should say
  *   npm run android:publish -- --dry-run    # say everything, change nothing
  *   npm run android:publish -- --json       # one JSON line on stdout; the rest on stderr
@@ -132,11 +133,42 @@ export function isTrustedSigner(assetlinksText, fingerprints) {
 }
 
 /**
+ * The date is the day a version was announced — `2026-10-20`, no time — because
+ * that is all the manifest has ever said and all a device shows.
+ *
+ * It comes from the clock of the publish, not from the commit being released: a
+ * workflow can be dispatched or re-run days after a merge, and a device asking
+ * when this build appeared wants the day it appeared. Re-publishing the same
+ * version keeps the date it was first published, because that is the same
+ * release; any other version gets the current UTC date and never the previous
+ * manifest's. `--released-at` wins over all of that so a wrong date can be
+ * corrected by hand.
+ */
+export function resolveReleasedAt({ previous, versionCode, releasedAt, now = new Date() }) {
+  if (releasedAt !== undefined) return releasedAt;
+  const sameVersion =
+    Number(previous?.versionCode ?? 0) === versionCode && isManifestDate(previous?.releasedAt);
+  return sameVersion ? previous.releasedAt : now.toISOString().slice(0, 10);
+}
+
+/** Whether a value is a real calendar date, spelled the way the manifest spells it. */
+export function isManifestDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+/**
  * The manifest, from the APK and the manifest that is already published.
  *
  * `minSupportedVersionCode` is the floor below which a shell is told its update
  * cannot wait; it is carried forward unless raised deliberately, because
  * lowering it is how a device would be told to stop caring.
+ *
+ * Everything else is an input. In particular `releasedAt` is never copied from
+ * the previous manifest: a publish that did not say when it happened used to keep
+ * the date of the first release that ever set it, and described every release
+ * after it with that day. A date that is wrong is worse than no date at all.
  */
 export function stampManifest({
   previous,
@@ -162,6 +194,13 @@ export function stampManifest({
     throw new Error(`versionCode must be a positive integer, got ${JSON.stringify(versionCode)}`);
   }
 
+  if (!isManifestDate(releasedAt)) {
+    throw new Error(
+      `releasedAt must be a real date as YYYY-MM-DD, got ${JSON.stringify(releasedAt)}.\n` +
+        'It is never copied from the previous manifest; say when this publish happened.'
+    );
+  }
+
   const previousCode = Number(previous?.versionCode ?? 0);
   if (versionCode < previousCode) {
     throw new Error(
@@ -184,7 +223,7 @@ export function stampManifest({
     sizeBytes,
     minSupportedVersionCode,
     notes: notes ?? previous?.notes ?? '',
-    releasedAt: releasedAt ?? previous?.releasedAt ?? '',
+    releasedAt,
   };
 }
 
@@ -475,7 +514,11 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     sha256: sha256File(apkPath),
     sizeBytes: statSync(apkPath).size,
     notes: valueOf('--notes'),
-    releasedAt: valueOf('--released-at'),
+    releasedAt: resolveReleasedAt({
+      previous,
+      versionCode: badging.versionCode,
+      releasedAt: valueOf('--released-at'),
+    }),
     minSupportedVersionCode: min,
   });
 
@@ -510,6 +553,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     log(`size           ${manifest.sizeBytes} bytes (${megabytes} MB)`);
     log(`release        ${tag} — "${releaseTitle}"`);
     log(`published URL  ${manifest.apkUrl}`);
+    log(`released       ${manifest.releasedAt}`);
     if (manifest.versionCode === previous.versionCode) {
       log('');
       log(`Note: ${previous.versionCode} was already published. Devices that installed it already`);

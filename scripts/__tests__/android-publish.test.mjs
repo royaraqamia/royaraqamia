@@ -8,6 +8,7 @@ import {
   APK_ORIGIN,
   apkUrlFor,
   checkApkAgainstTree,
+  isManifestDate,
   isTrustedSigner,
   listedFingerprints,
   MANIFEST_KEYS,
@@ -16,6 +17,7 @@ import {
   parseBadging,
   parseSignerFingerprints,
   publishVerdict,
+  resolveReleasedAt,
   sha256File,
   shellAssetName,
   shellReleaseTag,
@@ -127,6 +129,7 @@ describe('stamping the manifest', () => {
       apkUrl: previous.apkUrl,
       sha256: GOOD_SHA,
       sizeBytes: 10_800_000,
+      releasedAt: '2026-10-20',
       minSupportedVersionCode: 20000,
     });
 
@@ -138,8 +141,26 @@ describe('stamping the manifest', () => {
     const manifest = stamped();
 
     expect(manifest.notes).toBe('');
-    expect(manifest.releasedAt).toBe('2026-10-14');
     expect(manifest.apkUrl).toBe(previous.apkUrl);
+  });
+
+  it('takes the release date as an input, never from the previous manifest', () => {
+    // A new version published without a date is a publish nobody can date. It
+    // used to inherit the previous one, which described every later release as
+    // the day the field was first written.
+    expect(stamped().releasedAt).toBe('2026-10-20');
+
+    expect(() =>
+      stampManifest({
+        previous,
+        versionCode: 20001,
+        versionName: '1.0.1',
+        apkUrl: previous.apkUrl,
+        sha256: GOOD_SHA,
+        sizeBytes: 10_800_000,
+        minSupportedVersionCode: 20000,
+      })
+    ).toThrow(/releasedAt/);
   });
 
   it('takes the size and the hash from the APK, not from anyone’s typing', () => {
@@ -159,6 +180,7 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: previous.apkUrl,
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 0,
       })
@@ -173,6 +195,7 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: previous.apkUrl,
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 20000,
       }).versionCode
@@ -187,6 +210,7 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: 'http://10.0.2.2:3000/android/x.apk',
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 0,
       })
@@ -201,6 +225,7 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: previous.apkUrl,
         sha256: '',
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 0,
       })
@@ -215,6 +240,7 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: previous.apkUrl,
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 0,
         minSupportedVersionCode: 0,
       })
@@ -230,10 +256,44 @@ describe('stamping the manifest', () => {
         versionName: 'x',
         apkUrl: previous.apkUrl,
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 20002,
       })
     ).toThrow(/minSupportedVersionCode/);
+  });
+});
+
+describe('the date a publish is announced as', () => {
+  const previous = { versionCode: 20000, releasedAt: '2026-10-14' };
+  const now = new Date('2026-10-20T23:30:00Z');
+
+  it('dates a new version today, never the day the previous one had', () => {
+    // This is the bug: every release inherited the date of the first one that set it.
+    expect(resolveReleasedAt({ previous, versionCode: 20001, now })).toBe('2026-10-20');
+  });
+
+  it('keeps the date a version was already published with', () => {
+    // A re-run publishes the same bytes, so it is not a second release.
+    expect(resolveReleasedAt({ previous, versionCode: 20000, now })).toBe('2026-10-14');
+  });
+
+  it('takes an explicit date, so a wrong one can be corrected by hand', () => {
+    expect(resolveReleasedAt({ previous, versionCode: 20001, releasedAt: '2026-10-19', now })).toBe(
+      '2026-10-19'
+    );
+    expect(resolveReleasedAt({ previous, versionCode: 20000, releasedAt: '2026-10-19', now })).toBe(
+      '2026-10-19'
+    );
+  });
+
+  it('rejects anything that is not a real calendar date', () => {
+    expect(isManifestDate('2026-10-20')).toBe(true);
+    expect(isManifestDate('2026-02-31')).toBe(false);
+    expect(isManifestDate('2026-13-01')).toBe(false);
+    expect(isManifestDate('2026-10-20T00:00:00Z')).toBe(false);
+    expect(isManifestDate('')).toBe(false);
+    expect(isManifestDate(undefined)).toBe(false);
   });
 });
 
@@ -302,6 +362,7 @@ describe('the file that gets served', () => {
         versionName: '1.0.4',
         apkUrl: apkUrlFor('1.0.4'),
         sha256: GOOD_SHA,
+        releasedAt: '2026-10-20',
         sizeBytes: 1,
         minSupportedVersionCode: 20000,
       }).apkUrl

@@ -180,6 +180,10 @@ jobs:
           NOTES: ${{ steps.notes.outputs.notes }}
         run: |
           set -euo pipefail
+          # `releasedAt` is stamped by the script from this run's clock (UTC), not
+          # passed here: a publish must never be able to inherit the previous
+          # manifest's date, which is how the field froze for every release after
+          # the first one that set it (#391).
           extra=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             extra="--dry-run"
