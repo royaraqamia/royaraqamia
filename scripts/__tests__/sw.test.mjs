@@ -43,7 +43,13 @@ function makePushSubscription({ endpointBase, keyBuffer }) {
   };
 }
 
-function createSandbox({ withPushConfig = true, fetchImpl, budgetBytes } = {}) {
+function createSandbox({
+  withPushConfig = true,
+  fetchImpl,
+  budgetBytes,
+  routeBudgetBytes,
+  precacheRoutes = [],
+} = {}) {
   const listeners = new Map();
   const cacheStores = new Map();
   const state = { fetchCalls: [], subscribeCalls: [], showNotificationCalls: [] };
@@ -149,11 +155,18 @@ function createSandbox({ withPushConfig = true, fetchImpl, budgetBytes } = {}) {
       if (name === 'sw-routing.js') {
         return Function('self', 'URL', ROUTING_SOURCE)(sandbox, URL);
       }
+      if (name === 'sw-precache.js') {
+        return Function(
+          'self',
+          `self.PRECACHE_ROUTES = ${JSON.stringify(precacheRoutes)};`
+        )(sandbox);
+      }
       throw new Error(`not found: ${name}`);
     },
   };
   sandbox.self = sandbox;
   if (budgetBytes !== undefined) sandbox.CACHE_BUDGET_BYTES = budgetBytes;
+  if (routeBudgetBytes !== undefined) sandbox.ROUTE_PRECACHE_BUDGET_BYTES = routeBudgetBytes;
   // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
   // this worker would be a bug the suite must see, so opening IndexedDB throws.
   sandbox.indexedDB = {
@@ -575,6 +588,94 @@ describe('service worker cache durability', () => {
     log.mockRestore();
   });
 
+  it('precaches the build route shells and skips one failed URL', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const routes = ['/privacy', '/terms', '/security'];
+
+    const { caches } = await boot({
+      precacheRoutes: routes,
+      fetchImpl: async (url) => {
+        if (String(url).includes('/terms')) return new Response('missing', { status: 404 });
+        return new Response('shell', {
+          status: 200,
+          headers: {
+            'content-type': 'text/html',
+            'content-length': '5',
+            'cache-control': 'public, max-age=60',
+          },
+        });
+      },
+    });
+
+    const cache = await caches.open('royaraqamia-test-v1');
+    // The failed URL does not reject install or block the routes after it.
+    expect(await cache.match('/privacy')).toBeTruthy();
+    expect(await cache.match('/security')).toBeTruthy();
+    expect(await cache.match('/terms')).toBeUndefined();
+    expect(log.mock.calls.flat().join(' ')).toContain('/terms');
+
+    log.mockRestore();
+  });
+
+  it('stops adding route shells at the install budget', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { caches } = await boot({
+      precacheRoutes: ['/a', '/b', '/c'],
+      routeBudgetBytes: 500,
+      fetchImpl: async () =>
+        new Response('shell', {
+          status: 200,
+          headers: {
+            'content-type': 'text/html',
+            'content-length': '300',
+            'cache-control': 'public, max-age=60',
+          },
+        }),
+    });
+
+    const cache = await caches.open('royaraqamia-test-v1');
+    // 300 fits; the second would take the list to 600, over the 500 ceiling.
+    expect(await cache.match('/a')).toBeTruthy();
+    expect(await cache.match('/b')).toBeUndefined();
+    expect(await cache.match('/c')).toBeUndefined();
+    expect(log.mock.calls.flat().join(' ')).toContain('budget reached');
+
+    log.mockRestore();
+  });
+
+  it('does not spend cache budget it does not have on route shells', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { caches } = await boot({
+      budgetBytes: 100,
+      precacheRoutes: ['/privacy'],
+      fetchImpl: async (url) => {
+        // The fixed shell is empty, so the route has to fit in what is left.
+        if (String(url) === '/privacy') {
+          return new Response('shell', {
+            status: 200,
+            headers: {
+              'content-type': 'text/html',
+              'content-length': '200',
+              'cache-control': 'public, max-age=60',
+            },
+          });
+        }
+        return new Response('', {
+          status: 200,
+          headers: { 'content-length': '0', 'cache-control': 'public, max-age=60' },
+        });
+      },
+    });
+
+    const cache = await caches.open('royaraqamia-test-v1');
+    expect(await cache.match('/privacy')).toBeUndefined();
+    expect(log.mock.calls.flat().join(' ')).toContain('budget reached');
+
+    log.mockRestore();
+  });
+
   it('serves the last good cached API read when the network answers 5xx', async () => {
     const { caches, dispatch, sandbox } = await boot();
     const cache = await caches.open('royaraqamia-test-v1');
@@ -760,7 +861,7 @@ describe('service worker cache budget and eviction', () => {
   });
 
   it('purges account-bearing entries on sign-out and keeps the offline shell', async () => {
-    const ctx = await boot({ budgetBytes: 10_000 });
+    const ctx = await boot({ budgetBytes: 10_000, precacheRoutes: ['/privacy'] });
 
     await visit(ctx, '/community', 100);
     // The device's data-free shell must survive sign-out: removing the copy that
@@ -798,6 +899,10 @@ describe('service worker cache budget and eviction', () => {
     // device preference do.
     expect(await ctx.caches.match('/offline')).toBeTruthy();
     expect(await ctx.caches.match('/device')).toBeTruthy();
+    // A public route shell was prerendered without a session and survives too
+    // (#395): it carries no account data, and a signed-out device still needs
+    // it to deep-link offline.
+    expect(await ctx.caches.match('/privacy')).toBeTruthy();
     expect(await ctx.caches.match('/_next/static/chunks/app.js')).toBeTruthy();
     expect(await ctx.caches.match('/__push_disabled__')).toBeTruthy();
     expect(event.ports[0].postMessage).toHaveBeenCalledWith({ type: 'ACCOUNT_CACHES_PURGED' });

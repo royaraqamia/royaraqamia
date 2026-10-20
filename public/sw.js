@@ -1,6 +1,9 @@
 try { importScripts('/sw-version.js'); } catch { self.CACHE_VERSION = 'royaraqamia-dev'; }
 try { importScripts('/sw-push-config.js'); } catch { self.PUSH_CONFIG = null; }
 try { importScripts('/sw-routing.js'); } catch { self.SWRouting = self.SWRouting || null; }
+// Generated after `next build` from the routes the build actually prerendered.
+// Absent in dev/test runs, where the worker keeps to its fixed shell.
+try { importScripts('/sw-precache.js'); } catch { self.PRECACHE_ROUTES = []; }
 try { importScripts('/sw-outbox.js'); } catch { self.SWOutbox = self.SWOutbox || null; }
 const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
@@ -33,6 +36,21 @@ const PRECACHE_URLS = [
   `/icons/badge-icon-96x96.png${ASSET_QUERY}`,
 ];
 
+// Public static route shells (#395, ADR-0071). Generated from the build's own
+// route manifests, so this is whatever the current build prerendered — never a
+// hand-maintained list and never a dynamic detail route. Deduped and limited to
+// same-origin paths here as a last guard against a malformed generated file.
+const PRECACHE_ROUTES = Array.isArray(self.PRECACHE_ROUTES)
+  ? [...new Set(self.PRECACHE_ROUTES)].filter(
+      (route) => typeof route === 'string' && route.startsWith('/') && !route.startsWith('//')
+    )
+  : [];
+
+// Install-time ceiling for those shells, bytes. The public cache's own budget
+// (below) still wins: the worker only spends what is left of it. ADR-0071
+// documents both numbers and why the list carries HTML shells only.
+const ROUTE_PRECACHE_BUDGET_BYTES = self.ROUTE_PRECACHE_BUDGET_BYTES || 6 * 1024 * 1024;
+
 // The public cache's byte ceiling (ADR-0069). A test may shrink it through the
 // same realm global; production always takes the spec's ~150 MB.
 const CACHE_BUDGET_BYTES = self.CACHE_BUDGET_BYTES || 150 * 1024 * 1024;
@@ -46,7 +64,7 @@ const CACHE_META_KEY = '/__sw_cache_index__';
 const CACHE_META_VERSION = 1;
 
 const PRECACHE_PATHS = new Set(
-  PRECACHE_URLS.map((url) => new URL(url, self.location.origin).pathname)
+  [...PRECACHE_URLS, ...PRECACHE_ROUTES].map((url) => new URL(url, self.location.origin).pathname)
 );
 
 // Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
@@ -60,11 +78,74 @@ async function precache(cache, urls) {
   await recordCachedEntries(cache, stored);
 }
 
+// The route shells are fetched one at a time so the budget can stop the list
+// before an entry is written. A single failed route is logged and skipped; it
+// never blocks the rest. `cache.add` cannot do this because it gives no answer
+// about the response's size until after it has already stored it.
+async function precacheRoutes(cache, urls) {
+  if (urls.length === 0) return;
+
+  let budget = ROUTE_PRECACHE_BUDGET_BYTES;
+  try {
+    const accounted = await withIndex(async (index) => accountedBytes(index));
+    budget = Math.min(ROUTE_PRECACHE_BUDGET_BYTES, Math.max(0, CACHE_BUDGET_BYTES - accounted));
+  } catch (error) {
+    // The index is an optimisation. If it cannot be read, the install-time
+    // ceiling still bounds the list; `recordEntry` enforces the cache budget.
+    console.log('[sw] route precache budget read failed', String(error));
+  }
+
+  let spent = 0;
+  let stoppedAt = urls.length;
+  for (let index = 0; index < urls.length; index += 1) {
+    const url = urls[index];
+    if (spent >= budget) {
+      stoppedAt = index;
+      break;
+    }
+    try {
+      const parsed = new URL(url, self.location.origin);
+      if (parsed.origin !== self.location.origin || isNeverCache(parsed)) continue;
+      // `no-cache` revalidates against the server instead of letting a stale
+      // HTTP-cache copy of a previous build become this build's shell.
+      const response = await fetch(url, { cache: 'no-cache' });
+      if (!response.ok) {
+        console.log('[sw] route precache failed:', url, response.status);
+        continue;
+      }
+      if (!isCacheable(response)) {
+        console.log('[sw] route precache skipped (not cacheable):', url);
+        continue;
+      }
+      const size = await sizeOf(response);
+      if (spent + size > budget) {
+        stoppedAt = index;
+        break;
+      }
+      await cache.put(url, response);
+      await recordEntry(cacheKeyOf(url), size);
+      spent += size;
+    } catch (error) {
+      // A failed URL must not reject `install`: that would leave the previous
+      // worker in place, and every other route it fetches goes to waste.
+      console.log('[sw] route precache failed:', url, String(error));
+    }
+  }
+
+  if (stoppedAt < urls.length) {
+    console.log(
+      '[sw] route precache budget reached; skipped:',
+      urls.slice(stoppedAt).join(', ')
+    );
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
       await precache(cache, PRECACHE_URLS);
+      await precacheRoutes(cache, PRECACHE_ROUTES);
     })()
   );
 });
@@ -368,7 +449,10 @@ async function rebuildIndex() {
 // `/device` belongs on this list with the offline page (ADR-0070): it is a
 // data-free shell that paints the Local Store after mount, and a borrowed device
 // needs it *after* sign-out to remove the copy sign-out deliberately kept.
+// The build's public route shells belong here too (#395): they were prerendered
+// without a session and contain nothing account-bearing.
 const SIGN_OUT_SHELL_PATHS = new Set([
+  ...PRECACHE_ROUTES,
   FALLBACK_URL,
   '/device',
   '/manifest.json',

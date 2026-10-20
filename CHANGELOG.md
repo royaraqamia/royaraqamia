@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- precache the build's public route shells so a never-visited route deep-links offline (#395)
+
 ## [1.128.0] - 2026-10-20
 
 ### Changed
