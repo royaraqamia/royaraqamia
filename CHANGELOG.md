@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- release builds ship without WebView debugging (#398)
+
 ## [1.125.0] - 2026-10-20
 
 ### Changed

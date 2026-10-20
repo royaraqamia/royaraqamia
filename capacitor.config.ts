@@ -43,6 +43,10 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     captureInput: true,
     backgroundColor: '#0f172a',
+    // A developer's `android:apk` wants `chrome://inspect`; a release must never
+    // offer it. The release paths force `NODE_ENV=production` before `cap sync`
+    // and then read the generated config back (`scripts/android-config-guard.mjs`),
+    // so an inherited environment cannot ship an inspectable WebView (issue #398).
     webContentsDebuggingEnabled: process.env.NODE_ENV !== 'production',
     // The floor the site itself is built for: Next.js 16 supports Chrome 111+,
     // and Tailwind 4 needs the same baseline. The shipped chunks also use

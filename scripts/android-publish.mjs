@@ -63,6 +63,7 @@ import {
   shellVersionNameFor,
   versionNameVerdict,
 } from './android-shell-version.mjs';
+import { assertWebViewDebuggingOff } from './android-config-guard.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETLINKS_PATH = join(ROOT, 'public/.well-known/assetlinks.json');
@@ -444,6 +445,13 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     });
     if (build.status !== 0) throw new Error('the release build failed; nothing was published');
   }
+
+  // Checked after the build, not before it: the build's own `cap sync` is what
+  // writes the config this would read, and a `npm run android:test` before it
+  // leaves a debug config that a pre-build check would refuse (issue #398).
+  // `android:release` refuses earlier itself, so this only catches a build made
+  // with the check bypassed — and the `--apk` path, which builds nothing here.
+  assertWebViewDebuggingOff({ label: 'android:publish' });
 
   apkPath = resolve(apkPath);
   if (!existsSync(apkPath)) throw new Error(`no APK at ${apkPath}`);
