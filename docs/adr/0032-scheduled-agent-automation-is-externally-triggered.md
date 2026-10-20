@@ -17,9 +17,11 @@ layered triggers plus a day-guard:
   rejects `workflow_run` outright — the bug that previously broke this link.)
 - **Backstops:** the original `schedule` triggers stay, needing no configuration, for when the
   external dispatcher or its secret is unavailable.
-- **Catch-up:** `issue-automation-health.yml` checks the age of each workflow's last success,
-  re-dispatches any that lapsed (using the default `GITHUB_TOKEN`), and opens or closes a single
-  `opencode:alert` issue.
+- **Catch-up:** `issue-automation-health.yml` every six hours checks the age of each workflow's
+  last success, re-dispatches any that lapsed (using the default `GITHUB_TOKEN`), confirms the
+  dispatch actually started a run, and opens or closes a single `opencode:alert` issue. The
+  confirmation matters because a dispatch is fire-and-forget: the API answers `204` even when it
+  starts nothing, which is how the 2026-10-19/20 misses stayed invisible until the 26-hour check.
 - **Idempotency:** a calendar-day `Daily guard` on each workflow means only the first successful run
   on a given UTC day does work, so the redundant triggers never double-file issues or implement a
   second issue in a day. Keying on the calendar day rather than a rolling window is deliberate: a
@@ -44,7 +46,9 @@ layered triggers plus a day-guard:
 ## Consequences
 
 A day is now started by one punctual external call which chains the rest, so the pipeline no longer
-depends on GitHub's schedule being on time; a missed day is re-dispatched and surfaced as an issue.
+depends on GitHub's schedule being on time; a missed day is re-dispatched within six hours, and if
+the re-dispatch is itself dropped the issue says so instead of reporting a recovery that never
+happened.
 Redundant triggers are cheap and safe (free minutes and models on a public repo, de-duped by the
 guard). The dispatch token is privileged: when scoped to this repository's `Actions: write` its
 blast radius is bounded to starting workflows, but the deployment currently reuses the repo
