@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { FileText, Search, X } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from './post-card';
 import { LoadMore } from './load-more';
@@ -11,6 +12,9 @@ interface CommunityResultsProps {
   query: string;
   onLoadMore: () => void;
   isLoadingMore: boolean;
+  /** The next page read failed; shown instead of a button that would do nothing. */
+  loadMoreError?: string | null;
+  onRetryLoadMore?: () => void;
 }
 
 export function CommunityResults({
@@ -19,6 +23,8 @@ export function CommunityResults({
   query,
   onLoadMore,
   isLoadingMore,
+  loadMoreError,
+  onRetryLoadMore,
 }: CommunityResultsProps) {
   return (
     <>
@@ -73,14 +79,21 @@ export function CommunityResults({
             ))}
           </div>
 
-          {nextCursor && (
-            <LoadMore
-              cursor={nextCursor}
-              query={query}
-              isLoading={isLoadingMore}
-              onLoadMore={onLoadMore}
-            />
-          )}
+          {nextCursor &&
+            (loadMoreError ? (
+              <NeedsConnection
+                message={loadMoreError}
+                onRetry={onRetryLoadMore}
+                className="my-8 rounded-3xl border border-border bg-muted/20"
+              />
+            ) : (
+              <LoadMore
+                cursor={nextCursor}
+                query={query}
+                isLoading={isLoadingMore}
+                onLoadMore={onLoadMore}
+              />
+            ))}
         </>
       )}
     </>
