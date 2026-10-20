@@ -26,9 +26,11 @@ name: 'E2E: Offline'
 #
 # `--workers=1` is not a workaround for flakiness, it is the shape of this suite:
 # every test signs in as the same account, and the login endpoint allows five
-# attempts per email per minute (`backend/services/auth/auth-service.ts`). Run in
-# parallel the specs rate-limit each other, and the failure looks like an
-# unrelated assertion at the sign-in step.
+# attempts per email per minute (`backend/services/auth/auth-service.ts`). Serial
+# execution alone does not stay under that ceiling — the first five finish inside
+# thirty seconds — so every sign-in goes through `e2e/sign-in.ts`, which paces the
+# attempts and waits out the window when one is refused. Removing that (or the
+# serial flag) brings back the 400 that reads like a broken product (#386).
 #
 # Background Sync itself is not what this job proves: Chromium gives no way to
 # fire a `sync` event on demand, so the drain is unit-tested (its identity rules,
@@ -65,6 +67,7 @@ on:
       - 'frontend/ui/linksnap/**'
       - 'app/blogpress/**'
       - 'e2e/setup-test-user.ts'
+      - 'e2e/sign-in.ts'
       - 'e2e/worker-control.ts'
       - 'e2e/public-offline.spec.ts'
       - 'e2e/responsive-offline.spec.ts'
@@ -133,6 +136,7 @@ jobs:
           e2e/blogpress-offline.spec.ts
           e2e/quran-sync.spec.ts
           e2e/sync-chaos.spec.ts
+          e2e/sync-flush.spec.ts
           --project=existing-tests
           --project=responsive-mobile-small
           --project=responsive-mobile-medium

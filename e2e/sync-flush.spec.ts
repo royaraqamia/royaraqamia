@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
+import { signIn } from './sign-in';
 
 /**
  * The Android shell's drain page (ADR-0059).
@@ -24,8 +25,6 @@ import { gotoUnderWorkerControl } from './worker-control';
  */
 
 const ENABLED = process.env.SYNC_FLUSH_E2E === '1';
-const EMAIL = process.env.E2E_TEST_EMAIL!;
-const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires SYNC_FLUSH_E2E=1 (live Supabase + auth)');
 
@@ -41,17 +40,7 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
   test.setTimeout(240_000);
 
   const context = await browser.newContext({ serviceWorkers: 'allow' });
-  const login = await context.request.fetch(`${baseURL}/auth/api/login`, {
-    method: 'POST',
-    data: {
-      email: EMAIL,
-      password: PASSWORD,
-      redirectTo: null,
-      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
-    },
-    headers: { 'Content-Type': 'application/json' },
-  });
-  expect(login.ok()).toBeTruthy();
+  await signIn(context, baseURL!);
 
   const name = `Flush-${Date.now()}`;
   const app = await context.newPage();
