@@ -1,6 +1,5 @@
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { ReadingSession } from './reading-session';
-import { SurahAudioPlayer } from './audio-player';
+import { QuranReadingClient } from './quran-reading-client';
 import { revelationLabel } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
@@ -42,19 +41,7 @@ export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
         </p>
       </header>
 
-      {audio && (
-        <div className="mt-6">
-          <SurahAudioPlayer surah={summary.n} ayahCount={audio.ayahCount} bytes={audio.bytes} />
-        </div>
-      )}
-
-      {surah.bismillah && (
-        <p className="font-quran mt-8 text-center text-2xl leading-[2.4] text-foreground sm:text-3xl">
-          {surah.bismillah}
-        </p>
-      )}
-
-      <ReadingSession surah={summary.n} className="mt-10 flex flex-col gap-4">
+      <QuranReadingClient surah={summary.n} bismillah={surah.bismillah} audio={audio}>
         {surah.ayahs.map((ayah, position) => {
           const number = position + 1;
           return (
@@ -90,7 +77,7 @@ export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
             </article>
           );
         })}
-      </ReadingSession>
+      </QuranReadingClient>
     </div>
   );
 }
