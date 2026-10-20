@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.129.0] - 2026-10-20
+
+### Changed
+- Remove the /device intro paragraph and center the refresh button (#442)
+- drop the verify section from the landing page (#444)
+- stop preview deployments and prune to 25 (#445)
+
 ### Added
+- name the connection inside auth, admin and MCP (#368) (#441)
 - precache the build's public route shells so a never-visited route deep-links offline (#395)
+
+### Fixed
+- verify agent re-dispatches and check heartbeats every six hours (#443)
 
 ## [1.128.0] - 2026-10-20
 
