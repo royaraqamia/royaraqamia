@@ -43,6 +43,7 @@
     "android:release": "cross-env NODE_ENV=production npm run android:sync && node scripts/android.mjs release",
     "android:aab": "cross-env NODE_ENV=production npm run android:sync && node scripts/android.mjs aab",
     "android:verify-bridge": "node scripts/verify-bridge.mjs",
+    "android:drill": "node --env-file-if-exists=.env scripts/shell-drill.mjs",
     "android:shell-version": "node scripts/android-shell-version.mjs",
     "android:publish": "cross-env NODE_ENV=production node scripts/android-publish.mjs",
     "android:assets": "node scripts/generate-android-assets.mjs",
