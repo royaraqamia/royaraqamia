@@ -4,12 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Loader2, Search, X } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { postExcerpt } from '@/shared/reading-time';
 import type { CommunitySearchResult } from '@/shared/contracts/community';
 
 type Row = { kind: 'person'; index: number } | { kind: 'post'; index: number } | { kind: 'all' };
 
-const EMPTY_RESULTS: CommunitySearchResult = { people: [], posts: [] };
+const SEARCH_ERROR = 'تعذَّر تحميل نتائج البحث — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
 
 export function CommunitySearch() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export function CommunitySearch() {
   const [results, setResults] = useState<CommunitySearchResult | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [active, setActive] = useState(-1);
 
   const commitQuery = useCallback(
@@ -49,24 +52,37 @@ export function CommunitySearch() {
     if (!trimmed) {
       setResults(null);
       setOpen(false);
+      setError(null);
+      setLoading(false);
       setActive(-1);
       return;
     }
 
     const controller = new AbortController();
+    setError(null);
     const timer = setTimeout(() => {
       setLoading(true);
       fetch(`/api/community/search?q=${encodeURIComponent(trimmed)}`, {
         signal: controller.signal,
       })
-        .then((res) => (res.ok ? (res.json() as Promise<CommunitySearchResult>) : EMPTY_RESULTS))
+        .then((res) => {
+          if (!res.ok) throw new Error('failed to search community');
+          return res.json() as Promise<CommunitySearchResult>;
+        })
         .then((data) => {
           setResults(data);
+          setError(null);
           setOpen(true);
           setActive(-1);
         })
         .catch(() => {
-          /* aborted or offline — leave the last results in place */
+          if (controller.signal.aborted) return;
+          // A failed read is not "no results" (ADR-0031): the server was never
+          // asked, so the panel says so and offers the same request again.
+          setResults(null);
+          setError(SEARCH_ERROR);
+          setOpen(true);
+          setActive(-1);
         })
         .finally(() => setLoading(false));
     }, 220);
@@ -75,7 +91,7 @@ export function CommunitySearch() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value]);
+  }, [value, retryKey]);
 
   // Dismiss on outside pointer down.
   useEffect(() => {
@@ -93,19 +109,26 @@ export function CommunitySearch() {
 
   const allIndex = people.length + posts.length;
   const rows = useMemo<Row[]>(() => {
+    if (error) return [];
     const next: Row[] = [];
     people.forEach((_, index) => next.push({ kind: 'person', index }));
     posts.forEach((_, index) => next.push({ kind: 'post', index }));
     if (value.trim()) next.push({ kind: 'all' });
     return next;
-  }, [people, posts, value]);
+  }, [people, posts, value, error]);
 
   const handleClear = useCallback(() => {
     setValue('');
     setResults(null);
+    setError(null);
     setOpen(false);
     commitQuery('');
   }, [commitQuery]);
+
+  const handleRetry = useCallback(() => {
+    setLoading(true);
+    setRetryKey((key) => key + 1);
+  }, []);
 
   const activate = useCallback(
     (row: Row) => {
@@ -208,114 +231,129 @@ export function CommunitySearch() {
           aria-label="نتائج البحث"
           className="absolute inset-x-0 top-full z-50 mt-2 max-h-[26rem] overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-popover p-2 shadow-2xl shadow-background/70"
         >
-          {!hasResults && !loading && (
-            <p role="presentation" className="px-3 py-6 text-center text-sm text-muted-foreground">
-              لا توجد نتائج لـ &ldquo;{value.trim()}&rdquo;
-            </p>
-          )}
+          {error ? (
+            <div role="presentation">
+              <NeedsConnection
+                message={error}
+                onRetry={handleRetry}
+                className="py-6 sm:py-8 md:py-8"
+              />
+            </div>
+          ) : (
+            <>
+              {results && !hasResults && !loading && (
+                <p
+                  role="presentation"
+                  className="px-3 py-6 text-center text-sm text-muted-foreground"
+                >
+                  لا توجد نتائج لـ &ldquo;{value.trim()}&rdquo;
+                </p>
+              )}
 
-          {people.length > 0 && (
-            <div role="group" aria-label="أشخاص" className="mb-1">
-              <p
-                role="presentation"
-                className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                أشخاص
-              </p>
-              <div role="presentation">
-                {people.map((person, index) => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    id={`community-search-option-${index}`}
-                    role="option"
-                    aria-selected={active === index}
-                    onMouseEnter={() => setActive(index)}
-                    onClick={() => activate({ kind: 'person', index })}
-                    className={optionClass(active === index)}
+              {people.length > 0 && (
+                <div role="group" aria-label="أشخاص" className="mb-1">
+                  <p
+                    role="presentation"
+                    className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
                   >
-                    <MemberAvatar
-                      name={person.name}
-                      avatarUrl={person.avatar_url}
-                      size="sm"
-                      sizes="36px"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-foreground">
-                        {person.name?.trim() || `@${person.username}`}
-                      </span>
-                      <span
-                        className="block truncate text-end text-xs text-muted-foreground"
-                        dir="ltr"
+                    أشخاص
+                  </p>
+                  <div role="presentation">
+                    {people.map((person, index) => (
+                      <button
+                        key={person.id}
+                        type="button"
+                        id={`community-search-option-${index}`}
+                        role="option"
+                        aria-selected={active === index}
+                        onMouseEnter={() => setActive(index)}
+                        onClick={() => activate({ kind: 'person', index })}
+                        className={optionClass(active === index)}
                       >
-                        @{person.username}
-                      </span>
-                    </span>
-                    <ArrowLeft
-                      className="size-4 shrink-0 text-muted-foreground/50"
-                      aria-hidden="true"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {posts.length > 0 && (
-            <div role="group" aria-label="منشورات" className="mb-1">
-              <p
-                role="presentation"
-                className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                منشورات
-              </p>
-              <div role="presentation">
-                {posts.map((post, index) => {
-                  const rowIndex = people.length + index;
-                  const label =
-                    post.meta_desc?.trim() || postExcerpt(post.content, post.meta_desc ?? '');
-                  return (
-                    <button
-                      key={post.id}
-                      type="button"
-                      id={`community-search-option-${rowIndex}`}
-                      role="option"
-                      aria-selected={active === rowIndex}
-                      onMouseEnter={() => setActive(rowIndex)}
-                      onClick={() => activate({ kind: 'post', index })}
-                      className={optionClass(active === rowIndex)}
-                    >
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/40 text-muted-foreground">
-                        <FileText className="size-4" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">
-                          {label || 'بدون عنوان'}
+                        <MemberAvatar
+                          name={person.name}
+                          avatarUrl={person.avatar_url}
+                          size="sm"
+                          sizes="36px"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-foreground">
+                            {person.name?.trim() || `@${person.username}`}
+                          </span>
+                          <span
+                            className="block truncate text-end text-xs text-muted-foreground"
+                            dir="ltr"
+                          >
+                            @{person.username}
+                          </span>
                         </span>
-                        <span className="block text-xs text-muted-foreground">منشور</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                        <ArrowLeft
+                          className="size-4 shrink-0 text-muted-foreground/50"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {value.trim() && (
-            <button
-              type="button"
-              id={`community-search-option-${allIndex}`}
-              role="option"
-              aria-selected={active === allIndex}
-              onMouseEnter={() => setActive(allIndex)}
-              onClick={() => activate({ kind: 'all' })}
-              className={`flex w-full items-center gap-3 rounded-xl border-t border-border/50 px-3 py-3 text-start text-sm font-bold text-primary transition-safe duration-150 ${
-                active === allIndex ? 'bg-primary/10' : 'hover:bg-primary/5'
-              }`}
-            >
-              <Search className="size-4" aria-hidden="true" />
-              <span className="truncate">عرض كل النتائج لـ &ldquo;{value.trim()}&rdquo;</span>
-            </button>
+              {posts.length > 0 && (
+                <div role="group" aria-label="منشورات" className="mb-1">
+                  <p
+                    role="presentation"
+                    className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+                  >
+                    منشورات
+                  </p>
+                  <div role="presentation">
+                    {posts.map((post, index) => {
+                      const rowIndex = people.length + index;
+                      const label =
+                        post.meta_desc?.trim() || postExcerpt(post.content, post.meta_desc ?? '');
+                      return (
+                        <button
+                          key={post.id}
+                          type="button"
+                          id={`community-search-option-${rowIndex}`}
+                          role="option"
+                          aria-selected={active === rowIndex}
+                          onMouseEnter={() => setActive(rowIndex)}
+                          onClick={() => activate({ kind: 'post', index })}
+                          className={optionClass(active === rowIndex)}
+                        >
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/40 text-muted-foreground">
+                            <FileText className="size-4" aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-foreground">
+                              {label || 'بدون عنوان'}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">منشور</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {value.trim() && (
+                <button
+                  type="button"
+                  id={`community-search-option-${allIndex}`}
+                  role="option"
+                  aria-selected={active === allIndex}
+                  onMouseEnter={() => setActive(allIndex)}
+                  onClick={() => activate({ kind: 'all' })}
+                  className={`flex w-full items-center gap-3 rounded-xl border-t border-border/50 px-3 py-3 text-start text-sm font-bold text-primary transition-safe duration-150 ${
+                    active === allIndex ? 'bg-primary/10' : 'hover:bg-primary/5'
+                  }`}
+                >
+                  <Search className="size-4" aria-hidden="true" />
+                  <span className="truncate">عرض كل النتائج لـ &ldquo;{value.trim()}&rdquo;</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

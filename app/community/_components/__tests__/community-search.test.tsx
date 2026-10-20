@@ -95,4 +95,29 @@ describe('CommunitySearch', () => {
 
     expect(push).toHaveBeenCalledWith('/community?q=ahmad');
   });
+
+  it('shows a connection error instead of the empty-results message when the search fails', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<CommunitySearch />);
+
+    await typeQuery('ahmad');
+
+    expect(screen.getByText('يتطلَّب الاتصال بالإنترنت')).toBeInTheDocument();
+    expect(screen.queryByText(/لا توجد نتائج/)).not.toBeInTheDocument();
+  });
+
+  it('retries the failed search and shows its results', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<CommunitySearch />);
+
+    await typeQuery('ahmad');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+      await vi.advanceTimersByTimeAsync(250);
+    });
+
+    expect(screen.queryByText('يتطلَّب الاتصال بالإنترنت')).not.toBeInTheDocument();
+    expect(screen.getByText('أحمد')).toBeInTheDocument();
+    expect(screen.getByText('درس تمهيدي')).toBeInTheDocument();
+  });
 });

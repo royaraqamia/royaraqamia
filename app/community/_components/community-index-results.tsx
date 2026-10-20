@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { CommunityResults } from './community-results';
 
 interface CommunityIndexResultsProps {
@@ -14,6 +15,10 @@ interface IndexData {
   posts: PostSummary[];
   nextCursor: string | null;
 }
+
+const PAGE_ERROR = 'تعذَّر تحميل المنشورات — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
+const LOAD_MORE_ERROR =
+  'تعذَّر تحميل المزيد من المنشورات — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
 
 function fetchIndex(
   cursor: string | null,
@@ -59,6 +64,10 @@ function CommunityFeedSkeleton() {
  * opaque keyset `cursor` when the visitor presses "load more" (which degrades to
  * a `?cursor=` navigation without JS). Searching or opening a direct `?cursor=`
  * link replaces the list instead of appending to it.
+ *
+ * A read that never reached the server is not an empty feed (ADR-0031), so both
+ * the page load and "load more" keep a failure state with a retry rather than
+ * leaving the last list in place.
  */
 export function CommunityIndexResults({
   initialPosts,
@@ -73,6 +82,9 @@ export function CommunityIndexResults({
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [ready, setReady] = useState(isDefault);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (isDefault) {
@@ -80,12 +92,16 @@ export function CommunityIndexResults({
       setNextCursor(initialNextCursor);
       setReady(true);
       setIsLoadingMore(false);
+      setPageError(null);
+      setLoadMoreError(false);
       return;
     }
 
     const controller = new AbortController();
     setReady(false);
     setIsLoadingMore(false);
+    setPageError(null);
+    setLoadMoreError(false);
 
     fetchIndex(cursor, query, controller.signal)
       .then((json) => {
@@ -94,26 +110,43 @@ export function CommunityIndexResults({
         setReady(true);
       })
       .catch((error: unknown) => {
-        if ((error as { name?: string })?.name !== 'AbortError') setReady(true);
+        if ((error as { name?: string })?.name === 'AbortError') return;
+        setPageError(PAGE_ERROR);
+        setReady(true);
       });
 
     return () => controller.abort();
-  }, [cursor, query, isDefault, initialPosts, initialNextCursor]);
+  }, [cursor, query, isDefault, initialPosts, initialNextCursor, reloadKey]);
 
   const handleLoadMore = useCallback(() => {
     if (isLoadingMore || !nextCursor) return;
     const requestCursor = nextCursor;
     setIsLoadingMore(true);
+    setLoadMoreError(false);
     fetchIndex(requestCursor, query)
       .then((json) => {
         setPosts((prev) => [...prev, ...json.posts]);
         setNextCursor(json.nextCursor);
       })
-      .catch(() => {})
+      .catch((error: unknown) => {
+        if ((error as { name?: string })?.name !== 'AbortError') setLoadMoreError(true);
+      })
       .finally(() => setIsLoadingMore(false));
   }, [isLoadingMore, nextCursor, query]);
 
+  const handleRetryPage = useCallback(() => setReloadKey((key) => key + 1), []);
+
   if (!ready) return <CommunityFeedSkeleton />;
+
+  if (pageError) {
+    return (
+      <NeedsConnection
+        message={pageError}
+        onRetry={handleRetryPage}
+        className="my-8 rounded-3xl border border-border bg-muted/20"
+      />
+    );
+  }
 
   return (
     <CommunityResults
@@ -122,6 +155,8 @@ export function CommunityIndexResults({
       query={query}
       onLoadMore={handleLoadMore}
       isLoadingMore={isLoadingMore}
+      loadMoreError={loadMoreError ? LOAD_MORE_ERROR : null}
+      onRetryLoadMore={handleLoadMore}
     />
   );
 }
