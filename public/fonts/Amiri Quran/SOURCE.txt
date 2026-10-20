@@ -1,0 +1,11 @@
+Amiri Quran, Regular, Version 1.003
+Copyright 2010-2022 The Amiri Quran Project Authors (https://github.com/aliftype/amiri).
+
+Vendored from Google Fonts' build of the family:
+https://fonts.gstatic.com/s/amiriquran/v19/_Xmo-Hk0rD6DbUL4_vH8Zp5v5i2ssg.woff2
+
+sha256 35f4f02bbde81b20118a788f8b212bff385eb499df0746d277b5b478f32e733e
+
+The file is unmodified. The licence is in OFL.txt beside it. Only its three
+silent-letter marks are used: the Uthmani face sets them in the reader
+(ADR 0067).
