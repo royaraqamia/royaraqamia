@@ -67,6 +67,7 @@ on:
       - 'e2e/setup-test-user.ts'
       - 'e2e/worker-control.ts'
       - 'e2e/public-offline.spec.ts'
+      - 'e2e/responsive-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'
       - 'e2e/sync-flush.spec.ts'
@@ -88,7 +89,7 @@ jobs:
   offline:
     name: Writes survive and resume
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     env:
       NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
@@ -113,16 +114,28 @@ jobs:
       # One invocation, so one production build, and serial so the specs do not
       # rate-limit each other's sign-in. The public spec needs no account; the
       # owned-data flags are set only when the account is configured.
+      #
+      # The four `responsive-*` projects are the offline breakpoint matrix
+      # (#396): each is one of 320 / 375 / 428 / 768 px, and their
+      # `testMatch: /responsive/` is the mirror of `existing-tests`' ignore, so
+      # `responsive-offline.spec.ts` runs once per width and nothing else runs
+      # there. All of them in this single invocation keeps the matrix at one
+      # production build.
       - name: Offline suite
         run: >
           npx playwright test
           e2e/public-offline.spec.ts
+          e2e/responsive-offline.spec.ts
           e2e/spendtrack-offline.spec.ts
           e2e/habitflow-sync-resume.spec.ts
           e2e/linksnap-offline.spec.ts
           e2e/blogpress-offline.spec.ts
           e2e/quran-sync.spec.ts
           --project=existing-tests
+          --project=responsive-mobile-small
+          --project=responsive-mobile-medium
+          --project=responsive-mobile-large
+          --project=responsive-tablet
           --workers=1
         env:
           PUBLIC_OFFLINE_E2E: '1'

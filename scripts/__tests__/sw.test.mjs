@@ -78,6 +78,7 @@ function createSandbox({ withPushConfig = true } = {}) {
   const sandbox = {
     console,
     URL,
+    Response,
     Promise,
     atob,
     btoa,
@@ -381,5 +382,64 @@ describe('service worker routing wiring', () => {
     expect(await event.response).not.toBe(stale);
     // And nothing was written over it: the stale entry is untouched.
     expect(await caches.match(key)).toBe(stale);
+  });
+});
+
+describe('service worker image routing', () => {
+  function imageRequest(path) {
+    return {
+      method: 'GET',
+      mode: 'cors',
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(request) {
+    const event = new FakeEvent('fetch');
+    event.request = request;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  it('answers an image width nobody fetched offline with a placeholder, never a 503', async () => {
+    const { dispatch, sandbox } = await boot();
+    sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+
+    const event = fetchEvent(imageRequest('/_next/image?url=%2F01.webp&w=3840&q=75'));
+    dispatch('fetch', event);
+    const response = await event.response;
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('image/svg+xml');
+  });
+
+  it('reuses a cached rendering of the same source when a new width is requested offline', async () => {
+    const { dispatch, sandbox } = await boot();
+    const cachedImage = new Response('cached-image', {
+      status: 200,
+      headers: { 'cache-control': 'public, max-age=86400', 'content-type': 'image/webp' },
+    });
+    sandbox.fetch = vi.fn(async () => cachedImage);
+
+    // The online visit fetches one width; it is remembered under the source.
+    const online = fetchEvent(imageRequest('/_next/image?url=%2F01.webp&w=828&q=75'));
+    dispatch('fetch', online);
+    expect((await online.response).status).toBe(200);
+
+    // The offline visit asks for a width that was never fetched.
+    sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    const offline = fetchEvent(imageRequest('/_next/image?url=%2F01.webp&w=1200&q=75'));
+    dispatch('fetch', offline);
+    const response = await offline.response;
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('cached-image');
   });
 });

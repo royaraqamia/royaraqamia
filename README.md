@@ -299,17 +299,17 @@ npx vitest run backend/services/certificates/__tests__/certificate-verification.
 
 ### End-to-end tests (Playwright)
 
-Playwright covers the main products plus a dedicated **responsive suite** executed across five device projects (mobile 320/375/428px, tablet, and desktop). The config auto-starts `npm run dev` on port 3000 and reuses the running server if one exists.
+Playwright covers the main products plus a dedicated **responsive suite** executed across four device projects (mobile 320/375/428px and tablet 768px). The config starts `npm run dev` on port 3000 itself (`reuseExistingServer: false`, so a stale server must be stopped first). The responsive projects only match `e2e/responsive-offline.spec.ts`, which needs a production build and `PUBLIC_OFFLINE_E2E=1`.
 
 ```bash
 # Full E2E run (all projects)
 npm run test:e2e
 
 # A single spec file
-npx playwright test e2e/linksnap-responsive.spec.ts
+npx playwright test e2e/quran-reader.spec.ts
 
-# Only the responsive projects (mobile/tablet viewports)
-npx playwright test --grep responsive
+# The offline breakpoint matrix (needs `npm run build && npm run start`)
+PUBLIC_OFFLINE_E2E=1 npx playwright test e2e/responsive-offline.spec.ts
 
 # Interactive UI mode
 npx playwright test --ui
