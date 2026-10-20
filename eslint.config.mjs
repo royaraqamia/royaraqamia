@@ -36,6 +36,9 @@ export default [
       // (git-ignored, minified): linting a build artifact only reports on
       // esbuild's output. Its source is `frontend/api/sw-outbox.ts`.
       'public/sw-outbox.js',
+      // Same shape, from `scripts/build-sync-flush.mjs`: the Android shell's
+      // headless drain page bundle. Its source is `frontend/api/sync-flush-entry.ts`.
+      'public/sync-flush.js',
     ],
   },
   js.configs.recommended,

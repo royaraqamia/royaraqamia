@@ -256,7 +256,10 @@ the server is unreachable, and the [Verification](#verification) section for wha
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
   server state correct) across the public shell, SpendTrack, HabitFlow, LinkSnap, BlogPress and the
   Quran Reader. Every offline spec is wired in; the goal beyond that is a sync-resume proof per
-  remaining product family rather than the flag-gated status quo.
+  remaining product family rather than the flag-gated status quo. The public pass also runs at each
+  web breakpoint — 320, 375, 428 and 768 px, one Playwright project per width
+  (`e2e/responsive-offline.spec.ts`) — including an image width first requested offline: the worker
+  answers with a cached rendering of the same source or a layout-stable placeholder, never a 503.
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Needs-connection states are asserted where they were missing.** Consultation's availability and

@@ -30,10 +30,17 @@ export default defineConfig({
     navigationTimeout: 60_000,
   },
   projects: [
+    // The responsive projects are a width matrix, not a browser matrix. The
+    // Apple descriptors carry `defaultBrowserType: 'webkit'`, which selected
+    // WebKit for three of them while the E2E workflow installs Chromium only —
+    // so those projects could not launch at all and listed tests nobody ran.
+    // Pinning Chromium keeps the device's DPR/touch profile and the width, which
+    // is what these specs are about.
     {
       name: 'responsive-mobile-small',
       use: {
         ...devices['Pixel 5'],
+        browserName: 'chromium',
         viewport: VIEWPORTS.mobileSmall,
       },
       testMatch: /responsive/,
@@ -42,6 +49,7 @@ export default defineConfig({
       name: 'responsive-mobile-medium',
       use: {
         ...devices['iPhone 13'],
+        browserName: 'chromium',
         viewport: VIEWPORTS.mobileMedium,
       },
       testMatch: /responsive/,
@@ -50,6 +58,7 @@ export default defineConfig({
       name: 'responsive-mobile-large',
       use: {
         ...devices['iPhone 14 Pro Max'],
+        browserName: 'chromium',
         viewport: VIEWPORTS.mobileLarge,
       },
       testMatch: /responsive/,
@@ -58,6 +67,7 @@ export default defineConfig({
       name: 'responsive-tablet',
       use: {
         ...devices['iPad Pro 11'],
+        browserName: 'chromium',
         viewport: VIEWPORTS.tablet,
       },
       testMatch: /responsive/,

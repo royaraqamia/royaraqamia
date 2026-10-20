@@ -6,6 +6,16 @@ const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
 
+// A transparent 1x1 SVG, used when an image variant has no cache entry at all.
+// The `img` box is fixed by the markup (a `fill` container or explicit
+// width/height), so the placeholder holds the layout and the browser never draws
+// its broken-image glyph. The intrinsic size stays 1x1 on purpose: a larger one
+// would imply an aspect ratio the caller never asked for.
+const IMAGE_PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>';
+// Stable cache key for "any rendering of this image source". Responsive images
+// are cached per width, so without it a width first used offline has no entry.
+const IMAGE_FALLBACK_PATH = '/__sw-image-fallback';
+
 // Content hash of the generated PWA/favicon assets (see scripts/generate-icons.mjs).
 // Appending it to every asset URL means a new build publishes new URLs, so a
 // client's HTTP/PWA/favicon cache can never answer with the previous artwork —
@@ -108,18 +118,20 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
   }
 }
 
-async function staleWhileRevalidate(request) {
+async function staleWhileRevalidate(request, onMiss) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request)
-    .then((response) => {
+    .then(async (response) => {
       if (response.ok && isCacheable(response)) {
         cache.put(request, response.clone());
+        await rememberImageFallback(new URL(request.url), response.clone());
       }
       return response;
     })
     .catch(async () => {
       if (cached) return cached;
+      if (onMiss) return onMiss(request);
       if (isNavigationRequest(request)) {
         const fallback = await caches.match(FALLBACK_URL);
         if (fallback) return fallback;
@@ -127,6 +139,42 @@ async function staleWhileRevalidate(request) {
       return new Response('Offline', { status: 503 });
     });
   return cached || fetchPromise;
+}
+
+/**
+ * A responsive image is cached per width, so a width the browser never fetched
+ * offline has no entry — and a 503 there renders as a broken image. Answer with
+ * the last successful rendering of the same source, or a layout-stable
+ * placeholder when no width of it was ever cached.
+ */
+function imageFallbackKey(source) {
+  return `${self.location.origin}${IMAGE_FALLBACK_PATH}?src=${encodeURIComponent(source)}`;
+}
+
+async function rememberImageFallback(url, response) {
+  if (!isNextImage(url)) return;
+  const source = url.searchParams.get('url');
+  if (!source) return;
+  const cache = await caches.open(STATIC_CACHE);
+  await cache.put(imageFallbackKey(source), response);
+}
+
+async function offlineImage(request) {
+  const url = new URL(request.url);
+  if (isNextImage(url)) {
+    const source = url.searchParams.get('url');
+    if (source) {
+      const cached = await caches.match(imageFallbackKey(source));
+      if (cached) return cached;
+    }
+  }
+  return new Response(IMAGE_PLACEHOLDER, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'no-store',
+    },
+  });
 }
 
 // Online-only surfaces (ADR-0031): go straight to the network, never to Cache
@@ -164,7 +212,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isIcon(url) || isImage(url) || isNextImage(url)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(request, offlineImage));
     return;
   }
 
