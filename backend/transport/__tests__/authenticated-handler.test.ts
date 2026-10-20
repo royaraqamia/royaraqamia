@@ -195,6 +195,35 @@ describe('handleAuthenticated', () => {
   });
 });
 
+describe('account-scoped cache posture', () => {
+  it('marks a successful authenticated read no-store', async () => {
+    const result = await handleAuthenticated(
+      async () => ({ userId: 'u-1' }),
+      async () => jsonResult(200, { bookmarks: [] })
+    );
+
+    expect(result).toMatchObject({ headers: { 'Cache-Control': 'no-store' } });
+  });
+
+  it('marks the signed-out 401 no-store, so the refusal is not replayed', async () => {
+    const result = await handleAuthenticated(
+      async () => null,
+      async () => jsonResult(200, {})
+    );
+
+    expect(result).toMatchObject({ status: 401, headers: { 'Cache-Control': 'no-store' } });
+  });
+
+  it('does not let a handler re-enable caching on an account-scoped response', async () => {
+    const result = await handleAuthenticated(
+      async () => ({ userId: 'u-1' }),
+      async () => jsonResult(200, {}, { headers: { 'Cache-Control': 'public, max-age=60' } })
+    );
+
+    expect(result).toMatchObject({ headers: { 'Cache-Control': 'no-store' } });
+  });
+});
+
 describe('messageError', () => {
   it('uses the error message', () => {
     const result = messageError(400, 'فشل')(new Error('تصنيف مطلوب'));

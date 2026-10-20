@@ -3,6 +3,7 @@ import { loadCommunityIndex } from '@/backend/loaders/community';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { communitySearchRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { getClientIp } from '@/backend/transport/http';
+import { NO_STORE, PUBLIC_CACHEABLE } from '@/backend/transport/cache-policy';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { COMMUNITY_PAGE_SIZE } from '@/app/community/_components/constants';
 import { CommunityIndexQuerySchema } from '@/shared/contracts/community';
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: parsed.error.issues[0]?.message ?? 'مرجع التصفّح غير صالح.',
       },
-      { status: 400 }
+      { status: 400, headers: NO_STORE }
     );
   }
 
@@ -41,5 +42,5 @@ export async function GET(request: NextRequest) {
     COMMUNITY_PAGE_SIZE
   );
 
-  return NextResponse.json({ posts, nextCursor });
+  return NextResponse.json({ posts, nextCursor }, { headers: PUBLIC_CACHEABLE });
 }

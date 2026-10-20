@@ -72,6 +72,7 @@ const {
   isNextImage,
   isApiCall,
   isCacheable,
+  isPubliclyCacheable,
   isNeverCache,
 } = self.SWRouting;
 
@@ -98,19 +99,22 @@ async function cacheFirst(request) {
 }
 
 async function networkFirst(request, timeoutMs = 3000, options = {}) {
+  const mayServe = (response) => !options.requireExplicitPublic || isPubliclyCacheable(response);
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('timeout')), timeoutMs)
   );
   try {
     const response = await Promise.race([fetch(request), timeout]);
-    if (response.ok && (!options.respectNoStore || isCacheable(response))) {
+    if (response.ok && mayServe(response)) {
       const cache = await caches.open(CACHE);
       cache.put(request, response.clone());
     }
     return response;
   } catch {
+    // A cached API response is only a fallback when it still opts in. Entries
+    // persisted before an endpoint turned account-scoped must not be replayed.
     const cached = await caches.match(request);
-    if (cached) return cached;
+    if (cached && mayServe(cached)) return cached;
     if (isNavigationRequest(request)) {
       return caches.match(FALLBACK_URL);
     }
@@ -217,7 +221,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isApiCall(url)) {
-    event.respondWith(networkFirst(request, 5000, { respectNoStore: true }));
+    event.respondWith(networkFirst(request, 5000, { requireExplicitPublic: true }));
     return;
   }
 

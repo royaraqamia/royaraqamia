@@ -93,6 +93,9 @@ describe('sw-routing predicates', () => {
       '/api/project-requests/abc',
       '/api/retainers/abc',
       '/api/consultation/bookings',
+      // The Quran pull carries bookmarks and a reading position; a shared
+      // cache would replay them to the next identity on the device (#392).
+      '/quran/api/sync',
     ]) {
       expect(routing.isNeverCache(u(path))).toBe(true);
     }
@@ -126,5 +129,17 @@ describe('sw-routing predicates', () => {
     expect(routing.isCacheable(withCacheControl('private, max-age=0'))).toBe(false);
     expect(routing.isCacheable(withCacheControl('public, max-age=60'))).toBe(true);
     expect(routing.isCacheable(withCacheControl(''))).toBe(true);
+  });
+
+  it('caches an API read only when it opts in with public', () => {
+    const withCacheControl = (value) => ({ headers: { get: () => value } });
+    // The absent header is the bug from #392: it was read as permission.
+    expect(routing.isPubliclyCacheable(withCacheControl(''))).toBe(false);
+    expect(routing.isPubliclyCacheable(withCacheControl('no-store'))).toBe(false);
+    expect(routing.isPubliclyCacheable(withCacheControl('private, max-age=0'))).toBe(false);
+    expect(
+      routing.isPubliclyCacheable(withCacheControl('public, max-age=0, must-revalidate'))
+    ).toBe(true);
+    expect(routing.isPubliclyCacheable(withCacheControl('public, s-maxage=60'))).toBe(true);
   });
 });

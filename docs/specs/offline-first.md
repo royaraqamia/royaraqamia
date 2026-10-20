@@ -162,8 +162,13 @@ Honest list of what stands between us and the bar, each with the file that shows
 | -------------------------------------------------- | ------------------------------------------ |
 | App shell, icons, fonts                            | cache-first                                |
 | Public navigation / RSC payloads                   | stale-while-revalidate (+ "updated X ago") |
-| Public read APIs                                   | SWR with max-age                           |
+| Public read APIs that declare `public`             | SWR; an absent header is not permission    |
 | Auth, mutations, admin, push, `no-store`/`private` | never cache                                |
+
+Account-scoped reads are `no-store` by construction at the authenticated seam, and the Quran sync
+read is also on the never-cache list — a signed-in reader's bookmarks and position never enter Cache
+Storage (#392). `scripts/__tests__/api-cache-contract.test.ts` fails an API GET route that is neither
+on the never-cache list nor explicitly `no-store`/`public`.
 
 ### Delivery states
 
