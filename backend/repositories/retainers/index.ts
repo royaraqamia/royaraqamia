@@ -10,13 +10,17 @@ import type {
   RetainersRepository,
 } from '@/backend/repositories/retainers/retainers-repository';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
 
 export function createRetainersRepository(supabase: SupabaseClient<Database>): RetainersRepository {
-  return {
+  return guardRepositoryMethods<RetainersRepository>({
     async getById(id: string): Promise<Retainer | null> {
       const { data, error } = await supabase.from('retainers').select('*').eq('id', id).single();
 
-      if (error || !data) return null;
+      // Only PostgREST's no-rows code means absence; anything else is an outage
+      // and must reach the controller as a 5xx, not a false 404.
+      if (error && !isNotFoundError(error)) throw error;
+      if (!data) return null;
       return data as Retainer;
     },
 
@@ -49,7 +53,8 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       }
 
       const from = (query.page - 1) * query.pageSize;
-      const { data, count } = await request.range(from, from + query.pageSize - 1);
+      const { data, count, error } = await request.range(from, from + query.pageSize - 1);
+      if (error) throw error;
 
       return { data: (data as Retainer[]) ?? [], total: count ?? 0 };
     },
@@ -134,5 +139,5 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       if (error) throw error;
       return (data as Retainer | null) ?? null;
     },
-  };
+  });
 }
