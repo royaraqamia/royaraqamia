@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { localStoreName, userIdentity } from '@/frontend/shared/local-store/identity';
 import { gotoUnderWorkerControl } from './worker-control';
 import { signIn } from './sign-in';
 
@@ -59,6 +60,16 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
   await app.close();
   await context.setOffline(false);
 
+  // A write this device has never seen: made on the server ("device A") after
+  // the app's page closed, so the only way into the Local Store is the pull the
+  // drain page runs after its replay.
+  const remoteName = `DeviceA-${Date.now()}`;
+  const created = await context.request.fetch(`${baseURL}/habitflow/api/habits`, {
+    method: 'POST',
+    data: { clientId: crypto.randomUUID(), name: remoteName, frequency: 'daily' },
+  });
+  expect(created.ok()).toBe(true);
+
   const drain = await context.newPage();
   await drain.addInitScript(() => {
     window.RoyShellSync = {
@@ -81,6 +92,14 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
   );
   expect(habitflow?.replayed).toBeGreaterThanOrEqual(1);
 
+  // The page's `refreshed` count is a claim; the store is the evidence. Read the
+  // product's own IndexedDB, which the drain page shares, and find the row only
+  // the pull could have delivered. Emptying `PULLABLE_PRODUCTS` makes this fail.
+  const database = await signedInHabitStore(context, baseURL!);
+  await expect
+    .poll(() => localHabitNames(drain, database), { timeout: 60_000 })
+    .toContain(remoteName);
+
   // Server truth, read with the same session the page drained with.
   await expect
     .poll(
@@ -94,3 +113,33 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
     )
     .toContain(name);
 });
+
+/** The signed-in account's `habitflow__user:<id>` database, named as the app names it. */
+async function signedInHabitStore(context: BrowserContext, baseURL: string): Promise<string> {
+  const response = await context.request.fetch(`${baseURL}/auth/api/session`);
+  expect(response.ok()).toBe(true);
+  const { userId } = (await response.json()) as { userId?: unknown };
+  if (typeof userId !== 'string') throw new Error('the e2e session has no user id');
+  return localStoreName('habitflow', userIdentity(userId));
+}
+
+/** Reads the habit rows straight from the product's Local Store. */
+function localHabitNames(page: Page, database: string): Promise<string[]> {
+  return page.evaluate(async (name) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(name);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    try {
+      const rows = await new Promise<Array<{ name?: string }>>((resolve, reject) => {
+        const request = db.transaction('habits', 'readonly').objectStore('habits').getAll();
+        request.onsuccess = () => resolve(request.result as Array<{ name?: string }>);
+        request.onerror = () => reject(request.error);
+      });
+      return rows.map((row) => row.name ?? '');
+    } finally {
+      db.close();
+    }
+  }, database);
+}
