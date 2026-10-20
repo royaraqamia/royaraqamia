@@ -33,11 +33,34 @@ const PRECACHE_URLS = [
   `/icons/badge-icon-96x96.png${ASSET_QUERY}`,
 ];
 
+// Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
+// would reject the install and leave the previous worker in place forever, so
+// every URL is fetched independently and failures are only reported.
+async function precache(cache, urls) {
+  const results = await Promise.allSettled(urls.map((url) => cache.add(url)));
+  const failed = urls.filter((_, index) => results[index].status === 'rejected');
+  if (failed.length > 0) console.log('[sw] precache failed:', failed.join(', '));
+}
+
+// A cache write is part of the worker's lifetime: the browser may terminate it
+// as soon as the in-flight promise chain settles, so an unawaited `put` can be
+// dropped. Every strategy awaits this; the detached revalidation path also ties
+// it to `event.waitUntil` (see `staleWhileRevalidate`).
+async function store(cacheName, request, response) {
+  try {
+    const cache = await caches.open(cacheName);
+    await cache.put(request, response);
+  } catch (error) {
+    // A failed write must not turn a good response into a failed fetch.
+    console.log('[sw] cache write failed', String(error));
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      await cache.addAll(PRECACHE_URLS);
+      await precache(cache, PRECACHE_URLS);
     })()
   );
 });
@@ -81,9 +104,8 @@ async function cacheFirst(request) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, response.clone());
+    if (response.ok && isCacheable(response)) {
+      await store(STATIC_CACHE, request, response.clone());
     }
     return response;
   } catch {
@@ -105,9 +127,15 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
   );
   try {
     const response = await Promise.race([fetch(request), timeout]);
-    if (response.ok && mayServe(response)) {
-      const cache = await caches.open(CACHE);
-      cache.put(request, response.clone());
+    // A 5xx is a failed read even though `fetch` resolved. Serve the last good
+    // cached response when one exists; otherwise the error is the answer.
+    if (response.status >= 500) {
+      const cached = await caches.match(request);
+      if (cached && mayServe(cached)) return cached;
+      return response;
+    }
+    if (response.ok && isCacheable(response) && mayServe(response)) {
+      await store(CACHE, request, response.clone());
     }
     return response;
   } catch {
@@ -122,14 +150,20 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
   }
 }
 
-async function staleWhileRevalidate(request, onMiss) {
+async function staleWhileRevalidate(request, onMiss, event) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
-  const fetchPromise = fetch(request)
+  const revalidate = fetch(request)
     .then(async (response) => {
       if (response.ok && isCacheable(response)) {
-        cache.put(request, response.clone());
-        await rememberImageFallback(new URL(request.url), response.clone());
+        const write = (async () => {
+          await store(CACHE, request, response.clone());
+          await rememberImageFallback(new URL(request.url), response.clone());
+        })().catch((error) => {
+          // A bookkeeping failure must not turn a good response into an error.
+          console.log('[sw] cache write failed', String(error));
+        });
+        await write;
       }
       return response;
     })
@@ -142,7 +176,13 @@ async function staleWhileRevalidate(request, onMiss) {
       }
       return new Response('Offline', { status: 503 });
     });
-  return cached || fetchPromise;
+
+  // `cached` can answer the request while this chain keeps running, so the
+  // lifetime extension is registered before the response is handed back — after
+  // `respondWith` settles the event is no longer active.
+  if (event) event.waitUntil(revalidate.catch(() => undefined));
+
+  return cached || revalidate;
 }
 
 /**
@@ -216,7 +256,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isIcon(url) || isImage(url) || isNextImage(url)) {
-    event.respondWith(staleWhileRevalidate(request, offlineImage));
+    event.respondWith(staleWhileRevalidate(request, offlineImage, event));
     return;
   }
 
@@ -228,11 +268,11 @@ self.addEventListener('fetch', (event) => {
   // Public navigations and RSC payloads paint from cache instantly, then
   // refresh in the background (stale-while-revalidate). Offline-first reads.
   if (isNavigationRequest(request) || isRSCPayload(url)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(request, undefined, event));
     return;
   }
 
-  event.respondWith(staleWhileRevalidate(request));
+  event.respondWith(staleWhileRevalidate(request, undefined, event));
 });
 
 self.addEventListener('message', (event) => {
@@ -255,7 +295,7 @@ self.addEventListener('message', (event) => {
     if (event.data?.type === 'CACHE_URLS') {
       const urls = event.data.urls;
       const cache = await caches.open(CACHE);
-      await cache.addAll(urls);
+      await precache(cache, urls);
     }
   })());
 });

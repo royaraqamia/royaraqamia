@@ -16,7 +16,8 @@
   }
 
   function isRSCPayload(url) {
-    return url.pathname.startsWith('/_next/data/') || url.searchParams.has('__rsc');
+    // The App Router marks its flight requests with `_rsc` (one underscore).
+    return url.pathname.startsWith('/_next/data/') || url.searchParams.has('_rsc');
   }
 
   function isFont(url) {
@@ -47,6 +48,10 @@
   // A response the server marked non-storable must never be persisted: serving
   // it later would fall back to stale authenticated/private data offline.
   function isCacheable(response) {
+    // A 206 carries only the requested slice of the body. Storing it under the
+    // whole-resource key would serve a truncated payload to every later read.
+    if (response.status === 206) return false;
+    if (response.headers.get('content-range')) return false;
     const cacheControl = response.headers.get('cache-control') || '';
     return !/no-store|no-cache|private/i.test(cacheControl);
   }
