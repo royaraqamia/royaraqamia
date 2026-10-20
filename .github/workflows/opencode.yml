@@ -40,6 +40,7 @@ on:
 
 permissions:
   id-token: write
+  actions: write
   contents: write
   pull-requests: write
   issues: write
@@ -184,17 +185,63 @@ jobs:
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and
         # titles generated during /oc tasks are not guaranteed to comply. Rewrite
-        # any open opencode/* PR title that fails the same regex (rename triggers
-        # `edited`, which re-runs Repo Checks green).
+        # any open opencode/* PR title that fails the same regex.
+        #
+        # The rename alone does not clear the red check. A GITHUB_TOKEN event starts no
+        # workflow run, so the `edited` this triggers never reaches Repo Checks, and the
+        # run that already failed stays failed — and re-running it alone would not help,
+        # because a re-run replays the stored event payload, old title and all. So
+        # repo-checks reads the live title (repo-checks.yml) and this step re-runs the
+        # run the rename invalidated.
         #
         # It runs before the checks are watched on purpose: a title repo-checks
         # rejects is a red check, and the run must leave the pull request in a
         # state a person can merge.
         if: always()
+        timeout-minutes: 10
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const pattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .+/;
+
+            // Re-run the Repo Checks run for a head commit whose title was just
+            // corrected. The run may still be queued when the rename lands seconds
+            // after the push — an in-flight run cannot be re-run — and it may not
+            // exist yet at all, so poll instead of giving up: giving up leaves the
+            // check red and a person has to touch the pull request.
+            async function rerunRepoChecks(headSha) {
+              for (let attempt = 0; attempt < 12; attempt++) {
+                const { data } = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'repo-checks.yml',
+                  head_sha: headSha,
+                  per_page: 20,
+                });
+                const runs = data.workflow_runs || [];
+                const failed = runs.find(
+                  (run) => run.status === 'completed' && run.conclusion === 'failure'
+                );
+                if (failed) {
+                  await github.rest.actions.reRunWorkflowFailedJobs({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: failed.id,
+                  });
+                  core.info('Re-ran Repo Checks run ' + failed.id + ' for ' + headSha);
+                  return;
+                }
+                if (runs.length > 0 && runs.every((run) => run.status === 'completed')) {
+                  core.info('Repo Checks for ' + headSha + ' has no failed run; nothing to re-run.');
+                  return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 5000));
+              }
+              core.warning(
+                'Repo Checks for ' + headSha + ' did not settle in time; its title job may stay red.'
+              );
+            }
+
             const prs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -212,6 +259,15 @@ jobs:
                 title,
               });
               core.info('Renamed PR #' + pr.number + ': \'' + pr.title + '\' -> \'' + title + '\'');
+              try {
+                await rerunRepoChecks(pr.head.sha);
+              } catch (error) {
+                // A re-run that cannot be requested must not fail the run: the title is
+                // corrected either way, and a person can re-run the check by hand.
+                core.warning(
+                  'Could not re-run Repo Checks for ' + pr.head.sha + ': ' + error.message
+                );
+              }
             }
 
       - name: Watch the pull request's checks and report

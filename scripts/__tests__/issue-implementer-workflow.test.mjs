@@ -41,6 +41,13 @@ describe('the issue implementer stops at the open pull request', () => {
     expect(workflow.indexOf('Normalize Agent PR Titles')).toBeLessThan(checksAt);
   });
 
+  it('re-runs the Repo Checks run its rename invalidated, because a GITHUB_TOKEN event starts none', () => {
+    const normalizeAt = workflow.indexOf('Normalize Agent PR Titles');
+    expect(normalizeAt).toBeGreaterThan(-1);
+    expect(workflow.slice(normalizeAt, checksAt)).toContain('reRunWorkflowFailedJobs');
+    expect(workflow).toMatch(/actions:\s*write/);
+  });
+
   it('hands the issue over when the pull request is open, instead of closing it as merged', () => {
     expect(workflow).toContain("labels: ['ready-for-human']");
     expect(workflow).toContain('ready for a human to merge');

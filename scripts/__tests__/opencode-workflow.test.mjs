@@ -52,6 +52,13 @@ describe('the interactive agent stops at the open pull request', () => {
     expect(workflow.indexOf('Normalize Agent PR Titles')).toBeLessThan(checksAt);
   });
 
+  it('re-runs the Repo Checks run its rename invalidated, because a GITHUB_TOKEN event starts none', () => {
+    const normalizeAt = workflow.indexOf('Normalize Agent PR Titles');
+    expect(normalizeAt).toBeGreaterThan(-1);
+    expect(workflow.slice(normalizeAt, checksAt)).toContain('reRunWorkflowFailedJobs');
+    expect(workflow).toMatch(/actions:\s*write/);
+  });
+
   it('watches only after the implement phase succeeded', () => {
     expect(checks).toContain("steps.implement.outcome == 'success'");
   });
