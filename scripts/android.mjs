@@ -14,6 +14,8 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertWebViewDebuggingOff } from './android-config-guard.mjs';
+
 const REQUIRED_JDK_MAJOR = 21;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ANDROID_DIR = join(ROOT, 'android');
@@ -28,11 +30,13 @@ const TASKS = {
     gradle: ['assembleRelease'],
     artifact: 'app/build/outputs/apk/release/app-release.apk',
     label: 'signed release APK',
+    guardWebView: true,
   },
   aab: {
     gradle: ['bundleRelease'],
     artifact: 'app/build/outputs/bundle/release/app-release.aab',
     label: 'signed App Bundle (Play upload)',
+    guardWebView: true,
   },
   clean: { gradle: ['clean'], artifact: null, label: 'clean' },
   // The shell's JVM unit tests (ADR-0043): no device, no emulator — the update
@@ -44,6 +48,20 @@ const task = TASKS[process.argv[2]];
 if (!task) {
   process.stderr.write(`Usage: node scripts/android.mjs <${Object.keys(TASKS).join('|')}>\n`);
   process.exit(1);
+}
+
+// The cheapest question first: `cap sync` has already run by the time this
+// runs (`android:release` is `sync && node scripts/android.mjs release`), so
+// read what it generated and refuse a WebView that is still inspectable before
+// Gradle spends minutes on it (issue #398). Debug builds skip this: their
+// WebView is meant to be inspectable.
+if (task.guardWebView) {
+  try {
+    assertWebViewDebuggingOff({ label: `android:${process.argv[2]}` });
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`);
+    process.exit(1);
+  }
 }
 
 function javaMajor(home) {

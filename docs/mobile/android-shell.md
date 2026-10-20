@@ -38,6 +38,14 @@ npm run android:test      # the shell's JVM tests: the update decision and the d
 npm run android:verify-bridge   # on a connected device: is the native bridge live?
 ```
 
+**A release build cannot be inspected.** `capacitor.config.ts` opens the WebView to `chrome://inspect`
+whenever `NODE_ENV` is not `production`, which is what a developer wants from `android:apk`.
+`android:release`, `android:aab` and `android:publish` force `NODE_ENV=production` for `cap sync` and
+then read the generated `android/app/src/main/assets/capacitor.config.json` back
+(`scripts/android-config-guard.mjs`): a config that still enables `webContentsDebuggingEnabled` stops
+the build before Gradle signs anything (issue #398). The generated file is what the APK bundles, so a
+`cap sync` run by hand cannot leak inspection into a release, and the debug build keeps it.
+
 The launcher icon is generated from `public/icons/icon-maskable-1024x1024.png`, the
 same artwork the PWA ships, so the two installs look like one product: one purple, one logo.
 That is the PWA's _full-bleed_ tile — the layer an adaptive icon is cut from — rather than its
