@@ -43,11 +43,20 @@
  *   npm run android:drill -- --device <serial>   # a real device, already booted
  *   npm run android:drill -- --keep        # leave the emulator/server up to inspect
  *   npm run android:drill -- --skip-build  # reuse an APK built against this origin
+ *   npm run android:drill -- --matrix      # then the force-stop, doze and mid-flush cases
+ *
+ * `--matrix` is the phone-only half of the device matrix (issue #387): the three
+ * cases that can be scripted are run after the drain, each with its own queued
+ * write, and their observations are printed as a markdown table to paste into
+ * docs/mobile/android-shell.md. The cases that need credentials or a person (the
+ * FCM wake, low storage, a worker swap, several tabs) stay manual; the doc table
+ * says so rather than implying a run that never happened.
  *
  * Credentials come from `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` (the offline
  * suite's account), loaded from `.env` by the npm script.
  *
- * Exit codes: 0 drained, 1 failed, 2 the environment cannot run the page half.
+ * Exit codes: 0 drained (and no matrix case failed), 1 failed, 2 the environment
+ * cannot run the page half.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -73,6 +82,31 @@ export const DEVTOOLS_PORT = 9222;
 export const DRILL_LOG_TAG = 'RoySyncFlush';
 /** The success line the drill waits for (`SyncFlushResult.done`). */
 export const DRAIN_SUCCESS = /drained \(failed=\d+\)/;
+/**
+ * The matrix's scripted cases, in the order they run. The titles and expected
+ * observations are the doc table's own words, so a run pastes in without editing.
+ */
+export const MATRIX_CASES = [
+  {
+    id: 'force-stop',
+    title: 'Force-stop',
+    expected: 'nothing until launch',
+  },
+  {
+    id: 'doze',
+    title: 'Doze',
+    expected: 'deferred while idle, drains after release',
+  },
+  {
+    id: 'mid-flush',
+    title: 'Process death mid-flush',
+    expected: 'one habit, no duplicate',
+  },
+];
+/** How long force-stop is observed doing nothing before the app is launched. */
+export const FORCE_STOP_WINDOW_MS = 60_000;
+/** How long doze is observed holding the job before the device is released. */
+export const DOZE_WINDOW_MS = 60_000;
 const APK = join(ROOT, 'android/app/build/outputs/apk/debug/app-debug.apk');
 const PACKAGED_CONFIG = join(ROOT, 'android/app/src/main/assets/capacitor.config.json');
 const TURNSTILE_TOKEN = 'XXXX.DUMMY.TOKEN.XXXX';
@@ -102,6 +136,7 @@ export function parseArgs(argv = []) {
     port: DEFAULT_PORT,
     keep: false,
     skipBuild: false,
+    matrix: false,
     timeoutMs: DEFAULT_TIMEOUT_MS,
     help: false,
   };
@@ -144,6 +179,9 @@ export function parseArgs(argv = []) {
       case '--skip-build':
         options.skipBuild = true;
         break;
+      case '--matrix':
+        options.matrix = true;
+        break;
       case '--help':
       case '-h':
         options.help = true;
@@ -167,6 +205,30 @@ export function isDrainSuccess(line) {
   return DRAIN_SUCCESS.test(String(line ?? ''));
 }
 
+/** A markdown table cell: one line, and pipes escaped so the row cannot split. */
+function cell(value) {
+  return String(value ?? '')
+    .replace(/\r?\n/g, ' ')
+    .replace(/\|/g, '\\|');
+}
+
+/**
+ * The matrix's observations as the table docs/mobile/android-shell.md holds. The
+ * status is part of the cell rather than a column because a reader wants "pass —
+ * what it showed" in one place, and a skipped case must not look like a pass.
+ */
+export function formatMatrixTable(results) {
+  const lines = ['| Case | Expected | Observed |', '| --- | --- | --- |'];
+  for (const result of results) {
+    lines.push(
+      `| ${cell(result.title)} | ${cell(result.expected)} | ${cell(
+        `${result.status} — ${result.observation}`
+      )} |`
+    );
+  }
+  return lines.join('\n');
+}
+
 export function usage() {
   return [
     'Usage: node scripts/shell-drill.mjs [options]',
@@ -176,6 +238,7 @@ export function usage() {
     '  --port <n>         port of the local dev server (default: 3000)',
     '  --timeout <s>      how long to wait for the worker line (default: 300)',
     '  --skip-build       reuse the debug APK if it was built against this origin',
+    '  --matrix           after the drain, run the force-stop, doze and mid-flush cases',
     '  --keep             leave the emulator and the dev server running',
     '  --help             this text',
   ].join('\n');
@@ -392,6 +455,10 @@ export async function main({
     reverse: false,
     forward: false,
     page: null,
+    /** Set by `setRadio(false)`; teardown puts the radio back even on a failure. */
+    radioOff: false,
+    /** Set while doze is forced; teardown releases the device. */
+    dozing: false,
   };
 
   function adb(args, { allowFailure = false, timeout = 30_000 } = {}) {
@@ -404,12 +471,20 @@ export async function main({
     return (result.stdout ?? '').trim();
   }
 
+  /** The exit status, for a command whose refusal has to be told from its effect. */
+  function adbStatus(args) {
+    const full = state.device ? ['-s', state.device, ...args] : args;
+    return spawnSync(adbPath, full, { encoding: 'utf8', timeout: 30_000 }).status ?? 1;
+  }
+
   async function teardown() {
     try {
       state.page?.close();
     } catch {
       // The target is gone with the process; closing it is best-effort.
     }
+    // A case that failed must not leave the phone without a radio or stuck idle.
+    await restoreDevice();
     if (state.forward && state.device) {
       adb(['forward', '--remove', `tcp:${DEVTOOLS_PORT}`], { allowFailure: true });
       state.forward = false;
@@ -488,6 +563,11 @@ export async function main({
     } catch (error) {
       throw new DrillError(`${error.message}\n\n${lastLines(state.serverLog)}`);
     }
+  }
+
+  /** The app's pid, or an empty string when the process is gone. */
+  function pidOf() {
+    return adb(['shell', 'pidof', PACKAGE_ID], { allowFailure: true }).split(/\s+/)[0] || '';
   }
 
   function listDevices() {
@@ -600,12 +680,19 @@ export async function main({
   }
 
   async function openShell() {
+    // A matrix case reattaches after the process its page belonged to is gone.
+    try {
+      state.page?.close();
+    } catch {
+      // The socket died with the process; closing it is best-effort.
+    }
+    state.page = null;
+
     adb(['shell', 'am', 'start', '-W', '-n', MAIN_ACTIVITY], { timeout: 60_000 });
-    const pid = await waitFor(
-      'the shell process',
-      () => adb(['shell', 'pidof', PACKAGE_ID], { allowFailure: true }).split(/\s+/)[0] || null,
-      { timeoutMs: 60_000, intervalMs: 1_000 }
-    );
+    const pid = await waitFor('the shell process', () => pidOf() || null, {
+      timeoutMs: 60_000,
+      intervalMs: 1_000,
+    });
     adb(['forward', '--remove', `tcp:${DEVTOOLS_PORT}`], { allowFailure: true });
     adb(['forward', `tcp:${DEVTOOLS_PORT}`, `localabstract:webview_devtools_remote_${pid}`]);
     state.forward = true;
@@ -772,6 +859,85 @@ export async function main({
     const value = enabled ? 'enable' : 'disable';
     adb(['shell', 'svc', 'wifi', value], { allowFailure: true });
     adb(['shell', 'svc', 'data', value], { allowFailure: true });
+    state.radioOff = !enabled;
+  }
+
+  /** Put back whatever a case (or a failure inside one) left changed. */
+  async function restoreDevice() {
+    if (state.radioOff && state.device) {
+      log('[drill] restoring the radio');
+      setRadio(true);
+    }
+    if (state.dozing && state.device) {
+      log('[drill] releasing doze');
+      adb(['shell', 'dumpsys', 'deviceidle', 'unforce'], { allowFailure: true });
+      adb(['shell', 'dumpsys', 'battery', 'reset'], { allowFailure: true });
+      state.dozing = false;
+    }
+  }
+
+  /** `mState=IDLE` (or its maintenance window) once the device really is idle. */
+  function deviceIdleState() {
+    const dump = adb(['shell', 'dumpsys', 'deviceidle'], { allowFailure: true });
+    return /mState=(IDLE|IDLE_MAINTENANCE)\b/.exec(dump)?.[0] ?? null;
+  }
+
+  /**
+   * Force the device into doze. It has to be unplugged for the platform to accept
+   * it, and an OEM that ignores `force-idle` is reported as an environment limit
+   * rather than as a pass: the case exists to watch the deferral happen.
+   */
+  async function enterDoze() {
+    adb(['shell', 'dumpsys', 'battery', 'unplug'], { allowFailure: true });
+    state.dozing = true;
+    await waitFor(
+      'the device to enter doze',
+      () => {
+        adb(['shell', 'dumpsys', 'deviceidle', 'force-idle'], { allowFailure: true });
+        return deviceIdleState();
+      },
+      { timeoutMs: 30_000, intervalMs: 2_000 }
+    ).catch(() => {
+      throw new EnvironmentError(
+        'the device never reported mState=IDLE: this build/OEM ignores `dumpsys deviceidle force-idle`,\n' +
+          'so the deferral cannot be observed here. Record that, and run this case on another phone.'
+      );
+    });
+    return deviceIdleState();
+  }
+
+  async function releaseDoze() {
+    adb(['shell', 'dumpsys', 'deviceidle', 'unforce'], { allowFailure: true });
+    adb(['shell', 'dumpsys', 'battery', 'reset'], { allowFailure: true });
+    state.dozing = false;
+  }
+
+  /** Background and force-stop: the one kill that cancels scheduled work. */
+  async function forceStopApp() {
+    adb(['shell', 'input', 'keyevent', 'KEYCODE_HOME']);
+    await sleep(1_500);
+    adb(['shell', 'am', 'force-stop', PACKAGE_ID]);
+    await waitFor('the shell process to be gone after force-stop', () => pidOf() === '', {
+      timeoutMs: 30_000,
+      intervalMs: 1_000,
+    });
+    log('[drill] force-stopped: its WorkManager jobs are cancelled until the next launch');
+  }
+
+  /**
+   * The first worker line inside `timeoutMs`, or null. Any line counts, not just a
+   * clean drain: a case asserting "the job was deferred" is disproved by a retry
+   * line as much as by a success line.
+   */
+  async function sawWorkerLineWithin(timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const dump = adb(['logcat', '-d', '-s', `${DRILL_LOG_TAG}:I`], { allowFailure: true });
+      const line = dump.split(/\r?\n/).find((entry) => entry.includes(DRILL_LOG_TAG));
+      if (line) return line.trim();
+      await sleep(2_000);
+    }
+    return null;
   }
 
   async function waitUntilOffline(page) {
@@ -792,7 +958,7 @@ export async function main({
       'the shell process to be gone',
       () => {
         adb(['shell', 'am', 'kill', PACKAGE_ID], { allowFailure: true });
-        return adb(['shell', 'pidof', PACKAGE_ID], { allowFailure: true }) === '';
+        return pidOf() === '';
       },
       { timeoutMs: 30_000, intervalMs: 1_000 }
     );
@@ -861,6 +1027,25 @@ export async function main({
       .join('; ');
   }
 
+  /** Every habit on the server with this exact name, without deleting it. */
+  async function serverMatches(cookie, name) {
+    const response = await fetch(`${origin}/habitflow/api/habits`, { headers: { cookie } });
+    if (!response.ok) throw new DrillError(`GET /habitflow/api/habits said ${response.status}`);
+    const body = await response.json();
+    return (body.habits ?? []).filter((entry) => entry.name === name);
+  }
+
+  /** Best-effort cleanup: a drill leaves nothing on the shared test account. */
+  async function deleteHabits(cookie, habits) {
+    for (const habit of habits) {
+      await fetch(`${origin}/habitflow/api/habits?id=${encodeURIComponent(habit.id)}`, {
+        method: 'DELETE',
+        headers: { cookie, 'content-type': 'application/json' },
+        body: '{}',
+      }).catch(() => undefined);
+    }
+  }
+
   /**
    * The delivered row, and the cleanup in the same call: a drill that leaves a
    * `Drill-…` habit on the shared test account would accumulate one per run. The
@@ -868,18 +1053,212 @@ export async function main({
    * (five attempts per email per minute) on the wait itself.
    */
   async function serverHabit(cookie, name) {
-    const response = await fetch(`${origin}/habitflow/api/habits`, { headers: { cookie } });
-    if (!response.ok) throw new DrillError(`GET /habitflow/api/habits said ${response.status}`);
-    const body = await response.json();
-    const habit = (body.habits ?? []).find((entry) => entry.name === name) ?? null;
-    if (habit) {
-      await fetch(`${origin}/habitflow/api/habits?id=${encodeURIComponent(habit.id)}`, {
-        method: 'DELETE',
-        headers: { cookie, 'content-type': 'application/json' },
-        body: '{}',
-      }).catch(() => undefined);
+    const [habit] = await serverMatches(cookie, name);
+    if (habit) await deleteHabits(cookie, [habit]);
+    return habit ?? null;
+  }
+
+  /**
+   * The write half every case starts from: the page is online so its chunk and
+   * handlers arrive, the radio goes off, and one habit is saved into the Outbox.
+   */
+  async function queueOfflineWrite(page, label) {
+    const before = await openHabitflow(page);
+    await openAddHabitDialog(page);
+    setRadio(false);
+    await waitUntilOffline(page);
+    const name = `Drill-${label}-${Date.now()}`;
+    await queueWrite(page, name, before);
+    return name;
+  }
+
+  /** A fresh page handle for the next case; a launch also flushes what is left. */
+  async function reopen() {
+    log('[drill] reopening the shell for the next case');
+    const page = await openShell();
+    await openHabitflow(page);
+    return page;
+  }
+
+  /**
+   * Force-stop is the documented limit: Android cancels the scheduled work and
+   * blocks FCM until the next launch. The case watches that nothing arrives in
+   * the window, then that the launch delivers — the last part is what turns
+   * "expected" into observed.
+   */
+  async function caseForceStop(cookie) {
+    const page = await reopen();
+    const name = await queueOfflineWrite(page, 'force-stop');
+    try {
+      await forceStopApp();
+      adb(['logcat', '-c'], { allowFailure: true });
+      setRadio(true);
+
+      const early = await sawWorkerLineWithin(FORCE_STOP_WINDOW_MS);
+      const beforeLaunch = await serverMatches(cookie, name);
+      if (early || beforeLaunch.length > 0) {
+        throw new DrillError(
+          `something drained before the launch: ${
+            early ?? `${beforeLaunch.length} habit(s) on the server`
+          }`
+        );
+      }
+
+      log('[drill] launching after the force-stop: the queue should flush on open');
+      const relaunched = await openShell();
+      await openHabitflow(relaunched);
+      const delivered = await waitFor(
+        `"${name}" on the server after the launch`,
+        () => serverMatches(cookie, name),
+        { timeoutMs: options.timeoutMs, intervalMs: 2_000 }
+      );
+      if (delivered.length !== 1) {
+        throw new DrillError(`${delivered.length} copies of "${name}" on the server, expected one`);
+      }
+      return `nothing for ${FORCE_STOP_WINDOW_MS / 1_000}s; the launch delivered exactly one`;
+    } finally {
+      await deleteHabits(cookie, await serverMatches(cookie, name).catch(() => []));
     }
-    return habit;
+  }
+
+  /**
+   * Doze defers the `CONNECTED` job by design, which is also why the 15-minute
+   * floor exists: the wake and the page signal both stop working there. The case
+   * proves the deferral (no worker line while idle) and the release, not a
+   * wall-clock 15 minutes: that interval is a WorkManager constant, not something
+   * a short run can measure honestly.
+   */
+  async function caseDoze(cookie) {
+    const page = await reopen();
+    const name = await queueOfflineWrite(page, 'doze');
+    try {
+      await killApp();
+      adb(['logcat', '-c'], { allowFailure: true });
+
+      const idle = await enterDoze();
+      log(`[drill] device is idle (${idle}); restoring the radio with the job constrained`);
+      setRadio(true);
+
+      const early = await sawWorkerLineWithin(DOZE_WINDOW_MS);
+      if (early) throw new DrillError(`the worker ran while the device was idle: ${early}`);
+
+      await releaseDoze();
+      const delivered = await waitFor(
+        `"${name}" on the server after the release`,
+        () => serverMatches(cookie, name),
+        { timeoutMs: options.timeoutMs, intervalMs: 2_000 }
+      );
+      if (delivered.length !== 1) {
+        throw new DrillError(
+          `${delivered.length} copies of "${name}" on the server after the release, expected one`
+        );
+      }
+      return `idle (${idle}), nothing for ${DOZE_WINDOW_MS / 1_000}s, the release delivered exactly one`;
+    } finally {
+      await deleteHabits(cookie, await serverMatches(cookie, name).catch(() => []));
+    }
+  }
+
+  /**
+   * The worker's flush is one HTTP replay from a page; killing the process in the
+   * middle of it is the only way to see whether the retry duplicates a write. The
+   * case does not need the kill to land before the POST: if it lands after, the
+   * retry must still find exactly one habit, which is the same assertion.
+   */
+  async function caseMidFlush(cookie) {
+    const page = await reopen();
+    const name = await queueOfflineWrite(page, 'mid-flush');
+    try {
+      await killApp();
+      adb(['logcat', '-c'], { allowFailure: true });
+      setRadio(true);
+
+      let pid;
+      try {
+        pid = await waitFor('the worker to start a process for the drain', () => pidOf() || null, {
+          timeoutMs: 120_000,
+          intervalMs: 500,
+        });
+      } catch {
+        throw new EnvironmentError(
+          'the drain never started within 120s, so there was no flush to interrupt. Check\n' +
+            '`adb shell dumpsys jobscheduler` for the package: a CONNECTED constraint left\n' +
+            'unsatisfied is the emulator limit, not this case.'
+        );
+      }
+
+      const before = adb(['logcat', '-d', '-s', `${DRILL_LOG_TAG}:I`], { allowFailure: true });
+      const already = before.split(/\r?\n/).find((line) => isDrainSuccess(line)) ?? null;
+
+      // `run-as` is the app's uid, which may signal its own process; the debug
+      // build the drill installs is what makes it available. The status is read
+      // rather than inferred from the pid: a process that had already finished
+      // and exited is not a SIGKILL, and must not be recorded as one.
+      const status = adbStatus(['shell', 'run-as', PACKAGE_ID, 'kill', '-9', pid]);
+      await sleep(1_000);
+      if (status !== 0) {
+        throw new EnvironmentError(
+          pidOf() === pid
+            ? `run-as could not signal pid ${pid} (exit ${status}): this build does not allow the kill.`
+            : `pid ${pid} had already exited before the kill: the drain finished before it could be interrupted.`
+        );
+      }
+      log(
+        `[drill] killed pid ${pid} with SIGKILL${
+          already ? ' after a drain line had already landed' : ''
+        }`
+      );
+
+      const relaunched = await openShell();
+      await openHabitflow(relaunched);
+      const delivered = await waitFor(
+        `"${name}" on the server after the interrupted flush`,
+        () => serverMatches(cookie, name),
+        { timeoutMs: options.timeoutMs, intervalMs: 2_000 }
+      );
+      if (delivered.length !== 1) {
+        throw new DrillError(
+          `${delivered.length} copies of "${name}" on the server after the retry, expected one`
+        );
+      }
+      return `killed pid ${pid} mid-flush${
+        already ? ' (a drain line had landed first)' : ''
+      }; the retry delivered exactly one`;
+    } finally {
+      await deleteHabits(cookie, await serverMatches(cookie, name).catch(() => []));
+    }
+  }
+
+  /** Each scripted case, its own write, and the table a reader can paste. */
+  async function runMatrix(cookie) {
+    const runners = {
+      'force-stop': () => caseForceStop(cookie),
+      doze: () => caseDoze(cookie),
+      'mid-flush': () => caseMidFlush(cookie),
+    };
+    const results = [];
+
+    for (const definition of MATRIX_CASES) {
+      log(`\n[matrix] ${definition.title} — expected: ${definition.expected}`);
+      let status = 'pass';
+      let observation;
+      try {
+        observation = await runners[definition.id]();
+      } catch (error) {
+        // A case the device refuses is not a product failure; it is an unobserved
+        // claim, and it must not read as a pass in the table.
+        status = error instanceof EnvironmentError ? 'skipped' : 'fail';
+        observation = error.message;
+      } finally {
+        await restoreDevice();
+      }
+      results.push({ ...definition, status, observation });
+      log(`[matrix] ${status.toUpperCase()} ${definition.title}: ${observation}`);
+    }
+
+    log('\n[matrix] results — paste these rows into docs/mobile/android-shell.md:\n');
+    log(formatMatrixTable(results));
+    return results;
   }
 
   try {
@@ -897,14 +1276,7 @@ export async function main({
     await measureWebView(page);
 
     await signIn(page);
-    const before = await openHabitflow(page);
-    await openAddHabitDialog(page);
-
-    setRadio(false);
-    await waitUntilOffline(page);
-
-    const name = `Drill-${Date.now()}`;
-    await queueWrite(page, name, before);
+    const name = await queueOfflineWrite(page, 'base');
 
     log('[drill] backgrounding and killing the app (am kill, not force-stop)');
     await killApp();
@@ -925,6 +1297,14 @@ export async function main({
     log(`[drill] PASS — "${habit.name}" was queued offline and delivered by the worker`);
 
     // Keep the page handle for teardown only; the process it belonged to is gone.
+    if (!options.matrix) return 0;
+
+    const results = await runMatrix(cookie);
+    if (results.some((result) => result.status === 'fail')) {
+      throw new DrillError(
+        'the matrix recorded a failing case; the observation is in the table above'
+      );
+    }
     return 0;
   } finally {
     await teardown();

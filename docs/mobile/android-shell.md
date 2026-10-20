@@ -379,6 +379,62 @@ adb shell svc wifi enable; adb shell svc data enable
 adb logcat -s RoySyncFlush:*
 ```
 
+### The real-device matrix
+
+The drill above proves one case: a write queued with the radio off survives the process and the
+worker delivers it. The table below is the rest of phase 7's matrix — the part that needs a phone,
+for the two environmental reasons above. `--matrix` fills the three rows that do not need a person
+pressing buttons:
+
+| Case                    | What it does                                                                                                     | What it proves                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Force-stop              | queues offline, `am force-stop`, restores the radio, waits a minute, launches                                    | nothing arrives before the launch, and the launch then delivers exactly one habit         |
+| Doze                    | queues offline, `am kill`s, forces `mState=IDLE`, restores the radio, waits a minute, releases                   | the `CONNECTED` job is deferred while idle, and the release drains exactly one            |
+| Process death mid-flush | queues offline, `am kill`s, restores the radio, `SIGKILL`s the process the moment the worker starts it, launches | the queue survives an interrupted drain, and the retry leaves exactly one habit — not two |
+
+```powershell
+npm run android:drill -- --device <serial> --matrix
+```
+
+Three constraints, all of them things a short run would otherwise measure dishonestly:
+
+- **Doze is a deferral test, not a 15-minute clock.** The floor is `PERIOD_MINUTES = 15` in
+  `SyncScheduler.java`, which WorkManager enforces; what the case watches is that the forced-idle
+  device runs no worker at all, and that releasing it drains. Timing the period belongs to the
+  manual row below, with the phone left alone for a quarter of an hour.
+- **A case the device refuses is recorded as `skipped`, never as a pass.** An OEM that ignores
+  `force-idle`, a build where `run-as` cannot signal the app, a drain that starts and finishes
+  before the kill lands — each prints the device's own words in the table.
+- **The radio and doze are restored in a `finally`,** so a failed case leaves the phone usable and
+  the next case still starts from a network.
+
+The cases that stay manual, and why:
+
+- **The FCM wake** needs a Firebase-enabled build _and_ the server-side service account: with FCM
+  unconfigured (which `.env` leaves it) `POST /api/push/wake` answers `202` and sends nothing, so a
+  scripted wake would "pass" by never happening. Watch it land with `adb logcat -s RoySyncFlush:*`
+  after a write from a second device.
+- **Low storage / a full quota, a worker swap mid-queue and several tabs** are browser behaviours
+  first (`docs/specs/offline-first.md`, Verification) whose device form needs a person to fill the
+  disk, update the shell mid-queue, or open a second tab — nothing here can judge what the phone
+  did.
+
+The run prints its three rows as a markdown table; paste them over the three scripted rows below.
+A row that says `_(manual)_` has not been measured by anything, and should not read as if it had.
+
+| Case                     | Expected                                                                 | Observed            |
+| ------------------------ | ------------------------------------------------------------------------ | ------------------- |
+| Force-stop               | nothing until launch                                                     | _(run `--matrix`)_  |
+| Doze                     | deferred while idle, drains after release                                | _(run `--matrix`)_  |
+| Process death mid-flush  | one habit, no duplicate                                                  | _(run `--matrix`)_  |
+| FCM wake, backgrounded   | the drain runs without the app being opened                              | _(manual)_          |
+| FCM wake, killed         | the drain runs from a closed process                                     | _(manual)_          |
+| 15-minute floor          | a queued write drains within one period, with no signal                  | _(manual, 15+ min)_ |
+| No network at launch     | the shell opens, the queue waits, and it drains when the network returns | _(manual)_          |
+| Low storage / full quota | the failure is visible and the write is not silently lost                | _(manual)_          |
+| Worker swap mid-queue    | the queue survives the swap and each intent is delivered once            | _(manual)_          |
+| Several tabs             | one intent per write, not one per tab                                    | _(manual)_          |
+
 ### The wake
 
 The drain answers "what this device still owes". The wake answers the other half of ADR-0060: "this
