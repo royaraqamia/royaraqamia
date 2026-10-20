@@ -6,7 +6,6 @@ import { Testimonials } from './Testimonials';
 import { WebDevService } from './WebDevService';
 import { TrainingCourses } from './TrainingCourses';
 import { Certificate } from './Certificate';
-import { VerifySection } from './VerifySection';
 import { ConsultationCards } from './ConsultationCards';
 
 export function HomePageContent() {
@@ -26,8 +25,6 @@ export function HomePageContent() {
         <TrainingCourses />
         <Certificate />
       </section>
-
-      <VerifySection />
 
       <section id="consultations">
         <ConsultationCards />
