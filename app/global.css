@@ -17,6 +17,36 @@
 /* Decorative ambient keyframes (float, hero particles, icon float, fadeInUp)
    were removed by ADR 0004. */
 
+/* Aref Ruqaa is loaded by hand rather than through `next/font/local`: the site
+   needs two faces backed by the same file, one for headings and one restricted
+   to digits. `unicode-range` is what lets numerals pick Aref Ruqaa without
+   changing the family of the surrounding Arabic text. */
+@font-face {
+  font-family: 'Aref Ruqaa';
+  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aref Ruqaa Digits';
+  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+}
+
+/* Editable controls keep the UI face. This rule is intentionally unlayered so
+   it wins over Tailwind's `font-mono`/`font-sans` utilities, which are layered. */
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  font-family: var(--font-arabic);
+}
+
 .font-aref-ruqaa {
   font-family: var(--font-heading);
 }

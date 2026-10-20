@@ -612,6 +612,13 @@ sibling are IBM Plex Sans Arabic, the face the site sets its body in (`frontend/
 read — with `fontTools`. There is no regeneration step, so a change to the site's body face would not
 reach here; that is the cost of the 344KB, and it is the reason the `.woff2` files are named above.
 
+The numerals in both cards are the exception: they take Aref Ruqaa, the face the site uses for
+read-only numbers (`--font-digits`). `res/font/aref_ruqaa_digits.ttf` is a digit-only subset of the
+same `ArefRuqaa-Bold.woff2` (about 4.5KB), applied by `DigitSpans` to the ASCII runs `DigitRanges`
+finds, so the Arabic around a version or a size stays in IBM Plex. `formatPercent` formats with
+`Locale.ROOT` because `getString(id, args)` otherwise renders `%d` in Arabic-Indic digits on an Arabic
+phone.
+
 Measured on the API 30 image — en-US locale, 320dp wide, shell at `20005`, a manifest at `20099`, and an
 APK served at 300KB/s so the bar stayed on screen:
 

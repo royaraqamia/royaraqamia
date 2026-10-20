@@ -26,6 +26,23 @@ accessible name, a copy assertion) silently misses one of them.
   rewrites.
 - `public/quran/**` is vendored as published and is never normalised.
 
+## Digits
+
+Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) or Persian
+(`۱۲۳`, U+06F0–U+06F9) — in source, docs, UI copy, tests and stored content.
+
+- `npm run check:digits` gates the repo (pre-commit + CI); `npm run fix:digits` rewrites.
+- `toLatinDigits` (`shared/contracts/text.ts`) normalises runtime input and is used by the phone
+  helpers; `toNullableText` applies it too.
+- A digit-normalising database trigger covers writes to user-content tables, with a one-time
+  backfill for rows written before it existed.
+- Read-only numbers render in Aref Ruqaa (`--font-digits`, a `unicode-range`-limited face);
+  editable controls fall back to the UI face. Never hard-code a font family on a number.
+- The native Android update dialogs do the same with `DigitSpans` + `DigitRanges`; the percent is
+  formatted with `Locale.ROOT` so an Arabic-locale phone cannot produce Arabic-Indic digits.
+- The allowlisted exceptions (normalisation fixtures, vendored `.agents/`/`public/quran/`, history
+  files, the migration itself) are listed at the top of `scripts/check-digits.mjs`.
+
 ## Logging
 
 - **Never** use `console.error/warn` outside loggers

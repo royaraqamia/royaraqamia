@@ -106,4 +106,11 @@ describe('the shell fallback page', () => {
       expect(html).toContain(`url('fonts/${name}')`);
     }
   });
+
+  it('sets the WebView version numbers in the brand digit face', () => {
+    expect(html).toContain("font-family: 'Aref Ruqaa Digits'");
+    expect(html).toContain("url('fonts/ArefRuqaa-Digits.woff2')");
+    expect(html).toContain('unicode-range: U+0030-0039');
+    expect(readFileSync('capacitor-web/fonts/ArefRuqaa-Digits.woff2').length).toBeGreaterThan(0);
+  });
 });

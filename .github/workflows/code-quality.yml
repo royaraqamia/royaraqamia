@@ -38,6 +38,9 @@ jobs:
       - name: Arabic Diacritic Order
         run: npm run check:arabic
 
+      - name: Digits Are ASCII
+        run: npm run check:digits
+
       - name: Lint
         run: npm run lint
 

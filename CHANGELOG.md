@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- render read-only numbers in Aref Ruqaa and keep every digit in the ASCII shape, including the Android update dialogs
+
 ## [1.125.1] - 2026-10-20
 
 ### Fixed

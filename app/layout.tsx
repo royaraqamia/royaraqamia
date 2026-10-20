@@ -22,7 +22,7 @@ import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
-import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
+import { ibmPlexSansArabic } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 
 const designTokensCss = (() => {
@@ -140,12 +140,17 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="ar"
-      dir={DIRECTION}
-      className={`dark ${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}
-    >
+    <html lang="ar" dir={DIRECTION} className={`dark ${ibmPlexSansArabic.variable}`}>
       <head>
+        {/* Aref Ruqaa is declared by hand in `app/global.css` (headings plus a
+            digits-only face), so preload it here where `next/font` used to. */}
+        <link
+          rel="preload"
+          href="/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         {designTokensCss ? (
           <style dangerouslySetInnerHTML={{ __html: designTokensCss }} />
         ) : (

@@ -35,6 +35,8 @@ taskkill /PID $p.Id /T /F
 
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
+**Digits are ASCII, always.** Type `0-9`, never Arabic-Indic (U+0660–U+0669) or Persian (U+06F0–U+06F9) numerals — in source, docs, UI copy, tests and stored content. `npm run check:digits` gates it and `npm run fix:digits` rewrites. Read-only numbers render in Aref Ruqaa through `--font-digits`; editable fields opt back out. Runtime input goes through `toLatinDigits` in `shared/contracts/text.ts`.
+
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
 
 **Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, and open as a pull request. Do that without being asked, at the end of every task: sync → scoped gates → commit → push → `gh pr create`. **Never merge** — `gh pr merge`, auto-merge and `--delete-branch` are the repository owner's manual step, and an agent never runs them. Stop at the open pull request: leave the worktree and branch in place (the pull request needs the branch), do not delete anything, and do not touch local `main`; it is reconciled after the owner merges. Sequence and conventions: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.

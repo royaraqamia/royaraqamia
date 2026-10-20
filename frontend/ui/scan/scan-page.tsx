@@ -393,7 +393,7 @@ export function ScanPage() {
       return;
     }
     if (file.size > SCAN_MAX_UPLOAD_BYTES) {
-      setError('حجم الصُّورة كبير جدًّا. الحد الأقصى ١٢ ميغابايت.');
+      setError('حجم الصُّورة كبير جدًّا. الحد الأقصى 12 ميغابايت.');
       return;
     }
 
