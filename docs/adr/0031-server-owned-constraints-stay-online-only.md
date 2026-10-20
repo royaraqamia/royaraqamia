@@ -50,3 +50,26 @@ the staleness bound (ADR-0011).
 `ConnectivityIndicator`, which announces «غير متَّصل» and how old the cached copy is (ADR-0027), so
 nothing fails silently. `e2e/public-offline.spec.ts` holds the absence of a refresh control as the
 design, not as an accident.
+
+## Amendment (2026-10-20): the state lives where the action is attempted
+
+[#368](https://github.com/royaraqamia/royaraqamia/issues/368) applied this ADR to auth, admin and MCP
+surface by surface, and settled the rule the wording left open: **a surface shows its own state
+wherever a user can attempt a server action from a document already on screen. The `/offline`
+document answers a document request that cannot be served at all — it is not the state of a page that
+is already open.**
+
+The distinction matters because the worker can only speak for documents. Once a page is running, a
+failed request is the page's own event, and handing that failure to a navigation fallback is neither
+possible nor honest.
+
+| Surface                   | Decision                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/auth/**`                | **In-form state.** Login, sign-up, OTP, reset and update each render the shared `NeedsConnection` inline when the submit never reached the server, because the message the transport writes («تعذّر الاتصال…») is otherwise shown in the same red banner as a wrong password. The auth documents stay never-cached, so a cold offline request still gets `/offline`.                                                  |
+| `/admin/**`               | **`/offline` for the document; in-page state for the reads.** The console's guard (`identity.resolveAdmin`) answers on the server, so a cached admin document could not authorize itself and must not be served. Inside a live page, the user picker, the certificate list and the certificate editor now name a failed read and offer its retry instead of showing an empty picker, an empty table or an empty form. |
+| `/mcp/connect`            | **In-page state.** The approve/deny pair is a server POST that mints the authorization code; offline it is replaced by `NeedsConnection` rather than submitting into a browser error page.                                                                                                                                                                                                                            |
+| `/mcp/guide`              | **`/offline` for the document.** The page is static instructions with no server action and nothing to lose, so there is no in-page state to show. It stays inside the `/mcp` never-cache prefix, which exists for the consent route.                                                                                                                                                                                  |
+| `/account/connected-apps` | **In-page state.** A failed read caused by an unreachable server renders `NeedsConnection` with the retry; a server-answered failure keeps the ordinary error card, since those are different statements.                                                                                                                                                                                                             |
+
+The shared presentation is still `frontend/ui/shared/needs-connection.tsx`, which grew an `inline`
+variant for the form and picker cases; the title and vocabulary do not change between variants.

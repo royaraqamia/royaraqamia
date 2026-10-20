@@ -10,6 +10,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 const OTP_EXPIRY_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -22,10 +23,17 @@ function VerifyOtpForm() {
 
   const OTP_START_KEY = `otp_start_${email}`;
 
-  type VerifyState = { message?: string; success?: boolean; redirectTo?: string } | null;
+  type VerifyState = {
+    message?: string;
+    success?: boolean;
+    redirectTo?: string;
+    offline?: boolean;
+  } | null;
   const [otp, setOtp] = useState('');
   const [state, setState] = useState<VerifyState>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [resendOffline, setResendOffline] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(OTP_EXPIRY_SECONDS);
@@ -99,7 +107,7 @@ function VerifyOtpForm() {
     try {
       const result = await verifyOtp({ email, otp, redirectTo });
       if (!result.ok) {
-        setState({ message: result.message });
+        setState({ message: result.message, offline: result.offline });
         return;
       }
       setState({ success: true, redirectTo: result.redirectUrl });
@@ -110,9 +118,17 @@ function VerifyOtpForm() {
 
   async function handleResend(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setResendMessage(null);
+    setResendError(null);
+    setResendOffline(false);
     setIsResending(true);
     try {
       const result = await resendOtp(email);
+      if (!result.ok) {
+        setResendOffline(result.offline);
+        setResendError(result.offline ? null : result.message);
+        return;
+      }
       setResendMessage(result.message);
     } finally {
       setIsResending(false);
@@ -173,7 +189,7 @@ function VerifyOtpForm() {
                   value={otp}
                   onChange={setOtp}
                   disabled={isPending}
-                  hasError={!!state?.message}
+                  hasError={!!state?.message && !state.offline}
                 />
               </div>
 
@@ -195,13 +211,20 @@ function VerifyOtpForm() {
                 </div>
               )}
 
-              {state?.message && (
-                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs">
-                  <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
-                  <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
-                    {state.message}
-                  </p>
-                </div>
+              {state?.offline ? (
+                <NeedsConnection
+                  variant="inline"
+                  message="لم يصل طلب التَّحقُّق إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+                />
+              ) : (
+                state?.message && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs">
+                    <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
+                    <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
+                      {state.message}
+                    </p>
+                  </div>
+                )
               )}
 
               <HeroCtaButton
@@ -243,6 +266,20 @@ function VerifyOtpForm() {
                 إذا كان لديك حساب مُسبقًا بهذا البريد، فقد أرسلنا إليك روابط الدُّخول وإعادة تعيين
                 كلمة المرور بدلًا من الرَّمز.
               </p>
+
+              {resendOffline && (
+                <NeedsConnection
+                  variant="inline"
+                  message="لم يصل طلب إعادة إرسال الرَّمز إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+                  className="text-start"
+                />
+              )}
+
+              {resendError && (
+                <p role="alert" className="text-xs sm:text-sm font-medium text-destructive">
+                  {resendError}
+                </p>
+              )}
 
               {resendMessage && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">

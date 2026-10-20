@@ -14,6 +14,8 @@ import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { ApiError } from '@/frontend/transport/http';
 
 const PasswordStrength = lazy(
   tolerateChunkFailure('password strength meter', () =>
@@ -30,15 +32,18 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [message, setMessage] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googleOffline, setGoogleOffline] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setOffline(false);
     setIsPending(true);
     try {
       const formData = new FormData(event.currentTarget);
@@ -54,6 +59,7 @@ function SignupForm() {
         return;
       }
       setMessage(result.message);
+      setOffline(result.offline);
     } finally {
       setIsPending(false);
     }
@@ -150,17 +156,24 @@ function SignupForm() {
           <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
           {/* Animated Error Alert */}
-          {message && (
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs">
-              <CircleAlert
-                size={20}
-                className="shrink-0 mt-0.5 text-destructive"
-                aria-hidden="true"
-              />
-              <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
-                {message}
-              </p>
-            </div>
+          {offline ? (
+            <NeedsConnection
+              variant="inline"
+              message="لم يصل طلب إنشاء الحساب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            />
+          ) : (
+            message && (
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs">
+                <CircleAlert
+                  size={20}
+                  className="shrink-0 mt-0.5 text-destructive"
+                  aria-hidden="true"
+                />
+                <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
+                  {message}
+                </p>
+              </div>
+            )
           )}
 
           {/* Primary Action Button */}
@@ -189,10 +202,13 @@ function SignupForm() {
             onClick={async () => {
               setGoogleLoading(true);
               setGoogleError(null);
+              setGoogleOffline(false);
               try {
                 await signInWithGoogle(redirectTo);
               } catch (e) {
-                if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
+                if (e instanceof ApiError && e.isNetworkError) {
+                  setGoogleOffline(true);
+                } else if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
                   setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
                 }
               } finally {
@@ -204,6 +220,13 @@ function SignupForm() {
             <GoogleLogo size={20} className="shrink-0" />
             <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
           </Button>
+
+          {googleOffline && (
+            <NeedsConnection
+              variant="inline"
+              message="لم نتمكَّن من الوصول إلى Google. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            />
+          )}
 
           {googleError && (
             <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center">

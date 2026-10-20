@@ -3,6 +3,7 @@
 import { CloudOff } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { cn } from '@/frontend/shared/cn';
 
 interface NeedsConnectionProps {
   /**
@@ -15,6 +16,13 @@ interface NeedsConnectionProps {
   /** Runs the surface's own load again. Omitted where there is nothing to retry. */
   onRetry?: () => void;
   className?: string;
+  /**
+   * `block` is the state of a whole page or panel. `inline` is the same
+   * statement at the point of a failed action — inside a form or under a picker
+   * — where an empty-state block would drown the control it belongs to. Both
+   * carry the same title and vocabulary; only the density changes.
+   */
+  variant?: 'block' | 'inline';
 }
 
 /**
@@ -29,7 +37,35 @@ interface NeedsConnectionProps {
  * The presentation is shared (ADR-0027: the sync-status UI is one vocabulary);
  * the copy is the caller's, because each surface knows what it lost.
  */
-export function NeedsConnection({ message, onRetry, className }: NeedsConnectionProps) {
+export function NeedsConnection({
+  message,
+  onRetry,
+  className,
+  variant = 'block',
+}: NeedsConnectionProps) {
+  if (variant === 'inline') {
+    return (
+      <div
+        role="status"
+        className={cn(
+          'flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-50 p-3.5 text-amber-900 shadow-xs dark:border-amber-500/30 dark:bg-amber-950/60 dark:text-amber-200',
+          className
+        )}
+      >
+        <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-bold leading-snug">يتطلَّب الاتصال بالإنترنت</p>
+          <p className="text-xs leading-relaxed sm:text-sm">{message}</p>
+          {onRetry && (
+            <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-1.5">
+              إعادة المحاولة
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <EmptyState
       icon={CloudOff}

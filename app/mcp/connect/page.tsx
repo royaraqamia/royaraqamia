@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
-import { Button } from '@/frontend/ui/primitives/button';
 import {
   Card,
   CardDescription,
@@ -10,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/frontend/ui/primitives/card';
-import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { ConnectForm } from './connect-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,20 +81,14 @@ export default async function ConnectPage({
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <form method="POST" action="/mcp/connect/consent" className="w-full space-y-3">
-            <input type="hidden" name="client_id" value={clientId} />
-            <input type="hidden" name="redirect_uri" value={redirectUri} />
-            <input type="hidden" name="scope" value={scope} />
-            <input type="hidden" name="state" value={state} />
-            <input type="hidden" name="code_challenge" value={codeChallenge} />
-            <input type="hidden" name="code_challenge_method" value={codeChallengeMethod} />
-            <HeroCtaButton type="submit" name="action" value="approve" className="w-full">
-              السَّماح
-            </HeroCtaButton>
-            <Button type="submit" name="action" value="deny" className="w-full" variant="outline">
-              رفض
-            </Button>
-          </form>
+          <ConnectForm
+            clientId={clientId!}
+            redirectUri={redirectUri}
+            scope={scope}
+            state={state}
+            codeChallenge={codeChallenge}
+            codeChallengeMethod={codeChallengeMethod}
+          />
         </CardFooter>
       </Card>
     </main>

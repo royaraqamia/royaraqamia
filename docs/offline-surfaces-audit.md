@@ -99,9 +99,9 @@ Each is a fix in the file named rather than a decision, so none of them needs an
 - Community search swallows its failure — offline reads as «لا توجد نتائج»
   (`app/community/_components/community-search.tsx:68`).
 - Admin user lookup swallows its failure — an empty picker rather than a failed one
-  (`frontend/ui/admin/user-select.tsx:60`; also under #368).
+  (`frontend/ui/admin/user-select.tsx:60`; also under #368, closed there).
 - Admin certificate edit swallows its failure — the page loads into an empty form
-  (`app/admin/certificates/[id]/edit/page.tsx:26`).
+  (`app/admin/certificates/[id]/edit/page.tsx:26`; closed in #368).
 - A failed BlogPress media upload surfaces the raw English `Failed to fetch`
   (`frontend/state/blogpress/use-post-upload.ts:94` from `frontend/api/blogpress.ts:41`).
 - A Local Store that fails to open only logs; the lead path still degrades to the network
@@ -113,3 +113,24 @@ The spec's [Limits of instant](specs/offline-first.md#limits-of-instant) is wher
 a never-visited route cannot render offline, a reload of an owned-data route lands on `/offline`, and
 a product that invents a credential the browser will not attach cannot drain in the background (#385
 closed LinkSnap's case). This audit found nothing there to correct.
+
+## Resolved after the audit (2026-10-20)
+
+[#368](https://github.com/royaraqamia/royaraqamia/issues/368) closed the auth, admin and MCP rows
+above. The per-surface decisions are recorded in the
+[ADR-0031 amendment](adr/0031-server-owned-constraints-stay-online-only.md#amendment-2026-10-20-the-state-lives-where-the-action-is-attempted);
+what changed in the tree:
+
+- **Auth forms name the connection.** `frontend/api/auth.ts` reports `offline` on a failure whose
+  request never left, and login, sign-up, OTP (verify and resend), reset and update render
+  `NeedsConnection` inline instead of the credential/validation banner. The Google button uses the
+  same distinction. A cold offline document request still gets `/offline`.
+- **Admin reads stop swallowing failures.** `frontend/api/admin/users.ts` throws instead of answering
+  `[]`, so `frontend/ui/admin/user-select.tsx` shows a failed lookup with a retry; the certificates
+  list (`app/admin/certificates/page.tsx`) and editor
+  (`app/admin/certificates/[id]/edit/page.tsx`) now distinguish an unreachable server from an empty
+  page and a certificate that is genuinely gone.
+- **MCP has an in-page state where it has an action.** `app/mcp/connect/connect-form.tsx` replaces the
+  consent buttons with the shared state offline; `/account/connected-apps` names an unreachable
+  server instead of the generic load error. `/mcp/guide` stays a document request answered by
+  `/offline` — it has no server action.
