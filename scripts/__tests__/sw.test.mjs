@@ -43,10 +43,18 @@ function makePushSubscription({ endpointBase, keyBuffer }) {
   };
 }
 
-function createSandbox({ withPushConfig = true } = {}) {
+function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
   const listeners = new Map();
   const cacheStores = new Map();
   const state = { fetchCalls: [], subscribeCalls: [], showNotificationCalls: [] };
+  let writeGate = null;
+
+  // Cache Storage resolves relative keys against the worker origin. The fake
+  // does the same so a `put(request, ...)` and `match('/path')` share one key.
+  function keyOf(url) {
+    const raw = typeof url === 'string' ? url : (url && url.url) || String(url);
+    return raw.startsWith('/') ? `https://site.example${raw}` : raw;
+  }
 
   function openStore(name) {
     let store = cacheStores.get(name);
@@ -55,10 +63,26 @@ function createSandbox({ withPushConfig = true } = {}) {
       cacheStores.set(name, store);
     }
     return {
-      put: async (url, response) => void store.set(String(url), response),
-      match: async (url) => store.get(String(url)),
-      delete: async (url) => store.delete(String(url)),
-      addAll: async () => undefined,
+      put: async (url, response) => {
+        if (writeGate) await writeGate;
+        store.set(keyOf(url), response);
+      },
+      match: async (url) => store.get(keyOf(url)),
+      delete: async (url) => store.delete(keyOf(url)),
+      add: async (url) => {
+        const response = await sandbox.fetch(url);
+        if (!response.ok) throw new Error(`precache failed: ${url}`);
+        store.set(keyOf(url), response);
+      },
+      addAll: async (urls) => {
+        await Promise.all(
+          urls.map(async (url) => {
+            const response = await sandbox.fetch(url);
+            if (!response.ok) throw new Error(`precache failed: ${url}`);
+            store.set(keyOf(url), response);
+          })
+        );
+      },
     };
   }
 
@@ -67,7 +91,7 @@ function createSandbox({ withPushConfig = true } = {}) {
     keys: async () => [...cacheStores.keys()],
     match: async (url) => {
       for (const store of cacheStores.values()) {
-        const hit = store.get(String(url));
+        const hit = store.get(keyOf(url));
         if (hit) return hit;
       }
       return undefined;
@@ -92,7 +116,8 @@ function createSandbox({ withPushConfig = true } = {}) {
     },
     fetch: vi.fn(async (url, init) => {
       state.fetchCalls.push({ url: String(url), init });
-      return { ok: true, status: 200 };
+      if (fetchImpl) return fetchImpl(url, init);
+      return new Response('ok', { status: 200 });
     }),
     caches,
     location: { origin: 'https://site.example' },
@@ -141,7 +166,21 @@ function createSandbox({ withPushConfig = true } = {}) {
     return event;
   }
 
-  return { sandbox, state, caches, dispatch, listeners };
+  // Suspends every pending `put` until the returned function is called, so a
+  // test can prove the write is part of the response's lifetime rather than a
+  // detached promise the worker would be free to drop.
+  function holdWrites() {
+    let release;
+    writeGate = new Promise((resolve) => {
+      release = resolve;
+    });
+    return () => {
+      writeGate = null;
+      release();
+    };
+  }
+
+  return { sandbox, state, caches, dispatch, listeners, holdWrites };
 }
 
 async function boot(options = {}) {
@@ -149,6 +188,9 @@ async function boot(options = {}) {
   vm.runInNewContext(SW_SOURCE, ctx.sandbox, { filename: 'sw.js' });
   await Promise.all(ctx.dispatch('install').waitUntilCalls);
   await Promise.all(ctx.dispatch('activate').waitUntilCalls);
+  // Install precaches through `fetch`; those calls are not what the tests below
+  // are counting.
+  ctx.state.fetchCalls.length = 0;
   return ctx;
 }
 
@@ -356,6 +398,10 @@ describe('service worker routing wiring', () => {
     expect(typeof sandbox.SWRouting.isNeverCache).toBe('function');
     expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/admin'))).toBe(true);
     expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/community/x'))).toBe(false);
+    // The App Router's flight request uses `_rsc`, not `__rsc`.
+    expect(
+      sandbox.SWRouting.isRSCPayload(new URL('https://site.example/community?_rsc=1abc'))
+    ).toBe(true);
   });
 
   it('never reads or writes the admin certificates API through Cache Storage', async () => {
@@ -441,5 +487,118 @@ describe('service worker image routing', () => {
 
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('cached-image');
+  });
+});
+
+describe('service worker cache durability', () => {
+  function request(path, mode = 'cors') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  it('writes a first-visit response before handing it back to the page', async () => {
+    const ctx = await boot();
+    const release = ctx.holdWrites();
+
+    const event = fetchEvent(request('/community', 'navigate'));
+    ctx.dispatch('fetch', event);
+
+    let settled = false;
+    event.response.then(() => {
+      settled = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // The put is still pending, so the response must not have settled: if it
+    // had, the browser could terminate the worker and lose the write.
+    expect(settled).toBe(false);
+
+    release();
+    const response = await event.response;
+    expect(response.status).toBe(200);
+    // Survives the hypothetical termination because it was already persisted.
+    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+  });
+
+  it('installs when one precache URL fails, still caching the rest', async () => {
+    const failedUrl = '/icons/notification-icon-192x192.png';
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    // `boot` awaits install; a rejected install would reject here.
+    const { caches } = await boot({
+      fetchImpl: async (url) =>
+        String(url).includes('notification-icon')
+          ? { ok: false, status: 404 }
+          : { ok: true, status: 200 },
+    });
+
+    const cache = await caches.open('royaraqamia-test-v1');
+    expect(await cache.match('/')).toBeTruthy();
+    expect(await cache.match('/offline')).toBeTruthy();
+    expect(await cache.match(failedUrl)).toBeUndefined();
+    expect(log.mock.calls.flat().join(' ')).toContain(failedUrl);
+
+    log.mockRestore();
+  });
+
+  it('serves the last good cached API read when the network answers 5xx', async () => {
+    const { caches, dispatch, sandbox } = await boot();
+    const cache = await caches.open('royaraqamia-test-v1');
+    const good = new Response('cached-rates', {
+      status: 200,
+      headers: { 'cache-control': 'public, max-age=60' },
+    });
+    await cache.put('/api/rates?pair=usd', good);
+    sandbox.fetch = vi.fn(async () => new Response('upstream down', { status: 503 }));
+
+    const event = fetchEvent(request('/api/rates?pair=usd'));
+    dispatch('fetch', event);
+    const response = await event.response;
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('cached-rates');
+  });
+
+  it('returns the 5xx when no cached copy exists', async () => {
+    const { dispatch, sandbox } = await boot();
+    sandbox.fetch = vi.fn(async () => new Response('upstream down', { status: 502 }));
+
+    const event = fetchEvent(request('/api/rates?pair=usd'));
+    dispatch('fetch', event);
+    const response = await event.response;
+
+    expect(response.status).toBe(502);
+    expect(await response.text()).toBe('upstream down');
+  });
+
+  it('never writes a range/206 response to Cache Storage', async () => {
+    const { caches, dispatch, sandbox } = await boot();
+    sandbox.fetch = vi.fn(
+      async () =>
+        new Response('partial-bytes', {
+          status: 206,
+          headers: { 'content-range': 'bytes 0-12/1000' },
+        })
+    );
+
+    const event = fetchEvent(request('/_next/static/chunk.js'));
+    dispatch('fetch', event);
+    const response = await event.response;
+
+    expect(response.status).toBe(206);
+    expect(await caches.match('https://site.example/_next/static/chunk.js')).toBeUndefined();
   });
 });

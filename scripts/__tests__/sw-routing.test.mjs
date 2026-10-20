@@ -21,6 +21,17 @@ function u(path) {
   return new URL(`https://site.example${path}`);
 }
 
+function response(overrides = {}) {
+  const values = {
+    'cache-control': overrides.cacheControl ?? null,
+    'content-range': overrides.contentRange ?? null,
+  };
+  return {
+    status: overrides.status ?? 200,
+    headers: { get: (key) => values[key] ?? null },
+  };
+}
+
 function request(overrides = {}) {
   return {
     mode: 'cors',
@@ -35,7 +46,9 @@ describe('sw-routing predicates', () => {
     expect(routing.isNextStaticAsset(u('/_next/static/chunk.js'))).toBe(true);
     expect(routing.isNextStaticAsset(u('/community'))).toBe(false);
 
-    expect(routing.isRSCPayload(u('/community?__rsc=abc'))).toBe(true);
+    // The App Router marks flight requests with `_rsc` (one underscore).
+    expect(routing.isRSCPayload(u('/community?_rsc=abc'))).toBe(true);
+    expect(routing.isRSCPayload(u('/community?__rsc=abc'))).toBe(false);
     expect(routing.isRSCPayload(u('/_next/data/build/x.json'))).toBe(true);
     expect(routing.isRSCPayload(u('/rates'))).toBe(false);
 
@@ -123,23 +136,35 @@ describe('sw-routing predicates', () => {
   });
 
   it('refuses to cache no-store / no-cache / private responses', () => {
-    const withCacheControl = (value) => ({ headers: { get: () => value } });
-    expect(routing.isCacheable(withCacheControl('no-store'))).toBe(false);
-    expect(routing.isCacheable(withCacheControl('no-cache'))).toBe(false);
-    expect(routing.isCacheable(withCacheControl('private, max-age=0'))).toBe(false);
-    expect(routing.isCacheable(withCacheControl('public, max-age=60'))).toBe(true);
-    expect(routing.isCacheable(withCacheControl(''))).toBe(true);
+    expect(routing.isCacheable(response({ cacheControl: 'no-store' }))).toBe(false);
+    expect(routing.isCacheable(response({ cacheControl: 'no-cache' }))).toBe(false);
+    expect(routing.isCacheable(response({ cacheControl: 'private, max-age=0' }))).toBe(false);
+    expect(routing.isCacheable(response({ cacheControl: 'public, max-age=60' }))).toBe(true);
+    expect(routing.isCacheable(response())).toBe(true);
+  });
+
+  it('refuses to cache a range/206 response', () => {
+    expect(routing.isCacheable(response({ status: 206, contentRange: 'bytes 0-12/1000' }))).toBe(
+      false
+    );
+    // Some servers answer a Range request with a 200; a content-range header is
+    // still a slice of the body and must not be stored under the full key.
+    expect(routing.isCacheable(response({ contentRange: 'bytes 0-12/1000' }))).toBe(false);
+    expect(routing.isCacheable(response())).toBe(true);
   });
 
   it('caches an API read only when it opts in with public', () => {
-    const withCacheControl = (value) => ({ headers: { get: () => value } });
     // The absent header is the bug from #392: it was read as permission.
-    expect(routing.isPubliclyCacheable(withCacheControl(''))).toBe(false);
-    expect(routing.isPubliclyCacheable(withCacheControl('no-store'))).toBe(false);
-    expect(routing.isPubliclyCacheable(withCacheControl('private, max-age=0'))).toBe(false);
+    expect(routing.isPubliclyCacheable(response())).toBe(false);
+    expect(routing.isPubliclyCacheable(response({ cacheControl: 'no-store' }))).toBe(false);
+    expect(routing.isPubliclyCacheable(response({ cacheControl: 'private, max-age=0' }))).toBe(
+      false
+    );
     expect(
-      routing.isPubliclyCacheable(withCacheControl('public, max-age=0, must-revalidate'))
+      routing.isPubliclyCacheable(response({ cacheControl: 'public, max-age=0, must-revalidate' }))
     ).toBe(true);
-    expect(routing.isPubliclyCacheable(withCacheControl('public, s-maxage=60'))).toBe(true);
+    expect(routing.isPubliclyCacheable(response({ cacheControl: 'public, s-maxage=60' }))).toBe(
+      true
+    );
   });
 });
