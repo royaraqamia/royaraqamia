@@ -20,7 +20,17 @@ const html = readFileSync('capacitor-web/unavailable.html', 'utf8');
 const errorPath = config.match(/errorPath:\s*'([^']+)'/)?.[1];
 const configuredFloor = Number(config.match(/minWebViewVersion:\s*(\d+)/)?.[1]);
 const pageFloor = Number(html.match(/MINIMUM_WEBVIEW = (\d+)/)?.[1]);
-const pageScript = html.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)?.[1] ?? '';
+/** The one inline script, taken by offsets rather than an HTML-filtering regexp. */
+function inlineScript(source) {
+  const open = source.toLowerCase().indexOf('<script');
+  if (open < 0) return '';
+  const body = source.indexOf('>', open);
+  if (body < 0) return '';
+  const close = source.toLowerCase().indexOf('</script', body + 1);
+  return close < 0 ? '' : source.slice(body + 1, close);
+}
+
+const pageScript = inlineScript(html);
 /** Source wrapping and rendered whitespace are not the same string. */
 const pageText = html.replace(/\s+/g, ' ');
 
