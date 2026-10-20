@@ -4,10 +4,15 @@
  *
  * Why this exists: Vercel Hobby measures **Deployment Storage** and **Functions
  * Storage** as sums over *all retained deployments* of a project, with 10 GB each
- * and no overage. A repository that pushes ~20 commits/day (plus a release commit
- * per release) reaches hundreds of retained deployments in a month, and the two
- * storage meters climb even when the site is idle. Deleting old deployments is
- * the only lever that shrinks them.
+ * and no overage. It also rate-limits deployment *creation* to roughly 100 per
+ * day. A repository that deploys every branch push (plus a production deployment
+ * per merge and per release commit) reaches both limits while the site is idle:
+ * on 2026-10-20 the daily creation cap was hit with 91 deployments created by
+ * mid-afternoon, and storage climbed to 9.18 GB.
+ *
+ * `vercel.json` sets `git.deploymentEnabled` to `main` only, so branches no
+ * longer deploy. Deleting old deployments is the only lever that shrinks the
+ * storage meters.
  *
  * This never touches the deployments you would actually need to roll back to:
  * the newest production deployment, anything Vercel still flags as a rollback
@@ -15,7 +20,7 @@
  *
  * Usage:
  *   node scripts/prune-deployments.mjs --dry-run
- *   node scripts/prune-deployments.mjs --keep=25 --min-age-days=1
+ *   node scripts/prune-deployments.mjs --keep=25 --min-age-days=0.25
  *
  * Required env (or flags): VERCEL_TOKEN, VERCEL_PROJECT_ID, VERCEL_ORG_ID
  */
@@ -26,13 +31,21 @@ import { fileURLToPath } from 'node:url';
 const API = 'https://api.vercel.com';
 const PAGE_SIZE = 100;
 /**
- * 60 deployments ≈ 1.3 GB of Functions Storage (≈21 MB per deployment, measured
- * as 7.06 GB over 325 retained) — about 13% of the Hobby 10 GB cap — while still
- * leaving ~3 days of rollback history at this repository's ~20 deployments/day.
+ * 25 deployments is ~1.4 GB of Functions Storage at the ~54 MB per deployment
+ * measured on 2026-10-20 (9.18 GB over ~170 retained) — around 14% of the Hobby
+ * 10 GB cap. With preview deployments off there are ~30 deployments/day, so 25
+ * is about a day of rollback history; the current production deployment and any
+ * deployment Vercel still flags as a rollback candidate survive regardless.
  * The point is to keep both storage meters flat, not to minimise the number.
  */
-const DEFAULT_KEEP = 60;
-const DEFAULT_MIN_AGE_DAYS = 1;
+const DEFAULT_KEEP = 25;
+/**
+ * Six hours. The gate exists to avoid deleting a deployment that is still
+ * building or that was just handed out as a preview URL — not to preserve a
+ * day of history: at ~90 deployments/day the old one-day gate covered the whole
+ * retained set, so `keep` could never bind and storage sat at the cap.
+ */
+const DEFAULT_MIN_AGE_DAYS = 0.25;
 /**
  * Vercel rate-limits deployment deletion to roughly 200 per 10 minutes
  * (`429 rate_limited`, code `now-rm`). Stay under it and let the next scheduled

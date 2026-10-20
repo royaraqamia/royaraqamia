@@ -340,7 +340,7 @@ This produces the optimized production bundle in `.next/` ready for `next start`
 
 1. **Connect the repository** in the Vercel dashboard and set the Framework preset to **Next.js**.
 2. **Add every environment variable** from the [Environment Variables](#environment-variables) table in the Vercel project settings (Production/Preview/Development as appropriate).
-3. **Deploy** — every push to the production branch triggers an automatic build; preview deployments are created for pull requests.
+3. **Deploy** — every push to the production branch triggers an automatic build. Branch previews are off (`vercel.json` → `git.deploymentEnabled`): Hobby caps deployment creation at ~100/day and the daily prune caps retention, so pull requests are reviewed from the diff, not a preview URL.
 
 ### Platform configuration
 
