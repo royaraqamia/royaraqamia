@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
+import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import type { Me } from '@/frontend/api/me';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -102,13 +103,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
 
         // Session expired (had a session, now null) — not on an auth page
-        if (prevSession && !session && !AUTH_PATHS.some((p) => pathnameRef.current.startsWith(p))) {
-          const currentPath = pathnameRef.current;
-          const loginPath =
-            currentPath && currentPath !== '/'
-              ? `/auth/login?session_expired=1&redirect=${encodeURIComponent(currentPath)}`
-              : '/auth/login?session_expired=1';
-          router.push(loginPath);
+        if (prevSession && !session) {
+          // An expiry is a sign-out the user did not perform: the cached renders
+          // may still belong to the account that just lost its session.
+          void purgeServiceWorkerCaches();
+          if (!AUTH_PATHS.some((p) => pathnameRef.current.startsWith(p))) {
+            const currentPath = pathnameRef.current;
+            const loginPath =
+              currentPath && currentPath !== '/'
+                ? `/auth/login?session_expired=1&redirect=${encodeURIComponent(currentPath)}`
+                : '/auth/login?session_expired=1';
+            router.push(loginPath);
+          }
         }
       });
     });

@@ -43,7 +43,7 @@ function makePushSubscription({ endpointBase, keyBuffer }) {
   };
 }
 
-function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
+function createSandbox({ withPushConfig = true, fetchImpl, budgetBytes } = {}) {
   const listeners = new Map();
   const cacheStores = new Map();
   const state = { fetchCalls: [], subscribeCalls: [], showNotificationCalls: [] };
@@ -56,6 +56,13 @@ function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
     return raw.startsWith('/') ? `https://site.example${raw}` : raw;
   }
 
+  // Real Cache Storage stores a copy and hands one out per `match`, so reading
+  // an entry never disturbs the next reader. Clone real Responses to match that;
+  // fixture objects (no `clone`) are kept by identity as before.
+  function copy(value) {
+    return value && typeof value.clone === 'function' ? value.clone() : value;
+  }
+
   function openStore(name) {
     let store = cacheStores.get(name);
     if (!store) {
@@ -65,21 +72,23 @@ function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
     return {
       put: async (url, response) => {
         if (writeGate) await writeGate;
-        store.set(keyOf(url), response);
+        store.set(keyOf(url), copy(response));
       },
-      match: async (url) => store.get(keyOf(url)),
+      match: async (url) => copy(store.get(keyOf(url))),
       delete: async (url) => store.delete(keyOf(url)),
+      keys: async () => [...store.keys()].map((url) => ({ url })),
+      matchAll: async () => [...store.values()].map(copy),
       add: async (url) => {
         const response = await sandbox.fetch(url);
         if (!response.ok) throw new Error(`precache failed: ${url}`);
-        store.set(keyOf(url), response);
+        store.set(keyOf(url), copy(response));
       },
       addAll: async (urls) => {
         await Promise.all(
           urls.map(async (url) => {
             const response = await sandbox.fetch(url);
             if (!response.ok) throw new Error(`precache failed: ${url}`);
-            store.set(keyOf(url), response);
+            store.set(keyOf(url), copy(response));
           })
         );
       },
@@ -92,7 +101,7 @@ function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
     match: async (url) => {
       for (const store of cacheStores.values()) {
         const hit = store.get(keyOf(url));
-        if (hit) return hit;
+        if (hit) return copy(hit);
       }
       return undefined;
     },
@@ -113,6 +122,7 @@ function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
       claim: async () => undefined,
       matchAll: async () => [],
       openWindow: async () => undefined,
+      get: async (id) => ({ id, url: 'https://site.example/' }),
     },
     fetch: vi.fn(async (url, init) => {
       state.fetchCalls.push({ url: String(url), init });
@@ -143,6 +153,17 @@ function createSandbox({ withPushConfig = true, fetchImpl } = {}) {
     },
   };
   sandbox.self = sandbox;
+  if (budgetBytes !== undefined) sandbox.CACHE_BUDGET_BYTES = budgetBytes;
+  // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
+  // this worker would be a bug the suite must see, so opening IndexedDB throws.
+  sandbox.indexedDB = {
+    open: vi.fn(() => {
+      throw new Error('cache maintenance must not touch IndexedDB');
+    }),
+    databases: vi.fn(async () => {
+      throw new Error('cache maintenance must not touch IndexedDB');
+    }),
+  };
 
   sandbox.registration = {
     pushManager: {
@@ -600,5 +621,183 @@ describe('service worker cache durability', () => {
 
     expect(response.status).toBe(206);
     expect(await caches.match('https://site.example/_next/static/chunk.js')).toBeUndefined();
+  });
+});
+
+describe('service worker cache budget and eviction', () => {
+  const RUNTIME_CACHE = 'royaraqamia-test-v1';
+
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  // Install precaches the shell; give those entries no bytes so each test's
+  // arithmetic is about the churn it writes, not the fixed shell.
+  function emptyResponse() {
+    return new Response('', { status: 200, headers: { 'content-length': '0' } });
+  }
+
+  function sized(bytes, contentType = 'text/html') {
+    return new Response('x'.repeat(16), {
+      status: 200,
+      headers: {
+        'content-type': contentType,
+        'content-length': String(bytes),
+        'cache-control': 'public, max-age=60',
+      },
+    });
+  }
+
+  async function fetchInto(ctx, req, response) {
+    ctx.sandbox.fetch = vi.fn(async () => response);
+    const event = fetchEvent(req);
+    ctx.dispatch('fetch', event);
+    return event.response;
+  }
+
+  async function visit(ctx, path, bytes) {
+    const response = await fetchInto(ctx, request(path), sized(bytes));
+    expect(response.status).toBe(200);
+  }
+
+  async function runtimeEntries(ctx, cacheName = RUNTIME_CACHE) {
+    const cache = await ctx.caches.open(cacheName);
+    const requests = await cache.keys();
+    const entries = {};
+    for (const { url } of requests) {
+      const response = await cache.match(url);
+      entries[url.replace('https://site.example', '')] = Number(
+        response.headers.get('content-length') || 0
+      );
+    }
+    return entries;
+  }
+
+  function totalOf(entries) {
+    return Object.values(entries).reduce((sum, size) => sum + size, 0);
+  }
+
+  it('keeps accounted bytes at or below the budget under page churn', async () => {
+    const ctx = await boot({ budgetBytes: 1000, fetchImpl: async () => emptyResponse() });
+
+    // Pages, RSC variants, responsive image widths and search queries all land
+    // in the same cache, and each one is another chance to grow past the budget.
+    for (let index = 0; index < 8; index += 1) {
+      await visit(ctx, `/community?page=${index}`, 400);
+      await visit(ctx, `/community?_rsc=${index}`, 400);
+      await visit(ctx, `/_next/image?url=%2F01.webp&w=${640 + index * 120}&q=75`, 400);
+      await visit(ctx, `/api/search?q=${index}`, 400);
+    }
+
+    const entries = await runtimeEntries(ctx);
+    expect(totalOf(entries)).toBeLessThanOrEqual(1000);
+    expect(entries).toHaveProperty('/offline');
+    expect(ctx.sandbox.indexedDB.open).not.toHaveBeenCalled();
+    expect(ctx.sandbox.indexedDB.databases).not.toHaveBeenCalled();
+  });
+
+  it('evicts the least-recently-used entry, not the newest', async () => {
+    const ctx = await boot({ budgetBytes: 1000, fetchImpl: async () => emptyResponse() });
+    await visit(ctx, '/a', 300);
+    await visit(ctx, '/b', 300);
+    await visit(ctx, '/c', 300);
+
+    // Read A again, offline: that is its most recent use.
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    const hit = fetchEvent(request('/a'));
+    ctx.dispatch('fetch', hit);
+    expect((await hit.response).status).toBe(200);
+
+    // The fourth entry takes the cache over budget; B is the one left unused.
+    await visit(ctx, '/d', 300);
+
+    const entries = await runtimeEntries(ctx);
+    expect(entries['/a']).toBe(300);
+    expect(entries['/b']).toBeUndefined();
+    expect(entries['/c']).toBe(300);
+    expect(entries['/d']).toBe(300);
+    expect(totalOf(entries)).toBeLessThanOrEqual(1000);
+  });
+
+  it("never evicts the offline page or the current build's static assets", async () => {
+    const ctx = await boot({ budgetBytes: 1000, fetchImpl: async () => emptyResponse() });
+
+    // The build asset goes in first, so it is the oldest entry once pages land.
+    await fetchInto(
+      ctx,
+      request('/_next/static/chunks/app.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    await visit(ctx, '/a', 300);
+    await visit(ctx, '/b', 300);
+    // One more page forces an eviction. It must take the oldest page, not the
+    // older static chunk or the offline page.
+    await visit(ctx, '/c', 300);
+
+    const entries = await runtimeEntries(ctx);
+    const staticEntries = await runtimeEntries(ctx, 'royaraqamia-static-v1');
+    expect(staticEntries['/_next/static/chunks/app.js']).toBe(300);
+    expect(entries).toHaveProperty('/offline');
+    expect(entries['/a']).toBeUndefined();
+    expect(entries['/b']).toBe(300);
+    expect(entries['/c']).toBe(300);
+  });
+
+  it('purges account-bearing entries on sign-out and keeps the offline shell', async () => {
+    const ctx = await boot({ budgetBytes: 10_000 });
+
+    await visit(ctx, '/community', 100);
+    await fetchInto(
+      ctx,
+      request('/api/rates?pair=usd', 'cors'),
+      new Response('rates', {
+        status: 200,
+        headers: { 'cache-control': 'public, max-age=60' },
+      })
+    );
+    await fetchInto(
+      ctx,
+      request('/_next/static/chunks/app.js', 'cors'),
+      sized(50, 'application/javascript')
+    );
+    const prefs = await ctx.caches.open('royaraqamia-push-prefs');
+    await prefs.put('/__push_disabled__', {});
+
+    const event = new FakeEvent('message');
+    event.data = { type: 'PURGE_ACCOUNT_CACHES' };
+    event.source = { id: 'client-1' };
+    event.ports = [{ postMessage: vi.fn() }];
+    ctx.dispatch('message', event);
+    await Promise.all(event.waitUntilCalls);
+
+    // Pages, RSC payloads and public reads may have been rendered for the
+    // signed-in caller; none of them survives.
+    expect(await ctx.caches.match('/community')).toBeUndefined();
+    expect(await ctx.caches.match('/api/rates?pair=usd')).toBeUndefined();
+    expect(await ctx.caches.match('/')).toBeUndefined();
+    // The offline shell, the build's static assets and the device preference do.
+    expect(await ctx.caches.match('/offline')).toBeTruthy();
+    expect(await ctx.caches.match('/_next/static/chunks/app.js')).toBeTruthy();
+    expect(await ctx.caches.match('/__push_disabled__')).toBeTruthy();
+    expect(event.ports[0].postMessage).toHaveBeenCalledWith({ type: 'ACCOUNT_CACHES_PURGED' });
+    // Local Store and Outbox were never opened.
+    expect(ctx.sandbox.indexedDB.open).not.toHaveBeenCalled();
+    expect(ctx.sandbox.indexedDB.databases).not.toHaveBeenCalled();
   });
 });

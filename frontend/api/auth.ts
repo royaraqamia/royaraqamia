@@ -1,6 +1,7 @@
 import { request } from '@/frontend/transport/http';
 import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
+import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { unregisterNativePush } from '@/frontend/api/push-native';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -44,6 +45,10 @@ export async function signOutSession(): Promise<void> {
   await unregisterNativePush();
   const client = await createClient();
   await client.auth.signOut();
+  // Cache Storage is the one shared surface that could still answer with the
+  // previous account's render. IndexedDB is not touched: the Local Store and
+  // Outbox survive sign-out until "Remove this device's copy" (#370).
+  await purgeServiceWorkerCaches();
 }
 
 export async function logout(): Promise<void> {
@@ -56,6 +61,9 @@ export async function logout(): Promise<void> {
   } catch {
     throw new Error('فشل تسجيل الخروج');
   }
+  // The session is gone server-side: drop account-bearing Cache Storage entries
+  // before the redirect, while this document still controls the worker.
+  await purgeServiceWorkerCaches();
   window.location.assign('/');
 }
 
