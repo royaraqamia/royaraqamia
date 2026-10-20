@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { PublicUser } from '@/shared/contracts/users';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
 
 const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio, verified';
 
@@ -29,7 +30,7 @@ export interface PublicUsersRepository {
 export function createPublicUsersRepository(
   supabase: SupabaseClient<Database>
 ): PublicUsersRepository {
-  return {
+  return guardRepositoryMethods<PublicUsersRepository>({
     async list(limit): Promise<PublicUser[]> {
       const { data, error } = await supabase
         .from('users')
@@ -38,7 +39,7 @@ export function createPublicUsersRepository(
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) return [];
+      if (error) throw error;
       return (data ?? []) as PublicUser[];
     },
 
@@ -47,7 +48,7 @@ export function createPublicUsersRepository(
         .from('users')
         .select('id', { count: 'exact', head: true });
 
-      if (error) return 0;
+      if (error) throw error;
       return count ?? 0;
     },
 
@@ -63,7 +64,7 @@ export function createPublicUsersRepository(
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);
 
-      if (error) return [];
+      if (error) throw error;
       return (data ?? []) as PublicUser[];
     },
 
@@ -74,7 +75,9 @@ export function createPublicUsersRepository(
         .eq('username', username.toLowerCase())
         .maybeSingle();
 
-      if (error) return null;
+      // Only PostgREST's no-rows code means absence; anything else is an outage
+      // and must not render as `/u/[username]` not-found.
+      if (error && !isNotFoundError(error)) throw error;
       return (data as PublicUser | null) ?? null;
     },
 
@@ -85,8 +88,8 @@ export function createPublicUsersRepository(
         .eq('id', id)
         .maybeSingle();
 
-      if (error) return null;
+      if (error && !isNotFoundError(error)) throw error;
       return (data as PublicUser | null) ?? null;
     },
-  };
+  });
 }

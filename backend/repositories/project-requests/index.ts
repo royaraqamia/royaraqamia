@@ -9,11 +9,12 @@ import type {
   ProjectRequestsRepository,
 } from '@/backend/repositories/project-requests/project-requests-repository';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
 
 export function createProjectRequestsRepository(
   supabase: SupabaseClient<Database>
 ): ProjectRequestsRepository {
-  return {
+  return guardRepositoryMethods<ProjectRequestsRepository>({
     async getById(id: string): Promise<ProjectRequest | null> {
       const { data, error } = await supabase
         .from('project_requests')
@@ -21,7 +22,10 @@ export function createProjectRequestsRepository(
         .eq('id', id)
         .single();
 
-      if (error || !data) return null;
+      // Only PostgREST's no-rows code means absence; anything else is an outage
+      // and must reach the controller as a 5xx, not a false 404.
+      if (error && !isNotFoundError(error)) throw error;
+      if (!data) return null;
       return data as ProjectRequest;
     },
 
@@ -54,7 +58,8 @@ export function createProjectRequestsRepository(
       }
 
       const from = (query.page - 1) * query.pageSize;
-      const { data, count } = await request.range(from, from + query.pageSize - 1);
+      const { data, count, error } = await request.range(from, from + query.pageSize - 1);
+      if (error) throw error;
 
       return { data: (data as ProjectRequest[]) ?? [], total: count ?? 0 };
     },
@@ -139,5 +144,5 @@ export function createProjectRequestsRepository(
       if (error) throw error;
       return (data as ProjectRequest | null) ?? null;
     },
-  };
+  });
 }

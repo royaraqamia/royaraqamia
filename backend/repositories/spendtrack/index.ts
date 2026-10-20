@@ -14,7 +14,7 @@ import type {
   ExpenseUpdateInput,
   SpendtrackRepository,
 } from '@/backend/repositories/spendtrack/spendtrack-repository';
-import { guardRepositoryMethods } from '@/backend/shared/repository-error';
+import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
 
 const nowIso = () => new Date().toISOString();
 
@@ -35,11 +35,12 @@ export function createSpendtrackRepository(
     const ids = rows.map((r) => r.id as string).filter(Boolean);
     if (ids.length === 0) return;
 
-    const { data: splits } = await supabase
+    const { data: splits, error } = await supabase
       .from('expense_splits')
       .select('id, expense_id, category_id, amount, client_id, updated_at, deleted_at')
       .in('expense_id', ids)
       .is('deleted_at', null);
+    if (error) throw error;
 
     const byExpense = new Map<string, Record<string, unknown>[]>();
     for (const s of splits ?? []) {
@@ -55,12 +56,16 @@ export function createSpendtrackRepository(
 
   return guardRepositoryMethods<SpendtrackRepository>({
     async getUserCategories(userId: string): Promise<Category[]> {
-      const { data } = (await supabase
+      const { data, error } = (await supabase
         .from('categories')
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .is('deleted_at', null)
-        .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
+        .order('name')) as {
+        data: Array<{ color_hex: string; [key: string]: unknown }> | null;
+        error: unknown;
+      };
+      if (error) throw error;
       return (data ?? []).map(({ color_hex, ...row }) =>
         withOfflineFields({ ...row, colorHex: color_hex })
       ) as Category[];
@@ -94,6 +99,12 @@ export function createSpendtrackRepository(
         budQ,
         recQ,
       ]);
+
+      // A failed page must fail the pull: returning the old cursor with empty
+      // arrays tells the offline engine "nothing changed" and hides the outage.
+      for (const result of [cats, rawExpenses, rawBudgets, rawRecurring]) {
+        if (result.error) throw result.error;
+      }
 
       const categories = (
         (cats.data ?? []) as Array<{ color_hex: string; [key: string]: unknown }>
@@ -138,12 +149,13 @@ export function createSpendtrackRepository(
       end: string,
       catFilter: string[] | null
     ): Promise<number | null> {
-      const { data } = await supabase.rpc('get_total_expenses', {
+      const { data, error } = await supabase.rpc('get_total_expenses', {
         p_user_id: userId,
         p_start: start,
         p_end: end,
         p_categories: catFilter ?? undefined,
       });
+      if (error) throw error;
       return data;
     },
 
@@ -153,12 +165,13 @@ export function createSpendtrackRepository(
       end: string,
       catFilter: string[] | null
     ): Promise<{ categoryId: string; colorHex: string; name: string; total: number }[] | null> {
-      const { data } = await supabase.rpc('get_category_breakdown', {
+      const { data, error } = await supabase.rpc('get_category_breakdown', {
         p_user_id: userId,
         p_start: start,
         p_end: end,
         p_categories: catFilter ?? undefined,
       });
+      if (error) throw error;
       if (!data) return null;
       return data.map(
         (row: { category_id: string; color_hex: string; name: string; total: number }) => ({
@@ -176,12 +189,13 @@ export function createSpendtrackRepository(
       end: string,
       catFilter: string[] | null
     ): Promise<{ date: string; total: number }[] | null> {
-      const { data } = await supabase.rpc('get_daily_totals', {
+      const { data, error } = await supabase.rpc('get_daily_totals', {
         p_user_id: userId,
         p_start: start,
         p_end: end,
         p_categories: catFilter ?? undefined,
       });
+      if (error) throw error;
       return data;
     },
 
@@ -237,8 +251,14 @@ export function createSpendtrackRepository(
         queryBuilder = queryBuilder.limit(pageSize);
       }
 
-      const [{ data: categories }, { count: totalCount }, { data: rawExpenses }] =
-        await Promise.all([categoriesPromise, countQuery, queryBuilder]);
+      const [
+        { data: categories, error: categoriesError },
+        { count: totalCount, error: countError },
+        { data: rawExpenses, error: expensesError },
+      ] = await Promise.all([categoriesPromise, countQuery, queryBuilder]);
+      if (categoriesError) throw categoriesError;
+      if (countError) throw countError;
+      if (expensesError) throw expensesError;
 
       const safeCategories = (
         (categories ?? []) as Array<{
@@ -284,7 +304,8 @@ export function createSpendtrackRepository(
         query = query.in('category_id', catFilter);
       }
 
-      const { data: rawExpenses } = await query;
+      const { data: rawExpenses, error } = await query;
+      if (error) throw error;
       const expenses = (rawExpenses ?? []).map((row: Record<string, unknown>) => {
         const cats = row.categories as { name: string; color_hex: string } | null;
         return {
@@ -486,7 +507,8 @@ export function createSpendtrackRepository(
         query = query.is('category_id', null);
       }
 
-      const { data } = await query.maybeSingle();
+      const { data, error } = await query.maybeSingle();
+      if (error && !isNotFoundError(error)) throw error;
       return data ? Number(data.amount) : null;
     },
 
@@ -696,12 +718,13 @@ export function createSpendtrackRepository(
       userId: string,
       month: string
     ): Promise<{ category_id: string | null; amount: number }[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('budgets')
         .select('category_id, amount')
         .eq('user_id', userId)
         .eq('month', month)
         .is('deleted_at', null);
+      if (error) throw error;
       return (data ?? []) as { category_id: string | null; amount: number }[];
     },
 
