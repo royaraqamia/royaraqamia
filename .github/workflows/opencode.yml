@@ -2,13 +2,12 @@
 # on any issue or PR to trigger it (explain, fix, implement, review...).
 # Two-model pipeline: plan (DeepSeek 4.1 Flash) -> implement (DeepSeek 4.1 Flash).
 # Only collaborators with write access can trigger it (enforced by the action).
-# When the run opens a pull request, the workflow merges it once its checks are
-# green — the landing loop in docs/agents/landing.md, ADR 0048 and ADR 0049.
+# When the run opens a pull request, the workflow watches its checks and reports
+# the result on the thread. It never merges: the merge is the repository owner's
+# manual step (ADR 0066, superseding ADR 0049).
 #
 # Setup (repo secrets):
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
-#   RELEASE_TOKEN         - a PAT, the merge identity, so the merge starts the
-#                           Code Quality -> Release pipeline a human merge would
 #   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
 #   SUPABASE_PROJECT_REF  - target Supabase project reference
 #   VERCEL_TOKEN          - https://vercel.com/account/tokens
@@ -17,9 +16,8 @@
 #
 # Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
 # are authored by the app identity and DO re-trigger code-quality workflows.
-# The merge, by contrast, uses RELEASE_TOKEN: a merge made with the default
-# GITHUB_TOKEN starts no workflows, so the push to main would skip Code Quality and
-# with it Release. See ADR 0049.
+# The check watch only reads, so the default GITHUB_TOKEN is enough; there is no
+# merge identity because there is no merge.
 # Checkout must NOT persist credentials — opencode injects its own app token
 # (persisted credentials cause a duplicate-Authorization failure on push).
 # A runner-only opencode config grants the Supabase MCP server (project-scoped)
@@ -160,7 +158,7 @@ jobs:
           variant: high
           share: 'false'
           prompt: |
-            You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing, opening the pull request and merging it once its checks are green. Do NOT run any git commands yourself, and do not merge anything.
+            You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing and opening the pull request. Do NOT run any git commands yourself, and do not merge anything: opening the pull request is where the run ends and a person merges it.
 
             Skills: Before starting, load these skills using the skill tool:
             - `implement` — structured implementation workflow
@@ -189,8 +187,9 @@ jobs:
         # any open opencode/* PR title that fails the same regex (rename triggers
         # `edited`, which re-runs Repo Checks green).
         #
-        # It runs before the merge on purpose: a title repo-checks rejects is a red
-        # check, and the merge step below refuses to merge over one.
+        # It runs before the checks are watched on purpose: a title repo-checks
+        # rejects is a red check, and the run must leave the pull request in a
+        # state a person can merge.
         if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
@@ -215,25 +214,23 @@ jobs:
               core.info('Renamed PR #' + pr.number + ': \'' + pr.title + '\' -> \'' + title + '\'');
             }
 
-      - name: Merge the agent's pull request once CI is green
-        id: merge
-        # The landing loop, run for /oc: the action committed, pushed and opened or
-        # updated a pull request; this waits for its checks and merges it.
+      - name: Watch the pull request's checks and report
+        id: checks
+        # The landing loop, run for /oc, stops at the pull request: the action committed,
+        # pushed and opened or updated one, and this waits for its checks so the thread
+        # records the result. It never merges — the merge is the repository owner's
+        # manual step, so there is no merge command, no auto-merge and no merge identity.
         #
         # The pull request is named by its head commit rather than by "the newest
         # opencode/* pull request", because the concurrency group is per comment and two
-        # /oc runs can be in flight at once — picking the newest would let one run merge
-        # the other's branch. A branch that did not exist when the snapshot was taken, or
+        # /oc runs can be in flight at once — picking the newest would report on the
+        # other's branch. A branch that did not exist when the snapshot was taken, or
         # whose tip has moved since, is this run's; more than one candidate is ambiguous
-        # and none is merged. See ADR 0049.
-        #
-        # RELEASE_TOKEN, not GITHUB_TOKEN, is the merge identity: a merge made with the
-        # default token starts no workflows, so the push to main would skip Code Quality
-        # and with it Release.
+        # and none is reported. See ADR 0049 and ADR 0066.
         if: always() && steps.implement.outcome == 'success'
         timeout-minutes: 50
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BEFORE: ${{ steps.snapshot.outputs.agent_prs }}
         run: |
           set -uo pipefail
@@ -241,9 +238,8 @@ jobs:
           before="${BEFORE:-}"
           if [ -z "$before" ]; then
             # No snapshot means we cannot tell this run's pull request from another's.
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-            printf 'reason=%s\n' "This run could not record which pull requests were already open, so none was merged automatically." >> "$GITHUB_OUTPUT"
-            echo "::warning title=Not merging::No pre-run snapshot of open agent pull requests."
+            echo "status=none" >> "$GITHUB_OUTPUT"
+            echo "::warning title=No pull request to report::No pre-run snapshot of open agent pull requests."
             exit 0
           fi
 
@@ -256,8 +252,8 @@ jobs:
           count=$(printf '%s\n' "$candidates" | grep -c '[0-9]')
 
           if [ "$count" -eq 0 ]; then
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-            echo "No agent pull request was opened or updated by this run; nothing to merge."
+            echo "status=none" >> "$GITHUB_OUTPUT"
+            echo "No agent pull request was opened or updated by this run; nothing to report."
             exit 0
           fi
 
@@ -266,9 +262,8 @@ jobs:
 
           if [ "$count" -gt 1 ]; then
             opened=$(printf '%s\n' "$candidates" | paste -sd, -)
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-            printf 'reason=%s\n' "More than one agent pull request changed while this run was in flight (#$opened), so which is this task's is ambiguous." >> "$GITHUB_OUTPUT"
-            echo "::warning title=Not merging::Ambiguous: #$opened all changed during this run."
+            echo "status=none" >> "$GITHUB_OUTPUT"
+            echo "::warning title=No pull request to report::Ambiguous: #$opened all changed during this run."
             exit 0
           fi
 
@@ -292,38 +287,24 @@ jobs:
                 awk -F'\t' '$2 == "fail" || $2 == "pending" { print $1 }' | paste -sd, -)
               reason="A check on #$pr did not pass: ${failing:-see the pull request}."
             fi
-            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "status=red" >> "$GITHUB_OUTPUT"
             printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Not merging::$reason"
+            echo "::warning title=Checks are not green::$reason"
             exit 0
           fi
 
-          # GitHub refuses the write when main moved between the check and the merge
-          # ("Base branch was modified"); a second attempt settles it.
-          for attempt in 1 2; do
-            if gh pr merge "$pr" --squash --delete-branch; then
-              echo "merged=true" >> "$GITHUB_OUTPUT"
-              echo "Merged #$pr."
-              exit 0
-            fi
-            echo "Merge attempt $attempt failed; retrying."
-            sleep 10
-          done
+          echo "status=green" >> "$GITHUB_OUTPUT"
+          echo "Pull request #$pr is open with green checks; the merge is a person's step."
 
-          echo "merged=false" >> "$GITHUB_OUTPUT"
-          printf 'reason=%s\n' "The pull request #$pr could not be merged." >> "$GITHUB_OUTPUT"
-          echo "::warning title=Not merging::Could not merge #$pr."
-          exit 0
-
-      - name: Report the merge
-        # Only where there was a pull request to merge: a run that answered a question, or
-        # reviewed, opens none and should stay quiet on the thread.
-        if: always() && steps.merge.outputs.pr != ''
+      - name: Report the pull request
+        # Only where there was a pull request to report on: a run that answered a
+        # question, or reviewed, opens none and should stay quiet on the thread.
+        if: always() && steps.checks.outputs.pr != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          PR_NUMBER: ${{ steps.merge.outputs.pr }}
-          MERGED: ${{ steps.merge.outputs.merged }}
-          MERGE_REASON: ${{ steps.merge.outputs.reason }}
+          PR_NUMBER: ${{ steps.checks.outputs.pr }}
+          STATUS: ${{ steps.checks.outputs.status }}
+          REASON: ${{ steps.checks.outputs.reason }}
         with:
           script: |
             const target =
@@ -331,12 +312,14 @@ jobs:
               (context.payload.pull_request && context.payload.pull_request.number);
             if (!target) return;
             const body =
-              process.env.MERGED === 'true'
-                ? 'Merged in #' + process.env.PR_NUMBER + '.'
+              process.env.STATUS === 'green'
+                ? 'Pull request #' +
+                  process.env.PR_NUMBER +
+                  ' is open and its checks are green. It is ready for a human to merge.'
                 : 'Pull request #' +
                   process.env.PR_NUMBER +
-                  ' was not merged: ' +
-                  (process.env.MERGE_REASON || 'the reason was not recorded') +
+                  ' is open, but it is not ready to merge: ' +
+                  (process.env.REASON || 'the reason was not recorded') +
                   '\n\nIt is open for a person to look at.';
             await github.rest.issues.createComment({
               owner: context.repo.owner,

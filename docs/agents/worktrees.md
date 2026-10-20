@@ -54,14 +54,14 @@ the junction out.
 ## Land the work
 
 Commit in the worktree, confirm the commit exists (`git log --oneline -1` — a lost commit looks like a
-successful one), then push to `main` (the release train and Vercel deploy follow) or open a PR.
+successful one), push the branch, and open a pull request. That is where an agent stops: the merge is
+the repository owner's manual step ([landing.md](landing.md)).
 
 Landing from a worktree does **not** update the canonical checkout by itself: it sits behind
-`origin/main` until someone pulls there, and if it holds unpushed work of its own it is diverged
-rather than merely behind (measured: `ahead 1, behind 1` right after a worktree push). The landing
-loop closes that gap from both ends — it fetches before a worktree is cut, and fast-forwards the
-canonical checkout once the branch is gone ([landing.md](landing.md)) — so a checkout still behind
-`origin/main` means the loop was not run, or its closing pull refused.
+`origin/main` until the owner merges and someone pulls there. That is expected while a pull request is
+open — the branch has to stay until it is merged — and if the checkout holds unpushed work of its own
+it is diverged rather than merely behind (measured: `ahead 1, behind 1` right after a worktree push).
+Reconcile it after the merge.
 
 ## Delegated agents
 
@@ -97,6 +97,9 @@ rather than blocked.
 
 ## Clean up
 
+After the pull request is merged, and only when the owner asks. Removing the worktree or the branch
+while the pull request is open takes away the thing it points at.
+
 ```powershell
 git worktree list              # find them
 git worktree remove <dir>      # remove one (refuses while dirty)
@@ -106,5 +109,5 @@ git worktree prune             # drop records for directories already gone
 `worktree_remove` does the same, with force as an explicit opt-in — force only after checking that
 nothing unlanded is in there.
 
-Cleanup is the last step of landing the work, not a separate chore: order and the surrounding
-commit/push/pull-request steps are in [landing.md](landing.md).
+Cleanup is the last step of landing the work, after the owner merges, not a separate chore: order and
+the surrounding commit/push/pull-request steps are in [landing.md](landing.md).

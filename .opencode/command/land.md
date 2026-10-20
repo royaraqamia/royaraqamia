@@ -1,5 +1,5 @@
 ---
-description: Land the task end to end — sync, scoped gates, commit, push, pull request, merge, cleanup
+description: Land the task end to end — sync, scoped gates, commit, push, pull request (the merge is manual)
 agent: build
 ---
 
@@ -18,14 +18,11 @@ Land the work in this tree, end to end and without asking.
 4. **Push.** `git push -u origin HEAD`, then confirm the commit exists in `git log --oneline -1`.
 5. **Open the pull request.** `gh pr create --base main --fill`, then edit the body so it says what
    changed and why and links `Closes #<n>` when there is an issue.
-6. **Merge once CI is green.** `gh pr checks <n> --watch`, then
-   `gh pr merge <n> --squash --delete-branch` — retry once if it answers `Base branch was modified`,
-   which only means `main` moved under it. If a check fails, stop, report it, and leave the pull
-   request open — never merge over a red check.
-7. **Clean up and re-sync.** `session_move` out of the worktree, remove it, delete the local branch,
-   `git worktree prune`, then `git fetch origin --prune` and `git pull --ff-only` so local `main` is
-   level with `origin/main`. If that pull refuses because local `main` has commits of its own, stop
-   and report it — that is unpushed work, not a stale checkout.
+6. **Stop at the open pull request.** Report the pull request URL and stop. Do **not** merge — no
+   `gh pr merge`, no auto-merge, no `--delete-branch`: the merge is the repository owner's manual
+   step. Leave the worktree and branch in place, and leave local `main` alone; it is reconciled
+   after the owner merges. A failing check is worth reporting, but the pull request stays open
+   either way.
 
-Report the pull request URL and the merged commit. If nothing changed, stop after step 2 and say so
-rather than manufacturing a commit.
+Report the pull request URL. If nothing changed, stop after step 2 and say so rather than
+manufacturing a commit.
