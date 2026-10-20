@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
 import { QuranSyncStatus } from './sync-status';
-import { observeReadingLine } from './reading-line';
+import { isOutsideViewport, observeReadingLine, READER_SCROLL_QUIET_MS } from './reading-line';
 
 /** How long the reader rests on an ayah before it is worth writing down. */
 const POSITION_WRITE_DELAY_MS = 1200;
@@ -11,6 +11,8 @@ const POSITION_WRITE_DELAY_MS = 1200;
 interface ReadingSessionProps {
   /** The sura being read; the position and every mark below belong to it. */
   surah: number;
+  /** The Ayah the Recitation is playing, or null when nothing is playing. */
+  playingAyah: number | null;
   className?: string;
   children: ReactNode;
 }
@@ -24,12 +26,14 @@ interface ReadingSessionProps {
  * on this container handles every ayah. A sura of 286 ayat therefore contributes
  * exactly one client component, and reading it needs no JavaScript at all.
  */
-export function ReadingSession({ surah, className, children }: ReadingSessionProps) {
+export function ReadingSession({ surah, playingAyah, className, children }: ReadingSessionProps) {
   const reader = useQuranReader();
   const { ready, bookmarks, savePosition, toggleBookmark } = reader;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pendingRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
+  const lastReaderScrollRef = useRef(0);
+  const programmaticScrollUntilRef = useRef(0);
 
   /** Writes whatever ayah is pending, now. */
   const flush = useCallback(() => {
@@ -97,6 +101,53 @@ export function ReadingSession({ surah, className, children }: ReadingSessionPro
       button.setAttribute('aria-pressed', marked.has(ayah) ? 'true' : 'false');
     });
   }, [ready, bookmarks, surah]);
+
+  useEffect(() => {
+    const markReaderScroll = () => {
+      if (Date.now() < programmaticScrollUntilRef.current) return;
+      lastReaderScrollRef.current = Date.now();
+    };
+
+    window.addEventListener('scroll', markReaderScroll, { passive: true });
+    window.addEventListener('wheel', markReaderScroll, { passive: true });
+    window.addEventListener('touchmove', markReaderScroll, { passive: true });
+    window.addEventListener('keydown', markReaderScroll);
+    return () => {
+      window.removeEventListener('scroll', markReaderScroll);
+      window.removeEventListener('wheel', markReaderScroll);
+      window.removeEventListener('touchmove', markReaderScroll);
+      window.removeEventListener('keydown', markReaderScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.querySelectorAll<HTMLElement>('[data-ayah]').forEach((node) => {
+      const isPlaying = playingAyah !== null && Number(node.dataset.ayah) === playingAyah;
+      node.classList.toggle('quran-ayah-playing', isPlaying);
+      if (isPlaying) node.setAttribute('aria-current', 'true');
+      else node.removeAttribute('aria-current');
+    });
+  }, [playingAyah]);
+
+  useEffect(() => {
+    if (playingAyah === null) return;
+    const container = containerRef.current;
+    if (!container) return;
+    if (Date.now() - lastReaderScrollRef.current < READER_SCROLL_QUIET_MS) return;
+
+    const node = container.querySelector<HTMLElement>(`[data-ayah="${playingAyah}"]`);
+    if (!node) return;
+
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    if (!isOutsideViewport(node.getBoundingClientRect(), viewportHeight)) return;
+    if (typeof node.scrollIntoView !== 'function') return;
+
+    programmaticScrollUntilRef.current = Date.now() + READER_SCROLL_QUIET_MS;
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [playingAyah]);
 
   /** One listener for the whole sura, rather than a handler per ayah. */
   const onClick = (event: MouseEvent<HTMLDivElement>) => {

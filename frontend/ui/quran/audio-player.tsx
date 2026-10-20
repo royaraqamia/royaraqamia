@@ -13,6 +13,8 @@ interface SurahAudioPlayerProps {
   ayahCount: number;
   /** What the whole sura weighs, which is what it costs a reader on mobile data. */
   bytes: number;
+  /** The Ayah currently playing, or null once the recitation has stopped. */
+  onAyahChange?: (ayah: number | null) => void;
 }
 
 /**
@@ -29,7 +31,7 @@ interface SurahAudioPlayerProps {
  * which is also why the control can exist on a sura whose files are there and
  * simply not render on one whose are not.
  */
-export function SurahAudioPlayer({ surah, ayahCount, bytes }: SurahAudioPlayerProps) {
+export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: SurahAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playlistRef = useRef<QuranSurahAudio | null>(null);
   const baseUrlRef = useRef<string | null>(null);
@@ -46,26 +48,32 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes }: SurahAudioPlayerPr
     []
   );
 
-  const playAt = useCallback(async (position: number) => {
-    const audio = audioRef.current;
-    const file = playlistRef.current?.files[position];
-    const baseUrl = baseUrlRef.current;
-    if (!audio || !baseUrl || !file) {
-      setStatus('idle');
-      return;
-    }
+  const playAt = useCallback(
+    async (position: number) => {
+      const audio = audioRef.current;
+      const file = playlistRef.current?.files[position];
+      const baseUrl = baseUrlRef.current;
+      if (!audio || !baseUrl || !file) {
+        setStatus('idle');
+        onAyahChange?.(null);
+        return;
+      }
 
-    positionRef.current = position;
-    setAyah(file.ayah);
-    audio.src = audioFileUrl(baseUrl, file);
+      positionRef.current = position;
+      setAyah(file.ayah);
+      audio.src = audioFileUrl(baseUrl, file);
 
-    try {
-      await audio.play();
-      setStatus('playing');
-    } catch {
-      setStatus('error');
-    }
-  }, []);
+      try {
+        await audio.play();
+        setStatus('playing');
+        onAyahChange?.(file.ayah);
+      } catch {
+        setStatus('error');
+        onAyahChange?.(null);
+      }
+    },
+    [onAyahChange]
+  );
 
   const prepare = useCallback(async () => {
     if (playlistRef.current) return true;
@@ -87,8 +95,9 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes }: SurahAudioPlayerPr
     }
     positionRef.current = 0;
     setAyah(1);
+    onAyahChange?.(null);
     setStatus('idle');
-  }, []);
+  }, [onAyahChange]);
 
   const toggle = useCallback(async () => {
     const audio = audioRef.current;

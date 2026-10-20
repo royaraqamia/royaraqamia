@@ -71,3 +71,14 @@ export function observeReadingLine(
   ayat.forEach((node) => observer.observe(node));
   return () => observer.disconnect();
 }
+
+/** How long after the reader's own scroll playback leaves the page alone. */
+export const READER_SCROLL_QUIET_MS = 1200;
+
+/** True when the element is entirely outside the visible viewport. */
+export function isOutsideViewport(
+  rect: Pick<DOMRect, 'top' | 'bottom'>,
+  viewportHeight: number
+): boolean {
+  return rect.bottom <= 0 || rect.top >= viewportHeight;
+}

@@ -77,7 +77,7 @@ async function stubRecitation(page: Page): Promise<string[]> {
   );
   await page.route('https://audio.royaraqamia.com/**', (route) => {
     played.push(route.request().url());
-    return route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() });
+    return route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav(2) });
   });
 
   return played;
@@ -93,6 +93,12 @@ test('plays a sura one Ayah file after another, from the host the manifest names
   await expect(play).toBeVisible();
   await play.click();
 
+  const firstAyah = page.locator('#ayah-1');
+  const secondAyah = page.locator('#ayah-2');
+
+  await expect(firstAyah).toHaveAttribute('aria-current', 'true');
+  await expect(secondAyah).not.toHaveAttribute('aria-current');
+
   const audio = page.locator('audio');
   await expect(audio).toHaveAttribute(
     'src',
@@ -105,6 +111,8 @@ test('plays a sura one Ayah file after another, from the host the manifest names
     `https://audio.royaraqamia.com/${SECOND.key}?v=${SECOND.sha256.slice(0, 8)}`,
     { timeout: 15_000 }
   );
+  await expect(secondAyah).toHaveAttribute('aria-current', 'true');
+  await expect(firstAyah).not.toHaveAttribute('aria-current');
   expect(played.length).toBeGreaterThanOrEqual(2);
 });
 
