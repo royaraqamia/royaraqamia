@@ -92,3 +92,43 @@ describe('the manifest rebases on a history it can see', () => {
     expect(step).toContain('git push origin HEAD:main');
   });
 });
+
+/**
+ * A rerun after the manifest step failed cannot rebuild the version and get the
+ * same bytes: measured on shell 1.0.13, the same tree rebuilt to the same
+ * 8,052,296 bytes with a different sha256, so the upload refused it and the
+ * manifest could never land. A version whose bytes are already in storage is
+ * adopted instead — stamped, uploaded and verified as exactly what a device
+ * already gets — and the dialog text and date come from the release that first
+ * published it, not from the commit that happened to be on main at the rerun.
+ */
+describe('a version that is already published is adopted, not rebuilt', () => {
+  const workflow = readFileSync(
+    resolve(process.cwd(), '.github/workflows/shell-release.yml'),
+    'utf8'
+  );
+  const adoptAt = workflow.indexOf('Is this version already published?');
+  const adopt = workflow.slice(adoptAt, workflow.indexOf('Setup Build Environment'));
+  const publishAt = workflow.indexOf('Build or adopt, sign and stamp');
+  const publish = workflow.slice(publishAt, workflow.indexOf('Upload the APK to storage'));
+
+  it('has the step it pins', () => {
+    expect(adoptAt).toBeGreaterThan(-1);
+  });
+
+  it('looks for the version in storage before building, and hands the bytes to the stamp', () => {
+    expect(adopt).toContain('storage/v1/object/android/$ASSET');
+    expect(adopt).toContain('echo "path=$RUNNER_TEMP/published.apk"');
+    expect(publish).toContain('args+=(--apk "$ADOPT")');
+  });
+
+  it('refuses when storage and the release disagree about the bytes', () => {
+    expect(adopt).toContain('Storage and the release disagree');
+  });
+
+  it('adopts the dialog text and date the first publish recorded', () => {
+    expect(adopt).toContain('releasedAt=$released_at');
+    expect(workflow).toContain('steps.existing.outputs.notes || steps.notes.outputs.notes');
+    expect(publish).toContain('args+=(--released-at "$RELEASED_AT")');
+  });
+});

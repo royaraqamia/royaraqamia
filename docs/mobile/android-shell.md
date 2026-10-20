@@ -775,13 +775,16 @@ bump could be required to move the counter and then never publish it. In order:
 2. **The shell's JVM tests**, so nothing lands on main without them.
 3. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
-   `public/android/latest.json`.
+   `public/android/latest.json`. Before it builds, the run asks the bucket whether this version's file
+   is already there: if it is, those bytes are adopted and stamped instead, because a rebuild is not
+   byte-identical (ADR-0069).
 4. **The uploads** — the APK goes to the Supabase Storage bucket first, because that is what the site
    serves, and then to its own release, `android-1.0.3`, one release per version, holding
    `royaraqamia-1.0.3.apk`, titled with its own tag so the releases list and the tags list cannot
    disagree. The tag in a published URL belongs to one version and is never repointed at other bytes.
-   A bucket object or a release that already exists is a re-run: identical content is reused, different
-   content is refused, and the release asset is replaced only when no committed manifest has ever named it.
+   A bucket object or a release that already exists is a re-run: the run adopts the bytes storage
+   already holds — after checking them against the release — and refuses anything that disagrees with
+   them. The release asset is replaced only when no committed manifest has ever named it.
 5. **The re-download** — the URL the manifest names, `https://royaraqamia.com/android/royaraqamia-1.0.3.apk`,
    is fetched from outside and hashed before anything is announced (ADR-0047). That is the path a device
    takes — the site's rewrite to the bucket — so the check is also what proves the rewrite serves the file.
@@ -793,8 +796,9 @@ bump could be required to move the counter and then never publish it. In order:
 
 Failing at 3–5 leaves the published channel exactly as it was. Failing at 6 leaves the asset uploaded and
 the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
-verified, and re-running finishes it. Only `main` publishes; a dispatch on a branch can rehearse with
-`dry_run` (build and sign, upload nothing).
+verified, and re-running finishes it by adopting the bytes already in storage instead of rebuilding
+them (ADR-0069). Only `main` publishes; a dispatch on a branch can rehearse with `dry_run` (build and
+sign, upload nothing).
 
 **The version, and where a user sees it.** `shellVersionName` sits beside the counter and is _derived_ from
 it — `1.<minor>.<patch>` from `(counter − 20000)`, so counter 20003 is version `1.0.3` — which means

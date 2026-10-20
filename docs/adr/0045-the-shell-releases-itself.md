@@ -47,8 +47,10 @@ and an older manifest that names its own file keeps working forever.
 happened before: until it existed, the only thing that had ever seen the published file was the machine
 that uploaded it. Everything before the commit is recoverable — the published channel is untouched, and
 an asset that no committed manifest has ever named is a leftover from a run that died, which the next run
-replaces. A version code whose _committed_ manifest names it with different bytes is the one case that
-fails hard, because that is republishing history.
+replaces. (Superseded in part by ADR-0069: the next run adopts those bytes instead of replacing them,
+because rebuilding the same tree does not reproduce them byte for byte.) A version code whose
+_committed_ manifest names it with different bytes is the one case that fails hard, because that is
+republishing history.
 
 **Only `main` publishes.** A manual dispatch on any ref runs the same verdict, tests, build and signing;
 the upload and the manifest commit are gated on `main`, so a branch can rehearse (with `dry_run`) but

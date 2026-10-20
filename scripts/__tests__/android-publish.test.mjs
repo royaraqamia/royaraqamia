@@ -11,6 +11,7 @@ import {
   isManifestDate,
   isTrustedSigner,
   listedFingerprints,
+  main,
   MANIFEST_KEYS,
   manifestText,
   normalizeFingerprint,
@@ -438,5 +439,20 @@ describe('whether there is anything to publish', () => {
   it('refuses a counter it cannot read, rather than guessing', () => {
     expect(() => publishVerdict({ counter: 0, published })).toThrow(/no usable counter/);
     expect(() => publishVerdict({ counter: '20002', published })).toThrow(/no usable counter/);
+  });
+});
+
+describe('the verdict the workflow reads', () => {
+  it('names the version, so a run can find bytes that are already published', () => {
+    // The run asks the bucket for `royaraqamia-<versionName>.apk` before building:
+    // a version whose bytes are already there is adopted, not rebuilt (ADR-0069).
+    let out = '';
+    const code = main({ argv: ['--verdict'], log: (line) => (out += `${line}\n`) });
+
+    expect(code).toBe(0);
+    const verdict = JSON.parse(out.trim());
+    expect(verdict.versionName).toBe(shellVersionNameFor(verdict.counter));
+    expect(verdict.published).toBe(JSON.parse(committedManifest).versionCode);
+    expect(typeof verdict.publish).toBe('boolean');
   });
 });
