@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.125.1] - 2026-10-20
+
 ### Fixed
+- never cache account-scoped reads (#420)
 - release builds ship without WebView debugging (#398)
 
 ## [1.125.0] - 2026-10-20
