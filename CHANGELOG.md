@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.124.1] - 2026-10-20
+
+### Changed
+- Quran reader joins background refresh pull. (#407)
+- stop at the open pull request and leave the merge manual (#408)
+
 ## [1.124.0] - 2026-10-19
 
 ### Added
