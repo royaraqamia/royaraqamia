@@ -3,10 +3,17 @@
 # GitHub's `schedule` trigger is best-effort: it lands hours late and is sometimes
 # dropped for a whole day, which is exactly the failure the planner/implementer
 # pipeline cannot detect on its own (a run that never starts cannot report that it
-# never started). This workflow is the dead-man's switch: once a day it checks the
-# age of the last successful run of each agent workflow, re-dispatches any that
+# never started). This workflow is the dead-man's switch: every six hours it checks
+# the age of the last successful run of each agent workflow, re-dispatches any that
 # lapsed, and opens (or closes) a single tracking issue so a human notices a
 # recurring outage.
+#
+# Every dispatch is fire-and-forget — GitHub answers `204` and can still start
+# nothing, which is how the 2026-10-19/20 misses stayed invisible until the 26-hour
+# check. So each re-dispatch is confirmed: the run has to appear in the Actions API
+# before the catch-up is reported as done, and a dropped dispatch is named as such in
+# the issue instead of being counted as a recovery. Six-hourly rather than daily so a
+# silent drop is caught within hours, not a day.
 #
 # Re-dispatching works with the default GITHUB_TOKEN: `workflow_dispatch` is exempt
 # from the "token-triggered events do not start workflows" rule the planner and
@@ -16,9 +23,8 @@ name: 'Issue Automation Health'
 
 on:
   schedule:
-    # 12:00 UTC = 15:00 Damascus — six hours after the implementer backstop, so a
-    # missed day is unambiguous.
-    - cron: '0 12 * * *'
+    # Every six hours, so a missed heartbeat is caught within hours rather than a day.
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -75,7 +81,15 @@ jobs:
               if (!run || ageMs > STALE_MS) stale.push(target);
             }
 
+            // Re-dispatch each lapsed workflow and confirm a run actually started.
+            // The dispatch call itself proves nothing: GitHub returns 204 for a
+            // request it then drops, so a catch-up that is not verified is reported
+            // as a recovery that never happened.
+            const DISPATCH_WAIT_MS = 90 * 1000;
+            const DISPATCH_POLL_MS = 5 * 1000;
+            const recoveries = [];
             for (const target of stale) {
+              const since = Date.now();
               try {
                 await github.rest.actions.createWorkflowDispatch({
                   owner,
@@ -83,11 +97,45 @@ jobs:
                   workflow_id: target.file,
                   ref: 'main',
                 });
-                core.warning('Re-dispatched ' + target.name + ' (' + target.file + ').');
               } catch (err) {
                 core.error('Could not re-dispatch ' + target.name + ': ' + err.message);
+                recoveries.push({ target, error: err.message });
+                continue;
               }
+
+              let run = null;
+              const deadline = Date.now() + DISPATCH_WAIT_MS;
+              while (!run && Date.now() < deadline) {
+                await new Promise((resolve) => setTimeout(resolve, DISPATCH_POLL_MS));
+                const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                  owner,
+                  repo,
+                  workflow_id: target.file,
+                  per_page: 10,
+                });
+                // A minute of slack absorbs clock skew between the runner and GitHub.
+                run = runs.find((r) => Date.parse(r.created_at) >= since - 60000) || null;
+              }
+
+              if (run) {
+                core.warning('Re-dispatched ' + target.name + '; run ' + run.id + ' started.');
+              } else {
+                core.error(
+                  'Re-dispatched ' + target.name + ' but no run appeared within ' +
+                    DISPATCH_WAIT_MS / 1000 + 's — the dispatch was dropped.'
+                );
+              }
+              recoveries.push({ target, run });
             }
+
+            const recoveryLines = recoveries.map(({ target, run, error }) => {
+              if (error) return '- ' + target.name + ': re-dispatch failed (' + error + ').';
+              if (run) return '- ' + target.name + ': re-dispatched, run ' + run.id + ' started.';
+              return (
+                '- ' + target.name + ': re-dispatched, but no run appeared within ' +
+                DISPATCH_WAIT_MS / 1000 + 's. The dispatch was dropped — this is GitHub, not the pipeline.'
+              );
+            });
 
             const open = await github.paginate(github.rest.issues.listForRepo, {
               owner,
@@ -120,14 +168,15 @@ jobs:
             }
 
             const body = [
-              'The daily heartbeat for the autonomous issue automation is late.',
+              'The heartbeat for the autonomous issue automation is late. Checked every six hours.',
               '',
               'Last successful runs:',
               ...lines,
               '',
-              'Re-dispatched: ' + stale.map((t) => t.name).join(', ') + '.',
+              'Catch-up:',
+              ...recoveryLines,
               '',
-              "If this recurs, check the pg_cron dispatcher (`dispatch_github_workflow`) and GitHub's schedule delivery.",
+              "If a dispatch above was dropped, GitHub's Actions delivery is the problem rather than the pg_cron dispatcher (`dispatch_github_workflow`). Either way the next check re-dispatches.",
               '',
               '_Maintained by `.github/workflows/issue-automation-health.yml` (ADR 0032)._',
             ].join('\n');
