@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { QuranLocalStore, isAyahRef } from '@/frontend/api/quran/local-store';
-import { pullQuranSync } from '@/frontend/api/quran/sync-api';
+import { pullQuranData } from '@/frontend/api/quran/pull';
 import { createQuranHttpSyncTransport } from '@/frontend/api/quran/sync-transport';
 import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
@@ -107,7 +107,7 @@ export function useQuranReader(): QuranReaderState {
     async (target: QuranLocalStore) => {
       if (!isSignedIn) return;
       try {
-        await target.applySyncSnapshot(await pullQuranSync(await target.getSyncCursor()));
+        await pullQuranData(target);
       } catch (error) {
         logger.error('Failed to reconcile the reader with the server', { error: String(error) });
       }
