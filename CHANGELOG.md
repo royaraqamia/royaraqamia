@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.126.1] - 2026-10-20
+
+### Fixed
+- assign the trigger's columns through jsonb, not EXECUTE (#429)
+
 ## [1.126.0] - 2026-10-20
 
 ### Changed
