@@ -173,6 +173,26 @@ describe('staying wired to the shell it drills', () => {
   });
 });
 
+/** Columns a pasted row yields: pipes escaped by an odd run of backslashes do not count. */
+function cellCount(line) {
+  const cells = [];
+  let current = '';
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '\\') {
+      current += char + (line[index + 1] ?? '');
+      index += 1;
+    } else if (char === '|') {
+      cells.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current);
+  return cells.length;
+}
+
 describe('the real-device matrix', () => {
   it('runs the three cases the doc table names, in order', () => {
     expect(MATRIX_CASES.map((entry) => entry.id)).toEqual(['force-stop', 'doze', 'mid-flush']);
@@ -196,6 +216,12 @@ describe('the real-device matrix', () => {
         status: 'skipped',
         observation: 'run-as said "a | b"',
       },
+      {
+        title: 'Force stop',
+        expected: 'no loss',
+        status: 'pass',
+        observation: 'logcat echoed "a \\| b" and "C:\\tmp"',
+      },
     ]);
     expect(table.split('\n')[0]).toBe('| Case | Expected | Observed |');
     expect(table).toContain(
@@ -203,6 +229,12 @@ describe('the real-device matrix', () => {
     );
     // A pipe in the device's own words must not split the row.
     expect(table).toContain('skipped — run-as said "a \\| b"');
+    // A backslash before a pipe must be escaped too, or the pipe escapes the cell.
+    expect(table).toContain('pass — logcat echoed "a \\\\\\| b" and "C:\\\\tmp"');
+    // No unescaped pipe may survive: every row keeps its three columns.
+    for (const line of table.split('\n')) {
+      expect(cellCount(line)).toBe(5);
+    }
   });
 
   it('forces doze, unplugs, and kills the drain process with the commands the cases need', () => {
