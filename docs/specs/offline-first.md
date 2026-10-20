@@ -181,6 +181,12 @@ Cache Storage is bounded in bytes and evicted least-recently-used first, with th
 the current build's static assets pinned; sign-out purges the runtime cache except that shell, and
 never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache-has-a-byte-budget.md), #394).
 
+The build's public static routes are precached as HTML documents at install, derived from the build's
+own route manifests and bounded to 6 MB (or what the cache budget has left), so a deep link to a route
+this device never opened still paints its own shell offline
+([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). Dynamic detail routes,
+account tools and every never-cache prefix stay out.
+
 ### Delivery states
 
 Property 3 needs a per-item state a user can read at a glance, the way a messenger's clock and ticks
@@ -284,7 +290,7 @@ the server is unreachable, and the [Verification](#verification) section for wha
   | LinkSnap                   | link created offline, server row after reconnect — and a second proof that the list paints from the Local Store offline; the drain registry now covers it (#385) | `linksnap-offline.spec.ts`                             |
   | BlogPress                  | draft edit made offline, server body after reconnect                                                                                                             | `blogpress-offline.spec.ts`                            |
   | Quran Reader               | mark made offline, account row after reconnect                                                                                                                   | `quran-sync.spec.ts`                                   |
-  | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503                                                                                                             | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
+  | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503; a never-visited public route deep-links to its own shell offline                                           | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
 
   Two more specs prove a mechanism rather than a product: `sync-flush.spec.ts` queues a write, closes
   the page and restores the network, so only the Android shell's drain page can deliver it; and

@@ -66,6 +66,7 @@ $RECYCLE.BIN/
 
 # auto-generated
 public/sw-version.js
+public/sw-precache.js
 public/sw-push-config.js
 public/sw-outbox.js
 public/sync-flush.js

@@ -45,6 +45,7 @@ on:
     paths:
       - 'public/sw.js'
       - 'public/sw-routing.js'
+      - 'scripts/generate-sw-precache.mjs'
       - 'frontend/shared/local-store/**'
       - 'frontend/shared/persistent-storage.ts'
       - 'frontend/state/**'

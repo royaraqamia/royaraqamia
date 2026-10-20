@@ -51,5 +51,6 @@ describe('PWA asset cache-busting', () => {
     const vercel = read('vercel.json');
     expect(vercel).toContain('/sw-version.js');
     expect(vercel).toContain('/sw-push-config.js');
+    expect(vercel).toContain('/sw-precache.js');
   });
 });

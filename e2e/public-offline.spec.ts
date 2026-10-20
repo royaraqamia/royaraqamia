@@ -56,3 +56,39 @@ test('a visited public page paints from cache offline and shows its age', async 
 
   await context.close();
 });
+
+test('a never-visited public route deep-links offline from the install precache', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  // The install event precaches the build's public route shells; the helper
+  // returns only after the worker controls the page, which is after `install`
+  // has settled. `/privacy` is never opened in this context.
+  await gotoUnderWorkerControl(page, `${baseURL}/rates`);
+  await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
+
+  await context.setOffline(true);
+  await page.goto(`${baseURL}/privacy`, { waitUntil: 'domcontentloaded' });
+
+  // A hard navigation to a never-visited route must render its own shell, not
+  // the offline fallback. The heading is server-rendered into the precached
+  // document; the offline page's retry link is the negative control.
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole('heading', { name: /سياسة الخصوصيَّة/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
+  // The precache list must not have widened the online-only boundary: an
+  // auth/account navigation still falls back to `/offline`.
+  await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toBeVisible();
+
+  await context.close();
+});
