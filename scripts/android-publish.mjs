@@ -48,6 +48,7 @@ import { spawnSync } from 'node:child_process';
 import {
   copyFileSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   statSync,
@@ -463,7 +464,17 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   // native needs answered: is there a publish here at all? No build, no keystore.
   if (argv.includes('--verdict')) {
     const verdict = publishVerdict({ counter, published: previous });
-    log(JSON.stringify({ ...verdict, counter, published: Number(previous?.versionCode ?? 0) }));
+    // `versionName` rides along because the workflow names the storage object after
+    // it before the build: a version that is already published is adopted, not
+    // rebuilt, and the run has to know which file to look for (ADR-0069).
+    log(
+      JSON.stringify({
+        ...verdict,
+        counter,
+        published: Number(previous?.versionCode ?? 0),
+        versionName,
+      })
+    );
     return 0;
   }
 
@@ -568,6 +579,10 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     return 0;
   }
 
+  // An adopted build was compiled by an earlier run, so this job never ran Gradle
+  // and the staging directory does not exist yet. `--apk` is the resume path
+  // (ADR-0069), and it still has to stage the file it stamped.
+  mkdirSync(STAGING_DIR, { recursive: true });
   copyFileSync(apkPath, staged);
   writeFileSync(MANIFEST_PATH, manifestText(manifest));
 

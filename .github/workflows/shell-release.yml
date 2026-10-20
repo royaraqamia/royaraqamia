@@ -10,7 +10,9 @@ name: 'Shell Release'
 #
 #   1. decides whether there is anything to publish at all (counter vs the manifest)
 #   2. runs the shell's JVM tests
-#   3. builds and signs the release APK, stamping the manifest from the file
+#   3. builds and signs the release APK, stamping the manifest from the file — or,
+#      when this version's bytes are already in storage, adopts them instead: a
+#      rebuild is not byte-identical, and a version is published once
 #   4. creates this version's own release (`android-1.0.3`) and attaches the asset
 #   5. downloads it back and hashes it against the manifest
 #   6. waits for the release train's commit to land on main (both write there, and the
@@ -20,7 +22,10 @@ name: 'Shell Release'
 # Failing at 3–5 leaves the published channel exactly as it was: nothing is
 # announced. Failing at 6 leaves the asset uploaded and the manifest stale — the
 # safe direction, because nobody is told about an APK whose bytes were not
-# verified. Re-running finishes the job.
+# verified. Re-running finishes the job: it finds the version's bytes in storage
+# and adopts them, because a rebuild from the same tree is not byte-identical
+# (shell 1.0.13: same 8,052,296 bytes, different sha256) and a version is never
+# republished with different bytes.
 #
 # A push that changed nothing native costs about ten seconds: the verdict is the
 # first step and needs nothing but node. `workflow_dispatch` runs the same thing on
@@ -81,7 +86,61 @@ jobs:
             echo "publish=$(echo "$verdict" | jq -r .publish)"
             echo "reason=$(echo "$verdict" | jq -r .reason)"
             echo "counter=$(echo "$verdict" | jq -r .counter)"
+            echo "versionName=$(echo "$verdict" | jq -r .versionName)"
           } >> "$GITHUB_OUTPUT"
+
+      # A version's bytes are published once. The verdict above has just proved the
+      # committed manifest does not name this version, so bytes already in storage
+      # are this version's, from a run that died between the upload and the commit.
+      # Adopt them: a rebuild is not byte-identical (shell 1.0.13 rebuilt to the
+      # same 8,052,296 bytes with a different sha256), and a published version is
+      # never republished with different bytes (ADR-0046, ADR-0069).
+      - name: Is this version already published?
+        id: existing
+        if: steps.verdict.outputs.publish == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ASSET: royaraqamia-${{ steps.verdict.outputs.versionName }}.apk
+          TAG: android-${{ steps.verdict.outputs.versionName }}
+        run: |
+          set -euo pipefail
+          url="https://ievboaylytxgtijconak.supabase.co/storage/v1/object/android/$ASSET"
+          if ! curl -sS -f -o "$RUNNER_TEMP/published.apk" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" "$url"; then
+            echo "no $ASSET in storage; this version will be built"
+            exit 0
+          fi
+
+          sha=$(sha256sum "$RUNNER_TEMP/published.apk" | cut -d' ' -f1)
+          size=$(stat -c%s "$RUNNER_TEMP/published.apk")
+          echo "$ASSET is already in storage: $size bytes, sha256 $sha"
+
+          # The archive has to agree with what the site serves, or one of the two
+          # was replaced and neither can be trusted. Fail before announcing anything.
+          notes=""
+          released_at=""
+          if release=$(gh release view "$TAG" --json body,assets,createdAt 2>/dev/null); then
+            digest=$(printf '%s' "$release" | jq -r --arg name "$ASSET" \
+              '.assets[] | select(.name == $name) | .digest // empty')
+            if [ -n "$digest" ] && [ "${digest#sha256:}" != "$sha" ]; then
+              echo "::error title=Storage and the release disagree::$ASSET is sha256 $sha in storage but $digest on $TAG. One of the two was replaced; nothing was uploaded or committed."
+              exit 1
+            fi
+            # What the update dialog says was written by the run that built these
+            # bytes, as the first line of the release body; the date is the day it
+            # was first published, not the day this rerun happened.
+            notes=$(printf '%s' "$release" | jq -r '.body | split("\n")[0] | gsub("\r"; "")')
+            notes=${notes:0:160}
+            released_at=$(printf '%s' "$release" | jq -r '.createdAt[:10]')
+          fi
+
+          {
+            echo "path=$RUNNER_TEMP/published.apk"
+            echo "sha256=$sha"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$notes" ]; then echo "notes=$notes" >> "$GITHUB_OUTPUT"; fi
+          if [ -n "$released_at" ]; then echo "releasedAt=$released_at" >> "$GITHUB_OUTPUT"; fi
 
       - name: Setup Build Environment
         if: steps.verdict.outputs.publish == 'true'
@@ -174,25 +233,39 @@ jobs:
           # locales and would split an Arabic title mid-character.
           title=$(printf '%s' "$subject" | tr -d '\r\n')
           echo "notes=${title:0:160}" >> "$GITHUB_OUTPUT"
-      - name: Build, sign and stamp
+      - name: Build or adopt, sign and stamp
         id: publish
         if: steps.verdict.outputs.publish == 'true'
         env:
-          NOTES: ${{ steps.notes.outputs.notes }}
+          # An adopted version keeps the dialog text the run that built it wrote;
+          # only a fresh build uses this run's commit subject.
+          NOTES: ${{ steps.existing.outputs.notes || steps.notes.outputs.notes }}
+          ADOPT: ${{ steps.existing.outputs.path }}
+          RELEASED_AT: ${{ steps.existing.outputs.releasedAt }}
         run: |
           set -euo pipefail
-          # `releasedAt` is stamped by the script from this run's clock (UTC), not
-          # passed here: a publish must never be able to inherit the previous
-          # manifest's date, which is how the field froze for every release after
-          # the first one that set it (#391).
-          extra=""
+          # `releasedAt` is stamped by the script from this run's clock (UTC), except
+          # for an adopted version, whose date is the day it was first published. A
+          # publish must never be able to inherit the *previous* manifest's date,
+          # which is how the field froze for every release after the first that set
+          # it (#391).
+          args=(--json)
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            extra="--dry-run"
+            args+=(--dry-run)
+          fi
+          if [ -n "${ADOPT:-}" ]; then
+            # The guard in android:publish reads the config `cap sync` writes, and
+            # the JVM tests above synced without NODE_ENV=production — which is the
+            # debug config. Generate the one a release ships before adopting.
+            NODE_ENV=production npm run android:sync
+            args+=(--apk "$ADOPT")
+          fi
+          if [ -n "${RELEASED_AT:-}" ]; then
+            args+=(--released-at "$RELEASED_AT")
           fi
 
           log="$RUNNER_TEMP/publish.log"
-          # shellcheck disable=SC2086 # $extra is one flag or nothing, on purpose
-          if ! npm run android:publish -- --json $extra --notes "$NOTES" > "$log" 2>&1; then
+          if ! npm run android:publish -- "${args[@]}" --notes "$NOTES" > "$log" 2>&1; then
             tail -n 200 "$log"
             echo "::error title=The publish failed::nothing was uploaded or committed"
             exit 1
@@ -237,15 +310,15 @@ jobs:
           head -c 400 "$RUNNER_TEMP/upload.out" || true
 
           # Anything but "created" is only safe to walk away from when the object in
-          # the bucket is already exactly this build — which is what a re-run looks
-          # like, and the only case where the manifest may still be committed.
+          # the bucket is already exactly these bytes — the adopt step made them so
+          # when the version was published before, and this compares them again.
           curl -sS -f -o "$RUNNER_TEMP/existing.apk" "$url" || {
             echo "::error title=The APK is not in storage::the upload answered $status and downloading it back failed too"
             exit 1
           }
           existing=$(sha256sum "$RUNNER_TEMP/existing.apk" | cut -d' ' -f1)
           if [ "$existing" != "$SHA256" ]; then
-            echo "::error title=Same version, different bytes in storage::$ASSET already holds sha256 $existing, not $SHA256. A version is never republished with different bytes — bump android/shell-version.properties instead."
+            echo "::error title=Same version, different bytes in storage::$ASSET holds sha256 $existing, but this run stamped $SHA256, so it did not adopt the published bytes. A version is never republished with different bytes — re-run so the bytes in storage are adopted, or bump android/shell-version.properties."
             exit 1
           fi
           echo "$ASSET in storage is already this build"
