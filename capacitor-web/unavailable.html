@@ -41,6 +41,16 @@
         font-style: normal;
         font-display: swap;
       }
+      /* The WebView version numbers take the same digit face as the site and the
+         native update cards; the Arabic around them stays in IBM Plex. */
+      @font-face {
+        font-family: 'Aref Ruqaa Digits';
+        src: url('fonts/ArefRuqaa-Digits.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+        unicode-range: U+0030-0039;
+      }
 
       html,
       body {
@@ -58,7 +68,7 @@
         justify-content: center;
         padding: var(--gutter);
         min-height: 100vh;
-        font-family: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
+        font-family: 'Aref Ruqaa Digits', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
 

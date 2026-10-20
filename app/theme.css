@@ -39,7 +39,15 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: var(--font-arabic);
+  /* Digits in read-only text use Aref Ruqaa's Latin numerals. The dedicated
+     `Aref Ruqaa Digits` face is unicode-range-limited to U+0030-0039, so it
+     only ever supplies numerals. Editable fields opt back out (see
+     app/global.css) because the calligraphic bold face is hard to read while
+     typing. */
+  --font-digits: 'Aref Ruqaa Digits';
+  --font-sans: var(--font-digits), var(--font-arabic);
+  --font-mono: var(--font-digits), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-heading: 'Aref Ruqaa', var(--font-arabic);
 }
 
 /* Compositor-only transition (ADR 0004). Replaces `transition-all`, which

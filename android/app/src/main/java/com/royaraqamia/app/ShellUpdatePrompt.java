@@ -2,6 +2,7 @@ package com.royaraqamia.app;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -13,10 +14,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.res.ResourcesCompat;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -77,6 +81,8 @@ final class ShellUpdatePrompt {
     private TextView progressPercent;
     private TextView progressSize;
     private Button cancelButton;
+    /** Aref Ruqaa's digit face, loaded once for both update cards. */
+    private Typeface digitTypeface;
     private int lastPercent = -1;
     /**
      * «إلغاء» was tapped. Read on the download thread, written on the main one,
@@ -90,6 +96,24 @@ final class ShellUpdatePrompt {
     ShellUpdatePrompt(Activity activity, String serverUrl) {
         this.activity = activity;
         this.manifestUrl = ShellUpdate.manifestUrl(serverUrl);
+    }
+
+    /** The brand's numeral face, or null if the resource cannot be loaded. */
+    private Typeface digitTypeface() {
+        if (digitTypeface == null) {
+            digitTypeface = ResourcesCompat.getFont(activity, R.font.aref_ruqaa_digits);
+        }
+        return digitTypeface;
+    }
+
+    /**
+     * `getString(id, args)` formats with the device locale, which renders a
+     * percentage in Arabic-Indic digits on an Arabic phone. `Locale.ROOT` keeps
+     * the app's Western digits whatever the device is set to.
+     */
+    private String formatPercent(int percent) {
+        return String.format(
+                Locale.ROOT, activity.getString(R.string.shell_update_percent), percent);
     }
 
     /**
@@ -208,6 +232,7 @@ final class ShellUpdatePrompt {
         // repeating its numbers.
         String details = failed ? "" : describe(status);
         meta.setText(details);
+        DigitSpans.apply(meta, digitTypeface());
         meta.setVisibility(details.isEmpty() ? View.GONE : View.VISIBLE);
 
         Dialog dialog = new Dialog(activity, R.style.Theme_Royaraqamia_Dialog);
@@ -350,15 +375,21 @@ final class ShellUpdatePrompt {
         if (percent == lastPercent) return;
         lastPercent = percent;
 
-        String percentText = activity.getString(R.string.shell_update_percent, percent);
+        String percentText = formatPercent(percent);
         String sizeText = activity.getString(
                 R.string.shell_update_progress_size,
                 ShellUpdate.formatSize(received),
                 ShellUpdate.formatSize(total));
         onUiThread(() -> {
             if (progressBar != null) progressBar.setProgress(percent);
-            if (progressPercent != null) progressPercent.setText(percentText);
-            if (progressSize != null) progressSize.setText(sizeText);
+            if (progressPercent != null) {
+                progressPercent.setText(percentText);
+                DigitSpans.apply(progressPercent, digitTypeface());
+            }
+            if (progressSize != null) {
+                progressSize.setText(sizeText);
+                DigitSpans.apply(progressSize, digitTypeface());
+            }
         });
     }
 
@@ -380,12 +411,14 @@ final class ShellUpdatePrompt {
         progressSize = content.findViewById(R.id.shell_update_progress_size);
         cancelButton = content.findViewById(R.id.shell_update_cancel);
 
-        progressPercent.setText(activity.getString(R.string.shell_update_percent, 0));
+        progressPercent.setText(formatPercent(0));
+        DigitSpans.apply(progressPercent, digitTypeface());
         if (installing.sizeBytes > 0) {
             progressSize.setText(activity.getString(
                     R.string.shell_update_progress_size,
                     ShellUpdate.formatSize(0),
                     ShellUpdate.formatSize(installing.sizeBytes)));
+            DigitSpans.apply(progressSize, digitTypeface());
         } else {
             // A manifest with no size downloads nothing (`ShellDownload` refuses
             // it before the first byte), so this line is about to be replaced by

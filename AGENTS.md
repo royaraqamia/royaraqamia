@@ -35,6 +35,8 @@ taskkill /PID $p.Id /T /F
 
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
+**Digits are ASCII, always.** Type `0-9`, never Arabic-Indic (U+0660–U+0669) or Persian (U+06F0–U+06F9) numerals — in source, docs, UI copy, tests and stored content. `npm run check:digits` gates it and `npm run fix:digits` rewrites. Read-only numbers render in Aref Ruqaa through `--font-digits`; editable fields opt back out. Runtime input goes through `toLatinDigits` in `shared/contracts/text.ts`.
+
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
 
 **Arabic copy:** write «جاري» (final ya), never «جارٍ» (tanween). `npm run check:arabic` enforces it and `npm run fix:arabic` rewrites it; ADR 0054 records why.

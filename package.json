@@ -32,6 +32,8 @@
     "check:env-docs": "node scripts/check-env-docs.mjs",
     "check:arabic": "node scripts/check-arabic-order.mjs",
     "fix:arabic": "node scripts/check-arabic-order.mjs --fix",
+    "check:digits": "node scripts/check-digits.mjs",
+    "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",

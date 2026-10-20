@@ -20,15 +20,6 @@ export const ibmPlexSansArabic = localFont({
   adjustFontFallback: 'Arial',
 });
 
-export const arefRuqaa = localFont({
-  src: [
-    {
-      path: '../../public/fonts/Aref Ruqaa/ArefRuqaa-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-  ],
-  variable: '--font-heading',
-  display: 'swap',
-  adjustFontFallback: 'Arial',
-});
+// Aref Ruqaa itself is declared in `app/global.css`: it needs a second,
+// `unicode-range`-limited face for numerals, which `next/font/local` cannot
+// express. The root layout preloads the file instead.

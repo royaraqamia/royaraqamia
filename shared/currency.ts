@@ -111,7 +111,7 @@ export function getCurrencyDisplaySymbol(code: string): string {
   const curated = getCurated(code);
   if (curated) return curated.symbol;
   try {
-    const parts = new Intl.NumberFormat('ar', {
+    const parts = new Intl.NumberFormat('ar-u-nu-latn', {
       style: 'currency',
       currency: code,
       currencyDisplay: 'narrowSymbol',

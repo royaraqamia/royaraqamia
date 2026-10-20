@@ -1,13 +1,9 @@
+import { toLatinDigits } from '@/shared/contracts/text';
 import { COUNTRY_DIAL_CODES, type CountryDialCode } from './country-dial-codes';
 
-const ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 const MAX_NATIONAL_LENGTH = 18;
 
 /** Pure helpers for composing/parsing WhatsApp numbers stored as "+<dial> <national>". */
-
-function toLatinDigits(value: string): string {
-  return value.replace(/[٠-٩]/g, (digit) => String(ARABIC_INDIC_DIGITS.indexOf(digit)));
-}
 
 /**
  * Live-typing sanitizer for the national-number field: Arabic-Indic digits

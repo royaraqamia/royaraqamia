@@ -43,7 +43,9 @@
     -->
     <string name="shell_update_downloading">جاري تنزيل التَّحديث…</string>
     <!-- `%%` is a literal percent sign for `String.format`, so this renders as
-         «42%». Western digits, like every other number the app shows. -->
+         «42%». Western digits, like every other number the app shows; the
+         formatter in `ShellUpdatePrompt.formatPercent` pins `Locale.ROOT` so an
+         Arabic-locale phone cannot turn it into Arabic-Indic digits. -->
     <string name="shell_update_percent">%1$d%%</string>
     <string name="shell_update_progress_size">%1$s من %2$s م.ب</string>
     <string name="shell_update_cancel">إلغاء</string>
