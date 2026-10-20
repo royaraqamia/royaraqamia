@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PostSchema, PostSlugSchema } from '@/shared/contracts/community';
+import {
+  CommunityIndexQuerySchema,
+  CommunitySearchQuerySchema,
+  COMMUNITY_INDEX_CURSOR_MAX_LENGTH,
+  COMMUNITY_SEARCH_QUERY_MAX_LENGTH,
+  PostSchema,
+  PostSlugSchema,
+} from '@/shared/contracts/community';
 
 const validPost = {
   slug: 'new-post',
@@ -87,5 +94,63 @@ describe('PostSlugSchema', () => {
     for (const slug of ['bad slug', 'bad/slug', 'bad!slug', 'slug?x=1']) {
       expect(PostSlugSchema.safeParse(slug).success).toBe(false);
     }
+  });
+});
+
+describe('CommunitySearchQuerySchema', () => {
+  it('trims the query', () => {
+    expect(CommunitySearchQuerySchema.parse({ q: '  ahmad  ' })).toEqual({ q: 'ahmad' });
+  });
+
+  it('accepts a blank query as the "no search" sentinel', () => {
+    expect(CommunitySearchQuerySchema.safeParse({ q: '' }).success).toBe(true);
+    expect(CommunitySearchQuerySchema.parse({ q: '   ' })).toEqual({ q: '' });
+  });
+
+  it('accepts a query of exactly the maximum length', () => {
+    const q = 'أ'.repeat(COMMUNITY_SEARCH_QUERY_MAX_LENGTH);
+    expect(CommunitySearchQuerySchema.safeParse({ q }).success).toBe(true);
+  });
+
+  it('rejects a query longer than the maximum with an Arabic message', () => {
+    const result = CommunitySearchQuerySchema.safeParse({
+      q: 'أ'.repeat(COMMUNITY_SEARCH_QUERY_MAX_LENGTH + 1),
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toContain('طويلة جداً');
+    }
+  });
+});
+
+describe('CommunityIndexQuerySchema', () => {
+  it('accepts a missing cursor', () => {
+    expect(CommunityIndexQuerySchema.parse({ q: '', cursor: null })).toEqual({
+      q: '',
+      cursor: null,
+    });
+  });
+
+  it('normalises a blank cursor to the first page', () => {
+    expect(CommunityIndexQuerySchema.parse({ q: '', cursor: '   ' })).toEqual({
+      q: '',
+      cursor: null,
+    });
+  });
+
+  it('bounds the cursor length', () => {
+    const cursor = 'a'.repeat(COMMUNITY_INDEX_CURSOR_MAX_LENGTH + 1);
+    const result = CommunityIndexQuerySchema.safeParse({ q: '', cursor });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toContain('مرجع التصفّح');
+    }
+  });
+
+  it('applies the same query bound as the search route', () => {
+    const q = 'أ'.repeat(COMMUNITY_SEARCH_QUERY_MAX_LENGTH + 1);
+    expect(CommunityIndexQuerySchema.safeParse({ q, cursor: null }).success).toBe(false);
   });
 });
