@@ -35,7 +35,7 @@ jobs:
       - name: Env Docs Sync
         run: npm run check:env-docs
 
-      - name: Arabic Diacritic Order
+      - name: Arabic Spelling & Diacritic Order
         run: npm run check:arabic
 
       - name: Lint

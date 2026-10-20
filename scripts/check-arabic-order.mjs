@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Requires the repo's text to be NFC, and folds it into that form with `--fix`.
+ * Requires the repo's text to be NFC and to spell "running" with a final ya, and
+ * folds both into that form with `--fix`.
  *
  * Arabic writes a letter's combining marks in two orders — the Unicode canonical
  * one, and the reverse, which renders identically but compares unequal. Any
@@ -9,6 +10,11 @@
  * it in the files ESLint parses, and this is the repo-wide gate: docs, JSON and
  * the rest are not linted, and one copy-paste of a word is all it takes to
  * reintroduce the mismatch. See ADR 0063.
+ *
+ * The tanween spelling of "running" is banned for the same reason: the copy uses
+ * the final-ya form (ADR 0054), and a screen reader or an exact-text assertion
+ * only matches one of them. The banned form is written as escapes so this file
+ * passes its own check; the files that must name both spellings are allowlisted.
  *
  * `public/quran/**` is excluded by design: that text is vendored as published
  * (ADR 0057, ADR 0062), and for it NFC composes marks rather than reordering
@@ -27,6 +33,23 @@ import { isNfc, nonNfcLines } from '../eslint-rules/no-non-nfc.mjs';
 export const EXCLUDED = ['public/quran/'];
 
 export const isExcluded = (file) => EXCLUDED.some((prefix) => file.startsWith(prefix));
+
+/** Banned tanween form → final-ya form; escaped so this file passes itself. */
+export const BANNED = '\u062C\u0627\u0631\u064D';
+export const PREFERRED = '\u062C\u0627\u0631\u064A';
+
+/**
+ * Files that must name both spellings: the rule itself and the records that
+ * explain the swap. Every other file is expected to use the preferred form only.
+ */
+export const SPELLING_ALLOWED = [
+  'AGENTS.md',
+  'CHANGELOG.md',
+  'docs/adr/0054-the-shells-dialogs-look-like-the-product.md',
+  'docs/conventions.md',
+];
+
+export const isSpellingAllowed = (file) => SPELLING_ALLOWED.includes(file);
 
 /**
  * Every file the repo would ship: tracked, plus untracked that git does not
@@ -81,35 +104,81 @@ export function fix(files, cwd = process.cwd()) {
   return changed;
 }
 
+/** `{ file, lines }` for every non-excluded text file that uses the banned spelling. */
+export function scanBanned(files, cwd = process.cwd()) {
+  const offenders = [];
+  for (const file of files) {
+    if (isExcluded(file) || isSpellingAllowed(file)) continue;
+    const text = readText(file, cwd);
+    if (text === null || !text.includes(BANNED)) continue;
+    const lines = text
+      .split('\n')
+      .flatMap((line, index) => (line.includes(BANNED) ? [index + 1] : []));
+    offenders.push({ file, lines });
+  }
+  return offenders;
+}
+
+/** Replaces the banned spelling in every eligible file and returns the changed files. */
+export function fixBanned(files, cwd = process.cwd()) {
+  const changed = [];
+  for (const file of files) {
+    if (isExcluded(file) || isSpellingAllowed(file)) continue;
+    const text = readText(file, cwd);
+    if (text === null || !text.includes(BANNED)) continue;
+    writeFileSync(resolve(cwd, file), text.replaceAll(BANNED, PREFERRED));
+    changed.push(file);
+  }
+  return changed;
+}
+
 export async function main(argv = process.argv.slice(2), log = console.log, error = console.error) {
   const files = listedFiles();
 
   if (argv.includes('--fix')) {
     const changed = fix(files);
-    // NFC is idempotent, so a clean re-scan proves the pass converged rather
-    // than shuffling the same marks into a different order.
+    const respelled = fixBanned(files);
+    // Both fixes are idempotent, so a clean re-scan proves the pass converged
+    // rather than shuffling the same marks into a different order.
     const left = scan(files);
-    if (left.length > 0) {
-      error(`ERROR: ${left.length} file(s) are still not NFC after --fix:`);
-      for (const { file, lines } of left) error(`  - ${file} (lines ${lines.join(', ')})`);
+    const stillBanned = scanBanned(files);
+    if (left.length > 0 || stillBanned.length > 0) {
+      if (left.length > 0) {
+        error(`ERROR: ${left.length} file(s) are still not NFC after --fix:`);
+        for (const { file, lines } of left) error(`  - ${file} (lines ${lines.join(', ')})`);
+      }
+      if (stillBanned.length > 0) {
+        error(`ERROR: ${stillBanned.length} file(s) still use the banned spelling after --fix:`);
+        for (const { file, lines } of stillBanned) error(`  - ${file} (lines ${lines.join(', ')})`);
+      }
       return 1;
     }
-    log(`OK: folded ${changed.length} file(s) into NFC.`);
+    log(`OK: folded ${changed.length} file(s) into NFC and respelled ${respelled.length}.`);
     return 0;
   }
 
   const offenders = scan(files);
-  if (offenders.length === 0) {
-    log(`OK: all ${files.length} files are NFC (${EXCLUDED.join(', ')} excluded).`);
+  const banned = scanBanned(files);
+  if (offenders.length === 0 && banned.length === 0) {
+    log(`OK: all ${files.length} files are NFC and use the preferred spelling.`);
     return 0;
   }
 
-  error(
-    `ERROR: ${offenders.length} file(s) are not NFC — Arabic combining marks are in a ` +
-      `non-canonical order, so an exact-text match against the correctly spelled copy misses:`
-  );
-  for (const { file, lines } of offenders) error(`  - ${file} (lines ${lines.join(', ')})`);
-  error('\nRun `npm run fix:arabic` to fold them into the canonical order. See ADR 0063.');
+  if (offenders.length > 0) {
+    error(
+      `ERROR: ${offenders.length} file(s) are not NFC — Arabic combining marks are in a ` +
+        `non-canonical order, so an exact-text match against the correctly spelled copy misses:`
+    );
+    for (const { file, lines } of offenders) error(`  - ${file} (lines ${lines.join(', ')})`);
+  }
+  if (banned.length > 0) {
+    error(
+      `ERROR: ${banned.length} file(s) use «${BANNED}» — write «${PREFERRED}» instead ` +
+        `(ADR 0054), or the exact-text match hits only one spelling:`
+    );
+    for (const { file, lines } of banned) error(`  - ${file} (lines ${lines.join(', ')})`);
+  }
+  error('\nRun `npm run fix:arabic` to fold the marks and rewrite the spelling. See ADR 0063.');
   return 1;
 }
 

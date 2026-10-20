@@ -145,7 +145,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     : status === 'paused'
       ? 'متابعة'
       : isBusy
-        ? 'جارٍ التَّحميل…'
+        ? 'جاري التَّحميل…'
         : status === 'error'
           ? 'إعادة المحاولة'
           : 'استمع للسُّورة';

@@ -102,7 +102,7 @@ export function InstallSection() {
         >
           <span className="flex items-center gap-2.5">
             <RefreshCw className="w-4 h-4 shrink-0 text-primary" />
-            <span>{status === 'checking' ? 'جارٍ التَّحقُّق…' : 'التَّحقُّق من وجود تحديث'}</span>
+            <span>{status === 'checking' ? 'جاري التَّحقُّق…' : 'التَّحقُّق من وجود تحديث'}</span>
           </span>
         </button>
         <p

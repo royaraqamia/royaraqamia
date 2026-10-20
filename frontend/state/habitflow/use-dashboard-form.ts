@@ -60,7 +60,7 @@ export function useDashboardForm(
     setFormError('');
     if (!habitName.trim()) return;
     if (!store) {
-      setFormError('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      setFormError('جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
     setIsSubmitting(true);
@@ -89,7 +89,7 @@ export function useDashboardForm(
     setFormError('');
     if (!selectedHabit || !habitName.trim()) return;
     if (!store) {
-      setFormError('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      setFormError('جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
     setIsSubmitting(true);
