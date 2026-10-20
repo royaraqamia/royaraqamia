@@ -51,6 +51,14 @@
     return !/no-store|no-cache|private/i.test(cacheControl);
   }
 
+  // API reads are cached only when the server says `public` explicitly. An
+  // absent header is not permission: that assumption is what let account-scoped
+  // reads (the Quran sync snapshot) land in Cache Storage (#392).
+  function isPubliclyCacheable(response) {
+    const cacheControl = response.headers.get('cache-control') || '';
+    return /\bpublic\b/i.test(cacheControl) && isCacheable(response);
+  }
+
   // Routes that must never be read from or written to Cache Storage. These are
   // the online-only surfaces (ADR-0031): authentication, admin, per-user reads
   // and the account-tool shells. Caching them risks leaking one session's data
@@ -62,6 +70,7 @@
     '/api/push',
     '/api/me',
     '/api/notifications',
+    '/quran/api',
     '/api/blogpress',
     '/api/downloader',
     '/auth',
@@ -95,6 +104,7 @@
     isNextImage,
     isApiCall,
     isCacheable,
+    isPubliclyCacheable,
     isNeverCache,
     NEVER_CACHE_PREFIXES,
   };

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
 import { isRepositoryError } from '@/backend/shared/repository-error';
+import { NO_STORE } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 /**
@@ -64,6 +65,16 @@ const UNAUTHORIZED_BODY = { error: 'غير مصرح' };
 const FORBIDDEN_BODY = { error: 'غير مصرح' };
 const FAILED_BODY = { success: false, error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.' };
 
+/**
+ * An authenticated response belongs to one signed-in identity, so it must not
+ * survive in Cache Storage for the next one. `no-store` wins over any cache
+ * header a handler tried to set: the seam owns this property, not the caller.
+ */
+function accountScoped(result: HttpResult): HttpResult {
+  if ('redirect' in result) return result;
+  return { ...result, headers: { ...result.headers, ...NO_STORE } };
+}
+
 export async function handleAuthenticated<Identity>(
   authenticate: () => Promise<Identity | AuthFailure | null>,
   run: (identity: Identity) => Promise<HttpResult>,
@@ -74,32 +85,34 @@ export async function handleAuthenticated<Identity>(
     raw = await authenticate();
   } catch (error) {
     Sentry.captureException(error);
-    return jsonResult(500, policy.whenFailed ?? FAILED_BODY);
+    return accountScoped(jsonResult(500, policy.whenFailed ?? FAILED_BODY));
   }
 
   if (raw === null || raw === undefined) {
-    return policy.whenUnauthenticated?.() ?? jsonResult(401, UNAUTHORIZED_BODY);
+    return accountScoped(policy.whenUnauthenticated?.() ?? jsonResult(401, UNAUTHORIZED_BODY));
   }
 
   if (isAuthFailure(raw)) {
     if (raw.kind === 'forbidden') {
-      return policy.whenForbidden?.() ?? jsonResult(403, FORBIDDEN_BODY);
+      return accountScoped(policy.whenForbidden?.() ?? jsonResult(403, FORBIDDEN_BODY));
     }
-    return policy.whenUnauthenticated?.() ?? jsonResult(401, UNAUTHORIZED_BODY);
+    return accountScoped(policy.whenUnauthenticated?.() ?? jsonResult(401, UNAUTHORIZED_BODY));
   }
 
   try {
-    return await run(raw as Identity);
+    return accountScoped(await run(raw as Identity));
   } catch (error) {
     // A data-access failure is infrastructure, not the client's fault: answer
     // 5xx so an Offline Sync replay backs off and retries rather than being
     // marked a permanent failure (ADR-0029). It is already logged and reported
     // at the repository seam, so it is not captured again here.
     if (isRepositoryError(error)) {
-      return jsonResult(500, policy.whenFailed ?? FAILED_BODY);
+      return accountScoped(jsonResult(500, policy.whenFailed ?? FAILED_BODY));
     }
     Sentry.captureException(error);
-    return policy.mapError?.(error) ?? jsonResult(500, policy.whenFailed ?? FAILED_BODY);
+    return accountScoped(
+      policy.mapError?.(error) ?? jsonResult(500, policy.whenFailed ?? FAILED_BODY)
+    );
   }
 }
 

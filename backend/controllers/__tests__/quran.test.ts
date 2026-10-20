@@ -64,6 +64,7 @@ describe('quran controller', () => {
     const result = await syncQuran(new URLSearchParams({ since: '2026-10-01T00:00:00.000Z' }));
 
     expect(result).toEqual(expect.objectContaining({ status: 200, body: snapshot }));
+    expect(result).toMatchObject({ headers: { 'Cache-Control': 'no-store' } });
     expect(mockService.getSyncSnapshot).toHaveBeenCalledWith('u-1', '2026-10-01T00:00:00.000Z');
   });
 

@@ -3,10 +3,9 @@ import { loadCommunitySearch } from '@/backend/loaders/community';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { communitySearchRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { getClientIp } from '@/backend/transport/http';
+import { NO_STORE } from '@/backend/transport/cache-policy';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { CommunitySearchQuerySchema } from '@/shared/contracts/community';
-
-const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 
 /**
  * People + post suggestions for the community search combobox.
