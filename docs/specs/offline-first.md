@@ -92,10 +92,10 @@ Honest list of what stands between us and the bar, each with the file that shows
    elsewhere reaches a closed shell too: the device that delivered it asks the server for a silent
    high-priority FCM wake, and the receiver enqueues that same drain. What is still open is the
    battery-optimization prompt and delivery badges in the shell; and the background _pull_ covers only
-   the products whose pull a background realm can run - HabitFlow and SpendTrack today, because LinkSnap
-   needs a bearer token, BlogPress has no client pull to reuse, and Quran's pull is not wired to its
-   surface yet. So a laptop write refreshes a phone's habits and expenses before the phone is opened; a
-   post, a link or a Quran position still waits for the app.
+   the products whose pull a background realm can run - HabitFlow, SpendTrack and the Quran Reader today,
+   because LinkSnap needs a bearer token and BlogPress has no client pull to reuse. So a laptop write
+   refreshes a phone's habits, expenses and Quran reading position before the phone is opened; a post or
+   a link still waits for the app.
 2. **The offline e2e suite runs, but its owned-data half still skips in CI.** Every spec is
    `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow now sets them for every
    spec except `lead-offline`, which stays out because it writes a row the suite cannot remove, and runs
@@ -244,8 +244,8 @@ the server is unreachable, and the [Verification](#verification) section for wha
    WebView, replays the Outbox and then pulls what it can (ADR-0059). _5b, landed:_ the FCM data wake —
    a device that delivered a write asks the server to wake the account's other devices, a silent
    high-priority data message reaches `SyncMessagingService`, and the receiver enqueues the same drain;
-   the background pull covers HabitFlow and SpendTrack (`PULLABLE_PRODUCTS`). _5c, open:_ the
-   battery-exemption prompt and delivery badges in the shell.
+   the background pull covers HabitFlow, SpendTrack and the Quran Reader (`PULLABLE_PRODUCTS`). _5c,
+   open:_ the battery-exemption prompt and delivery badges in the shell.
 6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
    as content arriving, staying stateless and OTA-free (ADR-0061).
 7. **Verify and harden** — the device matrix below, chaos tests, and the offline suite as a CI gate.
@@ -307,7 +307,7 @@ the server is unreachable, and the [Verification](#verification) section for wha
   is a device result, and [the shell notes](../mobile/android-shell.md) name where it stands.
 - **The background pull** is the drain page's second half: it runs `PULLABLE_PRODUCTS` after the queue
   (`refresh-products.test.ts`, `sync-flush-entry.test.ts`, and each product's pull module through the
-  hook that now shares it). Its coverage is the honest part: two products today, with the reason each
+  hook that now shares it). Its coverage is the honest part: three products today, with the reason each
   absent one is absent written in `sync-products.ts`.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase

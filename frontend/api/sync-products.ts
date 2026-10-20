@@ -7,6 +7,8 @@ import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { createLeadHttpSyncTransport } from '@/frontend/api/leads/sync-transport';
+import { QuranLocalStore } from '@/frontend/api/quran/local-store';
+import { pullQuranData } from '@/frontend/api/quran/pull';
 import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
 import { createQuranHttpSyncTransport } from '@/frontend/api/quran/sync-transport';
 import { pullSpendtrackData } from '@/frontend/api/spendtrack/pull';
@@ -147,10 +149,6 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
  *   `mergeServerData` and nothing that calls it, so the product has no transport
  *   a background realm could run. Its posts arrive from the server through the
  *   route's own seeding instead.
- * - **Quran.** `pullQuranSync` exists but nothing in the app calls it yet, so a
- *   background refresh would be the *only* pull the product has — new behaviour
- *   for the reader, smuggled in through the back door. It waits for the surface
- *   to pull first.
  * - **Leads.** Delivered, not owned: submissions have no server rows to merge.
  */
 export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
@@ -175,6 +173,19 @@ export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
       const store = await SpendtrackLocalStore.open(identity, factory);
       try {
         return await pullSpendtrackData(store);
+      } finally {
+        store.close();
+      }
+    },
+  },
+  {
+    product: 'quran',
+    identity: signedInIdentity,
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('quran', identity))) return 0;
+      const store = await QuranLocalStore.open(identity, factory);
+      try {
+        return await pullQuranData(store);
       } finally {
         store.close();
       }
