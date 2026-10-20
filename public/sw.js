@@ -33,6 +33,22 @@ const PRECACHE_URLS = [
   `/icons/badge-icon-96x96.png${ASSET_QUERY}`,
 ];
 
+// The public cache's byte ceiling (ADR-0069). A test may shrink it through the
+// same realm global; production always takes the spec's ~150 MB.
+const CACHE_BUDGET_BYTES = self.CACHE_BUDGET_BYTES || 150 * 1024 * 1024;
+// Evicting exactly to the ceiling leaves the next write one byte over it, so a
+// pass trims to 90% and churn pays for one large read rather than every write.
+const CACHE_EVICT_TO = 0.9;
+// Size/access bookkeeping lives in its own cache: Cache Storage exposes no
+// metadata, and a sibling entry in `CACHE` would be served by `caches.match`.
+const CACHE_META_NAME = 'royaraqamia-cache-meta';
+const CACHE_META_KEY = '/__sw_cache_index__';
+const CACHE_META_VERSION = 1;
+
+const PRECACHE_PATHS = new Set(
+  PRECACHE_URLS.map((url) => new URL(url, self.location.origin).pathname)
+);
+
 // Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
 // would reject the install and leave the previous worker in place forever, so
 // every URL is fetched independently and failures are only reported.
@@ -40,20 +56,8 @@ async function precache(cache, urls) {
   const results = await Promise.allSettled(urls.map((url) => cache.add(url)));
   const failed = urls.filter((_, index) => results[index].status === 'rejected');
   if (failed.length > 0) console.log('[sw] precache failed:', failed.join(', '));
-}
-
-// A cache write is part of the worker's lifetime: the browser may terminate it
-// as soon as the in-flight promise chain settles, so an unawaited `put` can be
-// dropped. Every strategy awaits this; the detached revalidation path also ties
-// it to `event.waitUntil` (see `staleWhileRevalidate`).
-async function store(cacheName, request, response) {
-  try {
-    const cache = await caches.open(cacheName);
-    await cache.put(request, response);
-  } catch (error) {
-    // A failed write must not turn a good response into a failed fetch.
-    console.log('[sw] cache write failed', String(error));
-  }
+  const stored = urls.filter((_, index) => results[index].status === 'fulfilled');
+  await recordCachedEntries(cache, stored);
 }
 
 self.addEventListener('install', (event) => {
@@ -73,11 +77,19 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE && key !== STATIC_CACHE && key !== PUSH_PREF_CACHE) {
+          if (
+            key !== CACHE &&
+            key !== STATIC_CACHE &&
+            key !== PUSH_PREF_CACHE &&
+            key !== CACHE_META_NAME
+          ) {
             return caches.delete(key);
           }
         })
       );
+      // After the stale caches are gone, count what survived (and what the
+      // previous worker wrote without bookkeeping) before serving from it.
+      await rebuildIndex();
     })()
   );
   self.clients.claim();
@@ -99,9 +111,297 @@ const {
   isNeverCache,
 } = self.SWRouting;
 
+// ---------------------------------------------------------------------------
+// Cache budget and LRU eviction (ADR-0069)
+//
+// Cache Storage has no access time and no per-entry byte count, so the worker
+// keeps both in a small index entry beside the data. Reads touch the index in
+// memory; the next write folds those touches in and evicts oldest-first until
+// the accounted bytes fit. Local Store and Outbox live in IndexedDB and are not
+// reachable from anything in this section — cache maintenance only ever calls
+// `caches`.
+// ---------------------------------------------------------------------------
+
+function cacheKeyOf(input) {
+  const raw = typeof input === 'string' ? input : (input && input.url) || String(input);
+  try {
+    return new URL(raw, self.location.origin).href;
+  } catch {
+    return raw;
+  }
+}
+
+// The body, not the headers, is what fills the quota. `Content-Length` is the
+// cheap answer when the server sent one; otherwise the body is measured. Both
+// run on a clone, so the response can still be stored and served afterwards.
+async function sizeOf(response) {
+  if (!response) return 0;
+  try {
+    const declared =
+      response.headers && typeof response.headers.get === 'function'
+        ? response.headers.get('content-length')
+        : null;
+    const size = declared === null ? NaN : Number(declared);
+    if (Number.isFinite(size) && size >= 0) return size;
+    if (typeof response.clone !== 'function') return 0;
+    const body = await response.clone().arrayBuffer();
+    return body.byteLength;
+  } catch {
+    return 0;
+  }
+}
+
+function emptyIndex() {
+  return { version: CACHE_META_VERSION, entries: {} };
+}
+
+async function readIndex() {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    const stored = await meta.match(CACHE_META_KEY);
+    if (!stored) return emptyIndex();
+    const parsed = await stored.json();
+    if (
+      !parsed ||
+      parsed.version !== CACHE_META_VERSION ||
+      !parsed.entries ||
+      typeof parsed.entries !== 'object'
+    ) {
+      return emptyIndex();
+    }
+    return parsed;
+  } catch {
+    return emptyIndex();
+  }
+}
+
+async function writeIndex(index) {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    await meta.put(
+      CACHE_META_KEY,
+      new Response(JSON.stringify(index), {
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+  } catch (error) {
+    // Bookkeeping is an optimisation; losing it costs a rebuild, not a fetch.
+    console.log('[sw] cache index write failed', String(error));
+  }
+}
+
+let maintenance = Promise.resolve();
+let accessClock = Date.now();
+const pendingTouches = new Map();
+
+function stampAccess() {
+  accessClock = Math.max(Date.now(), accessClock + 1);
+  return accessClock;
+}
+
+// A served hit is remembered in memory, never awaited: answering a read must
+// not wait on a disk write. A touch dropped by worker termination only makes
+// LRU slightly optimistic; it cannot lose an entry the index still lists.
+function touchCache(input) {
+  pendingTouches.set(cacheKeyOf(input), stampAccess());
+}
+
+// Holds a lock across the whole read-modify-write in this worker realm. Cache
+// Storage has no atomic counter, so a shared promise chain is what keeps two
+// concurrent fetches from booking a write twice or evicting mid-write.
+function withIndex(mutate) {
+  const run = async () => {
+    const index = await readIndex();
+    for (const [key, at] of pendingTouches) {
+      const entry = index.entries[key];
+      if (entry && at > entry.lastAccess) entry.lastAccess = at;
+    }
+    pendingTouches.clear();
+    const result = await mutate(index);
+    await writeIndex(index);
+    return result;
+  };
+  const next = maintenance.then(run, run);
+  maintenance = next.then(
+    () => undefined,
+    () => undefined
+  );
+  return next;
+}
+
+// The offline page and the build's own static assets are never evicted: the
+// page is the only legible surface with no network, and a hashed `_next/static`
+// chunk belongs to the build already shipped. Their size is bounded by the
+// build rather than by how much the user browses.
+function isPinned(key) {
+  let url;
+  try {
+    url = new URL(key);
+  } catch {
+    return false;
+  }
+  if (url.pathname === FALLBACK_URL) return true;
+  if (url.pathname.startsWith('/_next/static/') || isFont(url) || isIcon(url)) return true;
+  return PRECACHE_PATHS.has(url.pathname);
+}
+
+async function removeEntry(key) {
+  await Promise.all(
+    [CACHE, STATIC_CACHE].map(async (name) => {
+      try {
+        const cache = await caches.open(name);
+        if (await cache.match(key)) await cache.delete(key);
+      } catch (error) {
+        console.log('[sw] cache delete failed', String(error));
+      }
+    })
+  );
+}
+
+function accountedBytes(index) {
+  let total = 0;
+  for (const key of Object.keys(index.entries)) {
+    total += index.entries[key].size || 0;
+  }
+  return total;
+}
+
+// Oldest access first; pinned entries are skipped even when they are the oldest.
+// If only pinned entries remain the budget cannot be met, and evicting the
+// offline page or the current build would be the worse failure: it is logged.
+async function enforceBudget(index) {
+  let total = accountedBytes(index);
+  if (total <= CACHE_BUDGET_BYTES) return;
+
+  const target = Math.floor(CACHE_BUDGET_BYTES * CACHE_EVICT_TO);
+  const candidates = Object.keys(index.entries)
+    .filter((key) => !isPinned(key))
+    .sort((a, b) => {
+      const byAccess = (index.entries[a].lastAccess || 0) - (index.entries[b].lastAccess || 0);
+      return byAccess !== 0 ? byAccess : a.localeCompare(b);
+    });
+
+  for (const key of candidates) {
+    if (total <= target) break;
+    const size = index.entries[key].size || 0;
+    await removeEntry(key);
+    delete index.entries[key];
+    total -= size;
+  }
+
+  if (total > CACHE_BUDGET_BYTES) {
+    console.log('[sw] cache budget exceeded by pinned entries', total, CACHE_BUDGET_BYTES);
+  }
+}
+
+async function recordEntry(key, size) {
+  await withIndex(async (index) => {
+    index.entries[key] = { size, lastAccess: stampAccess() };
+    await enforceBudget(index);
+  });
+}
+
+// Books entries that were written by `cache.add` rather than through `store`.
+async function recordCachedEntries(cache, urls) {
+  const sized = [];
+  for (const url of urls) {
+    const response = await cache.match(url);
+    if (response) sized.push([cacheKeyOf(url), await sizeOf(response)]);
+  }
+  if (sized.length === 0) return;
+  await withIndex(async (index) => {
+    for (const [key, size] of sized) {
+      index.entries[key] = { size, lastAccess: stampAccess() };
+    }
+    await enforceBudget(index);
+  });
+}
+
+// A cache write is part of the worker's lifetime: the browser may terminate it
+// as soon as the in-flight promise chain settles, so an unawaited `put` can be
+// dropped. Every strategy awaits this; the detached revalidation path also ties
+// it to `event.waitUntil` (see `staleWhileRevalidate`).
+async function store(cacheName, request, response) {
+  try {
+    const size = await sizeOf(response);
+    const cache = await caches.open(cacheName);
+    await cache.put(request, response);
+    await recordEntry(cacheKeyOf(request), size);
+  } catch (error) {
+    // A failed write must not turn a good response into a failed fetch.
+    console.log('[sw] cache write failed', String(error));
+  }
+}
+
+// Rebuilds the index from what Cache Storage actually holds. `activate` is where
+// entries written by a previous worker version, or by a write whose bookkeeping
+// was dropped, get counted again.
+async function rebuildIndex() {
+  await withIndex(async (index) => {
+    const live = new Set();
+    for (const name of [CACHE, STATIC_CACHE]) {
+      const cache = await caches.open(name);
+      const requests = await cache.keys();
+      for (const request of requests) {
+        const key = cacheKeyOf(request);
+        if (live.has(key)) continue;
+        const previous = index.entries[key];
+        index.entries[key] = {
+          size: await sizeOf(await cache.match(request)),
+          lastAccess: previous ? previous.lastAccess : stampAccess(),
+        };
+        live.add(key);
+      }
+    }
+    for (const key of Object.keys(index.entries)) {
+      if (!live.has(key)) delete index.entries[key];
+    }
+    await enforceBudget(index);
+  });
+}
+
+// Sign-out drops every runtime cache entry except the offline shell files that
+// carry no account state. `STATIC_CACHE` is build output, not data, and the push
+// preference marker is this device's setting, not an account's; IndexedDB (the
+// Local Store and Outbox) is out of scope and is never opened from here.
+const SIGN_OUT_SHELL_PATHS = new Set([
+  FALLBACK_URL,
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/notification-icon-192x192.png',
+  '/icons/badge-icon-96x96.png',
+]);
+
+function isSignOutShell(key) {
+  let url;
+  try {
+    url = new URL(key);
+  } catch {
+    return false;
+  }
+  return SIGN_OUT_SHELL_PATHS.has(url.pathname);
+}
+
+async function purgeAccountCaches() {
+  const cache = await caches.open(CACHE);
+  const requests = await cache.keys();
+  await withIndex(async (index) => {
+    for (const request of requests) {
+      const key = cacheKeyOf(request);
+      if (isSignOutShell(key)) continue;
+      await cache.delete(request);
+      delete index.entries[key];
+    }
+  });
+}
+
 async function cacheFirst(request) {
   const cached = await caches.match(request);
-  if (cached) return cached;
+  if (cached) {
+    touchCache(request);
+    return cached;
+  }
   try {
     const response = await fetch(request);
     if (response.ok && isCacheable(response)) {
@@ -131,7 +431,10 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
     // cached response when one exists; otherwise the error is the answer.
     if (response.status >= 500) {
       const cached = await caches.match(request);
-      if (cached && mayServe(cached)) return cached;
+      if (cached && mayServe(cached)) {
+        touchCache(request);
+        return cached;
+      }
       return response;
     }
     if (response.ok && isCacheable(response) && mayServe(response)) {
@@ -142,7 +445,10 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
     // A cached API response is only a fallback when it still opts in. Entries
     // persisted before an endpoint turned account-scoped must not be replayed.
     const cached = await caches.match(request);
-    if (cached && mayServe(cached)) return cached;
+    if (cached && mayServe(cached)) {
+      touchCache(request);
+      return cached;
+    }
     if (isNavigationRequest(request)) {
       return caches.match(FALLBACK_URL);
     }
@@ -153,6 +459,7 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
 async function staleWhileRevalidate(request, onMiss, event) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
+  if (cached) touchCache(request);
   const revalidate = fetch(request)
     .then(async (response) => {
       if (response.ok && isCacheable(response)) {
@@ -199,8 +506,7 @@ async function rememberImageFallback(url, response) {
   if (!isNextImage(url)) return;
   const source = url.searchParams.get('url');
   if (!source) return;
-  const cache = await caches.open(STATIC_CACHE);
-  await cache.put(imageFallbackKey(source), response);
+  await store(STATIC_CACHE, imageFallbackKey(source), response);
 }
 
 async function offlineImage(request) {
@@ -208,8 +514,12 @@ async function offlineImage(request) {
   if (isNextImage(url)) {
     const source = url.searchParams.get('url');
     if (source) {
-      const cached = await caches.match(imageFallbackKey(source));
-      if (cached) return cached;
+      const key = imageFallbackKey(source);
+      const cached = await caches.match(key);
+      if (cached) {
+        touchCache(key);
+        return cached;
+      }
     }
   }
   return new Response(IMAGE_PLACEHOLDER, {
@@ -296,6 +606,13 @@ self.addEventListener('message', (event) => {
       const urls = event.data.urls;
       const cache = await caches.open(CACHE);
       await precache(cache, urls);
+    }
+    if (event.data?.type === 'PURGE_ACCOUNT_CACHES') {
+      await purgeAccountCaches();
+      // The page waits for this acknowledgement; a dropped port is fine (the
+      // purge already happened and the sign-out continues either way).
+      const port = event.ports && event.ports[0];
+      if (port) port.postMessage({ type: 'ACCOUNT_CACHES_PURGED' });
     }
   })());
 });

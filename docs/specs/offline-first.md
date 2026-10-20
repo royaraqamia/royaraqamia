@@ -173,6 +173,10 @@ read is also on the never-cache list — a signed-in reader's bookmarks and posi
 Storage (#392). `scripts/__tests__/api-cache-contract.test.ts` fails an API GET route that is neither
 on the never-cache list nor explicitly `no-store`/`public`.
 
+Cache Storage is bounded in bytes and evicted least-recently-used first, with the offline page and
+the current build's static assets pinned; sign-out purges the runtime cache except that shell, and
+never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache-has-a-byte-budget.md), #394).
+
 ### Delivery states
 
 Property 3 needs a per-item state a user can read at a glance, the way a messenger's clock and ticks
