@@ -6,5 +6,5 @@
   "sizeBytes": 8046000,
   "minSupportedVersionCode": 20000,
   "notes": "fix(android): keep WebView debugging out of release builds (#419)",
-  "releasedAt": "2026-10-15"
+  "releasedAt": "2026-10-20"
 }
