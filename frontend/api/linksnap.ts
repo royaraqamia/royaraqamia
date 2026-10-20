@@ -86,11 +86,13 @@ export async function listLinks(token: string): Promise<ShortenedLink[]> {
  * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so a
  * delete made on another device lands here (ADR-0029). Display reads keep using
  * `listLinks`, which excludes tombstones.
+ *
+ * Authenticates with the session cookie, which the browser attaches to this
+ * same-origin read. That is what lets the background pull run it (ADR-0060): a
+ * worker cannot read the page's token, and does not have to.
  */
-export async function listLinksIncludingDeleted(token: string): Promise<ShortenedLink[]> {
-  const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links/sync', {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+export async function listLinksIncludingDeleted(): Promise<ShortenedLink[]> {
+  const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links/sync');
   return data.links || [];
 }
 

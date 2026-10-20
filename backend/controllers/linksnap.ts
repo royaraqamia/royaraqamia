@@ -1,4 +1,3 @@
-import { getAuthenticatedUser } from '@/backend/middleware/bearer-auth';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';
@@ -28,7 +27,10 @@ import {
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
 import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { withBearerUser } from '@/backend/transport/bearer-handler';
+import {
+  resolveBearerOrSessionUser,
+  withSessionOrBearerUser,
+} from '@/backend/transport/session-or-bearer-handler';
 
 /**
  * Codes that cannot exist (reserved paths, wrong alphabet) are answered here
@@ -126,20 +128,25 @@ function errorResponse(err: unknown, log: string): HttpResult {
   return jsonResult(status, { success: false, error: getErrorMessage(err) });
 }
 
-/** Wrap a handler that requires a bearer token, mapping thrown errors per route. */
-function requireBearer(
+/**
+ * Wrap a handler that requires an identity — a bearer token or the session
+ * cookie — mapping thrown errors per route. The cookie is the credential a
+ * background realm presents (it cannot read the token), which is why LinkSnap's
+ * routes accept both rather than the bearer alone.
+ */
+function requireUser(
   authorization: string | null,
   log: string,
-  run: Parameters<typeof withBearerUser>[1]
+  run: Parameters<typeof withSessionOrBearerUser>[1]
 ): Promise<HttpResult> {
-  return withBearerUser(authorization, run, {
+  return withSessionOrBearerUser(authorization, run, {
     whenUnauthenticated: () => jsonResult(401, UNAUTHORIZED_BODY),
     mapError: (err) => errorResponse(err, log),
   });
 }
 
 export async function listLinks(authorization: string | null): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in list links API route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in list links API route:', async ({ userId }) => {
     const links = await createListLinksService().execute(userId);
     return jsonResult(200, { success: true, links: links.map(linkView) });
   });
@@ -151,7 +158,7 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
  * `listLinks`, which excludes tombstones.
  */
 export async function listLinksForSync(authorization: string | null): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in list links sync API route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in list links sync API route:', async ({ userId }) => {
     const links = await createListLinksService().executeIncludingDeleted(userId);
     return jsonResult(200, { success: true, links: links.map(linkView) });
   });
@@ -169,7 +176,7 @@ export async function updateLink(
     deletedAt?: unknown;
   }
 ): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in update link API route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in update link API route:', async ({ userId }) => {
     const changes = {
       code: body.newCode as string | undefined,
       originalUrl: body.originalUrl as string | undefined,
@@ -198,7 +205,7 @@ export async function deleteLink(
   code: string | null,
   updatedAt?: string | null
 ): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in delete link API route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in delete link API route:', async ({ userId }) => {
     const service = createDeleteLinkService();
     if (typeof updatedAt === 'string') {
       await service.execute(code ?? '', userId, { updatedAt });
@@ -214,7 +221,7 @@ export async function checkCodeAvailability(
   ip: string,
   code: string | null
 ): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in slug availability API route:', async () => {
+  return requireUser(authorization, 'Error in slug availability API route:', async () => {
     const rateLimitResult = await checkRateLimitApi(slugAvailabilityRateLimitPolicy(ip));
     if (rateLimitResult) return rateLimitResult;
 
@@ -246,7 +253,7 @@ export async function shortenUrl(
       throw new AppError('URL cannot be empty.', 400);
     }
 
-    const user = await getAuthenticatedUser(authorization);
+    const user = await resolveBearerOrSessionUser(authorization);
     const userId = user ? user.id : null;
 
     const rateLimitResult = await checkRateLimitApi(shortenRateLimitPolicy(userId, ip));
@@ -283,7 +290,7 @@ export async function moderateLink(
   authorization: string | null,
   body: { code?: unknown; isBlocked?: unknown }
 ): Promise<HttpResult> {
-  return requireBearer(
+  return requireUser(
     authorization,
     'Error in administration moderation endpoint:',
     async ({ userEmail }) => {
@@ -307,7 +314,7 @@ export async function moderateLink(
 }
 
 export async function getSystemStats(authorization: string | null): Promise<HttpResult> {
-  return requireBearer(
+  return requireUser(
     authorization,
     'Error in administrative stats endpoint:',
     async ({ userEmail }) => {
@@ -322,7 +329,7 @@ export async function getUrlAnalytics(
   code: string,
   search?: URLSearchParams
 ): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in link analytics API route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in link analytics API route:', async ({ userId }) => {
     const range = search ? parseDateRange(search) : undefined;
     const analytics = await createGetUrlAnalyticsService().execute(code, userId, range);
     return jsonResult(200, { success: true, analytics });
@@ -334,15 +341,11 @@ export async function exportUrlAnalytics(
   code: string,
   search?: URLSearchParams
 ): Promise<HttpResult> {
-  return requireBearer(
-    authorization,
-    'Error in link analytics export route:',
-    async ({ userId }) => {
-      const range = search ? parseDateRange(search) : undefined;
-      const rows = await createGetUrlAnalyticsService().exportCsv(code, userId, range);
-      return jsonResult(200, { success: true, rows });
-    }
-  );
+  return requireUser(authorization, 'Error in link analytics export route:', async ({ userId }) => {
+    const range = search ? parseDateRange(search) : undefined;
+    const rows = await createGetUrlAnalyticsService().exportCsv(code, userId, range);
+    return jsonResult(200, { success: true, rows });
+  });
 }
 
 export async function bulkLinkAction(
@@ -353,7 +356,7 @@ export async function bulkLinkAction(
     expiresAt?: unknown;
   }
 ): Promise<HttpResult> {
-  return requireBearer(authorization, 'Error in bulk link action route:', async ({ userId }) => {
+  return requireUser(authorization, 'Error in bulk link action route:', async ({ userId }) => {
     if (body.action !== 'delete' && body.action !== 'setExpiry') {
       throw new AppError("القيمة 'action' يجب أن تكون delete أو setExpiry.", 400);
     }

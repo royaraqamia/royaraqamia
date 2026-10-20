@@ -24,7 +24,12 @@ function entry(type: string, payload: Record<string, unknown>): OutboxEntry {
   };
 }
 
-const transport = () => createLinksnapHttpSyncTransport(() => 'tok-1');
+/**
+ * No credential is passed: the routes read the session cookie, which is the
+ * only one a background realm can present (#385). The absence of an
+ * `Authorization` header is the property these tests pin.
+ */
+const transport = () => createLinksnapHttpSyncTransport();
 
 describe('createLinksnapHttpSyncTransport', () => {
   beforeEach(() => request.mockClear());
@@ -42,7 +47,6 @@ describe('createLinksnapHttpSyncTransport', () => {
     );
     expect(request).toHaveBeenCalledWith('/linksnap/api/shorten', {
       method: 'POST',
-      headers: { Authorization: 'Bearer tok-1' },
       body: JSON.stringify({
         originalUrl: 'https://example.com',
         customCode: 'promo',
@@ -68,7 +72,6 @@ describe('createLinksnapHttpSyncTransport', () => {
     );
     expect(request).toHaveBeenCalledWith('/linksnap/api/links', {
       method: 'PATCH',
-      headers: { Authorization: 'Bearer tok-1' },
       body: JSON.stringify({
         code: 'promo',
         newCode: 'promo-2',
@@ -86,7 +89,6 @@ describe('createLinksnapHttpSyncTransport', () => {
     );
     expect(request).toHaveBeenCalledWith('/linksnap/api/links?code=promo', {
       method: 'DELETE',
-      headers: { Authorization: 'Bearer tok-1' },
       body: JSON.stringify({ updatedAt: '2026-08-01T00:00:00Z' }),
     });
   });

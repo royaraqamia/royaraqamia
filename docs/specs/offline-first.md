@@ -76,10 +76,12 @@ stated limit.
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
   says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
   Android shell covers the same ground natively (ADR-0059).
-- **LinkSnap's Outbox cannot be drained by the worker.** Its API authenticates with a bearer token
-  rather than the session cookie, and a service worker can read neither the cookie nor the token — so a
-  drain would replay `link.*` intents with no credential, or worse, with whichever credential it could
-  find. LinkSnap flushes from the page only, and it is the one product the drain registry leaves out.
+- **A product whose writes need a credential the browser will not attach cannot drain in the
+  background.** Every wired product now replays through the session cookie, which the browser sends on
+  a same-origin fetch from any realm. LinkSnap used to be the exception — its API took a bearer token
+  from React state, which a worker cannot read — so its routes now resolve the cookie when the header
+  is absent (`backend/transport/session-or-bearer-handler.ts`) and its transport carries no token
+  (#385). A future product that invents its own credential would re-open this limit.
 
 ## Where we are today
 
@@ -92,10 +94,10 @@ Honest list of what stands between us and the bar, each with the file that shows
    elsewhere reaches a closed shell too: the device that delivered it asks the server for a silent
    high-priority FCM wake, and the receiver enqueues that same drain. What is still open is the
    battery-optimization prompt and delivery badges in the shell; and the background _pull_ covers only
-   the products whose pull a background realm can run - HabitFlow, SpendTrack and the Quran Reader today,
-   because LinkSnap needs a bearer token and BlogPress has no client pull to reuse. So a laptop write
-   refreshes a phone's habits, expenses and Quran reading position before the phone is opened; a post or
-   a link still waits for the app.
+   the products whose pull a background realm can run - HabitFlow, SpendTrack, the Quran Reader and, since
+   #385, LinkSnap. BlogPress is the one absent: it has no client pull to reuse. So a laptop write
+   refreshes a phone's habits, expenses, Quran reading position and links before the phone is opened; a
+   post still waits for the app.
 2. **The offline e2e suite's owned-data half runs in CI, and the sign-in is paced to the product's
    own limit.** Every spec is `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow
    sets them for every wired spec except `lead-offline`, which stays out because it writes a row the
@@ -256,7 +258,8 @@ the server is unreachable, and the [Verification](#verification) section for wha
    WebView, replays the Outbox and then pulls what it can (ADR-0059). _5b, landed:_ the FCM data wake —
    a device that delivered a write asks the server to wake the account's other devices, a silent
    high-priority data message reaches `SyncMessagingService`, and the receiver enqueues the same drain;
-   the background pull covers HabitFlow, SpendTrack and the Quran Reader (`PULLABLE_PRODUCTS`). _5c,
+   the background pull covers HabitFlow, SpendTrack, the Quran Reader and LinkSnap
+   (`PULLABLE_PRODUCTS`). _5c,
    open:_ the battery-exemption prompt and delivery badges in the shell.
 6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
    as content arriving, staying stateless and OTA-free (ADR-0061).
@@ -268,14 +271,14 @@ the server is unreachable, and the [Verification](#verification) section for wha
   `serviceWorkers: 'allow'`, asserting cached read and **sync-resume** (offline → mutate → reconnect →
   server state correct). Which surfaces have that proof, and which do not:
 
-  | Surface                    | Sync-resume proof                                                                                                                                                                                                      | Spec                                                   |
-  | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-  | SpendTrack                 | expense written offline, server row after reconnect                                                                                                                                                                    | `spendtrack-offline.spec.ts`                           |
-  | HabitFlow                  | habit written offline, server row after reconnect                                                                                                                                                                      | `habitflow-sync-resume.spec.ts`                        |
-  | LinkSnap                   | link created offline, server row after reconnect — and a second proof that the list paints from the Local Store offline; page flush only, the drain registry excludes it (see [Limits of instant](#limits-of-instant)) | `linksnap-offline.spec.ts`                             |
-  | BlogPress                  | draft edit made offline, server body after reconnect                                                                                                                                                                   | `blogpress-offline.spec.ts`                            |
-  | Quran Reader               | mark made offline, account row after reconnect                                                                                                                                                                         | `quran-sync.spec.ts`                                   |
-  | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503                                                                                                                                                                   | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
+  | Surface                    | Sync-resume proof                                                                                                                                                | Spec                                                   |
+  | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+  | SpendTrack                 | expense written offline, server row after reconnect                                                                                                              | `spendtrack-offline.spec.ts`                           |
+  | HabitFlow                  | habit written offline, server row after reconnect                                                                                                                | `habitflow-sync-resume.spec.ts`                        |
+  | LinkSnap                   | link created offline, server row after reconnect — and a second proof that the list paints from the Local Store offline; the drain registry now covers it (#385) | `linksnap-offline.spec.ts`                             |
+  | BlogPress                  | draft edit made offline, server body after reconnect                                                                                                             | `blogpress-offline.spec.ts`                            |
+  | Quran Reader               | mark made offline, account row after reconnect                                                                                                                   | `quran-sync.spec.ts`                                   |
+  | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503                                                                                                             | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
 
   Two more specs prove a mechanism rather than a product: `sync-flush.spec.ts` queues a write, closes
   the page and restores the network, so only the Android shell's drain page can deliver it; and
@@ -339,8 +342,8 @@ the server is unreachable, and the [Verification](#verification) section for wha
   is a device result, and [the shell notes](../mobile/android-shell.md) name where it stands.
 - **The background pull** is the drain page's second half: it runs `PULLABLE_PRODUCTS` after the queue
   (`refresh-products.test.ts`, `sync-flush-entry.test.ts`, and each product's pull module through the
-  hook that now shares it). Its coverage is the honest part: three products today, with the reason each
-  absent one is absent written in `sync-products.ts`.
+  hook that now shares it). Its coverage is the honest part: four products today, with the reason the
+  one absent product is absent written in `sync-products.ts`.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase
   that regresses `perf/budget.json` does not land — the budget is a gate, not a report.

@@ -7,6 +7,10 @@ import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { createLeadHttpSyncTransport } from '@/frontend/api/leads/sync-transport';
+import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
+import { pullLinksnapData } from '@/frontend/api/linksnap/pull';
+import { LinksnapSyncEngine } from '@/frontend/api/linksnap/sync-engine';
+import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { pullQuranData } from '@/frontend/api/quran/pull';
 import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
@@ -43,13 +47,13 @@ import type { SyncTransport } from '@/frontend/shared/local-store/sync-transport
  * `frontend/shared/local-store/__tests__/drain-products.test.ts` opens every real
  * store and asserts this list finds it.
  *
- * **Not here, on purpose:**
- *
- * - **LinkSnap.** Its API authenticates with a bearer token and never the session
- *   cookie, and a service worker cannot read either the cookie or the token. A
- *   worker drain would replay `link.*` intents with no credential and, worse,
- *   with whichever credential it could find. LinkSnap therefore flushes from the
- *   page only (spec: docs/specs/offline-first.md, "Limits of instant").
+ * Every product here replays through the session cookie, which the browser
+ * attaches to a same-origin fetch from any realm. LinkSnap's routes used to
+ * accept only a bearer token — a credential no worker can read — and its
+ * transport now carries none at all: the routes resolve the cookie when the
+ * header is absent (`backend/transport/session-or-bearer-handler.ts`). A new
+ * product joins by making its writes cookie-authenticated, not by teaching the
+ * worker a second credential.
  */
 
 /** The account's own stores, and no other: a guest namespace claims on sign-in. */
@@ -121,6 +125,12 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
     createEngine: (deps) => new QuranSyncEngine(deps),
   },
   {
+    product: 'linksnap',
+    identity: signedInIdentity,
+    open: openOutboxOnly('linksnap', createLinksnapHttpSyncTransport),
+    createEngine: (deps) => new LinksnapSyncEngine(deps),
+  },
+  {
     product: 'leads',
     /**
      * Lead submissions are the exception to the identity rule: the store *is*
@@ -140,11 +150,12 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
  * module that knows every product at once, and only the background tiers import
  * it — the app bundle never does.
  *
+ * LinkSnap's read takes the session cookie for the same reason its writes do:
+ * the page's token lives in React state, which a worker cannot read, while the
+ * browser sends the cookie on its behalf.
+ *
  * **Not here, on purpose:**
  *
- * - **LinkSnap.** Its reads authenticate with a bearer token taken from the
- *   Supabase session in React state, never the cookie, and a background realm
- *   has neither — the same reason it is out of `DRAINABLE_PRODUCTS`.
  * - **BlogPress.** There is no client pull to reuse: the store has
  *   `mergeServerData` and nothing that calls it, so the product has no transport
  *   a background realm could run. Its posts arrive from the server through the
@@ -186,6 +197,19 @@ export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
       const store = await QuranLocalStore.open(identity, factory);
       try {
         return await pullQuranData(store);
+      } finally {
+        store.close();
+      }
+    },
+  },
+  {
+    product: 'linksnap',
+    identity: signedInIdentity,
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('linksnap', identity))) return 0;
+      const store = await LinksnapLocalStore.open(identity, factory);
+      try {
+        return await pullLinksnapData(store);
       } finally {
         store.close();
       }

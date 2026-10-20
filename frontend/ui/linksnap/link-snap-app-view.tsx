@@ -49,7 +49,7 @@ export function LinkSnapAppView() {
   }, []);
 
   return (
-    <LinksnapProvider token={token} user={session?.user ?? null}>
+    <LinksnapProvider user={session?.user ?? null}>
       <div className="relative flex flex-col min-h-full overflow-hidden">
         <div className="flex justify-end mb-2">
           <LinksnapSyncStatus />

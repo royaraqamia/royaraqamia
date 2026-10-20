@@ -8,6 +8,7 @@ function readBody<T>(res: NextResponse): T {
 }
 
 const mockGetAuthenticatedUser = vi.fn();
+const mockGetSessionUser = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockGetClientIp = vi.fn();
 const mockGetErrorMessage = vi.fn((err: unknown) =>
@@ -45,9 +46,14 @@ vi.mock('next/server', () => ({
   NextRequest: class {},
 }));
 
-vi.mock('@/backend/middleware/bearer-auth', () => ({
-  getAuthenticatedUser: (req: unknown) => mockGetAuthenticatedUser(req),
-}));
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => ({ user: await mockGetSessionUser(), client: {} }),
+    optional: async () => ({ user: await mockGetSessionUser(), client: {} }),
+    bearer: (authorization: string | null) => mockGetAuthenticatedUser(authorization),
+  });
+});
 
 vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: (config: unknown) => mockCheckRateLimitApi(config),
@@ -114,6 +120,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGetClientIp.mockReturnValue('127.0.0.1');
   mockCheckRateLimitApi.mockResolvedValue(null);
+  mockGetSessionUser.mockResolvedValue(null);
 });
 
 describe('POST /linksnap/api/shorten', () => {
@@ -186,6 +193,16 @@ describe('GET /linksnap/api/links', () => {
     mockGetAuthenticatedUser.mockResolvedValue(null);
     const res = await linksGET(makeReq());
     expect(res.status).toBe(401);
+  });
+
+  it('reads with the session cookie when no bearer header is present (#385)', async () => {
+    mockGetSessionUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockListLinks.execute.mockResolvedValue([shortLink]);
+
+    const res = await linksGET(makeReq());
+
+    expect(res.status).toBe(200);
+    expect(mockListLinks.execute).toHaveBeenCalledWith('u-1');
   });
 
   it('lists links for an authenticated user', async () => {
