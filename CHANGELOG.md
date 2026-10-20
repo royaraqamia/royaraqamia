@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.126.2] - 2026-10-20
+
+### Changed
+- run the owned-data suite without tripping the login limiter (#431)
+- script the force-stop, doze and mid-flush cases (#430)
+
+### Fixed
+- give the manifest rebase a history it can see (#432)
+
 ## [1.126.1] - 2026-10-20
 
 ### Fixed
