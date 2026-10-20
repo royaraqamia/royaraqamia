@@ -763,6 +763,9 @@ describe('service worker cache budget and eviction', () => {
     const ctx = await boot({ budgetBytes: 10_000 });
 
     await visit(ctx, '/community', 100);
+    // The device's data-free shell must survive sign-out: removing the copy that
+    // sign-out deliberately keeps is exactly what it is for (ADR-0070).
+    await visit(ctx, '/device', 100);
     await fetchInto(
       ctx,
       request('/api/rates?pair=usd', 'cors'),
@@ -791,8 +794,10 @@ describe('service worker cache budget and eviction', () => {
     expect(await ctx.caches.match('/community')).toBeUndefined();
     expect(await ctx.caches.match('/api/rates?pair=usd')).toBeUndefined();
     expect(await ctx.caches.match('/')).toBeUndefined();
-    // The offline shell, the build's static assets and the device preference do.
+    // The offline shell, the device shell, the build's static assets and the
+    // device preference do.
     expect(await ctx.caches.match('/offline')).toBeTruthy();
+    expect(await ctx.caches.match('/device')).toBeTruthy();
     expect(await ctx.caches.match('/_next/static/chunks/app.js')).toBeTruthy();
     expect(await ctx.caches.match('/__push_disabled__')).toBeTruthy();
     expect(event.ports[0].postMessage).toHaveBeenCalledWith({ type: 'ACCOUNT_CACHES_PURGED' });

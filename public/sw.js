@@ -364,8 +364,13 @@ async function rebuildIndex() {
 // carry no account state. `STATIC_CACHE` is build output, not data, and the push
 // preference marker is this device's setting, not an account's; IndexedDB (the
 // Local Store and Outbox) is out of scope and is never opened from here.
+//
+// `/device` belongs on this list with the offline page (ADR-0070): it is a
+// data-free shell that paints the Local Store after mount, and a borrowed device
+// needs it *after* sign-out to remove the copy sign-out deliberately kept.
 const SIGN_OUT_SHELL_PATHS = new Set([
   FALLBACK_URL,
+  '/device',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
