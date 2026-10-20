@@ -20,7 +20,7 @@ const html = readFileSync('capacitor-web/unavailable.html', 'utf8');
 const errorPath = config.match(/errorPath:\s*'([^']+)'/)?.[1];
 const configuredFloor = Number(config.match(/minWebViewVersion:\s*(\d+)/)?.[1]);
 const pageFloor = Number(html.match(/MINIMUM_WEBVIEW = (\d+)/)?.[1]);
-const pageScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '';
+const pageScript = html.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i)?.[1] ?? '';
 /** Source wrapping and rendered whitespace are not the same string. */
 const pageText = html.replace(/\s+/g, ' ');
 
