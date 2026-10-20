@@ -31,6 +31,11 @@ as $$
   );
 $$;
 
+-- The columns arrive as trigger arguments, so the assignment has to be built at
+-- runtime -- but `new.col := ...` is PL/pgSQL syntax, not SQL, and EXECUTE only
+-- runs SQL. Build a JSONB patch of the named columns and populate the row from
+-- it instead. Columns not named stay untouched, and a name that does not exist
+-- on the table raises rather than being silently skipped.
 create or replace function private.normalize_digits_in_text_columns()
 returns trigger
 language plpgsql
@@ -39,13 +44,21 @@ set search_path = ''
 as $$
 declare
   column_name text;
+  row_values jsonb := to_jsonb(new);
+  patch jsonb := '{}'::jsonb;
 begin
   foreach column_name in array tg_argv loop
-    execute format(
-      'new.%1$I := private.normalize_arabic_digits(new.%1$I)',
-      column_name
+    if not row_values ? column_name then
+      raise exception 'normalize_digits_in_text_columns: % has no column %',
+        tg_table_name, column_name
+        using errcode = 'undefined_column';
+    end if;
+    patch := patch || jsonb_build_object(
+      column_name,
+      private.normalize_arabic_digits(row_values ->> column_name)
     );
   end loop;
+  new := jsonb_populate_record(new, patch);
   return new;
 end;
 $$;
