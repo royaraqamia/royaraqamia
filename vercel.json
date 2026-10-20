@@ -1,5 +1,11 @@
 {
   "regions": ["dub1"],
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  },
   "crons": [
     {
       "path": "/api/rates/refresh",
