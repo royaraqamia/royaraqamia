@@ -57,4 +57,24 @@
     <string name="shell_update_download_failed">لم يكتمل التَّنزيل. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.</string>
     <string name="shell_update_verify_failed">الملف الذي نزَّلناه لا يطابق الإصدار المنشور، ولم يُثبَّت شيء.</string>
     <string name="shell_update_no_installer">تعذَّر فتح مُثبِّت التَّطبيقات على هذا الجهاز، ولم يُثبَّت شيء.</string>
+
+    <!--
+      The battery-optimization exemption (ADR-0059's amendment, #381). A drain
+      that ended with work still owed, or a wake received with the app in the
+      background, asks here once, and the notification's tap opens the platform's
+      one-tap dialog (ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS). The copy
+      therefore carries the whole reason on its own: what was recorded, what
+      defers it, and what the tap starts — the dialog it opens cannot be relied
+      on to be read first.
+
+      The voice is ADR-0054's: a plain statement of a fact and of what the press
+      does, no exclamation and no promises about battery life the platform does
+      not make. Tashkeel only where it disambiguates, as with the update strings:
+      the shadda on the أجّل root of «تؤجِّل» and on «رصَّدتَه», and the fatha
+      that says the «تَه» is an object, not a conjugation slip.
+    -->
+    <string name="battery_channel_name">التَّسليم في الخلفية</string>
+    <string name="battery_channel_description">حالة ما رصَّدته وهو مغلق: متى وصل، وما ينتظر.</string>
+    <string name="battery_prompt_title">تأخُّر وصول ما رصَّدته</string>
+    <string name="battery_prompt_message">تؤجِّل تحسينات البَّطارية وصول ما رصَّدتَه وهو مغلق. اضغط لطلب استثناء لهذا التَّطبيق، فيصل في وقته.</string>
 </resources>

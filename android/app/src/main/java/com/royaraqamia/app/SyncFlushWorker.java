@@ -73,6 +73,13 @@ public class SyncFlushWorker extends Worker {
             return Result.success();
         }
 
+        // Something is still owed: the ADR-0059 amendment's exemption prompt
+        // follows this moment, gated to one ask (see `ShellBatteryPrompt`) and
+        // reached here for both exits below — the retry and the give-up are
+        // different ends of one schedule, but the queue is not empty after
+        // either of them.
+        ShellBatteryPrompt.promptIfNeeded(context);
+
         String why = page.note == null ? result.summary : result.summary + " (" + page.note + ")";
         if (getRunAttemptCount() >= MAX_ATTEMPTS) {
             // The queue is durable and the page still flushes on open, so this is
