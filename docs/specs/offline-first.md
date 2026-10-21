@@ -35,6 +35,7 @@ messenger is_.
 | Surface                                                               | Offline read                                                    | Offline write |
 | --------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- |
 | Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache                                                 | No            |
+| Auth shells (login, signup, OTP, reset, password update)              | Yes — SWR cache since #447; every submit still needs the server | No            |
 | Scanner (decodes on the device; owns no server surface)               | Yes — once the engine is cached                                 | No            |
 | Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store                                          | Yes — Outbox  |
 | Non-inventory leads — Training Application, Project Request, Retainer | n/a                                                             | Yes — Outbox  |
@@ -64,6 +65,12 @@ stated limit.
 - **"Instant" is perceived latency, not a benchmark.** The property is that owned data paints from the
   Local Store with no network wait and a write applies on tap. It is not a claim that every route
   renders in zero milliseconds.
+- **A cold load waits no longer than ten seconds for the network.** `NAVIGATION_TIMEOUT_MS = 10000`
+  (`public/sw.js`, #447): a request with no cached copy races the network against the deadline, and
+  the fallback answers instead of the browser's own several-minute hang. The cut fetch keeps
+  running, so a late response still enters the cache and the next visit gets the real page. A cached
+  copy is never behind the deadline — stale paint stays instant — and never-cache API reads inside a
+  painted page rely on the page's own states rather than on this rule.
 - **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`, `/spendtrack`,
   `/linksnap`, `/blogpress` and `/account` are in the worker's never-cache list (ADR-0031: their
   documents are server-rendered per user, so caching them risks leaking one session's data to the next
@@ -167,12 +174,13 @@ Honest list of what stands between us and the bar, each with the file that shows
 
 ### Cache tiers
 
-| Request                                            | Strategy                                   |
-| -------------------------------------------------- | ------------------------------------------ |
-| App shell, icons, fonts                            | cache-first                                |
-| Public navigation / RSC payloads                   | stale-while-revalidate (+ "updated X ago") |
-| Public read APIs that declare `public`             | SWR; an absent header is not permission    |
-| Auth, mutations, admin, push, `no-store`/`private` | never cache                                |
+| Request                                                                        | Strategy                                   |
+| ------------------------------------------------------------------------------ | ------------------------------------------ |
+| App shell, icons, fonts                                                        | cache-first                                |
+| Public navigation / RSC payloads                                               | stale-while-revalidate (+ "updated X ago") |
+| Auth document shells                                                           | stale-while-revalidate (#447; shell only)  |
+| Public read APIs that declare `public`                                         | SWR; an absent header is not permission    |
+| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                |
 
 Account-scoped reads are `no-store` by construction at the authenticated seam, and the Quran sync
 read is also on the never-cache list — a signed-in reader's bookmarks and position never enter Cache
@@ -254,6 +262,13 @@ survive the app being killed and relaunched, and a battery-optimization exemptio
 moment it matters — with the reason stated, since the request is otherwise opaque.
 
 ## Phases
+
+**Phase 0 of the "never show `/offline`" roadmap (#447) landed on 2026-10-21.** Three diffs close the
+most-complained paths without touching the dashboard architecture: a ten-second deadline for every
+cold load (the limit above), the auth shells in the SWR cache with their forms answering offline
+submits inline (ADR-0031's amendment; the shells join ADR-0071's precache), and the Android shell's
+fallback page recovering exactly once when the radio returns (ADR-0067's amendment). With it,
+`/offline` ends up serving only a brand-new install hit with no network, and `/admin`.
 
 Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
 section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when

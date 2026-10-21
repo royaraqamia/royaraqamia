@@ -48,6 +48,7 @@ function createSandbox({
   fetchImpl,
   budgetBytes,
   routeBudgetBytes,
+  navigationTimeoutMs,
   precacheRoutes = [],
 } = {}) {
   const listeners = new Map();
@@ -167,6 +168,7 @@ function createSandbox({
   sandbox.self = sandbox;
   if (budgetBytes !== undefined) sandbox.CACHE_BUDGET_BYTES = budgetBytes;
   if (routeBudgetBytes !== undefined) sandbox.ROUTE_PRECACHE_BUDGET_BYTES = routeBudgetBytes;
+  if (navigationTimeoutMs !== undefined) sandbox.NAVIGATION_TIMEOUT_MS = navigationTimeoutMs;
   // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
   // this worker would be a bug the suite must see, so opening IndexedDB throws.
   sandbox.indexedDB = {
@@ -909,5 +911,117 @@ describe('service worker cache budget and eviction', () => {
     // Local Store and Outbox were never opened.
     expect(ctx.sandbox.indexedDB.open).not.toHaveBeenCalled();
     expect(ctx.sandbox.indexedDB.databases).not.toHaveBeenCalled();
+  });
+});
+
+describe('service worker navigation deadline (#447)', () => {
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  it('answers a cached navigation instantly while the network hangs', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    await cache.put('https://site.example/rates', new Response('stale-shell'));
+
+    // A request the network never answers: a slow connection, not a dead one.
+    ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
+
+    const event = fetchEvent(request('/rates'));
+    ctx.dispatch('fetch', event);
+
+    // Stale paint must not depend on the deadline at all: the cached copy has
+    // already answered before the 20ms budget could even elapse.
+    await expect(event.response).resolves.toBeTruthy();
+    const response = await event.response;
+    expect(await response.text()).toBe('stale-shell');
+  });
+
+  it('gives a cold navigation the offline fallback after the deadline, then keeps a late answer for the next visit', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve(
+                new Response('late-shell', {
+                  status: 200,
+                  headers: { 'cache-control': 'public, max-age=60' },
+                })
+              ),
+            60
+          )
+        )
+    );
+
+    const event = fetchEvent(request('/community'));
+    ctx.dispatch('fetch', event);
+
+    // The deadline cut the cold load: the page sees the offline fallback, not
+    // the browser's own multi-minute hang.
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+
+    // The cut fetch keeps running as the lifetime extension and still writes.
+    await Promise.all(event.waitUntilCalls);
+    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+
+    // The next visit — even with the radio off — gets the real page.
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    const second = fetchEvent(request('/community'));
+    ctx.dispatch('fetch', second);
+    expect(await second.response.then((r) => r.text())).toBe('late-shell');
+  });
+
+  it('bounds a never-cache navigation with the same deadline', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
+
+    const event = fetchEvent(request('/admin'));
+    ctx.dispatch('fetch', event);
+
+    // `/admin` bypasses the cache entirely (ADR-0031), but a slow network must
+    // still not hang the document: /offline arrives at the deadline.
+    await expect(event.response.then((r) => r.text())).resolves.toBe('ok');
+  });
+
+  it('caches the auth document shell like any other public page (#447)', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const shell = () =>
+      new Response('login-shell', {
+        status: 200,
+        headers: { 'cache-control': 'public, max-age=60' },
+      });
+    ctx.sandbox.fetch = vi.fn(async () => shell());
+
+    const online = fetchEvent(request('/auth/login'));
+    ctx.dispatch('fetch', online);
+    const first = await online.response;
+    expect(await first.text()).toBe('login-shell');
+    expect(await ctx.caches.match('https://site.example/auth/login')).toBeTruthy();
+
+    // Radio off: the reload paints the cached form instead of the offline page.
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    const offline = fetchEvent(request('/auth/login'));
+    ctx.dispatch('fetch', offline);
+    expect(await offline.response.then((r) => r.text())).toBe('login-shell');
   });
 });
