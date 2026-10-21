@@ -145,3 +145,53 @@ test('a never-visited public route deep-links offline from the install precache'
 
   await context.close();
 });
+
+test('a never-visited dynamic detail route lands on /offline, then renders after one visit', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  // A dynamic segment is a pattern, not a document, so the install precache has
+  // no shell for `/quran/7` (ADR-0071's #473 amendment). This is the documented
+  // third door in the spec's "Limits of instant", pinned here so a precache
+  // change cannot move the limit without moving the document with it.
+  await gotoUnderWorkerControl(page, `${baseURL}/rates`);
+  await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
+
+  await context.setOffline(true);
+  await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
+
+  // The offline page answers: its retry control is the marker, and the surah's
+  // own heading is the negative control.
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'الأعراف' })).toHaveCount(0);
+
+  // The limit is one visit deep, not one segment deep: opening the same detail
+  // route online caches its document like any other navigation, and the next
+  // offline open paints the surah instead of `/offline`.
+  await context.setOffline(false);
+  await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
+
+  // The stored copy is written after the response is returned, so wait for the
+  // entry rather than racing the reload against the background write.
+  await expect
+    .poll(() => page.evaluate(() => caches.match('/quran/7').then((hit) => Boolean(hit))), {
+      timeout: 15_000,
+    })
+    .toBe(true);
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
+  await context.close();
+});

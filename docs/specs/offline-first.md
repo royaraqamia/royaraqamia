@@ -52,9 +52,15 @@ because it reserves a scarce resource (ADR-0031).
 Being honest about the floor is part of the spec, because a promise we cannot keep is worse than a
 stated limit.
 
-- **A route never visited, opened offline for the first time, cannot render.** There is no cached HTML
-  or RSC payload to serve, and nothing can synthesise it. We shrink the window by precaching every
-  route's shell, but a server-rendered page's data still needs one online visit first.
+- **A route never visited, opened offline for the first time, cannot render — and a dynamic detail
+  route cannot even show its own chrome.** There is no cached HTML or RSC payload to serve, and
+  nothing can synthesise it. The install precaches every _static_ route's shell (ADR-0071), so for
+  those the window closes after one online visit. A detail route whose pages come from a dynamic
+  segment — `/u/[username]`, `/community/[slug]`, `/quran/[surah]`, `/verify/[code]` — is a pattern,
+  not a document: the build has no shell to precache, so a first offline deep link lands on
+  `/offline` (#473, and ADR-0071's #473 amendment records why the alternatives lost). That is the
+  case a profile link opened from a message hits. One online visit caches the page like any other
+  navigation, and the next offline open renders it.
 - **Server-bound surfaces stay server-bound.** Auth, consultation booking, rate refresh, the media
   downloader, admin and MCP show a needs-connection state by design (ADR-0031); they are not a gap to
   close. Since #447–#450 that state lives inside a cached document for every one of them except
@@ -64,10 +70,11 @@ stated limit.
   so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
   messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen
   (ADR-0061) rather than by bundling, and we do not pretend it is a native-first render.
-- **The floor is two doors, and one surface that still knocks.** `/offline` answers exactly two
+- **The floor is three doors, and one surface that still knocks.** `/offline` answers three
   situations: a brand-new install's first hit with no network (nothing has been cached yet, by
-  definition), and `/admin`, whose guard answers on the server (`identity.resolveAdmin`) so a cached
-  document could not authorize itself. `/mcp/connect` is the one other user-facing surface that asks
+  definition); `/admin`, whose guard answers on the server (`identity.resolveAdmin`) so a cached
+  document could not authorize itself; and a never-visited dynamic detail route, which has no
+  precached shell to answer it (#473). `/mcp/connect` is the one other user-facing surface that asks
   the network for its document, and it is not a gap left behind: its URL carries `client_id`,
   `redirect_uri`, the PKCE challenge and `state`, so a bare precached path cannot answer it, and the
   document renders the client the user is being asked about — a consent that cannot reach the server
@@ -376,7 +383,10 @@ the server is unreachable, and the [Verification](#verification) section for wha
   check that the shells are cached documents rather than per-user renders. `public-offline.spec.ts`
   carries the same assertion for the #450 shells: a context that opened neither `/downloader` nor
   `/consultation/book` deep-links to each with the radio off and reads its heading, not the offline
-  page's retry link.
+  page's retry link. Since #473 the same spec pins the boundary from the other side: a dynamic detail
+  route this context never opened (`/quran/7`) answers `/offline` on a first offline deep link — the
+  third door the [Limits of instant](#limits-of-instant) now states — and the same link renders the
+  surah once it has been opened online, so the limit stays one visit deep rather than one segment deep.
 
   What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
   Request but is left out of the workflow because it writes a row the suite cannot remove against the
