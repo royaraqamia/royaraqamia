@@ -5,62 +5,70 @@ import {
   createNotificationFanout,
   createSupabaseNotificationService,
 } from '@/backend/config/notifications';
+import { NO_STORE } from '@/backend/transport/cache-policy';
 import { AnnouncementSendSchema } from '@/shared/contracts/notifications';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
+/**
+ * These reads bypass the authenticated seam (`getAuthUser` is called directly,
+ * and a signed-out caller gets a 200 rather than a 401), so the seam's
+ * `no-store` guarantee does not reach them. Each response declares the posture
+ * itself (#461): an account-scoped body is never publicly cacheable, not even
+ * the anonymous 200 the background flush depends on.
+ */
 export async function listNotifications(): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(200, { notifications: [] });
+    if (!user) return jsonResult(200, { notifications: [] }, { headers: NO_STORE });
     const service = createSupabaseNotificationService(supabase);
     const notifications = await service.getNotifications(user.id);
-    return jsonResult(200, { notifications });
+    return jsonResult(200, { notifications }, { headers: NO_STORE });
   } catch {
-    return jsonResult(500, { error: 'فشل تحميل الإشعارات' });
+    return jsonResult(500, { error: 'فشل تحميل الإشعارات' }, { headers: NO_STORE });
   }
 }
 
 export async function markAllNotificationsRead(): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(200, { success: true });
+    if (!user) return jsonResult(200, { success: true }, { headers: NO_STORE });
     await createSupabaseNotificationService(supabase).markAllAsRead(user.id);
-    return jsonResult(200, { success: true });
+    return jsonResult(200, { success: true }, { headers: NO_STORE });
   } catch {
-    return jsonResult(500, { error: 'فشل تحديث الإشعارات' });
+    return jsonResult(500, { error: 'فشل تحديث الإشعارات' }, { headers: NO_STORE });
   }
 }
 
 export async function markNotificationRead(id: string): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(200, { success: true });
+    if (!user) return jsonResult(200, { success: true }, { headers: NO_STORE });
     await createSupabaseNotificationService(supabase).markAsRead(id, user.id);
-    return jsonResult(200, { success: true });
+    return jsonResult(200, { success: true }, { headers: NO_STORE });
   } catch {
-    return jsonResult(500, { error: 'فشل تحديث الإشعار' });
+    return jsonResult(500, { error: 'فشل تحديث الإشعار' }, { headers: NO_STORE });
   }
 }
 
 export async function deleteNotification(id: string): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(200, { success: true });
+    if (!user) return jsonResult(200, { success: true }, { headers: NO_STORE });
     await createSupabaseNotificationService(supabase).delete(id, user.id);
-    return jsonResult(200, { success: true });
+    return jsonResult(200, { success: true }, { headers: NO_STORE });
   } catch {
-    return jsonResult(500, { error: 'فشل حذف الإشعار' });
+    return jsonResult(500, { error: 'فشل حذف الإشعار' }, { headers: NO_STORE });
   }
 }
 
 export async function getUnreadNotificationCount(): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(200, { count: 0 });
+    if (!user) return jsonResult(200, { count: 0 }, { headers: NO_STORE });
     const count = await createSupabaseNotificationService(supabase).getUnreadCount(user.id);
-    return jsonResult(200, { count });
+    return jsonResult(200, { count }, { headers: NO_STORE });
   } catch {
-    return jsonResult(500, { error: 'فشل تحميل عدد الإشعارات' });
+    return jsonResult(500, { error: 'فشل تحميل عدد الإشعارات' }, { headers: NO_STORE });
   }
 }
 
