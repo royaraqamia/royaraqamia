@@ -6,8 +6,9 @@ agent: build
 Land the work in this tree, end to end and without asking.
 [docs/agents/landing.md](../../docs/agents/landing.md) is the full procedure; this is the short form.
 
-1. **Start in sync.** `git fetch origin --prune`, and in the canonical checkout `git pull --ff-only`.
-   Cut the worktree from `origin/main`, never from a local `main` or a stale HEAD.
+1. **Start in sync.** `git fetch origin --prune`, reconcile local `main` per landing.md step 1, then
+   cut the worktree from local `main` — never from `origin/main`
+   ([ADR-0072](../../docs/adr/0072-worktrees-are-cut-from-local-main.md)).
 2. **Gate — only what the change can break.** `npm run typecheck`, then `npm run lint:fix`, then the
    affected tests (`npx vitest run <path>`, or `npx vitest run --changed`). Do **not** run the full
    `npm test` unless the change is repo-wide, and do **not** run `npm run build` unless nothing
