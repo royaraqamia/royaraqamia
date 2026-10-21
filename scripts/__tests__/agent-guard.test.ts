@@ -27,7 +27,7 @@ describe('isWriterCommand', () => {
   it.each([
     'git status --short',
     'git log --grep push',
-    'git worktree add -b task ../wt origin/main',
+    'git worktree add -b task ../wt main',
     'git worktree remove ../wt',
     'git stash list',
     "echo 'git commit'",

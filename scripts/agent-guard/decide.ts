@@ -22,7 +22,7 @@ const WRITERS = new Set(['commit', 'push']);
 
 export const DENY_MESSAGE =
   'Denied: land this in your own worktree, not the shared checkout - two writers here have already ' +
-  'silently lost a commit. Create one (worktree_create, or `git worktree add -b <task> <dir> origin/main`) ' +
+  'silently lost a commit. Create one (worktree_create, or `git worktree add -b <task> <dir> main`) ' +
   'and commit there. See docs/agents/worktrees.md.';
 
 export function normalizePath(path: string): string {

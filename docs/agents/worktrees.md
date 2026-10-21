@@ -15,24 +15,34 @@ Measured on 2026-10-13, every one of these silent:
 2. **You publish someone else's work.** Pushing from the shared tree sends every commit in it,
    including another agent's unpushed commits (`0d2e0baa`, `ba77538a` were published this way).
 3. **You inherit their work.** A new worktree starts at the canonical checkout's current HEAD, so
-   anything unpushed sitting there comes with it.
+   anything unpushed sitting there comes with it. (Since ADR-0072 the cut is from local `main` on
+   purpose; the step-1 reconcile is what keeps the owner's unpushed work out of it.)
 
 ## Create one
 
-Prefer the harness tool — it returns the directory and registers the worktree with OpenCode:
+Run the sync first (`git fetch origin --prune`, then the reconcile in
+[landing.md](landing.md), step 1): a fetched, reconciled local `main` is what makes the cut safe.
+Then prefer the harness tool — it returns the directory and registers the worktree with OpenCode:
 
 ```
 worktree_create({ name: "<task>" })
 ```
 
 On this machine that lands under OpenCode's app-data share
-(`C:\Users\Asus\.local\share\opencode\worktree\<id>\<name>`) at the **canonical checkout's current
-HEAD, detached**. When that tree holds unpushed commits you do not want to carry, start from
-`origin/main` instead — and put the work on a branch so the push has a name:
+(`C:\Users\Asus\.local\share\opencode\worktree\<id>\<name>`) at the canonical checkout's current
+**local `main`, detached** — which is the point ([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)):
+the checkout's HEAD is the one base both paths agree on. Put the work on a branch so the push has a
+name:
 
 ```powershell
-git worktree add -b <task-branch> <dir> origin/main
+git worktree add -b <task-branch> <dir> main
 ```
+
+Never start from `origin/main`: the checkout deliberately sits ahead of it while a pull request is
+open, so a branch cut from the remote misses the landed record and the open stacks it is supposed to
+grow on. The cut inherits the reconcile's state by design — the open `(#N)` copies come with the
+worktree, and a local commit that is not a `(#N)` copy is unpushed owner work, which the sync's
+stop-and-report rule keeps out of every worktree cut after it ([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)).
 
 ## Make it runnable
 

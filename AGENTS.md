@@ -31,7 +31,7 @@ do { Start-Sleep 2 } while (-not (Get-NetTCPConnection -LocalPort 3000 -State Li
 taskkill /PID $p.Id /T /F
 ```
 
-**Work in a worktree — never commit in a tree another agent may be writing to.** The canonical checkout is shared, and concurrent `git` there has silently lost a commit and published other agents' unpushed work. Create a worktree (`worktree_create`, or `git worktree add -b <task> origin/main`), land your work by pushing from it, then remove it. Setup, delegated `--cd`, and cleanup: [docs/agents/worktrees.md](docs/agents/worktrees.md).
+**Work in a worktree — never commit in a tree another agent may be writing to.** The canonical checkout is shared, and concurrent `git` there has silently lost a commit and published other agents' unpushed work. Create a worktree from local `main` — `worktree_create`, or `git worktree add -b <task> <dir> main` after the landing sync (never `origin/main`, [ADR-0072](docs/adr/0072-worktrees-are-cut-from-local-main.md)) — land your work by pushing from it, then remove it. Setup, delegated `--cd`, and cleanup: [docs/agents/worktrees.md](docs/agents/worktrees.md).
 
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
