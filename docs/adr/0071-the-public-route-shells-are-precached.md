@@ -64,6 +64,38 @@ crosses it drops the sorted tail, which is why the cap and the list are re-check
 ADR-0069's 150 MB cache budget is untouched by the install, and the worker still spends the smaller
 of the two.
 
+## Amendment: dynamic detail patterns stay out, and the spec says so (#473)
+
+The precache selects static routes only, so a **never-visited dynamic detail route** — `/u/[username]`,
+`/community/[slug]`, `/quran/[surah]`, `/verify/[code]` — has no document to answer a first offline deep
+link, the navigation deadline expires and `/offline` answers. The spec said the opposite twice
+("precaching every route's shell"; "`/offline` answers exactly two situations"), so this amendment
+records the decision the spec now states, and why the alternatives lost.
+
+1. **Accept the limit and correct the spec. Chosen.**
+2. **Precache the concretely prerendered documents under a dynamic segment.** The build does render
+   some: `/quran/[surah]` is `force-static` with `dynamicParams = false`, so `prerender-manifest.json`
+   holds `/quran/1`…`/quran/114`; `/community` and `/verify` prerender the rows the build's database
+   held (five posts and two certificates on this checkout). Rejected. It buys the Quran reader and
+   nothing that motivated the issue: `/u/[username]` (`revalidate = 300`, no `generateStaticParams`)
+   has no prerendered document at all, which is the profile-link-from-a-message case, and the other two
+   cover only what existed at build time. It also inflates the install — those 114 Quran documents are
+   **17.04 MB** of HTML (2.41 MB gzip, 1.41 MB brotli) against the 1.63 MB the current 29-shell list
+   holds, pinned in Cache Storage, and fetched one at a time on install. Neither ceiling would stop it:
+   `sizeOf` (`public/sw.js`) accounts `Content-Length`, the compressed wire size, while the current
+   1.63 MB figure is raw bytes, so the 6 MB ceiling cannot see the jump in what the device stores; and
+   the 32-route cap would have to rise to roughly 146, which defeats the routing-mistake guard it is.
+3. **A generic per-segment shell** that paints "this item is not on this device" client-side. Rejected.
+   It is a new rendering contract per segment (and a new copy, gate and test surface for each), and what
+   it renders is a page about the missing item — the same answer `/offline` gives, with more machinery
+   behind it.
+
+The cost of the chosen option is one online visit before a detail deep link works offline, which is the
+same cost every data-bearing route already pays (ADR-0031) — paid once per document rather than once
+per segment. `e2e/public-offline.spec.ts` pins the boundary in both directions (first offline deep link
+lands on `/offline`; the same link renders after one online visit), so a future change to the precache
+has to move the spec's limits with it.
+
 ## Budget
 
 Two ceilings bound the install:
