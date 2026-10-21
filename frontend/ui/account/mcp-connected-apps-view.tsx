@@ -13,7 +13,9 @@ import {
 import { calculateTimeAgo, formatHijriDate } from '@/frontend/shared/format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
+import { useSession } from '@/frontend/state/session-provider';
 
 /**
  * The MCP clients connected to the signed-in account.
@@ -21,8 +23,15 @@ import { ApiError } from '@/frontend/transport/http';
  * The list is read from the server rather than filtered locally, because the
  * server is the record of what is still live: a revocation that half-succeeded
  * must not look complete because the client removed the row optimistically.
+ *
+ * The page under this view is a data-free shell the worker may cache (#448), so
+ * the guard lives here — the session provider answers network failure as "never
+ * a logout", and a guest is pointed at sign-in in place. The read runs on the
+ * never-cache `/api/me` prefix, which is what keeps an offline visit honest:
+ * the shared needs-connection state instead of the list's stale look-alike.
  */
 export function McpConnectedAppsView() {
+  const { user, isLoading } = useSession();
   const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadOffline, setLoadOffline] = useState(false);
@@ -43,8 +52,9 @@ export function McpConnectedAppsView() {
   }, []);
 
   useEffect(() => {
+    if (isLoading || !user) return;
     void load();
-  }, [load]);
+  }, [isLoading, user, load]);
 
   const confirmDisconnect = async () => {
     if (!target) return;
@@ -67,6 +77,17 @@ export function McpConnectedAppsView() {
 
     await load();
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2.5" aria-busy="true" aria-label="جاري التَّحميل...">
+        <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+        <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!user) return <SignInCta href="/auth/login?redirect=/account/connected-apps" />;
 
   if (loadFailed) {
     if (loadOffline) {

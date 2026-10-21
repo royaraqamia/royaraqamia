@@ -135,3 +135,12 @@ what changed in the tree:
   consent buttons with the shared state offline; `/account/connected-apps` names an unreachable
   server instead of the generic load error. `/mcp/guide` stays a document request answered by
   `/offline` — it has no server action.
+
+## Account shells ride the cache (2026-10-21, #448)
+
+The account subtree's documents left the never-cache list with their guard moved client-side
+(ADR-0031's amendment): an offline reload of a visited `/account` route — and a cold deep link to
+a prerendered one — paints the account chrome instead of `/offline`. Every account-scoped read
+stays on a never-cache API prefix, so a cached shell is still data-free; `/offline` remains the
+answer for the account _tools_ (`/habitflow`, `/spendtrack`, `/linksnap`, `/blogpress`), whose
+documents stay server-rendered per user.

@@ -162,7 +162,7 @@ test('a width first used offline falls back gracefully, never with a 503', async
   expect(imageFailures).toEqual([]);
 });
 
-test('in-session owned-data navigation paints offline; a cold reload is the offline page', async ({
+test('an offline in-session account navigation paints; a cold reload is now the cached shell', async ({
   page,
   context,
 }) => {
@@ -173,9 +173,10 @@ test('in-session owned-data navigation paints offline; a cold reload is the offl
 
   await gotoUnderWorkerControl(page, '/');
 
-  // Warm `/account` online. It is in the worker's never-cache list (ADR-0031),
-  // so its document is never written to Cache Storage; the in-session router
-  // cache and the static chunks are what carry the offline navigation below.
+  // Warm `/account` online. Its document rides the SWR cache since #448
+  // (ADR-0031's amendment): the shell is static and carries nothing
+  // account-bearing, and the in-session router cache plus the SW entry carry
+  // the offline navigation below.
   await bottomTab('/account').click();
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('سجِّل الدُّخول إلى حسابك')).toBeVisible();
@@ -187,9 +188,11 @@ test('in-session owned-data navigation paints offline; a cold reload is the offl
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('سجِّل الدُّخول إلى حسابك')).toBeVisible();
 
-  // A cold reload has no document to serve: the never-cache rule answers the
-  // navigation with the cached `/offline` page. This is the documented limit in
-  // docs/specs/offline-first.md ("Limits of instant"), not a regression.
+  // A cold reload now has the document to serve: the cached shell paints
+  // instead of the offline page. This is exactly what #448 landed — the offline
+  // reload of a visited account route is cache-served chrome (ADR-0031's
+  // #448 amendment), and the granularity guarantee (that the last stale copy
+  // is never presented as live) stays an account-view concern.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: /غير متَّصل/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /غير متَّصل/ })).toHaveCount(0);
 });

@@ -93,7 +93,6 @@ describe('sw-routing predicates', () => {
       '/auth/api/login',
       '/auth/callback',
       '/admin/training',
-      '/account/submissions',
       '/mcp/connect',
       '/habitflow',
       '/spendtrack',
@@ -135,6 +134,12 @@ describe('sw-routing predicates', () => {
       '/verify/ABC',
       '/api/rates',
       '/api/community',
+      // The account shells ride the SWR cache since #448: the guard and the
+      // server-owned reads live client-side, so the document carries no
+      // fragment one user could leave for the next (ADR-0031's amendment).
+      '/account',
+      '/account/submissions',
+      '/account/faq',
     ]) {
       expect(routing.isNeverCache(u(path))).toBe(false);
     }
