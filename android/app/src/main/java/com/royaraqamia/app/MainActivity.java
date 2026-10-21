@@ -63,21 +63,27 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Exposes `RoyShellSync.schedule()` to the page.
+     * Exposes `RoyShellSync.schedule()` and `lastFlush()` to the page.
      *
      * The shell is the only tier that comes back for a queued write once the app is
      * closed, and it has to be *told* the queue is non-empty: the page knows (it
      * just tried to flush), the native side does not. The interface carries no data
      * and cannot touch the queue, so a document in this WebView can do nothing with
      * it beyond asking the shell to drain — and navigation out of our own origin is
-     * already what Capacitor's `allowNavigation` refuses.
+     * already what Capacitor's `allowNavigation` refuses. `lastFlush()` reads back
+     * the record the worker persisted (#455), so `/device` can name what the shell
+     * delivered while nobody was looking.
      */
     private void installSyncBridge(@Nullable Bridge bridge) {
         WebView webView = bridge != null ? bridge.getWebView() : null;
         if (webView == null) return;
 
         webView.addJavascriptInterface(
-            ShellSyncBridge.forApp(() -> SyncScheduler.flushSoon(getApplicationContext())),
+            ShellSyncBridge.forApp(
+                () -> SyncScheduler.flushSoon(getApplicationContext()),
+                // #455: the last drain the worker persisted, for `/device` to read.
+                () -> SyncFlushRecord.load(getApplicationContext())
+            ),
             ShellSyncBridge.NAME
         );
     }

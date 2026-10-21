@@ -14,8 +14,10 @@ import {
 import { cn } from '@/frontend/shared/cn';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import {
+  readShellLastFlush,
   requestOutboxFlush,
   requestShellFlush,
+  type ShellLastFlush,
 } from '@/frontend/shared/local-store/background-sync';
 import {
   DeviceListingUnsupportedError,
@@ -38,7 +40,10 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
  * data to the next (ADR-0031). This page is the opposite — a data-free shell
  * that is safe to cache, with every fact painted from IndexedDB after mount — so
  * it is the one account-adjacent surface that still works with the radio off.
- * See ADR-0070.
+ * See ADR-0070. The background tier on top of it is labeled here and nowhere
+ * else (#455): the shell's last reported drain, read back through the
+ * `RoyShellSync` bridge, where the pill decides — per ADR-0027's amendment —
+ * never to gain a state for it.
  */
 
 type LoadStatus = 'loading' | 'ready' | 'unsupported' | 'error';
@@ -107,18 +112,38 @@ function removeMessage(removal: DeviceCopyRemoval, identity: string, counted: bo
   return stores + queued + '.' + blocked;
 }
 
+/**
+ * What the shell's last reported drain said, in the page's counting voice.
+ * Zeroes with no error are not dressed up as an error; the counts line speaks
+ * for itself.
+ */
+function lastFlushLine(lastFlush: ShellLastFlush): string {
+  if (lastFlush.delivered === 0 && lastFlush.pulled === 0 && lastFlush.left === 0) {
+    return 'لم يكن في آخر استيقاظ شيء بانتظار المزامنة.';
+  }
+
+  return `سلَّمت ${countOperations(lastFlush.delivered)} وسحبت ${countOperations(
+    lastFlush.pulled
+  )}، وبقي ${countOperations(lastFlush.left)} بانتظار المزامنة.`;
+}
+
 export function DeviceView() {
   const { user } = useSession();
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [copies, setCopies] = useState<DeviceStoreCopy[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  /** What the shell recorded of its last background drain (#455); null without a shell. */
+  const [lastFlush, setLastFlush] = useState<ShellLastFlush | null>(null);
   /** The identity whose copy the confirm dialog is about. */
   const [pendingIdentity, setPendingIdentity] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       setCopies(await readDeviceCopies());
+      // The bridge is the shell's own; a browser answers null, and the page's
+      // background tier stays out entirely.
+      setLastFlush(readShellLastFlush());
       setStatus('ready');
     } catch (error) {
       setStatus(error instanceof DeviceListingUnsupportedError ? 'unsupported' : 'error');
@@ -299,6 +324,29 @@ export function DeviceView() {
             onRemove={() => setPendingIdentity(group.identity)}
           />
         ))}
+
+      {lastFlush && (
+        <section className="space-y-2 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-foreground sm:text-base">المزامنة في الخلفية</h2>
+            <span className="text-[11px] text-muted-foreground sm:text-xs">
+              {calculateTimeAgo(new Date(lastFlush.at).toISOString())}
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            {lastFlushLine(lastFlush)}
+          </p>
+          {lastFlush.error && (
+            <p className="text-xs leading-relaxed text-destructive">
+              <span className="font-bold">تعذَّرت المزامنة:</span> {lastFlush.error}
+            </p>
+          )}
+          {/* The shell notes' own concession (ADR-0059): what FCM cannot do. */}
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            التَّطبيق الموقوف قسرًا ينتظر الدَّورة الأدنى — تنبيه الإيقاظ لا يصل إليه.
+          </p>
+        </section>
+      )}
 
       <ConfirmDialog
         open={pendingIdentity !== null}
