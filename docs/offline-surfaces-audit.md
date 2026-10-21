@@ -172,9 +172,10 @@ per route for the reason each one exists:
   is a server POST that re-validates all of it. Offline it renders `NeedsConnection` in place
   (#368); it never renders a stale consent.
 
-The route-level floor is therefore two doors — a brand-new install's first hit with no network, and
-`/admin` — plus this one surface that knocks on the network for a document it cannot safely be
-handed a cached copy of. The mechanical leftovers in the list above (Community's read failures, the
+The route-level floor is therefore three doors — a brand-new install's first hit with no network, a
+never-visited dynamic detail route (`/u/[username]`, `/community/[slug]`, `/quran/[surah]`,
+`/verify/[code]`; #473), and `/admin` — plus this one surface that knocks on the network for a
+document it cannot safely be handed a cached copy of. The mechanical leftovers in the list above (Community's read failures, the
 raw `Failed to fetch` string) are closed as of #475; what the list still records is a Local Store that
 fails to open, which degrades to the network rather than misreporting a state.
 

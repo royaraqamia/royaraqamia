@@ -295,11 +295,17 @@ reading because of a chunk they never asked for (#332).
   `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the previous report. What
   is deliberately not collected: **no URL** (not even a path), no user, session or client id, no
   cookies (`credentials: 'omit'`), no timing, no sizes. The beacon is droppable — it is not awaited,
-  and a limiter outage drops it rather than opening a write path.
+  and a limiter outage drops it rather than opening a write path. A beacon the network refuses (the
+  radio is off) is kept in one small Cache Storage entry, merged per door and retried on the next
+  request that reaches the network — so a device that reconnects before the next worker change
+  delivers what it could not send; a worker killed mid-write still loses it.
 - **Where a maintainer reads it:** the endpoint writes one `logger.info` line, so the field signal is
   a Vercel log query — filter on `[offline-serve]` and group the door. A door changing shape is the
   regression signal: `navigation-*` climbing means ordinary routes stopped caching, `no-fallback`
-  means the shell itself is missing. Nothing in the app reads the count back.
+  means the shell itself is missing. The endpoint also emits one Sentry message per door (fingerprint
+  `offline-serve/<door>`): `warning` for `no-fallback`, `navigation-deadline` and
+  `online-only-deadline`, `info` for the accepted doors, so an alert rule pages without a log query.
+  Nothing in the app reads the count back.
 
 ## UX
 

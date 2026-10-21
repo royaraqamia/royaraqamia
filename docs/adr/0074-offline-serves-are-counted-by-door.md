@@ -97,3 +97,32 @@ The endpoint answers `{ success: true }` and nothing reads it back.
 - **This does not cover the Android shell's native states.** It counts the
   worker, which the shell also runs (ADR-0036), so WebView navigations are
   inside the count; a native launch that never reaches the site is not.
+
+## Amendment (2026-10-21): a refused report is kept, and a regression door pages
+
+The decision above stands; two consequences narrowed when the field signal was
+reviewed against production readiness.
+
+**The beacon is retried, once per request rather than once per report.** A serve
+caused by "radio off" could not send anything, which made `navigation-offline` a
+floor rather than a census (the limit below). The worker now keeps a refused
+report in one small Cache Storage entry (`royaraqamia-offline-report`, outside
+the byte budget and kept across `activate` like the push-preference marker),
+merged per door so a long offline stretch costs one entry, and retries it at the
+top of the next GET the worker sees. It is still not awaited and still
+droppable: a limiter outage, a 400, or a worker killed mid-write loses the
+report, and the tallies remain an aggregation window rather than an audit.
+
+**Sentry gets one issue per door, on the server.** The worker still cannot
+import `@sentry/nextjs`; `/api/offline-serve` — which already validated and
+logged the report — now emits `captureMessage('[offline-serve]')` with
+fingerprint `offline-serve/<door>`. `no-fallback`, `navigation-deadline` and
+`online-only-deadline` are `warning`; the accepted doors are `info`, so a trend
+is visible without paging. The alert rule itself is one Owner step in the Sentry
+project (a frequency rule on the warning issues); the repository holds the
+emission, not the paging configuration.
+
+What does not change: still no URL, user, session, client id, cookie, timing or
+size, and still no fourth-party script in the worker. The one new cost is the
+retry fetch — bounded by the next request after a failed one, and by the same
+"offline serves are nearly zero" argument as the beacon itself.

@@ -1,8 +1,23 @@
+import * as Sentry from '@sentry/nextjs';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { offlineServeRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { logger } from '@/backend/shared/logger';
-import { OfflineServeReportSchema } from '@/shared/contracts/offline-metrics';
+import {
+  OfflineServeReportSchema,
+  type OfflineServeDoor,
+} from '@/shared/contracts/offline-metrics';
+
+/**
+ * The doors worth waking someone for: a shell that is gone, or an ordinary page
+ * that could not answer in time. The accepted doors still reach Sentry as
+ * `info` (one issue per door, so a trend is visible) but never page.
+ */
+const OFFLINE_REGRESSION_DOORS = new Set<OfflineServeDoor>([
+  'no-fallback',
+  'navigation-deadline',
+  'online-only-deadline',
+]);
 
 /**
  * The field signal for `/offline` (ADR-0074, #474): one beacon per serve, sent
@@ -28,6 +43,12 @@ export async function recordOfflineServe(body: unknown, ip: string): Promise<Htt
 
   const { version, door, cache } = parsed.data;
   logger.info('[offline-serve]', { version, door, cache });
+  Sentry.captureMessage('[offline-serve]', {
+    level: OFFLINE_REGRESSION_DOORS.has(door) ? 'warning' : 'info',
+    fingerprint: ['offline-serve', door],
+    tags: { 'offline.door': door, 'offline.version': String(version) },
+    extra: { cache },
+  });
 
   return jsonResult(200, { success: true });
 }

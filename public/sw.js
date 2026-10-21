@@ -24,11 +24,19 @@ const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 10_000;
 // along with the next serve — so the volume is bounded by how often the offline
 // page is actually shown, which the roadmap says is almost never. The payload is
 // a door class and three tallies: never a URL, a user, a client id or a
-// timestamp. The beacon is droppable by design; it is a field signal, not an
-// audit, and the sink is a Vercel log line a maintainer greps (spec:
-// docs/specs/offline-first.md, "Storage & telemetry").
+// timestamp. A beacon cannot leave a device that is truly offline, so an
+// undelivered report is kept and retried on the next request that reaches the
+// network (ADR-0074's amendment); it is still droppable, and still a field
+// signal rather than an audit. The sink is a Vercel log line a maintainer greps
+// and a Sentry issue per door (spec: docs/specs/offline-first.md, "Storage &
+// telemetry").
 const OFFLINE_REPORT_PATH = '/api/offline-serve';
 const OFFLINE_REPORT_VERSION = 1;
+// One small entry, so it is outside the cache budget and survives a worker
+// version change: `activate` keeps this name like the push-preference marker.
+const OFFLINE_REPORT_STORE = 'royaraqamia-offline-report';
+const OFFLINE_REPORT_KEY = '/__sw_offline_report__';
+const OFFLINE_REPORT_RETRY_MS = self.OFFLINE_REPORT_RETRY_MS ?? 5 * 60_000;
 
 const cacheOutcomes = { hits: 0, misses: 0, failures: 0 };
 
@@ -185,7 +193,8 @@ self.addEventListener('activate', (event) => {
             key !== CACHE &&
             key !== STATIC_CACHE &&
             key !== PUSH_PREF_CACHE &&
-            key !== CACHE_META_NAME
+            key !== CACHE_META_NAME &&
+            key !== OFFLINE_REPORT_STORE
           ) {
             return caches.delete(key);
           }
@@ -652,34 +661,127 @@ async function missResponse(request, onMiss, door) {
  */
 async function serveOffline(door) {
   const fallback = await caches.match(FALLBACK_URL);
-  reportOfflineServe(fallback ? door : 'no-fallback');
-  if (fallback) return fallback;
+  void reportOfflineServe(fallback ? door : 'no-fallback');  if (fallback) return fallback;
   return new Response('Offline', { status: 503 });
 }
 
 /**
- * Sends one beacon and resets the tallies it carries. Deliberately not awaited:
- * `/offline` must paint instantly, and the user is already waiting on a failure.
- * `keepalive` is the best effort at outliving the worker, and `credentials:
- * 'omit'` keeps the request free of the visitor's session — the endpoint reads
- * nothing but the body.
+ * Sends one beacon and resolves whether the server took it. Deliberately not
+ * awaited by the caller: `/offline` must paint instantly, and the user is
+ * already waiting on a failure. `keepalive` is the best effort at outliving the
+ * worker, and `credentials: 'omit'` keeps the request free of the visitor's
+ * session — the endpoint reads nothing but the body.
  */
-function reportOfflineServe(door) {
+function postOfflineReport(report) {
+  return fetch(OFFLINE_REPORT_PATH, {
+    method: 'POST',
+    credentials: 'omit',
+    keepalive: true,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(report),
+  })
+    .then((response) => response.ok)
+    .catch(() => false);
+}
+
+function emptyOutcomes() {
+  return { hits: 0, misses: 0, failures: 0 };
+}
+
+function addOutcomes(a, b) {
+  return {
+    hits: a.hits + b.hits,
+    misses: a.misses + b.misses,
+    failures: a.failures + b.failures,
+  };
+}
+
+async function readPendingReport() {
+  try {
+    const cache = await caches.open(OFFLINE_REPORT_STORE);
+    const response = await cache.match(OFFLINE_REPORT_KEY);
+    if (!response) return null;
+    const parsed = await response.json();
+    if (!parsed || parsed.version !== OFFLINE_REPORT_VERSION || !parsed.doors) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function writePendingReport(doors) {
+  const cache = await caches.open(OFFLINE_REPORT_STORE);
+  await cache.put(
+    OFFLINE_REPORT_KEY,
+    new Response(JSON.stringify({ version: OFFLINE_REPORT_VERSION, doors }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+}
+
+async function clearPendingReport() {
+  try {
+    const cache = await caches.open(OFFLINE_REPORT_STORE);
+    await cache.delete(OFFLINE_REPORT_KEY);
+  } catch {
+    // Losing the marker only costs one duplicate report, never the page.
+  }
+}
+
+/**
+ * Keeps a report the network refused, merged per door so a long offline stretch
+ * costs one entry rather than one per serve. A worker killed before the write
+ * settles still loses it: this is a signal, not an audit.
+ */
+async function keepOfflineReport(report) {
+  const pending = await readPendingReport();
+  const doors = { ...((pending && pending.doors) || {}) };
+  doors[report.door] = addOutcomes(doors[report.door] || emptyOutcomes(), report.cache);
+  await writePendingReport(doors);
+}
+
+let lastReportFlush = 0;
+
+/**
+ * Tries the reports an offline serve could not deliver. Called on every GET the
+ * worker sees, so a device that comes back online flushes on its own first
+ * request; throttled because a beacon is not worth a cache read per request.
+ */
+async function flushOfflineReports(force = false) {
+  const now = Date.now();
+  if (!force && now - lastReportFlush < OFFLINE_REPORT_RETRY_MS) return;
+  lastReportFlush = now;
+  const pending = await readPendingReport();
+  if (!pending) return;
+  const remaining = {};
+  for (const door of Object.keys(pending.doors)) {
+    const delivered = await postOfflineReport({
+      version: OFFLINE_REPORT_VERSION,
+      door,
+      cache: pending.doors[door],
+    });
+    if (!delivered) remaining[door] = pending.doors[door];
+  }
+  if (Object.keys(remaining).length === 0) await clearPendingReport();
+  else await writePendingReport(remaining);
+}
+
+/**
+ * Counts one `/offline` serve and gets the report out: straight to the endpoint
+ * when the network answers, kept for the next request when it does not.
+ */
+async function reportOfflineServe(door) {
   const cache = { ...cacheOutcomes };
   cacheOutcomes.hits = 0;
   cacheOutcomes.misses = 0;
   cacheOutcomes.failures = 0;
-  try {
-    fetch(OFFLINE_REPORT_PATH, {
-      method: 'POST',
-      credentials: 'omit',
-      keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ version: OFFLINE_REPORT_VERSION, door, cache }),
-    }).catch(() => undefined);
-  } catch {
-    // A reporting failure must never change what the user is shown.
+  const report = { version: OFFLINE_REPORT_VERSION, door, cache };
+  const delivered = await postOfflineReport(report);
+  if (!delivered) {
+    await keepOfflineReport(report);
+    return;
   }
+  await flushOfflineReports(true);
 }
 
 /**
@@ -757,6 +859,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.method !== 'GET') return;
+
+  // Retry what a truly-offline serve could not send (ADR-0074's amendment).
+  void flushOfflineReports();
 
   // Online-only surfaces bypass the cache entirely (ADR-0031).
   if (isNeverCache(url)) {

@@ -49,6 +49,7 @@ function createSandbox({
   budgetBytes,
   routeBudgetBytes,
   navigationTimeoutMs,
+  offlineReportRetryMs,
   precacheRoutes = [],
 } = {}) {
   const listeners = new Map();
@@ -169,6 +170,7 @@ function createSandbox({
   if (budgetBytes !== undefined) sandbox.CACHE_BUDGET_BYTES = budgetBytes;
   if (routeBudgetBytes !== undefined) sandbox.ROUTE_PRECACHE_BUDGET_BYTES = routeBudgetBytes;
   if (navigationTimeoutMs !== undefined) sandbox.NAVIGATION_TIMEOUT_MS = navigationTimeoutMs;
+  if (offlineReportRetryMs !== undefined) sandbox.OFFLINE_REPORT_RETRY_MS = offlineReportRetryMs;
   // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
   // this worker would be a bug the suite must see, so opening IndexedDB throws.
   sandbox.indexedDB = {
@@ -1151,5 +1153,85 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
     expect(beacons()).toHaveLength(1);
     expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
+  });
+
+  it('keeps a report the network refused and flushes it on the next request', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20, offlineReportRetryMs: 0 });
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+
+    const missed = fetchEvent(request('/community/lead'));
+    ctx.dispatch('fetch', missed);
+    expect(await missed.response.then((r) => r.text())).toBe('ok');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const store = await ctx.caches.open('royaraqamia-offline-report');
+    const pending = await (await store.match('/__sw_offline_report__')).json();
+    expect(pending).toEqual({
+      version: 1,
+      doors: { 'navigation-offline': { hits: 0, misses: 1, failures: 1 } },
+    });
+
+    // The next request reaches the network: the kept report goes out and the
+    // marker is cleared, even though this navigation itself needed no fallback.
+    const beacons = [];
+    ctx.sandbox.fetch = vi.fn(async (url, init) => {
+      if (String(url) === '/api/offline-serve') {
+        beacons.push(init);
+        return new Response('{}', { status: 200 });
+      }
+      throw new Error('offline');
+    });
+    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    await cache.put('https://site.example/rates', new Response('stale-shell'));
+
+    const online = fetchEvent(request('/rates'));
+    ctx.dispatch('fetch', online);
+    expect(await online.response.then((r) => r.text())).toBe('stale-shell');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(beacons).toHaveLength(1);
+    expect(JSON.parse(beacons[0].body)).toMatchObject({ door: 'navigation-offline' });
+    expect(await store.match('/__sw_offline_report__')).toBeUndefined();
+  });
+
+  it('merges reports per door while the radio is off', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20, offlineReportRetryMs: 60_000 });
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+
+    for (const path of ['/community/lead', '/admin']) {
+      const event = fetchEvent(request(path));
+      ctx.dispatch('fetch', event);
+      expect(await event.response.then((r) => r.text())).toBe('ok');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const store = await ctx.caches.open('royaraqamia-offline-report');
+    const pending = await (await store.match('/__sw_offline_report__')).json();
+    expect(Object.keys(pending.doors).sort()).toEqual([
+      'navigation-offline',
+      'online-only-offline',
+    ]);
+  });
+
+  it('keeps the kept report when a new worker activates', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const store = await ctx.caches.open('royaraqamia-offline-report');
+    await store.put(
+      '/__sw_offline_report__',
+      new Response(
+        JSON.stringify({
+          version: 1,
+          doors: { 'no-fallback': { hits: 0, misses: 0, failures: 1 } },
+        })
+      )
+    );
+
+    await Promise.all(ctx.dispatch('activate').waitUntilCalls);
+
+    expect(await store.match('/__sw_offline_report__')).toBeTruthy();
   });
 });

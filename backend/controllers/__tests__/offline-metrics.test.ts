@@ -2,7 +2,11 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockCheckRateLimitApi = vi.fn();
 const mockInfo = vi.fn();
+const mockCaptureMessage = vi.fn();
 
+vi.mock('@sentry/nextjs', () => ({
+  captureMessage: (...args: unknown[]) => mockCaptureMessage(...args),
+}));
 vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: (config: unknown) => mockCheckRateLimitApi(config),
 }));
@@ -58,6 +62,38 @@ describe('recordOfflineServe', () => {
 
     expect(mockCheckRateLimitApi).not.toHaveBeenCalled();
     expect(mockInfo).not.toHaveBeenCalled();
+  });
+
+  it('raises a regression door to a Sentry warning, one issue per door', async () => {
+    await recordOfflineServe(REPORT, IP);
+
+    expect(mockCaptureMessage).toHaveBeenCalledWith('[offline-serve]', {
+      level: 'warning',
+      fingerprint: ['offline-serve', 'navigation-deadline'],
+      tags: { 'offline.door': 'navigation-deadline', 'offline.version': '1' },
+      extra: { cache: { hits: 4, misses: 2, failures: 1 } },
+    });
+  });
+
+  it('keeps an accepted door at info, so the trend exists without paging', async () => {
+    await recordOfflineServe({ ...REPORT, door: 'online-only-offline' }, IP);
+
+    expect(mockCaptureMessage).toHaveBeenCalledWith(
+      '[offline-serve]',
+      expect.objectContaining({
+        level: 'info',
+        tags: { 'offline.door': 'online-only-offline', 'offline.version': '1' },
+      })
+    );
+  });
+
+  it('never sends a malformed report or the stray keys it stripped', async () => {
+    await recordOfflineServe({ ...REPORT, url: '/rates', userId: 'x' }, IP);
+    await recordOfflineServe({ ...REPORT, door: 'somewhere-else' }, IP);
+
+    expect(mockCaptureMessage).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(mockCaptureMessage.mock.calls[0])).not.toContain('/rates');
+    expect(JSON.stringify(mockCaptureMessage.mock.calls[0])).not.toContain('userId');
   });
 
   it('denies when the limiter fails closed', async () => {
