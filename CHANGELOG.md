@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.131.1] - 2026-10-21
+
+### Fixed
+- name the cause on Community reads and BlogPress uploads (#482)
+
 ## [1.131.0] - 2026-10-21
 
 ### Added
