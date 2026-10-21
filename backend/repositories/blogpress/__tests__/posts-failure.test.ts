@@ -135,6 +135,23 @@ describe('blogpress posts repository failure contract', () => {
     await expect(repo.listPostsByAuthor('u-1')).rejects.toBeInstanceOf(RepositoryError);
   });
 
+  it('throws from the sync snapshot read instead of reporting an empty set', async () => {
+    const repo = createPostsRepository(makeClient({ data: null, error: DB_ERROR }).client);
+
+    await expect(repo.listPostsByAuthorIncludingDeleted('u-1')).rejects.toBeInstanceOf(
+      RepositoryError
+    );
+  });
+
+  it('returns tombstone rows in the sync snapshot read, filtered by author only', async () => {
+    const { client } = makeClient({ data: [POST], error: null });
+    const repo = createPostsRepository(client);
+
+    await expect(repo.listPostsByAuthorIncludingDeleted('u-1')).resolves.toEqual([POST]);
+    const from = (client as unknown as { from: ReturnType<typeof vi.fn> }).from.mock;
+    expect(from.calls[0]).toEqual(['posts']);
+  });
+
   it('throws from getPostTagsByPostIds on a database error', async () => {
     const repo = createPostsRepository(makeClient({ data: null, error: DB_ERROR }).client);
 

@@ -56,6 +56,15 @@ export interface PostAuthor {
   bio: string | null;
 }
 
+/**
+ * The full owned snapshot the client pull reconciles with (ADR-0060),
+ * tombstone-inclusive: a delete made on another device is a `deleted_at` row,
+ * so a snapshot that filtered it would resurrect the draft here.
+ */
+export interface BlogpressSyncSnapshot {
+  posts: Post[];
+}
+
 /** Full snapshot of a deleted post, re-sent by the client to undo a delete. */
 export const RestorePostSnapshotSchema = z.object({
   slug: z.string().min(1, 'الرَّابط مطلوب'),

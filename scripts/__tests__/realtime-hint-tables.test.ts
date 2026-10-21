@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { SYNC_HINT_TABLES as BLOGPRESS } from '@/frontend/state/blogpress/use-blogpress-store';
 import { SYNC_HINT_TABLES as HABITFLOW } from '@/frontend/state/habitflow/use-habit-sync';
 import { SYNC_HINT_TABLES as LINKSNAP } from '@/frontend/state/linksnap/use-linksnap';
 import { SYNC_HINT_TABLES as QURAN } from '@/frontend/state/quran/use-quran-reader';
@@ -52,7 +53,7 @@ function checkedTables(): string[] {
   return [...source.matchAll(/table:\s*'([a-z_]+)'/g)].map((match) => match[1]!);
 }
 
-const SUBSCRIBED = [...HABITFLOW, ...SPENDTRACK, ...LINKSNAP, ...QURAN];
+const SUBSCRIBED = [...HABITFLOW, ...SPENDTRACK, ...LINKSNAP, ...QURAN, ...BLOGPRESS];
 
 describe('Realtime sync hint tables', () => {
   it('subscribes to every table the publication migration publishes, and no other', () => {
@@ -67,6 +68,8 @@ describe('Realtime sync hint tables', () => {
   it('checks a table of every subscribed product against the live project', () => {
     const checked = checkedTables();
     // HabitFlow, SpendTrack, LinkSnap and the Quran Reader, one table each.
+    // BlogPress's hint path is covered by the migration-array pin above; its
+    // probe is pending until check-realtime-hints learns `author_id` filtering.
     expect(checked.length).toBeGreaterThanOrEqual(4);
     for (const table of checked) expect(SUBSCRIBED).toContain(table);
   });

@@ -95,11 +95,11 @@ Honest list of what stands between us and the bar, each with the file that shows
    there, and only then pulls (ADR-0059, [the shell notes](../mobile/android-shell.md)). A change made
    elsewhere reaches a closed shell too: the device that delivered it asks the server for a silent
    high-priority FCM wake, and the receiver enqueues that same drain. What is still open is the
-   battery-optimization prompt and delivery badges in the shell; and the background _pull_ covers only
-   the products whose pull a background realm can run - HabitFlow, SpendTrack, the Quran Reader and, since
-   #385, LinkSnap. BlogPress is the one absent: it has no client pull to reuse. So a laptop write
-   refreshes a phone's habits, expenses, Quran reading position and links before the phone is opened; a
-   post still waits for the app.
+   battery-optimization prompt and delivery badges in the shell; and the background _pull_ covers
+   HabitFlow, SpendTrack, the Quran Reader, LinkSnap (#385) and — since #384, whose client pull it
+   reuses — BlogPress. Those five products refresh, including a BlogPress fought with on a phone that
+   never opens the app. So a laptop write refreshes a phone's habits, expenses, Quran reading
+   position, links and posts before the phone is opened.
 2. **The offline e2e suite's owned-data half runs in CI, and the sign-in is paced to the product's
    own limit.** Every spec is `test.skip(!ENABLED)` behind its own env flag; the `E2E: Offline` workflow
    sets them for every wired spec except `lead-offline`, which stays out because it writes a row the
@@ -158,10 +158,11 @@ Honest list of what stands between us and the bar, each with the file that shows
    channel per table, filtered to `user_id`, dropped while the document is hidden, and a burst of
    changes folded into one pull. It listens only to tables whose surface has a pull to trigger
    (HabitFlow's `habits`/`habit_logs`, SpendTrack's four, LinkSnap's `short_links`, the Quran Reader's
-   `quran_reading_positions`/`quran_bookmarks`), published by
+   `quran_reading_positions`/`quran_bookmarks`, and BlogPress's `posts` — filtered on `author_id`,
+   since posts key ownership there), published by
    `supabase/migrations/*_publish_*_realtime_hints.sql` — one file per slice that adds tables, because
-   an applied migration never runs again; BlogPress and the lead forms read on the server through their
-   loader, so they have nothing to pull and are not published. A tab that was hidden catches up through
+   an applied migration never runs again; the lead forms read on the server through their loader, so
+   they have nothing to pull and are not published. A tab that was hidden catches up through
    its own focus pull — the subscription is gone by then, which is why a hint never has to be replayed.
 
 ### Cache tiers
@@ -271,7 +272,7 @@ the server is unreachable, and the [Verification](#verification) section for wha
    WebView, replays the Outbox and then pulls what it can (ADR-0059). _5b, landed:_ the FCM data wake —
    a device that delivered a write asks the server to wake the account's other devices, a silent
    high-priority data message reaches `SyncMessagingService`, and the receiver enqueues the same drain;
-   the background pull covers HabitFlow, SpendTrack, the Quran Reader and LinkSnap
+   the background pull covers HabitFlow, SpendTrack, the Quran Reader, LinkSnap and BlogPress
    (`PULLABLE_PRODUCTS`). _5c,
    half-landed:_ the battery-exemption prompt — a drain that ends with work still owed, or a wake the
    app receives in the background, asks once with the reason in the notification's copy, and the tap
@@ -359,7 +360,7 @@ the server is unreachable, and the [Verification](#verification) section for wha
   is a device result, and [the shell notes](../mobile/android-shell.md) name where it stands.
 - **The background pull** is the drain page's second half: it runs `PULLABLE_PRODUCTS` after the queue
   (`refresh-products.test.ts`, `sync-flush-entry.test.ts`, and each product's pull module through the
-  hook that now shares it). Its coverage is the honest part: four products today, with the reason the
+  hook that now shares it). Its coverage is the honest part: five products today, with the reason the
   one absent product is absent written in `sync-products.ts`.
 - **Performance budget:** `npm run perf:check` gates every phase. Local-first reads should move the
   numbers the right way, but Background Sync, Realtime and extra caching all cost something, so a phase

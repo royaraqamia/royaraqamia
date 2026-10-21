@@ -37,16 +37,21 @@ export interface SyncHintSource {
 /**
  * Hint sources for one account's rows of `tables`.
  *
- * RLS already decides what a subscriber is allowed to see; the `user_id` filter
+ * RLS already decides what a subscriber is allowed to see; the ownership filter
  * is what keeps another account's writes off this device's wire in the first
  * place, and it is the same shape `frontend/api/notifications.ts` subscribes
- * with.
+ * with. Most owned tables key ownership on `user_id`; BlogPress keys its posts
+ * on `author_id`, which is what `column` exists for.
  */
-export function userSyncHints(tables: readonly string[], userId: string): SyncHintSource[] {
+export function userSyncHints(
+  tables: readonly string[],
+  userId: string,
+  column = 'user_id'
+): SyncHintSource[] {
   return tables.map((table) => ({
     table,
     channel: `${table}_sync_hints`,
-    filter: `user_id=eq.${userId}`,
+    filter: `${column}=eq.${userId}`,
   }));
 }
 
