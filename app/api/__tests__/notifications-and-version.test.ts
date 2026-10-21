@@ -5,6 +5,16 @@ function readBody<T>(res: NextResponse): T {
   return (res as unknown as { data: T }).data;
 }
 
+/**
+ * A notifications response is account-scoped even when it is anonymous, so it
+ * must be `no-store` on every path (#461). The mock keeps whatever headers the
+ * handler passed to `NextResponse.json`, so a dropped header reads as `{}`.
+ */
+function expectNoStore(res: NextResponse): void {
+  const headers = (res as unknown as { headers: Record<string, string> }).headers;
+  expect(headers['Cache-Control']).toBe('no-store');
+}
+
 const mockGetAuthUser = vi.fn();
 const mockService = {
   getNotifications: vi.fn(),
@@ -74,6 +84,7 @@ describe('GET /api/notifications', () => {
     const res = await listGET({} as NextRequest);
     expect(res.status).toBe(200);
     expect(readBody(res)).toEqual({ notifications: [] });
+    expectNoStore(res);
   });
 
   it('returns the user notifications', async () => {
@@ -85,6 +96,7 @@ describe('GET /api/notifications', () => {
     expect(res.status).toBe(200);
     expect(readBody<{ notifications: unknown[] }>(res).notifications).toEqual([notification]);
     expect(mockService.getNotifications).toHaveBeenCalledWith('u-1');
+    expectNoStore(res);
   });
 
   it('returns 500, not an empty list, when the service throws', async () => {
@@ -95,6 +107,7 @@ describe('GET /api/notifications', () => {
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحميل الإشعارات' });
+    expectNoStore(res);
   });
 });
 
@@ -102,7 +115,9 @@ describe('PATCH /api/notifications (mark all read)', () => {
   it('is a no-op success for unauthenticated users', async () => {
     mockGetAuthUser.mockResolvedValue({ user: null, client: null });
     const res = await markAllPATCH({} as NextRequest);
+    expect(res.status).toBe(200);
     expect(readBody(res)).toEqual({ success: true });
+    expectNoStore(res);
   });
 
   it('marks all notifications as read', async () => {
@@ -113,6 +128,7 @@ describe('PATCH /api/notifications (mark all read)', () => {
 
     expect(readBody(res)).toEqual({ success: true });
     expect(mockService.markAllAsRead).toHaveBeenCalledWith('u-1');
+    expectNoStore(res);
   });
 
   it('returns 500 when the service throws', async () => {
@@ -123,6 +139,7 @@ describe('PATCH /api/notifications (mark all read)', () => {
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحديث الإشعارات' });
+    expectNoStore(res);
   });
 });
 
@@ -131,6 +148,7 @@ describe('GET /api/notifications/unread-count', () => {
     mockGetAuthUser.mockResolvedValue({ user: null, client: null });
     const res = await unreadGET({} as NextRequest);
     expect(readBody(res)).toEqual({ count: 0 });
+    expectNoStore(res);
   });
 
   it('returns the unread count', async () => {
@@ -140,6 +158,7 @@ describe('GET /api/notifications/unread-count', () => {
     const res = await unreadGET({} as NextRequest);
 
     expect(readBody(res)).toEqual({ count: 4 });
+    expectNoStore(res);
   });
 
   it('returns 500, not a zero count, when the service throws', async () => {
@@ -150,10 +169,20 @@ describe('GET /api/notifications/unread-count', () => {
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحميل عدد الإشعارات' });
+    expectNoStore(res);
   });
 });
 
 describe('PATCH /api/notifications/[id]', () => {
+  it('is a no-op success for unauthenticated users', async () => {
+    mockGetAuthUser.mockResolvedValue({ user: null, client: null });
+    const res = await markOnePATCH({} as NextRequest, { params });
+    expect(res.status).toBe(200);
+    expect(readBody(res)).toEqual({ success: true });
+    expect(mockService.markAsRead).not.toHaveBeenCalled();
+    expectNoStore(res);
+  });
+
   it('marks a single notification as read', async () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.markAsRead.mockResolvedValue(undefined);
@@ -162,6 +191,7 @@ describe('PATCH /api/notifications/[id]', () => {
 
     expect(readBody(res)).toEqual({ success: true });
     expect(mockService.markAsRead).toHaveBeenCalledWith('n-1', 'u-1');
+    expectNoStore(res);
   });
 
   it('returns 500 when the service throws', async () => {
@@ -172,10 +202,20 @@ describe('PATCH /api/notifications/[id]', () => {
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحديث الإشعار' });
+    expectNoStore(res);
   });
 });
 
 describe('DELETE /api/notifications/[id]', () => {
+  it('is a no-op success for unauthenticated users', async () => {
+    mockGetAuthUser.mockResolvedValue({ user: null, client: null });
+    const res = await deleteOne({} as NextRequest, { params });
+    expect(res.status).toBe(200);
+    expect(readBody(res)).toEqual({ success: true });
+    expect(mockService.delete).not.toHaveBeenCalled();
+    expectNoStore(res);
+  });
+
   it('deletes a notification', async () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.delete.mockResolvedValue(undefined);
@@ -184,6 +224,7 @@ describe('DELETE /api/notifications/[id]', () => {
 
     expect(readBody(res)).toEqual({ success: true });
     expect(mockService.delete).toHaveBeenCalledWith('n-1', 'u-1');
+    expectNoStore(res);
   });
 
   it('returns 500 when the service throws', async () => {
@@ -194,6 +235,7 @@ describe('DELETE /api/notifications/[id]', () => {
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل حذف الإشعار' });
+    expectNoStore(res);
   });
 });
 
