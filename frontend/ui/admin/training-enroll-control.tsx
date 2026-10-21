@@ -20,6 +20,8 @@ import { trainingCohortSeatsLeft, type TrainingCohort } from '@/shared/contracts
 
 interface EnrollControlProps {
   applicationId: string;
+  /** The Course the application was made for; only its cohorts may be offered. */
+  courseSlug: string;
   isEnrolled: boolean;
   enrolledCohortId: string | null;
   onChanged: () => void;
@@ -29,9 +31,15 @@ interface EnrollControlProps {
  * Enrolling is an explicit act with a chosen Cohort, not a status flip — the seat
  * is scarce and is claimed through the capacity-guarded RPC (ADR-0008). So this
  * only ever offers a Cohort + an "enroll" button, never a free status dropdown.
+ *
+ * The offer is scoped to the application's own Course: a seat claimed against
+ * another Course's cohort would enrol the student in the wrong Course, and the
+ * RPC now refuses it (`COHORT_COURSE_MISMATCH`). Filtering here keeps the admin
+ * from ever picking one.
  */
 export function EnrollControl({
   applicationId,
+  courseSlug,
   isEnrolled,
   enrolledCohortId,
   onChanged,
@@ -50,6 +58,8 @@ export function EnrollControl({
       cancelled = true;
     };
   }, []);
+
+  const courseCohorts = cohorts.filter((cohort) => cohort.course_slug === courseSlug);
 
   async function handleEnroll() {
     if (!selectedCohortId) return;
@@ -111,12 +121,12 @@ export function EnrollControl({
             <SelectValue placeholder="اختر الدُّفعة" />
           </SelectTrigger>
           <SelectContent>
-            {cohorts.length === 0 ? (
+            {courseCohorts.length === 0 ? (
               <SelectItem value="__none__" disabled>
                 لا توجد دُفعات
               </SelectItem>
             ) : (
-              cohorts.map((cohort) => {
+              courseCohorts.map((cohort) => {
                 const seatsLeft = trainingCohortSeatsLeft(cohort);
                 return (
                   <SelectItem key={cohort.id} value={cohort.id} disabled={seatsLeft === 0}>
