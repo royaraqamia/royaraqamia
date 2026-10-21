@@ -59,3 +59,28 @@ is what the emulator and the shell notes measure.
 `scripts/__tests__/shell-fallback.test.mjs` pins the config to the page, parses the inline script as ES5,
 refuses automatic navigation, and holds the bundled fonts to the site's own files. The emulator drill in
 `docs/mobile/android-shell.md` records what the below-floor copy looks like on WebView 83.
+
+## Amendment (2026-10-21, #447): the failure is recovered once, on reconnect
+
+"Auto-retry on `online`, or a timed reload" was rejected above on the wording alone: as _automatic_
+retry it is a loop. Phase 0 of the offline-first roadmap needed the narrower version, one bound
+attempt instead of a mechanism:
+
+- The trigger is only the `online` event — there is still no timer, no interval and no
+  `navigator.onLine` probe. A page whose radio never comes back is read for as long as the user
+  needs it.
+- The listener exists on the reachability copy only. The below-floor update card has no automatic
+  action at all: reloading cannot update a WebView.
+
+One failed main-frame load still produces one page load. And the reload that reconnect triggers
+cannot happen twice in a session: before navigating, the listener writes
+`rqq-unavailable-recovered` into `sessionStorage` (on the `https://localhost` origin the page is
+served from), and every page load that finds the flag set arms nothing. A site that is _still_ down
+after the reload therefore serves this page again with retry-by-tap only — the original guarantee —
+and a site that came up delivers the user without a tap. The flag lives for the browsing session by
+design: a later outage in the same session costs one tap, which is the old behaviour every time it
+matters.
+
+`scripts/__tests__/shell-fallback.test.mjs` holds the guard, not just the copy: one `online`
+listener, the flag written before navigating with `location.assign` (never `location.href`,
+`location.replace` or `location.reload`), and the update-card branch still automatic-free.
