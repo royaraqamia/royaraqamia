@@ -11,7 +11,9 @@ import * as acorn from 'acorn';
  * at build time connects them. A moved page, a floor that drifts from the
  * config, or a "fix" written in the site's modern syntax would all look fine in
  * a browser and fail exactly where this page is meant to work — on an old,
- * offline WebView. So the agreement is pinned here.
+ * offline WebView. So the agreement is pinned here. Since #447 the page also
+ * owns ADR-0067's recovery amendment: one reload, on the first `online` event,
+ * guarded by a session flag — and this test pins the guard, not just the copy.
  */
 
 const config = readFileSync('capacitor.config.ts', 'utf8');
@@ -66,13 +68,14 @@ describe('the shell fallback page', () => {
     expect(pageText).toContain('تعذَّر فتح الموقع');
   });
 
-  it('retries with a real link to the canonical origin, and nothing automatic', () => {
+  it('retries with a real link, and reloads once on reconnect behind a session guard', () => {
     const retries = html.match(/href="https:\/\/royaraqamia\.com"/g) ?? [];
     expect(retries.length).toBeGreaterThanOrEqual(2); // the button and <noscript>
     expect(html).toContain('>إعادة المحاولة</a>');
 
-    // No timer, online listener or location write: a site that stays down must
-    // produce this page once per attempt, never a reload loop.
+    // No timer ever: the radio coming back — not a clock — is the only
+    // automatic trigger, and a reload never treats a still-down site as a
+    // reason to try again (one failure stays one page load, ADR-0067).
     for (const automatic of [
       'setTimeout',
       'setInterval',
@@ -80,10 +83,21 @@ describe('the shell fallback page', () => {
       'location.replace',
       'location.href',
       'window.open',
-      "addEventListener('online'",
     ]) {
       expect(pageScript).not.toContain(automatic);
     }
+
+    // The one-shot recovery (#447): exactly one `online` listener, on the
+    // reachability copy only, guarded by a sessionStorage flag that the page
+    // after the first reload reads and refuses to re-arm.
+    expect((pageScript.match(/addEventListener\('online'/g) ?? []).length).toBe(1);
+    expect(pageScript).toContain('RECOVERY_FLAG');
+    expect(pageScript).toContain("sessionStorage.setItem(RECOVERY_FLAG, '1')");
+    expect(pageScript).toContain('sessionStorage.getItem(RECOVERY_FLAG) !== null');
+    expect(pageScript).toContain("removeEventListener('online'");
+    expect(pageScript).toContain('var outdated = current > 0 && current < MINIMUM_WEBVIEW;');
+    const recovery = pageScript.slice(pageScript.indexOf('function recoverOnce()'));
+    expect(recovery).toContain("window.location.assign('https://royaraqamia.com')");
   });
 
   it('is readable at 320px and does not fetch anything from the network', () => {
