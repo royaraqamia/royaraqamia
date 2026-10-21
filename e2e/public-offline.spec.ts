@@ -159,7 +159,7 @@ test('a community search names the connection when the request never leaves, and
   const page = await context.newPage();
 
   await gotoUnderWorkerControl(page, `${baseURL}/community`);
-  const search = page.getByRole('combobox', { name: 'ابحث عن الأعضاء أو المنشورات' });
+  const search = page.getByRole('combobox', { name: 'ابحث عن أشخاص أو منشورات' });
   await expect(search).toBeVisible();
 
   // A failed read is not "no results" (ADR-0031): the panel names the
