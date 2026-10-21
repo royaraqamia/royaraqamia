@@ -34,7 +34,11 @@ public class SyncMessagingService extends FirebaseMessagingService {
         if (ShellSyncWake.isWake(message.getData())) {
             // A wake means the account moved on another device, which is both a
             // reason to replay what this device owes and to pull what it lacks;
-            // the worker's page does one and then the other.
+            // the worker's page does one and then the other. It is also the
+            // amendment's second moment for the exemption prompt: a wake
+            // received with the app in the background is background delivery
+            // arriving, and the prompt is gated to one ask.
+            ShellBatteryPrompt.promptIfNeeded(this);
             SyncScheduler.flushSoon(this);
         }
 
