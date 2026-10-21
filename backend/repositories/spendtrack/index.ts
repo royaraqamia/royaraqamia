@@ -71,6 +71,25 @@ export function createSpendtrackRepository(
       ) as Category[];
     },
 
+    async getDefaultCategories(): Promise<Category[]> {
+      // Queried through the admin client by the controller (#449): default rows
+      // have no `user_id`, and the user-scoped RLS policy would hide them from a
+      // guest seeding the offered-but-unclaimed dashboard.
+      const { data, error } = (await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_default', true)
+        .is('deleted_at', null)
+        .order('name')) as {
+        data: Array<{ color_hex: string; [key: string]: unknown }> | null;
+        error: unknown;
+      };
+      if (error) throw error;
+      return (data ?? []).map(({ color_hex, ...row }) =>
+        withOfflineFields({ ...row, colorHex: color_hex })
+      ) as Category[];
+    },
+
     async getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot> {
       // Deliberately unfiltered by `deleted_at`: tombstones are part of the
       // snapshot so a delete made on another device can be replayed here.

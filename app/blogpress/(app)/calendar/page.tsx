@@ -1,24 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { verifySession } from '@/backend/middleware/session-guard';
-import { getBlogpressPosts } from '@/backend/loaders/blogpress';
-import { ScheduledCalendar } from '@/frontend/ui/blogpress/scheduled-calendar';
 import { CalendarRange, ArrowRight } from 'lucide-react';
-
-export const dynamic = 'force-dynamic';
+import { BlogpressCalendar } from '@/frontend/ui/blogpress/blogpress-calendar';
 
 export const metadata: Metadata = {
   description: 'تقويم منشورات BlogPress المجدولة – انشر بجدول زمني في مكانٍ واحد.',
 };
 
-export default async function CalendarPage() {
-  const session = await verifySession();
-  const { repository } = await getBlogpressPosts();
-  const posts = await repository.listPostsByAuthor(session.userId);
-
-  const scheduled = posts.filter((p) => p.status === 'scheduled' && p.publish_at);
-  const drafts = posts.filter((p) => p.status === 'draft');
-
+/**
+ * A cached, data-free shell (#449, ADR-0073). The session read and the post
+ * query moved into `BlogpressCalendar`, which paints the Local Store; the page
+ * keeps only the chrome both online and offline share.
+ */
+export default function CalendarPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
@@ -40,7 +34,7 @@ export default async function CalendarPage() {
         </Link>
       </div>
 
-      <ScheduledCalendar scheduled={scheduled} drafts={drafts} withReorder />
+      <BlogpressCalendar />
     </div>
   );
 }

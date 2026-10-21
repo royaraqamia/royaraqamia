@@ -94,13 +94,11 @@ describe('sw-routing predicates', () => {
       '/auth/callback',
       '/admin/training',
       '/mcp/connect',
-      '/habitflow',
-      '/spendtrack',
-      '/linksnap',
-      '/blogpress',
+      // The product dashboard roots are cached shells since #449 (ADR-0073);
+      // their APIs and the two server-rendered subroutes keep the prefix.
       '/spendtrack/categories',
-      '/blogpress/calendar',
-      '/linksnap/unlock/ABC',
+      '/spendtrack/categories/new',
+      '/blogpress/editor/9f1c2b3a-0000-4000-8000-000000000000',
       '/habitflow/api/habits',
       '/spendtrack/api/sync',
       '/linksnap/api/links',
@@ -118,11 +116,20 @@ describe('sw-routing predicates', () => {
     }
   });
 
-  it('is never-cache for per-user account-tool shells (route groups are not in the URL)', () => {
-    // `app/<tool>/(app)/page.tsx` is served at `/<tool>`, not `/<tool>/app`, and
-    // the shell embeds per-user seeds, so the bare tool path must bypass the cache.
-    for (const path of ['/habitflow', '/spendtrack', '/linksnap', '/blogpress']) {
-      expect(routing.isNeverCache(u(path))).toBe(true);
+  it('caches the product dashboard shells and never their APIs (#449)', () => {
+    // `app/<tool>/(app)/page.tsx` is served at `/<tool>` and is now a static,
+    // data-free shell painted from the Local Store (ADR-0073), so the document
+    // rides the SWR cache while every account-bearing read underneath it keeps
+    // its own prefix.
+    for (const path of [
+      '/habitflow',
+      '/spendtrack',
+      '/linksnap',
+      '/blogpress',
+      '/blogpress/calendar',
+      '/linksnap/unlock/ABC',
+    ]) {
+      expect(routing.isNeverCache(u(path))).toBe(false);
     }
   });
 

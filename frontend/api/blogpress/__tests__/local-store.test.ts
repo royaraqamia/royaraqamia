@@ -5,6 +5,7 @@ import {
   BlogpressLocalStore,
   mediaPlaceholder,
   mediaPlaceholderIds,
+  postFromDraft,
 } from '@/frontend/api/blogpress/local-store';
 import { GUEST_IDENTITY, userIdentity } from '@/frontend/shared/local-store/identity';
 import type { Post } from '@/shared/contracts/blogpress';
@@ -41,6 +42,40 @@ function post(overrides: Partial<Post> = {}): Post {
 }
 
 describe('BlogpressLocalStore', () => {
+  it('carries the dashboard display fields through the store and back out (#449)', async () => {
+    const store = await open();
+    await store.seedIfEmpty([
+      post({
+        view_count: 12,
+        featured: true,
+        community_visible: true,
+        published_at: '2026-08-17T08:00:00.000Z',
+        reading_time_minutes: 4,
+      }),
+    ]);
+
+    const draft = await store.getDraft('post-1');
+    expect(draft?.viewCount).toBe(12);
+    expect(draft?.featured).toBe(true);
+    expect(draft?.communityVisible).toBe(true);
+    expect(draft?.publishedAt).toBe('2026-08-17T08:00:00.000Z');
+    expect(draft?.readingTimeMinutes).toBe(4);
+
+    // The dashboard reads the store's drafts as posts, so the fields have to
+    // survive the round trip rather than resetting to their defaults offline.
+    const mapped = postFromDraft(draft!, 'author-1');
+    expect(mapped).toMatchObject({
+      id: 'post-1',
+      author_id: 'author-1',
+      view_count: 12,
+      featured: true,
+      community_visible: true,
+      published_at: '2026-08-17T08:00:00.000Z',
+      reading_time_minutes: 4,
+    });
+    store.close();
+  });
+
   it('seeds the server post once without queueing an intent', async () => {
     const store = await open();
     await store.seedIfEmpty([post()]);
