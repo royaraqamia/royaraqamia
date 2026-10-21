@@ -31,10 +31,10 @@ describe('LeadSuccessPanel', () => {
     expect(await screen.findByText('تمَّ النَّسخ')).toBeInTheDocument();
   });
 
-  it('sends a signed-in submitter straight to طلباتي', () => {
+  it('sends a signed-in submitter straight to الطَّلبات', () => {
     render(<LeadSuccessPanel referenceCode="A" message="m" isAuthenticated />);
 
-    expect(screen.getByRole('link', { name: /طلباتي/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /الطَّلبات/ })).toHaveAttribute(
       'href',
       '/account/submissions'
     );
@@ -44,7 +44,7 @@ describe('LeadSuccessPanel', () => {
     render(<LeadSuccessPanel referenceCode="A" message="m" />);
 
     expect(screen.queryByRole('link', { name: /عدِّل طلبك/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'طلباتي' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'الطَّلبات' })).toHaveAttribute(
       'href',
       '/account/submissions'
     );

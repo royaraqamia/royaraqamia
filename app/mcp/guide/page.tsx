@@ -139,7 +139,7 @@ url = "${SERVER_URL}"
               href="/account/connected-apps"
               className="font-bold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded"
             >
-              التَّطبيقات المتَّصلة
+              التَّطبيقات المتَّصلة بالـ MCP
             </Link>{' '}
             في حسابك.
           </p>
