@@ -23,6 +23,7 @@ const APP_PATHS = {
   '/verify/page': '/verify',
   '/verify/[code]/page': '/verify/[code]',
   '/auth/login/page': '/auth/login',
+  '/auth/error/page': '/auth/error',
   '/admin/page': '/admin',
   '/account/page': '/account',
   '/habitflow/(app)/page': '/habitflow',
@@ -37,13 +38,16 @@ const APP_PATHS = {
 };
 
 // Every public page here is prerendered; the never-cache and dynamic filters
-// have to do the excluding, not the prerender manifest alone.
+// have to do the excluding, not the prerender manifest alone. The fixture
+// mirrors the real worker: the auth API and the OAuth callback keep their
+// never-cache prefixes while the document shells became cacheable (#447).
 const PRERENDERED = Object.fromEntries(
   Object.values(APP_PATHS).map((route) => [route, { srcRoute: null }])
 );
 
 const NEVER_CACHE = [
-  '/auth',
+  '/auth/api',
+  '/auth/callback',
   '/admin',
   '/account',
   '/mcp',
@@ -63,8 +67,17 @@ function select(overrides = {}) {
 }
 
 describe('public route shell derivation', () => {
-  it('keeps only prerendered public static pages', () => {
-    expect(select()).toEqual(['/community', '/privacy', '/quran', '/rates', '/terms', '/verify']);
+  it('keeps only prerendered public static pages, with the auth shells in', () => {
+    expect(select()).toEqual([
+      '/auth/error',
+      '/auth/login',
+      '/community',
+      '/privacy',
+      '/quran',
+      '/rates',
+      '/terms',
+      '/verify',
+    ]);
   });
 
   it('drops dynamic detail patterns and concrete prerendered details', () => {
@@ -102,7 +115,7 @@ describe('public route shell derivation', () => {
 
   it('caps the list and keeps it deterministic', () => {
     const routes = select({ maxRoutes: 2 });
-    expect(routes).toEqual(['/community', '/privacy']);
+    expect(routes).toEqual(['/auth/error', '/auth/login']);
     expect(select({ maxRoutes: MAX_PRECACHE_ROUTES })).toEqual(select());
   });
 

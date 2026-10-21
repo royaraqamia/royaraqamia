@@ -124,7 +124,8 @@ what changed in the tree:
 - **Auth forms name the connection.** `frontend/api/auth.ts` reports `offline` on a failure whose
   request never left, and login, sign-up, OTP (verify and resend), reset and update render
   `NeedsConnection` inline instead of the credential/validation banner. The Google button uses the
-  same distinction. A cold offline document request still gets `/offline`.
+  same distinction. A cold offline document request still got `/offline` until phase 0 moved the
+  shells into the SWR cache (#447, ADR-0031's amendment).
 - **Admin reads stop swallowing failures.** `frontend/api/admin/users.ts` throws instead of answering
   `[]`, so `frontend/ui/admin/user-select.tsx` shows a failed lookup with a retry; the certificates
   list (`app/admin/certificates/page.tsx`) and editor

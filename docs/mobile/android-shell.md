@@ -186,13 +186,18 @@ The page reads `Chrome/<major>` from its own user agent:
   cannot run until the WebView is updated.
 - **otherwise** — the offline copy and an «إعادة المحاولة» link to `https://royaraqamia.com`. A tap is
   one navigation. If the site is still unreachable, Capacitor serves this page again — one attempt per
-  tap, not a loop. There is no timer, no `online` listener and no automatic `location` write.
+  tap, not a loop. There is no timer, and no `navigator.onLine` probe: the radio coming back is the
+  only automatic trigger. When it does, the page spends exactly one more attempt on its own
+  (`location.assign` to the canonical origin) — the recovery ADR-0067's amendment bounds to once per
+  session with a `sessionStorage` flag, so a still-down site produces one page load per failure, never
+  a reload loop (#447). The copy itself says so: «عند عودة الاتِّصال، يُعاد فتح الموقع تلقائيًّا مرة
+  واحدة».
 
 The inline script is **ES5** on purpose: the page is shown precisely on WebViews that cannot parse the
 site. Its two IBM Plex Sans Arabic `.woff2` files are the site's own, copied beside it, and the palette
 is the card's from `res/values/colors.xml`. `scripts/__tests__/shell-fallback.test.mjs` pins the config
-to the page, parses the script as ES5, refuses automatic navigation, and compares the bundled fonts with
-`public/fonts/`.
+to the page, parses the script as ES5, holds the recovery's one-listener/one-flag guard, and compares
+the bundled fonts with `public/fonts/`.
 
 The API 30 image's WebView is 83.0.4103.106, which is below the floor — the same image that used to
 render the site without hydrating. A launch there now shows the update card instead of that blank page.
