@@ -81,7 +81,7 @@ describe('AccountView', () => {
     expect(screen.queryByText('جميع الحقوق محفوظة')).not.toBeInTheDocument();
 
     // Gated rows are visible, but as buttons rather than links.
-    for (const label of ['طلباتي', 'المنشورات', 'الرَّوابط المختصَرة', 'التَّطبيقات المتَّصلة']) {
+    for (const label of ['الطَّلبات', 'المنشورات', 'الرَّوابط المختصَرة', 'التَّطبيقات المتَّصلة بالـ MCP']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }
@@ -93,7 +93,7 @@ describe('AccountView', () => {
   it('prompts guests to sign in and returns them to the row they picked', async () => {
     render(<AccountView />);
 
-    fireEvent.click(screen.getByRole('button', { name: /التَّطبيقات المتَّصلة/ }));
+    fireEvent.click(screen.getByRole('button', { name: /التَّطبيقات المتَّصلة بالـ MCP/ }));
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toHaveAttribute(
@@ -107,11 +107,11 @@ describe('AccountView', () => {
     render(<AccountView />);
 
     expect(screen.getAllByText('user@example.com').length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /طلباتي/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /الطَّلبات/ })).toHaveAttribute(
       'href',
       '/account/submissions'
     );
-    expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة بالـ MCP/ })).toHaveAttribute(
       'href',
       '/account/connected-apps'
     );
