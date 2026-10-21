@@ -52,10 +52,9 @@ const NEVER_CACHE = [
   '/auth/callback',
   '/admin',
   '/mcp',
-  '/habitflow',
-  '/spendtrack',
-  '/linksnap',
-  '/blogpress',
+  '/spendtrack/api',
+  '/spendtrack/categories',
+  '/blogpress/editor',
 ];
 
 function select(overrides = {}) {
@@ -68,6 +67,19 @@ function select(overrides = {}) {
 }
 
 describe('public route shell derivation', () => {
+  it('keeps only prerendered public static pages, with the auth, account and product shells in', () => {
+    expect(select()).toEqual([
+      '/account',
+      '/auth/error',
+      '/auth/login',
+      '/blogpress',
+      '/community',
+      '/habitflow',
+      '/linksnap',
+      '/privacy',
+      '/quran',
+      '/rates',
+      '/spendtrack',
   it('keeps only prerendered public static pages, with the auth and account shells in', () => {
     expect(select()).toEqual([
       '/account',

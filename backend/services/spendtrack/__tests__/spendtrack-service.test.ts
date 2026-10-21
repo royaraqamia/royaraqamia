@@ -8,6 +8,7 @@ import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spe
 function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
   const repository: SpendtrackRepository = {
     getUserCategories: vi.fn(),
+    getDefaultCategories: vi.fn(),
     getSyncSnapshot: vi.fn(),
     getTotalExpenses: vi.fn(),
     getCategoryBreakdown: vi.fn(),

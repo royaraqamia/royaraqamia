@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import { DashboardShell } from '@/frontend/ui/habitflow/components/dashboard-shell';
-import { loadHabitflowDashboard } from '@/backend/loaders/habitflow';
+import { Suspense } from 'react';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-
-export const dynamic = 'force-dynamic';
+import { HabitflowPageClient } from '@/frontend/ui/habitflow/components/habitflow-page-client';
 
 export const metadata: Metadata = {
   title: 'تتبُّع العادات',
@@ -28,14 +26,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ create?: string }>;
-}) {
-  const { habits, logs, mode, user } = await loadHabitflowDashboard();
-  const { create } = await searchParams;
-
+/**
+ * The dashboard as a cached, data-free shell (#449, ADR-0073).
+ *
+ * The page used to be `force-dynamic` because `loadHabitflowDashboard` read the
+ * session server-side. The document now carries only the heading; the client
+ * shell paints the Local Store, so an offline reload renders habits instead of
+ * `/offline`.
+ */
+export default function HomePage() {
   return (
     <>
       <header className="mb-6 text-center sm:mb-10">
@@ -43,13 +42,9 @@ export default async function HomePage({
           <SectionTitleHighlight>تتبُّع العادات</SectionTitleHighlight>
         </SectionTitle>
       </header>
-      <DashboardShell
-        initialHabits={habits}
-        initialLogs={logs}
-        initialMode={mode}
-        initialUser={user}
-        autoOpenCreate={create === '1'}
-      />
+      <Suspense fallback={null}>
+        <HabitflowPageClient />
+      </Suspense>
     </>
   );
 }

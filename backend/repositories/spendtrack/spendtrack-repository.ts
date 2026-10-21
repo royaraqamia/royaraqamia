@@ -80,6 +80,8 @@ export interface BudgetWriteMeta {
 
 export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
+  /** The shared defaults: readable without a session so a guest store can seed them (#449). */
+  getDefaultCategories(): Promise<Category[]>;
   getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot>;
   getTotalExpenses(
     userId: string,

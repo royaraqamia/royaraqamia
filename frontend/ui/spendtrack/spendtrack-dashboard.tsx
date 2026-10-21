@@ -14,6 +14,8 @@ import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 import { CategoryPieChartLazy, DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
 import { SpendtrackSyncStatus } from '@/frontend/ui/spendtrack/spendtrack-sync-status';
 import { TotalSpendCard } from '@/frontend/ui/spendtrack/total-spend-card';
+import { CsvActions } from '@/frontend/ui/spendtrack/csv-actions';
+import { CurrencySelector } from '@/frontend/ui/spendtrack/currency-selector';
 import {
   categoryBreakdown,
   computeInsights,
@@ -37,6 +39,9 @@ export function SpendtrackDashboard({
   filterCategories,
   sort,
   search,
+  isSignedIn = false,
+  autoOpen = false,
+  onCurrencyChange,
 }: {
   currency: string;
   start: string;
@@ -44,6 +49,10 @@ export function SpendtrackDashboard({
   filterCategories: string[];
   sort: string;
   search?: string;
+  /** The signed-in extras: CSV actions and the currency selector. */
+  isSignedIn?: boolean;
+  autoOpen?: boolean;
+  onCurrencyChange?: (next: string) => void;
 }) {
   const context = useSpendtrackContext();
   const ready = context?.ready ?? false;
@@ -82,7 +91,17 @@ export function SpendtrackDashboard({
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <CreateExpenseDialog categories={categories} currency={currency} showFab hideTrigger />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {isSignedIn && <CsvActions />}
+          {isSignedIn && <CurrencySelector currency={currency} onChange={onCurrencyChange} />}
+          <CreateExpenseDialog
+            categories={categories}
+            currency={currency}
+            showFab
+            hideTrigger
+            autoOpen={autoOpen}
+          />
+        </div>
         <SpendtrackSyncStatus />
       </div>
 

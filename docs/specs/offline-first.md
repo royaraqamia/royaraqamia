@@ -71,6 +71,19 @@ stated limit.
   running, so a late response still enters the cache and the next visit gets the real page. A cached
   copy is never behind the deadline — stale paint stays instant — and never-cache API reads inside a
   painted page rely on the page's own states rather than on this rule.
+- **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
+  `/spendtrack`, `/linksnap` and `/blogpress` used to be in the worker's never-cache list
+  (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
+  session's data to the next on a shared device), and an offline reload landed on `/offline`.
+  #449 made them data-free static shells with a client gate that paints the Local Store into
+  them (ADR-0073), so their documents are SWR-cached and precached like the public ones: a
+  reload or deep link paints the product's own chrome and its local rows, never the offline
+  page. `/device` was the pilot for that shape (ADR-0070): the queue and the device's copy are
+  inspectable and removable with no network, precisely because that page renders no account
+  data on the server. `/account` took the same step in #448 (ADR-0031's #448 amendment). The
+  first visit still needs the network — there is no document before it — and server-owned
+  values inside these pages (SpendTrack's currency, BlogPress's categories and tags) answer
+  only when their own never-cache read does.
 - **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`,
   `/spendtrack`, `/linksnap` and `/blogpress` are in the worker's never-cache list (ADR-0031:
   their documents are server-rendered per user, so caching them risks leaking one session's
@@ -192,6 +205,9 @@ Honest list of what stands between us and the bar, each with the file that shows
 | App shell, icons, fonts                                                        | cache-first                                                                |
 | Public navigation / RSC payloads                                               | stale-while-revalidate (+ "updated X ago")                                 |
 | Auth + account document shells                                                 | stale-while-revalidate (#447, #448; shell only, no account-bearing render) |
+| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)          | stale-while-revalidate (#449; shell only, painted from the Local Store)    |
+| Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
+| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
 | Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
 | Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
 | Request                                                                        | Strategy                                   |
@@ -215,7 +231,8 @@ The build's public static routes are precached as HTML documents at install, der
 own route manifests and bounded to 6 MB (or what the cache budget has left), so a deep link to a route
 this device never opened still paints its own shell offline
 ([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). Dynamic detail routes,
-account tools and every never-cache prefix stay out.
+account tools' API prefixes and every never-cache prefix stay out; the product dashboard roots joined
+the list in #449 (ADR-0073) once they became data-free shells.
 
 ### Delivery states
 
@@ -244,6 +261,11 @@ Zod schemas carry the same fields.
 Owned data renders from the Local Store: hydrate IndexedDB → paint → refresh from the server in the
 background, on a sync hint or on focus. Server loaders remain the initial seed and warm path. Shared
 and public data stays RSC, served from the SW cache.
+
+The product dashboards follow that rule down to the document: their roots are static data-free shells
+(#449, ADR-0073), the session and the URL's filters are resolved on the client, and everything the
+account owns is painted from the store the pull keeps current. No loader seeds a product store any
+more — the pull is the only source of server data, so there is one path to keep in step.
 
 **A missing chunk costs the component, never the page.** Every lazy boundary (`next/dynamic`,
 `React.lazy`, the below-the-fold sections) loads through `tolerateChunkFailure`
@@ -298,6 +320,13 @@ for a failed read instead of routing the failure to `/offline`. The boundary the
 no account fragment in a cached response — is held by the never-cache API prefixes, not by the
 documents.
 
+**Phase 2 (#449) landed on 2026-10-21:** the four product dashboard roots are static data-free
+shells painted from their Local Stores (ADR-0073). BlogPress's layout guard moved client-side (its
+editor keeps the server guard and the never-cache prefix), `/blogpress/calendar` follows the root,
+and the worker's never-cache list narrows from the product prefixes to their APIs and the two
+data-bearing subroutes. With it, `/offline` serves only a brand-new install hit with no network,
+`/admin`, and the server-guarded editor.
+
 Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
 section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when
 the server is unreachable, and the [Verification](#verification) section for what runs.
@@ -343,6 +372,11 @@ the server is unreachable, and the [Verification](#verification) section for wha
   Two more specs prove a mechanism rather than a product: `sync-flush.spec.ts` queues a write, closes
   the page and restores the network, so only the Android shell's drain page can deliver it; and
   `sync-chaos.spec.ts` loses a create's acknowledgement and proves the replay is the same row.
+
+  The render drill is separate from the resume proof: `product-offline-render.spec.ts` (#449) visits
+  each product root once online, reloads it with the radio off, and asserts the product's own chrome —
+  and the row written offline, where the root shows owned rows — instead of `/offline`. It is the
+  check that the shells are cached documents rather than per-user renders.
 
   What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
   Request but is left out of the workflow because it writes a row the suite cannot remove against the
