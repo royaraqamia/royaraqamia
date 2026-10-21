@@ -19,6 +19,19 @@ const FALLBACK_URL = '/offline';
 // same realm global; production always takes 10000.
 const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 10_000;
 
+// Field telemetry (ADR-0074, #474). `/offline` serves are counted by the door
+// that led to them, and the cache outcomes tallied since the last report ride
+// along with the next serve — so the volume is bounded by how often the offline
+// page is actually shown, which the roadmap says is almost never. The payload is
+// a door class and three tallies: never a URL, a user, a client id or a
+// timestamp. The beacon is droppable by design; it is a field signal, not an
+// audit, and the sink is a Vercel log line a maintainer greps (spec:
+// docs/specs/offline-first.md, "Storage & telemetry").
+const OFFLINE_REPORT_PATH = '/api/offline-serve';
+const OFFLINE_REPORT_VERSION = 1;
+
+const cacheOutcomes = { hits: 0, misses: 0, failures: 0 };
+
 // A transparent 1x1 SVG, used when an image variant has no cache entry at all.
 // The `img` box is fixed by the markup (a `fill` container or explicit
 // width/height), so the placeholder holds the layout and the browser never draws
@@ -498,9 +511,11 @@ async function purgeAccountCaches() {
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) {
+    cacheOutcomes.hits += 1;
     touchCache(request);
     return cached;
   }
+  cacheOutcomes.misses += 1;
   try {
     const response = await fetch(request);
     if (response.ok && isCacheable(response)) {
@@ -508,13 +523,11 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
+    cacheOutcomes.failures += 1;
     // The earlier match was already falsy, so never resolve to `undefined`:
     // respondWith(undefined) throws. Fall back to the offline page for
     // navigations and a clean 503 for everything else.
-    if (isNavigationRequest(request)) {
-      const fallback = await caches.match(FALLBACK_URL);
-      if (fallback) return fallback;
-    }
+    if (isNavigationRequest(request)) return serveOffline('static-offline');
     return new Response('Offline', { status: 503 });
   }
 }
@@ -531,9 +544,11 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
     if (response.status >= 500) {
       const cached = await caches.match(request);
       if (cached && mayServe(cached)) {
+        cacheOutcomes.hits += 1;
         touchCache(request);
         return cached;
       }
+      cacheOutcomes.failures += 1;
       return response;
     }
     if (response.ok && isCacheable(response) && mayServe(response)) {
@@ -545,12 +560,12 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
     // persisted before an endpoint turned account-scoped must not be replayed.
     const cached = await caches.match(request);
     if (cached && mayServe(cached)) {
+      cacheOutcomes.hits += 1;
       touchCache(request);
       return cached;
     }
-    if (isNavigationRequest(request)) {
-      return caches.match(FALLBACK_URL);
-    }
+    cacheOutcomes.failures += 1;
+    if (isNavigationRequest(request)) return serveOffline('api-offline');
     return new Response('Offline', { status: 503 });
   }
 }
@@ -558,7 +573,22 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
 async function staleWhileRevalidate(request, onMiss, event) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
-  if (cached) touchCache(request);
+  if (cached) {
+    cacheOutcomes.hits += 1;
+    touchCache(request);
+  } else {
+    cacheOutcomes.misses += 1;
+  }
+  // A cold load has two ways to reach the fallback: the deadline below, and the
+  // revalidation rejecting afterwards. Only the one the user actually sees is
+  // reported — otherwise one navigation would count twice, once per door.
+  let missed = false;
+  const miss = (door) => {
+    if (missed) return new Response('Offline', { status: 503 });
+    missed = true;
+    cacheOutcomes.failures += 1;
+    return missResponse(request, onMiss, door);
+  };
   const revalidate = fetch(request)
     .then(async (response) => {
       if (response.ok && isCacheable(response)) {
@@ -575,7 +605,7 @@ async function staleWhileRevalidate(request, onMiss, event) {
     })
     .catch(async () => {
       if (cached) return cached;
-      return missResponse(request, onMiss);
+      return miss('navigation-offline');
     });
 
   // The revalidation outlives the response either way: a deadline-swallowed cold
@@ -595,20 +625,61 @@ async function staleWhileRevalidate(request, onMiss, event) {
     setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
   );
   const winner = await Promise.race([revalidate, deadlineSunder]);
-  if (winner === undefined) return missResponse(request, onMiss);
+  if (winner === undefined) return miss('navigation-deadline');
   return winner;
 }
 
 // What answers a request that has neither a cached copy nor a network answer.
 // (The deadline path reaches here resolved; the failure path reaches through
 // the catch above.)
-async function missResponse(request, onMiss) {
+//
+// The door names the path that missed, so the field count can tell the accepted
+// doors (a first install, an online-only route) from a real regression
+// (ADR-0074): `navigation-deadline` vs `navigation-offline` separates "too slow"
+// from "no network" on an ordinary page, and `online-only-*` is the surface
+// ADR-0031 deliberately keeps out of Cache Storage.
+async function missResponse(request, onMiss, door) {
   if (onMiss) return onMiss(request);
-  if (isNavigationRequest(request)) {
-    const fallback = await caches.match(FALLBACK_URL);
-    if (fallback) return fallback;
-  }
+  if (isNavigationRequest(request)) return serveOffline(door);
   return new Response('Offline', { status: 503 });
+}
+
+/**
+ * Answers the offline page and reports which door led here. `no-fallback` means
+ * the page itself was missing from Cache Storage — the first-install shape (the
+ * install has not finished precaching, or something evicted the shell), which
+ * is the one case that must stay visible rather than being counted as a door.
+ */
+async function serveOffline(door) {
+  const fallback = await caches.match(FALLBACK_URL);
+  reportOfflineServe(fallback ? door : 'no-fallback');
+  if (fallback) return fallback;
+  return new Response('Offline', { status: 503 });
+}
+
+/**
+ * Sends one beacon and resets the tallies it carries. Deliberately not awaited:
+ * `/offline` must paint instantly, and the user is already waiting on a failure.
+ * `keepalive` is the best effort at outliving the worker, and `credentials:
+ * 'omit'` keeps the request free of the visitor's session — the endpoint reads
+ * nothing but the body.
+ */
+function reportOfflineServe(door) {
+  const cache = { ...cacheOutcomes };
+  cacheOutcomes.hits = 0;
+  cacheOutcomes.misses = 0;
+  cacheOutcomes.failures = 0;
+  try {
+    fetch(OFFLINE_REPORT_PATH, {
+      method: 'POST',
+      credentials: 'omit',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ version: OFFLINE_REPORT_VERSION, door, cache }),
+    }).catch(() => undefined);
+  } catch {
+    // A reporting failure must never change what the user is shown.
+  }
 }
 
 /**
@@ -665,12 +736,15 @@ async function networkOnly(request) {
       setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
     );
     const winner = await Promise.race([fetch(request), deadlineSunder]);
-    if (winner === undefined) return missResponse(request);
+    if (winner === undefined) {
+      cacheOutcomes.failures += 1;
+      return missResponse(request, undefined, 'online-only-deadline');
+    }
     return winner;
   } catch {
     if (navigation) {
-      const fallback = await caches.match(FALLBACK_URL);
-      if (fallback) return fallback;
+      cacheOutcomes.failures += 1;
+      return serveOffline('online-only-offline');
     }
     return new Response('Offline', { status: 503 });
   }

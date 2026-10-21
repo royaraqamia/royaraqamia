@@ -1025,3 +1025,131 @@ describe('service worker navigation deadline (#447)', () => {
     expect(await offline.response.then((r) => r.text())).toBe('login-shell');
   });
 });
+
+describe('service worker offline-serve telemetry (#474)', () => {
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  // Records everything the worker asks for, answers the beacon, and hands every
+  // other request to `network`. The beacon is the only thing this suite lets
+  // through without a network, which is the point: the count must exist offline.
+  function intercept(ctx, network) {
+    const calls = [];
+    ctx.sandbox.fetch = vi.fn(async (url, init) => {
+      calls.push({ url: String(url), init });
+      if (String(url) === '/api/offline-serve') return new Response('{}', { status: 200 });
+      return network(url, init);
+    });
+    return () => calls.filter((call) => call.url === '/api/offline-serve');
+  }
+
+  it('reports the door of a cold navigation with no network answer', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
+
+    const event = fetchEvent(request('/community/lead'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+
+    expect(beacons()).toHaveLength(1);
+    expect(beacons()[0].init).toMatchObject({ method: 'POST', credentials: 'omit' });
+    expect(JSON.parse(beacons()[0].init.body)).toEqual({
+      version: 1,
+      door: 'navigation-offline',
+      cache: { hits: 0, misses: 1, failures: 1 },
+    });
+    // Nothing about the page that missed leaves the device.
+    expect(beacons()[0].init.body).not.toContain('/community');
+  });
+
+  it('separates the deadline door from the network one', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const beacons = intercept(ctx, () => new Promise(() => undefined));
+
+    const event = fetchEvent(request('/rates'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+
+    expect(beacons()).toHaveLength(1);
+    expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
+  });
+
+  it('labels an online-only route as its own door', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const beacons = intercept(ctx, () => new Promise(() => undefined));
+
+    const event = fetchEvent(request('/admin'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+
+    expect(beacons()).toHaveLength(1);
+    expect(JSON.parse(beacons()[0].init.body).door).toBe('online-only-deadline');
+  });
+
+  it('counts nothing when the cached copy answers', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    await cache.put('https://site.example/rates', new Response('stale-shell'));
+    const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
+
+    const event = fetchEvent(request('/rates'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('stale-shell');
+
+    expect(beacons()).toHaveLength(0);
+  });
+
+  it('answers the offline page without waiting on the beacon', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    let beaconStarted = false;
+    ctx.sandbox.fetch = vi.fn(async (url) => {
+      if (String(url) === '/api/offline-serve') {
+        beaconStarted = true;
+        return new Promise(() => undefined);
+      }
+      throw new Error('offline');
+    });
+
+    const event = fetchEvent(request('/community'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+    expect(beaconStarted).toBe(true);
+  });
+
+  it('reports a deadline-cut navigation once, not again when the cut fetch fails', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const beacons = intercept(
+      ctx,
+      () =>
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('offline')), 60);
+        })
+    );
+
+    const event = fetchEvent(request('/community/lead'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+
+    // Let the cut revalidation reject and settle its lifetime extension.
+    await Promise.all(event.waitUntilCalls);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    expect(beacons()).toHaveLength(1);
+    expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
+  });
+});

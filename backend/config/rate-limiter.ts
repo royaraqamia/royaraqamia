@@ -211,3 +211,18 @@ export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حدّ الطلب: الموافقة على ربط MCP محدودة بـ 20 طلبًا كل 10 دقائق.',
   };
 }
+
+/**
+ * The offline-serve beacon (ADR-0074) is sent by the service worker, so a
+ * browser that is repeatedly cut off can ring it several times a minute while a
+ * visitor navigates. The bucket is per IP and the endpoint is fail-closed: losing
+ * a signal during a limiter outage is preferable to an unbounded write path.
+ */
+export function offlineServeRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `offline-serve:${ip}`,
+    limit: 30,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تسجيل الصفحة دون اتصال محدود بـ 30 طلبًا في الدقيقة.',
+  };
+}
