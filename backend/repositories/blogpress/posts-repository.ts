@@ -34,6 +34,13 @@ export interface PostsRepository {
   getPublishedPostCategories(postId: string): Promise<PostCategory[]>;
   incrementPostViewCount(postId: string): Promise<void>;
   listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]>;
+  /**
+   * The whole owned snapshot for the client pull (ADR-0060), deliberately
+   * unfiltered by `deleted_at`: a tombstone is part of the snapshot so a delete
+   * made on another device can land here. Untagged, unsorted beyond
+   * `updated_at` — the store is LWW per row and never renders a page from this.
+   */
+  listPostsByAuthorIncludingDeleted(authorId: string): Promise<Post[]>;
   getPostExcerptById(id: string): Promise<string | null>;
   getPostForUser(id: string, userId: string): Promise<Post | null>;
   createPost(authorId: string, input?: PostInput): Promise<{ id: string }>;

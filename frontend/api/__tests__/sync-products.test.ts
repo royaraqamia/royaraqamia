@@ -87,13 +87,13 @@ describe('DRAINABLE_PRODUCTS', () => {
 describe('PULLABLE_PRODUCTS', () => {
   it('covers the products whose pull can run without the page', () => {
     expect(PULLABLE_PRODUCTS.map((product) => product.product).sort()).toEqual(
-      ['habitflow', 'linksnap', 'quran', 'spendtrack'].sort()
+      ['blogpress', 'habitflow', 'linksnap', 'quran', 'spendtrack'].sort()
     );
   });
 
   it('keeps out the product a background realm cannot pull', () => {
-    // BlogPress has no client pull to reuse; LinkSnap's read takes the cookie.
-    expect(PULLABLE_PRODUCTS.map((product) => product.product)).not.toContain('blogpress');
+    // Leads are delivered, not owned: no server rows to merge.
+    expect(PULLABLE_PRODUCTS.map((product) => product.product)).not.toContain('leads');
   });
 
   it('never creates a store the page has not opened', async () => {

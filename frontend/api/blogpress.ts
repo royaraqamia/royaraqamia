@@ -1,5 +1,5 @@
 import { request } from '@/frontend/transport/http';
-import type { Post, PostTag } from '@/shared/contracts/blogpress';
+import type { Post, PostTag, BlogpressSyncSnapshot } from '@/shared/contracts/blogpress';
 
 export interface PostFields {
   slug: string;
@@ -19,6 +19,14 @@ export async function restorePost(
     method: 'POST',
     body: JSON.stringify(snapshot),
   });
+}
+
+/**
+ * Owned snapshot (incl. tombstones) for the client pull (ADR-0060). The merge
+ * is the store's own LWW, so a re-read of the whole set is idempotent.
+ */
+export async function getSyncSnapshot(): Promise<BlogpressSyncSnapshot> {
+  return request<BlogpressSyncSnapshot>('/api/blogpress/sync');
 }
 
 export async function createPost(payload?: PostFields & { id?: string }): Promise<{ id: string }> {

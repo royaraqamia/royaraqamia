@@ -28,6 +28,22 @@ function publishRevalidation(slug: string): RevalidationHint[] {
   return [...postRevalidation(slug), { path: '/sitemap.xml' }];
 }
 
+/**
+ * The BlogPress sync endpoint (ADR-0060): the full owned snapshot for the client
+ * pull, including tombstones so another device's delete lands here. Answers 401
+ * without a session; the pull's callers listen for that on the next open.
+ */
+export async function syncBlogpress(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { repository } = createBlogpressPostsModule(supabase);
+      const posts = await repository.listPostsByAuthorIncludingDeleted(userId);
+      return jsonResult(200, { posts });
+    },
+    { mapError: messageError(500, 'فشل مزامنة المنشورات') }
+  );
+}
+
 export async function createPost(body?: Record<string, unknown> | null): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
