@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMcpOAuthProvider, McpOAuthError } from '@/backend/services/mcp/oauth-provider';
 import { basicAuthCredentials, noStore } from '@/backend/services/mcp/oauth-http';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
+import { mcpRevokeRateLimitPolicy } from '@/backend/config/rate-limiter';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +15,14 @@ export const runtime = 'nodejs';
  * (HTTP 200) per RFC 7009 §2.2 to avoid leaking whether a token exists.
  */
 export async function POST(req: NextRequest) {
+  // Revocation is deliberately unauthenticated (RFC 7009), so the limit is the
+  // only thing standing in front of the client lookup and the token lookup.
+  const rateLimited = await checkRateLimitApi({
+    ...mcpRevokeRateLimitPolicy(getClientIp(req)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   const form = await req.formData();
   const token = (form.get('token') as string) ?? '';
   const bodyClientId = (form.get('client_id') as string) ?? '';

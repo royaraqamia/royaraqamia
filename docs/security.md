@@ -81,9 +81,9 @@ amendment), and a pre-amendment row holds a copy of the user's _browser_ session
 alone — signing it out would sign them out of the website. Retirement paths make no such call,
 because GoTrue has already invalidated those sessions or the ciphertext will not decrypt.
 
-All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-limited
-(fail-closed); registration also enforces https-only redirect URIs with a localhost exception
-(ADR 0022).
+All MCP routes (`/mcp`, `/register`, `/token`, `/authorize`, `/revoke`, `/connect/consent`)
+are Upstash-limited (fail-closed); registration also enforces https-only redirect URIs with a
+localhost exception (ADR 0022).
 
 ### Runbook: rotating `MCP_TOKEN_ENCRYPTION_KEY`
 
