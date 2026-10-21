@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.131.2] - 2026-10-21
+
+### Fixed
+- keep refused serve reports and page on the regression doors (#483)
+
 ## [1.131.1] - 2026-10-21
 
 ### Fixed
