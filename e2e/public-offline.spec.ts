@@ -113,10 +113,15 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page).toHaveURL(/\/auth\/login$/);
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
+  // The account shells ride the SWR cache since #448: the document is static
+  // and carries nothing account-bearing, so an account deep link this context
+  // never opened lands on its own shell, not on the offline fallback (ADR-0031's
+  // amendment). Everything account-bearing in it paints from client state.
   // The never-cache boundary still holds where the data is: an account
   // navigation falls back to `/offline`.
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toBeVisible();
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await context.close();
 });

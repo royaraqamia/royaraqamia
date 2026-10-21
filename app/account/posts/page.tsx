@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
-import { FileText } from 'lucide-react';
 
-import { requireAuth } from '@/backend/middleware/auth-guard';
-import { loadAccountPosts } from '@/backend/loaders/community';
-import { PostCard } from '@/app/community/_components/post-card';
-import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { MyPostsView } from '@/frontend/ui/account/my-posts-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -12,10 +8,14 @@ export const metadata: Metadata = {
   description: 'منشوراتك على مجتمع رؤيَة رَقَميَّة.',
 };
 
-export default async function AccountPostsPage() {
-  const { user } = await requireAuth('/auth/login?redirect=/account/posts');
-  const { posts } = await loadAccountPosts(user.id);
-
+/**
+ * A data-free shell: the guard and the read live in `MyPostsView` on the client
+ * (#448), so the document carries nothing account-bearing and the worker may
+ * cache it. The read runs on the never-cache `/api/me` prefix, so offline the
+ * view answers with its own needs-connection state instead of the stale list a
+ * cached response would replay.
+ */
+export default function AccountPostsPage() {
   return (
     <div className="space-y-6">
       <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
@@ -24,20 +24,7 @@ export default async function AccountPostsPage() {
         </SectionTitle>
       </div>
 
-      {posts.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          variant="card"
-          title="لا توجد منشورات بعد"
-          description="لم تنشر أيَّ منشور على المجتمع حتَّى الآن."
-        />
-      ) : (
-        <div className="flex flex-col gap-6">
-          {posts.map((post, index) => (
-            <PostCard key={post.id} post={post} index={index} />
-          ))}
-        </div>
-      )}
+      <MyPostsView />
     </div>
   );
 }

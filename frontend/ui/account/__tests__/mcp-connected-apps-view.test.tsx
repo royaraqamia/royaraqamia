@@ -11,6 +11,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/frontend/api/mcp-connected-apps', () => mocks);
 
+const session = vi.hoisted(() => ({
+  useSession: vi.fn(),
+}));
+
+vi.mock('@/frontend/state/session-provider', () => session);
+
 import { McpConnectedAppsView } from '../mcp-connected-apps-view';
 
 const CLAUDE = {
@@ -43,11 +49,31 @@ beforeEach(() => {
   mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE, OPENCODE]);
   mocks.disconnectMcpConnectedApp.mockResolvedValue({ success: true });
   mocks.disconnectAllMcpConnectedApps.mockResolvedValue({ success: true });
+  session.useSession.mockReturnValue({ user: { id: 'user-1' }, isLoading: false });
 });
 
 afterEach(cleanup);
 
 describe('McpConnectedAppsView', () => {
+  it('points a guest at sign-in without reading the list', async () => {
+    session.useSession.mockReturnValue({ user: null, isLoading: false });
+    render(<McpConnectedAppsView />);
+
+    expect(await screen.findByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=/account/connected-apps'
+    );
+    expect(mocks.getMcpConnectedApps).not.toHaveBeenCalled();
+  });
+
+  it('holds the skeleton while the session is still being read', () => {
+    session.useSession.mockReturnValue({ user: { id: 'user-1' }, isLoading: true });
+    render(<McpConnectedAppsView />);
+
+    expect(screen.getByLabelText('جاري التَّحميل...')).toBeInTheDocument();
+    expect(mocks.getMcpConnectedApps).not.toHaveBeenCalled();
+  });
+
   it('lists the connected clients with their activity', async () => {
     render(<McpConnectedAppsView />);
 

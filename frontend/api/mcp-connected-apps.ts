@@ -9,9 +9,9 @@ import { request } from '@/frontend/transport/http';
  * The signed-in visitor's connected MCP clients, and the two ways to cut one
  * loose.
  *
- * Unlike `getMyRetainers`, a failed read is *not* degraded to an empty list: on
- * a security surface "nothing is connected" and "we could not tell you" must not
- * look the same. The caller renders the error instead.
+ * A failed read is thrown to the caller like every account view's getter since
+ * #448: on a security surface "nothing is connected" and "we could not tell
+ * you" must not look the same. The view renders the difference.
  */
 
 export async function getMcpConnectedApps(): Promise<McpConnectedApp[]> {

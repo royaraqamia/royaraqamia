@@ -1,4 +1,5 @@
 import { request } from '@/frontend/transport/http';
+import type { PublishedFeedResult } from '@/shared/contracts/blogpress';
 
 export interface Me {
   isAdmin: boolean;
@@ -11,6 +12,19 @@ export async function getMe(): Promise<Me> {
   return request<Me>('/api/me', {
     cache: 'no-store',
   });
+}
+
+/**
+ * The signed-in member's own published community posts, for `/account/posts`.
+ * Unlike `getMyRetainers` a failure is surfaced rather than converged to an
+ * empty list: an unreachable server and a feed with no posts are different
+ * statements (ADR-0031), and the view renders the difference.
+ */
+export async function getMyPosts(): Promise<PublishedFeedResult> {
+  const result = await request<{ success: boolean; data: PublishedFeedResult }>('/api/me/posts', {
+    cache: 'no-store',
+  });
+  return result.data;
 }
 
 export async function updateUsername(

@@ -69,6 +69,21 @@
   // reads and the account-tool shells. Caching them risks leaking one session's
   // data to the next on a shared device, so they bypass the cache entirely.
   //
+  // Two document-shell exceptions ride the SWR cache instead, on the same
+  // principle in both: the shell is a static client page with nothing
+  // account-bearing rendered into it, and every read under it that *is*
+  // account-bearing keeps its own never-cache prefix here.
+  //
+  // - The auth document shells since #447: submitting still needs the server —
+  //   Turnstile and Supabase cannot run offline — and every auth form answers
+  //   that with its own inline needs-connection state (ADR-0031). The auth
+  //   route handlers keep `/auth/api` and `/auth/callback`.
+  // - The `/account` shells since #448: the subtree's guard moved client-side
+  //   (the session provider treats network failure as "never a logout"), pages
+  //   that show server-owned data fetch it through this list's `/api` prefixes
+  //   and degrade to inline needs-connection banners, so a cached account
+  //   document or RSC payload carries no fragment one user could leave for the
+  //   next on the same browser.
   // The auth document shells are the one deliberate exception since #447: the
   // forms are static client pages with nothing account-bearing in them, so their
   // shells ride the SWR cache and an offline reload paints the form instead of
@@ -91,7 +106,6 @@
     // that must never be replayed from a cache, not a shell.
     '/auth/callback',
     '/admin',
-    '/account',
     '/mcp',
     '/api/training',
     '/api/project-requests',

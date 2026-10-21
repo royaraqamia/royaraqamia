@@ -94,18 +94,15 @@ export interface MyBookingUpdateResult {
 }
 
 /**
- * The signed-in booker's own consultations. A failure degrades to an empty list
- * so the account page renders its empty state rather than an error screen.
+ * The signed-in booker's own consultations. A failure is thrown to the caller,
+ * not degraded to an empty list (#448): an unreachable server and no bookings
+ * are different statements, and the view renders the difference.
  */
 export async function getMyConsultationBookings(): Promise<ConsultationBooking[]> {
-  try {
-    const result = await request<{ success: boolean; data?: ConsultationBooking[] }>(
-      '/api/me/consultation-bookings'
-    );
-    return result.data ?? [];
-  } catch {
-    return [];
-  }
+  const result = await request<{ success: boolean; data?: ConsultationBooking[] }>(
+    '/api/me/consultation-bookings'
+  );
+  return result.data ?? [];
 }
 
 export async function updateMyConsultationBooking(

@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ClipboardList, Pencil } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ClipboardList, Pencil, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
+import { useSession } from '@/frontend/state/session-provider';
+import { ApiError } from '@/frontend/transport/http';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { getMyProjectRequests } from '@/frontend/api/project-requests';
 import { getMyRetainers } from '@/frontend/api/retainers';
 import { getMyTrainingApplications } from '@/frontend/api/training';
@@ -106,39 +110,99 @@ function toSubmissions(
   );
 }
 
+function SubmissionsSkeleton({ label }: { label: string }) {
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label={label}>
+      {[0, 1].map((key) => (
+        <div key={key} className="rounded-2xl border border-border/60 bg-card p-5">
+          <Skeleton className="mb-3 h-5 w-48" />
+          <Skeleton className="mb-2 h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * The signed-in visitor's own submissions across the intake flows. Only rows
  * submitted while signed in appear here — an anonymous submission has no
  * account to prove ownership against, so it cannot be edited.
  *
+ * The guard moved client-side (#448): the page is a data-free shell the worker
+ * may cache, and this view reads the session itself — network failure is never
+ * a logout, so a cached shell stays signed in — and reads the four lists
+ * through the never-cache `/api` prefixes. A guest is pointed at sign-in in
+ * place, and a read that never reached the server renders the shared
+ * needs-connection state instead of the forever-skeleton an uncaught rejection
+ * used to leave behind.
+ *
  * The edit forms and the save handlers stay per-kind, so a project request and
  * a retainer never share a mutable shape; only the list chrome is common.
  */
 export function MySubmissionsView() {
+  const { user, isLoading } = useSession();
   const [projectRequests, setProjectRequests] = useState<ProjectRequest[] | null>(null);
   const [retainers, setRetainers] = useState<Retainer[] | null>(null);
   const [applications, setApplications] = useState<TrainingApplication[] | null>(null);
   const [bookings, setBookings] = useState<ConsultationBooking[] | null>(null);
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadOffline, setLoadOffline] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      getMyProjectRequests(),
-      getMyRetainers(),
-      getMyTrainingApplications(),
-      getMyConsultationBookings(),
-    ]).then(([requests, rows, training, consultations]) => {
-      if (!active) return;
+  const load = useCallback(async () => {
+    setLoadFailed(false);
+    setLoadOffline(false);
+    try {
+      const [requests, rows, training, consultations] = await Promise.all([
+        getMyProjectRequests(),
+        getMyRetainers(),
+        getMyTrainingApplications(),
+        getMyConsultationBookings(),
+      ]);
       setProjectRequests(requests);
       setRetainers(rows);
       setApplications(training);
       setBookings(consultations);
-    });
-    return () => {
-      active = false;
-    };
+    } catch (error) {
+      setLoadOffline(error instanceof ApiError && error.isNetworkError);
+      setLoadFailed(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    void load();
+  }, [isLoading, user, load]);
+
+  if (loadFailed) {
+    if (loadOffline) {
+      return (
+        <NeedsConnection
+          message="تعذّر تحميل طلباتك: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+          onRetry={() => void load()}
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <p className="text-sm font-bold text-destructive sm:text-base">تعذّر تحميل طلباتك.</p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="mx-auto inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          <RefreshCw aria-hidden="true" className="h-4 w-4" />
+          <span>إعادة المحاولة</span>
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading) return <SubmissionsSkeleton label="جاري تحميل طلباتك" />;
+
+  if (!user) return <SignInCta href="/auth/login?redirect=/account/submissions" />;
 
   if (
     projectRequests === null ||
@@ -146,17 +210,7 @@ export function MySubmissionsView() {
     applications === null ||
     bookings === null
   ) {
-    return (
-      <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل طلباتك">
-        {[0, 1].map((key) => (
-          <div key={key} className="rounded-2xl border border-border/60 bg-card p-5">
-            <Skeleton className="mb-3 h-5 w-48" />
-            <Skeleton className="mb-2 h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
-        ))}
-      </div>
-    );
+    return <SubmissionsSkeleton label="جاري تحميل طلباتك" />;
   }
 
   const submissions = toSubmissions(projectRequests, retainers, applications, bookings);
