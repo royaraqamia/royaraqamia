@@ -36,6 +36,19 @@ The result is capped at 24 routes. On the build this landed against it is nine:
 is cacheable and data-free but is a device tool warmed from `/account`
 (ADR-0070), not public content, so it stays out of the list.
 
+## Amendment: the cap follows the shells, not the public pages (#449)
+
+The four product dashboard roots and `/blogpress/calendar` are data-free shells
+since ADR-0073, and the auth and account shells entered the list in #447 and
+#448. On the #449 build the candidate set is 26 routes — the public pages, the
+auth shells, the account subtree, `/app-info` and the five product documents —
+totalling about 1.6 MB. The 24-route cap no longer fit that set, and because the
+selection is sorted, it silently dropped the tail rather than the newest entries:
+`/terms` and `/verify` were the ones lost. The cap is raised to 32: still a guard
+against a routing mistake multiplying the install, no longer smaller than the
+set it is supposed to bound. The 6 MB ceiling and ADR-0069's cache budget are
+unchanged, and neither is close.
+
 ## Budget
 
 Two ceilings bound the install:
