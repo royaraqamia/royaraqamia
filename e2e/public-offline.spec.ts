@@ -31,12 +31,17 @@ test('a visited public page paints from cache offline and shows its age', async 
   });
   const page = await context.newPage();
 
+  // The auth shells ride the SWR cache since #447, and the login document must
+  // be visited once online before it can be reloaded offline: the visit caches
+  // the runtime shell together with the chunk graph hydration needs.
+  await gotoUnderWorkerControl(page, `${baseURL}/auth/login`);
+  await expect(page.getByRole('heading', { name: 'تسجيل الدُّخول' })).toBeVisible();
+
   // First load registers the worker and the app replaces the document when it
   // claims the page; the helper returns with that reload already applied.
   await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
 
-  // Radio off: the reload must be served from the service-worker cache.
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
@@ -53,6 +58,20 @@ test('a visited public page paints from cache offline and shows its age', async 
   // disabled button. The offline state itself is the shared ConnectivityIndicator
   // asserted above.
   await expect(page.locator('#main-content').getByRole('button', { name: /تحديث/ })).toHaveCount(0);
+
+  // The visited auth shell answers offline too (#447): the reload paints the
+  // login form, not the offline page. The submit — which still needs Turnstile
+  // and Supabase — answers with the inline needs-connection state instead of a
+  // credential error.
+  await page.goto(`${baseURL}/auth/login`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/auth\/login$/);
+  await expect(page.getByRole('heading', { name: 'تسجيل الدُّخول' })).toBeVisible();
+
+  await page.fill('#login-email', 'someone@example.com');
+  await page.fill('#login-password', 'not-the-password');
+  await page.getByRole('button', { name: 'تسجيل الدُّخول' }).click();
+  const needsConnection = page.getByRole('status').filter({ hasText: 'يتطلَّب الاتصال بالإنترنت' });
+  await expect(needsConnection).toBeVisible();
 
   await context.close();
 });
@@ -85,8 +104,17 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page.getByRole('heading', { name: /سياسة الخصوصيَّة/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
-  // The precache list must not have widened the online-only boundary: an
-  // auth/account navigation still falls back to `/offline`.
+  // The auth shells are in the precache since #447: an offline navigation to a
+  // login page this context never opened lands on the auth document, not on the
+  // offline fallback. (The prerendered copy is the Suspense fallback shell the
+  // build produced; the interactive offline pass with the real form is the
+  // visited-page test above.)
+  await page.goto(`${baseURL}/auth/login`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/auth\/login$/);
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
+  // The never-cache boundary still holds where the data is: an account
+  // navigation falls back to `/offline`.
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toBeVisible();
 

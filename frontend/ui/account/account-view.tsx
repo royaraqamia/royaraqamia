@@ -110,7 +110,7 @@ export function AccountView() {
         <AccountRow
           href="/account/submissions"
           icon={ClipboardList}
-          label="طلباتي"
+          label="الطَّلبات"
           onRequireAuth={setPromptHref}
         />
 
@@ -131,7 +131,7 @@ export function AccountView() {
         <AccountRow
           href="/account/connected-apps"
           icon={Plug}
-          label="التَّطبيقات المتَّصلة"
+          label="التَّطبيقات المتَّصلة بالـ MCP"
           onRequireAuth={setPromptHref}
         />
 

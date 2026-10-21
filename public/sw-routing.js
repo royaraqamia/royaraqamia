@@ -65,9 +65,17 @@
   }
 
   // Routes that must never be read from or written to Cache Storage. These are
-  // the online-only surfaces (ADR-0031): authentication, admin, per-user reads
-  // and the account-tool shells. Caching them risks leaking one session's data
-  // to the next on a shared device, so they bypass the cache entirely.
+  // the online-only surfaces (ADR-0031): authentication *APIs*, admin, per-user
+  // reads and the account-tool shells. Caching them risks leaking one session's
+  // data to the next on a shared device, so they bypass the cache entirely.
+  //
+  // The auth document shells are the one deliberate exception since #447: the
+  // forms are static client pages with nothing account-bearing in them, so their
+  // shells ride the SWR cache and an offline reload paints the form instead of
+  // the offline page. Submitting still needs the server — Turnstile and Supabase
+  // cannot run offline — and every auth form answers that with its own inline
+  // needs-connection state (ADR-0031). The auth route handlers keep their own
+  // never-cache prefixes so a session read never lands in shared Cache Storage.
   const NEVER_CACHE_PREFIXES = [
     '/api/auth',
     '/api/admin',
@@ -78,7 +86,10 @@
     '/quran/api',
     '/api/blogpress',
     '/api/downloader',
-    '/auth',
+    '/auth/api',
+    // The OAuth callback is the code exchange itself — a one-time redirect
+    // that must never be replayed from a cache, not a shell.
+    '/auth/callback',
     '/admin',
     '/account',
     '/mcp',

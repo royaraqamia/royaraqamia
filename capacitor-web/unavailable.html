@@ -210,6 +210,7 @@
         </p>
         <p class="meta">قد يكون الاتِّصال ضعيفًا، أو الموقع غير متاح مؤقتًا.</p>
         <a class="primary" href="https://royaraqamia.com">إعادة المحاولة</a>
+        <p class="hint">عند عودة الاتِّصال، يُعاد فتح الموقع تلقائيًّا مرة واحدة.</p>
       </section>
 
       <noscript>
@@ -221,23 +222,57 @@
     <script>
       (function () {
         var MINIMUM_WEBVIEW = 111;
+        // The per-session guard for #447's auto-recovery: written before the
+        // listener navigates, read by the next page load in this session. One
+        // failed main-frame load still produces one page load (ADR-0067), and
+        // reconnect produces exactly one automatic reload, never a loop.
+        var RECOVERY_FLAG = 'rqq-unavailable-recovered';
 
         var match = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
         var current = match ? parseInt(match[1], 10) : 0;
         var outdated = current > 0 && current < MINIMUM_WEBVIEW;
 
-        if (!outdated) return;
+        /**
+         * The offline card's one automatic attempt: the first `online` event
+         * after a failed main-frame load navigates to the canonical origin,
+         * once per session. Still no timer — the radio coming back is the only
+         * trigger — and the storage guard turns every page after the first
+         * recovery back into ADR-0067's tap-only page, so a site that stays
+         * down cannot drag this WebView into a reload loop.
+         */
+        function recoverOnce() {
+          try {
+            if (sessionStorage.getItem(RECOVERY_FLAG) !== null) return;
+          } catch (storageErr) {
+            // A denied Storage lets this page attempt one recovery; the flag
+            // is only the loop guard for the page loads after this one.
+          }
 
-        var offline = document.getElementById('unreachable');
-        var unsupported = document.getElementById('outdated');
-        var version = document.getElementById('current');
-        var required = document.getElementById('required');
+          var onOnline = function () {
+            window.removeEventListener('online', onOnline);
+            try {
+              sessionStorage.setItem(RECOVERY_FLAG, '1');
+            } catch (storageErr) {}
+            window.location.assign('https://royaraqamia.com');
+          };
+          window.addEventListener('online', onOnline, { once: true });
+        }
 
-        if (offline) offline.hidden = true;
-        if (unsupported) unsupported.hidden = false;
-        if (version) version.textContent = String(current);
-        if (required) required.textContent = String(MINIMUM_WEBVIEW);
-        document.title = 'يلزم تحديث عرض النظام · رؤيَة رقَميَّة';
+        if (outdated) {
+          var offline = document.getElementById('unreachable');
+          var unsupported = document.getElementById('outdated');
+          var version = document.getElementById('current');
+          var required = document.getElementById('required');
+
+          if (offline) offline.hidden = true;
+          if (unsupported) unsupported.hidden = false;
+          if (version) version.textContent = String(current);
+          if (required) required.textContent = String(MINIMUM_WEBVIEW);
+          document.title = 'يلزم تحديث عرض النظام · رؤيَة رقَميَّة';
+          return;
+        }
+
+        recoverOnce();
       })();
     </script>
   </body>

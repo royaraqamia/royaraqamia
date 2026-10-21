@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   removeDeviceCopies: vi.fn(),
   requestOutboxFlush: vi.fn(),
   requestShellFlush: vi.fn(),
+  readShellLastFlush: vi.fn(),
 }));
 
 vi.mock('@/frontend/shared/local-store/device-copy', () => {
@@ -28,6 +29,7 @@ vi.mock('@/frontend/shared/local-store/device-copy', () => {
 vi.mock('@/frontend/shared/local-store/background-sync', () => ({
   requestOutboxFlush: mocks.requestOutboxFlush,
   requestShellFlush: mocks.requestShellFlush,
+  readShellLastFlush: mocks.readShellLastFlush,
 }));
 
 vi.mock('@/frontend/state/session-provider', () => ({
@@ -85,6 +87,7 @@ beforeEach(() => {
   mocks.readDeviceCopies.mockResolvedValue([]);
   mocks.removeDeviceCopies.mockResolvedValue({ removed: [ACCOUNT], blocked: [], queued: 1 });
   mocks.requestOutboxFlush.mockResolvedValue(true);
+  mocks.readShellLastFlush.mockReturnValue(null);
 });
 
 afterEach(cleanup);
@@ -194,5 +197,50 @@ describe('DeviceView', () => {
     render(<DeviceView />);
 
     expect(await screen.findByText('لا توجد نسخة محلِّيَّة على هذا الجهاز')).toBeInTheDocument();
+  });
+
+  it('names the shell’s last background drain where the bridge answers (#455)', async () => {
+    mocks.readShellLastFlush.mockReturnValue({
+      at: Date.parse('2026-10-21T07:00:00Z'),
+      delivered: 1,
+      left: 2,
+      pulled: 3,
+      error: null,
+    });
+
+    render(<DeviceView />);
+
+    expect(await screen.findByText('المزامنة في الخلفية')).toBeInTheDocument();
+    expect(
+      screen.getByText(/سلَّمت عملية واحدة وسحبت 3 عمليات، وبقي عمليتان بانتظار المزامنة/)
+    ).toBeInTheDocument();
+    // The shell notes' own concession, in the page's voice: what a force-stop
+    // can take away — FCM does not reach it, the floor does.
+    expect(screen.getByText(/تنبيه الإيقاظ لا يصل إليه/)).toBeInTheDocument();
+    expect(screen.queryByText('تعذَّرت المزامنة:')).not.toBeInTheDocument();
+  });
+
+  it('names a failed background drain beside what it delivered', async () => {
+    mocks.readShellLastFlush.mockReturnValue({
+      at: Date.parse('2026-10-21T07:00:00Z'),
+      delivered: 0,
+      left: 0,
+      pulled: 0,
+      error: 'session lookup failed (503)',
+    });
+
+    render(<DeviceView />);
+
+    expect(await screen.findByText('المزامنة في الخلفية')).toBeInTheDocument();
+    expect(screen.getByText('لم يكن في آخر استيقاظ شيء بانتظار المزامنة.')).toBeInTheDocument();
+    expect(screen.getByText(/session lookup failed/)).toBeInTheDocument();
+  });
+
+  it('keeps the background tier out entirely without a bridge (#455)', async () => {
+    render(<DeviceView />);
+
+    expect(await screen.findByText('لا توجد نسخة محلِّيَّة على هذا الجهاز')).toBeInTheDocument();
+    expect(screen.queryByText('المزامنة في الخلفية')).not.toBeInTheDocument();
+    expect(screen.queryByText(/تنبيه الإيقاظ لا يصل إليه/)).not.toBeInTheDocument();
   });
 });

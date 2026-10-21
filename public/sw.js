@@ -9,6 +9,16 @@ const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
 
+// The deadline a cold SWR request gets (#447, documented in
+// docs/specs/offline-first.md): the network must answer within it or the
+// response gives way to the fallback, so a slow-but-alive connection cannot hang
+// the document for the browser's own several-minute timeout. A cached copy is
+// never behind this deadline — stale paint is instant — and a fetch the deadline
+// cuts keeps running in the background, so a late answer still lands in the
+// cache and the next visit gets the real page. A test may shrink it through the
+// same realm global; production always takes 10000.
+const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 10_000;
+
 // A transparent 1x1 SVG, used when an image variant has no cache entry at all.
 // The `img` box is fixed by the markup (a `fill` container or explicit
 // width/height), so the placeholder holds the layout and the browser never draws
@@ -565,20 +575,40 @@ async function staleWhileRevalidate(request, onMiss, event) {
     })
     .catch(async () => {
       if (cached) return cached;
-      if (onMiss) return onMiss(request);
-      if (isNavigationRequest(request)) {
-        const fallback = await caches.match(FALLBACK_URL);
-        if (fallback) return fallback;
-      }
-      return new Response('Offline', { status: 503 });
+      return missResponse(request, onMiss);
     });
 
-  // `cached` can answer the request while this chain keeps running, so the
-  // lifetime extension is registered before the response is handed back — after
-  // `respondWith` settles the event is no longer active.
+  // The revalidation outlives the response either way: a deadline-swallowed cold
+  // load must still write the late answer into the cache for the next visit,
+  // and the browser may terminate the worker as soon as `respondWith` settles.
   if (event) event.waitUntil(revalidate.catch(() => undefined));
 
-  return cached || revalidate;
+  // A cached copy answers instantly and unconditionally; stale paint never
+  // waits on the network.
+  if (cached) return cached;
+
+  // A cold load races the network against the navigation deadline (#447). The
+  // deadline resolves `undefined`, never an error, so `Promise.race` cannot
+  // turn the timeout itself into a rejection: the loser keeps running as the
+  // background revalidation registered above.
+  const deadlineSunder = new Promise((resolve) =>
+    setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
+  );
+  const winner = await Promise.race([revalidate, deadlineSunder]);
+  if (winner === undefined) return missResponse(request, onMiss);
+  return winner;
+}
+
+// What answers a request that has neither a cached copy nor a network answer.
+// (The deadline path reaches here resolved; the failure path reaches through
+// the catch above.)
+async function missResponse(request, onMiss) {
+  if (onMiss) return onMiss(request);
+  if (isNavigationRequest(request)) {
+    const fallback = await caches.match(FALLBACK_URL);
+    if (fallback) return fallback;
+  }
+  return new Response('Offline', { status: 503 });
 }
 
 /**
@@ -622,12 +652,23 @@ async function offlineImage(request) {
 
 // Online-only surfaces (ADR-0031): go straight to the network, never to Cache
 // Storage. A navigation that cannot reach the network falls back to the offline
-// page so the user lands somewhere legible rather than on a browser error.
+// page so the user lands somewhere legible rather than on a browser error. The
+// same navigation deadline bounds a slow navigation (#447): /offline arrives
+// after the deadline instead of whenever the browser's own timeout gives up.
+// Non-navigations (API reads on never-cache prefixes) stay unbounded — those
+// run inside an already-painted page whose failure state is the app's own job.
 async function networkOnly(request) {
+  const navigation = isNavigationRequest(request);
   try {
-    return await fetch(request);
+    if (!navigation) return await fetch(request);
+    const deadlineSunder = new Promise((resolve) =>
+      setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
+    );
+    const winner = await Promise.race([fetch(request), deadlineSunder]);
+    if (winner === undefined) return missResponse(request);
+    return winner;
   } catch {
-    if (isNavigationRequest(request)) {
+    if (navigation) {
       const fallback = await caches.match(FALLBACK_URL);
       if (fallback) return fallback;
     }

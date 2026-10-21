@@ -46,6 +46,9 @@ being a base problem — the branch and the record grow from the same commits.
 
 ## Consequences
 
+`landing.md`, `worktrees.md`, the `/land` command (`.opencode/command/land.md`, tracked like the
+docs) and the guard's deny message (`scripts/agent-guard/decide.ts`, pinned by its unit test) now
+name local `main`. The guard's decision logic is untouched — `worktree add` was never a writer — and everything
 `landing.md`, `worktrees.md`, the `/land` command (machine-local, mirrors the tracked docs) and the
 guard's deny message (`scripts/agent-guard/decide.ts`, pinned by its unit test) now name local
 `main`. The guard's decision logic is untouched — `worktree add` was never a writer — and everything

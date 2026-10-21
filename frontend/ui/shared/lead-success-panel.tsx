@@ -31,7 +31,7 @@ interface LeadSuccessPanelProps {
  *
  * It also points at where the submission can be corrected later. Editing needs
  * an account, so the bridge is honest about that: a signed-in submitter is sent
- * straight to `طلباتي`, an anonymous one to sign in first.
+ * straight to `الطَّلبات`, an anonymous one to sign in first.
  */
 export function LeadSuccessPanel({
   referenceCode,
@@ -108,7 +108,7 @@ export function LeadSuccessPanel({
             className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-safe duration-200 hover:border-primary/50 hover:bg-primary/15"
           >
             <ClipboardList className="size-4" aria-hidden="true" />
-            عدِّل طلبك من «طلباتي»
+            عدِّل طلبك من «الطَّلبات»
           </a>
         ) : (
           <p className="mx-auto max-w-md text-xs text-muted-foreground leading-relaxed">
@@ -118,7 +118,7 @@ export function LeadSuccessPanel({
               href="/account/submissions"
               className="mx-1 font-bold text-primary hover:underline underline-offset-4"
             >
-              طلباتي
+              الطَّلبات
             </a>
             .
           </p>
