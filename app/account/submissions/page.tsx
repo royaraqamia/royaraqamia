@@ -5,7 +5,7 @@ import { MySubmissionsView } from '@/frontend/ui/account/my-submissions-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'طلباتي',
+  title: 'الطَّلبات',
   description: 'طلباتك المرسلة من نماذج رؤيَة رَقَميَّة، مع إمكانيَّة تعديلها.',
 };
 
@@ -16,7 +16,7 @@ export default async function AccountSubmissionsPage() {
     <div className="space-y-6">
       <div className="text-center flex flex-col items-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>طلباتي</SectionTitleHighlight>
+          <SectionTitleHighlight>الطَّلبات</SectionTitleHighlight>
         </SectionTitle>
       </div>
 
