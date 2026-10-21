@@ -84,6 +84,13 @@
   //   and degrade to inline needs-connection banners, so a cached account
   //   document or RSC payload carries no fragment one user could leave for the
   //   next on the same browser.
+  // The auth document shells are the one deliberate exception since #447: the
+  // forms are static client pages with nothing account-bearing in them, so their
+  // shells ride the SWR cache and an offline reload paints the form instead of
+  // the offline page. Submitting still needs the server — Turnstile and Supabase
+  // cannot run offline — and every auth form answers that with its own inline
+  // needs-connection state (ADR-0031). The auth route handlers keep their own
+  // never-cache prefixes so a session read never lands in shared Cache Storage.
   const NEVER_CACHE_PREFIXES = [
     '/api/auth',
     '/api/admin',

@@ -4,7 +4,7 @@ import { McpConnectedAppsView } from '@/frontend/ui/account/mcp-connected-apps-v
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'التَّطبيقات المتَّصلة',
+  title: 'التَّطبيقات المتَّصلة بالـ MCP',
   description:
     'التَّطبيقات الخارجيَّة المتَّصلة بحسابك عبر بروتوكول سياق النَّماذج (MCP)، مع إمكانيَّة فصل أيٍّ منها في أيِّ وقت.',
 };
@@ -20,7 +20,7 @@ export default function AccountConnectedAppsPage() {
     <div className="space-y-6">
       <header className="mb-10 text-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>التَّطبيقات المتَّصلة</SectionTitleHighlight>
+          <SectionTitleHighlight>التَّطبيقات المتَّصلة بالـ MCP</SectionTitleHighlight>
         </SectionTitle>
       </header>
 
