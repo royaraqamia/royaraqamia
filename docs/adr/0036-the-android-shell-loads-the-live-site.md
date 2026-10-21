@@ -69,3 +69,24 @@ breaking. See
 links, an OAuth return trip, FCM — has a web counterpart that must keep working, and the
 two must not drift. `docs/mobile/android-shell.md` is the runbook and lists what is still
 open.
+
+## Amendment (2026-10-21, #447): a warm cache answers the launch, and a failed one recovers
+
+The consequence above — "No connection at launch means no content" — describes a launch with no cache
+at all, which is now one case among several. Phase 0 of the offline-first roadmap changed the two that
+were wrong:
+
+- **A launch with a warm cache serves the worker's shell.** The remote URL is still requested first
+  (that is this ADR's decision), but the service worker answers it from the cached document when the
+  network fails or misses the ten-second navigation deadline (`public/sw.js`, #447), so the app paints
+  the site it already has. The WebView start plus a first frame is still a real cost; it is no longer a
+  content cost.
+- **A failed first frame recovers once on reconnect.** `capacitor-web/unavailable.html` arms a single
+  reload on the first `online` event, guarded by a session flag
+  ([ADR-0067 amendment](0067-the-shell-has-a-floor-and-a-local-page.md)). A site still down after that
+  reload gets the retry-by-tap card only, so the anti-loop guarantee stands.
+
+What does not change: a brand-new install with no network still has no document, and the cold-start
+floor remains the WebView start plus a first frame, recorded in the limits of
+[`docs/specs/offline-first.md`](../specs/offline-first.md). This ADR's decision (load the live site)
+is untouched; its consequence paragraph was one state too absolute.
