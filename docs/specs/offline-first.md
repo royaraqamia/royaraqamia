@@ -95,6 +95,29 @@ stated limit.
   first visit still needs the network — there is no document before it — and server-owned
   values inside these pages (SpendTrack's currency, BlogPress's categories and tags) answer
   only when their own never-cache read does.
+- **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`,
+  `/spendtrack`, `/linksnap` and `/blogpress` are in the worker's never-cache list (ADR-0031:
+  their documents are server-rendered per user, so caching them risks leaking one session's
+  data to the next on a shared device). In-session navigation still paints from the Local
+  Store — that is the measured behaviour, and where it is not, it is a gap — but a reload or a
+  deep link with the radio off has no document to serve. Closing it needs a data-free shell for
+  those routes plus a client-side gate that paints the Local Store into it: a design step, not
+  a one-line change, so it is recorded here rather than promised. `/device` is the one place
+  that design has been built (ADR-0070): the queue and the device's copy are inspectable and
+  removable with no network, precisely because that page renders no account data on the server.
+  `/account` used to stand in this list too; #448 moved its children's guard client-side and
+  its reads onto the never-cache API seams, so its shells ride the SWR cache (ADR-0031's #448
+  amendment) and this limit no longer reaches them.
+- **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`, `/spendtrack`,
+  `/linksnap`, `/blogpress` and `/account` are in the worker's never-cache list (ADR-0031: their
+  documents are server-rendered per user, so caching them risks leaking one session's data to the next
+  on a shared device). In-session navigation still paints from the Local Store — that is the measured
+  behaviour, and where it is not, it is a gap — but a reload or a deep link with the radio off has no
+  document to serve. Closing it needs a data-free shell for those routes plus a client-side gate that
+  paints the Local Store into it: a design step, not a one-line change, so it is recorded here rather
+  than promised. `/device` is the one place that design has been built (ADR-0070): the queue and the
+  device's copy are inspectable and removable with no network, precisely because that page renders no
+  account data on the server.
 - **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
   says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
@@ -322,7 +345,7 @@ for the reason the [Limits of instant](#limits-of-instant) states. The precache 
 estimated: 29 documents, 1,705,315 bytes, against the 32-route cap and the 6 MB install ceiling
 (ADR-0071's amendment). The device half of this phase — the cold-start drill matrix and the
 weak-network soak — is owner-run and recorded in
-[the shell notes](../mobile/android-shell.md#the-drain-drill), not something a CI job can claim.
+[the shell notes](../mobile/android-shell.md), not something a CI job can claim.
 
 Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
 section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when

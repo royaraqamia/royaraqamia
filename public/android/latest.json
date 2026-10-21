@@ -1,10 +1,10 @@
 {
-  "versionCode": 20013,
-  "versionName": "1.0.13",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.13.apk",
-  "sha256": "c9540eb99d4f200b426988534313b395dc142e890f9b2c1c9b1277e8b3fddfb4",
-  "sizeBytes": 8052296,
+  "versionCode": 20014,
+  "versionName": "1.0.14",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.14.apk",
+  "sha256": "afa1f9a35e669021cb1ca50817f58cfc21e37ba6553da6f383066fcc620f3e51",
+  "sizeBytes": 8054296,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(ui): render numbers in Aref Ruqaa with ASCII digits (#427)",
-  "releasedAt": "2026-10-20"
+  "notes": "feat(offline): ask for the battery-optimization exemption where it matters (#451)",
+  "releasedAt": "2026-10-21"
 }

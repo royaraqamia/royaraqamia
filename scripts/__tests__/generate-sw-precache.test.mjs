@@ -40,8 +40,10 @@ const APP_PATHS = {
 // Every public page here is prerendered; the never-cache and dynamic filters
 // have to do the excluding, not the prerender manifest alone. The fixture
 // mirrors the real worker: the auth API and the OAuth callback keep their
-// never-cache prefixes while the document shells became cacheable (#447), and
-// the account shells joined them once their guard moved client-side (#448).
+// never-cache prefixes while the document shells became cacheable (#447), the
+// account shells joined them once their guard moved client-side (#448), and
+// since #450 the fixture keeps `/mcp/connect` rather than all of `/mcp`, so the
+// guide is a precache candidate.
 const PRERENDERED = Object.fromEntries(
   Object.values(APP_PATHS).map((route) => [route, { srcRoute: null }])
 );
@@ -50,8 +52,6 @@ const NEVER_CACHE = [
   '/auth/api',
   '/auth/callback',
   '/admin',
-  // Since #450 `/mcp` is an exact entry and the consent document its own
-  // prefix, so the guide is a cacheable public document.
   '/mcp/connect',
   '/spendtrack/api',
   '/spendtrack/categories',
