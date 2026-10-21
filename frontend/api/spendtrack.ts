@@ -1,4 +1,5 @@
 import type {
+  Category,
   ExpenseWithCategory,
   RecurringExpenseInput,
   SpendtrackSyncSnapshot,
@@ -257,6 +258,20 @@ export async function getCurrency(): Promise<string | null> {
     return data?.currency ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * The shared default categories, for a guest's first Local Store seed (#449).
+ * Falls back to none — a guest can still create a category, and this read only
+ * exists to keep the old server seed's starting set.
+ */
+export async function getDefaultCategories(): Promise<Category[]> {
+  try {
+    const data = await request<{ categories: Category[] }>('/spendtrack/api/categories/default');
+    return data?.categories ?? [];
+  } catch {
+    return [];
   }
 }
 

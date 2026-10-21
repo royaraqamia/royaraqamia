@@ -1,4 +1,5 @@
 import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { getAdminSupabase } from '@/backend/config/supabase';
 import {
   jsonResult,
   type HttpResult,
@@ -395,6 +396,21 @@ export async function getCurrency(): Promise<HttpResult> {
     },
     { mapError: messageError(500, 'فشل تحميل العملة') }
   );
+}
+
+/**
+ * The shared default categories, readable without a session (#449). The guest
+ * dashboard is a static shell seeded from the Local Store now, so the defaults
+ * it used to get from the RSC loader arrive through this never-cache read.
+ * Default rows carry no `user_id`, which is why the read uses the admin client.
+ */
+export async function getDefaultCategories(): Promise<HttpResult> {
+  try {
+    const service = createSpendtrackService(getAdminSupabase());
+    return jsonResult(200, { categories: await service.getDefaultCategories() });
+  } catch (error) {
+    return messageError(500, 'فشل تحميل التصنيفات الافتراضيَّة')(error);
+  }
 }
 
 export async function updateCurrency(body: Record<string, unknown>): Promise<HttpResult> {

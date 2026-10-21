@@ -19,7 +19,14 @@ import {
   isExpenseCurrency,
 } from '@/shared/currency';
 
-export function CurrencySelector({ currency }: { currency?: string | null }) {
+export function CurrencySelector({
+  currency,
+  onChange,
+}: {
+  currency?: string | null;
+  /** Lets a client-rendered dashboard update without a server refresh (#449). */
+  onChange?: (next: string) => void;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const value = currency && isExpenseCurrency(currency) ? currency : DEFAULT_CURRENCY;
@@ -31,7 +38,8 @@ export function CurrencySelector({ currency }: { currency?: string | null }) {
     setPending(false);
     if (result?.success) {
       toast.success('تمَّ تغيير العملة');
-      router.refresh();
+      if (onChange) onChange(next);
+      else router.refresh();
     } else {
       toast.error(result?.error ?? 'فشل تغيير العملة');
     }
