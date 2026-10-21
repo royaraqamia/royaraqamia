@@ -32,8 +32,10 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // A hard cap on the build-time list, independent of bytes. The install budget
 // below is the real constraint; the cap keeps a routing mistake (a dynamic
 // segment that lost its brackets, an accidental catch-all) from turning into
-// thousands of fetches on install.
-export const MAX_PRECACHE_ROUTES = 24;
+// thousands of fetches on install. Raised from 24 to 32 in #449: the cached
+// auth/account/product shells alone are 27 routes on this build, and a cap
+// below that drops public content (`/terms`, `/verify`) from the tail.
+export const MAX_PRECACHE_ROUTES = 32;
 
 // Cacheable, data-free, but not public content: `/device` is the per-device
 // diagnostics tool (ADR-0070), reached from `/account` and warmed there. A
@@ -41,8 +43,9 @@ export const MAX_PRECACHE_ROUTES = 24;
 const NON_PUBLIC_ROUTES = ['/device'];
 
 // Install-time ceiling for the route shells, documented in ADR-0071. HTML
-// shells are the only thing fetched here (no RSC variants), and the current
-// build's nine routes total about 0.9 MB. The cache budget still wins: the
+// shells are the only thing fetched here (no RSC variants). The 26 shells this
+// build produces — auth, account, the public pages and the four product
+// dashboards (#449) — total about 1.6 MB. The cache budget still wins: the
 // worker will not spend bytes it does not have.
 export const ROUTE_PRECACHE_BUDGET_BYTES = 6 * 1024 * 1024;
 

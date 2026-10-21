@@ -67,6 +67,12 @@ on:
       - 'frontend/ui/shared/lazy-chunk.ts'
       - 'frontend/ui/linksnap/**'
       - 'app/blogpress/**'
+      - 'app/habitflow/**'
+      - 'app/spendtrack/**'
+      - 'app/linksnap/**'
+      - 'frontend/ui/spendtrack/**'
+      - 'frontend/ui/habitflow/**'
+      - 'frontend/ui/blogpress/**'
       - 'e2e/setup-test-user.ts'
       - 'e2e/sign-in.ts'
       - 'e2e/worker-control.ts'
@@ -74,6 +80,7 @@ on:
       - 'e2e/responsive-offline.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'
+      - 'e2e/product-offline-render.spec.ts'
       - 'e2e/sync-flush.spec.ts'
       - 'e2e/sync-chaos.spec.ts'
       - 'e2e/linksnap-offline.spec.ts'
@@ -135,6 +142,7 @@ jobs:
           e2e/habitflow-sync-resume.spec.ts
           e2e/linksnap-offline.spec.ts
           e2e/blogpress-offline.spec.ts
+          e2e/product-offline-render.spec.ts
           e2e/quran-sync.spec.ts
           e2e/sync-chaos.spec.ts
           e2e/sync-flush.spec.ts
@@ -150,6 +158,7 @@ jobs:
           HABITFLOW_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           LINKSNAP_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           BLOGPRESS_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          PRODUCT_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           SYNC_FLUSH_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           SYNC_CHAOS_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           QURAN_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}

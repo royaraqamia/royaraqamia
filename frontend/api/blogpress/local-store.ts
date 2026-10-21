@@ -75,6 +75,12 @@ export interface BlogpressDraft {
   metaTitle: string;
   metaDesc: string;
   publishAt: string | null;
+  /** Server-owned display fields carried so the dashboard list renders offline (#449). */
+  publishedAt: string | null;
+  viewCount: number;
+  featured: boolean;
+  communityVisible: boolean;
+  readingTimeMinutes: number;
   createdAt: string;
   updatedAt: string;
   isNew: boolean;
@@ -266,6 +272,11 @@ export class BlogpressLocalStore {
       metaTitle: input.metaTitle,
       metaDesc: input.metaDesc,
       publishAt: input.publishAt !== undefined ? input.publishAt : (existing?.publishAt ?? null),
+      publishedAt: existing?.publishedAt ?? null,
+      viewCount: existing?.viewCount ?? 0,
+      featured: existing?.featured ?? false,
+      communityVisible: existing?.communityVisible ?? true,
+      readingTimeMinutes: existing?.readingTimeMinutes ?? 0,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       isNew: input.isNew ?? existing?.isNew ?? true,
@@ -496,10 +507,42 @@ export function draftFromPost(post: Post, now: string): BlogpressDraft {
     metaTitle: post.meta_title ?? '',
     metaDesc: post.meta_desc ?? '',
     publishAt: post.publish_at,
+    publishedAt: post.published_at ?? null,
+    viewCount: post.view_count ?? 0,
+    featured: post.featured ?? false,
+    communityVisible: post.community_visible ?? true,
+    readingTimeMinutes: post.reading_time_minutes ?? 0,
     createdAt: post.created_at,
     updatedAt: post.updated_at ?? now,
     isNew: false,
     deletedAt: post.deleted_at ?? null,
+  };
+}
+
+/**
+ * The dashboard's read shape (#449): the store's drafts presented as posts, so
+ * the list and the calendar render the same records the editor writes.
+ */
+export function postFromDraft(draft: BlogpressDraft, authorId: string): Post {
+  return {
+    id: draft.id,
+    author_id: authorId,
+    client_id: draft.clientId,
+    deleted_at: draft.deletedAt,
+    slug: draft.slug,
+    content: draft.content,
+    status: draft.status,
+    cover_image: draft.coverImage || null,
+    meta_title: draft.metaTitle || null,
+    meta_desc: draft.metaDesc || null,
+    published_at: draft.publishedAt,
+    publish_at: draft.publishAt,
+    view_count: draft.viewCount ?? 0,
+    featured: draft.featured ?? false,
+    community_visible: draft.communityVisible ?? true,
+    reading_time_minutes: draft.readingTimeMinutes ?? 0,
+    created_at: draft.createdAt,
+    updated_at: draft.updatedAt,
   };
 }
 

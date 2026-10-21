@@ -79,6 +79,10 @@ export class SpendtrackService {
     return this.repository.getUserCategories(userId);
   }
 
+  async getDefaultCategories(): Promise<Category[]> {
+    return this.repository.getDefaultCategories();
+  }
+
   async getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot> {
     return this.repository.getSyncSnapshot(userId, since);
   }

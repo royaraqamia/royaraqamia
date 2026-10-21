@@ -121,5 +121,14 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
+  // The product dashboard roots are data-free shells since #449 (ADR-0073), so
+  // the install precache covers one this context never opened: an offline deep
+  // link paints the product's own heading, and the Local Store (empty for a
+  // guest here) is what the client awaits, not `/offline`.
+  await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/habitflow$/);
+  await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
   await context.close();
 });
