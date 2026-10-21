@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.130.1] - 2026-10-21
+
+### Changed
+- drop the duplicate worktree instruction the merges left behind (#471)
+
 ## [1.130.0] - 2026-10-21
 
 ### Changed
