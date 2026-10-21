@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.130.0] - 2026-10-21
+
+### Changed
+- publish shell 1.0.14 (20014)
+- the /land command follows ADR-0072 (#457)
+- cut worktrees from local main, not origin/main (#456)
+- land with a local squash, reconcile at the next start (#454)
+- decide the pull-failure read state in ADR-0027 (issue 369) (#452)
+
+### Added
+- the last two shells, and the measured install budget (#470)
+- render the product dashboards from cached shells (#469)
+- cache the account shells - the guard moves client-side (#448) (#466)
+- record the shell's last flush and the force-stop note on /device (#464)
+- Phase 0 - slow networks are harmless (#458)
+- add the client pull the store could never get (#453)
+- ask for the battery-optimization exemption where it matters (#451)
+
+### Fixed
+- mark account-scoped notification responses no-store (#468)
+- restore post view counting after the updated_at trigger was dropped (#467)
+- rename «طلباتي» and name MCP in connected-apps (#465)
+
 ## [1.129.0] - 2026-10-20
 
 ### Changed
