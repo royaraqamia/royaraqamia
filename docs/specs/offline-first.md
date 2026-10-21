@@ -57,11 +57,22 @@ stated limit.
   route's shell, but a server-rendered page's data still needs one online visit first.
 - **Server-bound surfaces stay server-bound.** Auth, consultation booking, rate refresh, the media
   downloader, admin and MCP show a needs-connection state by design (ADR-0031); they are not a gap to
-  close.
+  close. Since #447–#450 that state lives inside a cached document for every one of them except
+  `/admin` and the MCP consent screen, which still ask the network for their document — the boundary
+  the next bullet states.
 - **The Android app's cold start is capped by the WebView.** The shell loads a remote URL (ADR-0036),
   so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
   messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen
   (ADR-0061) rather than by bundling, and we do not pretend it is a native-first render.
+- **The floor is two doors, and one surface that still knocks.** `/offline` answers exactly two
+  situations: a brand-new install's first hit with no network (nothing has been cached yet, by
+  definition), and `/admin`, whose guard answers on the server (`identity.resolveAdmin`) so a cached
+  document could not authorize itself. `/mcp/connect` is the one other user-facing surface that asks
+  the network for its document, and it is not a gap left behind: its URL carries `client_id`,
+  `redirect_uri`, the PKCE challenge and `state`, so a bare precached path cannot answer it, and the
+  document renders the client the user is being asked about — a consent that cannot reach the server
+  mints nothing, and the form says so in place (#450). Every other user-facing route precaches or
+  SWR-caches its shell and paints its own needs-connection state inside it.
 - **"Instant" is perceived latency, not a benchmark.** The property is that owned data paints from the
   Local Store with no network wait and a write applies on tap. It is not a claim that every route
   renders in zero milliseconds.
@@ -126,15 +137,18 @@ Honest list of what stands between us and the bar, each with the file that shows
    all against a test account that had no `public.users` profile row — and proved convergence by
    reloading a page that paints from the Local Store either way. Each was invisible to every other
    check in the repo.
-3. **The surfaces audit left a short list, and none of it is a promise.**
+3. **The surfaces audit's list is closed down to its mechanical leftovers.**
    [`offline-surfaces-audit.md`](offline-surfaces-audit.md) checked every route against the table above
    and every ADR-0031 surface for the needs-connection state it promises. It closed the three that were
    misreporting a connection failure — consultation availability, the media downloader, Web Push — and
-   filed the rest. In-page states for auth, admin and MCP (#368) have since landed, with the
-   per-surface decision recorded in the ADR-0031 amendment; the silent read-failure of a pull (#369)
-   remains open. The account diagnostics view and "Remove this device's copy" that it filed as #370 now
-   live in `/device` (ADR-0070). The mechanical leftovers (Community's read failures, one raw error
-   string) are recorded there with the file that shows each.
+   filed the rest. In-page states for auth, admin and MCP (#368) landed and the per-surface decision is
+   recorded in the ADR-0031 amendment; #369's silent read-failure of a pull is closed by the ADR-0027
+   amendment. The account diagnostics view and "Remove this device's copy" that it filed as #370 live in
+   `/device` (ADR-0070). Phase 3 (#450) then closed the route half of the list: `/downloader` and
+   `/consultation/book` are data-free cached shells whose actions name the connection, `/mcp/guide` left
+   the `/mcp` never-cache prefix, and `/mcp/connect` stays a network document for the reason the
+   [Limits of instant](#limits-of-instant) records. The mechanical leftovers (Community's read failures,
+   one raw error string) remain, each with the file that shows it.
 
 ## Architecture
 
@@ -177,14 +191,16 @@ Honest list of what stands between us and the bar, each with the file that shows
 
 ### Cache tiers
 
-| Request                                                                        | Strategy                                                                   |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| App shell, icons, fonts                                                        | cache-first                                                                |
-| Public navigation / RSC payloads                                               | stale-while-revalidate (+ "updated X ago")                                 |
-| Auth + account document shells                                                 | stale-while-revalidate (#447, #448; shell only, no account-bearing render) |
-| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)          | stale-while-revalidate (#449; shell only, painted from the Local Store)    |
-| Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
-| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
+| Request                                                                                     | Strategy                                                                                                           |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| App shell, icons, fonts                                                                     | cache-first                                                                                                        |
+| Public navigation / RSC payloads                                                            | stale-while-revalidate (+ "updated X ago")                                                                         |
+| Auth + account document shells                                                              | stale-while-revalidate (#447, #448; shell only, no account-bearing render)                                         |
+| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)                       | stale-while-revalidate (#449; shell only, painted from the Local Store)                                            |
+| Consultation booking + media downloader shells                                              | stale-while-revalidate (#450; shell only — packages and the link probe are client reads on their never-cache APIs) |
+| MCP guide                                                                                   | stale-while-revalidate (#450; static instructions, no server action)                                               |
+| Public read APIs that declare `public`                                                      | SWR; an absent header is not permission                                                                            |
+| Auth APIs and the OAuth callback, mutations, admin, MCP consent, push, `no-store`/`private` | never cache                                                                                                        |
 
 Account-scoped reads are `no-store` by construction at the authenticated seam, and the Quran sync
 read is also on the never-cache list — a signed-in reader's bookmarks and position never enter Cache
@@ -200,7 +216,9 @@ own route manifests and bounded to 6 MB (or what the cache budget has left), so 
 this device never opened still paints its own shell offline
 ([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). Dynamic detail routes,
 account tools' API prefixes and every never-cache prefix stay out; the product dashboard roots joined
-the list in #449 (ADR-0073) once they became data-free shells.
+the list in #449 (ADR-0073) once they became data-free shells, and `/consultation/book`,
+`/downloader` and `/mcp/guide` in #450. On the #450 build the list is 29 documents and 1,705,315 bytes
+(1.63 MB) measured from the build's own HTML, against the 32-route cap and the 6 MB ceiling.
 
 ### Delivery states
 
@@ -295,6 +313,17 @@ and the worker's never-cache list narrows from the product prefixes to their API
 data-bearing subroutes. With it, `/offline` serves only a brand-new install hit with no network,
 `/admin`, and the server-guarded editor.
 
+**Phase 3 (#450) landed the same day:** `/consultation/book` and `/downloader` stopped being
+`force-dynamic` documents — the package read, the optional sign-in hint and the link probe are
+client reads on their never-cache APIs — so both are precached shells whose forms name the
+connection they still need. `/mcp` became an exact never-cache entry with the consent document on
+its own prefix, which lets `/mcp/guide` ride the SWR cache; `/mcp/connect` stays a network document
+for the reason the [Limits of instant](#limits-of-instant) states. The precache is re-measured, not
+estimated: 29 documents, 1,705,315 bytes, against the 32-route cap and the 6 MB install ceiling
+(ADR-0071's amendment). The device half of this phase — the cold-start drill matrix and the
+weak-network soak — is owner-run and recorded in
+[the shell notes](../mobile/android-shell.md#the-drain-drill), not something a CI job can claim.
+
 Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
 section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when
 the server is unreachable, and the [Verification](#verification) section for what runs.
@@ -344,7 +373,10 @@ the server is unreachable, and the [Verification](#verification) section for wha
   The render drill is separate from the resume proof: `product-offline-render.spec.ts` (#449) visits
   each product root once online, reloads it with the radio off, and asserts the product's own chrome —
   and the row written offline, where the root shows owned rows — instead of `/offline`. It is the
-  check that the shells are cached documents rather than per-user renders.
+  check that the shells are cached documents rather than per-user renders. `public-offline.spec.ts`
+  carries the same assertion for the #450 shells: a context that opened neither `/downloader` nor
+  `/consultation/book` deep-links to each with the radio off and reads its heading, not the offline
+  page's retry link.
 
   What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
   Request but is left out of the workflow because it writes a row the suite cannot remove against the

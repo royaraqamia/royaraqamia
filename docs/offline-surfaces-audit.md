@@ -133,14 +133,44 @@ what changed in the tree:
   page and a certificate that is genuinely gone.
 - **MCP has an in-page state where it has an action.** `app/mcp/connect/connect-form.tsx` replaces the
   consent buttons with the shared state offline; `/account/connected-apps` names an unreachable
-  server instead of the generic load error. `/mcp/guide` stays a document request answered by
-  `/offline` — it has no server action.
+  server instead of the generic load error. `/mcp/guide` is a document request with no server action;
+  until #450 it was answered by `/offline`, and it now rides the SWR cache (see the last section).
 
 ## Account shells ride the cache (2026-10-21, #448)
 
 The account subtree's documents left the never-cache list with their guard moved client-side
 (ADR-0031's amendment): an offline reload of a visited `/account` route — and a cold deep link to
 a prerendered one — paints the account chrome instead of `/offline`. Every account-scoped read
-stays on a never-cache API prefix, so a cached shell is still data-free; `/offline` remains the
-answer for the account _tools_ (`/habitflow`, `/spendtrack`, `/linksnap`, `/blogpress`), whose
-documents stay server-rendered per user.
+stays on a never-cache API prefix, so a cached shell is still data-free. The account _tools_
+(`/habitflow`, `/spendtrack`, `/linksnap`, `/blogpress`) were, at this point, still server-rendered
+per user; #449 made them data-free shells too, so this paragraph's last sentence stopped being true
+one phase later (ADR-0073).
+
+## Phase 3: the last shells, and the floor the cache cannot cross (2026-10-21, #450)
+
+The three routes this audit left as `/offline` documents are settled, and the settled state differs
+per route for the reason each one exists:
+
+- **`/downloader` and `/consultation/book` are cached shells.** Both were `force-dynamic` for a
+  server read the client can do itself: the downloader's link inspection never came from the server
+  render at all, and the booking page's package list is a client read of
+  `/api/consultation/packages` that `useBookingFlow` already ran when handed no initial list. The
+  optional sign-in hint on the booking page now comes from the session provider instead of
+  `getOptionalUser`, so the document carries nothing account-bearing and both routes prerender,
+  precache and SWR-cache. What stays online-only is the action, not the page: the downloader
+  disables its submit and names the connection while the browser is offline, and the booking flow
+  keeps its availability/package failure states and refuses to queue a scarce slot.
+- **`/mcp/guide` rides the cache, and `/mcp/connect` does not.** The worker's `/mcp` prefix was
+  doing two jobs: protecting the protocol endpoint, and shutting the guide out of a cache it had no
+  reason to be shut out of. `/mcp` is now an exact never-cache entry and the consent document
+  (`/mcp/connect`, covering `/mcp/connect/consent`) its own prefix, so the guide is a public
+  document like any other. The consent page stays network-only, and not by omission: its URL
+  carries `client_id`, `redirect_uri`, the PKCE challenge and `state`, so a bare precached path
+  cannot answer it, and the document renders the client being asked about — while the grant itself
+  is a server POST that re-validates all of it. Offline it renders `NeedsConnection` in place
+  (#368); it never renders a stale consent.
+
+The route-level floor is therefore two doors — a brand-new install's first hit with no network, and
+`/admin` — plus this one surface that knocks on the network for a document it cannot safely be
+handed a cached copy of. The mechanical leftovers in the list above (Community's read failures, the
+raw `Failed to fetch` string) are still open and still need no issue of their own.

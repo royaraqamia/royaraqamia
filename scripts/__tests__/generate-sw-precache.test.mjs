@@ -50,7 +50,9 @@ const NEVER_CACHE = [
   '/auth/api',
   '/auth/callback',
   '/admin',
-  '/mcp',
+  // Since #450 `/mcp` is an exact entry and the consent document its own
+  // prefix, so the guide is a cacheable public document.
+  '/mcp/connect',
   '/spendtrack/api',
   '/spendtrack/categories',
   '/blogpress/editor',
@@ -75,6 +77,7 @@ describe('public route shell derivation', () => {
       '/community',
       '/habitflow',
       '/linksnap',
+      '/mcp/guide',
       '/privacy',
       '/quran',
       '/rates',

@@ -1,24 +1,22 @@
 'use client';
 
 import { CloudOff, LogIn } from 'lucide-react';
-import { type ConsultationPackage } from '@/shared/contracts/consultation';
 import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
+import { useSession } from '@/frontend/state/session-provider';
 import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
 import { BookingWizard } from '@/frontend/ui/consultation/booking-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 
-interface ConsultationBookingPageProps {
-  /** Server-rendered so the wizard has content on first paint. */
-  initialPackages?: ConsultationPackage[];
-  /** Whether a session was present on first render. */
-  isAuthenticated: boolean;
-}
-
-export function ConsultationBookingPage({
-  initialPackages,
-  isAuthenticated,
-}: ConsultationBookingPageProps) {
-  const flow = useBookingFlow({ initialPackages });
+/**
+ * The booking page is a cached shell (#450): packages are a client read on the
+ * never-cache `/api/consultation` prefix, and the only thing the server used to
+ * decide — whether a session exists — is the session provider's answer, which
+ * keeps the sign-in hint out of the cached document entirely.
+ */
+export function ConsultationBookingPage() {
+  const flow = useBookingFlow();
+  const { user, isLoading } = useSession();
+  const isAuthenticated = Boolean(user);
 
   if (!flow.createdBooking) {
     return (
@@ -26,8 +24,10 @@ export function ConsultationBookingPage({
         <BookingSummary packages={flow.packages} />
 
         {/* Signing in is optional — an anonymous booking still works. The
-            notice only sets the expectation that editing later needs an account. */}
-        {!isAuthenticated && (
+            notice only sets the expectation that editing later needs an account.
+            Held until the session answers, so a signed-in visitor never sees the
+            guest hint flash on a cached shell. */}
+        {!isLoading && !isAuthenticated && (
           <div className="rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             <p>
               <LogIn className="me-1.5 -mt-0.5 inline size-4 align-middle" aria-hidden="true" />
