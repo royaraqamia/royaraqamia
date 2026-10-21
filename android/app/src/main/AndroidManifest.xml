@@ -125,4 +125,17 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Required from Android 13 to show any notification, including FCM pushes. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      The battery-optimization exemption prompt (ADR-0059's amendment, #381). Doze
+      defers both halves of the background path — the FCM wake and the CONNECTED
+      WorkManager drain — so delivery can wait for an open the user did not plan.
+      Holding this permission is what makes the platform's one-tap dialog
+      (ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) reachable, which the shell
+      asks for from a notification the moment a drain ends with work still owed
+      or a wake arrives in the background. Play's policy restricts that dialog to
+      specific app categories for apps it distributes; this shell is installed
+      directly (ADR-0036), and the notification's copy states the reason, which
+      is the "with the reason stated" the ADR asked for.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 </manifest>

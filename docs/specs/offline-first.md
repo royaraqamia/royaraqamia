@@ -273,7 +273,10 @@ the server is unreachable, and the [Verification](#verification) section for wha
    high-priority data message reaches `SyncMessagingService`, and the receiver enqueues the same drain;
    the background pull covers HabitFlow, SpendTrack, the Quran Reader and LinkSnap
    (`PULLABLE_PRODUCTS`). _5c,
-   open:_ the battery-exemption prompt and delivery badges in the shell.
+   half-landed:_ the battery-exemption prompt — a drain that ends with work still owed, or a wake the
+   app receives in the background, asks once with the reason in the notification's copy, and the tap
+   opens the platform's one-tap exemption dialog (ADR-0059's amendment; #381). The delivery badges in
+   the shell are the open half.
 6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
    as content arriving, staying stateless and OTA-free (ADR-0061).
 7. **Verify and harden** — the device matrix below, chaos tests, and the offline suite as a CI gate.
