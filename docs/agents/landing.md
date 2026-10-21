@@ -38,6 +38,19 @@ gh pr list --state merged --json number --jq '.[].number'
   git merge --squash origin/<open-branch>; git commit -m "<subject> (#N)"
   ```
 
+Then cut the branch — from local `main`, never from `origin/main`. A worktree inherits whatever HEAD
+it is cut from ([worktrees.md](worktrees.md)), and `worktree_create` starts at the checkout's current
+HEAD anyway, so the checkout's own `main` is the one base every path agrees on
+([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)). The reconcile above is what makes
+that safe: every commit `origin/main..main` is a `(#N)` squash copy at cut time, and a local commit
+that is not one is unpushed owner work — stop and report before cutting anything. A branch cut from
+local `main` is stacked on the still-open copies, so while they are open its pull request's diff
+reads wider than its own change; merges resolve it. `--prune` drops the remote branches deleted
+since the last fetch, which is half of what makes a landed branch stay gone.
+
+```powershell
+git worktree add -b <branch> <dir> main
+```
 Then cut the branch — always from `origin/main`, never from local `main`: a merge-base above
 `origin/main` inflates the pull request's diff with the still-open squash copies, and a worktree
 inherits whatever HEAD it is cut from ([worktrees.md](worktrees.md)). `--prune` drops the remote
