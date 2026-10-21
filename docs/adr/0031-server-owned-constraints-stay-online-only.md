@@ -92,3 +92,34 @@ server. The auth APIs keep their never-cache prefixes (`/auth/api`, and `/auth/c
 OAuth code exchange), so a session read never lands in shared Cache Storage. "Server-owned
 constraints stay online-only" narrowed to the network call; the page that shows the call no longer
 has to be unreachable to get there.
+
+## Amendment (2026-10-21, #448): the account shells ride the cache; the account data keeps the never-cache prefixes
+
+The same surgery as the auth shells above, one subtree over: every `await cookies()`/`await
+headers()` call in `/account`'s own code is gone. The layout's shell-version read (ADR-0046)
+moved into `AccountFooter`, the client component that displays it; the four guarded children
+(`/account/submissions`, `/account/links`, `/account/connected-apps`, `/account/posts`) dropped
+their server-side `requireAuth` — the session provider already guards network failure as "never
+a logout" — and the one page that rendered server data into an RSC payload (`/account/posts`)
+now reads the signed-in member's own published posts through the new never-cache `/api/me/posts`
+seam. `/account` left the worker's never-cache list and its shells ride the same
+stale-while-revalidate cache the public content does: an offline reload of a visited account
+route paints the account chrome instead of `/offline`, and the install-time precache picks the
+shells up (ADR-0071).
+
+What holds the boundary where it always was: the read seams under the subtree (`/api/me`,
+`/api/notifications`, the intake and consultation `/api` groups) keep their never-cache prefixes,
+so a cached response can never carry one user's rows to the next user of the same browser — the
+cached documents and RSC payloads carry no account fragments at all. The views keep three
+answers apart: a guest is pointed at sign-in in place (the prompt the account front page has
+always shown), an unreachable server renders the shared `NeedsConnection` with its retry, and a
+genuinely empty feed renders the empty state. To make that last split possible the account views'
+API getters (`getMyRetainers`, `getMyProjectRequests`, `getMyTrainingApplications`,
+`getMyConsultationBookings`, `getMyPosts`) now throw a failed read instead of converging it to an
+empty list — the shape the admin and MCP reads already had, and the reason a never-cached page
+does not show «لا توجد…» while the radio is off.
+
+Hygiene is unchanged by construction: sign-out still plays `PURGE_ACCOUNT_CACHES` and session
+expiry still purges on its way to `/auth/login?session_expired=1`. The cached shells join the
+precached set sign-out keeps, exactly like the auth shells — they are the same data-free kind of
+document.

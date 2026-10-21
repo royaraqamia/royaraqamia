@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 
-import { shellVersionNameFromUserAgent } from '@/frontend/shared/shell-update';
 import { AccountFooter } from '@/frontend/ui/account/account-footer';
 import { AccountSiteFooter } from '@/frontend/ui/account/account-site-footer';
 import { Navbar } from '@/frontend/ui/Navbar';
@@ -14,20 +12,17 @@ export const metadata: Metadata = {
 /**
  * Left open to guests on purpose: `/account` renders a sign-in prompt in place
  * of the profile card so the mobile tab lands somewhere useful. Auth-only
- * children (e.g. `/account/submissions`) guard themselves.
+ * children (e.g. `/account/submissions`) guard themselves on the client — the
+ * session provider answers network failure as "never a logout" — and the views
+ * that read server data degrade to their own inline needs-connection states.
  *
- * The installed app's version reaches the page the same way the rest of the
- * shell's state does: in the shell's own user agent (ADR-0046), so only a shell
- * sends it and a browser has nothing to render. This layout only reads it;
- * `AccountFooter` decides whether the page under it is one that shows it.
- *
- * The site footer sits below the content rather than inside it, and both
- * footers gate on the route themselves — a layout cannot tell which page it is
- * wrapping.
+ * No `cookies()`/`headers()` call now exists in this subtree's own code. The
+ * layout once awaited `headers()` for the shell's version (ADR-0046); #448
+ * moved that read into `AccountFooter`, so the whole subtree is static shells
+ * the service worker caches and an offline reload paints the account chrome
+ * instead of `/offline` (ADR-0031's #448 amendment).
  */
-export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const shellVersion = shellVersionNameFromUserAgent((await headers()).get('user-agent') ?? '');
-
+export default function AccountLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <Navbar reserveSpace />
@@ -35,7 +30,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         <div className="container mx-auto max-w-3xl px-4 pb-16">{children}</div>
       </main>
       <AccountSiteFooter />
-      <AccountFooter version={shellVersion} />
+      <AccountFooter />
     </div>
   );
 }

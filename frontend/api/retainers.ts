@@ -80,16 +80,13 @@ export async function updateRetainer(
 }
 
 /**
- * The signed-in visitor's own retainers. A failure degrades to an empty list so
- * the account page can render its empty state rather than an error screen.
+ * The signed-in visitor's own retainers. A failure is thrown to the caller, not
+ * degraded to an empty list (#448): an unreachable server and a feed with no
+ * retainers are different statements, and the view renders the difference.
  */
 export async function getMyRetainers(): Promise<Retainer[]> {
-  try {
-    const result = await request<{ success: boolean; data?: Retainer[] }>('/api/me/retainers');
-    return result.data ?? [];
-  } catch {
-    return [];
-  }
+  const result = await request<{ success: boolean; data?: Retainer[] }>('/api/me/retainers');
+  return result.data ?? [];
 }
 
 export async function updateMyRetainer(

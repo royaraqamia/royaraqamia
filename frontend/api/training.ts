@@ -128,18 +128,15 @@ export async function releaseTrainingApplication(
 }
 
 /**
- * The signed-in applicant's own applications. A failure degrades to an empty
- * list so the account page renders its empty state rather than an error screen.
+ * The signed-in applicant's own applications. A failure is thrown to the
+ * caller, not degraded to an empty list (#448): an unreachable server and an
+ * empty feed are different statements, and the view renders the difference.
  */
 export async function getMyTrainingApplications(): Promise<TrainingApplication[]> {
-  try {
-    const result = await request<{ success: boolean; data?: TrainingApplication[] }>(
-      '/api/me/training-applications'
-    );
-    return result.data ?? [];
-  } catch {
-    return [];
-  }
+  const result = await request<{ success: boolean; data?: TrainingApplication[] }>(
+    '/api/me/training-applications'
+  );
+  return result.data ?? [];
 }
 
 export async function updateMyTrainingApplication(

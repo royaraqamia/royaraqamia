@@ -77,18 +77,15 @@ export async function updateProjectRequest(
 }
 
 /**
- * The signed-in visitor's own requests. A failure degrades to an empty list so
- * the account page can render its empty state rather than an error screen.
+ * The signed-in visitor's own requests. A failure is thrown to the caller, not
+ * degraded to an empty list (#448): an unreachable server and a feed with no
+ * requests are different statements, and the view renders the difference.
  */
 export async function getMyProjectRequests(): Promise<ProjectRequest[]> {
-  try {
-    const result = await request<{ success: boolean; data?: ProjectRequest[] }>(
-      '/api/me/project-requests'
-    );
-    return result.data ?? [];
-  } catch {
-    return [];
-  }
+  const result = await request<{ success: boolean; data?: ProjectRequest[] }>(
+    '/api/me/project-requests'
+  );
+  return result.data ?? [];
 }
 
 export async function updateMyProjectRequest(
