@@ -5,6 +5,7 @@ import type { Paginated } from '@/shared/pagination';
 import {
   AlreadyEnrolledError,
   CohortClosedError,
+  CohortCourseMismatchError,
   CohortFullError,
   CohortNotFoundError,
   InvalidReleaseStatusError,
@@ -34,6 +35,8 @@ function mapEnrollError(code: string): Error {
       return new CohortNotFoundError();
     case 'COHORT_CLOSED':
       return new CohortClosedError();
+    case 'COHORT_COURSE_MISMATCH':
+      return new CohortCourseMismatchError();
     case 'ALREADY_ENROLLED':
       return new AlreadyEnrolledError();
     default:

@@ -71,7 +71,9 @@ export interface TrainingApplicationsWriter {
   /**
    * Claims a seat: moves the application into `enrolled` against a cohort, in the
    * `enroll_application` RPC so the capacity check and the write are atomic.
-   * Throws {@link CohortFullError} / {@link CohortNotFoundError} / {@link AlreadyEnrolledError}.
+   * Throws {@link CohortFullError} / {@link CohortNotFoundError} /
+   * {@link CohortClosedError} / {@link CohortCourseMismatchError} /
+   * {@link AlreadyEnrolledError}.
    */
   enroll(id: string, cohortId: string): Promise<TrainingApplication>;
   /**
@@ -119,6 +121,17 @@ export class CohortClosedError extends Error {
   constructor() {
     super('COHORT_CLOSED');
     this.name = 'CohortClosedError';
+  }
+}
+
+/**
+ * The cohort belongs to a different Course than the application. Raised before
+ * the seat is claimed, so nothing was consumed or changed.
+ */
+export class CohortCourseMismatchError extends Error {
+  constructor() {
+    super('COHORT_COURSE_MISMATCH');
+    this.name = 'CohortCourseMismatchError';
   }
 }
 

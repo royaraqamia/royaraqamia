@@ -143,6 +143,7 @@ export function TrainingApplicationsList({
             <div className="mt-4 border-t border-border/50 pt-4">
               <EnrollControl
                 applicationId={application.id}
+                courseSlug={application.course_slug}
                 isEnrolled={isEnrolled}
                 enrolledCohortId={application.cohort_id}
                 onChanged={onEnrollmentChanged}
