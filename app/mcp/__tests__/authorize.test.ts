@@ -4,6 +4,9 @@ import type { NextRequest, NextResponse } from 'next/server';
 const mockGetClient = vi.fn();
 const mockGetUser = vi.fn();
 const mockGetSession = vi.fn();
+const { mockCheckRateLimitApi } = vi.hoisted(() => ({ mockCheckRateLimitApi: vi.fn() }));
+
+vi.mock('@/backend/middleware/http', () => ({ checkRateLimitApi: mockCheckRateLimitApi }));
 
 vi.mock('@/backend/services/mcp/oauth-provider', () => ({
   createMcpOAuthProvider: () => ({ getClient: mockGetClient }),
@@ -16,6 +19,8 @@ vi.mock('@/backend/config/supabase', () => ({
 }));
 
 import { GET } from '@/app/mcp/authorize/route';
+
+const IP = '203.0.113.9';
 
 const client = {
   id: 'client-1',
@@ -32,7 +37,11 @@ function makeReq(query: Record<string, string>): NextRequest {
   for (const [key, value] of Object.entries(query)) {
     url.searchParams.set(key, value);
   }
-  return { url: url.toString(), nextUrl: url } as unknown as NextRequest;
+  return {
+    url: url.toString(),
+    nextUrl: url,
+    headers: new Headers({ 'x-real-ip': IP }),
+  } as unknown as NextRequest;
 }
 
 async function readBody(res: NextResponse): Promise<{ error: string }> {
@@ -41,7 +50,48 @@ async function readBody(res: NextResponse): Promise<{ error: string }> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockCheckRateLimitApi.mockResolvedValue(null);
   mockGetClient.mockResolvedValue(client);
+});
+
+describe('GET /mcp/authorize — rate limiting', () => {
+  it('returns 429 without a client lookup or a getUser when the limit is exceeded', async () => {
+    mockCheckRateLimitApi.mockResolvedValue({
+      status: 429,
+      body: { success: false, error: 'limited' },
+    });
+
+    const res = await GET(
+      makeReq({
+        response_type: 'code',
+        client_id: 'client-1',
+        redirect_uri: 'https://client.example/callback',
+        code_challenge: 'challenge',
+        code_challenge_method: 'S256',
+      })
+    );
+
+    expect(res.status).toBe(429);
+    expect(mockGetClient).not.toHaveBeenCalled();
+    expect(mockGetUser).not.toHaveBeenCalled();
+  });
+
+  it('limits the caller IP on its own bucket, fail-closed, before the client lookup', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+
+    await GET(makeReq({ response_type: 'code', client_id: 'client-1' }));
+
+    expect(mockCheckRateLimitApi).toHaveBeenCalledWith({
+      key: `mcp-authorize:${IP}`,
+      limit: 30,
+      windowMs: 10 * 60 * 1000,
+      message: expect.any(String),
+      failClosed: true,
+    });
+    expect(mockCheckRateLimitApi.mock.invocationCallOrder[0]).toBeLessThan(
+      mockGetClient.mock.invocationCallOrder[0] as number
+    );
+  });
 });
 
 describe('GET /mcp/authorize', () => {

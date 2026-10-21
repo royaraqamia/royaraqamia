@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
+import { mcpAuthorizeRateLimitPolicy } from '@/backend/config/rate-limiter';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +17,13 @@ export const runtime = 'nodejs';
  * params preserved. The consent page handles approve/deny.
  */
 export async function GET(req: NextRequest) {
+  // Before the client lookup and getUser(): both are anonymous-reachable work.
+  const rateLimited = await checkRateLimitApi({
+    ...mcpAuthorizeRateLimitPolicy(getClientIp(req)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   const params = req.nextUrl.searchParams;
   const responseType = params.get('response_type');
   const clientId = params.get('client_id');

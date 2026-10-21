@@ -174,6 +174,35 @@ export function mcpTokenRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/**
+ * The authorization endpoint does a client lookup on every request before the
+ * browser is even signed in, so an anonymous loop with a made-up client id
+ * costs a database round trip each time. Its own bucket, at the token-exchange
+ * order: the browser flow's own redirects stay well inside it.
+ */
+export function mcpAuthorizeRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-authorize:${ip}`,
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: طلبات تفويض MCP محدودة بـ 30 طلبًا كل 10 دقائق.',
+  };
+}
+
+/**
+ * RFC 7009 allows revocation without authentication, so the endpoint hashes
+ * whatever it is handed and looks the row up. Its own bucket keeps that work
+ * from being driven by a script at the cost of the tokens it is meant to kill.
+ */
+export function mcpRevokeRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-revoke:${ip}`,
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: إلغاء رموز MCP محدود بـ 30 طلبًا كل 10 دقائق.',
+  };
+}
+
 export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-consent:${ip}`,
