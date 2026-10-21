@@ -25,6 +25,26 @@ public class SyncFlushResultTest {
         assertTrue(result.summary, result.summary.contains("failed=0"));
     }
 
+    /**
+     * The page's own shape, and the one a device read as a failure (#484): a
+     * JVM's `org.json` answers `""` for a JSON null, Android's answers `"null"`,
+     * so this asserts the decision rather than trusting either.
+     */
+    @Test
+    public void aNullErrorIsNoError() {
+        SyncFlushResult nulled = SyncFlushResult.parse(
+            "{\"outcomes\":[{\"product\":\"habitflow\",\"replayed\":1,\"pending\":0,\"failed\":0,"
+                + "\"error\":null}],\"refreshed\":[],\"pending\":0,\"failed\":0,\"error\":null}"
+        );
+
+        assertFalse(nulled.summary, nulled.retry);
+
+        SyncFlushResult quoted = SyncFlushResult.parse(
+            "{\"outcomes\":[],\"pending\":0,\"failed\":0,\"error\":\"null\"}"
+        );
+        assertTrue(quoted.retry);
+    }
+
     @Test
     public void pendingWorkComesBack() {
         SyncFlushResult result = SyncFlushResult.parse(

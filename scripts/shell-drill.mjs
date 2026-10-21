@@ -342,14 +342,14 @@ async function connectDevTools(wsUrl) {
     else entry.resolve(message.result);
   });
 
-  function send(method, params = {}) {
+  function send(method, params = {}, timeoutMs = 20_000) {
     return new Promise((resolveSend, rejectSend) => {
       const id = nextId;
       nextId += 1;
       const timer = setTimeout(() => {
         pending.delete(id);
         rejectSend(new Error(`${method} timed out`));
-      }, 20_000);
+      }, timeoutMs);
       pending.set(id, {
         resolve: (result) => {
           clearTimeout(timer);
@@ -370,12 +370,16 @@ async function connectDevTools(wsUrl) {
   await send('Runtime.enable');
 
   return {
-    async evaluate(expression) {
-      const result = await send('Runtime.evaluate', {
-        expression,
-        returnByValue: true,
-        awaitPromise: true,
-      });
+    async evaluate(expression, { timeoutMs } = {}) {
+      const result = await send(
+        'Runtime.evaluate',
+        {
+          expression,
+          returnByValue: true,
+          awaitPromise: true,
+        },
+        timeoutMs
+      );
       if (result.exceptionDetails) {
         throw new Error(
           result.exceptionDetails.exception?.description ?? result.exceptionDetails.text
@@ -708,10 +712,20 @@ export async function main({
         const list = await fetch(`http://127.0.0.1:${DEVTOOLS_PORT}/json/list`)
           .then((response) => response.json())
           .catch(() => []);
+        // The worker's headless WebView shares this process (and so this
+        // DevTools socket) while a drain runs, and its page is the drain page
+        // on the same origin — attaching to it would sign in and queue in the
+        // wrong WebView. Everything else on this origin is the app's own page:
+        // a later matrix case reattaches with the shell on `/habitflow`, not `/`.
         return (
           list.find((entry) => {
             try {
-              return entry.type === 'page' && new URL(entry.url).hostname === 'localhost';
+              const url = new URL(entry.url);
+              return (
+                entry.type === 'page' &&
+                url.origin === origin &&
+                url.pathname !== '/sync-flush.html'
+              );
             } catch {
               return false;
             }
@@ -722,7 +736,22 @@ export async function main({
     );
 
     state.page = await connectDevTools(target.webSocketDebuggerUrl);
-    log(`[drill] attached to ${target.url}`);
+
+    // The target's `url` is where the WebView is *navigating to*; until the
+    // document commits, evaluation runs in the initial `about:blank` context.
+    // A relative fetch there has no base URL — `signIn` failed with "Failed to
+    // parse URL from /auth/api/login" on a cold first load — and the user agent
+    // measured from it says nothing about the site. Wait for the commit.
+    const href = await waitFor(
+      'the shell document to load',
+      async () => {
+        const value = await state.page.evaluate('location.href').catch(() => null);
+        return typeof value === 'string' && value.startsWith(origin) ? value : null;
+      },
+      { timeoutMs: 180_000, intervalMs: 2_000 }
+    );
+
+    log(`[drill] attached to ${href}`);
     return state.page;
   }
 
@@ -767,7 +796,11 @@ export async function main({
       return JSON.stringify({ ok: response.ok, status: response.status, body: body.slice(0, 400) });
     })()`;
 
-    const raw = await page.evaluate(expression);
+    // The first request to a route in a dev server the drill just started
+    // compiles it (Turbopack): a cold `/auth/api/login` can outlast the 20s a
+    // CDP command gets by default, and that timeout says "timed out", not
+    // "refused" — which is a different diagnosis.
+    const raw = await page.evaluate(expression, { timeoutMs: 180_000 });
     const result = JSON.parse(raw);
     if (!result.ok) {
       throw new DrillError(

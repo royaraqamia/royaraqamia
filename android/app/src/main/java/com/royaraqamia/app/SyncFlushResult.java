@@ -52,7 +52,12 @@ final class SyncFlushResult {
             JSONObject report = new JSONObject(json);
             pending = report.optInt("pending", -1);
             failed = report.optInt("failed", 0);
-            error = report.optString("error", "");
+            // Not `optString`: Android stringifies a JSON `null` into "null", so a
+            // clean report — the page's own shape, `"error": null` — read as a
+            // failed drain, and the worker retried a queue that was already empty
+            // (#484, found on a device). A JSON null is an absent error.
+            Object rawError = report.opt("error");
+            error = rawError == null || rawError == JSONObject.NULL ? "" : String.valueOf(rawError);
         } catch (Exception e) {
             return again("the report could not be read: " + e.getMessage());
         }

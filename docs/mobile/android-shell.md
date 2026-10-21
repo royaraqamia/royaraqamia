@@ -289,13 +289,13 @@ adb shell dumpsys jobscheduler | Select-String 'com.royaraqamia.app'   # both re
 Measured on the API 30 emulator (`Pixel_API_30`), with the site served locally and the shell pointed at
 `http://localhost:3000` through `adb reverse` (see the two limits below for why not `10.0.2.2`):
 
-| What the device showed              | Evidence                                                                                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Both schedules registered           | `dumpsys jobscheduler`: two jobs on `androidx.work…SystemJobService`, `initial backoff +30s`                                                  |
-| The bridge is live in the page      | from the page itself: `typeof window.RoyShellSync.schedule === 'function'`                                                                    |
-| An attempt loads the drain page     | the worker's WebView appears as a `sync-flush.html` target in `adb forward …/json`, and `logcat` carries its `page: …` console line           |
-| A page that says nothing comes back | `RoySyncFlush: queued another attempt: the page reported nothing (the drain page did not report within 60000ms)`                              |
-| A clean report ends the attempt     | `e2e/sync-flush.spec.ts` loads the same page against a production build and gets `pending: 0`, one replayed intent, and the row on the server |
+| What the device showed              | Evidence                                                                                                                                                                                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Both schedules registered           | `dumpsys jobscheduler`: two jobs on `androidx.work…SystemJobService`, `initial backoff +30s`                                                                                                                                                  |
+| The bridge is live in the page      | from the page itself: `typeof window.RoyShellSync.schedule === 'function'`                                                                                                                                                                    |
+| An attempt loads the drain page     | the worker's WebView appears as a `sync-flush.html` target in `adb forward …/json`, and `logcat` carries its `page: …` console line                                                                                                           |
+| A page that says nothing comes back | `RoySyncFlush: queued another attempt: the page reported nothing (the drain page did not report within 60000ms)`                                                                                                                              |
+| A clean report ends the attempt     | `e2e/sync-flush.spec.ts` loads the same page against a production build and gets `pending: 0`, one replayed intent, and the row on the server; on hardware the worker's own line is `RoySyncFlush: drained (failed=0)`, one attempt, no retry |
 
 **Two limits of this drill, and both are environmental.** The image's WebView is 83.0.4103.106, below the
 shell's floor of 111 (ADR-0067): the site's bundles use syntax it cannot parse (`SyntaxError: Unexpected
@@ -309,6 +309,10 @@ the shell at `http://10.0.2.2:3000` therefore fails to load the app's own script
 connectivity also never reaches `VALIDATED` on a network as flaky as this one, which WorkManager's
 `CONNECTED` request includes — the jobs sit at `Unsatisfied constraints: CONNECTIVITY`. On a real device
 with working DNS neither applies.
+
+Both limits belong to that image. An API 35 image ships WebView 124 and reaches `VALIDATED`, so the
+page half runs there (`--avd Roy_API_35`, or any AVD with a current System WebView): what it measured, and
+the defect it found, are in "The real-device matrix" below.
 
 ### The drain drill
 
@@ -359,7 +363,8 @@ half and exits `2` with that explanation, instead of replaying the dead end. Mea
 exit `2`, emulator killed. The two paths that run the whole drill are **a real device** (`--device
 <serial>`, where the page-driven `schedule()` signal also works) and **the Chromium stand-in**
 (`SYNC_FLUSH_E2E=1 npx playwright test e2e/sync-flush.spec.ts`), which covers the page half but not the
-worker. No script can make the API 30 image do more than the worker half in the table above.
+worker. No script can make the API 30 image do more than the worker half in the table above — a newer
+image can, and did: see "The real-device matrix".
 
 **If the worker never runs**, the drill's timeout prints `dumpsys jobscheduler` for the package.
 `Unsatisfied constraints: CONNECTIVITY` is the environmental limit above, not a shell defect: the
@@ -428,18 +433,27 @@ The cases that stay manual, and why:
 The run prints its three rows as a markdown table; paste them over the three scripted rows below.
 A row that says `_(manual)_` has not been measured by anything, and should not read as if it had.
 
-| Case                     | Expected                                                                 | Observed            |
-| ------------------------ | ------------------------------------------------------------------------ | ------------------- |
-| Force-stop               | nothing until launch                                                     | _(run `--matrix`)_  |
-| Doze                     | deferred while idle, drains after release                                | _(run `--matrix`)_  |
-| Process death mid-flush  | one habit, no duplicate                                                  | _(run `--matrix`)_  |
-| FCM wake, backgrounded   | the drain runs without the app being opened                              | _(manual)_          |
-| FCM wake, killed         | the drain runs from a closed process                                     | _(manual)_          |
-| 15-minute floor          | a queued write drains within one period, with no signal                  | _(manual, 15+ min)_ |
-| No network at launch     | the shell opens, the queue waits, and it drains when the network returns | _(manual)_          |
-| Low storage / full quota | the failure is visible and the write is not silently lost                | _(manual)_          |
-| Worker swap mid-queue    | the queue survives the swap and each intent is delivered once            | _(manual)_          |
-| Several tabs             | one intent per write, not one per tab                                    | _(manual)_          |
+Measured on `Roy_API_35` (Android 15, System WebView 124.0.6367.219, connectivity `VALIDATED`),
+2026-10-21, against a production build served locally — the first run that reached the page half at
+all (the two limits above are properties of the API 30 image, not of the shell: an API 35 image has
+WebView 124 and reaches `VALIDATED` here, so `--avd <that AVD>` runs the whole drill). It found
+[#484](https://github.com/royaraqamia/royaraqamia/issues/484): the worker read the drain page's
+`"error": null` through Android's `optString`, which stringifies a JSON null to `"null"`, so a clean
+drain logged `the drain failed: null`, retried five times, then gave up — `drained (failed=0)` only
+appears once that fix is in the build.
+
+| Case                     | Expected                                                                 | Observed                                                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Force-stop               | nothing until launch                                                     | pass — nothing for 60s; the launch delivered exactly one                                                                                                                                             |
+| Doze                     | deferred while idle, drains after release                                | fail — nothing drained inside the release window; the habit was on the server after the next launch, so the queue was late, not lost ([#485](https://github.com/royaraqamia/royaraqamia/issues/485)) |
+| Process death mid-flush  | one habit, no duplicate                                                  | pass — `SIGKILL` landed mid-flush; the retry delivered exactly one                                                                                                                                   |
+| FCM wake, backgrounded   | the drain runs without the app being opened                              | _(manual)_                                                                                                                                                                                           |
+| FCM wake, killed         | the drain runs from a closed process                                     | _(manual)_                                                                                                                                                                                           |
+| 15-minute floor          | a queued write drains within one period, with no signal                  | _(manual, 15+ min)_                                                                                                                                                                                  |
+| No network at launch     | the shell opens, the queue waits, and it drains when the network returns | _(manual)_                                                                                                                                                                                           |
+| Low storage / full quota | the failure is visible and the write is not silently lost                | _(manual)_                                                                                                                                                                                           |
+| Worker swap mid-queue    | the queue survives the swap and each intent is delivered once            | _(manual)_                                                                                                                                                                                           |
+| Several tabs             | one intent per write, not one per tab                                    | _(manual)_                                                                                                                                                                                           |
 
 ### The wake
 
