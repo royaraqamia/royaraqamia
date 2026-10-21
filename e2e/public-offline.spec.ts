@@ -146,6 +146,88 @@ test('a never-visited public route deep-links offline from the install precache'
   await context.close();
 });
 
+test('a community search names the connection when the request never leaves, and retries in place', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  await gotoUnderWorkerControl(page, `${baseURL}/community`);
+  const search = page.getByRole('combobox', { name: 'ابحث عن الأعضاء أو المنشورات' });
+  await expect(search).toBeVisible();
+
+  // A failed read is not "no results" (ADR-0031): the panel names the
+  // connection instead, and carries the same request as its retry (#475).
+  await context.setOffline(true);
+  await search.fill('اختبار');
+  const needsConnection = page.getByRole('status').filter({ hasText: 'يتطلَّب الاتصال بالإنترنت' });
+  await expect(needsConnection).toBeVisible();
+  await expect(page.getByText(/لا توجد نتائج/)).toHaveCount(0);
+
+  await context.setOffline(false);
+  await needsConnection.getByRole('button', { name: 'إعادة المحاولة' }).click();
+  await expect(needsConnection).toHaveCount(0);
+
+  await context.close();
+});
+
+test('a community load-more that never leaves keeps the loaded page and names the connection', async ({
+  page,
+  baseURL,
+}) => {
+  // The first page is answered here so the feed has a cursor to load more from;
+  // only the second request fails, which is the state under test.
+  const firstPage = {
+    posts: [
+      {
+        id: 'p-seed',
+        author_id: 'u-1',
+        slug: 'seed',
+        content: 'منشور تجريبيّ',
+        status: 'published',
+        cover_image: null,
+        meta_title: null,
+        meta_desc: null,
+        published_at: '2026-01-01T00:00:00.000Z',
+        publish_at: null,
+        view_count: 0,
+        featured: false,
+        community_visible: true,
+        reading_time_minutes: 3,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    nextCursor: 'next',
+  };
+
+  await page.route(
+    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'seed',
+    (route) => route.fulfill({ json: firstPage })
+  );
+  await page.route(
+    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'next',
+    (route) => route.abort('failed')
+  );
+
+  await page.goto(`${baseURL}/community?cursor=seed`);
+  await expect(page.getByText('منشور تجريبيّ')).toBeVisible();
+
+  await page.getByRole('link', { name: 'تحميل المزيد من المنشورات' }).click();
+
+  await expect(
+    page.getByRole('status').filter({ hasText: 'يتطلَّب الاتصال بالإنترنت' })
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'إعادة المحاولة' })).toBeVisible();
+  await expect(page.getByText('منشور تجريبيّ')).toBeVisible();
+});
+
 test('a never-visited dynamic detail route lands on /offline, then renders after one visit', async ({
   browser,
   baseURL,

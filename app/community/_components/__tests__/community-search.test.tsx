@@ -106,6 +106,20 @@ describe('CommunitySearch', () => {
     expect(screen.queryByText(/لا توجد نتائج/)).not.toBeInTheDocument();
   });
 
+  it('shows an ordinary error, not the connection state, when the server refuses the search', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({ success: false, error: 'طلبات كثيرة. أعد المحاولة بعد قليل.' }),
+    });
+    render(<CommunitySearch />);
+
+    await typeQuery('ahmad');
+
+    expect(screen.getByText('لم يكتمل الطَّلب')).toBeInTheDocument();
+    expect(screen.queryByText('يتطلَّب الاتصال بالإنترنت')).not.toBeInTheDocument();
+  });
+
   it('retries the failed search and shows its results', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
     render(<CommunitySearch />);

@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
-import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { request } from '@/frontend/transport/http';
+import {
+  ReadFailureNotice,
+  toReadFailure,
+  type ReadFailure,
+} from '@/frontend/ui/shared/read-failure';
 import { CommunityResults } from './community-results';
 
 interface CommunityIndexResultsProps {
@@ -16,9 +21,8 @@ interface IndexData {
   nextCursor: string | null;
 }
 
-const PAGE_ERROR = 'تعذَّر تحميل المنشورات — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
-const LOAD_MORE_ERROR =
-  'تعذَّر تحميل المزيد من المنشورات — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
+const PAGE_ERROR = 'تعذَّر تحميل المنشورات. أعد المحاولة.';
+const LOAD_MORE_ERROR = 'تعذَّر تحميل المزيد من المنشورات. أعد المحاولة.';
 
 function fetchIndex(
   cursor: string | null,
@@ -30,10 +34,9 @@ function fetchIndex(
   if (query) params.set('q', query);
   const search = params.toString();
 
-  return fetch(`/api/community/index${search ? `?${search}` : ''}`, { signal }).then((res) => {
-    if (!res.ok) throw new Error('failed to load community index');
-    return res.json() as Promise<IndexData>;
-  });
+  // Through the transport so a request that never left is distinguishable from a
+  // server that answered with a failure (#475): the two get different states.
+  return request<IndexData>(`/api/community/index${search ? `?${search}` : ''}`, { signal });
 }
 
 function CommunityFeedSkeleton() {
@@ -82,8 +85,8 @@ export function CommunityIndexResults({
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [ready, setReady] = useState(isDefault);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [pageError, setPageError] = useState<ReadFailure | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<ReadFailure | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -93,7 +96,7 @@ export function CommunityIndexResults({
       setReady(true);
       setIsLoadingMore(false);
       setPageError(null);
-      setLoadMoreError(false);
+      setLoadMoreError(null);
       return;
     }
 
@@ -101,7 +104,7 @@ export function CommunityIndexResults({
     setReady(false);
     setIsLoadingMore(false);
     setPageError(null);
-    setLoadMoreError(false);
+    setLoadMoreError(null);
 
     fetchIndex(cursor, query, controller.signal)
       .then((json) => {
@@ -110,8 +113,8 @@ export function CommunityIndexResults({
         setReady(true);
       })
       .catch((error: unknown) => {
-        if ((error as { name?: string })?.name === 'AbortError') return;
-        setPageError(PAGE_ERROR);
+        if (controller.signal.aborted) return;
+        setPageError(toReadFailure(error, PAGE_ERROR));
         setReady(true);
       });
 
@@ -122,14 +125,14 @@ export function CommunityIndexResults({
     if (isLoadingMore || !nextCursor) return;
     const requestCursor = nextCursor;
     setIsLoadingMore(true);
-    setLoadMoreError(false);
+    setLoadMoreError(null);
     fetchIndex(requestCursor, query)
       .then((json) => {
         setPosts((prev) => [...prev, ...json.posts]);
         setNextCursor(json.nextCursor);
       })
       .catch((error: unknown) => {
-        if ((error as { name?: string })?.name !== 'AbortError') setLoadMoreError(true);
+        setLoadMoreError(toReadFailure(error, LOAD_MORE_ERROR));
       })
       .finally(() => setIsLoadingMore(false));
   }, [isLoadingMore, nextCursor, query]);
@@ -140,8 +143,8 @@ export function CommunityIndexResults({
 
   if (pageError) {
     return (
-      <NeedsConnection
-        message={pageError}
+      <ReadFailureNotice
+        failure={pageError}
         onRetry={handleRetryPage}
         className="my-8 rounded-3xl border border-border bg-muted/20"
       />
@@ -155,7 +158,7 @@ export function CommunityIndexResults({
       query={query}
       onLoadMore={handleLoadMore}
       isLoadingMore={isLoadingMore}
-      loadMoreError={loadMoreError ? LOAD_MORE_ERROR : null}
+      loadMoreError={loadMoreError}
       onRetryLoadMore={handleLoadMore}
     />
   );
