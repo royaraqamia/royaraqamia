@@ -205,6 +205,8 @@ Honest list of what stands between us and the bar, each with the file that shows
 | App shell, icons, fonts                                                        | cache-first                                                                |
 | Public navigation / RSC payloads                                               | stale-while-revalidate (+ "updated X ago")                                 |
 | Auth + account document shells                                                 | stale-while-revalidate (#447, #448; shell only, no account-bearing render) |
+| Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
+| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
 | Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)          | stale-while-revalidate (#449; shell only, painted from the Local Store)    |
 | Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
 | Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |

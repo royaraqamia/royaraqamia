@@ -67,6 +67,9 @@ function select(overrides = {}) {
 }
 
 describe('public route shell derivation', () => {
+  it('keeps only prerendered public static pages, with the auth and account shells in', () => {
+    expect(select()).toEqual([
+      '/account',
   it('keeps only prerendered public static pages, with the auth, account and product shells in', () => {
     expect(select()).toEqual([
       '/account',
