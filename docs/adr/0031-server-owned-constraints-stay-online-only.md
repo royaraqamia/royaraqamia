@@ -123,3 +123,30 @@ Hygiene is unchanged by construction: sign-out still plays `PURGE_ACCOUNT_CACHES
 expiry still purges on its way to `/auth/login?session_expired=1`. The cached shells join the
 precached set sign-out keeps, exactly like the auth shells — they are the same data-free kind of
 document.
+
+## Amendment (2026-10-21, #450): the last two shells, and the consent document that stays a network read
+
+The `/mcp/guide` row above is reversed; the rest of the table stands.
+
+`/downloader` and `/consultation/book` were the last two `force-dynamic` user-facing pages, and
+neither needed to be. The downloader's link inspection was always a client call, and the booking
+page's package list is the read `useBookingFlow` already performs when it is handed no initial list.
+Both are now static, data-free documents — the booking page's optional sign-in hint comes from the
+session provider instead of `getOptionalUser` — so the worker caches and precaches them (ADR-0071).
+What this ADR owns does not move: the downloader disables its submit and names the connection while
+the browser is offline, and the booking flow keeps the availability and package failure states with
+their retries and refuses to queue a slot. `/api/consultation` and `/api/downloader` stay
+never-cache.
+
+`/mcp/guide` leaves the `/mcp` never-cache prefix, because that prefix was protecting the protocol
+endpoint and the consent document, not a document of static instructions. `/mcp` is now an exact
+entry, and `/mcp/connect` (which covers `/mcp/connect/consent`), `/mcp/authorize`, `/mcp/register`,
+`/mcp/revoke` and `/mcp/token` keep their own prefixes.
+
+`/mcp/connect` itself stays a network document, and this amendment records that as the decision
+rather than as a gap left behind. It renders the client asking for the grant, so it is data-bearing;
+its URL carries `client_id`, `redirect_uri`, `code_challenge` and `state`, so a precached bare path
+cannot answer it; and the grant is a server POST that re-validates all of it before minting a code.
+A cached shell would either show the wrong client's consent chrome or answer nothing, and neither is
+better than the in-page `NeedsConnection` state #368 already put there. `/offline`'s remaining doors
+are therefore a brand-new install's first hit with no network, `/admin`, and this consent document.

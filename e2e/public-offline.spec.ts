@@ -129,10 +129,18 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page).toHaveURL(/\/habitflow$/);
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
-  // The never-cache boundary still holds where the data is: an account
-  // navigation falls back to `/offline`.
-  await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/account$/);
+
+  // The two Phase 3 shells (#450) are data-free documents too: a deep link to a
+  // never-opened `/downloader` or `/consultation/book` paints its own chrome,
+  // and the reads underneath it answer with their own needs-connection states.
+  await page.goto(`${baseURL}/downloader`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/downloader$/);
+  await expect(page.getByRole('heading', { name: 'مُنزِّل الوسائط' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
+  await page.goto(`${baseURL}/consultation/book`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/consultation\/book$/);
+  await expect(page.getByRole('heading', { name: 'حجز استشارة' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await context.close();

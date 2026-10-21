@@ -73,10 +73,6 @@
   // shell is a static client page with nothing account-bearing rendered into
   // it, and every read under it that *is* account-bearing keeps its own
   // never-cache prefix here.
-  // Two document-shell exceptions ride the SWR cache instead, on the same
-  // principle in both: the shell is a static client page with nothing
-  // account-bearing rendered into it, and every read under it that *is*
-  // account-bearing keeps its own never-cache prefix here.
   //
   // - The auth document shells since #447: submitting still needs the server —
   //   Turnstile and Supabase cannot run offline — and every auth form answers
@@ -93,13 +89,11 @@
   //   read under them is on an `/api` prefix below. Two subroutes still render
   //   server-side data and keep their own entries: the SpendTrack categories
   //   page and the BlogPress editor.
-  // The auth document shells are the one deliberate exception since #447: the
-  // forms are static client pages with nothing account-bearing in them, so their
-  // shells ride the SWR cache and an offline reload paints the form instead of
-  // the offline page. Submitting still needs the server — Turnstile and Supabase
-  // cannot run offline — and every auth form answers that with its own inline
-  // needs-connection state (ADR-0031). The auth route handlers keep their own
-  // never-cache prefixes so a session read never lands in shared Cache Storage.
+  // - The `/mcp` root since #450 is an exact entry rather than a prefix: the
+  //   protocol endpoint itself must never be read from a cache, while
+  //   `/mcp/guide` is static instructions with nothing to lose and now rides the
+  //   SWR cache. The consent document and the OAuth handlers keep their own
+  //   prefixes.
   const NEVER_CACHE_PREFIXES = [
     '/api/auth',
     '/api/admin',
@@ -115,7 +109,15 @@
     // that must never be replayed from a cache, not a shell.
     '/auth/callback',
     '/admin',
-    '/mcp',
+    '/mcp/authorize',
+    // The consent document is data-bearing by construction: it renders the
+    // client asking for the grant, and the POST that decides is a server action.
+    // Its URL carries the OAuth parameters, which a precached bare path cannot
+    // answer anyway (#450).
+    '/mcp/connect',
+    '/mcp/register',
+    '/mcp/revoke',
+    '/mcp/token',
     '/api/training',
     '/api/project-requests',
     '/api/retainers',
@@ -127,7 +129,12 @@
     '/blogpress/editor',
   ];
 
+  // Paths that are exactly a never-cache surface: a prefix would also swallow
+  // their neighbours (`/mcp` is the protocol endpoint; `/mcp/guide` is a page).
+  const NEVER_CACHE_EXACT = ['/mcp'];
+
   function isNeverCache(url) {
+    if (NEVER_CACHE_EXACT.includes(url.pathname)) return true;
     return NEVER_CACHE_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
   }
 
@@ -144,5 +151,6 @@
     isPubliclyCacheable,
     isNeverCache,
     NEVER_CACHE_PREFIXES,
+    NEVER_CACHE_EXACT,
   };
 })();

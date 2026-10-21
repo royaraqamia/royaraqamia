@@ -49,6 +49,21 @@ against a routing mistake multiplying the install, no longer smaller than the
 set it is supposed to bound. The 6 MB ceiling and ADR-0069's cache budget are
 unchanged, and neither is close.
 
+## Amendment: the measured install budget (#450)
+
+The list is re-measured on the #450 build instead of being carried forward. The build prerendered 29
+route documents totalling **1,705,315 bytes (1.63 MB)** of HTML — measured from the files the build
+wrote, and the same 29 routes the generated `public/sw-precache.js` lists. Three documents joined the
+set (`/downloader`, `/consultation/book`, `/mcp/guide`); the largest entries are still the content
+pages (`/quran` 234,859 bytes, `/community` 216,007), not the shells.
+
+Both ceilings hold with room to spare: 29 routes against the 32-route cap, and 1.63 MB against the
+6 MB install ceiling — 28% of it. The cap stays at 32 because it is a guard against a routing
+mistake multiplying the install, not a target to fill: three more shells would fit, and a build that
+crosses it drops the sorted tail, which is why the cap and the list are re-checked together.
+ADR-0069's 150 MB cache budget is untouched by the install, and the worker still spends the smaller
+of the two.
+
 ## Budget
 
 Two ceilings bound the install:

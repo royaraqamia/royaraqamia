@@ -75,6 +75,15 @@ describe('sw-routing predicates', () => {
 
   it('is never-cache for online-only surfaces', () => {
     for (const path of [
+      // The MCP protocol endpoint is an exact entry: a prefix would also swallow
+      // `/mcp/guide`, which is a cacheable public document (#450).
+      '/mcp',
+      '/mcp/connect',
+      '/mcp/connect/consent',
+      '/mcp/authorize',
+      '/mcp/register',
+      '/mcp/revoke',
+      '/mcp/token',
       '/api/auth/login',
       '/api/admin/users',
       // The admin certificate list and detail carry student names and codes;
@@ -93,7 +102,6 @@ describe('sw-routing predicates', () => {
       '/auth/api/login',
       '/auth/callback',
       '/admin/training',
-      '/mcp/connect',
       // The product dashboard roots are cached shells since #449 (ADR-0073);
       // their APIs and the two server-rendered subroutes keep the prefix.
       '/spendtrack/categories',
@@ -148,6 +156,17 @@ describe('sw-routing predicates', () => {
       '/account/submissions',
       '/account/faq',
     ]) {
+      expect(routing.isNeverCache(u(path))).toBe(false);
+    }
+  });
+
+  it('caches the Phase 3 shells and keeps their actions online-only (#450)', () => {
+    // `/downloader` and `/consultation/book` are data-free documents since #450:
+    // their reads are on the never-cache `/api/downloader` and
+    // `/api/consultation` prefixes, and the submitting action stays a live
+    // server call. `/mcp/guide` is instructions alone, so it left the `/mcp`
+    // prefix that the protocol endpoint and the consent document still hold.
+    for (const path of ['/downloader', '/consultation/book', '/mcp/guide']) {
       expect(routing.isNeverCache(u(path))).toBe(false);
     }
   });

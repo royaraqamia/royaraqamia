@@ -40,9 +40,10 @@ const APP_PATHS = {
 // Every public page here is prerendered; the never-cache and dynamic filters
 // have to do the excluding, not the prerender manifest alone. The fixture
 // mirrors the real worker: the auth API and the OAuth callback keep their
-// never-cache prefixes while the document shells became cacheable (#447), and
-// the account shells joined them once their guard moved client-side (#448).
-// never-cache prefixes while the document shells became cacheable (#447).
+// never-cache prefixes while the document shells became cacheable (#447), the
+// account shells joined them once their guard moved client-side (#448), and
+// since #450 the fixture keeps `/mcp/connect` rather than all of `/mcp`, so the
+// guide is a precache candidate.
 const PRERENDERED = Object.fromEntries(
   Object.values(APP_PATHS).map((route) => [route, { srcRoute: null }])
 );
@@ -51,7 +52,7 @@ const NEVER_CACHE = [
   '/auth/api',
   '/auth/callback',
   '/admin',
-  '/mcp',
+  '/mcp/connect',
   '/spendtrack/api',
   '/spendtrack/categories',
   '/blogpress/editor',
@@ -67,9 +68,6 @@ function select(overrides = {}) {
 }
 
 describe('public route shell derivation', () => {
-  it('keeps only prerendered public static pages, with the auth and account shells in', () => {
-    expect(select()).toEqual([
-      '/account',
   it('keeps only prerendered public static pages, with the auth, account and product shells in', () => {
     expect(select()).toEqual([
       '/account',
@@ -79,21 +77,11 @@ describe('public route shell derivation', () => {
       '/community',
       '/habitflow',
       '/linksnap',
+      '/mcp/guide',
       '/privacy',
       '/quran',
       '/rates',
       '/spendtrack',
-  it('keeps only prerendered public static pages, with the auth and account shells in', () => {
-    expect(select()).toEqual([
-      '/account',
-  it('keeps only prerendered public static pages, with the auth shells in', () => {
-    expect(select()).toEqual([
-      '/auth/error',
-      '/auth/login',
-      '/community',
-      '/privacy',
-      '/quran',
-      '/rates',
       '/terms',
       '/verify',
     ]);
@@ -135,7 +123,6 @@ describe('public route shell derivation', () => {
   it('caps the list and keeps it deterministic', () => {
     const routes = select({ maxRoutes: 2 });
     expect(routes).toEqual(['/account', '/auth/error']);
-    expect(routes).toEqual(['/auth/error', '/auth/login']);
     expect(select({ maxRoutes: MAX_PRECACHE_ROUTES })).toEqual(select());
   });
 

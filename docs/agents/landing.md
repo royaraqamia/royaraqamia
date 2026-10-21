@@ -51,6 +51,7 @@ since the last fetch, which is half of what makes a landed branch stay gone.
 ```powershell
 git worktree add -b <branch> <dir> main
 ```
+
 Then cut the branch — always from `origin/main`, never from local `main`: a merge-base above
 `origin/main` inflates the pull request's diff with the still-open squash copies, and a worktree
 inherits whatever HEAD it is cut from ([worktrees.md](worktrees.md)). `--prune` drops the remote
