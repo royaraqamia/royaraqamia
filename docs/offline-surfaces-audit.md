@@ -36,8 +36,9 @@ Each route's client path was read rather than its intent:
 | Consultation Booking                                       | **Did not hold.** Booking was refused offline with a banner, but the availability read had no failure state: a request that never reached the server rendered as "no appointments are open". Closed in this change. |
 | Auth, Push, Media Downloader, Rates refresh, MCP, Admin    | **Partly.** Three of the six needed work; see the next table.                                                                                                                                                       |
 
-Two route-level reads outside the table also fail silently today (Community's "load more" and search).
-They are reads of cached public content rather than offline-capable surfaces, so they are recorded
+Two route-level reads outside the table also failed silently at the time of the audit (Community's "load
+more" and search; closed since, see [the mechanical leftovers](#the-mechanical-leftovers-closed-2026-10-21-475)).
+They are reads of cached public content rather than offline-capable surfaces, so they were recorded
 below rather than closed here.
 
 ## ADR-0031 surfaces, one by one
@@ -95,15 +96,16 @@ private spelling of the same state.
 Each is a fix in the file named rather than a decision, so none of them needs an issue of its own:
 
 - Community "load more" swallows its failure — the button appears to do nothing
-  (`app/community/_components/community-index-results.tsx:112`).
+  (`app/community/_components/community-index-results.tsx:112`; closed in #416, sharpened in #475).
 - Community search swallows its failure — offline reads as «لا توجد نتائج»
-  (`app/community/_components/community-search.tsx:68`).
+  (`app/community/_components/community-search.tsx:68`; closed in #416, sharpened in #475).
 - Admin user lookup swallows its failure — an empty picker rather than a failed one
   (`frontend/ui/admin/user-select.tsx:60`; also under #368, closed there).
 - Admin certificate edit swallows its failure — the page loads into an empty form
   (`app/admin/certificates/[id]/edit/page.tsx:26`; closed in #368).
 - A failed BlogPress media upload surfaces the raw English `Failed to fetch`
-  (`frontend/state/blogpress/use-post-upload.ts:94` from `frontend/api/blogpress.ts:41`).
+  (`frontend/state/blogpress/use-post-upload.ts:94` from `frontend/api/blogpress.ts:41`; closed by the
+  transport wrapper in #402, and the last English literal on the replay path in #475).
 - A Local Store that fails to open only logs; the lead path still degrades to the network
   (`frontend/state/leads/use-lead-submission.ts:141`, `frontend/state/blogpress/use-blogpress-store.ts:103`).
 
@@ -173,4 +175,26 @@ per route for the reason each one exists:
 The route-level floor is therefore two doors — a brand-new install's first hit with no network, and
 `/admin` — plus this one surface that knocks on the network for a document it cannot safely be
 handed a cached copy of. The mechanical leftovers in the list above (Community's read failures, the
-raw `Failed to fetch` string) are still open and still need no issue of their own.
+raw `Failed to fetch` string) are closed as of #475; what the list still records is a Local Store that
+fails to open, which degrades to the network rather than misreporting a state.
+
+## The mechanical leftovers, closed (2026-10-21, #475)
+
+The audit's last two mechanical rows needed a cause, not a string.
+
+- **Community's reads name the right cause.** The page, the search combobox and "load more" now read
+  through `frontend/transport/http.ts` instead of calling `fetch` themselves, so an `ApiError` with no
+  status means the request never left. That state keeps `NeedsConnection` — inline where a control
+  failed, as a block where the whole feed failed — while a server that answered with a failure renders
+  `ReadFailureNotice`'s ordinary error card. Both keep their retry in place: the page re-runs its
+  cursor/query, the combobox re-issues the same term, "load more" asks for the same cursor again.
+  #416 had already stopped both from swallowing the failure; this is the half that stops them from
+  blaming the connection for a 400 or a 429.
+- **BlogPress keeps the Arabic message.** The raw `Failed to fetch` was the transport's own unwrapped
+  rejection, fixed for every product by #402. What remained was the queued-attachment replay, whose
+  "answered without a URL" branch threw an English literal the sync pill and `/device` render; it now
+  says `فشل رفع الصُّورة. أعد المحاولة.`, and a unit test pins that a media upload that never left
+  reports the Arabic transport message rather than a browser string.
+
+`frontend/ui/shared/read-failure.tsx` holds the two-state presentation so the next read that fails has
+one component to reach for, the way `needs-connection.tsx` did for the offline half.

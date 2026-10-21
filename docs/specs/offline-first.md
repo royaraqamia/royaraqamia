@@ -155,7 +155,10 @@ Honest list of what stands between us and the bar, each with the file that shows
    `/consultation/book` are data-free cached shells whose actions name the connection, `/mcp/guide` left
    the `/mcp` never-cache prefix, and `/mcp/connect` stays a network document for the reason the
    [Limits of instant](#limits-of-instant) records. The mechanical leftovers (Community's read failures,
-   one raw error string) remain, each with the file that shows it.
+   one raw error string) were closed by #475: the feed's page, search and "load more" reads now go through
+   the transport, so an unreachable server names the connection and an answered failure is an ordinary
+   error card — each with its own retry — and the BlogPress upload replay speaks Arabic instead of an
+   English literal.
 
 ## Architecture
 
