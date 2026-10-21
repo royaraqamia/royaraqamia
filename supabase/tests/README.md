@@ -30,6 +30,11 @@ test here.
 - A signed-in non-admin cannot insert a certificate. The role holds the table-level
   `INSERT` grant, so the admin-only policy is what has to refuse it.
 - A user cannot set their own `users.is_admin`, nor rewrite their own `users.email`.
+- `project_requests` and `retainers` are service-role only: a signed-in user cannot insert,
+  and `anon` cannot read.
+- `short_links` writes are service-role only: neither `anon` nor `authenticated` holds
+  `INSERT`/`UPDATE`/`DELETE`, no write policy is left, and `upsert_short_link` refuses both
+  roles while `service_role` keeps execute. The owner-scoped `short_links_read` stays.
 
 Every write attempt in the file is expected to be _refused_, so a failed rollback cannot
 leave data behind.
