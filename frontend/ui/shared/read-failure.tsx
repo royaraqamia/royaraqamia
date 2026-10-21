@@ -21,7 +21,19 @@ export interface ReadFailure {
 }
 
 export function toReadFailure(error: unknown, message: string): ReadFailure {
-  return { offline: error instanceof ApiError && error.isNetworkError, message };
+  return { offline: neverReachedServer(error), message };
+}
+
+/**
+ * The service worker answers a GET that cannot reach the network with a
+ * synthetic `503 Offline` (`public/sw.js`, the API and online-only branches), so
+ * an offline read arrives as an answered failure with no status-less ApiError to
+ * read. The browser's own signal is the remaining evidence, and it is the same
+ * one the Local Store paths already consult before choosing the network.
+ */
+function neverReachedServer(error: unknown): boolean {
+  if (error instanceof ApiError && error.isNetworkError) return true;
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
 interface ReadFailureNoticeProps {

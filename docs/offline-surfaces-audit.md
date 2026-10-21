@@ -183,13 +183,14 @@ fails to open, which degrades to the network rather than misreporting a state.
 The audit's last two mechanical rows needed a cause, not a string.
 
 - **Community's reads name the right cause.** The page, the search combobox and "load more" now read
-  through `frontend/transport/http.ts` instead of calling `fetch` themselves, so an `ApiError` with no
-  status means the request never left. That state keeps `NeedsConnection` — inline where a control
-  failed, as a block where the whole feed failed — while a server that answered with a failure renders
-  `ReadFailureNotice`'s ordinary error card. Both keep their retry in place: the page re-runs its
-  cursor/query, the combobox re-issues the same term, "load more" asks for the same cursor again.
-  #416 had already stopped both from swallowing the failure; this is the half that stops them from
-  blaming the connection for a 400 or a 429.
+  through `frontend/transport/http.ts` instead of calling `fetch` themselves, so a status-less
+  `ApiError` means the request never left — and because the worker answers an unreachable GET with a
+  synthetic `503`, `navigator.onLine === false` counts as the same evidence. That state keeps
+  `NeedsConnection` — inline where a control failed, as a block where the whole feed failed — while a
+  server that answered with a failure renders `ReadFailureNotice`'s ordinary error card. Both keep
+  their retry in place: the page re-runs its cursor/query, the combobox re-issues the same term, "load
+  more" asks for the same cursor again. #416 had already stopped both from swallowing the failure;
+  this is the half that stops them from blaming the connection for a 400 or a 429.
 - **BlogPress keeps the Arabic message.** The raw `Failed to fetch` was the transport's own unwrapped
   rejection, fixed for every product by #402. What remained was the queued-attachment replay, whose
   "answered without a URL" branch threw an English literal the sync pill and `/device` render; it now

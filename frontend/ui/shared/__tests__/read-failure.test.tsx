@@ -55,4 +55,21 @@ describe('toReadFailure', () => {
       message: 'تعذّر التحميل.',
     });
   });
+
+  it('reads the worker’s synthetic 503 as unreachable when the browser is offline', () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    expect(
+      toReadFailure(new ApiError('تعذّر إتمام الطلب. أعد المحاولة.', 503), 'تعذّر التحميل.')
+    ).toEqual({ offline: true, message: 'تعذّر التحميل.' });
+
+    onLine.mockRestore();
+  });
+
+  it('keeps an answered 503 as a server failure while the browser is online', () => {
+    expect(toReadFailure(new ApiError('الخدمة متوقفة مؤقتًا.', 503), 'تعذّر التحميل.')).toEqual({
+      offline: false,
+      message: 'تعذّر التحميل.',
+    });
+  });
 });
