@@ -54,14 +54,17 @@ the junction out.
 ## Land the work
 
 Commit in the worktree, confirm the commit exists (`git log --oneline -1` — a lost commit looks like a
-successful one), push the branch, and open a pull request. That is where an agent stops: the merge is
-the repository owner's manual step ([landing.md](landing.md)).
+successful one), push the branch, and open a pull request. Finish with the local squash
+([landing.md](landing.md), step 6), then stop: the GitHub merge is the repository owner's manual step
+([ADR-0066](../adr/0066-agents-stop-at-the-open-pull-request.md) and its amendment).
 
-Landing from a worktree does **not** update the canonical checkout by itself: it sits behind
-`origin/main` until the owner merges and someone pulls there. That is expected while a pull request is
-open — the branch has to stay until it is merged — and if the checkout holds unpushed work of its own
-it is diverged rather than merely behind (measured: `ahead 1, behind 1` right after a worktree push).
-Reconcile it after the merge.
+Landing from a worktree updates the canonical checkout once more than it used to: after the pull
+request opens, the branch's content is squash-merged into local `main`, so the checkout carries the
+landed record instead of sitting behind `origin/main` until the owner merges. Two states are expected
+while a pull request is open — `main` ahead with open squash copies, and, once the owner merges from
+GitHub, `ahead, behind`, which the next task's step-1 reconcile resolves. The rule unchanged:
+concurrent `git` in the canonical checkout is not safe, so the squash commits in the task's own
+worktree and the checkout only receives a pointer move (landing.md step 6).
 
 ## Delegated agents
 
