@@ -1,24 +1,51 @@
 # Landing the work
 
 Every task runs the same loop, without being asked: start from the current remote, commit, push, and
-open a pull request. The loop stops there — the merge is the repository owner's manual step, and no
-agent merges. `/land` runs it in one go.
+open a pull request — then squash-merge the branch into the canonical checkout's local `main` and
+stop (step 6). The GitHub merge is the repository owner's manual step: an agent never runs
+`gh pr merge`, never enables auto-merge, and never passes `--delete-branch` (ADR-0066 and its
+amendment). The local squash is the checkout's record of what was landed, not a merge to the remote;
+the reconcile that reads it is the start of the next task.
 
 Work from your own worktree, never the canonical checkout — the guard refuses `git commit` and
 `git push` there, and for good reason ([worktrees.md](worktrees.md)).
 
-## 1. Start in sync
+## 1. Start in sync, reconcile `main`
 
 ```powershell
 git fetch origin --prune
-git pull --ff-only                     # the canonical checkout, before the worktree exists
-git worktree add -b <branch> <dir> origin/main
 ```
 
-Cut the branch from `origin/main`, never from local `main` or from whatever the canonical checkout
-happens to hold: a worktree inherits that HEAD, stale commits and all ([worktrees.md](worktrees.md)),
-and a branch cut behind `origin/main` is a conflict waiting to be pushed. `--prune` drops the remote
+`main` in the canonical checkout carries the local squash copies earlier landings left (step 6) — one
+`<subject> (#N)` per pull request, stacked on where `origin/main` was. Read them and reconcile before
+cutting anything:
+
+```powershell
+git status -sb                                  # the canonical checkout has to be clean to reconcile
+git log --oneline origin/main..main
+gh pr list --state merged --json number --jq '.[].number'
+```
+
+- **`origin/main..main` is empty** — the normal start: `git pull --ff-only` fast-forwards.
+- **Every `(#N)` above is a PR GitHub has merged** — stale copies; `origin/main` holds the same
+  content under its own squashed hash. Drop them: `git reset --hard origin/main`.
+- **Some `(#N)` is still open** — its copy is the only local record of the not-yet-merged pull
+  request; leave `main` as it stands and the next squash chains onto it. The one exception: a
+  _merged_ copy below an _open_ one. Then start from `origin/main` and re-apply the open ones,
+  oldest first — one squad command apiece:
+
+  ```powershell
+  git merge --squash origin/<open-branch>; git commit -m "<subject> (#N)"
+  ```
+
+Then cut the branch — always from `origin/main`, never from local `main`: a merge-base above
+`origin/main` inflates the pull request's diff with the still-open squash copies, and a worktree
+inherits whatever HEAD it is cut from ([worktrees.md](worktrees.md)). `--prune` drops the remote
 branches deleted since the last fetch, which is half of what makes a landed branch stay gone.
+
+```powershell
+git worktree add -b <branch> <dir> origin/main
+```
 
 ## 2. Gate — what the change can actually break
 
@@ -81,54 +108,66 @@ gh pr create --base main --fill
 and link the issue it closes with `Closes #<n>` so the owner's merge closes it. Body conventions: the
 `pr` skill.
 
-## 6. Stop at the open pull request
+## 6. The local squash — the last step
 
-The pull request is the handoff. Report its URL and stop.
+After `gh pr create`, the branch's content is squash-merged into the canonical checkout's `main`, and
+the loop stops. The pull request itself is never touched afterward: no push to its branch, no edit,
+no `gh pr merge`, no auto-merge, no `--delete-branch`, and waiting on CI remains nobody's duty — a
+person merges on GitHub
+([ADR 0066](adr/0066-agents-stop-at-the-open-pull-request.md) and its amendment).
 
-Do **not** merge — not with `gh pr merge`, not with auto-merge, not with `--delete-branch` — and do not
-wait on CI to decide anything. The checks run on the pull request where the owner can see them; their
-result does not change what the agent does. The merge is the owner's manual step
-([ADR 0066](adr/0066-agents-stop-at-the-open-pull-request.md)).
+```powershell
+# in the task's worktree — the guard refuses agent commits in the canonical
+# checkout, and this keeps one writer per tree while doing it that way
+git branch temp/squash <local main's HEAD>
+git checkout temp/squash
+git merge --squash <task-branch>
+git commit -m "<PR title> (#<n>)"      # body = the branch's reasoning: the why, not a changelog
+git checkout <task-branch>             # the worktree returns to the pull request's branch
+git -C D:\Projects\royaraqamia reset --hard temp/squash
+git -C D:\Projects\royaraqamia branch -d temp/squash
+```
 
-Leave the branch and the worktree exactly as they are. The pull request needs the branch, and the
-worktree is where the owner (or a later session they ask) finishes the job. Do not prune, do not
-`git branch -D`, and do not fast-forward the canonical checkout: local `main` is behind `origin/main`
-until the owner merges, and that is expected.
+- **Form:** the subject is the pull request's own title with `(#<n>)`; the body is the reasoning the
+  branch already carries. The shape matches the owner's squash-and-merge, so local `main` and what
+  `origin/main` ends up holding read the same, and the `(#N)` suffix is what makes step 1's reconcile
+  mechanical.
+- **The `reset --hard` is bounded:** only after `git status -sb` shows the canonical checkout clean,
+  and only because the result's content is the pull request's own diff — the tree does not change,
+  the pointer does. A local commit on `main` that is _not_ a squash copy (`(#N)`-suffixed) is
+  unpushed work of the owner's; a reset that would swallow it must stop and report instead.
+- **One-commit branches still squash** — the form of the record is the point, not its size.
+- **The worktree and the branch stay exactly as they are** — the pull request needs the branch, and
+  the worktree is where the owner finishes a failing check.
 
 A check that fails is still worth reporting — say which one — and the pull request stays open for the
 owner either way.
 
-## 7. After the owner merges (manual)
+## 7. After the owner merges (reconciled at the next start)
 
-This half belongs to whoever merges. An agent runs it only when the owner asks it to clean up a
-merged branch. The canonical checkout is still behind `origin/main`; this is what closes the gap.
+When the owner squash-merges from GitHub, `origin/main` gains its own hash for the same change; the
+canonical checkout then reads `ahead, behind` — diverged, and that is expected. Nothing needs to run
+at the merge itself: the divergence is exactly what the next task's step-1 reconcile resolves
+(`reset --hard origin/main` once every local copy's `(#N)` reads merged). What must **not** happen is
+resolving a local `main` with commits of its own any other way: a local commit that is not a squash
+copy is unpushed work, and that is the one thing here that must stop and be reported rather than be
+reset away. If the pull request was closed unmerged, the same rule protects the copy — its `(#N)` is
+not in the merged list, so the reconcile keeps it.
 
-Immediately after the merge. The worktree has to go from outside itself, so `session_move` the
-session to the canonical checkout first — or run this in a later session there:
+Post-merge machine cleanup — worktree removal, branch deletion, `git worktree prune` — still happens
+only when the owner asks. Removing the worktree or the branch while the pull request is open takes
+away the thing it points at:
 
 ```powershell
-git worktree remove <worktree dir>     # or the worktree_remove tool
-git branch -D <branch>                 # the local branch, from the canonical checkout
-git worktree prune
-git fetch origin --prune
-git pull --ff-only                     # local main now equals origin/main
-git status -sb                         # no ahead/behind reported
+git worktree list              # find them
+git worktree remove <dir>      # remove one (refuses while dirty)
+git worktree prune             # drop records for directories already gone
 ```
 
-The last three lines are what leave the canonical checkout level with `origin/main`, so the next task
-starts from the current remote instead of from whatever the last one left behind.
-
-A worktree refuses removal while it is dirty. Check `git status` in it first, and force it
-(`git worktree remove --force` / `worktree_remove({ force: true })`) only after confirming nothing
-unlanded is in there.
-
-If the pull request was closed unmerged, the only cleanup left is the local branch — the canonical
-checkout still wants the `--ff-only` pull.
-
-If that pull refuses because local `main` has commits of its own, stop and say so: that is unpushed
-work, and it is the one thing here that must not be resolved by the loop. Hand it to whoever owns
-the checkout.
+`worktree_remove` does the same, with force as an explicit opt-in — force only after checking that
+nothing unlanded is in there.
 
 ## When there is nothing to land
 
-A task that changed no files ends at step 2. Say so rather than manufacturing a commit.
+A task that changed no files ends at step 2 — no commit, no pull request, no squash. Say so rather
+than manufacturing a commit.
