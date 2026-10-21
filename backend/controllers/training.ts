@@ -13,6 +13,7 @@ import {
 import {
   AlreadyEnrolledError,
   CohortClosedError,
+  CohortCourseMismatchError,
   CohortFullError,
   CohortNotFoundError,
   InvalidReleaseStatusError,
@@ -118,6 +119,12 @@ function mapTrainingApplicationError(error: unknown): HttpResult | null {
     return jsonResult(400, {
       success: false,
       error: 'هذه الدُّفعة مُغلَقة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof CohortCourseMismatchError) {
+    return jsonResult(400, {
+      success: false,
+      error: 'هذه الدُّفعة تخص دورةً أخرى غير دورة الطَّلب.',
     } satisfies ApplicationActionResult);
   }
   if (error instanceof AlreadyEnrolledError) {

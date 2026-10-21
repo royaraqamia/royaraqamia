@@ -8,6 +8,7 @@ import {
   generateTrainingReferenceCode,
 } from '@/backend/services/training/training-application-service';
 import {
+  CohortCourseMismatchError,
   CohortFullError,
   NotEnrolledError,
   type TrainingApplicationCreateInput,
@@ -473,6 +474,17 @@ describe('TrainingApplicationService.enroll', () => {
     });
 
     await expect(service.enroll('app-1', 'cohort-1')).rejects.toBeInstanceOf(CohortFullError);
+  });
+
+  it('propagates a cohort from another course without swallowing it', async () => {
+    const enroll = vi.fn().mockRejectedValue(new CohortCourseMismatchError());
+    const { service } = makeService({
+      repository: makeRepository({ enroll } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.enroll('app-1', 'cohort-1')).rejects.toBeInstanceOf(
+      CohortCourseMismatchError
+    );
   });
 });
 

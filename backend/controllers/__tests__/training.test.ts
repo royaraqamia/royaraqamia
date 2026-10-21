@@ -5,6 +5,7 @@ const mockList = vi.fn();
 const mockUpdate = vi.fn();
 const mockListMine = vi.fn();
 const mockUpdateOwned = vi.fn();
+const mockEnroll = vi.fn();
 const mockGetSession = vi.fn();
 const mockGetOptionalUser = vi.fn();
 const mockGetAuthUser = vi.fn();
@@ -38,16 +39,19 @@ vi.mock('@/backend/config/training', () => ({
     update: mockUpdate,
     listMine: mockListMine,
     updateOwned: mockUpdateOwned,
+    enroll: mockEnroll,
   }),
 }));
 
 import {
+  enrollTrainingApplication,
   listMyTrainingApplications,
   listTrainingApplications,
   submitTrainingApplication,
   updateMyTrainingApplication,
   updateTrainingApplication,
 } from '@/backend/controllers/training';
+import { CohortCourseMismatchError } from '@/backend/repositories/training/training-applications-repository';
 import {
   TrainingApplicationClosedError,
   TrainingApplicationEnrolledError,
@@ -277,6 +281,49 @@ describe('training controller: updateTrainingApplication', () => {
 });
 
 const USER_SESSION = { user: { id: 'user-9', email: 'user@example.com' }, client: {} };
+
+describe('training controller: enrollTrainingApplication', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
+    mockEnroll.mockResolvedValue(APPLICATION);
+  });
+
+  it('answers 401 when signed out and never reaches the service', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
+
+    const result = await enrollTrainingApplication('app-1', { cohort_id: VALID_BODY.cohort_id });
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockEnroll).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing cohort_id with a field error', async () => {
+    const result = await enrollTrainingApplication('app-1', {});
+
+    expect(result).toMatchObject({ status: 400, body: { success: false } });
+    expect(mockEnroll).not.toHaveBeenCalled();
+  });
+
+  it('enrolls with the chosen cohort', async () => {
+    const result = await enrollTrainingApplication('app-1', { cohort_id: VALID_BODY.cohort_id });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockEnroll).toHaveBeenCalledWith('app-1', VALID_BODY.cohort_id);
+  });
+
+  it('maps a cohort from another course to a typed 400, not a 500', async () => {
+    mockEnroll.mockRejectedValue(new CohortCourseMismatchError());
+
+    const result = await enrollTrainingApplication('app-1', { cohort_id: VALID_BODY.cohort_id });
+
+    expect(result).toMatchObject({
+      status: 400,
+      body: { success: false, error: 'هذه الدُّفعة تخص دورةً أخرى غير دورة الطَّلب.' },
+    });
+  });
+});
 
 describe('training controller: listMyTrainingApplications', () => {
   beforeEach(() => {

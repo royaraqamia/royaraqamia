@@ -5,6 +5,7 @@ import { createTrainingApplicationsRepository } from '@/backend/repositories/tra
 import {
   AlreadyEnrolledError,
   CohortClosedError,
+  CohortCourseMismatchError,
   CohortFullError,
   CohortNotFoundError,
   NotEnrolledError,
@@ -132,6 +133,7 @@ describe('training repository enrollment error mapping', () => {
     ['COHORT_FULL', CohortFullError],
     ['COHORT_NOT_FOUND', CohortNotFoundError],
     ['COHORT_CLOSED', CohortClosedError],
+    ['COHORT_COURSE_MISMATCH', CohortCourseMismatchError],
     ['ALREADY_ENROLLED', AlreadyEnrolledError],
   ];
 
