@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(18);
+select plan(36);
 
 -- is_admin(): identity from the verified JWT, allowlist from app_settings, and no
 -- dependence on the non-authoritative users.is_admin column.
@@ -168,6 +168,161 @@ select ok(
   has_table_privilege('authenticated', 'public.certificates', 'select'),
   'authenticated holds the table-wide SELECT grant, constrained by RLS'
 );
+
+-- short_links is service-role only for writes (#460). 20261015103957 revoked
+-- anon SELECT, but the table kept INSERT/UPDATE/DELETE for both client roles and
+-- an insert policy that accepted `user_id is null`, so the publishable key could
+-- create rows straight through the Data API and bypass the rate limit and URL
+-- validation in backend/services/linksnap/shorten-url.ts.
+-- 20261021150000_revoke_short_links_client_writes.sql closes that path.
+
+select ok(
+  not has_table_privilege('anon', 'public.short_links', 'insert'),
+  'anon has no table-wide INSERT on short_links'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.short_links', 'update'),
+  'anon has no table-wide UPDATE on short_links'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.short_links', 'delete'),
+  'anon has no table-wide DELETE on short_links'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.short_links', 'insert'),
+  'authenticated has no table-wide INSERT on short_links'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.short_links', 'update'),
+  'authenticated has no table-wide UPDATE on short_links'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.short_links', 'delete'),
+  'authenticated has no table-wide DELETE on short_links'
+);
+
+-- The owner-scoped read stays: signed-in list and analytics filter by `user_id`
+-- and the policy is what keeps that row-scoped.
+select ok(
+  has_table_privilege('authenticated', 'public.short_links', 'select'),
+  'authenticated keeps the table-wide SELECT grant, constrained by RLS'
+);
+
+select ok(
+  exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'short_links'
+      and policyname = 'short_links_read'
+      and cmd = 'SELECT'
+  ),
+  'short_links_read still exists for the owner read'
+);
+
+select ok(
+  not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'short_links'
+      and cmd in ('INSERT', 'UPDATE', 'DELETE')
+  ),
+  'short_links has no write policy left'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.upsert_short_link(text,text,uuid,timestamptz,timestamptz,boolean,timestamptz,text,uuid,timestamptz)',
+    'execute'
+  ),
+  'anon cannot execute upsert_short_link'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.upsert_short_link(text,text,uuid,timestamptz,timestamptz,boolean,timestamptz,text,uuid,timestamptz)',
+    'execute'
+  ),
+  'authenticated cannot execute upsert_short_link'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.upsert_short_link(text,text,uuid,timestamptz,timestamptz,boolean,timestamptz,text,uuid,timestamptz)',
+    'execute'
+  ),
+  'service_role keeps execute on upsert_short_link'
+);
+
+-- Granted writes are refused outright, and privilege checks run before row
+-- filtering, so these raise even when the predicate matches no row. The inserts
+-- use the pre-#460 bypass itself: `user_id = null` from an anonymous caller.
+
+set local role authenticated;
+
+select throws_ok(
+  $$insert into public.short_links
+      (code, original_url, user_id, created_at, updated_at)
+    values ('RLSTEST-SL-1', 'https://example.invalid', '00000000-0000-0000-0000-000000000001', now(), now())$$,
+  '42501',
+  null,
+  'an authenticated user cannot insert a short link'
+);
+
+select throws_ok(
+  $$update public.short_links set original_url = 'https://example.invalid'
+     where user_id = '00000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'an authenticated user cannot update a short link'
+);
+
+select throws_ok(
+  $$delete from public.short_links
+     where user_id = '00000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'an authenticated user cannot delete a short link'
+);
+
+select throws_ok(
+  $$select public.upsert_short_link(
+      'RLSTEST-SL-2', 'https://example.invalid',
+      '00000000-0000-0000-0000-000000000001', now(), now(), false, null, null,
+      gen_random_uuid(), null)$$,
+  '42501',
+  null,
+  'an authenticated user cannot call upsert_short_link'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$insert into public.short_links
+      (code, original_url, user_id, created_at, updated_at)
+    values ('RLSTEST-SL-3', 'https://example.invalid', null, now(), now())$$,
+  '42501',
+  null,
+  'anon cannot insert a short link with a null user_id'
+);
+
+select throws_ok(
+  $$select public.upsert_short_link(
+      'RLSTEST-SL-4', 'https://example.invalid', null, now(), now(), false, null,
+      null, gen_random_uuid(), null)$$,
+  '42501',
+  null,
+  'anon cannot call upsert_short_link'
+);
+
+reset role;
 
 select * from finish();
 
