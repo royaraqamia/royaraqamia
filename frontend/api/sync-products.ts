@@ -1,6 +1,7 @@
 import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
+import { pullBlogpressData } from '@/frontend/api/blogpress/pull';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
@@ -152,14 +153,12 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
  *
  * LinkSnap's read takes the session cookie for the same reason its writes do:
  * the page's token lives in React state, which a worker cannot read, while the
- * browser sends the cookie on its behalf.
+ * browser sends the cookie on its behalf. BlogPress joined the same way (#384):
+ * its editor-surface pull (`pullBlogpressData`) is the transport a background
+ * realm runs, authenticating with the session cookie.
  *
  * **Not here, on purpose:**
  *
- * - **BlogPress.** There is no client pull to reuse: the store has
- *   `mergeServerData` and nothing that calls it, so the product has no transport
- *   a background realm could run. Its posts arrive from the server through the
- *   route's own seeding instead.
  * - **Leads.** Delivered, not owned: submissions have no server rows to merge.
  */
 export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
@@ -184,6 +183,21 @@ export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
       const store = await SpendtrackLocalStore.open(identity, factory);
       try {
         return await pullSpendtrackData(store);
+      } finally {
+        store.close();
+      }
+    },
+  },
+  {
+    product: 'blogpress',
+    identity: signedInIdentity,
+    // The full store open rather than outbox-only: the merge reads the drafts
+    // alongside the queued intents it must not clobber.
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('blogpress', identity))) return 0;
+      const store = await BlogpressLocalStore.open(identity, factory);
+      try {
+        return await pullBlogpressData(store);
       } finally {
         store.close();
       }

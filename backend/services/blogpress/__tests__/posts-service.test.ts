@@ -42,6 +42,7 @@ function makeRepo(
     getPublishedPostCategories: vi.fn(),
     incrementPostViewCount: vi.fn(),
     listPostsByAuthor: vi.fn(),
+    listPostsByAuthorIncludingDeleted: vi.fn(),
     getPostForUser: vi.fn(),
     getPostExcerptById: vi.fn(),
     createPost: vi.fn(),

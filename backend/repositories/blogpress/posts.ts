@@ -364,6 +364,18 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return (data as Post[]) ?? [];
     },
 
+    async listPostsByAuthorIncludingDeleted(authorId: string): Promise<Post[]> {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('author_id', authorId)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw repositoryFailure('blogpress.listPostsByAuthorIncludingDeleted', error);
+
+      return (data as Post[]) ?? [];
+    },
+
     async getPostExcerptById(id: string): Promise<string | null> {
       const { data, error } = await supabase
         .from('posts')
