@@ -73,6 +73,10 @@
   // shell is a static client page with nothing account-bearing rendered into
   // it, and every read under it that *is* account-bearing keeps its own
   // never-cache prefix here.
+  // Two document-shell exceptions ride the SWR cache instead, on the same
+  // principle in both: the shell is a static client page with nothing
+  // account-bearing rendered into it, and every read under it that *is*
+  // account-bearing keeps its own never-cache prefix here.
   //
   // - The auth document shells since #447: submitting still needs the server —
   //   Turnstile and Supabase cannot run offline — and every auth form answers
@@ -89,6 +93,13 @@
   //   read under them is on an `/api` prefix below. Two subroutes still render
   //   server-side data and keep their own entries: the SpendTrack categories
   //   page and the BlogPress editor.
+  // The auth document shells are the one deliberate exception since #447: the
+  // forms are static client pages with nothing account-bearing in them, so their
+  // shells ride the SWR cache and an offline reload paints the form instead of
+  // the offline page. Submitting still needs the server — Turnstile and Supabase
+  // cannot run offline — and every auth form answers that with its own inline
+  // needs-connection state (ADR-0031). The auth route handlers keep their own
+  // never-cache prefixes so a session read never lands in shared Cache Storage.
   const NEVER_CACHE_PREFIXES = [
     '/api/auth',
     '/api/admin',

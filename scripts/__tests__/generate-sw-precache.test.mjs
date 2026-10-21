@@ -42,6 +42,7 @@ const APP_PATHS = {
 // mirrors the real worker: the auth API and the OAuth callback keep their
 // never-cache prefixes while the document shells became cacheable (#447), and
 // the account shells joined them once their guard moved client-side (#448).
+// never-cache prefixes while the document shells became cacheable (#447).
 const PRERENDERED = Object.fromEntries(
   Object.values(APP_PATHS).map((route) => [route, { srcRoute: null }])
 );
@@ -79,6 +80,17 @@ describe('public route shell derivation', () => {
       '/quran',
       '/rates',
       '/spendtrack',
+  it('keeps only prerendered public static pages, with the auth and account shells in', () => {
+    expect(select()).toEqual([
+      '/account',
+  it('keeps only prerendered public static pages, with the auth shells in', () => {
+    expect(select()).toEqual([
+      '/auth/error',
+      '/auth/login',
+      '/community',
+      '/privacy',
+      '/quran',
+      '/rates',
       '/terms',
       '/verify',
     ]);
@@ -120,6 +132,7 @@ describe('public route shell derivation', () => {
   it('caps the list and keeps it deterministic', () => {
     const routes = select({ maxRoutes: 2 });
     expect(routes).toEqual(['/account', '/auth/error']);
+    expect(routes).toEqual(['/auth/error', '/auth/login']);
     expect(select({ maxRoutes: MAX_PRECACHE_ROUTES })).toEqual(select());
   });
 

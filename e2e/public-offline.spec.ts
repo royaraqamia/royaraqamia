@@ -129,6 +129,11 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page).toHaveURL(/\/habitflow$/);
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+  // The never-cache boundary still holds where the data is: an account
+  // navigation falls back to `/offline`.
+  await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await context.close();
 });

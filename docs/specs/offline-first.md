@@ -84,6 +84,29 @@ stated limit.
   first visit still needs the network — there is no document before it — and server-owned
   values inside these pages (SpendTrack's currency, BlogPress's categories and tags) answer
   only when their own never-cache read does.
+- **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`,
+  `/spendtrack`, `/linksnap` and `/blogpress` are in the worker's never-cache list (ADR-0031:
+  their documents are server-rendered per user, so caching them risks leaking one session's
+  data to the next on a shared device). In-session navigation still paints from the Local
+  Store — that is the measured behaviour, and where it is not, it is a gap — but a reload or a
+  deep link with the radio off has no document to serve. Closing it needs a data-free shell for
+  those routes plus a client-side gate that paints the Local Store into it: a design step, not
+  a one-line change, so it is recorded here rather than promised. `/device` is the one place
+  that design has been built (ADR-0070): the queue and the device's copy are inspectable and
+  removable with no network, precisely because that page renders no account data on the server.
+  `/account` used to stand in this list too; #448 moved its children's guard client-side and
+  its reads onto the never-cache API seams, so its shells ride the SWR cache (ADR-0031's #448
+  amendment) and this limit no longer reaches them.
+- **A reload of an owned-data route, offline, lands on the offline page.** `/habitflow`, `/spendtrack`,
+  `/linksnap`, `/blogpress` and `/account` are in the worker's never-cache list (ADR-0031: their
+  documents are server-rendered per user, so caching them risks leaking one session's data to the next
+  on a shared device). In-session navigation still paints from the Local Store — that is the measured
+  behaviour, and where it is not, it is a gap — but a reload or a deep link with the radio off has no
+  document to serve. Closing it needs a data-free shell for those routes plus a client-side gate that
+  paints the Local Store into it: a design step, not a one-line change, so it is recorded here rather
+  than promised. `/device` is the one place that design has been built (ADR-0070): the queue and the
+  device's copy are inspectable and removable with no network, precisely because that page renders no
+  account data on the server.
 - **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
   says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
@@ -185,6 +208,15 @@ Honest list of what stands between us and the bar, each with the file that shows
 | Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)          | stale-while-revalidate (#449; shell only, painted from the Local Store)    |
 | Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
 | Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
+| Public read APIs that declare `public`                                         | SWR; an absent header is not permission                                    |
+| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                                                |
+| Request                                                                        | Strategy                                   |
+| ------------------------------------------------------------------------------ | ------------------------------------------ |
+| App shell, icons, fonts                                                        | cache-first                                |
+| Public navigation / RSC payloads                                               | stale-while-revalidate (+ "updated X ago") |
+| Auth document shells                                                           | stale-while-revalidate (#447; shell only)  |
+| Public read APIs that declare `public`                                         | SWR; an absent header is not permission    |
+| Auth APIs and the OAuth callback, mutations, admin, push, `no-store`/`private` | never cache                                |
 
 Account-scoped reads are `no-store` by construction at the authenticated seam, and the Quran sync
 read is also on the never-cache list — a signed-in reader's bookmarks and position never enter Cache
