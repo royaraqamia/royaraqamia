@@ -37,7 +37,15 @@ function post(id: string, content: string): PostSummary {
 }
 
 function indexResponse(posts: PostSummary[], nextCursor: string | null = null) {
-  return { ok: true, json: async () => ({ posts, nextCursor }) };
+  return { ok: true, status: 200, json: async () => ({ posts, nextCursor }) };
+}
+
+function serverFailure() {
+  return {
+    ok: false,
+    status: 500,
+    json: async () => ({ success: false, error: 'تعذّر تحميل المنشورات مؤقتًا.' }),
+  };
 }
 
 describe('CommunityIndexResults', () => {
@@ -104,5 +112,36 @@ describe('CommunityIndexResults', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.getByText('المنشور الأول')).toBeInTheDocument();
+  });
+
+  it('reports a load-more the server refused as an error, not as a connection problem', async () => {
+    fetchMock.mockResolvedValueOnce(serverFailure());
+    render(
+      <CommunityIndexResults
+        initialPosts={[post('p-1', 'المنشور الأول')]}
+        initialNextCursor="cursor-1"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('link', { name: 'تحميل المزيد من المنشورات' }));
+
+    await waitFor(() => expect(screen.getByText('لم يكتمل الطَّلب')).toBeInTheDocument());
+    expect(screen.queryByText('يتطلَّب الاتصال بالإنترنت')).not.toBeInTheDocument();
+
+    fetchMock.mockResolvedValueOnce(indexResponse([post('p-2', 'المنشور الثاني')]));
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+
+    await waitFor(() => expect(screen.getByText('المنشور الثاني')).toBeInTheDocument());
+    expect(screen.queryByText('لم يكتمل الطَّلب')).not.toBeInTheDocument();
+  });
+
+  it('reports a search the server refused as an error, not as a connection problem', async () => {
+    nav.params = new URLSearchParams('q=ahmad');
+    fetchMock.mockResolvedValueOnce(serverFailure());
+
+    render(<CommunityIndexResults initialPosts={[]} initialNextCursor={null} />);
+
+    await waitFor(() => expect(screen.getByText('لم يكتمل الطَّلب')).toBeInTheDocument());
+    expect(screen.queryByText('يتطلَّب الاتصال بالإنترنت')).not.toBeInTheDocument();
   });
 });

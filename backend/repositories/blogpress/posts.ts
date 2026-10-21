@@ -472,7 +472,10 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       const { error } = await query;
 
       if (error) {
-        throw new Error(error.message);
+        // The controller forwards this message to the editor, so it is Arabic
+        // like every other failure here — a raw PostgREST message would render
+        // English inside an Arabic toast (#475).
+        throw new Error('فشل حفظ المنشور');
       }
     },
 

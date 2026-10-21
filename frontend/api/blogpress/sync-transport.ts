@@ -59,7 +59,9 @@ async function resolveMedia(
       const result = await uploadImage(formData);
       if ('error' in result && result.error) throw new Error(result.error);
       url = 'url' in result ? result.url : null;
-      if (!url) throw new Error('media upload failed');
+      // The upload answered without a URL; the queue shows this reason, so it is
+      // Arabic like every other failure the sync UI renders (#475).
+      if (!url) throw new Error('فشل رفع الصُّورة. أعد المحاولة.');
       await store.markMediaUploaded(id, url);
     }
     resolved = resolved.split(mediaPlaceholder(id)).join(url);

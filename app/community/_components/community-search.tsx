@@ -4,13 +4,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Loader2, Search, X } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
-import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import {
+  ReadFailureNotice,
+  toReadFailure,
+  type ReadFailure,
+} from '@/frontend/ui/shared/read-failure';
+import { request } from '@/frontend/transport/http';
 import { postExcerpt } from '@/shared/reading-time';
 import type { CommunitySearchResult } from '@/shared/contracts/community';
 
 type Row = { kind: 'person'; index: number } | { kind: 'post'; index: number } | { kind: 'all' };
 
-const SEARCH_ERROR = 'تعذَّر تحميل نتائج البحث — تحقَّق من اتصالك بالإنترنت ثم أعد المحاولة.';
+const SEARCH_ERROR = 'تعذَّر تحميل نتائج البحث. أعد المحاولة.';
 
 export function CommunitySearch() {
   const router = useRouter();
@@ -22,7 +27,7 @@ export function CommunitySearch() {
   const [results, setResults] = useState<CommunitySearchResult | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ReadFailure | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [active, setActive] = useState(-1);
 
@@ -62,25 +67,22 @@ export function CommunitySearch() {
     setError(null);
     const timer = setTimeout(() => {
       setLoading(true);
-      fetch(`/api/community/search?q=${encodeURIComponent(trimmed)}`, {
+      request<CommunitySearchResult>(`/api/community/search?q=${encodeURIComponent(trimmed)}`, {
         signal: controller.signal,
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('failed to search community');
-          return res.json() as Promise<CommunitySearchResult>;
-        })
         .then((data) => {
           setResults(data);
           setError(null);
           setOpen(true);
           setActive(-1);
         })
-        .catch(() => {
+        .catch((failure: unknown) => {
           if (controller.signal.aborted) return;
-          // A failed read is not "no results" (ADR-0031): the server was never
-          // asked, so the panel says so and offers the same request again.
+          // A failed read is not "no results" (ADR-0031), so the panel names the
+          // failure and offers the same request again; whether it names the
+          // connection depends on whether the request ever left (#475).
           setResults(null);
-          setError(SEARCH_ERROR);
+          setError(toReadFailure(failure, SEARCH_ERROR));
           setOpen(true);
           setActive(-1);
         })
@@ -233,10 +235,11 @@ export function CommunitySearch() {
         >
           {error ? (
             <div role="presentation">
-              <NeedsConnection
-                message={error}
+              <ReadFailureNotice
+                failure={error}
                 onRetry={handleRetry}
-                className="py-6 sm:py-8 md:py-8"
+                variant="inline"
+                className="my-4"
               />
             </div>
           ) : (

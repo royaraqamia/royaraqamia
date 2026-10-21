@@ -154,6 +154,42 @@ describe('createBlogpressHttpSyncTransport', () => {
     expect(body.content).toBe('![a](https://cdn.example/a.png)');
   });
 
+  it('names the upload failure in Arabic when the server answers without a URL', async () => {
+    const mediaId = '11111111-1111-7111-8111-111111111111';
+    const blob = new Blob(['bytes'], { type: 'image/png' });
+    const store = fakeStore({
+      getMedia: vi.fn().mockResolvedValue({
+        id: mediaId,
+        postId: 'p-1',
+        fileName: 'a.png',
+        mimeType: 'image/png',
+        blob,
+        status: 'pending',
+        url: null,
+      }),
+    } as Partial<BlogpressLocalStore>);
+    uploadImage.mockResolvedValue({});
+
+    // The queue renders this reason in the sync pill and on /device, so it must
+    // be Arabic like the rest of the failure vocabulary (#475).
+    await expect(
+      createBlogpressHttpSyncTransport(store).send(
+        entry('post.save', {
+          id: 'p-1',
+          clientId: 'p-1',
+          slug: 'p-1',
+          content: `![a](${mediaPlaceholder(mediaId)})`,
+          cover_image: '',
+          meta_title: '',
+          meta_desc: '',
+          updatedAt: '2026-08-01T00:00:00Z',
+          isNew: false,
+        })
+      )
+    ).rejects.toThrow('فشل رفع الصُّورة. أعد المحاولة.');
+    expect(store.markMediaUploaded).not.toHaveBeenCalled();
+  });
+
   it('rejects an unknown intent type as permanent', async () => {
     await expect(
       createBlogpressHttpSyncTransport(fakeStore()).send(entry('nope', {}))
