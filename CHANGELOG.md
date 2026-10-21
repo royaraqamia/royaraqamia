@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.130.3] - 2026-10-21
+
+### Fixed
+- keep an enrollment inside the application's course (#479)
+
+## [1.130.2] - 2026-10-21
+
+### Changed
+- drop the stale product-reload bullets and amend ADR-0036 (#476)
+
+### Fixed
+- revoke direct client writes to short_links (#478)
+- rate-limit the authorize and revoke endpoints (#477)
+
 ## [1.130.1] - 2026-10-21
 
 ### Changed
