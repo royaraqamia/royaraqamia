@@ -286,6 +286,17 @@ reading because of a chunk they never asked for (#332).
 - Public cache capped (~150 MB) with LRU eviction; **Owned data and the Outbox are never evicted**.
 - Android: Java `SharedPreferences` holds the FCM token; nothing else moves native.
 - Analytics/errors are best-effort, bounded and droppable; they share none of the Outbox guarantees.
+- **`/offline` serves are counted by door** (ADR-0074, #474): the worker labels every fallback serve
+  (`navigation-deadline`, `navigation-offline`, `online-only-deadline`, `online-only-offline`,
+  `static-offline`, `api-offline`, `no-fallback`) and posts one beacon per serve to
+  `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the previous report. What
+  is deliberately not collected: **no URL** (not even a path), no user, session or client id, no
+  cookies (`credentials: 'omit'`), no timing, no sizes. The beacon is droppable — it is not awaited,
+  and a limiter outage drops it rather than opening a write path.
+- **Where a maintainer reads it:** the endpoint writes one `logger.info` line, so the field signal is
+  a Vercel log query — filter on `[offline-serve]` and group the door. A door changing shape is the
+  regression signal: `navigation-*` climbing means ordinary routes stopped caching, `no-fallback`
+  means the shell itself is missing. Nothing in the app reads the count back.
 
 ## UX
 
@@ -396,6 +407,11 @@ the server is unreachable, and the [Verification](#verification) section for wha
   are paced by `e2e/sign-in.ts` — five attempts per email per minute is a product limit the suite has
   to live under, not a flag to switch off.
 
+- **The `/offline` counter is proven without a network.** `scripts/__tests__/sw.test.mjs` answers only
+  the beacon in its fake network and asserts each door, the tallies, the absence of a URL and that the
+  page does not wait on the report; `backend/controllers/__tests__/offline-metrics.test.ts` pins the
+  schema → log-line seam (unknown door, negative tally and unknown version refused before a bucket is
+  spent). The field side is the Vercel log query named in [Storage & telemetry](#storage--telemetry).
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
 - **Needs-connection states are asserted where they were missing.** Consultation's availability and
