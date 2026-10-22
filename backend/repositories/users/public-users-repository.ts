@@ -21,6 +21,11 @@ export interface PublicUsersRepository {
   list(limit: number): Promise<PublicUser[]>;
   /** Total members, for the roster badge. Independent of how many are shown. */
   count(): Promise<number>;
+  /**
+   * Every verified handle, for `sitemap.ts`. One column and no profile payload:
+   * the roster's own page size (`list`) is a display cap, not the directory.
+   */
+  listVerifiedHandles(limit: number): Promise<string[]>;
   /** Verified members matching the term. */
   search(query: string, limit: number): Promise<PublicUser[]>;
   getByUsername(username: string): Promise<PublicUser | null>;
@@ -50,6 +55,18 @@ export function createPublicUsersRepository(
 
       if (error) throw error;
       return count ?? 0;
+    },
+
+    async listVerifiedHandles(limit): Promise<string[]> {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('verified', true)
+        .order('username', { ascending: true })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data ?? []).map((row) => row.username);
     },
 
     async search(query, limit): Promise<PublicUser[]> {

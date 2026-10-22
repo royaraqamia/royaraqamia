@@ -87,6 +87,16 @@ describe('createPublicUsersRepository', () => {
     expect(total).toBe(11);
   });
 
+  it('lists every verified handle for the sitemap, not just the roster page', async () => {
+    const { supabase, eqFilters } = createClient({ list: [member] });
+    const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
+
+    const handles = await repo.listVerifiedHandles(50_000);
+
+    expect(handles).toEqual(['ahmad']);
+    expect(eqFilters).toContainEqual(['verified', true]);
+  });
+
   it('sanitizes the search term before it reaches the or() filter', async () => {
     const { supabase, orFilters, eqFilters } = createClient({ list: [member] });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
@@ -121,6 +131,10 @@ describe('createPublicUsersRepository', () => {
     it.each([
       ['list', (repo: ReturnType<typeof createPublicUsersRepository>) => repo.list(8)],
       ['count', (repo: ReturnType<typeof createPublicUsersRepository>) => repo.count()],
+      [
+        'listVerifiedHandles',
+        (repo: ReturnType<typeof createPublicUsersRepository>) => repo.listVerifiedHandles(10),
+      ],
       ['search', (repo: ReturnType<typeof createPublicUsersRepository>) => repo.search('ahmad', 5)],
       [
         'getByUsername',
