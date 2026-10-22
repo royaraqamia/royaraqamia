@@ -1064,6 +1064,123 @@ export type Database = {
           },
         ];
       };
+      plan_activations: {
+        Row: {
+          activated_at: string;
+          activated_by: string | null;
+          amount_cents: number;
+          currency: string;
+          expires_at: string;
+          id: string;
+          method: string;
+          note: string | null;
+          plan: string;
+          user_id: string;
+        };
+        Insert: {
+          activated_at?: string;
+          activated_by?: string | null;
+          amount_cents?: number;
+          currency?: string;
+          expires_at: string;
+          id?: string;
+          method?: string;
+          note?: string | null;
+          plan?: string;
+          user_id: string;
+        };
+        Update: {
+          activated_at?: string;
+          activated_by?: string | null;
+          amount_cents?: number;
+          currency?: string;
+          expires_at?: string;
+          id?: string;
+          method?: string;
+          note?: string | null;
+          plan?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'plan_activations_activated_by_fkey';
+            columns: ['activated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'plan_activations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      plan_limits: {
+        Row: {
+          free_cap: number;
+          key: string;
+          label_ar: string;
+          pro_cap: number;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          free_cap: number;
+          key: string;
+          label_ar: string;
+          pro_cap: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          free_cap?: number;
+          key?: string;
+          label_ar?: string;
+          pro_cap?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      plan_settings: {
+        Row: {
+          anonymous_daily_credits: number;
+          currency: string;
+          duration_days: number;
+          free_credits: number;
+          id: boolean;
+          price_cents: number;
+          pro_credits: number;
+          updated_at: string;
+          window_days: number;
+        };
+        Insert: {
+          anonymous_daily_credits?: number;
+          currency?: string;
+          duration_days?: number;
+          free_credits?: number;
+          id?: boolean;
+          price_cents?: number;
+          pro_credits?: number;
+          updated_at?: string;
+          window_days?: number;
+        };
+        Update: {
+          anonymous_daily_credits?: number;
+          currency?: string;
+          duration_days?: number;
+          free_credits?: number;
+          id?: boolean;
+          price_cents?: number;
+          pro_credits?: number;
+          updated_at?: string;
+          window_days?: number;
+        };
+        Relationships: [];
+      };
       posts: {
         Row: {
           author_id: string;
@@ -1633,6 +1750,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_plans: {
+        Row: {
+          expires_at: string | null;
+          plan: string;
+          updated_at: string;
+          updated_by: string | null;
+          user_id: string;
+          window_reset_at: string;
+        };
+        Insert: {
+          expires_at?: string | null;
+          plan?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id: string;
+          window_reset_at?: string;
+        };
+        Update: {
+          expires_at?: string | null;
+          plan?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          user_id?: string;
+          window_reset_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_plans_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_plans_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_settings: {
         Row: {
           currency: string;
@@ -1687,11 +1846,85 @@ export type Database = {
         };
         Relationships: [];
       };
+      usage_action_costs: {
+        Row: {
+          action_key: string;
+          cost: number;
+          label_ar: string;
+          sort_order: number;
+        };
+        Insert: {
+          action_key: string;
+          cost: number;
+          label_ar: string;
+          sort_order?: number;
+        };
+        Update: {
+          action_key?: string;
+          cost?: number;
+          label_ar?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      usage_events: {
+        Row: {
+          action_key: string;
+          cost: number;
+          created_at: string;
+          id: string;
+          ip_hash: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          action_key: string;
+          cost: number;
+          created_at?: string;
+          id?: string;
+          ip_hash?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          action_key?: string;
+          cost?: number;
+          created_at?: string;
+          id?: string;
+          ip_hash?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'usage_events_action_key_fkey';
+            columns: ['action_key'];
+            isOneToOne: false;
+            referencedRelation: 'usage_action_costs';
+            referencedColumns: ['action_key'];
+          },
+          {
+            foreignKeyName: 'usage_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      activate_plan: {
+        Args: {
+          p_activated_by: string;
+          p_amount_cents?: number;
+          p_days?: number | null;
+          p_method?: string;
+          p_note?: string | null;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       create_consultation_booking: {
         Args: {
           p_email?: string;
@@ -1753,6 +1986,7 @@ export type Database = {
         };
         Returns: number;
       };
+      get_usage_state: { Args: { p_user_id: string }; Returns: Json };
       increment_otp_attempts: { Args: { row_id: string }; Returns: number };
       increment_post_view_count: {
         Args: { p_post_id: string };
@@ -1767,10 +2001,26 @@ export type Database = {
           starts_at: string;
         }[];
       };
+      list_user_usage: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string | null;
+        };
+        Returns: Json;
+      };
       materialize_due_recurring_expenses: { Args: never; Returns: boolean };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;
+      };
+      refund_anonymous_credits: {
+        Args: { p_event_id: string; p_ip_hash: string };
+        Returns: boolean;
+      };
+      refund_credits: {
+        Args: { p_event_id: string; p_user_id: string };
+        Returns: boolean;
       };
       release_application: {
         Args: { p_application_id: string; p_status: string };
@@ -1790,6 +2040,14 @@ export type Database = {
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
       slugify_username: { Args: { raw: string }; Returns: string };
+      spend_anonymous_credits: {
+        Args: { p_action_key: string; p_ip_hash: string };
+        Returns: Json;
+      };
+      spend_credits: {
+        Args: { p_action_key: string; p_user_id: string };
+        Returns: Json;
+      };
       sweep_download_jobs: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_auth_codes: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
