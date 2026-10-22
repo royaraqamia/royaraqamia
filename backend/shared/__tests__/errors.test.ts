@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getErrorMessage, AppError } from '@/backend/shared/errors';
+import { getErrorMessage, AppError, describeError } from '@/backend/shared/errors';
 
 describe('getErrorMessage', () => {
   it('returns the message for Error instances', () => {
@@ -22,8 +22,36 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(false)).toBe('حدث خطأ غير متوقع.');
   });
 
+  it('falls back when a message is present but empty', () => {
+    // supabase-js builds `{ message: '' }` when a response body cannot be read,
+    // which used to reach the user as an empty error (#518 LinkSnap 500).
+    expect(getErrorMessage({ message: '' })).toBe('حدث خطأ غير متوقع.');
+    expect(getErrorMessage({ message: '   ' })).toBe('حدث خطأ غير متوقع.');
+    expect(getErrorMessage(new Error(''))).toBe('حدث خطأ غير متوقع.');
+  });
+
   it('returns the message for AppError', () => {
     expect(getErrorMessage(new AppError('app broke', 400))).toBe('app broke');
+  });
+});
+
+describe('describeError', () => {
+  it('names an Error instead of the useless "[object Object]"', () => {
+    expect(describeError(new Error('boom'))).toBe('Error: boom');
+    expect(describeError(new AppError('app broke', 400))).toBe('AppError: app broke');
+  });
+
+  it('serializes the plain objects supabase-js throws', () => {
+    expect(describeError({ code: '42703', details: null, hint: null, message: 'no column' })).toBe(
+      '{"code":"42703","details":null,"hint":null,"message":"no column"}'
+    );
+  });
+
+  it('falls back to a string for values that cannot be serialized', () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(describeError(circular)).toBe('[object Object]');
+    expect(describeError('a raw string')).toBe('a raw string');
   });
 });
 

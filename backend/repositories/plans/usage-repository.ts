@@ -235,10 +235,13 @@ export class SupabaseUsageRepository implements UsageRepository {
             .is('deleted_at', null)
         );
       case 'short_links':
+        // `short_links` is keyed by the code, not by an `id` column: selecting
+        // `id` is a PostgREST 42703, and the cap check turned that into a 500 on
+        // every signed-in create (#518 regression).
         return this.headCount(
           this.supabase
             .from('short_links')
-            .select('id', { count: 'exact', head: true })
+            .select('code', { count: 'exact', head: true })
             .eq('user_id', userId)
             .is('deleted_at', null)
         );
