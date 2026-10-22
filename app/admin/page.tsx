@@ -9,6 +9,7 @@ import {
   Link2,
   Megaphone,
   ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
@@ -60,6 +61,12 @@ const SECTIONS = [
     label: 'إرسال إعلان',
     description: 'إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين المسجَّلين',
     icon: Megaphone,
+  },
+  {
+    href: '/admin/plans',
+    label: 'الاشتراكات',
+    description: 'تفعيل الخطط المدفوعة ومتابعة رصيد الاستهلاك لكل مستخدم',
+    icon: Wallet,
   },
 ];
 

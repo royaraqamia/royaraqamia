@@ -433,6 +433,47 @@ disconnected or swept, and disconnecting one leaves the User's other Grants and 
 alone.
 _Avoid_: Permission, consent, access token, connection
 
+### Plans & usage
+
+**Plan**:
+What an account may spend and keep: the free plan or the paid plan, either of which reaches
+every product. A Plan is an entitlement, not a payment record — money moves off-system and an
+operator activates the plan by hand (ADR-0006, ADR-0075).
+_Avoid_: Subscription, tier, membership, package
+
+**Credit**:
+The unit one metered action spends from the Plan's rolling allowance. Reads are never charged; an
+action is. The remaining figure is computed from the ledger, never stored as a balance.
+_Avoid_: Quota, token, balance, points
+
+**Allowance window**:
+The rolling 30 days a credit spend counts against, floored by the last Activation or by the
+moment a paid Plan lapsed. A window has no reset date, only a length — the card reports what is
+left now.
+_Avoid_: Billing period, cycle, month
+
+**Owned-item cap**:
+How many things an account may hold — habits, expenses, short links, drafts, bookmarks, connected
+apps. A standing limit checked when a row is created; it is never a monthly charge on saved data,
+and lowering it never deletes anything.
+_Avoid_: Limit, storage quota, seat
+
+**Activation**:
+An operator's deliberate grant of the paid Plan for 30 days, recorded with amount, method, note
+and expiry in `plan_activations`. It raises the cap and starts a fresh window. Expiry lowers the
+cap and starts a fresh window too.
+_Avoid_: Purchase, payment, upgrade, renewal
+
+**Usage card**:
+The account page's report of one number: credits spent and remaining in the current window, plus
+what the Plan makes available next. It never mixes in Owned-item caps.
+_Avoid_: Dashboard, meter, quota bar
+
+**Anonymous allowance**:
+A visitor's 10 credits per rolling 24 hours, keyed on a salted IP hash rather than an account.
+When it runs out the site offers sign-in — the free Plan — instead of a dead end.
+_Avoid_: Guest quota, trial, rate limit
+
 ### Shared
 
 **Admin**:
