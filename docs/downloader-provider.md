@@ -89,6 +89,13 @@ platform that starts refusing the host (bot check, rate limit, IP block) shows u
 as `blocked` instead of blending into `generic`. The host logs the raw extractor
 output alongside it. Omitting `code` is valid — the app treats it as unclassified.
 
+The code also decides whether the failure counts against the Platform's circuit
+breaker: `duration`, `size` and `unsupported` describe the visitor's chosen link or
+format, so they never increment its consecutive-failure counter. `blocked`,
+`timeout`, `unavailable`, `generic` and an omitted code are host faults and do. A
+provider should therefore classify deliberately: reporting a private link as
+`generic` blames the Platform, and a run of them opens the breaker (ADR-0020).
+
 The app replies `200 {"success":true}` and moves the job to `ready` or `failed`.
 The route rejects a missing or wrong secret with `401` and never trusts a public
 caller. A host that never calls back leaves the job `running`, which the retention

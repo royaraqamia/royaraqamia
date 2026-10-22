@@ -298,6 +298,21 @@ export const DownloadCallbackSchema = z.discriminatedUnion('status', [
 
 export type DownloadCallback = z.infer<typeof DownloadCallbackSchema>;
 
+/**
+ * The `failed` codes that blame the visitor's own link or format rather than a
+ * Platform's health (`docs/downloader-provider.md`): a clip that is too long,
+ * too large, or in a format the provider cannot produce says nothing about the
+ * host's extractor. Every other code — `blocked`, `timeout`, `unavailable`,
+ * `generic`, or an older provider's omission — is a Platform/host fault.
+ */
+export const VISITOR_FAULT_FAILURE_CODES = ['duration', 'size', 'unsupported'] as const;
+export type VisitorFaultFailureCode = (typeof VISITOR_FAULT_FAILURE_CODES)[number];
+
+/** Whether a callback's optional `code` describes the visitor's request, not the host. */
+export function isVisitorFaultFailureCode(code: string | undefined): boolean {
+  return (VISITOR_FAULT_FAILURE_CODES as readonly string[]).includes(code ?? '');
+}
+
 // ------------------------------------------------------------
 // Entities
 // ------------------------------------------------------------

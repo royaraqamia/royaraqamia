@@ -1,6 +1,7 @@
 import {
   DEFAULT_DOWNLOAD_SETTINGS,
   TERMINAL_DOWNLOAD_STATUSES,
+  isVisitorFaultFailureCode,
   maxDownloadBytes,
   type DownloadCallback,
   type DownloadJob,
@@ -97,7 +98,8 @@ export interface DownloaderServiceDeps {
  * flight at the provider. A known Platform is refused at `create` when the
  * allowlist disables it or its circuit breaker is open, a blocked link is refused
  * before any work, and provider failures are counted per Platform so a repeatedly
- * failing extractor opens that breaker (ADR-0020).
+ * failing extractor opens that breaker (ADR-0020) — but a visitor's own bad link
+ * (`duration`, `size`, `unsupported`) never counts against the Platform.
  */
 export class DownloaderService {
   private readonly now: () => Date;
@@ -191,7 +193,12 @@ export class DownloaderService {
 
     if (callback.status === 'failed') {
       await this.repository.updateStatus(job.id, { status: 'failed', error: callback.error });
-      await this.recordPlatformFailure(job.sourceUrl);
+      // A visitor's bad link or format is not a Platform health signal: counting
+      // it would let one person take every visitor's Downloads offline by
+      // submitting enough private, deleted or unsupported links.
+      if (!isVisitorFaultFailureCode(callback.code)) {
+        await this.recordPlatformFailure(job.sourceUrl);
+      }
       return;
     }
 
