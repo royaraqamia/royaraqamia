@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.132.0] - 2026-10-22
+
+### Changed
+- advertise 27 hours across 18 sessions (#512) (#512)
+- MCP LinkSnap writes use service role now. (#511)
+
+### Added
+- serve the nearest cached shell instead of /offline (#521)
+- enforce credits and owned-item caps on every write path (#518)
+- refresh route shells after activation, not during install (#517) (#517)
+- add the pricing page and the account usage card (#516) (#516)
+- add plan, credit ledger and owned-item caps (#515) (#515)
+- measure cold open, warm open and tap to paint (#513) (#513)
+- cache by content, not by release (#514) (#514)
+
+### Fixed
+- a visitor's bad link must not trip a Platform's breaker (#520)
+- bulk delete must tombstone, not hard-delete (#519)
+- read a clean drain report as success (#505) (#505)
+
 ## [1.131.2] - 2026-10-21
 
 ### Fixed
