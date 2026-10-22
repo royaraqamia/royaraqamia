@@ -269,33 +269,54 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return true;
   }
 
-  async deleteMany(codes: string[], userId: string): Promise<void> {
-    if (codes.length === 0) return;
+  /**
+   * Bulk delete is the same tombstone `delete` writes, just for a set: a hard
+   * `DELETE` would cascade into `analytics_events` and destroy the rows' click
+   * history. Already-tombstoned rows are left as they are, and the returned
+   * count is the rows actually matched — a foreign or nonexistent code is not a
+   * delete (ADR-0029).
+   */
+  async deleteMany(codes: string[], userId: string): Promise<number> {
+    if (codes.length === 0) return 0;
+    const stamp = new Date().toISOString();
     const supabase = this.adminClient;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('short_links')
-      .delete()
+      .update({ deleted_at: stamp, updated_at: stamp })
       .in('code', codes)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .select('code');
 
     if (error) {
       throw new Error(`Failed to delete short links: ${error.message}`);
     }
+
+    return data?.length ?? 0;
   }
 
-  async setExpiryMany(codes: string[], expiresAt: Date | null, userId: string): Promise<void> {
-    if (codes.length === 0) return;
+  /**
+   * Bulk expiry advances `updated_at` so the change wins the last-write-wins
+   * merge on another device's next pull (ADR-0029); without it the local copy
+   * and the server look equally new and the expiry never lands.
+   */
+  async setExpiryMany(codes: string[], expiresAt: Date | null, userId: string): Promise<number> {
+    if (codes.length === 0) return 0;
+    const stamp = new Date().toISOString();
     const supabase = this.adminClient;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('short_links')
-      .update({ expires_at: expiresAt ? expiresAt.toISOString() : null })
+      .update({ expires_at: expiresAt ? expiresAt.toISOString() : null, updated_at: stamp })
       .in('code', codes)
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      .is('deleted_at', null)
+      .select('code');
 
     if (error) {
       throw new Error(`Failed to update short links expiry: ${error.message}`);
     }
+
+    return data?.length ?? 0;
   }
 
   async exists(code: string): Promise<boolean> {

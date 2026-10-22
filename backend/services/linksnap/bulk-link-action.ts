@@ -31,11 +31,17 @@ export class BulkLinkActionService {
     }
 
     if (action === 'delete') {
-      await this.shortLinkRepository.deleteMany(uniqueCodes, userId);
-      return { action, affected: uniqueCodes.length };
+      // The repository reports the rows it actually matched: a foreign or
+      // nonexistent code is not a delete, so a no-op is answered honestly.
+      const affected = await this.shortLinkRepository.deleteMany(uniqueCodes, userId);
+      return { action, affected };
     }
 
-    await this.shortLinkRepository.setExpiryMany(uniqueCodes, expiresAt ?? null, userId);
-    return { action, affected: uniqueCodes.length };
+    const affected = await this.shortLinkRepository.setExpiryMany(
+      uniqueCodes,
+      expiresAt ?? null,
+      userId
+    );
+    return { action, affected };
   }
 }

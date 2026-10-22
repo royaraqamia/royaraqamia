@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { useLinks } from '@/frontend/state/linksnap/use-links';
 import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
+import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
 import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
@@ -22,6 +23,7 @@ interface LinkDashboardProps {
 
 export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   const reducedMotion = useReducedMotion();
+  const linksnap = useLinksnapContext();
   const { links, loading, error, fetchLinks, handleDelete, applyLinkUpdate } = useLinks(
     token,
     refreshTrigger
@@ -62,25 +64,35 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
     setShowDeleteConfirm(false);
     const deletedLinks = links.filter((l) => bulk.selectedCodes.includes(l.code));
     const result = await bulk.runDelete();
-    if (result) {
-      toast('تم حذف الروابط المحددة', {
-        action: {
-          label: 'تراجع',
-          onClick: async () => {
-            try {
-              for (const link of deletedLinks) {
+    if (!result) return;
+    if (result.deleted === 0) {
+      toast.error('لم يتم العثور على الروابط المحددة.');
+      return;
+    }
+    toast('تم حذف الروابط المحددة', {
+      action: {
+        label: 'تراجع',
+        onClick: async () => {
+          try {
+            for (const link of deletedLinks) {
+              // Undo resurrects the same row, which the Local Store path can do
+              // by identity; the legacy network path has no restore endpoint, so
+              // it re-creates the link the way the single-row card does.
+              if (linksnap) {
+                if (link.clientId) await linksnap.restoreLink(link.clientId);
+              } else {
                 await shorten(link.originalUrl, link.code, token);
               }
-              await fetchLinks();
-              toast.success('تم استرجاع الروابط');
-            } catch {
-              toast.error('فشل استرجاع الروابط');
             }
-          },
+            await fetchLinks();
+            toast.success('تم استرجاع الروابط');
+          } catch {
+            toast.error('فشل استرجاع الروابط');
+          }
         },
-      });
-      await fetchLinks();
-    }
+      },
+    });
+    await fetchLinks();
   };
 
   const showBar = links.length > 0;
