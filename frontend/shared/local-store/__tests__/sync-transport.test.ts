@@ -22,6 +22,12 @@ describe('classifySyncError', () => {
     }
   });
 
+  it('keeps a plan refusal (402) permanent, so the intent is surfaced not retried forever', () => {
+    // An empty allowance or a reached cap will not clear by retrying: the queue
+    // keeps the entry as failed and the user is asked to upgrade (ADR-0075).
+    expect(classifySyncError(new ApiError('نفدت حصَّتك', 402))).toBe('permanent');
+  });
+
   it('treats 5xx, a missing status and a non-HTTP error as transient', () => {
     expect(classifySyncError(new ApiError('boom', 503))).toBe('transient');
     expect(classifySyncError(new ApiError('no status'))).toBe('transient');

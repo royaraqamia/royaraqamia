@@ -69,8 +69,10 @@ export function BudgetCard({
         await store.setBudget(month, amount, null);
         setBudget(amount);
         await context?.refresh?.();
-      } catch {
-        setError('فشل حفظ الميزانيَّة');
+      } catch (error) {
+        // A reached cap arrives with its own copy; show it instead of the
+        // generic save failure.
+        setError(error instanceof Error && error.message ? error.message : 'فشل حفظ الميزانيَّة');
       } finally {
         setSaving(false);
       }

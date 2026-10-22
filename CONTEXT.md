@@ -474,6 +474,17 @@ A visitor's 10 credits per rolling 24 hours, keyed on a salted IP hash rather th
 When it runs out the site offers sign-in — the free Plan — instead of a dead end.
 _Avoid_: Guest quota, trial, rate limit
 
+**Local usage report**:
+The count of actions a device performed while no server was in the loop — a scan, a surah read
+today — sent afterwards for reconciliation, each with a client event id so a retried report is
+never charged twice. Only the count travels; the content never does.
+_Avoid_: Telemetry, analytics, log
+
+**Plan gate**:
+The single seam a metered or capped write goes through: it reserves a credit, checks a standing cap
+first, and refunds when the action behind it fails.
+_Avoid_: Middleware, interceptor, paywall
+
 ### Shared
 
 **Admin**:

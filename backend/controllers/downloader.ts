@@ -10,6 +10,10 @@ import {
 } from '@/shared/contracts/downloader';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { checkRateLimitApi } from '@/backend/middleware/http';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { createPlanGate } from '@/backend/config/plans';
+import { USAGE_ACTIONS } from '@/shared/contracts/plans';
+import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { runAfter } from '@/backend/config/after';
 import {
@@ -65,7 +69,15 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
   try {
     const service = createDownloaderService();
-    const job = await service.create(request);
+    // A download spends provider CPU, so it is the priciest credit in the
+    // catalogue. Signed-in callers spend their own allowance; a visitor spends
+    // the shared per-IP one.
+    const { user } = await getOptionalUser();
+    const job = await createPlanGate().meter(
+      { userId: user?.id ?? null, ip },
+      USAGE_ACTIONS.downloaderJobCreate,
+      () => service.create(request)
+    );
 
     runAfter(async () => {
       try {
@@ -77,6 +89,13 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
     return jsonResult(202, { success: true, job });
   } catch (error) {
+    if (error instanceof AppError) {
+      return jsonResult(error.statusCode, {
+        success: false,
+        error: getErrorMessage(error),
+        ...(error.code ? { code: error.code } : {}),
+      });
+    }
     if (error instanceof BlockedLinkError) {
       return jsonResult(403, { success: false, error: BLOCKED_LINK_MESSAGE });
     }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AnonymousAllowanceExhaustedError,
   InsufficientCreditsError,
+  OwnedItemCapReachedError,
   PlanTargetNotFoundError,
   UsageService,
 } from '@/backend/services/plans/usage-service';
@@ -41,6 +42,13 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
       cost: 1,
       eventId: 'event-2',
     })),
+    spendOnce: vi.fn(async () => ({
+      allowed: true as const,
+      state: freeState,
+      cost: 1,
+      eventId: 'event-3',
+    })),
+    countOwned: vi.fn(async () => 0),
     refund: vi.fn(async () => true),
     refundAnonymous: vi.fn(async () => true),
     activate: vi.fn(async () => ({
@@ -193,5 +201,78 @@ describe('UsageService', () => {
 
     expect(error).toBeInstanceOf(AnonymousAllowanceExhaustedError);
     expect(error).toMatchObject({ statusCode: 402, code: 'anonymous_limit', remaining: 0 });
+  });
+
+  it('refuses a create at the standing cap before anything is written', async () => {
+    const repository = makeRepository({ countOwned: vi.fn(async () => 5) });
+    const service = new UsageService(repository);
+
+    const error = await service.assertOwnedItemCap('user-1', 'habits').catch((err) => err);
+
+    expect(error).toBeInstanceOf(OwnedItemCapReachedError);
+    expect(error).toMatchObject({ statusCode: 402, code: 'owned_item_cap', cap: 5, count: 5 });
+  });
+
+  it('lets a create through while a slot is free, and counts a batch against it', async () => {
+    const repository = makeRepository({ countOwned: vi.fn(async () => 3) });
+    const service = new UsageService(repository);
+
+    await expect(service.assertOwnedItemCap('user-1', 'habits')).resolves.toEqual(freeState);
+    await expect(service.assertOwnedItemCap('user-1', 'habits', 2)).resolves.toEqual(freeState);
+    await expect(service.assertOwnedItemCap('user-1', 'habits', 3)).rejects.toBeInstanceOf(
+      OwnedItemCapReachedError
+    );
+  });
+
+  it('exempts an Admin from the cap without counting anything', async () => {
+    const repository = makeRepository({
+      getState: vi.fn(async () => ({ ...freeState, unlimited: true })),
+      countOwned: vi.fn(async () => 9),
+    });
+    const service = new UsageService(repository);
+
+    await expect(service.assertOwnedItemCap('admin-1', 'habits', 5)).resolves.toMatchObject({
+      unlimited: true,
+    });
+    expect(repository.countOwned).not.toHaveBeenCalled();
+  });
+
+  it('resolves the caps for the plan the account is on', async () => {
+    const repository = makeRepository({
+      getState: vi.fn(async () => ({ ...freeState, plan: 'pro' as const })),
+    });
+    const service = new UsageService(repository);
+
+    await expect(service.caps('user-1')).resolves.toEqual({
+      plan: 'pro',
+      unlimited: false,
+      caps: { habits: 200 },
+    });
+  });
+
+  it('reports local counters once each and says what was refused', async () => {
+    const repository = makeRepository({
+      spendOnce: vi
+        .fn()
+        .mockResolvedValueOnce({ allowed: true, state: freeState, cost: 1, eventId: 'event-1' })
+        .mockResolvedValueOnce({ allowed: true, state: freeState, cost: 1, eventId: null })
+        .mockResolvedValueOnce({
+          allowed: false,
+          state: { ...freeState, remaining: 0 },
+          cost: 1,
+          eventId: null,
+        }),
+    });
+    const service = new UsageService(repository);
+
+    await expect(
+      service.reportLocalUsage('user-1', {
+        events: [
+          { clientEventId: '11111111-1111-7111-8111-111111111111', actionKey: 'scanner.scan' },
+          { clientEventId: '22222222-2222-7222-8222-222222222222', actionKey: 'quran.surah.read' },
+          { clientEventId: '33333333-3333-7333-8333-333333333333', actionKey: 'scanner.scan' },
+        ],
+      })
+    ).resolves.toMatchObject({ recorded: 1, alreadyRecorded: 1, refused: 1 });
   });
 });

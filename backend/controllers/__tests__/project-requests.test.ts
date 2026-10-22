@@ -45,6 +45,18 @@ vi.mock('@/backend/middleware/auth-guard', () => ({
   getOptionalUser: () => mockGetOptionalUser(),
 }));
 
+vi.mock('@/backend/config/plans', () => ({
+  createPlanGate: () => ({
+    meter: async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run(),
+    meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
+    reserve: async () => 'event-1',
+    release: async () => {},
+    cap: async () => {},
+    caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
+    report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
+  }),
+}));
+
 import {
   listMyProjectRequests,
   listProjectRequests,

@@ -162,3 +162,55 @@ be blocked by a customer allowance.
 - **The pool caps are per plan, not per product.** 100 credits is 10 posts _or_
   20 downloads _or_ 100 links, not ten of everything; the pricing page says so
   in those words.
+
+## Amendment (2026-10-22): the enforcement layer
+
+The third pull request wires the rules into the products. What the first two
+left open, decided here:
+
+- **One door.** Every metered or capped write calls `createPlanGate()`
+  (`backend/services/plans/plan-gate.ts`): `meter` reserves, runs and refunds on
+  failure; `meterMany` does that per unit for a bulk action; `reserve`/`release`
+  exist for a flow that learns after the fact whether it succeeded (a media
+  upload that answers with a validation message). A controller never repeats the
+  choreography.
+- **A refusal is 402 with a code.** `insufficient_credits`, `owned_item_cap` and
+  `anonymous_limit` all answer 402, because each is "you may ask, but not now,
+  and the remedy is the plan". The body carries the code so the client shows the
+  upgrade action instead of matching Arabic copy. A cap is checked _before_ the
+  spend, so a refused create costs nothing.
+- **Caps are checked at create, never over existing rows.** Admin accounts are
+  exempt (their allowance is reported unlimited) and an account already over a
+  cap keeps everything it has; only the next create is refused. `countOwned`
+  excludes tombstones, so deleting frees the slot.
+- **Local counters reconcile, they never block the server.** The scanner and the
+  Quran reader count on the device and enqueue a `clientEventId`; the shell
+  reports the queue (`POST /api/me/usage/local`, max 50 events) and
+  `spend_credits_once` records each client event at most once, under the same
+  advisory lock `spend_credits` takes. A lost response therefore costs nothing on
+  replay.
+- **The scanner still speaks to no server.** The count is written locally and the
+  report is flushed by the app shell, never by the scan page: what leaves the
+  device is an action key and a count, never the scanned content (ADR-0034). The
+  visitor cap is enforced locally from the same seeded number, mirrored as
+  `ANONYMOUS_DAILY_CREDITS_FALLBACK`.
+- **The Quran charges a surah a day, and does not withhold the page.** Opening a
+  surah records one `quran.surah.read` per day on the device; an empty allowance
+  is reported on the account card and in the plan nudge, not by blanking the
+  text. Reading the Quran offline is a promise this site keeps (ADR-0056).
+- **The visitor subject is `HMAC-SHA256(salt, ip)`.** The salt is
+  `ANONYMOUS_IP_SALT`, falling back to `MCP_TOKEN_ENCRYPTION_KEY` and then to a
+  fixed local value so development stays runnable. Rotating it forgets every
+  visitor's window, which is the intended effect.
+- **Offline, the device refuses what it already knows.** The caps and the
+  allowance are cached per account; a create past a cached cap throws before
+  anything is written or queued. A refusal that arrives from the server is a
+  permanent outbox failure — kept, surfaced and retryable, never dropped
+  (ADR-0029).
+- **A replayed idempotent create can cost one credit twice.** Links and posts are
+  created by a `client_id`-keyed upsert, so an intent the server had already
+  applied and that is replayed after a lost response charges again; the ledger
+  records the request that reached it. Deduplicating per table's client id was
+  judged worse than the occasional extra credit in a generous window, and the
+  spend is visible on the account card. Local-counter reports are the exception:
+  they are deduplicated by design.

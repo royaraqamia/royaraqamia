@@ -9,6 +9,8 @@ import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { mcpConsentRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
+import { createMcpConnectedAppService } from '@/backend/services/mcp/connected-apps';
+import { createUsageService } from '@/backend/config/plans';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
 export const runtime = 'nodejs';
@@ -111,6 +113,21 @@ export async function POST(req: NextRequest) {
   const granted = effectiveScopes(user.email ?? null, requested);
   if (granted.length === 0) {
     return oauthErrorRedirect(redirectUri, 'invalid_scope', state, 'No valid scopes requested');
+  }
+
+  // A grant is one connected app, so the plan's connected-app cap applies here —
+  // re-consenting for a client that is already connected reuses its slot.
+  const connected = await createMcpConnectedAppService().list(user.id);
+  if (!connected.some((app) => app.clientId === clientId)) {
+    const plan = await createUsageService().caps(user.id);
+    if (!plan.unlimited && connected.length >= plan.caps.mcp_connected_apps) {
+      return oauthErrorRedirect(
+        redirectUri,
+        'access_denied',
+        state,
+        'Reached the plan limit for connected apps'
+      );
+    }
   }
 
   const bridge = await createMcpBridgeSessionMinter().mint(user.email ?? '');

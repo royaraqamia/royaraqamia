@@ -16,6 +16,7 @@
 - `CRON_SECRET`
 - `E2E_TEST_PASSWORD`
 - `MCP_TOKEN_ENCRYPTION_KEY`
+- `ANONYMOUS_IP_SALT` (the salt behind a visitor's allowance subject; falls back to the MCP key)
 - `github_dispatch_token` (Supabase Vault, not env — see runbook below)
 
 ## GitHub Actions secrets

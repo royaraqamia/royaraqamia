@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
+import { refreshPlanLimits, clearPlanLimits } from '@/frontend/shared/plans/plan-limits';
 import type { Me } from '@/frontend/api/me';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -104,6 +105,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         // Session expired (had a session, now null) — not on an auth page
         if (prevSession && !session) {
+          clearPlanLimits(prevSession.user.id);
           // An expiry is a sign-out the user did not perform: the cached renders
           // may still belong to the account that just lost its session.
           void purgeServiceWorkerCaches();
@@ -172,6 +174,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [userId, applyMe, clearProfile]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // The plan caps and allowance, cached for the offline create checks, plus
+    // whatever this device counted while it was away. A refresh on `online`
+    // keeps them current without a poll.
+    const refresh = () => {
+      void refreshPlanLimits(userId);
+    };
+    refresh();
+    window.addEventListener('online', refresh);
+    return () => window.removeEventListener('online', refresh);
+  }, [userId]);
 
   const refreshProfile = useCallback(async () => {
     if (!userId) return;

@@ -28,6 +28,18 @@ vi.mock('@/backend/config/blogpress', () => ({
   createBlogpressMediaService: () => ({}),
 }));
 
+vi.mock('@/backend/config/plans', () => ({
+  createPlanGate: () => ({
+    meter: async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run(),
+    meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
+    reserve: async () => 'event-1',
+    release: async () => {},
+    cap: async () => {},
+    caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
+    report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
+  }),
+}));
+
 import {
   createPost,
   deletePost,
@@ -66,13 +78,13 @@ describe('blogpress controller', () => {
     expect(mockPosts.publishPost).toHaveBeenCalledWith('p-1', 'u-1');
   });
 
-  it('maps a post failure to 500 with the message under the "message" key', async () => {
+  it('maps a post failure to 500 with the message under the "error" key', async () => {
     mockRepository.updatePost.mockRejectedValue(new Error('فشل حفظ المنشور'));
 
     const result = await updatePost('p-1', { title: 'عنوان', slug: 'hello' });
 
     expect(result).toEqual(
-      expect.objectContaining({ status: 500, body: { message: 'فشل حفظ المنشور' } })
+      expect.objectContaining({ status: 500, body: { error: 'فشل حفظ المنشور' } })
     );
   });
 

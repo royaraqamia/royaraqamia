@@ -1,5 +1,7 @@
 import { checkRateLimitApi } from '@/backend/middleware/http';
+import { createPlanGate } from '@/backend/config/plans';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
+import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
 import {
@@ -259,13 +261,19 @@ export async function shortenUrl(
     const rateLimitResult = await checkRateLimitApi(shortenRateLimitPolicy(userId, ip));
     if (rateLimitResult) return rateLimitResult;
 
-    const newLink = await createShortenUrlService().execute(
-      originalUrl as string,
-      userId,
-      customCode as string | undefined,
-      parseExpiresAt(body.expiresAt),
-      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
-      offlineCreateMeta(body)
+    const plan = createPlanGate();
+    // The standing cap is the account's shelf; a visitor has none to fill.
+    if (userId) await plan.cap(userId, OWNED_ITEMS.shortLinks);
+
+    const newLink = await plan.meter({ userId, ip }, USAGE_ACTIONS.shortLinkCreate, () =>
+      createShortenUrlService().execute(
+        originalUrl as string,
+        userId,
+        customCode as string | undefined,
+        parseExpiresAt(body.expiresAt),
+        typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
+        offlineCreateMeta(body)
+      )
     );
 
     return jsonResult(200, {

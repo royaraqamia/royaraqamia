@@ -112,6 +112,20 @@ export const env = {
   get cronSecret(): string | undefined {
     return read('CRON_SECRET');
   },
+  /**
+   * The salt behind a visitor's ledger subject (ADR-0075). It never leaves the
+   * server, and rotating it forgets every visitor's 24-hour window — which is
+   * the intended effect, not a bug. A deployment that has not set it yet falls
+   * back to the MCP encryption key, which is already required to be secret, and
+   * finally to a fixed local value so development and tests stay runnable.
+   */
+  get anonymousIpSalt(): string {
+    return (
+      read('ANONYMOUS_IP_SALT') ??
+      read('MCP_TOKEN_ENCRYPTION_KEY') ??
+      'royaraqamia-anonymous-local'
+    ).trim();
+  },
   get downloaderProviderUrl(): string | undefined {
     return read('DOWNLOADER_PROVIDER_URL');
   },

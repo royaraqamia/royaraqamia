@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import {
   Camera,
@@ -17,6 +18,14 @@ import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { cn } from '@/frontend/shared/cn';
 import { shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
+import { useSession } from '@/frontend/state/session-provider';
+import { identityFromUser, identityUserId } from '@/frontend/shared/local-store/identity';
+import {
+  ANONYMOUS_DAILY_CREDITS_FALLBACK,
+  localUsageToday,
+  readCachedUsage,
+  recordLocalUsage,
+} from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
 import {
   SCAN_FORMAT_LABELS,
@@ -119,6 +128,8 @@ export function ScanPage() {
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [hit, setHit] = useState<{ rawValue: string; format: string } | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const { user } = useSession();
 
   const classification = hit ? classifyScanPayload(hit.rawValue) : null;
   const certificate = useScannedCertificate(hit?.rawValue ?? null);
@@ -237,8 +248,29 @@ export function ScanPage() {
     setStatus('idle');
   }
 
+  /**
+   * One scan is one metered action (ADR-0075). It is counted on the device and
+   * reported later, never sent from here: the scanner still speaks to no server
+   * at all (ADR-0034). A guest gets the visitor allowance; a signed-in account
+   * gets whatever its cached allowance says is left.
+   */
+  function mayScan(): boolean {
+    const identity = identityFromUser(user);
+    const usage = readCachedUsage(identity);
+
+    if (identityUserId(identity)) {
+      return !usage || usage.unlimited || usage.remaining > 0;
+    }
+    return localUsageToday('scanner.scan') < ANONYMOUS_DAILY_CREDITS_FALLBACK;
+  }
+
   /** The one place a decoded code becomes a result: camera and loop both stop. */
   function accept(code: DetectedCode) {
+    if (!mayScan()) {
+      setLimitReached(true);
+      return;
+    }
+    recordLocalUsage('scanner.scan');
     haltLoop();
     stopStream();
     if (typeof navigator.vibrate === 'function') navigator.vibrate(60);
@@ -450,6 +482,35 @@ export function ScanPage() {
           <SectionTitleHighlight>ماسح QR و Barcode</SectionTitleHighlight>
         </SectionTitle>
       </header>
+
+      {limitReached && (
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {user ? (
+            <>
+              نفدت حصَّتك لهذه الفترة.{' '}
+              <Link href="/pricing" className="underline underline-offset-4">
+                ارتقِ إلى الخطة المدفوعة
+              </Link>{' '}
+              للمتابعة.
+            </>
+          ) : (
+            <>
+              انتهت حصَّتك اليومية كزائر.{' '}
+              <Link href="/auth/login?redirect=/scan" className="underline underline-offset-4">
+                سجِّل الدُّخول
+              </Link>{' '}
+              لمتابعة الاستخدام، أو{' '}
+              <Link href="/pricing" className="underline underline-offset-4">
+                اطَّلع على الخطط
+              </Link>
+              .
+            </>
+          )}
+        </p>
+      )}
 
       <div className={cn('flex flex-col gap-4', hit && 'hidden')}>
         <Card>

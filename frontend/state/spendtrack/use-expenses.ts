@@ -10,6 +10,7 @@ import {
   getExpensesPage,
 } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
+import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 
 type SaveOptions = {
@@ -65,6 +66,9 @@ export function useSaveExpense(expenseId?: string) {
           toast.error('حدث خطأ أثناء حفظ المصروف');
           setServerError(result.error);
         }
+        return false;
+      } catch (error) {
+        setServerError(showActionError(error, 'حدث خطأ أثناء حفظ المصروف'));
         return false;
       } finally {
         setPending(false);

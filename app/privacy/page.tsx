@@ -231,6 +231,20 @@ export default function PrivacyPage() {
                 </div>
               ))}
             </div>
+
+            <p className="text-muted-foreground text-xs sm:text-sm mt-6 pt-4 border-t border-border/50 leading-relaxed">
+              ولحساب حصَّة الاستخدام نُسجِّل لكل إجراء استهلاكه (كالنَّشر أو التَّنزيل)، ونحفظ
+              للزَّائر عنوان IP بصيغة مُجزَّأة (hash) بمفتاح سرِّي لا يخرج من الخادم، فلا يمكن
+              استعادة العنوان من السِّجل. أمَّا عدَّاد الماسح وقراءة السُّور فحسابهما يجري على جهازك
+              ولا يُرسَل منه إلَّا العدد، ولا يُرسَل أبداً ما مسحتَه أو ما قرأتَه. تفاصيل ذلك في{' '}
+              <a
+                href="/pricing"
+                className="text-primary font-medium underline underline-offset-4 hover:text-primary transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                صفحة الخطط
+              </a>
+              .
+            </p>
           </section>
 
           {/* Section 04 */}

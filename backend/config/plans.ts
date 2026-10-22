@@ -3,6 +3,7 @@ import {
   SupabaseUsageRepository,
   type UsageRepository,
 } from '@/backend/repositories/plans/usage-repository';
+import { PlanGate } from '@/backend/services/plans/plan-gate';
 import { UsageService } from '@/backend/services/plans/usage-service';
 
 /**
@@ -20,4 +21,12 @@ export function createUsageRepository(): UsageRepository {
 
 export function createUsageService(): UsageService {
   return new UsageService(createUsageRepository());
+}
+
+/**
+ * Every write path's plan door. One instance per request is cheap: the service
+ * holds no connection of its own, and the repository shares the admin client.
+ */
+export function createPlanGate(): PlanGate {
+  return new PlanGate(createUsageService());
 }

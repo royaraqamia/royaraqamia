@@ -26,5 +26,49 @@ export function errorResult(error: unknown, status?: number): HttpJsonResult {
   if (status === undefined && error instanceof AppError) {
     status = error.statusCode;
   }
-  return { status: status ?? 500, body: { error: message } };
+  // A plan refusal carries a code so the client can pick the right remedy
+  // (sign in, upgrade, delete something) instead of matching Arabic copy.
+  const body =
+    error instanceof AppError && error.code
+      ? { error: message, code: error.code }
+      : { error: message };
+  return { status: status ?? 500, body };
+}
+
+/**
+ * A plan refusal in the shape the public forms answer with (`success: false`
+ * plus a code), or null when the error is something else and the caller's own
+ * mapping should decide.
+ */
+export function planRefusalResult(error: unknown): HttpJsonResult | null {
+  if (!(error instanceof AppError)) return null;
+  return {
+    status: error.statusCode,
+    body: {
+      success: false,
+      error: getErrorMessage(error),
+      ...(error.code ? { code: error.code } : {}),
+    },
+  };
+}
+
+/**
+ * `messageError` with one exception: an `AppError` keeps its own status and
+ * code. A handler that answers validation failures with 400 must still answer
+ * 402 for a plan refusal — otherwise the Offline Sync queue reads it as a server
+ * fault and retries a spend that can never succeed.
+ */
+export function errorResultAt(status: number, fallback: string) {
+  return (error: unknown): HttpJsonResult => {
+    if (error instanceof AppError) {
+      return {
+        status: error.statusCode,
+        body: {
+          error: getErrorMessage(error),
+          ...(error.code ? { code: error.code } : {}),
+        },
+      };
+    }
+    return { status, body: { error: error instanceof Error ? error.message : fallback } };
+  };
 }

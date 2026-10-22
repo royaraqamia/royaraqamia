@@ -81,6 +81,15 @@ vi.mock('@/backend/config/linksnap', () => ({
   createUnlockLinkService: () => mockUnlock,
 }));
 
+vi.mock('@/backend/config/plans', () => ({
+  createPlanGate: () => ({
+    cap: async () => {},
+    meter: async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run(),
+    reserve: async () => 'event-1',
+    release: async () => {},
+  }),
+}));
+
 import { POST as shortenPOST } from '@/app/linksnap/api/shorten/route';
 import {
   GET as linksGET,
