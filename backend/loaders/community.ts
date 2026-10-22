@@ -109,6 +109,16 @@ export const loadCommunityMembers = unstable_cache(
 );
 
 /**
+ * Every verified handle, for `sitemap.ts`. The roster's 50 is a display cap, so
+ * the sitemap cannot reuse it; 50,000 is the protocol's own per-file URL ceiling.
+ */
+export const loadCommunityMemberHandles = unstable_cache(
+  (): Promise<string[]> => createPublicUsersRepositoryServer().listVerifiedHandles(50_000),
+  ['community-member-handles'],
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members] }
+);
+
+/**
  * Combined people + post suggestions for the search combobox. Not cached: it is
  * keyed on the visitor's keystrokes and served on the request path.
  */

@@ -1,6 +1,10 @@
 import { MetadataRoute } from 'next';
 import { getCanonicalOrigin } from '@/frontend/shared/constants';
-import { loadPublishedPostSitemapEntries } from '@/backend/loaders/community';
+import {
+  loadCommunityMemberHandles,
+  loadPublishedPostSitemapEntries,
+} from '@/backend/loaders/community';
+import { loadSurahNumbers } from '@/backend/loaders/quran';
 
 // The sitemap reads published posts from the DB, so it is ISR rather than
 // build-static. This keeps newly scheduled/auto-published posts flowing in even
@@ -68,8 +72,24 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    // The index only. The 114 sura pages are reachable from it and are not
-    // listed individually, the way a feed's pages are not either.
+    path: '/downloader',
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  },
+  {
+    // The MCP setup guide. `/mcp` itself is disallowed in `robots.ts`; this is
+    // the one crawlable page under that prefix, and `robots.ts` allows it.
+    path: '/mcp/guide',
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  },
+  {
+    path: '/device',
+    changeFrequency: 'yearly',
+    priority: 0.3,
+  },
+  {
+    // The index and, below, the 114 sura pages themselves.
     path: '/quran',
     changeFrequency: 'monthly',
     priority: 0.8,
@@ -138,11 +158,46 @@ async function generatePostEntries(baseUrl: string): Promise<MetadataRoute.Sitem
   }
 }
 
+async function generateSurahEntries(baseUrl: string): Promise<MetadataRoute.Sitemap> {
+  try {
+    const numbers = await loadSurahNumbers();
+
+    return numbers.map((number) => ({
+      url: `${baseUrl}/quran/${number}`,
+      // The text is vendored and never edited, so a sura page never changes.
+      changeFrequency: 'yearly',
+      priority: 0.6,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function generateMemberEntries(baseUrl: string): Promise<MetadataRoute.Sitemap> {
+  try {
+    const handles = await loadCommunityMemberHandles();
+
+    return handles.map((handle) => ({
+      // Handles may be Arabic, so the URL is percent-encoded — the same form
+      // every internal `/u/` link uses.
+      url: `${baseUrl}/u/${encodeURIComponent(handle)}`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getCanonicalOrigin();
 
   const staticEntries = SITEMAP_ENTRIES.map((config) => generateStaticEntry(config, baseUrl));
-  const postEntries = await generatePostEntries(baseUrl);
+  const [postEntries, surahEntries, memberEntries] = await Promise.all([
+    generatePostEntries(baseUrl),
+    generateSurahEntries(baseUrl),
+    generateMemberEntries(baseUrl),
+  ]);
 
-  return [...staticEntries, ...postEntries];
+  return [...staticEntries, ...postEntries, ...surahEntries, ...memberEntries];
 }
