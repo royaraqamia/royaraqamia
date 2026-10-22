@@ -75,6 +75,28 @@ describe('blogpress write tools', { timeout: 20_000 }, () => {
 describe('linksnap write tools', () => {
   beforeEach(() => vi.resetModules());
 
+  function makeRepo(overrides: Record<string, unknown> = {}) {
+    return {
+      findByCode: vi.fn().mockResolvedValue(null),
+      findByClientId: vi.fn().mockResolvedValue(null),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+      setExpiryMany: vi.fn(),
+      exists: vi.fn().mockResolvedValue(false),
+      listByUserId: vi.fn().mockResolvedValue([]),
+      listByUserIdIncludingDeleted: vi.fn().mockResolvedValue([]),
+      ...overrides,
+    };
+  }
+
+  function mockRepositoryFactory(repo: Record<string, unknown>) {
+    const createShortLinkRepository = vi.fn(() => repo);
+    vi.doMock('@/backend/config/linksnap', () => ({ createShortLinkRepository }));
+    return createShortLinkRepository;
+  }
+
   it('createLinkHandler requires linksnap.write scope', async () => {
     const { createLinkHandler } = await import('../tools/linksnap');
     const result = await createLinkHandler(
@@ -84,50 +106,146 @@ describe('linksnap write tools', () => {
     expect(result.isError).toBe(true);
   });
 
-  it('createLinkHandler shortens via the service on the user-scoped client', async () => {
-    vi.doMock('@/backend/repositories/linksnap/supabase-short-link', () => ({
-      SupabaseShortLinkRepository: class {
-        exists = async () => false;
-        create = async (link: { code: string; originalUrl: string }) => ({
-          ...link,
-          userId: 'u1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isBlocked: false,
-          expiresAt: null,
-          passwordHash: null,
-        });
-      },
-    }));
-    vi.doMock('@/backend/services/linksnap/shorten-url', () => ({
-      ShortenUrlService: class {
-        execute = async (url: string, _userId: string, code?: string) => ({
-          code: code ?? 'abc123',
-          originalUrl: url,
-          userId: 'u1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isBlocked: false,
-          expiresAt: null,
-          passwordHash: null,
-        });
-      },
-    }));
+  it('createLinkHandler builds the write repository from the service-role factory', async () => {
+    const created = {
+      code: 'abc',
+      originalUrl: 'https://example.com',
+      userId: 'u1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: null,
+      deletedAt: null,
+    };
+    const repo = makeRepo({ create: vi.fn().mockResolvedValue(created) });
+    const createShortLinkRepository = mockRepositoryFactory(repo);
 
     const { createLinkHandler } = await import('../tools/linksnap');
     const result = await createLinkHandler(
       { url: 'https://example.com', code: 'abc', format: 'json' },
       userCtx
     );
+
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.code).toBe('abc');
-    expect(result.structuredContent?.originalUrl).toBe('https://example.com');
+    expect(createShortLinkRepository).toHaveBeenCalled();
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'abc', originalUrl: 'https://example.com', userId: 'u1' })
+    );
+  });
+
+  it('updateLinkHandler writes through the service-role factory', async () => {
+    const current = {
+      code: 'abc',
+      originalUrl: 'https://old.example.com',
+      userId: 'u1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: null,
+      deletedAt: null,
+    };
+    const repo = makeRepo({
+      findByCode: vi.fn().mockResolvedValue(current),
+      update: vi.fn().mockResolvedValue({ ...current, originalUrl: 'https://new.example.com' }),
+    });
+    const createShortLinkRepository = mockRepositoryFactory(repo);
+
+    const { updateLinkHandler } = await import('../tools/linksnap');
+    const result = await updateLinkHandler(
+      { code: 'abc', url: 'https://new.example.com', format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(createShortLinkRepository).toHaveBeenCalled();
+    expect(repo.update).toHaveBeenCalledWith('abc', { originalUrl: 'https://new.example.com' });
+  });
+
+  it('updateLinkHandler still refuses a link owned by another user', async () => {
+    const foreign = {
+      code: 'abc',
+      originalUrl: 'https://old.example.com',
+      userId: 'u2',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: null,
+      deletedAt: null,
+    };
+    const repo = makeRepo({ findByCode: vi.fn().mockResolvedValue(foreign) });
+    mockRepositoryFactory(repo);
+
+    const { updateLinkHandler } = await import('../tools/linksnap');
+    const result = await updateLinkHandler(
+      { code: 'abc', url: 'https://new.example.com', format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]?.text).toContain('Unauthorized');
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('deleteLinkHandler writes through the service-role factory', async () => {
+    const current = {
+      code: 'abc',
+      originalUrl: 'https://example.com',
+      userId: 'u1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isBlocked: false,
+      expiresAt: null,
+      passwordHash: null,
+      clientId: null,
+      deletedAt: null,
+    };
+    const repo = makeRepo({
+      findByCode: vi.fn().mockResolvedValue(current),
+      delete: vi.fn().mockResolvedValue(true),
+    });
+    const createShortLinkRepository = mockRepositoryFactory(repo);
+
+    const { deleteLinkHandler } = await import('../tools/linksnap');
+    const result = await deleteLinkHandler({ code: 'abc', format: 'json' }, userCtx);
+
+    expect(result.isError).toBeFalsy();
+    expect(createShortLinkRepository).toHaveBeenCalled();
+    expect(repo.delete).toHaveBeenCalledWith('abc', 'u1');
   });
 
   it('deleteLinkHandler rejects with missing scope', async () => {
     const { deleteLinkHandler } = await import('../tools/linksnap');
     const result = await deleteLinkHandler({ code: 'abc', format: 'json' }, restrictedCtx);
     expect(result.isError).toBe(true);
+  });
+
+  it('write handlers reject a null user before touching the write repository', async () => {
+    const repo = makeRepo();
+    const createShortLinkRepository = mockRepositoryFactory(repo);
+    const anonymousCtx: McpUserContext = { ...userCtx, userId: null };
+
+    const { createLinkHandler, updateLinkHandler, deleteLinkHandler } =
+      await import('../tools/linksnap');
+
+    for (const result of [
+      await createLinkHandler({ url: 'https://example.com', format: 'json' }, anonymousCtx),
+      await updateLinkHandler(
+        { code: 'abc', url: 'https://example.com', format: 'json' },
+        anonymousCtx
+      ),
+      await deleteLinkHandler({ code: 'abc', format: 'json' }, anonymousCtx),
+    ]) {
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.text).toContain('requires an authenticated session');
+    }
+    expect(createShortLinkRepository).not.toHaveBeenCalled();
   });
 });
 
