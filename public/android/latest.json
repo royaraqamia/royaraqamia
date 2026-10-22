@@ -1,10 +1,10 @@
 {
-  "versionCode": 20014,
-  "versionName": "1.0.14",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.14.apk",
-  "sha256": "afa1f9a35e669021cb1ca50817f58cfc21e37ba6553da6f383066fcc620f3e51",
-  "sizeBytes": 8054296,
+  "versionCode": 20015,
+  "versionName": "1.0.15",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.15.apk",
+  "sha256": "c5bc552b2abfcfeeda367de8e79f63b49a687a3a8cce71860fb21f62fe32003e",
+  "sizeBytes": 8054944,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(offline): ask for the battery-optimization exemption where it matters (#451)",
-  "releasedAt": "2026-10-21"
+  "notes": "feat(sw): refresh route shells after activation, not during install (#517) (#517)",
+  "releasedAt": "2026-10-22"
 }
