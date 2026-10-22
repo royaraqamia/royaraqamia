@@ -18,6 +18,7 @@ import {
   type OutboxEntry,
 } from '@/frontend/shared/local-store/outbox';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
+import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
 import {
   QURAN_SURAH_COUNT,
   type Bookmark,
@@ -331,7 +332,6 @@ export class QuranLocalStore {
     }
     const existing = await this.findBookmark(surah, ayah);
     const now = new Date().toISOString();
-
     if (existing) {
       const row: Bookmark = {
         ...existing,
@@ -341,6 +341,11 @@ export class QuranLocalStore {
       await this.commit([{ store: BOOKMARKS_STORE, put: row }], this.bookmarkIntent(row));
       return;
     }
+
+    // A new mark takes a slot; re-marking a tombstoned ayah frees one first,
+    // which the count below already reflects.
+    const bookmarks = await this.listBookmarks();
+    assertOwnedItemSlot(this.identity, 'quran_bookmarks', bookmarks.length);
 
     const bookmark: Bookmark = {
       clientId: uuidv7(),

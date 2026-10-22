@@ -60,6 +60,57 @@ export const OWNED_ITEMS = {
 
 export type OwnedItemKey = (typeof OWNED_ITEMS)[keyof typeof OWNED_ITEMS];
 
+/**
+ * The metered actions a client performs with no server in the loop, reported
+ * afterwards for reconciliation (ADR-0075). A scan never leaves the device
+ * except as this counter (ADR-0034), and reading a surah is counted locally so
+ * the reader works offline.
+ */
+export const LOCAL_USAGE_ACTIONS = [
+  USAGE_ACTIONS.scannerScan,
+  USAGE_ACTIONS.quranSurahRead,
+] as const;
+
+export type LocalUsageActionKey = (typeof LOCAL_USAGE_ACTIONS)[number];
+
+/**
+ * The standing caps for one account, as the offline client caches them: a cap
+ * check that has to hit the network could not refuse a write while offline, and
+ * the queue would then carry an intent the server is certain to reject.
+ */
+export interface PlanCaps {
+  plan: PlanId;
+  unlimited: boolean;
+  caps: Record<OwnedItemKey, number>;
+}
+
+/**
+ * A local counter report. `clientEventId` is minted once per counted action and
+ * is what makes a replayed report idempotent: the ledger refuses to record the
+ * same event twice (ADR-0075).
+ */
+export const LocalUsageReportSchema = z.object({
+  events: z
+    .array(
+      z.object({
+        clientEventId: z.string().uuid(),
+        actionKey: z.enum(LOCAL_USAGE_ACTIONS),
+      })
+    )
+    .min(1)
+    .max(50),
+});
+
+export type LocalUsageReportInput = z.infer<typeof LocalUsageReportSchema>;
+
+/** What a report recorded, and where the allowance stands afterwards. */
+export interface LocalUsageReportResult {
+  recorded: number;
+  alreadyRecorded: number;
+  refused: number;
+  state: UsageState;
+}
+
 /** The single row of plan numbers: price, duration, window and pools. */
 export interface PlanSettings {
   priceCents: number;

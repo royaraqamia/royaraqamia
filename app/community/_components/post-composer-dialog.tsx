@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { createPost, saveAndPublishPost, updatePost } from '@/frontend/api/blogpress';
+import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
@@ -99,8 +100,8 @@ export function PostComposerDialog({
         toast.success('تمَّ نشر منشورك');
         onOpenChange(false);
         onSaved(newSlug);
-      } catch {
-        toast.error(isEdit ? 'فشل حفظ التعديلات' : 'فشل نشر المنشور');
+      } catch (error) {
+        showActionError(error, isEdit ? 'فشل حفظ التعديلات' : 'فشل نشر المنشور');
       }
     });
   };

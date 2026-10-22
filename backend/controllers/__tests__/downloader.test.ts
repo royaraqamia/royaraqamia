@@ -7,6 +7,7 @@ const mockVerifyTurnstile = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockRunAfter = vi.fn();
 const mockCaptureMessage = vi.fn();
+const mockMeter = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({
   captureException: vi.fn(),
@@ -30,8 +31,35 @@ vi.mock('@/backend/config/downloader', () => ({
   createDownloaderTurnstileVerifier: () => (token: string) => mockVerifyTurnstile(token),
 }));
 
+// The gate double is configurable through `mockMeter`, so a test can make the
+// spend refuse (a 402) while every other test passes straight through.
+vi.mock('@/backend/config/plans', () => ({
+  createPlanGate: () => ({
+    meter: (subject: unknown, action: string, run: () => Promise<unknown>) =>
+      mockMeter(subject, action, run),
+    meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
+    reserve: async () => 'event-1',
+    release: async () => {},
+    cap: async () => {},
+    caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
+    report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
+  }),
+}));
+
 import { createDownloadJob, recordDownloadCallback } from '@/backend/controllers/downloader';
 import { downloaderRateLimitPolicy } from '@/backend/config/rate-limiter';
+import { InsufficientCreditsError } from '@/backend/services/plans/usage-service';
+import type { UsageState } from '@/shared/contracts/plans';
+
+const freeState: UsageState = {
+  plan: 'free',
+  unlimited: false,
+  cap: 100,
+  spent: 40,
+  remaining: 60,
+  windowDays: 30,
+  expiresAt: null,
+};
 
 const VALID_BODY = { url: 'https://example.com/v/1', format: 'video-720p' };
 const IP = '1.2.3.4';
@@ -56,6 +84,9 @@ describe('downloader controller createDownloadJob', () => {
     mockCheckRateLimitApi.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: JOB_ID, status: 'queued' });
     mockDispatch.mockResolvedValue(undefined);
+    mockMeter.mockImplementation(
+      async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
+    );
   });
 
   it('rejects when Turnstile fails, before creating a job', async () => {
@@ -104,6 +135,19 @@ describe('downloader controller createDownloadJob', () => {
     expect(result).toMatchObject({ status: 202 });
     expect(mockCreate).toHaveBeenCalledWith({ url: VALID_BODY.url, format: VALID_BODY.format });
     expect(mockRunAfter).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers 402 with the plan refusal code when the allowance is spent', async () => {
+    mockMeter.mockRejectedValue(new InsufficientCreditsError(freeState));
+
+    const result = await createDownloadJob(VALID_BODY, IP);
+
+    expect(result).toMatchObject({
+      status: 402,
+      body: { success: false, code: 'insufficient_credits' },
+    });
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockRunAfter).not.toHaveBeenCalled();
   });
 });
 

@@ -12,6 +12,7 @@ import {
   type AdminPlansQuery,
   type AdminUserUsagePage,
   type AnonymousSpendOutcome,
+  type OwnedItemKey,
   type PlanLimit,
   type PlanSettings,
   type PlanActivationRecord,
@@ -39,7 +40,15 @@ export interface UsageRepository {
   getState(userId: string): Promise<UsageState>;
   listActivations(userId: string): Promise<PlanActivationRecord[]>;
   spend(userId: string, actionKey: UsageActionKey): Promise<SpendOutcome>;
+  /** A spend a client-reported counter already has an id for (idempotent). */
+  spendOnce(
+    userId: string,
+    actionKey: UsageActionKey,
+    clientEventId: string
+  ): Promise<SpendOutcome>;
   spendAnonymous(ipHash: string, actionKey: UsageActionKey): Promise<AnonymousSpendOutcome>;
+  /** How many of an owned item the account currently holds (tombstones excluded). */
+  countOwned(item: OwnedItemKey, userId: string): Promise<number>;
   /** Give a reserved spend back when the action it preceded failed. */
   refund(userId: string, eventId: string): Promise<boolean>;
   refundAnonymous(ipHash: string, eventId: string): Promise<boolean>;
@@ -165,6 +174,130 @@ export class SupabaseUsageRepository implements UsageRepository {
       : { allowed: false, state, cost: payload.cost, eventId: null };
   }
 
+  async spendOnce(
+    userId: string,
+    actionKey: UsageActionKey,
+    clientEventId: string
+  ): Promise<SpendOutcome> {
+    const { data, error } = await this.supabase.rpc('spend_credits_once', {
+      p_user_id: userId,
+      p_action_key: actionKey,
+      p_client_event_id: clientEventId,
+    });
+
+    if (error) throw error;
+    const payload = SpendPayloadSchema.parse(data);
+    const state = { ...toUsageState(payload), remaining: payload.remaining };
+
+    return payload.allowed
+      ? { allowed: true, state, cost: payload.cost, eventId: payload.eventId }
+      : { allowed: false, state, cost: payload.cost, eventId: null };
+  }
+
+  /**
+   * Counting is a read per table, not an aggregate in Postgres: the caps are a
+   * product rule on top of ordinary tables, and a `count` per create keeps the
+   * data model untouched. Tombstones are excluded — a deleted habit still grows
+   * the history table, but it no longer holds a slot.
+   */
+  async countOwned(item: OwnedItemKey, userId: string): Promise<number> {
+    switch (item) {
+      case 'habits':
+        return this.headCount(
+          this.supabase
+            .from('habits')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'expenses':
+        return this.headCount(
+          this.supabase
+            .from('expenses')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'expense_categories':
+        return this.headCount(
+          this.supabase
+            .from('categories')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'budgets':
+        return this.headCount(
+          this.supabase
+            .from('budgets')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'short_links':
+        return this.headCount(
+          this.supabase
+            .from('short_links')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'community_drafts':
+        return this.headCount(
+          this.supabase
+            .from('posts')
+            .select('id', { count: 'exact', head: true })
+            .eq('author_id', userId)
+            .is('deleted_at', null)
+            .in('status', ['draft', 'scheduled'])
+        );
+      case 'community_published':
+        return this.headCount(
+          this.supabase
+            .from('posts')
+            .select('id', { count: 'exact', head: true })
+            .eq('author_id', userId)
+            .is('deleted_at', null)
+            .eq('status', 'published')
+        );
+      case 'community_tags':
+        return this.headCount(
+          this.supabase
+            .from('community_tags')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+        );
+      case 'community_categories':
+        return this.headCount(
+          this.supabase
+            .from('community_categories')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+        );
+      case 'quran_bookmarks':
+        return this.headCount(
+          this.supabase
+            .from('quran_bookmarks')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
+      case 'mcp_connected_apps': {
+        // One grant may hold an access and a refresh row for the same app, so the
+        // cap counts the app, not the token.
+        const { data, error } = await this.supabase
+          .from('mcp_oauth_tokens')
+          .select('client_id')
+          .eq('user_id', userId)
+          .is('revoked_at', null)
+          .gt('expires_at', new Date().toISOString());
+
+        if (error) throw error;
+        return new Set((data ?? []).map((row) => row.client_id)).size;
+      }
+    }
+  }
+
   async spendAnonymous(ipHash: string, actionKey: UsageActionKey): Promise<AnonymousSpendOutcome> {
     const { data, error } = await this.supabase.rpc('spend_anonymous_credits', {
       p_ip_hash: ipHash,
@@ -255,6 +388,13 @@ export class SupabaseUsageRepository implements UsageRepository {
       pageSize: payload.pageSize,
       windowDays: payload.windowDays,
     };
+  }
+  private async headCount(
+    query: PromiseLike<{ count: number | null; error: unknown }>
+  ): Promise<number> {
+    const { count, error } = await query;
+    if (error) throw error;
+    return count ?? 0;
   }
 }
 

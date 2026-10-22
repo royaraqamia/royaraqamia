@@ -25,6 +25,16 @@ vi.mock('@/backend/services/mcp/bridge-session', () => ({
   createMcpBridgeSessionMinter: () => ({ mint: mockMint }),
 }));
 
+vi.mock('@/backend/services/mcp/connected-apps', () => ({
+  createMcpConnectedAppService: () => ({ list: async () => [] }),
+}));
+
+vi.mock('@/backend/config/plans', () => ({
+  createUsageService: () => ({
+    caps: async () => ({ plan: 'free', unlimited: false, caps: { mcp_connected_apps: 1 } }),
+  }),
+}));
+
 vi.mock('@/backend/config/supabase', () => ({
   createServerSupabaseClient: () => ({
     // No `getSession` on purpose: the consent route must take identity from

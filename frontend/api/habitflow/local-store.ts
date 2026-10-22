@@ -7,6 +7,7 @@ import type {
   HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
 import {
   openLocalStore,
   promisifyRequest,
@@ -207,6 +208,7 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   async createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit> {
+    assertOwnedItemSlot(this.identity, 'habits', (await this.getHabits()).length);
     const now = new Date().toISOString();
     const id = uuidv7();
     const record: Habit = {

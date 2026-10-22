@@ -1,4 +1,7 @@
 import { createQuranSyncService } from '@/backend/config/quran';
+import { createPlanGate } from '@/backend/config/plans';
+import { errorResultAt } from '@/backend/middleware/http';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import { messageError } from '@/backend/transport/authenticated-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
@@ -44,6 +47,11 @@ export async function saveQuranReadingPosition(body: QuranPositionWrite): Promis
 export async function saveQuranBookmark(body: QuranBookmarkWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
+      // A mark takes a slot; clearing one (a tombstone) gives it back.
+      if (!body.deletedAt) {
+        await createPlanGate().cap(userId, OWNED_ITEMS.quranBookmarks);
+      }
+
       await createQuranSyncService(supabase).setBookmark(
         userId,
         { surah: body.surah, ayah: body.ayah, deletedAt: body.deletedAt ?? null },
@@ -51,6 +59,6 @@ export async function saveQuranBookmark(body: QuranBookmarkWrite): Promise<HttpR
       );
       return jsonResult(200, { success: true });
     },
-    { mapError: messageError(400, 'فشل حفظ العلامة') }
+    { mapError: errorResultAt(400, 'فشل حفظ العلامة') }
   );
 }

@@ -17,6 +17,8 @@ import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { logger } from '@/frontend/shared/logger';
 import { useSession } from '@/frontend/state/session-provider';
+import { recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
+import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import type { Bookmark, ReadingPosition } from '@/shared/contracts/quran';
 
 /**
@@ -262,6 +264,12 @@ export function useQuranReader(): QuranReaderState {
   const savePosition = useCallback(async (surah: number, ayah: number) => {
     const store = storeRef.current;
     if (!store || !isAyahRef(surah, ayah)) return;
+
+    // Reading a surah is metered once a day, and counted on the device: the
+    // reader works offline, and the count is reported for reconciliation
+    // (ADR-0075) rather than fetched before the page paints (ADR-0073).
+    recordLocalUsage('quran.surah.read', `quran:${surah}:${new Date().toISOString().slice(0, 10)}`);
+
     try {
       await store.saveReadingPosition(surah, ayah);
     } catch (error) {
@@ -276,6 +284,7 @@ export function useQuranReader(): QuranReaderState {
       await store.toggleBookmark(surah, ayah);
     } catch (error) {
       logger.error('Failed to toggle a bookmark', { error: String(error) });
+      showActionError(error, 'تعذَّر حفظ العلامة.');
     }
   }, []);
 

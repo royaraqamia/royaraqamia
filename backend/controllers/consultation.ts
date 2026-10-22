@@ -14,6 +14,9 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { planRefusalResult } from '@/backend/middleware/http';
+import { createPlanGate } from '@/backend/config/plans';
+import { USAGE_ACTIONS } from '@/shared/contracts/plans';
 import {
   createAdminConsultationService,
   createPublicConsultationService,
@@ -103,16 +106,23 @@ export async function createBooking(body: unknown, ip: string): Promise<HttpResu
 
   try {
     const { user } = await getOptionalUser();
-    const booking = await createPublicConsultationService().createBooking(parsed.data, {
-      ip,
-      userId: user?.id ?? null,
-    });
+    const booking = await createPlanGate().meter(
+      { userId: user?.id ?? null, ip },
+      USAGE_ACTIONS.consultationBookingCreate,
+      () =>
+        createPublicConsultationService().createBooking(parsed.data, {
+          ip,
+          userId: user?.id ?? null,
+        })
+    );
     return jsonResult(200, {
       success: true,
       bookingId: booking.id,
       referenceCode: booking.referenceCode,
     });
   } catch (error) {
+    const refusal = planRefusalResult(error);
+    if (refusal) return refusal;
     Sentry.captureException(error);
     const mapped = bookingErrorResponse(error);
     if (mapped) return mapped;

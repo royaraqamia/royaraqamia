@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { Habit, HabitRepository, HabitTargetPeriod } from '@/shared/contracts/habitflow';
+import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 
 export interface DashboardForm {
   isAddModalOpen: boolean;
@@ -76,9 +77,9 @@ export function useDashboardForm(
       setIsAddModalOpen(false);
       resetFields();
       toast.success('تم إنشاء العادة بنجاح');
-    } catch {
-      setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-      toast.error('فشل إنشاء العادة');
+    } catch (error) {
+      // A reached cap throws with its own copy; the form shows it as-is.
+      setFormError(showActionError(error, 'فشل إنشاء العادة'));
     } finally {
       setIsSubmitting(false);
     }

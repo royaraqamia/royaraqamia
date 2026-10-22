@@ -3,6 +3,9 @@ import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/ad
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { planRefusalResult } from '@/backend/middleware/http';
+import { createPlanGate } from '@/backend/config/plans';
+import { USAGE_ACTIONS } from '@/shared/contracts/plans';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import {
   TrainingApplicationClosedError,
@@ -60,16 +63,23 @@ export async function submitTrainingApplication(body: unknown, ip: string): Prom
 
   try {
     const { user } = await getOptionalUser();
-    const application = await createDefaultTrainingApplicationService().submit(parsed.data, {
-      ip,
-      userId: user?.id ?? null,
-    });
+    const application = await createPlanGate().meter(
+      { userId: user?.id ?? null, ip },
+      USAGE_ACTIONS.trainingApplicationSubmit,
+      () =>
+        createDefaultTrainingApplicationService().submit(parsed.data, {
+          ip,
+          userId: user?.id ?? null,
+        })
+    );
 
     return jsonResult(200, {
       success: true,
       referenceCode: application.reference_code,
     } satisfies ApplicationActionResult);
   } catch (error) {
+    const refusal = planRefusalResult(error);
+    if (refusal) return refusal;
     if (!isRepositoryError(error)) Sentry.captureException(error);
 
     if (error instanceof TrainingApplicationClosedError) {

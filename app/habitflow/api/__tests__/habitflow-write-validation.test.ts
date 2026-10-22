@@ -27,6 +27,13 @@ vi.mock('@/backend/config/habitflow', () => ({
   createHabitService: () => mockCreateHabitService(),
 }));
 
+vi.mock('@/backend/config/plans', () => ({
+  createPlanGate: () => ({
+    cap: async () => {},
+    meter: async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run(),
+  }),
+}));
+
 import { POST as habitsPOST, PUT as habitsPUT } from '@/app/habitflow/api/habits/route';
 import { POST as logsPOST } from '@/app/habitflow/api/logs/route';
 import { POST as kindPOST } from '@/app/habitflow/api/logs/kind/route';

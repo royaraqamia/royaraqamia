@@ -1,5 +1,8 @@
 import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { createPlanGate } from '@/backend/config/plans';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { errorResultAt } from '@/backend/middleware/http';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   jsonResult,
   type HttpResult,
@@ -124,6 +127,8 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
     async ({ userId, supabase }) => {
       const { amount, category_id, date, description, currency, splits } = body;
 
+      await createPlanGate().cap(userId, OWNED_ITEMS.expenses);
+
       await createSpendtrackService(supabase).createExpense(userId, {
         amount: amount as SpendtrackExpenseInput['amount'],
         category_id: category_id as SpendtrackExpenseInput['category_id'],
@@ -136,7 +141,7 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
 
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
-    { mapError: messageError(400, 'فشل إنشاء المصروف') }
+    { mapError: errorResultAt(400, 'فشل إنشاء المصروف') }
   );
 }
 
@@ -198,16 +203,16 @@ export async function setBudget(body: Record<string, unknown>): Promise<HttpResu
           ? undefined
           : String(body.categoryId);
 
-      await createSpendtrackService(supabase).setBudget(
-        userId,
-        month,
-        amount,
-        categoryId,
-        offlineWriteFields(body)
-      );
+      const service = createSpendtrackService(supabase);
+      // An update to an existing month/category is not a new slot, so the cap
+      // only guards the first budget written for a pair.
+      const existing = await service.getBudget(userId, month, categoryId);
+      if (!existing) await createPlanGate().cap(userId, OWNED_ITEMS.budgets);
+
+      await service.setBudget(userId, month, amount, categoryId, offlineWriteFields(body));
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
-    { mapError: messageError(400, 'فشل حفظ الميزانية') }
+    { mapError: errorResultAt(400, 'فشل حفظ الميزانية') }
   );
 }
 
@@ -313,6 +318,8 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
       const name = String(body.name ?? '').trim();
       const colorHex = String(body.color_hex ?? '').trim();
 
+      await createPlanGate().cap(userId, OWNED_ITEMS.expenseCategories);
+
       await createSpendtrackService(supabase).createCategory(userId, {
         name,
         colorHex,
@@ -330,7 +337,7 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
         }
       );
     },
-    { mapError: messageError(500, 'فشل إنشاء التصنيف') }
+    { mapError: errorResultAt(500, 'فشل إنشاء التصنيف') }
   );
 }
 

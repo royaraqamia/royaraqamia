@@ -2,6 +2,9 @@ import {
   createBlogpressMediaService,
   createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
+import { createPlanGate } from '@/backend/config/plans';
+import { errorResult } from '@/backend/middleware/http';
+import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
 import {
   PostSchema,
   TagInputSchema,
@@ -58,10 +61,24 @@ export async function createPost(body?: Record<string, unknown> | null): Promise
         input = validated.data;
       }
       const { repository } = createBlogpressPostsModule(supabase);
+      const plan = createPlanGate();
+
+      // A draft takes a draft slot; a post that arrives already published pays
+      // the publish credit and takes a published slot (an offline replay of a
+      // composer publish lands here).
+      if (input?.status === 'published') {
+        await plan.cap(userId, OWNED_ITEMS.communityPublished);
+        const { id } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
+          repository.createPost(userId, input)
+        );
+        return jsonResult(200, { id });
+      }
+
+      await plan.cap(userId, OWNED_ITEMS.communityDrafts);
       const { id } = await repository.createPost(userId, input);
       return jsonResult(200, { id });
     },
-    { mapError: messageError(500, 'فشل إنشاء المنشور') }
+    { mapError: errorResult }
   );
 }
 
@@ -75,7 +92,9 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
       }
 
       const { repository } = createBlogpressPostsModule(supabase);
-      await repository.updatePost(id, userId, validated.data);
+      await createPlanGate().meter({ userId }, USAGE_ACTIONS.communityPostEdit, () =>
+        repository.updatePost(id, userId, validated.data)
+      );
 
       return jsonResult(
         200,
@@ -89,7 +108,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
         }
       );
     },
-    { mapError: messageError(500, 'فشل حفظ المنشور', 'message') }
+    { mapError: errorResult }
   );
 }
 
@@ -125,10 +144,14 @@ export async function duplicatePost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { posts } = createBlogpressPostsModule(supabase);
-      const { id: newId } = await posts.duplicatePost(id, userId);
+      const plan = createPlanGate();
+      await plan.cap(userId, OWNED_ITEMS.communityDrafts);
+      const { id: newId } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostDuplicate, () =>
+        posts.duplicatePost(id, userId)
+      );
       return jsonResult(200, { success: true, id: newId });
     },
-    { mapError: messageError(500, 'فشل نسخ المنشور') }
+    { mapError: errorResult }
   );
 }
 
@@ -160,7 +183,11 @@ export async function publishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { posts } = createBlogpressPostsModule(supabase);
-      const { slug } = await posts.publishPost(id, userId);
+      const plan = createPlanGate();
+      await plan.cap(userId, OWNED_ITEMS.communityPublished);
+      const { slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
+        posts.publishPost(id, userId)
+      );
 
       return jsonResult(
         200,
@@ -168,7 +195,7 @@ export async function publishPost(id: string): Promise<HttpResult> {
         { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل نشر المنشور') }
+    { mapError: errorResult }
   );
 }
 
@@ -231,6 +258,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
 
       const { action, postIds, categoryId } = validated.data;
       const { posts, repository } = createBlogpressPostsModule(supabase);
+      const plan = createPlanGate();
 
       if (action === 'setCategory') {
         if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
@@ -242,7 +270,16 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         );
       }
 
-      const { affected, slugs } = await posts.bulkActionPosts(postIds, userId, action);
+      if (action === 'publish') {
+        await plan.cap(userId, OWNED_ITEMS.communityPublished, postIds.length);
+      }
+
+      const { affected, slugs } = await plan.meterMany(
+        userId,
+        USAGE_ACTIONS.communityPostPublish,
+        action === 'publish' ? postIds.length : 0,
+        () => posts.bulkActionPosts(postIds, userId, action)
+      );
 
       if (action === 'publish' || action === 'unpublish') {
         return jsonResult(
@@ -281,7 +318,11 @@ export async function saveAndPublishPost(
       }
 
       const { posts } = createBlogpressPostsModule(supabase);
-      const { slug } = await posts.saveAndPublishPost(id, userId, validated.data);
+      const plan = createPlanGate();
+      await plan.cap(userId, OWNED_ITEMS.communityPublished);
+      const { slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
+        posts.saveAndPublishPost(id, userId, validated.data)
+      );
 
       return jsonResult(
         200,
@@ -289,17 +330,22 @@ export async function saveAndPublishPost(
         { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل نشر المنشور') }
+    { mapError: errorResult }
   );
 }
 
 export async function uploadMedia(formData: FormData): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
+      const plan = createPlanGate();
+      // The service answers a rejected file with a message rather than throwing,
+      // so the reservation is released explicitly on that path.
+      const reservation = await plan.reserve(userId, USAGE_ACTIONS.communityMediaUpload);
       const result = await createBlogpressMediaService(supabase).uploadImage(formData, userId);
+      if ('error' in result) await plan.release(userId, reservation);
       return jsonResult(200, result);
     },
-    { mapError: messageError(500, 'فشل رفع الصُّورة') }
+    { mapError: errorResult }
   );
 }
 
@@ -323,11 +369,12 @@ export async function createBlogTag(body: Record<string, unknown>): Promise<Http
       }
 
       const { repository } = createBlogpressPostsModule(supabase);
+      await createPlanGate().cap(userId, OWNED_ITEMS.communityTags);
       const tag = await repository.createTag(userId, validated.data.name, validated.data.slug);
 
       return jsonResult(200, { tag });
     },
-    { mapError: messageError(500, 'فشل إنشاء الوسم') }
+    { mapError: errorResult }
   );
 }
 

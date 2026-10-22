@@ -3,6 +3,9 @@ import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/ad
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { planRefusalResult } from '@/backend/middleware/http';
+import { createPlanGate } from '@/backend/config/plans';
+import { USAGE_ACTIONS } from '@/shared/contracts/plans';
 import { createDefaultRetainerService } from '@/backend/config/retainers';
 import {
   RetainerNotFoundError,
@@ -46,16 +49,23 @@ export async function submitRetainer(body: unknown, ip: string): Promise<HttpRes
 
   try {
     const { user } = await getOptionalUser();
-    const retainer = await createDefaultRetainerService().submit(parsed.data, {
-      ip,
-      userId: user?.id ?? null,
-    });
+    const retainer = await createPlanGate().meter(
+      { userId: user?.id ?? null, ip },
+      USAGE_ACTIONS.retainerSubmit,
+      () =>
+        createDefaultRetainerService().submit(parsed.data, {
+          ip,
+          userId: user?.id ?? null,
+        })
+    );
 
     return jsonResult(200, {
       success: true,
       referenceCode: retainer.reference_code,
     } satisfies RetainerActionResult);
   } catch (error) {
+    const refusal = planRefusalResult(error);
+    if (refusal) return refusal;
     Sentry.captureException(error);
 
     if (error instanceof RetainerRateLimitError) {

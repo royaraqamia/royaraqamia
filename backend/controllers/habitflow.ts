@@ -1,5 +1,7 @@
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createHabitBackupService, createHabitService } from '@/backend/config/habitflow';
+import { createPlanGate } from '@/backend/config/plans';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import { errorResult } from '@/backend/middleware/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
@@ -41,6 +43,7 @@ export async function getHabitSync(): Promise<HttpResult> {
 export async function createHabit(body: HabitWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
+      await createPlanGate().cap(userId, OWNED_ITEMS.habits);
       const { service, mode } = createHabitService(userId, supabase);
       const habit = await service.createHabit(body);
       return jsonResult(201, { habit, mode });

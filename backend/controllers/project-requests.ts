@@ -3,6 +3,9 @@ import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/ad
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { planRefusalResult } from '@/backend/middleware/http';
+import { createPlanGate } from '@/backend/config/plans';
+import { USAGE_ACTIONS } from '@/shared/contracts/plans';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import {
   ProjectRequestNotFoundError,
@@ -46,16 +49,23 @@ export async function submitProjectRequest(body: unknown, ip: string): Promise<H
 
   try {
     const { user } = await getOptionalUser();
-    const request = await createDefaultProjectRequestService().submit(parsed.data, {
-      ip,
-      userId: user?.id ?? null,
-    });
+    const request = await createPlanGate().meter(
+      { userId: user?.id ?? null, ip },
+      USAGE_ACTIONS.projectRequestSubmit,
+      () =>
+        createDefaultProjectRequestService().submit(parsed.data, {
+          ip,
+          userId: user?.id ?? null,
+        })
+    );
 
     return jsonResult(200, {
       success: true,
       referenceCode: request.reference_code,
     } satisfies ProjectRequestActionResult);
   } catch (error) {
+    const refusal = planRefusalResult(error);
+    if (refusal) return refusal;
     Sentry.captureException(error);
 
     if (error instanceof ProjectRequestRateLimitError) {

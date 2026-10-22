@@ -1870,6 +1870,7 @@ export type Database = {
       usage_events: {
         Row: {
           action_key: string;
+          client_event_id: string | null;
           cost: number;
           created_at: string;
           id: string;
@@ -1878,6 +1879,7 @@ export type Database = {
         };
         Insert: {
           action_key: string;
+          client_event_id?: string | null;
           cost: number;
           created_at?: string;
           id?: string;
@@ -1886,6 +1888,7 @@ export type Database = {
         };
         Update: {
           action_key?: string;
+          client_event_id?: string | null;
           cost?: number;
           created_at?: string;
           id?: string;
@@ -2046,6 +2049,10 @@ export type Database = {
       };
       spend_credits: {
         Args: { p_action_key: string; p_user_id: string };
+        Returns: Json;
+      };
+      spend_credits_once: {
+        Args: { p_action_key: string; p_client_event_id: string; p_user_id: string };
         Returns: Json;
       };
       sweep_download_jobs: { Args: never; Returns: undefined };

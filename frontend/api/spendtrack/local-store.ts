@@ -18,6 +18,7 @@ import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
 import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
+import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
 import {
   OUTBOX_STORE,
   type NewOutboxEntry,
@@ -215,6 +216,7 @@ export class SpendtrackLocalStore {
   }
 
   async createCategory(input: CategoryWriteInput): Promise<Category> {
+    assertOwnedItemSlot(this.identity, 'expense_categories', (await this.getCategories()).length);
     const now = new Date().toISOString();
     const id = uuidv7();
     const record: Category = {
@@ -283,6 +285,7 @@ export class SpendtrackLocalStore {
   }
 
   async createExpense(input: ExpenseWriteInput): Promise<Expense> {
+    assertOwnedItemSlot(this.identity, 'expenses', (await this.getExpenses()).length);
     const now = new Date().toISOString();
     const id = uuidv7();
     const splits = (input.splits ?? []).map<ExpenseSplit>((split) => ({
@@ -390,6 +393,17 @@ export class SpendtrackLocalStore {
 
   async setBudget(month: string, amount: number, categoryId: string | null): Promise<Budget> {
     const id = budgetKey(month, categoryId);
+    const existing = await this.getOne<Budget>(BUDGETS_STORE, id);
+    // Only a new month/category is a new slot; an update to an existing one
+    // must keep working at the cap.
+    if (!existing || existing.deletedAt) {
+      const budgets = await this.readAll<Budget>(BUDGETS_STORE);
+      assertOwnedItemSlot(
+        this.identity,
+        'budgets',
+        budgets.filter((budget) => !budget.deletedAt).length
+      );
+    }
     const now = new Date().toISOString();
     const record: Budget = {
       id,
