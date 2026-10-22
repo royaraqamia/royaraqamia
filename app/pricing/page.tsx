@@ -7,26 +7,26 @@ import { PricingView } from '@/frontend/ui/plans/pricing-view';
 // of ISR is plenty and keeps three queries off every visit.
 export const revalidate = 300;
 
+const DESCRIPTION =
+  'خطط التَّسعير في رؤيَة رَقَميَّة: خطَّتان لكل المنتجات — مجانيَّة برصيد شهري محدود، ومدفوعة برصيد أكبر ودعم مباشر عبر واتساب.';
+
 export const metadata: Metadata = {
-  title: 'الخطط والأسعار',
-  description:
-    'خطَّتان لكل منتجات رؤيَة رَقَميَّة: مجانيَّة برصيد شهري محدود، ومدفوعة برصيد أكبر. قارن الرَّصيد وحدود الحفظ والزَّائر.',
+  title: 'خطط التَّسعير',
+  description: DESCRIPTION,
   alternates: { canonical: '/pricing' },
   openGraph: {
-    title: 'الخطط والأسعار | رؤيَة رقَميَّة',
-    description:
-      'خطَّتان لكل منتجات رؤيَة رَقَميَّة: مجانيَّة برصيد شهري محدود، ومدفوعة برصيد أكبر. قارن الرَّصيد وحدود الحفظ والزَّائر.',
+    title: 'خطط التَّسعير | رؤيَة رقَميَّة',
+    description: DESCRIPTION,
     url: '/pricing',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
-    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'الخطط والأسعار' }],
+    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'خطط التَّسعير' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'الخطط والأسعار | رؤيَة رقَميَّة',
-    description:
-      'خطَّتان لكل منتجات رؤيَة رقَميَّة: مجانيَّة برصيد شهري محدود، ومدفوعة برصيد أكبر. قارن الرَّصيد وحدود الحفظ والزَّائر.',
+    title: 'خطط التَّسعير | رؤيَة رقَميَّة',
+    description: DESCRIPTION,
     images: ['/OG Image.webp'],
   },
 };
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 /**
  * Public and account-free on purpose: the account row links here for guests too,
  * and a visitor has an allowance of their own. The page reads the catalog on the
- * server and caches it; only the current-plan line is client-side.
+ * server and caches it; the plan cards' two pills resolve in the browser.
  */
 export default async function PricingPage() {
   const catalog = await loadPlanCatalog();
