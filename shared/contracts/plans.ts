@@ -168,6 +168,31 @@ export interface AdminUserUsagePage {
   windowDays: number;
 }
 
+/** Everything the public pricing page renders, read from the catalog. */
+export interface PlanCatalog {
+  settings: PlanSettings;
+  limits: PlanLimit[];
+  costs: UsageActionCost[];
+}
+
+/** One manual grant, as the user's own history shows it. */
+export interface PlanActivationRecord {
+  id: string;
+  plan: PlanId;
+  amountCents: number;
+  currency: string;
+  method: PlanActivationMethod;
+  note: string | null;
+  activatedAt: string;
+  expiresAt: string;
+}
+
+/** The account's plan page: the current allowance plus every grant. */
+export interface MyPlan {
+  state: UsageState;
+  activations: PlanActivationRecord[];
+}
+
 // ---------------------------------------------------------------------------
 // RPC payloads. The repository validates what Postgres returns instead of
 // casting it: a drifted function body would otherwise reach the UI as

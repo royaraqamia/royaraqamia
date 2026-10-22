@@ -15,6 +15,7 @@ import {
   HelpCircle,
   MessageCircle,
   Lock,
+  Sparkles,
 } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -30,6 +31,7 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { AccountRow } from '@/frontend/ui/account/account-row';
+import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
@@ -104,6 +106,10 @@ export function AccountView() {
       {/* Public handle editor — signed-in members only */}
       {user && <UsernameEditor />}
 
+      {/* The allowance is the account's own data, so the card draws nothing at
+          all for a visitor — `/pricing` is where a guest learns what it offers. */}
+      <UsageCard />
+
       {/* Account actions — every row is public; the ones behind a session open the
           sign-in prompt instead of navigating. */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
@@ -134,6 +140,18 @@ export function AccountView() {
           label="التَّطبيقات المتَّصلة بالـ MCP"
           onRequireAuth={setPromptHref}
         />
+
+        {/* Public: a visitor may read the plans without an account, so this is a
+            plain link rather than a row that opens the sign-in prompt. */}
+        <Link href="/pricing" className={rowClasses}>
+          <span className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 shrink-0 text-primary" />
+            <span>الخطط والأسعار</span>
+          </span>
+          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+            ←
+          </span>
+        </Link>
 
         {isAdmin && (
           <Link href="/admin" className={rowClasses}>

@@ -27,6 +27,11 @@ vi.mock('@/frontend/ui/account/install-section', () => ({
   InstallSection: () => null,
 }));
 
+/* The usage card has its own suite; this one must not issue an account read. */
+vi.mock('@/frontend/state/plans/use-my-plan', () => ({
+  useMyUsage: () => ({ state: null, loading: false, failed: false, reload: vi.fn() }),
+}));
+
 import { AccountView } from '../account-view';
 
 /* Radix dialog measures with ResizeObserver; jsdom does not ship it. */
@@ -66,6 +71,13 @@ describe('AccountView', () => {
       'href',
       '/account/faq'
     );
+
+    // The plans are public for a guest too, and the usage card is absent.
+    expect(screen.getByRole('link', { name: /الخطط والأسعار/ })).toHaveAttribute(
+      'href',
+      '/pricing'
+    );
+    expect(screen.queryByText('الاستهلاك')).not.toBeInTheDocument();
 
     // The legal rows are public too — plain links for a guest.
     for (const [label, href] of [
@@ -123,6 +135,10 @@ describe('AccountView', () => {
     expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
       'href',
       '/account/faq'
+    );
+    expect(screen.getByRole('link', { name: /الخطط والأسعار/ })).toHaveAttribute(
+      'href',
+      '/pricing'
     );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();

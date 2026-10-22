@@ -17,14 +17,10 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import { PlanActivationForm } from '@/frontend/ui/admin/plans/plan-activation-form';
 import { useAdminPlans } from '@/frontend/state/plans/use-admin-plans';
-import { formatHijriDate } from '@/frontend/shared/format';
+import { formatCount, formatHijriDate } from '@/frontend/shared/format';
 import type { AdminUserUsage } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: 'مجاني', pro: 'مدفوع' } as const;
-
-function formatCredits(value: number): string {
-  return value.toLocaleString('en-US');
-}
 
 function usagePercent(spent: number, cap: number): number {
   if (cap <= 0) return 100;
@@ -56,21 +52,21 @@ export function PlansView() {
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
           label="رصيد الخطة المجانية"
-          value={result ? formatCredits(result.settings.freeCredits) : '—'}
+          value={result ? formatCount(result.settings.freeCredits) : '—'}
           hint={result ? `كل ${result.settings.windowDays} يوماً` : undefined}
         />
         <SummaryCard
           label="رصيد الخطة المدفوعة"
-          value={result ? formatCredits(result.settings.proCredits) : '—'}
+          value={result ? formatCount(result.settings.proCredits) : '—'}
           hint={
             result
-              ? `${formatCredits(result.settings.priceCents / 100)} ${result.settings.currency} / ${result.settings.durationDays} يوماً`
+              ? `${formatCount(result.settings.priceCents / 100)} ${result.settings.currency} / ${result.settings.durationDays} يوماً`
               : undefined
           }
         />
         <SummaryCard
           label="حصة الزائر"
-          value={result ? formatCredits(result.settings.anonymousDailyCredits) : '—'}
+          value={result ? formatCount(result.settings.anonymousDailyCredits) : '—'}
           hint="يومياً، لكل بصمة IP مجزَّأة"
         />
       </div>
@@ -137,12 +133,10 @@ export function PlansView() {
               <div className="mt-3 space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                   <span>
-                    المستهلك {formatCredits(user.spent)} من {formatCredits(user.cap)}
+                    المستهلك {formatCount(user.spent)} من {formatCount(user.cap)}
                   </span>
                   <span>
-                    {user.unlimited
-                      ? 'غير محدود (مشرف)'
-                      : `المتبقي ${formatCredits(user.remaining)}`}
+                    {user.unlimited ? 'غير محدود (مشرف)' : `المتبقي ${formatCount(user.remaining)}`}
                   </span>
                 </div>
                 {!user.unlimited && (

@@ -14,6 +14,7 @@ import {
   type AnonymousSpendOutcome,
   type PlanLimit,
   type PlanSettings,
+  type PlanActivationRecord,
   type SpendOutcome,
   type UsageActionCost,
   type UsageActionKey,
@@ -23,6 +24,7 @@ import {
 type PlanSettingsRow = Database['public']['Tables']['plan_settings']['Row'];
 type PlanLimitRow = Database['public']['Tables']['plan_limits']['Row'];
 type ActionCostRow = Database['public']['Tables']['usage_action_costs']['Row'];
+type ActivationRow = Database['public']['Tables']['plan_activations']['Row'];
 
 /**
  * Everything the app knows about plans and allowance. The rolling window, the
@@ -35,6 +37,7 @@ export interface UsageRepository {
   listLimits(): Promise<PlanLimit[]>;
   listActionCosts(): Promise<UsageActionCost[]>;
   getState(userId: string): Promise<UsageState>;
+  listActivations(userId: string): Promise<PlanActivationRecord[]>;
   spend(userId: string, actionKey: UsageActionKey): Promise<SpendOutcome>;
   spendAnonymous(ipHash: string, actionKey: UsageActionKey): Promise<AnonymousSpendOutcome>;
   /** Give a reserved spend back when the action it preceded failed. */
@@ -73,6 +76,22 @@ function toActionCost(row: ActionCostRow): UsageActionCost {
     label: row.label_ar,
     cost: row.cost,
     sortOrder: row.sort_order,
+  };
+}
+
+function toActivation(row: ActivationRow): PlanActivationRecord {
+  return {
+    id: row.id,
+    plan: row.plan === 'pro' ? 'pro' : 'free',
+    amountCents: row.amount_cents,
+    currency: row.currency,
+    method:
+      row.method === 'shamcash' || row.method === 'efendim' || row.method === 'other'
+        ? row.method
+        : 'other',
+    note: row.note,
+    activatedAt: row.activated_at,
+    expiresAt: row.expires_at,
   };
 }
 
@@ -117,6 +136,18 @@ export class SupabaseUsageRepository implements UsageRepository {
 
     if (error) throw error;
     return toUsageState(UsageStatePayloadSchema.parse(data));
+  }
+
+  async listActivations(userId: string): Promise<PlanActivationRecord[]> {
+    const { data, error } = await this.supabase
+      .from('plan_activations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('activated_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    return (data ?? []).map(toActivation);
   }
 
   async spend(userId: string, actionKey: UsageActionKey): Promise<SpendOutcome> {
