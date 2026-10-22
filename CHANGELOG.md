@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.133.0] - 2026-10-22
+
+### Changed
+- publish shell 1.0.15 (20015)
+
+### Added
+- cut the page to the two plans and reword the copy (#525)
+- list every public page in the sitemap (#524)
+
+### Fixed
+- count short links by code and keep the E2E account off the caps (#523)
+- fetch only same-origin URLs while precaching (#522)
+
 ## [1.132.0] - 2026-10-22
 
 ### Changed
