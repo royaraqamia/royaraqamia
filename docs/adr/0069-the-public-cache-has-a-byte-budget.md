@@ -73,3 +73,42 @@ constant.
 The index adds one small Cache Storage entry and one write per cache miss. It is
 rebuilt on every `activate`, so a corrupt or stale index costs a scan, not a
 correctness failure.
+
+## Amendment (2026-10-22, #488): the cache is named by schema, not by release
+
+The caches used to be named from the build: `CACHE = self.CACHE_VERSION`
+(`royaraqamia-v1.131.2-3118eaef`) and `STATIC_CACHE` from the commit suffix. Since
+`activate` deletes every name that is not the current one, **every release threw
+the whole offline library away** — each visited detail page, RSC payload, image
+width and chunk — and fetched the route shells again on the next install. That is
+why `/offline` reappeared after releases and why a release felt heavier than it
+should. WhatsApp does not invalidate its local store on a version bump either.
+
+- **The names are the schema**: `royaraqamia-data-v1` and `royaraqamia-static-v1`,
+  from `CACHE_SCHEMA` in `public/sw.js`. A release reuses both; only bumping
+  `CACHE_SCHEMA` — a change to the layout of what is stored — discards them.
+  `CACHE_VERSION` keeps its job as the build identity that makes a new worker
+  install and announce itself (ADR-0039, ADR-0042); it no longer names a cache.
+- **Every entry carries its build.** `store()` (and the install precache) writes
+  the response with an `x-sw-build` header set to the current `CACHE_VERSION`. The
+  stamp lives inside the entry, so it survives `rebuildIndex` — a rebuilt index
+  can never make a previous build's document look current.
+- **A hit from another build is served and refreshed.** Paint is instant and
+  unchanged; the background revalidation now asks with `cache: 'no-cache'`, so
+  after a release the refresh reaches the server instead of accepting an
+  HTTP-cache copy of the document that produced the stale copy.
+- **Install skips what this build already holds.** `precacheRoutes` reads the
+  cached entry's stamp first: an install that repeats (a re-registered worker, a
+  `CACHE_URLS` message) fetches nothing, and a new build refreshes the routes once.
+  Unchanged shells still revalidate rather than re-transfer; moving that refresh
+  off the install event entirely is #489.
+- **Eviction knows which build is in front of the user.** Entries stamped with an
+  older build are evicted before the current build's, and `/_next/static/**` is
+  pinned only for the current build. Old chunks stay until LRU pressure, because a
+  document cached at build N still references them — that is the point of keeping
+  the store — but they are not pinned forever, which a schema-named cache would
+  otherwise have made them.
+
+The one-time cost is the transition: the first worker carrying this change finds
+the old build-named caches, deletes them, and builds the store again. Every
+release after it keeps what the device already has.

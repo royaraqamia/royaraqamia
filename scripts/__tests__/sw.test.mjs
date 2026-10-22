@@ -18,7 +18,16 @@ const ROUTING_SOURCE = readFileSync(resolve(ROOT, 'public', 'sw-routing.js'), 'u
 
 const TEST_KEY_B64 = Buffer.from(new Uint8Array(65).fill(7)).toString('base64url');
 const PUSH_CONFIG_SCRIPT = `self.PUSH_CONFIG = { publicKey: '${TEST_KEY_B64}' };\n`;
-const VERSION_SCRIPT = `self.CACHE_VERSION = 'royaraqamia-test-v1';\n`;
+// The caches are named by schema, not by build (#488), so these names are the
+// worker's own literals rather than a function of the version below.
+const DATA_CACHE = 'royaraqamia-data-v1';
+const STATIC_CACHE = 'royaraqamia-static-v1';
+const BUILD_A = 'royaraqamia-test-build-a';
+const BUILD_B = 'royaraqamia-test-build-b';
+
+function versionScript(cacheVersion = BUILD_A) {
+  return `self.CACHE_VERSION = '${cacheVersion}';\n`;
+}
 
 class FakeEvent {
   constructor(type) {
@@ -51,9 +60,12 @@ function createSandbox({
   navigationTimeoutMs,
   offlineReportRetryMs,
   precacheRoutes = [],
+  cacheVersion = BUILD_A,
+  // A second worker over the same Cache Storage, i.e. what a release does.
+  storage,
 } = {}) {
   const listeners = new Map();
-  const cacheStores = new Map();
+  const cacheStores = storage ?? new Map();
   const state = { fetchCalls: [], subscribeCalls: [], showNotificationCalls: [] };
   let writeGate = null;
 
@@ -152,7 +164,7 @@ function createSandbox({
         return Function('self', 'caches', PUSH_CONFIG_SCRIPT)(sandbox, caches);
       }
       if (name === 'sw-version.js') {
-        return Function('self', VERSION_SCRIPT)(sandbox);
+        return Function('self', versionScript(cacheVersion))(sandbox);
       }
       if (name === 'sw-routing.js') {
         return Function('self', 'URL', ROUTING_SOURCE)(sandbox, URL);
@@ -221,14 +233,14 @@ function createSandbox({
   return { sandbox, state, caches, dispatch, listeners, holdWrites };
 }
 
-async function boot(options = {}) {
+async function boot({ keepFetchCalls = false, ...options } = {}) {
   const ctx = createSandbox(options);
   vm.runInNewContext(SW_SOURCE, ctx.sandbox, { filename: 'sw.js' });
   await Promise.all(ctx.dispatch('install').waitUntilCalls);
   await Promise.all(ctx.dispatch('activate').waitUntilCalls);
   // Install precaches through `fetch`; those calls are not what the tests below
-  // are counting.
-  ctx.state.fetchCalls.length = 0;
+  // are counting unless one is asking about the install itself.
+  if (!keepFetchCalls) ctx.state.fetchCalls.length = 0;
   return ctx;
 }
 
@@ -444,7 +456,7 @@ describe('service worker routing wiring', () => {
 
   it('never reads or writes the admin certificates API through Cache Storage', async () => {
     const { caches, dispatch, state } = await boot();
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     const key = '/api/certificates?page=1';
     const stale = { ok: true, status: 200, body: 'stale-admin-list' };
     await cache.put(key, stale);
@@ -583,7 +595,7 @@ describe('service worker cache durability', () => {
           : { ok: true, status: 200 },
     });
 
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     expect(await cache.match('/')).toBeTruthy();
     expect(await cache.match('/offline')).toBeTruthy();
     expect(await cache.match(failedUrl)).toBeUndefined();
@@ -611,7 +623,7 @@ describe('service worker cache durability', () => {
       },
     });
 
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     // The failed URL does not reject install or block the routes after it.
     expect(await cache.match('/privacy')).toBeTruthy();
     expect(await cache.match('/security')).toBeTruthy();
@@ -638,7 +650,7 @@ describe('service worker cache durability', () => {
         }),
     });
 
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     // 300 fits; the second would take the list to 600, over the 500 ceiling.
     expect(await cache.match('/a')).toBeTruthy();
     expect(await cache.match('/b')).toBeUndefined();
@@ -673,7 +685,7 @@ describe('service worker cache durability', () => {
       },
     });
 
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     expect(await cache.match('/privacy')).toBeUndefined();
     expect(log.mock.calls.flat().join(' ')).toContain('budget reached');
 
@@ -682,7 +694,7 @@ describe('service worker cache durability', () => {
 
   it('serves the last good cached API read when the network answers 5xx', async () => {
     const { caches, dispatch, sandbox } = await boot();
-    const cache = await caches.open('royaraqamia-test-v1');
+    const cache = await caches.open(DATA_CACHE);
     const good = new Response('cached-rates', {
       status: 200,
       headers: { 'cache-control': 'public, max-age=60' },
@@ -730,7 +742,7 @@ describe('service worker cache durability', () => {
 });
 
 describe('service worker cache budget and eviction', () => {
-  const RUNTIME_CACHE = 'royaraqamia-test-v1';
+  const RUNTIME_CACHE = DATA_CACHE;
 
   function request(path, mode = 'navigate') {
     return {
@@ -856,7 +868,7 @@ describe('service worker cache budget and eviction', () => {
     await visit(ctx, '/c', 300);
 
     const entries = await runtimeEntries(ctx);
-    const staticEntries = await runtimeEntries(ctx, 'royaraqamia-static-v1');
+    const staticEntries = await runtimeEntries(ctx, STATIC_CACHE);
     expect(staticEntries['/_next/static/chunks/app.js']).toBe(300);
     expect(entries).toHaveProperty('/offline');
     expect(entries['/a']).toBeUndefined();
@@ -937,7 +949,7 @@ describe('service worker navigation deadline (#447)', () => {
 
   it('answers a cached navigation instantly while the network hangs', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    const cache = await ctx.caches.open(DATA_CACHE);
     await cache.put('https://site.example/rates', new Response('stale-shell'));
 
     // A request the network never answers: a slow connection, not a dead one.
@@ -1105,7 +1117,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
   it('counts nothing when the cached copy answers', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    const cache = await ctx.caches.open(DATA_CACHE);
     await cache.put('https://site.example/rates', new Response('stale-shell'));
     const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
 
@@ -1183,7 +1195,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
       }
       throw new Error('offline');
     });
-    const cache = await ctx.caches.open('royaraqamia-test-v1');
+    const cache = await ctx.caches.open(DATA_CACHE);
     await cache.put('https://site.example/rates', new Response('stale-shell'));
 
     const online = fetchEvent(request('/rates'));
@@ -1233,5 +1245,141 @@ describe('service worker offline-serve telemetry (#474)', () => {
     await Promise.all(ctx.dispatch('activate').waitUntilCalls);
 
     expect(await store.match('/__sw_offline_report__')).toBeTruthy();
+  });
+});
+
+describe('service worker cache identity (#488)', () => {
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  async function visit(ctx, path) {
+    const event = fetchEvent(request(path));
+    ctx.dispatch('fetch', event);
+    const response = await event.response;
+    await Promise.all(event.waitUntilCalls);
+    return response;
+  }
+
+  it('keeps the offline library across a release', async () => {
+    const storage = new Map();
+    const first = await boot({ storage, cacheVersion: BUILD_A });
+    await visit(first, '/community/lead-1');
+
+    const written = await (
+      await first.caches.open(DATA_CACHE)
+    ).match('https://site.example/community/lead-1');
+    expect(written.headers.get('x-sw-build')).toBe(BUILD_A);
+
+    // The release: a new worker build, same Cache Storage.
+    const next = await boot({ storage, cacheVersion: BUILD_B });
+    expect(await next.caches.keys()).toContain(DATA_CACHE);
+
+    const kept = await (
+      await next.caches.open(DATA_CACHE)
+    ).match('https://site.example/community/lead-1');
+    expect(kept).toBeTruthy();
+    expect(await kept.text()).toBe('ok');
+  });
+
+  it('discards it only on a schema bump', async () => {
+    const storage = new Map();
+    // What a device holds today: build-named caches from the previous scheme,
+    // and a previous schema of the content-named ones.
+    const superseded = [
+      'royaraqamia-v1.131.2-3118eaef',
+      'royaraqamia-static-3118eaef',
+      'royaraqamia-data-v0',
+      'royaraqamia-static-v0',
+    ];
+    for (const name of superseded) storage.set(name, new Map());
+
+    const ctx = await boot({ storage });
+    const keys = await ctx.caches.keys();
+
+    expect(keys).toContain(DATA_CACHE);
+    expect(keys).toContain(STATIC_CACHE);
+    for (const name of superseded) expect(keys).not.toContain(name);
+  });
+
+  it("still finds the previous build's chunk after the next build activates", async () => {
+    const storage = new Map();
+    const chunk = '/_next/static/chunks/community-abc123.js';
+    const first = await boot({
+      storage,
+      cacheVersion: BUILD_A,
+      fetchImpl: async () => new Response('chunk-a', { status: 200 }),
+    });
+    expect(await (await visit(first, chunk)).text()).toBe('chunk-a');
+
+    const next = await boot({ storage, cacheVersion: BUILD_B });
+    next.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+
+    // The document cached at build A is served with its chunk still in place.
+    expect(await (await visit(next, chunk)).text()).toBe('chunk-a');
+    expect(next.sandbox.fetch).not.toHaveBeenCalled();
+  });
+
+  it("serves the previous build's document and refreshes it past the HTTP cache", async () => {
+    const storage = new Map();
+    const first = await boot({ storage, cacheVersion: BUILD_A });
+    await visit(first, '/community/lead-2');
+
+    const next = await boot({ storage, cacheVersion: BUILD_B });
+    next.state.fetchCalls.length = 0;
+
+    const event = fetchEvent(request('/community/lead-2'));
+    next.dispatch('fetch', event);
+    // Stale paint: the previous build's document answers straight away.
+    expect(await (await event.response).text()).toBe('ok');
+
+    await Promise.all(event.waitUntilCalls);
+    expect(next.state.fetchCalls).toHaveLength(1);
+    expect(next.state.fetchCalls[0].init).toMatchObject({ cache: 'no-cache' });
+
+    const refreshed = await (
+      await next.caches.open(DATA_CACHE)
+    ).match('https://site.example/community/lead-2');
+    expect(refreshed.headers.get('x-sw-build')).toBe(BUILD_B);
+  });
+
+  it('does not refetch a route shell the same build already holds', async () => {
+    const storage = new Map();
+    const routes = ['/privacy'];
+
+    await boot({ storage, cacheVersion: BUILD_A, precacheRoutes: routes });
+    const again = await boot({
+      storage,
+      cacheVersion: BUILD_A,
+      precacheRoutes: routes,
+      keepFetchCalls: true,
+    });
+    expect(again.state.fetchCalls.map((call) => call.url)).not.toContain('/privacy');
+
+    // A new build refreshes the shell once; the entry it replaces is the
+    // previous build's, so the check is the stamp and not the route list.
+    const release = await boot({
+      storage,
+      cacheVersion: BUILD_B,
+      precacheRoutes: routes,
+      keepFetchCalls: true,
+    });
+    expect(release.state.fetchCalls.map((call) => call.url)).toContain('/privacy');
   });
 });

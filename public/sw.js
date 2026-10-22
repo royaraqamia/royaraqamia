@@ -5,8 +5,19 @@ try { importScripts('/sw-routing.js'); } catch { self.SWRouting = self.SWRouting
 // Absent in dev/test runs, where the worker keeps to its fixed shell.
 try { importScripts('/sw-precache.js'); } catch { self.PRECACHE_ROUTES = []; }
 try { importScripts('/sw-outbox.js'); } catch { self.SWOutbox = self.SWOutbox || null; }
-const CACHE = self.CACHE_VERSION;
-const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
+// The cache names carry the cache's *schema*, not the build (#488). `activate`
+// deletes every name that is not current, so a build-derived name made each
+// release discard the whole offline library — every visited page, RSC payload,
+// image width and chunk — and fetch the shells again. A schema name survives a
+// release, and bumping `CACHE_SCHEMA` is the one thing that clears the store.
+const CACHE_SCHEMA = 'v1';
+const CACHE = `royaraqamia-data-${CACHE_SCHEMA}`;
+const STATIC_CACHE = `royaraqamia-static-${CACHE_SCHEMA}`;
+// The build that produced a cached response. `CACHE_VERSION` still changes per
+// deployment — it is what makes a new worker install and announce itself
+// (ADR-0039) — but it now identifies entries rather than naming a cache.
+const BUILD_ID = self.CACHE_VERSION || 'dev';
+const BUILD_HEADER = 'x-sw-build';
 const FALLBACK_URL = '/offline';
 
 // The deadline a cold SWR request gets (#447, documented in
@@ -101,11 +112,27 @@ const PRECACHE_PATHS = new Set(
 // Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
 // would reject the install and leave the previous worker in place forever, so
 // every URL is fetched independently and failures are only reported.
+//
+// The response is written through `stampBuild` rather than `cache.add`, so a
+// pinned entry carries the build that produced it like every other entry the
+// worker writes. `no-cache` revalidates: an unchanged shell answers from the
+// HTTP cache instead of transferring again.
 async function precache(cache, urls) {
-  const results = await Promise.allSettled(urls.map((url) => cache.add(url)));
-  const failed = urls.filter((_, index) => results[index].status === 'rejected');
+  const failed = [];
+  const stored = [];
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        await cache.put(url, stampBuild(response));
+        stored.push(url);
+      } catch {
+        failed.push(url);
+      }
+    })
+  );
   if (failed.length > 0) console.log('[sw] precache failed:', failed.join(', '));
-  const stored = urls.filter((_, index) => results[index].status === 'fulfilled');
   await recordCachedEntries(cache, stored);
 }
 
@@ -137,6 +164,12 @@ async function precacheRoutes(cache, urls) {
     try {
       const parsed = new URL(url, self.location.origin);
       if (parsed.origin !== self.location.origin || isNeverCache(parsed)) continue;
+      // A shell this build already holds needs no request at all: the cache
+      // survives a release, so an install that repeats (a re-registered worker,
+      // a `CACHE_URLS` message) costs nothing. A new build finds the previous
+      // build's stamp and refreshes the route.
+      const existing = await cache.match(url);
+      if (existing && buildOf(existing) === BUILD_ID) continue;
       // `no-cache` revalidates against the server instead of letting a stale
       // HTTP-cache copy of a previous build become this build's shell.
       const response = await fetch(url, { cache: 'no-cache' });
@@ -153,7 +186,7 @@ async function precacheRoutes(cache, urls) {
         stoppedAt = index;
         break;
       }
-      await cache.put(url, response);
+      await cache.put(url, stampBuild(response));
       await recordEntry(cacheKeyOf(url), size);
       spent += size;
     } catch (error) {
@@ -186,6 +219,9 @@ const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
+      // Only a schema bump (or the one-off move off the build-derived names
+      // this replaced) changes one of these, so a release deletes nothing and
+      // the offline library it was built on survives it (#488).
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
@@ -346,7 +382,13 @@ function withIndex(mutate) {
 // page is the only legible surface with no network, and a hashed `_next/static`
 // chunk belongs to the build already shipped. Their size is bounded by the
 // build rather than by how much the user browses.
-function isPinned(key) {
+//
+// Since the caches outlive a release, "the build" has to be read from the entry
+// rather than from the cache name: a chunk stamped with an older build is still
+// content-addressed and still valid for the document that references it, but it
+// is also the only copy of one, so it is evictable and goes first when the store
+// is over budget (`enforceBudget`).
+function isPinned(key, entry) {
   let url;
   try {
     url = new URL(key);
@@ -354,7 +396,8 @@ function isPinned(key) {
     return false;
   }
   if (url.pathname === FALLBACK_URL) return true;
-  if (url.pathname.startsWith('/_next/static/') || isFont(url) || isIcon(url)) return true;
+  if (url.pathname.startsWith('/_next/static/')) return Boolean(entry) && entry.build === BUILD_ID;
+  if (isFont(url) || isIcon(url)) return true;
   return PRECACHE_PATHS.has(url.pathname);
 }
 
@@ -379,6 +422,28 @@ function accountedBytes(index) {
   return total;
 }
 
+// Marks a cached response with the build that produced it. The header lives
+// inside the entry, so the stamp survives `rebuildIndex` without a second index
+// write, and a hit can tell this build's document from one a release left
+// behind.
+function stampBuild(response) {
+  try {
+    const stamped = new Response(response.body, response);
+    stamped.headers.set(BUILD_HEADER, BUILD_ID);
+    return stamped;
+  } catch {
+    return response;
+  }
+}
+
+function buildOf(response) {
+  try {
+    return (response && response.headers && response.headers.get(BUILD_HEADER)) || '';
+  } catch {
+    return '';
+  }
+}
+
 // Oldest access first; pinned entries are skipped even when they are the oldest.
 // If only pinned entries remain the budget cannot be met, and evicting the
 // offline page or the current build would be the worse failure: it is logged.
@@ -388,8 +453,13 @@ async function enforceBudget(index) {
 
   const target = Math.floor(CACHE_BUDGET_BYTES * CACHE_EVICT_TO);
   const candidates = Object.keys(index.entries)
-    .filter((key) => !isPinned(key))
+    .filter((key) => !isPinned(key, index.entries[key]))
     .sort((a, b) => {
+      // A previous build's entry goes before this build's, so the store drifts
+      // towards the build in front of the user instead of holding two.
+      const stale = (entry) => (entry.build === BUILD_ID ? 0 : 1);
+      const byBuild = stale(index.entries[b]) - stale(index.entries[a]);
+      if (byBuild !== 0) return byBuild;
       const byAccess = (index.entries[a].lastAccess || 0) - (index.entries[b].lastAccess || 0);
       return byAccess !== 0 ? byAccess : a.localeCompare(b);
     });
@@ -407,24 +477,25 @@ async function enforceBudget(index) {
   }
 }
 
-async function recordEntry(key, size) {
+async function recordEntry(key, size, build = BUILD_ID) {
   await withIndex(async (index) => {
-    index.entries[key] = { size, lastAccess: stampAccess() };
+    index.entries[key] = { size, lastAccess: stampAccess(), build };
     await enforceBudget(index);
   });
 }
 
-// Books entries that were written by `cache.add` rather than through `store`.
+// Books the pinned and route entries `precache` writes directly, which have a
+// size and a stamp but no `recordEntry` call of their own.
 async function recordCachedEntries(cache, urls) {
   const sized = [];
   for (const url of urls) {
     const response = await cache.match(url);
-    if (response) sized.push([cacheKeyOf(url), await sizeOf(response)]);
+    if (response) sized.push([cacheKeyOf(url), await sizeOf(response), buildOf(response)]);
   }
   if (sized.length === 0) return;
   await withIndex(async (index) => {
-    for (const [key, size] of sized) {
-      index.entries[key] = { size, lastAccess: stampAccess() };
+    for (const [key, size, build] of sized) {
+      index.entries[key] = { size, lastAccess: stampAccess(), build };
     }
     await enforceBudget(index);
   });
@@ -438,7 +509,7 @@ async function store(cacheName, request, response) {
   try {
     const size = await sizeOf(response);
     const cache = await caches.open(cacheName);
-    await cache.put(request, response);
+    await cache.put(request, stampBuild(response));
     await recordEntry(cacheKeyOf(request), size);
   } catch (error) {
     // A failed write must not turn a good response into a failed fetch.
@@ -448,7 +519,8 @@ async function store(cacheName, request, response) {
 
 // Rebuilds the index from what Cache Storage actually holds. `activate` is where
 // entries written by a previous worker version, or by a write whose bookkeeping
-// was dropped, get counted again.
+// was dropped, get counted again. The build comes back from the entry's own
+// stamp, so a rebuild never makes an old document look current.
 async function rebuildIndex() {
   await withIndex(async (index) => {
     const live = new Set();
@@ -458,10 +530,12 @@ async function rebuildIndex() {
       for (const request of requests) {
         const key = cacheKeyOf(request);
         if (live.has(key)) continue;
+        const response = await cache.match(request);
         const previous = index.entries[key];
         index.entries[key] = {
-          size: await sizeOf(await cache.match(request)),
+          size: await sizeOf(response),
           lastAccess: previous ? previous.lastAccess : stampAccess(),
+          build: buildOf(response),
         };
         live.add(key);
       }
@@ -588,6 +662,11 @@ async function staleWhileRevalidate(request, onMiss, event) {
   } else {
     cacheOutcomes.misses += 1;
   }
+  // A copy from another build is still served — instant paint, and the chunks
+  // that document references are still in the cache — but the refresh behind it
+  // must reach the server rather than accept an HTTP-cache copy of the build
+  // that produced it (#488).
+  const staleBuild = Boolean(cached) && buildOf(cached) !== BUILD_ID;
   // A cold load has two ways to reach the fallback: the deadline below, and the
   // revalidation rejecting afterwards. Only the one the user actually sees is
   // reported — otherwise one navigation would count twice, once per door.
@@ -598,7 +677,7 @@ async function staleWhileRevalidate(request, onMiss, event) {
     cacheOutcomes.failures += 1;
     return missResponse(request, onMiss, door);
   };
-  const revalidate = fetch(request)
+  const revalidate = fetch(request, staleBuild ? { cache: 'no-cache' } : undefined)
     .then(async (response) => {
       if (response.ok && isCacheable(response)) {
         const write = (async () => {
