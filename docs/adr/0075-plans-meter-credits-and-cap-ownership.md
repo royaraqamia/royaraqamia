@@ -125,6 +125,9 @@ be blocked by a customer allowance.
   (`plan_settings`, `plan_limits`, `usage_action_costs`) seeded by the
   migration, not constants in code. The pricing page, the account card, the
   Admin Console and the spend RPC read the same rows, so a number changes once.
+  The one deliberate copy is the pricing page's last-resort fallback: a database
+  outage must not take the page that explains the plans down with it, and that
+  copy is display-only — enforcement always reads the tables.
 - The ledger tables grant nothing to `anon` or `authenticated`; every read and
   write goes through an authenticated route or a service-role RPC. The catalog
   tables are public reads because the pricing page renders them and the offline

@@ -26,6 +26,7 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
     ]),
     listActionCosts: vi.fn(),
     getState: vi.fn(async () => freeState),
+    listActivations: vi.fn(async () => []),
     spend: vi.fn(async () => ({
       allowed: true as const,
       state: freeState,
@@ -60,6 +61,29 @@ describe('UsageService', () => {
 
     await expect(service.state('user-1')).resolves.toEqual(freeState);
     expect(repository.getState).toHaveBeenCalledWith('user-1');
+  });
+
+  it('serves the allowance and the grant history together', async () => {
+    const repository = makeRepository({
+      listActivations: vi.fn(async () => [
+        {
+          id: 'a1',
+          plan: 'pro' as const,
+          amountCents: 1000,
+          currency: 'USD',
+          method: 'shamcash' as const,
+          note: null,
+          activatedAt: '2026-10-22T12:00:00.000Z',
+          expiresAt: '2026-11-21T12:00:00.000Z',
+        },
+      ]),
+    });
+    const service = new UsageService(repository);
+
+    await expect(service.myPlan('user-1')).resolves.toMatchObject({
+      state: freeState,
+      activations: [{ id: 'a1', amountCents: 1000 }],
+    });
   });
 
   it('reads the cap for the plan the user is on', async () => {

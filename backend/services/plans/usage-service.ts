@@ -6,6 +6,7 @@ import {
   type ActivationResult,
   type AdminPlansQuery,
   type AdminUserUsagePage,
+  type MyPlan,
   type OwnedItemKey,
   type PlanId,
   type PlanLimit,
@@ -73,6 +74,16 @@ export class UsageService {
 
   state(userId: string): Promise<UsageState> {
     return this.repository.getState(userId);
+  }
+
+  /** The account's plan page: the allowance and every grant it came from. */
+  async myPlan(userId: string): Promise<MyPlan> {
+    const [state, activations] = await Promise.all([
+      this.repository.getState(userId),
+      this.repository.listActivations(userId),
+    ]);
+
+    return { state, activations };
   }
 
   /**

@@ -15,3 +15,17 @@ export async function getMyUsage(): Promise<HttpResult> {
     { whenFailed: { success: false, error: 'تعذّر تحميل استهلاكك.' } }
   );
 }
+
+/**
+ * The account's plan page data: the current allowance and the activation
+ * history, including the amount and method the operator recorded.
+ */
+export async function getMyPlan(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async (identity) => {
+      const plan = await createUsageService().myPlan(identity.userId);
+      return jsonResult(200, { success: true, ...plan });
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل بيانات الاشتراك.' } }
+  );
+}

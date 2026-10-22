@@ -56,6 +56,13 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    // Public on purpose: a visitor reaches the plans from `/account` and may
+    // compare them without an account (ADR-0075).
+    path: '/pricing',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
     path: '/scan',
     changeFrequency: 'monthly',
     priority: 0.8,

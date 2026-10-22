@@ -31,6 +31,15 @@ function localIsoDate(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
+/**
+ * Credits, counts and caps read as ASCII digits with grouping (`10,000`), never
+ * an Arabic-locale numeral system. Read-only figures only — an editable input
+ * keeps the raw value.
+ */
+export function formatCount(value: number): string {
+  return value.toLocaleString('en-US');
+}
+
 export function formatHijriDate(
   date: Date | string | number,
   options: Intl.DateTimeFormatOptions = {}
