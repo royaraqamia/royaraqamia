@@ -18,7 +18,9 @@ name: 'E2E: Offline'
 # the `public.users` profile the schema's foreign keys point at. Its credentials
 # live in the `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` secrets. Without them those
 # specs stay skipped rather than failing, so the check is honest about what it
-# covered.
+# covered. The job runs that script before the suite, which also keeps the account
+# on Pro: its owned-item caps are the easy way to turn a run into a false red
+# (ADR-0075, and the "Prepare the test account" step below).
 #
 # Every offline spec is wired in except `e2e/lead-offline.spec.ts`, which is left
 # out on purpose: it writes a Project Request the suite has no way to remove, and
@@ -122,6 +124,18 @@ jobs:
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+
+      # The suite writes its fixtures on one shared account, so that account has
+      # to start with headroom: it is put on Pro here, because the free
+      # owned-item caps (5 habits, 10 links, 5 drafts) are smaller than what a
+      # handful of runs leaves behind, and a capped account answers every
+      # creating spec with 402 before it can even clean up after itself.
+      # Idempotent, and refreshed every run. `--reset` is deliberately not
+      # passed: two branches' offline jobs can run at once against this account,
+      # and a purge would delete rows the other run is asserting on.
+      - name: Prepare the test account
+        if: ${{ env.E2E_TEST_EMAIL != '' }}
+        run: node e2e/setup-test-user.ts
 
       # One invocation, so one production build, and serial so the specs do not
       # rate-limit each other's sign-in. The public spec needs no account; the

@@ -1,6 +1,6 @@
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { createPlanGate } from '@/backend/config/plans';
-import { AppError, getErrorMessage } from '@/backend/shared/errors';
+import { AppError, describeError, getErrorMessage } from '@/backend/shared/errors';
 import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
@@ -125,7 +125,9 @@ function offlineUpdateMeta(body: {
 const UNAUTHORIZED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' };
 
 function errorResponse(err: unknown, log: string): HttpResult {
-  logger.error(log, { error: String(err) });
+  // `String(err)` printed `[object Object]` for the plain PostgREST error that
+  // broke the shorten route, so the log named nothing at all (#518).
+  logger.error(log, { error: describeError(err) });
   const status = err instanceof AppError ? err.statusCode : 500;
   return jsonResult(status, { success: false, error: getErrorMessage(err) });
 }

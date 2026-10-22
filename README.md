@@ -316,7 +316,7 @@ PUBLIC_OFFLINE_E2E=1 npx playwright test e2e/responsive-offline.spec.ts
 npx playwright test --ui
 ```
 
-Before running E2E tests, ensure `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set in `.env.local` — `e2e/setup-test-user.ts` creates (or refreshes) the test account via the Supabase Admin API. The HTML report is written to `playwright-report/` and traces are captured on first retry.
+Before running E2E tests, ensure `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set in `.env.local` — `e2e/setup-test-user.ts` creates (or refreshes) the test account via the Supabase Admin API, and puts it on the Pro plan so the owned-item caps (ADR-0075) do not gate the suite's fixtures. Run it with `--reset` to purge the account's product rows when earlier runs have left it over a cap. The HTML report is written to `playwright-report/` and traces are captured on first retry.
 
 ### CI
 
