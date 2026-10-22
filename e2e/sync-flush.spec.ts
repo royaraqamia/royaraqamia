@@ -44,75 +44,98 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
   await signIn(context, baseURL!);
 
   const name = `Flush-${Date.now()}`;
-  const app = await context.newPage();
-  await gotoUnderWorkerControl(app, `${baseURL}/habitflow`);
-  await expect(app.locator('#btn-create-habit')).toBeVisible();
-
-  // Radio off: the write lands in the Local Store and stays in the Outbox.
-  await context.setOffline(true);
-  await app.locator('#btn-create-habit').click();
-  await app.locator('#input-add-habit-name').fill(name);
-  await app.locator('#btn-submit-add-habit').click();
-  await expect(app.getByText(name)).toBeVisible();
-
-  // The app closes with the write still owed, and only then does the network come
-  // back — so nothing running can deliver it but the drain.
-  await app.close();
-  await context.setOffline(false);
-
   // A write this device has never seen: made on the server ("device A") after
   // the app's page closed, so the only way into the Local Store is the pull the
   // drain page runs after its replay.
   const remoteName = `DeviceA-${Date.now()}`;
-  const created = await context.request.fetch(`${baseURL}/habitflow/api/habits`, {
-    method: 'POST',
-    data: { clientId: crypto.randomUUID(), name: remoteName, frequency: 'daily' },
-  });
-  expect(created.ok()).toBe(true);
 
-  const drain = await context.newPage();
-  await drain.addInitScript(() => {
-    window.RoyShellSync = {
-      report: (json: string) => {
-        window.__shellReport = json;
-      },
-    };
-  });
-  await drain.goto(`${baseURL}/sync-flush.html`, { waitUntil: 'domcontentloaded' });
+  try {
+    const app = await context.newPage();
+    await gotoUnderWorkerControl(app, `${baseURL}/habitflow`);
+    await expect(app.locator('#btn-create-habit')).toBeVisible();
 
-  await expect
-    .poll(async () => drain.evaluate(() => window.__shellReport ?? null), { timeout: 120_000 })
-    .not.toBeNull();
+    // Radio off: the write lands in the Local Store and stays in the Outbox.
+    await context.setOffline(true);
+    await app.locator('#btn-create-habit').click();
+    await app.locator('#input-add-habit-name').fill(name);
+    await app.locator('#btn-submit-add-habit').click();
+    await expect(app.getByText(name)).toBeVisible();
 
-  const report = JSON.parse((await drain.evaluate(() => window.__shellReport)) ?? '{}');
-  expect(report.error).toBeNull();
-  expect(report.pending).toBe(0);
-  const habitflow = report.outcomes?.find(
-    (outcome: { product: string }) => outcome.product === 'habitflow'
-  );
-  expect(habitflow?.replayed).toBeGreaterThanOrEqual(1);
+    // The app closes with the write still owed, and only then does the network come
+    // back — so nothing running can deliver it but the drain.
+    await app.close();
+    await context.setOffline(false);
 
-  // The page's `refreshed` count is a claim; the store is the evidence. Read the
-  // product's own IndexedDB, which the drain page shares, and find the row only
-  // the pull could have delivered. Emptying `PULLABLE_PRODUCTS` makes this fail.
-  const database = await signedInHabitStore(context, baseURL!);
-  await expect
-    .poll(() => localHabitNames(drain, database), { timeout: 60_000 })
-    .toContain(remoteName);
+    const created = await context.request.fetch(`${baseURL}/habitflow/api/habits`, {
+      method: 'POST',
+      data: { clientId: crypto.randomUUID(), name: remoteName, frequency: 'daily' },
+    });
+    expect(created.ok()).toBe(true);
 
-  // Server truth, read with the same session the page drained with.
-  await expect
-    .poll(
-      async () => {
-        const response = await context.request.fetch(`${baseURL}/habitflow/api/habits`);
-        if (!response.ok()) return [];
-        const body = (await response.json()) as { habits?: Array<{ name: string }> };
-        return (body.habits ?? []).map((habit) => habit.name);
-      },
-      { timeout: 60_000 }
-    )
-    .toContain(name);
+    const drain = await context.newPage();
+    await drain.addInitScript(() => {
+      window.RoyShellSync = {
+        report: (json: string) => {
+          window.__shellReport = json;
+        },
+      };
+    });
+    await drain.goto(`${baseURL}/sync-flush.html`, { waitUntil: 'domcontentloaded' });
+
+    await expect
+      .poll(async () => drain.evaluate(() => window.__shellReport ?? null), { timeout: 120_000 })
+      .not.toBeNull();
+
+    const report = JSON.parse((await drain.evaluate(() => window.__shellReport)) ?? '{}');
+    expect(report.error).toBeNull();
+    expect(report.pending).toBe(0);
+    const habitflow = report.outcomes?.find(
+      (outcome: { product: string }) => outcome.product === 'habitflow'
+    );
+    expect(habitflow?.replayed).toBeGreaterThanOrEqual(1);
+
+    // The page's `refreshed` count is a claim; the store is the evidence. Read the
+    // product's own IndexedDB, which the drain page shares, and find the row only
+    // the pull could have delivered. Emptying `PULLABLE_PRODUCTS` makes this fail.
+    const database = await signedInHabitStore(context, baseURL!);
+    await expect
+      .poll(() => localHabitNames(drain, database), { timeout: 60_000 })
+      .toContain(remoteName);
+
+    // Server truth, read with the same session the page drained with.
+    await expect
+      .poll(
+        async () => {
+          const response = await context.request.fetch(`${baseURL}/habitflow/api/habits`);
+          if (!response.ok()) return [];
+          const body = (await response.json()) as { habits?: Array<{ name: string }> };
+          return (body.habits ?? []).map((habit) => habit.name);
+        },
+        { timeout: 60_000 }
+      )
+      .toContain(name);
+  } finally {
+    // In `finally` because this spec creates both rows on the server: the drained
+    // one and the "device A" one. Without the cleanup they accumulated on the
+    // shared account until its owned-item cap refused every create (#518's red
+    // offline run), and a failed assertion before a `finally` would leak them too.
+    await deleteHabits(context, baseURL!, [name, remoteName]);
+  }
 });
+
+/** Deletes this spec's habits by name; the suite shares one account across runs. */
+async function deleteHabits(context: BrowserContext, baseURL: string, names: string[]) {
+  const response = await context.request.fetch(`${baseURL}/habitflow/api/habits`);
+  if (!response.ok()) return;
+  const body = (await response.json()) as { habits?: Array<{ id: string; name: string }> };
+  for (const habit of body.habits ?? []) {
+    if (!names.includes(habit.name)) continue;
+    await context.request.fetch(
+      `${baseURL}/habitflow/api/habits?id=${encodeURIComponent(habit.id)}`,
+      { method: 'DELETE' }
+    );
+  }
+}
 
 /** The signed-in account's `habitflow__user:<id>` database, named as the app names it. */
 async function signedInHabitStore(context: BrowserContext, baseURL: string): Promise<string> {
