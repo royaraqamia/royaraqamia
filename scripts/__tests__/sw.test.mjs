@@ -693,6 +693,29 @@ describe('service worker cache durability', () => {
     log.mockRestore();
   });
 
+  // `precache` is the one place the worker fetches a URL it is handed, so a URL
+  // resolving off this origin is refused instead of fetched: the worker stores
+  // what it fetches, so an internal address would be served back to whatever
+  // asked for it (CodeQL `js/client-side-request-forgery`).
+  it('fetches only same-origin URLs, whatever the caller passes in', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const ctx = await boot();
+    ctx.state.fetchCalls.length = 0;
+
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await ctx.sandbox.precache(cache, [
+      '/privacy?from=test',
+      'https://internal.example/admin',
+      '//evil.example/x',
+      'javascript:alert(1)',
+    ]);
+
+    // The same-origin path is fetched unchanged; the other three never leave.
+    expect(ctx.state.fetchCalls.map((call) => call.url)).toEqual(['/privacy?from=test']);
+    expect(await cache.match('/privacy?from=test')).toBeTruthy();
+    log.mockRestore();
+  });
+
   it('stops adding route shells at the route budget', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -1586,24 +1609,6 @@ describe('service worker cache identity (#488)', () => {
 });
 
 describe('service worker route-shell refresh (#489)', () => {
-  function request(path, mode = 'navigate') {
-    return {
-      method: 'GET',
-      mode,
-      url: `https://site.example${path}`,
-      headers: { get: () => null },
-    };
-  }
-
-  function fetchEvent(req) {
-    const event = new FakeEvent('fetch');
-    event.request = req;
-    event.respondWith = (response) => {
-      event.response = response;
-    };
-    return event;
-  }
-
   function shell() {
     return new Response('shell', {
       status: 200,

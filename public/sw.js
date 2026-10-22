@@ -135,6 +135,22 @@ const PRECACHE_PATHS = new Set(
 // reads "what does this device already hold for the list" the same way.
 const PRECACHE_ROUTE_KEYS = PRECACHE_ROUTES.map((url) => cacheKeyOf(url));
 
+// Precaching only ever fetches this origin, and the check lives here rather than
+// at each caller. The route list arrives from the build's generated file and the
+// shell list is a literal, so neither is untrusted today; the guard is here
+// because this is the one function that fetches whatever it is handed, and an
+// unvalidated URL is a client-side request forgery: anything running on this
+// origin could ask the worker to fetch an internal address and store the answer
+// for it to read back. A URL that does not resolve to this origin is refused.
+function sameOriginUrl(input) {
+  try {
+    const url = new URL(input, self.location.origin);
+    return url.origin === self.location.origin ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 // Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
 // would reject the install and leave the previous worker in place forever, so
 // every URL is fetched independently and failures are only reported.
@@ -147,14 +163,22 @@ async function precache(cache, urls) {
   const failed = [];
   const stored = [];
   await Promise.all(
-    urls.map(async (url) => {
+    urls.map(async (input) => {
+      const url = sameOriginUrl(input);
+      if (!url) {
+        failed.push(String(input));
+        return;
+      }
+      // Resolved back to a path, so what the worker requests is a same-origin
+      // document and never an absolute URL some caller supplied.
+      const target = `${url.pathname}${url.search}`;
       try {
-        const response = await fetch(url, { cache: 'no-cache' });
+        const response = await fetch(target, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        await cache.put(url, stampBuild(response));
-        stored.push(url);
+        await cache.put(target, stampBuild(response));
+        stored.push(target);
       } catch {
-        failed.push(url);
+        failed.push(target);
       }
     })
   );
@@ -272,17 +296,23 @@ async function drainAssetQueue(queue, budget) {
   while (queue.length > 0 && drained < budget) {
     const asset = queue.shift();
     drained += 1;
+    // The queue is written from documents this worker fetched and re-read from
+    // Cache Storage, which anything on this origin can also write, so the same
+    // same-origin rule applies to it as to `precache`.
+    const target = sameOriginUrl(asset);
+    if (!target) continue;
+    const assetPath = `${target.pathname}${target.search}`;
     try {
-      if (await caches.match(asset)) continue;
-      const response = await fetch(asset, { cache: 'no-cache' });
+      if (await caches.match(assetPath)) continue;
+      const response = await fetch(assetPath, { cache: 'no-cache' });
       if (!response.ok) {
-        console.log('[sw] route asset failed:', asset, response.status);
+        console.log('[sw] route asset failed:', assetPath, response.status);
         continue;
       }
       if (!isCacheable(response)) continue;
-      await store(STATIC_CACHE, new URL(asset, self.location.origin).href, response);
+      await store(STATIC_CACHE, target.href, response);
     } catch (error) {
-      console.log('[sw] route asset failed:', asset, String(error));
+      console.log('[sw] route asset failed:', assetPath, String(error));
     }
   }
 }
@@ -1380,11 +1410,6 @@ self.addEventListener('message', (event) => {
 
     if (event.data?.type === 'SKIP_WAITING') {
       self.skipWaiting();
-    }
-    if (event.data?.type === 'CACHE_URLS') {
-      const urls = event.data.urls;
-      const cache = await caches.open(CACHE);
-      await precache(cache, urls);
     }
     if (event.data?.type === 'PURGE_ACCOUNT_CACHES') {
       await purgeAccountCaches();
