@@ -34,6 +34,9 @@ class Builder {
   is(column: string, value: unknown) {
     return this.log(`is ${column}=${String(value)}`);
   }
+  in(column: string, values: unknown[]) {
+    return this.log(`in ${column}=${values.join(',')}`);
+  }
   lte(column: string, value: unknown) {
     return this.log(`lte ${column}=${String(value)}`);
   }
@@ -123,6 +126,55 @@ describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
 
     expect(calls.some((c) => c.includes(`lte updated_at=${updatedAt}`))).toBe(true);
     expect(calls.find((c) => c.includes('update'))).toContain(`"deleted_at":"${updatedAt}"`);
+  });
+
+  describe('bulk writes', () => {
+    it('deleteMany tombstones instead of deleting, and counts the matched rows', async () => {
+      const { client, calls } = makeClient({
+        short_links: { data: [{ code: 'a' }, { code: 'b' }], error: null },
+      });
+      const repo = new SupabaseShortLinkRepository(client);
+
+      const affected = await repo.deleteMany(['a', 'b', 'foreign'], 'u-1');
+
+      // A tombstone, not a hard delete: `analytics_events` cascades on DELETE.
+      const update = calls.find((c) => c.includes('update'));
+      expect(calls).not.toContain('short_links:delete');
+      expect(update).toContain('"deleted_at":');
+      expect(update).toContain('"updated_at":');
+      expect(calls).toContain('short_links:in code=a,b,foreign');
+      expect(calls).toContain('short_links:eq user_id=u-1');
+      // Already-tombstoned rows are left alone, so a replay stays a no-op.
+      expect(calls).toContain('short_links:is deleted_at=null');
+      // The answer is what the database matched, not how many codes were sent.
+      expect(affected).toBe(2);
+    });
+
+    it('deleteMany reports 0 when nothing matched', async () => {
+      const { client } = makeClient({ short_links: { data: [], error: null } });
+      const repo = new SupabaseShortLinkRepository(client);
+
+      expect(await repo.deleteMany(['foreign'], 'u-1')).toBe(0);
+    });
+
+    it('setExpiryMany advances updated_at so the change wins the merge', async () => {
+      const { client, calls } = makeClient({
+        short_links: { data: [{ code: 'a' }], error: null },
+      });
+      const repo = new SupabaseShortLinkRepository(client);
+      const expiresAt = new Date('2026-09-01T00:00:00.000Z');
+
+      const affected = await repo.setExpiryMany(['a'], expiresAt, 'u-1');
+
+      const update = calls.find((c) => c.includes('update'));
+      expect(update).toContain(`"expires_at":"${expiresAt.toISOString()}"`);
+      // Without this, last-write-wins sees equal timestamps and the other
+      // device never applies the new expiry.
+      expect(update).toContain('"updated_at":"');
+      expect(calls).toContain('short_links:eq user_id=u-1');
+      expect(calls).toContain('short_links:is deleted_at=null');
+      expect(affected).toBe(1);
+    });
   });
 
   it('listByUserIdIncludingDeleted keeps tombstones in the sync snapshot', async () => {

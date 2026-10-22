@@ -31,3 +31,8 @@ Owned tables gain `client_id`, `updated_at` and `deleted_at` via additive migrat
 matching endpoints become upserts; RLS stays user-scoped. A partial failure is visible rather than
 lost, which means the UI must own a sync-status surface. The service worker's caches are evictable
 but the Local Store and Outbox are not (ADR-0030).
+
+A bulk path is not exempt from any of this: it tombstones exactly like the single-row delete (a hard
+`DELETE` would cascade into the row's history and could not sync), it advances `updated_at` so a bulk
+edit wins the merge, and a Local Store-backed surface applies the action there as one intent per
+record — the same intent an offline write queues — rather than only on the server.

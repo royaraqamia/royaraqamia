@@ -6,16 +6,17 @@ function makeDeps() {
   return {
     shortLinkRepository: {
       delete: vi.fn(),
-      deleteMany: vi.fn(),
-      setExpiryMany: vi.fn(),
+      deleteMany: vi.fn().mockResolvedValue(0),
+      setExpiryMany: vi.fn().mockResolvedValue(0),
       exists: vi.fn(),
     } as unknown as ShortLinkRepository,
   };
 }
 
 describe('BulkLinkActionService.execute', () => {
-  it('deletes the selected unique codes', async () => {
+  it('reports the rows the repository actually matched on delete', async () => {
     const { shortLinkRepository } = makeDeps();
+    vi.mocked(shortLinkRepository.deleteMany).mockResolvedValue(2);
     const service = new BulkLinkActionService(shortLinkRepository);
 
     const result = await service.execute('delete', ['a', 'b', 'a', ''], 'u-1');
@@ -24,8 +25,20 @@ describe('BulkLinkActionService.execute', () => {
     expect(shortLinkRepository.deleteMany).toHaveBeenCalledWith(['a', 'b'], 'u-1');
   });
 
+  it('does not count a code the repository did not match', async () => {
+    const { shortLinkRepository } = makeDeps();
+    vi.mocked(shortLinkRepository.deleteMany).mockResolvedValue(1);
+    const service = new BulkLinkActionService(shortLinkRepository);
+
+    // A foreign or nonexistent code is not a delete, so a no-op is reported.
+    const result = await service.execute('delete', ['mine', 'foreign'], 'u-1');
+
+    expect(result.affected).toBe(1);
+  });
+
   it('sets expiry for the selected unique codes', async () => {
     const { shortLinkRepository } = makeDeps();
+    vi.mocked(shortLinkRepository.setExpiryMany).mockResolvedValue(2);
     const service = new BulkLinkActionService(shortLinkRepository);
     const expiresAt = new Date('2026-09-01T00:00:00Z');
 
@@ -73,9 +86,7 @@ describe('BulkLinkActionService.execute', () => {
 
   it('propagates repository errors', async () => {
     const { shortLinkRepository } = makeDeps();
-    (shortLinkRepository.deleteMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('db down')
-    );
+    vi.mocked(shortLinkRepository.deleteMany).mockRejectedValue(new Error('db down'));
     const service = new BulkLinkActionService(shortLinkRepository);
     await expect(service.execute('delete', ['a'], 'u-1')).rejects.toThrow('db down');
   });

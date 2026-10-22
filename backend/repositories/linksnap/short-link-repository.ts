@@ -26,7 +26,11 @@ export interface ShortLinkRepository {
     meta?: ShortLinkWriteMeta
   ): Promise<ShortLink>;
   delete(code: string, userId: string, meta?: ShortLinkWriteMeta): Promise<boolean>;
-  deleteMany(codes: string[], userId: string): Promise<void>;
-  setExpiryMany(codes: string[], expiresAt: Date | null, userId: string): Promise<void>;
+  /**
+   * Tombstones the matching rows and resolves with how many it actually
+   * matched, not how many codes were sent.
+   */
+  deleteMany(codes: string[], userId: string): Promise<number>;
+  setExpiryMany(codes: string[], expiresAt: Date | null, userId: string): Promise<number>;
   exists(code: string): Promise<boolean>;
 }
