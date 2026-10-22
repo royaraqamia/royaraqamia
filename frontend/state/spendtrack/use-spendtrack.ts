@@ -14,6 +14,7 @@ import {
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
+import { markContent } from '@/frontend/shared/perf-marks';
 
 /**
  * Tables whose changes mean this surface's data moved on another device
@@ -165,6 +166,8 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         if (cancelled) return;
         setStore(store);
         setReady(true);
+        // The launch's content mark: owned rows painted from the Local Store (#487).
+        markContent();
 
         // A completed local write is itself a flush trigger while online, so a
         // change reaches the server promptly instead of waiting for a focus event.

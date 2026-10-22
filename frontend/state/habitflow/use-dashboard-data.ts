@@ -3,6 +3,7 @@ import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+import { markContent } from '@/frontend/shared/perf-marks';
 
 /**
  * Moves anything a guest wrote before signing in into the account store
@@ -101,6 +102,8 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
         setStore(localStore);
         setHabits(visibleHabits(data.habits));
         setLogs(visibleLogs(data.logs));
+        // The launch's content mark: owned rows painted from the Local Store (#487).
+        markContent();
       })
       .catch((error) => {
         logger.error('Failed to open HabitFlow Local Store', { error: String(error) });

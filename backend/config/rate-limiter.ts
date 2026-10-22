@@ -226,3 +226,19 @@ export function offlineServeRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حدّ الطلب: تسجيل الصفحة دون اتصال محدود بـ 30 طلبًا في الدقيقة.',
   };
 }
+
+/**
+ * The launch and tap beacon (#487) is one request per launch and one per local
+ * mutation, so an ordinary minute is a handful. Sixty leaves room for a rapid
+ * check-in spree while still bounding a script. Per IP and fail-closed for the
+ * same reason as the offline beacon: a limiter outage drops a sample, it does
+ * not open a write path.
+ */
+export function appPerfRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `app-perf:${ip}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: قياس الأداء محدود بـ 60 طلبًا في الدقيقة.',
+  };
+}

@@ -36,7 +36,8 @@ everyone.
 Images are out of scope here; they are handled by the image-compression ticket
 in the same program. Runtime metrics (INP, long tasks, dropped frames) are a
 separate concern — this tool measures transferred weight only. See
-[Runtime budget](#runtime-budget) for the field measurement that covers them.
+[Runtime budget](#runtime-budget) and [Launch and tap](#launch-and-tap) for the
+field measurements that cover them.
 
 ## Commands
 
@@ -143,6 +144,92 @@ The ceilings stay at the Web Vitals thresholds; only the baseline moves.
 **Window limit.** The Speed Insights API exposes only the last 7 days on the
 Hobby plan, which is why the window is fixed at `7d`. Longer trends are read from
 the dashboard.
+
+## Launch and tap
+
+Web Vitals measure the page the browser rendered; they do not measure what the
+instant-feel program (#486) is for: **the gap between a tap and the content that
+answers it**. Three numbers carry that, measured in the client and read from one
+log query (#487).
+
+| Number              | Mark pair          | Ceiling (#486 decision gate) |
+| ------------------- | ------------------ | ---------------------------- |
+| cold open → content | `boot` → `content` | 900 ms                       |
+| warm open → content | `boot` → `content` | 150 ms                       |
+| tap → paint         | `tap` → `paint`    | 50 ms                        |
+
+**What each row means.**
+
+- **`boot`** is the earliest client code of a launch:
+  `instrumentation-client.ts`, before hydration. All durations run from
+  `performance.timeOrigin`, so they include the document request a cold open
+  pays.
+- **`shell`** is the app chrome's first committed frame, marked once by
+  `AppPerfObserver` in the root layout.
+- **`content`** is owned rows painted from the Local Store, marked by the product
+  dashboards (SpendTrack, HabitFlow, BlogPress, LinkSnap) — the surfaces ADR-0073
+  made cached shells.
+- **`tap` → `paint`** brackets a local mutation's tap to the first frame after it
+  updated the UI. Today that is the HabitFlow check-in (optimistic) and LinkSnap's
+  link create (write → store subscriber → repaint); a new site is one
+  `beginTap()` call.
+- **cold vs warm** is the document's provenance: a reload or back/forward
+  navigation is warm, and so is a document that reports `transferSize === 0`
+  (Cache Storage or the HTTP cache). Everything else — including a WebView that
+  reports no navigation entry — is cold. That is the split the decision gate
+  budgets on: a warm open is the one that must paint in one frame.
+- **platform** is `shell` (the Capacitor bridge, or the `RoyaraqamiaShell` user
+  agent), `pwa` (`display-mode: standalone`) or `web`.
+
+**How it travels.** `frontend/shared/perf-marks.ts` writes the marks with
+`performance.mark`/`measure` and posts one record per launch — when the first
+content surface paints — and one per local mutation's tap, to
+`POST /api/app-perf`. The endpoint validates the body, applies a per-IP limit
+(60/min, fail-closed) and writes a single `logger.info('[app-perf]', …)` line.
+The beacon is deferred past the paint, uses `keepalive`, is skipped while
+offline and is never retried — the `/offline` beacon's guarantees (ADR-0074).
+The decision and its privacy boundary are recorded in
+[ADR-0075](adr/0075-launch-and-tap-timings-are-counted.md).
+
+**What it never carries:** no URL, no path, no user, no session, no client id, no
+user agent, no product name and no mutation name. The record is the platform, the
+cold/warm flag and the durations; the log line is safe to grep and to keep.
+
+**Reading it.** One query, one table (example output below):
+
+```bash
+npx vercel logs --project royaraqamia --since 1h --json --query '[app-perf]' \
+  | npm run perf:field
+```
+
+```text
+kind    platform  open  n   shell p75  content p75  paint p75
+launch  shell     cold  12  812 ms     1180 ms      —
+launch  shell     warm  30   96 ms      132 ms      —
+tap     shell     —     41       —           —      42 ms
+```
+
+`npm run perf:field` is a nearest-rank p75 by platform (and by cold/warm for
+launches); pass `--file <path>` to read saved JSON lines instead of stdin.
+
+**Window limit.** Vercel keeps runtime logs for an hour on the Hobby plan, so
+this is a recent-window read — the number just after a deploy, not a historical
+trend. Read it while the deployment is fresh, and treat a sample count in the
+single digits as noise.
+
+**Baseline.** There is no field-metrics store on the Hobby plan, so the baseline
+is this table, copied by hand from the query above after a deploy. Read it, then
+replace the row: the ceilings in the first table do not move, only the recorded
+number does.
+
+| Read on | cold open → content | warm open → content | tap → paint      |
+| ------- | ------------------- | ------------------- | ---------------- |
+| —       | not yet recorded    | not yet recorded    | not yet recorded |
+
+**Cost.** One function invocation per launch and per tap, bounded by the limiter.
+A launch only sends when a content surface paints owned rows; a public/SEO route
+sends nothing, and neither does a dashboard that never paints (that case is the
+skeleton in its own state, not a sample).
 
 ## CI
 

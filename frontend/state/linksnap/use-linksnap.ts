@@ -22,6 +22,7 @@ import {
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
+import { beginTap, markContent } from '@/frontend/shared/perf-marks';
 
 /**
  * Tables whose changes mean this surface's data moved on another device
@@ -128,6 +129,8 @@ export function useLinksnap({ user }: { user: { id: string } | null }): Linksnap
         if (cancelled) return;
         setStore(store);
         setReady(true);
+        // The launch's content mark: owned rows painted from the Local Store (#487).
+        markContent();
 
         // A completed local write is itself a flush trigger while online, so a
         // change reaches the server promptly instead of waiting for a focus event.
@@ -242,7 +245,14 @@ export function useLinksnap({ user }: { user: { id: string } | null }): Linksnap
   const createLink = useCallback(async (input: LinkCreateInput): Promise<ShortenedLink> => {
     const store = storeRef.current;
     if (!store) throw new Error('LinkSnap Local Store is not ready');
-    return recordToLink(await store.createLink(input));
+    // Tap → paint (#487): the write's subscriber repaints the list, so the frame
+    // after the write settles is the one the user waited for.
+    const painted = beginTap();
+    try {
+      return recordToLink(await store.createLink(input));
+    } finally {
+      painted();
+    }
   }, []);
 
   const updateLink = useCallback(
