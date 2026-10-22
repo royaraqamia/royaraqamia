@@ -3,6 +3,7 @@ import {
   DEFAULT_DOWNLOAD_SETTINGS,
   MAX_DOWNLOAD_DURATION_SECONDS,
   MAX_DOWNLOAD_VIDEO_BYTES,
+  VISITOR_FAULT_FAILURE_CODES,
   type DownloadBlocklistEntry,
   type DownloadCallback,
   type DownloadJob,
@@ -494,10 +495,16 @@ describe('DownloaderService platform allowlist', () => {
 describe('DownloaderService platform circuit breaker', () => {
   const policy = { failureThreshold: 3, cooldownMs: 60_000 };
 
-  async function failOnce(service: DownloaderService) {
+  async function failOnce(service: DownloaderService, code?: string): Promise<DownloadJob> {
     const created = await service.create(YOUTUBE_INPUT);
     await service.dispatch(created.id, YOUTUBE_INPUT);
-    await service.recordResult({ jobId: created.id, status: 'failed', error: 'تعذّر التَّنزيل.' });
+    await service.recordResult({
+      jobId: created.id,
+      status: 'failed',
+      ...(code === undefined ? {} : { code }),
+      error: 'تعذّر التَّنزيل.',
+    });
+    return created;
   }
 
   it('counts consecutive failures without opening below the threshold', async () => {
@@ -552,6 +559,86 @@ describe('DownloaderService platform circuit breaker', () => {
       consecutiveFailures: 0,
       openUntil: null,
     });
+  });
+
+  it.each(['blocked', 'timeout', 'unavailable', 'generic'] as const)(
+    'counts a %s host fault against the Platform',
+    async (code) => {
+      const platforms = new InMemoryDownloadPlatformRepository();
+      const { service } = makeService({ platforms, breaker: policy });
+
+      await failOnce(service, code);
+
+      expect(platforms.states.get('youtube')?.consecutiveFailures).toBe(1);
+      expect(platforms.states.get('youtube')?.openUntil).toBeNull();
+    }
+  );
+
+  it.each(VISITOR_FAULT_FAILURE_CODES)(
+    'fails the job but does not count a %s visitor fault against the Platform',
+    async (code) => {
+      const platforms = new InMemoryDownloadPlatformRepository();
+      const trips: BreakerTrip[] = [];
+      const { service } = makeService({
+        platforms,
+        breaker: policy,
+        onBreakerTrip: (trip) => trips.push(trip),
+      });
+      await platforms.save('youtube', { consecutiveFailures: 2 });
+
+      const created = await failOnce(service, code);
+
+      const job = await service.get(created.id);
+      expect(job.status).toBe('failed');
+      expect(job.error).toBe('تعذّر التَّنزيل.');
+      expect(platforms.states.get('youtube')).toMatchObject({
+        consecutiveFailures: 2,
+        openUntil: null,
+        lastFailureAt: null,
+      });
+      expect(trips).toHaveLength(0);
+    }
+  );
+
+  it('keeps the breaker closed after more visitor faults in a row than the threshold', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const trips: BreakerTrip[] = [];
+    const { service } = makeService({
+      platforms,
+      breaker: { failureThreshold: 5, cooldownMs: 60_000 },
+      onBreakerTrip: (trip) => trips.push(trip),
+    });
+
+    const codes = ['duration', 'size', 'unsupported', 'duration', 'size', 'unsupported'] as const;
+    for (const code of codes) {
+      const created = await failOnce(service, code);
+      await expect(service.get(created.id)).resolves.toMatchObject({ status: 'failed' });
+    }
+
+    expect(platforms.states.size).toBe(0);
+    expect(trips).toHaveLength(0);
+    await expect(service.create(YOUTUBE_INPUT)).resolves.toMatchObject({ status: 'queued' });
+  });
+
+  it('leaves the Platform counter alone when a ready result is past the caps', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const { service } = makeService({ platforms, breaker: policy });
+
+    const created = await service.create(YOUTUBE_INPUT);
+    await service.dispatch(created.id, YOUTUBE_INPUT);
+    await service.recordResult({
+      ...readyCallback(created.id),
+      durationSeconds: MAX_DOWNLOAD_DURATION_SECONDS + 1,
+    });
+    const second = await service.create(YOUTUBE_INPUT);
+    await service.dispatch(second.id, YOUTUBE_INPUT);
+    const callback = readyCallback(second.id);
+    await service.recordResult({
+      ...callback,
+      file: { ...callback.file, sizeBytes: MAX_DOWNLOAD_VIDEO_BYTES + 1 },
+    });
+
+    expect(platforms.states.size).toBe(0);
   });
 });
 
