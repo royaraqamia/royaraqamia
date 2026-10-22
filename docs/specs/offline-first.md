@@ -220,6 +220,11 @@ on the never-cache list nor explicitly `no-store`/`public`.
 Cache Storage is bounded in bytes and evicted least-recently-used first, with the offline page and
 the current build's static assets pinned; sign-out purges the runtime cache except that shell, and
 never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache-has-a-byte-budget.md), #394).
+The caches themselves are named by **schema** (`royaraqamia-data-v1`, `royaraqamia-static-v1`), not by
+release, so a deployment keeps the device's whole library and only a schema bump discards it. Each
+entry is stamped with the build that produced it: a document from an earlier build is served at once
+and refreshed through the network, and an install skips a route shell the current build already holds
+([ADR-0069's #488 amendment](../adr/0069-the-public-cache-has-a-byte-budget.md#amendment-2026-10-22-488-the-cache-is-named-by-schema-not-by-release)).
 
 The build's public static routes are precached as HTML documents at install, derived from the build's
 own route manifests and bounded to 6 MB (or what the cache budget has left), so a deep link to a route

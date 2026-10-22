@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -20,6 +20,23 @@ import { resolve } from 'node:path';
 const ENABLED = process.env.SW_UPDATE_E2E === '1';
 const VERSION_SCRIPT = resolve(process.cwd(), 'public', 'sw-version.js');
 const DEPLOY_MARKER = 'royaraqamia-sw-update-e2e';
+// The worker names its caches by schema, not by build (#488), so a deploy no
+// longer shows up as a new cache name. What a deploy changes is the stamp on the
+// entries it writes, which is what these tests read.
+const DATA_CACHE = 'royaraqamia-data-v1';
+const BUILD_HEADER = 'x-sw-build';
+
+/** The build that produced the cached copy of `path`, or '' when none is there. */
+function cachedBuild(page: Page, path = '/rates'): Promise<string> {
+  return page.evaluate(
+    async ({ cacheName, header, path }) => {
+      const cache = await caches.open(cacheName);
+      const response = await cache.match(path);
+      return response?.headers.get(header) ?? '';
+    },
+    { cacheName: DATA_CACHE, header: BUILD_HEADER, path }
+  );
+}
 
 interface SwProbe {
   /** Documents loaded in this context; `window.name` survives a reload. */
@@ -127,8 +144,11 @@ test('a deploy reaches a running client without a reload loop', async ({ browser
   await page.waitForTimeout(3_000);
   expect(await loads()).toBe(settled.loads + 1);
 
+  // The swap keeps the store: the schema-named cache survives it, and the copy
+  // the new worker refreshed now names the build that wrote it.
   const cacheKeys = await page.evaluate(async () => (await caches.keys()).join(','));
-  expect(cacheKeys).toContain(DEPLOY_MARKER);
+  expect(cacheKeys).toContain(DATA_CACHE);
+  await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
 
   await context.close();
 });
@@ -200,7 +220,9 @@ test('a waiting worker is announced, and the prompt is how a document takes it',
   // One reload for the gesture, plus the one the refresh already made.
   await expect.poll(loads, { timeout: 30_000 }).toBe(settled + 2);
   await expect(page.getByTestId('update-prompt')).toBeHidden();
-  expect(await page.evaluate(async () => (await caches.keys()).join(','))).toContain(DEPLOY_MARKER);
+  // The store survived the deploy; the document in it is now this build's.
+  expect(await page.evaluate(async () => (await caches.keys()).join(','))).toContain(DATA_CACHE);
+  await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
 
   // No loop: the tab settles on the build its worker serves.
   await page.waitForTimeout(3_000);
@@ -340,8 +362,11 @@ test('a refresh keeps the previous build; the next cold start takes the new one'
 }) => {
   test.setTimeout(180_000);
 
-  const previousCache = (original ?? '').split("'")[1] ?? '';
-  expect(previousCache).toMatch(/^royaraqamia-v/);
+  // The build the device is on before the deploy below. The caches are named by
+  // schema (#488), so a build is identified by the stamp its entries carry, not
+  // by a cache name.
+  const previousBuild = (original ?? '').split("'")[1] ?? '';
+  expect(previousBuild).toMatch(/^royaraqamia-v/);
 
   const context = await browser.newContext({ serviceWorkers: 'allow' });
   const page = await context.newPage();
@@ -360,7 +385,8 @@ test('a refresh keeps the previous build; the next cold start takes the new one'
   });
   // Let the registration's own update check finish before the deploy.
   await page.waitForTimeout(7_000);
-  expect(await cacheKeys()).toContain(previousCache);
+  expect(await cacheKeys()).toContain(DATA_CACHE);
+  await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(previousBuild);
 
   writeFileSync(
     VERSION_SCRIPT,
@@ -374,31 +400,23 @@ test('a refresh keeps the previous build; the next cold start takes the new one'
   );
 
   // A refresh keeps the previous build: the waiting worker survives the
-  // navigation, and the page is still served by the previous worker's caches.
+  // navigation, and the page is still served by it.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(8_000);
   expect(await hasWaiting()).toBe(true);
   const afterRefresh = await cacheKeys();
-  expect(afterRefresh).toContain(previousCache);
+  expect(afterRefresh).toContain(DATA_CACHE);
 
   // A fresh browsing context — the shell's next cold start — is what releases
-  // it; `activate` then deletes the previous build's caches.
+  // it. The new worker keeps the store rather than deleting the previous build's
+  // (#488), so the cold start costs no shell downloads; what moves is the stamp,
+  // which the new build already rewrote when its install refreshed the route.
   await page.close();
   const relaunched = await context.newPage();
   await relaunched.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await expect
-    .poll(
-      async () =>
-        (await relaunched.evaluate(async () => (await caches.keys()).join(','))).includes(
-          previousCache
-        ),
-      {
-        timeout: 30_000,
-      }
-    )
-    .toBe(false);
+  await expect.poll(() => cachedBuild(relaunched), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
   expect(await relaunched.evaluate(async () => (await caches.keys()).join(','))).toContain(
-    DEPLOY_MARKER
+    DATA_CACHE
   );
 
   await context.close();
