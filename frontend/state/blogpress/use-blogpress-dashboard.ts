@@ -14,6 +14,7 @@ import {
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
+import { markContent } from '@/frontend/shared/perf-marks';
 import type { Post } from '@/shared/contracts/blogpress';
 
 /**
@@ -108,6 +109,8 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
         await readIntoState(localStore);
         if (cancelled) return;
         setReady(true);
+        // The launch's content mark: owned rows painted from the Local Store (#487).
+        markContent();
 
         if (isOnline()) {
           await pullBlogpressData(localStore)

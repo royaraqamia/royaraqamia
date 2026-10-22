@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { HabitLog, HabitRepository } from '@/shared/contracts/habitflow';
+import { beginTap } from '@/frontend/shared/perf-marks';
 
 export interface DashboardToggle {
   togglingHabitId: string | null;
@@ -43,6 +44,9 @@ export function useDashboardToggle(
       toast.error('جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
       return;
     }
+    // Tap → paint (#487): the optimistic `setLogs` below is the frame that
+    // answers the tap, so the mark closes on the first frame after it.
+    const painted = beginTap();
     setTogglingHabitId(habitId);
     const previousLogs = logs;
     try {
@@ -58,6 +62,7 @@ export function useDashboardToggle(
         ...(nextCompleted ? { kind: 'complete' } : { kind: undefined }),
       });
       setLogs(updatedLogs);
+      painted();
 
       try {
         const log = await store.toggleLog(habitId, activeDate, nextCompleted);
