@@ -203,6 +203,28 @@ describe('linksnap tools', () => {
     );
     expect(result.isError).toBe(true);
   });
+
+  it('listLinksHandler keeps reading on the user-scoped client', async () => {
+    const userScopedClient = { marker: 'user-scoped' } as never;
+    const constructorArg = vi.fn();
+    vi.doMock('@/backend/repositories/linksnap/supabase-short-link', () => ({
+      SupabaseShortLinkRepository: class {
+        constructor(client: unknown) {
+          constructorArg(client);
+        }
+        listByUserId = async () => [];
+      },
+    }));
+
+    const { listLinksHandler } = await import('../tools/linksnap');
+    const result = await listLinksHandler(
+      { page_size: 10, offset: 0, format: 'json' },
+      { ...userCtx, supabase: userScopedClient }
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(constructorArg).toHaveBeenCalledWith(userScopedClient);
+  });
 });
 
 describe('spendtrack tools', () => {

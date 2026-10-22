@@ -6,6 +6,7 @@ import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from
 import { requireAnyScope, requireUserId } from './guards';
 import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
 import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
+import { createShortLinkRepository } from '@/backend/config/linksnap';
 import { ShortenUrlService } from '@/backend/services/linksnap/shorten-url';
 import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
 import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
@@ -234,6 +235,14 @@ export type { ListLinksInput, GetAnalyticsInput };
 
 // ============================================================
 // Write tools (linksnap.write)
+//
+// Writes go through the service role, exactly as the HTTP path does: the
+// 20261021150000 revocation removed INSERT/UPDATE/DELETE and the
+// `upsert_short_link` EXECUTE grant from `authenticated`, so a user-scoped
+// client can no longer write. Authorization stays in the service layer —
+// `requireAnyScope`/`requireUserId` here, then the ownership check inside
+// UpdateLinkService/DeleteLinkService — so the service role is not a bypass.
+// Reads stay on `ctx.supabase` and keep their RLS scoping.
 // ============================================================
 
 const CreateLinkInputSchema = z
@@ -280,7 +289,7 @@ export async function createLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Creating a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
+    const repo = createShortLinkRepository();
     const service = new ShortenUrlService(repo);
 
     const link = await service.execute(
@@ -316,7 +325,7 @@ export async function updateLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Updating a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
+    const repo = createShortLinkRepository();
     const service = new UpdateLinkService(repo);
 
     const link = await service.execute(params.code, userId, {
@@ -355,7 +364,7 @@ export async function deleteLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Deleting a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
+    const repo = createShortLinkRepository();
     const service = new DeleteLinkService(repo);
 
     await service.execute(params.code, userId);
