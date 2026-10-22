@@ -89,7 +89,7 @@ should. WhatsApp does not invalidate its local store on a version bump either.
   `CACHE_SCHEMA` — a change to the layout of what is stored — discards them.
   `CACHE_VERSION` keeps its job as the build identity that makes a new worker
   install and announce itself (ADR-0039, ADR-0042); it no longer names a cache.
-- **Every entry carries its build.** `store()` (and the install precache) writes
+- **Every entry carries its build.** `store()` (and the route precache) writes
   the response with an `x-sw-build` header set to the current `CACHE_VERSION`. The
   stamp lives inside the entry, so it survives `rebuildIndex` — a rebuilt index
   can never make a previous build's document look current.
@@ -97,11 +97,10 @@ should. WhatsApp does not invalidate its local store on a version bump either.
   unchanged; the background revalidation now asks with `cache: 'no-cache'`, so
   after a release the refresh reaches the server instead of accepting an
   HTTP-cache copy of the document that produced the stale copy.
-- **Install skips what this build already holds.** `precacheRoutes` reads the
-  cached entry's stamp first: an install that repeats (a re-registered worker, a
-  `CACHE_URLS` message) fetches nothing, and a new build refreshes the routes once.
-  Unchanged shells still revalidate rather than re-transfer; moving that refresh
-  off the install event entirely is #489.
+- **A refresh skips what this build already holds.** The background route refresh (#489) reads the
+  cached entry's stamp first: a pass that repeats (a re-registered worker, the next visit) fetches
+  nothing for a route the current build already has, and a new build refreshes the route once.
+  Unchanged shells still revalidate rather than re-transfer.
 - **Eviction knows which build is in front of the user.** Entries stamped with an
   older build are evicted before the current build's, and `/_next/static/**` is
   pinned only for the current build. Old chunks stay until LRU pressure, because a

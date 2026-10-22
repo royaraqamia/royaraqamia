@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 /**
- * Emits the public static routes whose HTML shells the service worker precaches
- * at install (#395).
+ * Emits the public static routes whose HTML shells the service worker refreshes
+ * in the background after activation (#395, #489).
  *
  * The list is derived from what the build actually produced, not from a
  * hand-maintained file:
@@ -29,13 +29,14 @@ const APP_PATHS = resolve(ROOT, '.next', 'app-path-routes-manifest.json');
 const PRERENDER = resolve(ROOT, '.next', 'prerender-manifest.json');
 const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 
-// A hard cap on the build-time list, independent of bytes. The install budget
+// A hard cap on the build-time list, independent of bytes. The refresh ceiling
 // below is the real constraint; the cap keeps a routing mistake (a dynamic
 // segment that lost its brackets, an accidental catch-all) from turning into
-// thousands of fetches on install. Raised from 24 to 32 in #449: the cached
+// thousands of fetches on a device. Raised from 24 to 32 in #449: the cached
 // auth/account/product shells alone were 27 routes on that build, and a cap
 // below that drops public content (`/terms`, `/verify`) from the tail. The #450
-// build lists 29.
+// build lists 29. The worker fetches the list in idle windows after activation
+// (#489), four routes per window over eight windows, so one pass covers this cap.
 export const MAX_PRECACHE_ROUTES = 32;
 
 // Cacheable, data-free, but not public content: `/device` is the per-device
@@ -43,12 +44,13 @@ export const MAX_PRECACHE_ROUTES = 32;
 // public route list must not grow into "every route the worker may cache".
 const NON_PUBLIC_ROUTES = ['/device'];
 
-// Install-time ceiling for the route shells, documented in ADR-0071. HTML
-// shells are the only thing fetched here (no RSC variants). The 29 shells the
-// #450 build produces — auth, account, the public pages, the four product
-// dashboards, `/consultation/book`, `/downloader` and `/mcp/guide` — measure
-// 1,705,315 bytes (1.63 MB) from the build's own files. The cache budget still
-// wins: the worker will not spend bytes it does not have.
+// Ceiling for the route shells, documented in ADR-0071. HTML shells are the
+// only thing fetched here (no RSC variants). The 29 shells the #450 build
+// produces — auth, account, the public pages, the four product dashboards,
+// `/consultation/book`, `/downloader` and `/mcp/guide` — measure 1,705,315 bytes
+// (1.63 MB) from the build's own files. The cache budget still wins: the worker
+// will not spend bytes it does not have, and since #489 it spends them over idle
+// windows after activation rather than during install.
 export const ROUTE_PRECACHE_BUDGET_BYTES = 6 * 1024 * 1024;
 
 /** Reads the never-cache prefixes from the worker's routing script. */

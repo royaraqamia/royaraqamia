@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { gotoUnderWorkerControl } from './worker-control';
 
 /**
@@ -18,6 +18,36 @@ import { gotoUnderWorkerControl } from './worker-control';
 const ENABLED = process.env.PUBLIC_OFFLINE_E2E === '1';
 
 test.skip(!ENABLED, 'requires PUBLIC_OFFLINE_E2E=1 (production build)');
+
+/**
+ * Waits for the worker's background route refresh to reach every path (#489).
+ *
+ * The install fetches only the fixed shell; the build's route documents arrive
+ * in idle windows after activation, so a spec that goes offline straight after
+ * the first load is racing a refresh that has not finished. Polling the worker's
+ * own cache is the honest signal — the page cannot know when the list is done,
+ * and the assertion below is exactly "the shell is on this device". It is an
+ * `expect.poll` over an async `evaluate`, not `waitForFunction`: a `waitForFunction`
+ * predicate that returns a promise is treated as truthy at once, so it would
+ * pass on an empty cache.
+ */
+async function waitForCachedRoutes(page: Page, paths: string[]): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async (routes) => {
+          const name = (await caches.keys()).find((key) => key.startsWith('royaraqamia-data-'));
+          if (!name) return false;
+          const cache = await caches.open(name);
+          for (const route of routes) {
+            if (!(await cache.match(route))) return false;
+          }
+          return true;
+        }, paths),
+      { timeout: 90_000, intervals: [250, 500, 1000] }
+    )
+    .toBe(true);
+}
 
 test('a visited public page paints from cache offline and shows its age', async ({
   browser,
@@ -76,7 +106,7 @@ test('a visited public page paints from cache offline and shows its age', async 
   await context.close();
 });
 
-test('a never-visited public route deep-links offline from the install precache', async ({
+test('a never-visited public route deep-links offline from the background precache', async ({
   browser,
   baseURL,
 }) => {
@@ -88,11 +118,20 @@ test('a never-visited public route deep-links offline from the install precache'
   });
   const page = await context.newPage();
 
-  // The install event precaches the build's public route shells; the helper
-  // returns only after the worker controls the page, which is after `install`
-  // has settled. `/privacy` is never opened in this context.
+  // The build's public route shells refresh in idle windows after the worker
+  // takes control (#489), so this waits for the shells it is about to request
+  // rather than assuming install fetched the whole list. None of these paths is
+  // opened in this context before the offline pass.
   await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
+  await waitForCachedRoutes(page, [
+    '/privacy',
+    '/auth/login',
+    '/account',
+    '/habitflow',
+    '/downloader',
+    '/consultation/book',
+  ]);
 
   await context.setOffline(true);
   await page.goto(`${baseURL}/privacy`, { waitUntil: 'domcontentloaded' });
@@ -122,8 +161,8 @@ test('a never-visited public route deep-links offline from the install precache'
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   // The product dashboard roots are data-free shells since #449 (ADR-0073), so
-  // the install precache covers one this context never opened: an offline deep
-  // link paints the product's own heading, and the Local Store (empty for a
+  // the background precache covers one this context never opened: an offline
+  // deep link paints the product's own heading, and the Local Store (empty for a
   // guest here) is what the client awaits, not `/offline`.
   await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/habitflow$/);
@@ -240,7 +279,7 @@ test('a never-visited dynamic detail route lands on /offline, then renders after
   });
   const page = await context.newPage();
 
-  // A dynamic segment is a pattern, not a document, so the install precache has
+  // A dynamic segment is a pattern, not a document, so the route precache has
   // no shell for `/quran/7` (ADR-0071's #473 amendment). This is the documented
   // third door in the spec's "Limits of instant", pinned here so a precache
   // change cannot move the limit without moving the document with it.

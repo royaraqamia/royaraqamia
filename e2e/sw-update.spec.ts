@@ -410,7 +410,7 @@ test('a refresh keeps the previous build; the next cold start takes the new one'
   // A fresh browsing context — the shell's next cold start — is what releases
   // it. The new worker keeps the store rather than deleting the previous build's
   // (#488), so the cold start costs no shell downloads; what moves is the stamp,
-  // which the new build already rewrote when its install refreshed the route.
+  // which the new build rewrote when its activation refreshed the route (#489).
   await page.close();
   const relaunched = await context.newPage();
   await relaunched.goto('/rates', { waitUntil: 'domcontentloaded' });

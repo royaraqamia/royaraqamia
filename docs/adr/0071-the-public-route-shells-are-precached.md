@@ -144,3 +144,42 @@ cache budget it does not have, and keeps a public shell across sign-out.
 `e2e/public-offline.spec.ts` installs the worker on one route, goes offline and
 hard-navigates to a route it never visited, asserting that route's own heading
 rather than `/offline`.
+
+## Amendment: the shells refresh after activation, not during install (#489)
+
+`install` used to fetch all 29 route documents (1.63 MB) before the worker activated, one at a
+time, competing with the page the user was looking at. On a slow connection the install outlasted
+the browser's patience with an installing worker, and a terminated install threw the whole list
+away. Install now fetches only the irreducible shell — `/`, `/offline`, the manifest and the four
+icons — and the build's list is a **background refresh** after activation.
+
+- **Idle windows, bounded concurrency.** Four routes per window, two fetches at a time, eight
+  windows per pass, which covers the 32-route cap in one visit. A window is gated by
+  `requestIdleCallback` where the realm exposes it; a service worker does not, on today's
+  browsers, so the fallback is a 500 ms delay — the same intent (stay out of a document's own
+  hydration burst), with a coarser signal. `activate` starts the pass and does not await it: it is
+  the one event every install is guaranteed after, and the page that triggered the install was
+  uncontrolled while `install` ran, so it may never make a request this worker sees — but a stalled
+  route fetch must not hold up the takeover. A request that arrives attaches to the same pass, and
+  a later one continues a pass that stopped early.
+- **Resumable, with the cache as the record.** A pass re-reads the cache and skips every route
+  this build already holds, so a worker the browser terminates mid-list — or a device that goes
+  offline — keeps what it has, and the next window continues instead of starting over. A pass
+  that stopped early skips the one-minute interval that stops a completed pass from repeating on
+  every GET.
+- **The same two ceilings, measured against what the device holds.** The list's 6 MB and what is
+  left of ADR-0069's cache budget. A route that does not fit stops the pass rather than crossing
+  either ceiling; the routes already cached stay pinned like the fixed shell, and a refresh that
+  replaces a previous build's copy only spends the growth in bytes.
+- **Coverage arrives in the visit, not in the install.** The promise is unchanged — a public
+  static route answers offline without being visited — but its window now closes when the refresh
+  reaches the route rather than when the worker installs. A first offline hit on a route the pass
+  has not reached yet still lands on `/offline` (the spec's first door), which is the same shape
+  as "the install has not finished" and just as short on a normal connection.
+
+`e2e/public-offline.spec.ts` no longer assumes install fetched the list: it polls the worker's
+cache for the shells it is about to request offline, which is also the assertion the offline pass
+needs. `scripts/__tests__/sw.test.mjs` proves the install fetches the fixed shell only, that a
+window waits for the idle signal, that routes are fetched two at a time, that a stopped pass
+resumes from what the device holds (on the next request, and across a worker), and that going
+offline mid-list loses nothing already cached.
