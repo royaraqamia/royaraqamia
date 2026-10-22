@@ -87,6 +87,21 @@ describe('recordOfflineServe', () => {
     );
   });
 
+  it('accepts a graceful prefix serve as its own door (#490)', async () => {
+    // A prefix serve never shows `/offline`, but it is counted through the same
+    // beacon so the field can tell the fallback from a real miss.
+    const result = await recordOfflineServe({ ...REPORT, door: 'navigation-prefix' }, IP);
+
+    expect(result).toEqual({ status: 200, body: { success: true } });
+    expect(mockCaptureMessage).toHaveBeenCalledWith(
+      '[offline-serve]',
+      expect.objectContaining({
+        level: 'info',
+        tags: { 'offline.door': 'navigation-prefix', 'offline.version': '1' },
+      })
+    );
+  });
+
   it('never sends a malformed report or the stray keys it stripped', async () => {
     await recordOfflineServe({ ...REPORT, url: '/rates', userId: 'x' }, IP);
     await recordOfflineServe({ ...REPORT, door: 'somewhere-else' }, IP);

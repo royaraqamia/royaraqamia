@@ -100,6 +100,12 @@ const ROUTE_PRECACHE_BUDGET_BYTES = self.ROUTE_PRECACHE_BUDGET_BYTES || 6 * 1024
 const ROUTE_REFRESH_BATCH = self.ROUTE_REFRESH_BATCH || 4;
 const ROUTE_REFRESH_WINDOWS = self.ROUTE_REFRESH_WINDOWS || 8;
 const ROUTE_REFRESH_CONCURRENCY = 2;
+// The chunks those documents name are collected in the same windows (#490), a
+// smaller handful per window: `/_next/static` files are what make a shell run, and
+// a burst of them beside a page the user is on is exactly what #489 stopped. The
+// queue resumes across windows and across workers, so coverage converges over a
+// few passes rather than in one.
+const ROUTE_REFRESH_ASSET_BATCH = self.ROUTE_REFRESH_ASSET_BATCH || 12;
 // A completed pass is not repeated for a while: one page load issues dozens of
 // same-origin GETs, and each one is another chance to walk a list the device
 // already holds. A pass that stopped early skips this wait and continues.
@@ -187,6 +193,100 @@ function whenIdle() {
   return new Promise((resolve) => setTimeout(resolve, ROUTE_REFRESH_IDLE_MS));
 }
 
+// ---------------------------------------------------------------------------
+// Route assets: the half of a shell that makes it a page (#490)
+//
+// A precached document is a picture of the route. Hydration needs the
+// `/_next/static` files the document names — layout chunks, the route's own
+// chunk, the stylesheet — and a route this device never visited has none of them,
+// so a prefix-served shell would paint and then stay inert: no card, no
+// interactivity. ADR-0071 recorded that as a known limit ("only documents, not
+// their route-specific chunks"); the prefix fallback turns it into a
+// user-visible one, so the refresh collects them alongside the document.
+//
+// They are content-addressed by the build, so one file serves every document
+// that names it: a queue dedupes the passes, and an asset the cache already holds
+// costs no request. The queue is the record, like the route list is for
+// documents — the pass takes a bounded handful per idle window, so a shell's
+// chunks never arrive as one burst beside the page the user is on, and a worker
+// the browser stops resumes from the file it wrote. Assets are not charged
+// against the route-shell ceiling — that ceiling bounds documents — and `store`
+// still books them into ADR-0069's budget.
+// ---------------------------------------------------------------------------
+
+const DOCUMENT_ASSET_PATTERN = /(?:src|href)="(\/_next\/static\/[^"?#]+)"/g;
+// Queued asset URLs, beside the worker's other bookkeeping (the meta cache
+// survives `activate` and is not part of the byte budget). Keyed by build: a
+// release's leftovers name files that no longer exist, so they are dropped.
+const ASSET_QUEUE_KEY = '/__sw_asset_queue__';
+const ASSET_QUEUE_VERSION = 1;
+
+/** The same-origin static files a document references. */
+function documentAssets(html) {
+  const assets = new Set();
+  for (const match of html.matchAll(DOCUMENT_ASSET_PATTERN)) assets.add(match[1]);
+  return [...assets];
+}
+
+async function readAssetQueue() {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    const stored = await meta.match(ASSET_QUEUE_KEY);
+    if (!stored) return [];
+    const parsed = await stored.json();
+    if (!parsed || parsed.version !== ASSET_QUEUE_VERSION) return [];
+    if (parsed.build !== BUILD_ID || !Array.isArray(parsed.urls)) return [];
+    return parsed.urls.filter((url) => typeof url === 'string');
+  } catch {
+    return [];
+  }
+}
+
+async function writeAssetQueue(urls) {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    if (urls.length === 0) {
+      await meta.delete(ASSET_QUEUE_KEY);
+      return;
+    }
+    await meta.put(
+      ASSET_QUEUE_KEY,
+      new Response(
+        JSON.stringify({ version: ASSET_QUEUE_VERSION, build: BUILD_ID, urls }),
+        { headers: { 'content-type': 'application/json' } }
+      )
+    );
+  } catch (error) {
+    // Bookkeeping only: losing the queue costs a re-collection, not a page.
+    console.log('[sw] route asset queue write failed', String(error));
+  }
+}
+
+/**
+ * Caches up to `budget` queued assets, front first, dropping each as it is dealt
+ * with. Sequential on purpose: this runs while the user is on a page, so it
+ * trickles rather than bursts. A failure is logged and the pass moves on.
+ */
+async function drainAssetQueue(queue, budget) {
+  let drained = 0;
+  while (queue.length > 0 && drained < budget) {
+    const asset = queue.shift();
+    drained += 1;
+    try {
+      if (await caches.match(asset)) continue;
+      const response = await fetch(asset, { cache: 'no-cache' });
+      if (!response.ok) {
+        console.log('[sw] route asset failed:', asset, response.status);
+        continue;
+      }
+      if (!isCacheable(response)) continue;
+      await store(STATIC_CACHE, new URL(asset, self.location.origin).href, response);
+    } catch (error) {
+      console.log('[sw] route asset failed:', asset, String(error));
+    }
+  }
+}
+
 // What this device may still spend on route shells: the list's own ceiling and
 // the cache budget (ADR-0069), minus what the shells already accounted for. A
 // resumable pass is measured against what it holds, not against this run's
@@ -207,7 +307,7 @@ function routeRefreshBudget(index) {
 // the list is worth more than the entry that failed. `held` carries each route
 // shell's current bytes, so a refresh that replaces a previous build's copy only
 // spends its growth. Returns the bytes left.
-async function refreshRouteWindow(cache, urls, budget, held) {
+async function refreshRouteWindow(cache, urls, budget, held, collect) {
   let remaining = budget;
   let cursor = 0;
   let exhausted = false;
@@ -243,8 +343,15 @@ async function refreshRouteWindow(cache, urls, budget, held) {
         }
         remaining -= growth;
         held.set(key, size);
+        const html = await response
+          .clone()
+          .text()
+          .catch(() => '');
         await cache.put(url, stampBuild(response));
         await recordEntry(key, size);
+        // The chunks this document references are queued with it (#490): a shell
+        // without them paints but cannot hydrate.
+        await collect(html);
       } catch (error) {
         console.log('[sw] route refresh failed:', url, String(error));
       }
@@ -258,6 +365,32 @@ async function refreshRouteWindow(cache, urls, budget, held) {
 /** Runs one pass over the list and returns how many routes are still pending. */
 async function refreshRouteShells() {
   const cache = await caches.open(CACHE);
+  // The queue is the record of what this build still needs to fetch, exactly as
+  // the cached documents are for the route list (#490).
+  const assets = await readAssetQueue();
+  const queued = new Set(assets);
+  const collect = async (html) => {
+    if (!html) return;
+    for (const asset of documentAssets(html)) {
+      if (queued.has(asset)) continue;
+      queued.add(asset);
+      assets.push(asset);
+    }
+  };
+
+  // `/` is fetched by `install`, not by this list, so its chunks are collected
+  // here: it is the last prefix a deep link falls back to (#490) and the one
+  // document every installed device holds.
+  const home = await cache.match('/');
+  if (home && typeof home.clone === 'function') {
+    await collect(
+      await home
+        .clone()
+        .text()
+        .catch(() => '')
+    );
+  }
+
   const pending = [];
   for (const url of PRECACHE_ROUTES) {
     const existing = await cache.match(url);
@@ -268,7 +401,7 @@ async function refreshRouteShells() {
     if (existing && buildOf(existing) === BUILD_ID) continue;
     pending.push(url);
   }
-  if (pending.length === 0) return 0;
+  if (pending.length === 0 && assets.length === 0) return 0;
 
   let budget;
   let held;
@@ -291,9 +424,21 @@ async function refreshRouteShells() {
   }
 
   for (let window = 0; window < ROUTE_REFRESH_WINDOWS; window += 1) {
-    if (budget <= 0 || pending.length === 0) break;
+    if (budget <= 0 || (pending.length === 0 && assets.length === 0)) break;
     await whenIdle();
-    budget = await refreshRouteWindow(cache, pending.splice(0, ROUTE_REFRESH_BATCH), budget, held);
+    if (pending.length > 0) {
+      budget = await refreshRouteWindow(
+        cache,
+        pending.splice(0, ROUTE_REFRESH_BATCH),
+        budget,
+        held,
+        collect
+      );
+    }
+    // A bounded handful of chunks per window: the same "never beside the page the
+    // user is on" rule the documents follow (#489), scaled to a list of files.
+    await drainAssetQueue(assets, ROUTE_REFRESH_ASSET_BATCH);
+    await writeAssetQueue(assets);
   }
 
   // No budget left is a different stop from "the pass ran out of windows": a
@@ -305,10 +450,11 @@ async function refreshRouteShells() {
     return 0;
   }
 
-  if (pending.length > 0) {
-    console.log('[sw] route refresh paused; next window continues:', pending.length);
+  const outstanding = pending.length + assets.length;
+  if (outstanding > 0) {
+    console.log('[sw] route refresh paused; next window continues:', outstanding);
   }
-  return pending.length;
+  return outstanding;
 }
 
 /**
@@ -316,10 +462,11 @@ async function refreshRouteShells() {
  * `event.waitUntil`, or null when there is nothing to do. `activate` calls it
  * for the pass every install is guaranteed, and the fetch handler calls it so a
  * pass that hit the budget, went offline or was cut short resumes on the next
- * request instead of waiting for the next launch.
+ * request instead of waiting for the next launch. An empty route list does not
+ * skip the pass: the fixed shell's own chunks are collected by the same code
+ * (#490).
  */
 function maybeRefreshRouteShells() {
-  if (PRECACHE_ROUTES.length === 0) return null;
   if (routeRefresh) return routeRefresh;
   const now = Date.now();
   if (!routeRefreshPending && now - lastRouteRefreshAt < ROUTE_REFRESH_INTERVAL_MS) return null;
@@ -403,6 +550,7 @@ const {
   isImage,
   isNextImage,
   isApiCall,
+  shellPrefixCandidates,
   isCacheable,
   isPubliclyCacheable,
   isNeverCache,
@@ -876,8 +1024,88 @@ async function staleWhileRevalidate(request, onMiss, event) {
 // ADR-0031 deliberately keeps out of Cache Storage.
 async function missResponse(request, onMiss, door) {
   if (onMiss) return onMiss(request);
-  if (isNavigationRequest(request)) return serveOffline(door);
+  if (isNavigationRequest(request)) {
+    // A never-cache surface (`/admin`) keeps `/offline`: its guard answers on
+    // the server, so the parent shell would be a page that cannot say anything
+    // true about the request the user made (ADR-0031).
+    if (isNeverCache(new URL(request.url))) return serveOffline(door);
+    return serveNearestShell(request, door);
+  }
   return new Response('Offline', { status: 503 });
+}
+
+// ---------------------------------------------------------------------------
+// The nearest cached shell (#490)
+//
+// `/offline` used to answer a navigation this worker had no copy of, which
+// replaced the screen the user asked for with a different one. The parent
+// segment's document is almost always on the device even when the dynamic child
+// is not — `/community` for `/community/<slug>`, `/quran` for `/quran/<surah>`
+// — so a miss serves the longest cached ancestor instead: the URL stays the one
+// requested, the app's own chrome is what paints, and the client draws an inline
+// card that says this link is not available offline.
+//
+// The swap is invisible in the response, so it is recorded beside the worker's
+// cache bookkeeping and read once by the app after hydration
+// (`frontend/shared/prefix-serve.ts`). `/offline` keeps answering an empty cache
+// and the never-cache surfaces (`/admin`), which never reach this path.
+// ---------------------------------------------------------------------------
+
+const PREFIX_MARKER_KEY = '/__sw_prefix_serve__';
+const PREFIX_MARKER_VERSION = 1;
+// A navigation clears the marker before it is answered, so what the app reads
+// after hydration always describes the document in front of it: a later online
+// visit to the same URL must not inherit an old prefix serve. The serve path
+// awaits this so a clear can never land after the write it belongs to.
+let prefixMarkerReset = Promise.resolve();
+
+async function clearPrefixMarker() {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    await meta.delete(PREFIX_MARKER_KEY);
+  } catch (error) {
+    console.log('[sw] prefix marker clear failed', String(error));
+  }
+}
+
+async function writePrefixMarker(requested, served) {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    await meta.put(
+      PREFIX_MARKER_KEY,
+      new Response(JSON.stringify({ version: PREFIX_MARKER_VERSION, requested, served }), {
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+  } catch (error) {
+    console.log('[sw] prefix marker write failed', String(error));
+  }
+}
+
+/** The longest ancestor document this device holds, or null. */
+async function nearestCachedShell(pathname) {
+  const cache = await caches.open(CACHE);
+  for (const prefix of shellPrefixCandidates(pathname)) {
+    const response = await cache.match(prefix);
+    if (response) return { served: prefix, response };
+  }
+  return null;
+}
+
+/**
+ * Answers a navigation miss with the nearest cached ancestor and reports it as
+ * its own door (ADR-0074): a prefix serve is a graceful fallback the field must
+ * be able to tell from a real miss, which stays on `/offline`.
+ */
+async function serveNearestShell(request, door) {
+  const pathname = new URL(request.url).pathname;
+  if (pathname === FALLBACK_URL) return serveOffline(door);
+  const shell = await nearestCachedShell(pathname);
+  if (!shell) return serveOffline(door);
+  await prefixMarkerReset;
+  await writePrefixMarker(pathname, shell.served);
+  void reportOfflineServe('navigation-prefix');
+  return shell.response;
 }
 
 /**
@@ -1086,6 +1314,14 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.method !== 'GET') return;
+
+  // This navigation's own answer decides the prefix marker: clear the previous
+  // serve before anything can answer it (#490). A prefix serve writes the marker
+  // back; anything else leaves it cleared.
+  if (isNavigationRequest(request)) {
+    prefixMarkerReset = clearPrefixMarker();
+    event.waitUntil(prefixMarkerReset);
+  }
 
   // Retry what a truly-offline serve could not send (ADR-0074's amendment).
   void flushOfflineReports();

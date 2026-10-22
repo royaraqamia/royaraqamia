@@ -65,6 +65,7 @@ function createSandbox({
   routeRefreshIntervalMs = 0,
   routeRefreshBatch,
   routeRefreshWindows,
+  routeRefreshAssetBatch,
   // A second worker over the same Cache Storage, i.e. what a release does.
   storage,
 } = {}) {
@@ -194,6 +195,9 @@ function createSandbox({
   sandbox.ROUTE_REFRESH_INTERVAL_MS = routeRefreshIntervalMs;
   if (routeRefreshBatch !== undefined) sandbox.ROUTE_REFRESH_BATCH = routeRefreshBatch;
   if (routeRefreshWindows !== undefined) sandbox.ROUTE_REFRESH_WINDOWS = routeRefreshWindows;
+  if (routeRefreshAssetBatch !== undefined) {
+    sandbox.ROUTE_REFRESH_ASSET_BATCH = routeRefreshAssetBatch;
+  }
   // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
   // this worker would be a bug the suite must see, so opening IndexedDB throws.
   sandbox.indexedDB = {
@@ -1029,6 +1033,9 @@ describe('service worker navigation deadline (#447)', () => {
 
   it('gives a cold navigation the offline fallback after the deadline, then keeps a late answer for the next visit', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
+    // An empty shell, which is the one shape `/offline` still answers (#490): no
+    // ancestor document is on the device, so there is nothing to prefix-serve.
+    await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     ctx.sandbox.fetch = vi.fn(
       () =>
         new Promise((resolve) =>
@@ -1134,19 +1141,21 @@ describe('service worker offline-serve telemetry (#474)', () => {
     return () => calls.filter((call) => call.url === '/api/offline-serve');
   }
 
-  it('reports the door of a cold navigation with no network answer', async () => {
+  it('reports a prefix serve as its own door, still with no URL in the payload', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/community', new Response('community-shell'));
     const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
 
     const event = fetchEvent(request('/community/lead'));
     ctx.dispatch('fetch', event);
-    expect(await event.response.then((r) => r.text())).toBe('ok');
+    expect(await event.response.then((r) => r.text())).toBe('community-shell');
 
     expect(beacons()).toHaveLength(1);
     expect(beacons()[0].init).toMatchObject({ method: 'POST', credentials: 'omit' });
     expect(JSON.parse(beacons()[0].init.body)).toEqual({
       version: 1,
-      door: 'navigation-offline',
+      door: 'navigation-prefix',
       cache: { hits: 0, misses: 1, failures: 1 },
     });
     // Nothing about the page that missed leaves the device.
@@ -1155,6 +1164,9 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
   it('separates the deadline door from the network one', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
+    // No ancestor shell, so the deadline still reaches `/offline` and its own
+    // door rather than a prefix serve (#490).
+    await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     const beacons = intercept(ctx, () => new Promise(() => undefined));
 
     const event = fetchEvent(request('/rates'));
@@ -1225,12 +1237,17 @@ describe('service worker offline-serve telemetry (#474)', () => {
     await Promise.all(event.waitUntilCalls);
     await new Promise((resolve) => setTimeout(resolve, 80));
 
+    // The deadline was cut and the homepage shell answered, which is a prefix
+    // serve (#490) — but still one report, not one per door.
     expect(beacons()).toHaveLength(1);
-    expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
+    expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-prefix');
   });
 
   it('keeps a report the network refused and flushes it on the next request', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20, offlineReportRetryMs: 0 });
+    // An empty shell, so this miss keeps its own door rather than a prefix serve
+    // (#490); the retry mechanism is what the test is about.
+    await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     ctx.sandbox.fetch = vi.fn(async () => {
       throw new Error('offline');
     });
@@ -1285,10 +1302,9 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
     const store = await ctx.caches.open('royaraqamia-offline-report');
     const pending = await (await store.match('/__sw_offline_report__')).json();
-    expect(Object.keys(pending.doors).sort()).toEqual([
-      'navigation-offline',
-      'online-only-offline',
-    ]);
+    // A prefix serve is its own door since #490; `/admin` stays on the
+    // online-only one, and both are kept while the radio is off.
+    expect(Object.keys(pending.doors).sort()).toEqual(['navigation-prefix', 'online-only-offline']);
   });
 
   it('keeps the kept report when a new worker activates', async () => {
@@ -1307,6 +1323,122 @@ describe('service worker offline-serve telemetry (#474)', () => {
     await Promise.all(ctx.dispatch('activate').waitUntilCalls);
 
     expect(await store.match('/__sw_offline_report__')).toBeTruthy();
+  });
+});
+
+describe('service worker prefix fallback (#490)', () => {
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  /** What the app will read after hydration to draw the offline card. */
+  async function markerOf(ctx) {
+    const meta = await ctx.caches.open('royaraqamia-cache-meta');
+    const entry = await meta.match('/__sw_prefix_serve__');
+    return entry ? entry.json() : undefined;
+  }
+
+  function noNetwork(ctx) {
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+  }
+
+  it('answers a never-visited detail route with its parent segment shell', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/quran', new Response('quran-shell'));
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/quran/7'));
+    ctx.dispatch('fetch', event);
+
+    // The URL stays the requested one; the parent's document is what answers.
+    expect(await event.response.then((r) => r.text())).toBe('quran-shell');
+    expect(await markerOf(ctx)).toEqual({
+      version: 1,
+      requested: '/quran/7',
+      served: '/quran',
+    });
+  });
+
+  it('walks up to the homepage when the segment has no document of its own', async () => {
+    // `/u` is a segment without a page (`app/u/layout.tsx` and a dynamic child),
+    // so the homepage — in the fixed shell, and therefore always on a device
+    // that installed the worker — is the first ancestor that exists.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/u/someone'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((r) => r.text())).toBe('ok');
+    expect(await markerOf(ctx)).toEqual({ version: 1, requested: '/u/someone', served: '/' });
+  });
+
+  it('keeps /offline for an empty cache and marks nothing', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/offline', new Response('offline-shell'));
+    // The first-install shape: the install precached the shell, but nothing this
+    // navigation could borrow — not even the homepage.
+    await cache.delete('https://site.example/');
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/community/lead'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((r) => r.text())).toBe('offline-shell');
+    expect(await markerOf(ctx)).toBeUndefined();
+  });
+
+  it('keeps /offline for the never-cache admin surface', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/offline', new Response('offline-shell'));
+    // Never-cache paths bypass Cache Storage entirely (ADR-0031); a prefix serve
+    // would put a public page where an admin guard is the whole point.
+    ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
+
+    const event = fetchEvent(request('/admin/rates'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((r) => r.text())).toBe('offline-shell');
+    expect(await markerOf(ctx)).toBeUndefined();
+  });
+
+  it('clears the marker once a later navigation answers its own URL', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/quran', new Response('quran-shell'));
+    noNetwork(ctx);
+
+    const missed = fetchEvent(request('/quran/7'));
+    ctx.dispatch('fetch', missed);
+    await missed.response;
+    expect(await markerOf(ctx)).toBeTruthy();
+
+    // The same deep link, now cached: the worker answered it itself, so the app
+    // must not draw a card for a document that is the real one.
+    await cache.put('https://site.example/quran/7', new Response('surah-shell'));
+    const exact = fetchEvent(request('/quran/7'));
+    ctx.dispatch('fetch', exact);
+    expect(await exact.response.then((r) => r.text())).toBe('surah-shell');
+    expect(await markerOf(ctx)).toBeUndefined();
   });
 });
 
@@ -1548,9 +1680,17 @@ describe('service worker route-shell refresh (#489)', () => {
     // Activation is parked on the browser's idle signal, so no route is fetched
     // beside the document that is still hydrating.
     expect(ctx.state.fetchCalls.map((call) => call.url)).not.toContain('/privacy');
-    expect(idle).toHaveLength(1);
+    // The fixed shell's chunks are collected first (#490); this fixture's `/`
+    // body has no asset references, so the pass moves straight to the routes.
+    expect(idle.length).toBeGreaterThanOrEqual(1);
 
-    idle.shift()();
+    // Release idle windows until the route is fetched: one for the fixed shell,
+    // one for the list.
+    while (!ctx.state.fetchCalls.some((call) => call.url === '/privacy') && idle.length > 0) {
+      idle.shift()();
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+
     await Promise.all(activating.waitUntilCalls);
     await settle(ctx);
     expect(ctx.state.fetchCalls.map((call) => call.url)).toContain('/privacy');
@@ -1662,5 +1802,162 @@ describe('service worker route-shell refresh (#489)', () => {
     expect(await cache.match('/a')).toBeTruthy();
     expect(await cache.match('/b')).toBeTruthy();
     expect(await cache.match('/c')).toBeTruthy();
+  });
+});
+
+describe('service worker route assets (#490)', () => {
+  /** A shell document that names the chunks it needs to hydrate. */
+  function document(assets) {
+    return new Response(
+      `<html><head><link rel="stylesheet" href="/_next/static/chunks/app.css"></head><body>${assets
+        .map((asset) => `<script src="${asset}"></script>`)
+        .join('')}</body></html>`,
+      { status: 200, headers: { 'content-type': 'text/html' } }
+    );
+  }
+
+  function chunk() {
+    return new Response('chunk', {
+      status: 200,
+      headers: { 'content-length': '5', 'cache-control': 'public, max-age=31536000' },
+    });
+  }
+
+  function assetFetches(ctx) {
+    return ctx.state.fetchCalls
+      .map((call) => call.url)
+      .filter((url) => url.startsWith('/_next/static/'));
+  }
+
+  it('caches the chunks a route document names, once across the whole list', async () => {
+    const routes = ['/a', '/b'];
+    const ctx = await boot({
+      precacheRoutes: routes,
+      routeRefreshBatch: 2,
+      routeRefreshWindows: 1,
+      keepFetchCalls: true,
+      fetchImpl: async (url) => {
+        const path = String(url);
+        if (path === '/a') {
+          return document(['/_next/static/chunks/shared.js', '/_next/static/chunks/a.js']);
+        }
+        if (path === '/b') {
+          return document(['/_next/static/chunks/shared.js', '/_next/static/chunks/b.js']);
+        }
+        if (path.startsWith('/_next/static/')) return chunk();
+        return new Response('ok', { status: 200 });
+      },
+    });
+
+    const staticCache = await ctx.caches.open(STATIC_CACHE);
+    for (const asset of ['app.css', 'shared.js', 'a.js', 'b.js']) {
+      expect(
+        await staticCache.match(`https://site.example/_next/static/chunks/${asset}`)
+      ).toBeTruthy();
+    }
+    // Two documents name the shared chunk; the pass fetches it once.
+    expect(assetFetches(ctx).filter((url) => url.endsWith('shared.js'))).toHaveLength(1);
+  });
+
+  it('does not refetch a chunk the device already holds', async () => {
+    const storage = new Map();
+    const options = {
+      storage,
+      precacheRoutes: ['/a'],
+      routeRefreshWindows: 1,
+      fetchImpl: async (url) => {
+        const path = String(url);
+        if (path === '/a') return document(['/_next/static/chunks/a.js']);
+        if (path.startsWith('/_next/static/')) return chunk();
+        return new Response('ok', { status: 200 });
+      },
+    };
+    await boot(options);
+
+    // A second worker over the same Cache Storage: the shell needs a refresh
+    // (a new build), the chunks it names do not.
+    const next = await boot({ ...options, cacheVersion: BUILD_B });
+    expect(assetFetches(next)).toHaveLength(0);
+    const staticCache = await next.caches.open(STATIC_CACHE);
+    expect(await staticCache.match('https://site.example/_next/static/chunks/a.js')).toBeTruthy();
+  });
+
+  it('keeps the document when a chunk cannot be fetched', async () => {
+    const ctx = await boot({
+      precacheRoutes: ['/a'],
+      routeRefreshWindows: 1,
+      fetchImpl: async (url) => {
+        const path = String(url);
+        if (path === '/a') return document(['/_next/static/chunks/a.js']);
+        if (path.startsWith('/_next/static/')) throw new Error('offline');
+        return new Response('ok', { status: 200 });
+      },
+    });
+
+    const cache = await ctx.caches.open(DATA_CACHE);
+    expect(await cache.match('/a')).toBeTruthy();
+    const staticCache = await ctx.caches.open(STATIC_CACHE);
+    expect(
+      await staticCache.match('https://site.example/_next/static/chunks/a.js')
+    ).toBeUndefined();
+  });
+
+  it("collects the fixed shell's chunks, since install fetches that document alone", async () => {
+    // `/` is the last prefix a deep link falls back to (#490), and it is fetched
+    // by `install` rather than by the generated route list.
+    const ctx = await boot({
+      fetchImpl: async (url) => {
+        if (String(url) === '/') return document(['/_next/static/chunks/home.js']);
+        if (String(url).startsWith('/_next/static/')) return chunk();
+        return new Response('ok', { status: 200 });
+      },
+    });
+
+    const staticCache = await ctx.caches.open(STATIC_CACHE);
+    expect(
+      await staticCache.match('https://site.example/_next/static/chunks/home.js')
+    ).toBeTruthy();
+  });
+
+  it('takes a bounded handful per window and resumes from the queue', async () => {
+    const storage = new Map();
+    const chunks = Array.from({ length: 10 }, (_, index) => `/_next/static/chunks/a${index}.js`);
+    const options = {
+      storage,
+      precacheRoutes: ['/a'],
+      routeRefreshWindows: 1,
+      routeRefreshAssetBatch: 4,
+      keepFetchCalls: true,
+      fetchImpl: async (url) => {
+        const path = String(url);
+        if (path === '/a') return document(chunks);
+        if (path.startsWith('/_next/static/')) return chunk();
+        return new Response('ok', { status: 200 });
+      },
+    };
+
+    const first = await boot(options);
+    // The document names 11 files (ten chunks plus the stylesheet); one window
+    // takes four of them and leaves the rest alone.
+    expect(assetFetches(first)).toHaveLength(4);
+
+    // The queue is the record, so a worker the browser stops loses nothing: the
+    // next pass continues from the files this one did not reach.
+    const meta = await first.caches.open('royaraqamia-cache-meta');
+    expect((await (await meta.match('/__sw_asset_queue__')).json()).urls).toHaveLength(7);
+
+    const second = await boot(options);
+    expect(assetFetches(second)).toHaveLength(4);
+
+    const third = await boot(options);
+    expect(assetFetches(third)).toHaveLength(3);
+
+    const staticCache = await third.caches.open(STATIC_CACHE);
+    for (const chunkUrl of [...chunks, '/_next/static/chunks/app.css']) {
+      expect(await staticCache.match(`https://site.example${chunkUrl}`)).toBeTruthy();
+    }
+    // Coverage complete: the queue entry is gone rather than a page-long list
+    // re-read on every pass.
+    expect(await meta.match('/__sw_asset_queue__')).toBeUndefined();
   });
 });

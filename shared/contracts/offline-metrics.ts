@@ -15,12 +15,18 @@ import { z } from 'zod';
  * - `online-only-offline`: a never-cache navigation with no network.
  * - `static-offline`: a static-asset navigation whose fetch failed.
  * - `api-offline`: an API-read navigation whose fetch failed.
+ * - `navigation-prefix`: an ordinary navigation with no copy of its own; the
+ *   nearest cached ancestor shell answered instead (#490), so the user saw the
+ *   parent's chrome and the inline "not available offline" card rather than
+ *   `/offline`. Counted as its own door so the field can tell a graceful
+ *   fallback from a real miss.
  * - `no-fallback`: the offline page itself was not in Cache Storage — the
  *   first-install shape, and the one that says the shell is missing.
  */
 export const OfflineServeDoorSchema = z.enum([
   'navigation-deadline',
   'navigation-offline',
+  'navigation-prefix',
   'online-only-deadline',
   'online-only-offline',
   'static-offline',

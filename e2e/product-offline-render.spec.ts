@@ -224,3 +224,45 @@ test('BlogPress reloads offline and paints its posts and stats', async ({ browse
 
   await context.close();
 });
+
+/**
+ * The product subroute that has no document of its own (#490).
+ *
+ * Every product root is a cached shell (ADR-0073), and each one can have a
+ * dynamic child the build cannot precache: `/linksnap/unlock/<code>` here, a
+ * password-protected share link opened from a message. Before #490 that deep link
+ * was answered with `/offline`; now the worker serves the root the device holds
+ * at the URL the user asked for, and the app adds the inline card that says the
+ * link itself is not available without a connection.
+ */
+test('a never-visited product subroute keeps the product chrome and names the missing link', async ({
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
+  await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
+
+  // The root shell arrives from the background refresh (#489); the deep link
+  // below is opened for the first time with the radio off.
+  await expect
+    .poll(() => page.evaluate(() => caches.match('/linksnap').then((hit) => Boolean(hit))), {
+      timeout: 90_000,
+      intervals: [250, 500, 1000],
+    })
+    .toBe(true);
+
+  await page.context().setOffline(true);
+  await page.goto(`${baseURL}/linksnap/unlock/abc123`, { waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL(/\/linksnap\/unlock\/abc123$/);
+  await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'هذا الرابط غير متاح دون اتصال' })
+  ).toBeVisible();
+  // The missing item's own screen is the negative control: the unlock form never
+  // rendered, which is the part the card is reporting.
+  await expect(page.getByRole('heading', { name: 'فتح الرَّابط' })).toHaveCount(0);
+  await expectNotOffline(page);
+});

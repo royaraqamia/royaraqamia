@@ -129,7 +129,9 @@ to land on with the radio off.
 - **Only documents, not their route-specific chunks.** The shared layout chunks
   come from that first visit, and a missing route chunk can cost the client
   hydration on a never-visited page; the server-rendered shell still paints. The
-  e2e asserts the document, which is what the issue promises.
+  e2e asserts the document, which is what the issue promises. _(Since #490 the
+  refresh queues the chunks each shell names — see the amendment below — so this
+  now closes on the pass that reaches the route rather than on its first visit.)_
 - **A stale shell is a shell.** ISR routes (`/rates`, `/community`) are fetched
   at install and refresh on the next online visit through
   stale-while-revalidate, like any other cached navigation.
@@ -183,3 +185,55 @@ needs. `scripts/__tests__/sw.test.mjs` proves the install fetches the fixed shel
 window waits for the idle signal, that routes are fetched two at a time, that a stopped pass
 resumes from what the device holds (on the next request, and across a worker), and that going
 offline mid-list loses nothing already cached.
+
+## Amendment: the #473 fallback is superseded — a miss serves the nearest shell (#490)
+
+The #473 amendment above accepted that a never-visited dynamic detail route lands on `/offline`, and
+recorded a generic per-segment "this item is not on this device" shell as the rejected alternative. The
+precache decision it protects is unchanged and still correct: a dynamic pattern is not a document, and
+the 114 prerendered Quran documents stay out. What was wrong is what answers the miss.
+
+`/offline` is a different screen replacing the one the user asked for, and the app already holds
+something better than nothing: the ancestor segment's document. So a navigation with no copy of its
+own is now answered with the **longest cached path prefix** — `/community` for
+`/community/<slug>`, `/quran` for `/quran/<surah>`, `/verify` for `/verify/<code>`, and `/` for
+`/u/<username>`, whose `/u` segment has no page of its own — served at the URL the user asked for.
+`/offline` keeps the two doors that are left: an empty cache (a new install's first hit with no
+network) and the never-cache surfaces, `/admin` among them.
+
+The rejected alternative in #473 called for a per-segment rendering contract. This is not that: the
+response is an existing document, and the only new rendering is one app-wide card that says the link
+is not available offline. The card is the shared needs-connection state (ADR-0031), so no surface
+gains a new gate, and it needs no per-segment copy.
+
+- **The swap is invisible, so the worker says it out loud.** The client cannot tell an ancestor
+  document from the one it asked for — the URL and the hydrated tree are the parent's either way. The
+  worker records `{ requested, served }` in the cache it already keeps for its own bookkeeping
+  (`royaraqamia-cache-meta`), clearing it at the start of every navigation it answers and writing it
+  only on a prefix serve. `frontend/shared/prefix-serve.ts` reads it once after hydration, and
+  `frontend/ui/shared/offline-route-card.tsx` draws the card when `requested` is the current pathname.
+  A later online visit to the same URL therefore never inherits a card.
+- **A shell is a document _and_ the chunks it names.** A precached document paints, but hydration
+  needs the `/_next/static` files it references, and a route the device never visited has none — so
+  the prefix-served parent would stay inert and the card (client-rendered) would never mount. That is
+  the `Only documents, not their route-specific chunks` limit below, and #490 turns it into a
+  user-visible one. The background refresh now queues the asset references of every document it
+  fetches, plus the fixed shell's own (fetched by `install`, not by the list), in
+  `royaraqamia-cache-meta`'s asset queue and drains a bounded handful per idle window —
+  `ROUTE_REFRESH_ASSET_BATCH`, twelve — so the files trickle in over a few passes instead of bursting
+  beside the page the user is on. The queue is build-stamped and is the record, like the cached
+  documents are for the route list: a worker the browser stops resumes from it. Assets are
+  content-addressed, so one file serves every document that names it, and they are charged to
+  ADR-0069's cache budget rather than the route-shell ceiling, which still bounds documents alone.
+- **A prefix serve is its own telemetry door** (`navigation-prefix`, ADR-0074's 2026-10-22
+  amendment), so the field can tell a graceful fallback from the miss that still reaches `/offline`.
+- **A client-side navigation needs no extra rule.** An RSC fetch that cannot be answered offline is
+  already answered by the App Router with a browser navigation, which arrives at the document above
+  and therefore at the nearest shell; the failed payload never becomes the route's error boundary.
+
+The cost is the one the #473 amendment already priced — `what renders is the ancestor, not the item,
+until that item has been opened online once` — paid without a wrong screen at the end of it.
+`e2e/public-offline.spec.ts` pins it for the three public shapes and `product-offline-render.spec.ts`
+for a product subroute; `scripts/__tests__/sw.test.mjs` proves the prefix order, the homepage walk,
+the marker's lifetime, that the chunks arrive with the document and resume from the queue, and that
+`/offline` still answers an empty cache and `/admin`.

@@ -204,3 +204,32 @@ describe('sw-routing predicates', () => {
     );
   });
 });
+
+describe('shell prefix candidates (#490)', () => {
+  it('walks a dynamic detail route up to the cached ancestor', () => {
+    // `/community/<slug>` has no document of its own (ADR-0071), so the miss
+    // falls back through the parent segment and then the homepage.
+    expect(routing.shellPrefixCandidates('/community/foo')).toEqual(['/community', '/']);
+    expect(routing.shellPrefixCandidates('/quran/7')).toEqual(['/quran', '/']);
+    expect(routing.shellPrefixCandidates('/verify/ABC-123')).toEqual(['/verify', '/']);
+    // `/u` is a segment with no page; the homepage is the first ancestor the
+    // worker can actually hold.
+    expect(routing.shellPrefixCandidates('/u/someone')).toEqual(['/u', '/']);
+  });
+
+  it('keeps the whole ancestor chain, longest first', () => {
+    expect(routing.shellPrefixCandidates('/a/b/c')).toEqual(['/a/b', '/a', '/']);
+    // Trailing slashes and repeated separators are the same path.
+    expect(routing.shellPrefixCandidates('/a/b/')).toEqual(['/a', '/']);
+    expect(routing.shellPrefixCandidates('//a//b')).toEqual(['/a', '/']);
+  });
+
+  it('never offers the requested path itself, or a non-path', () => {
+    // An exact entry is a cache hit, not a prefix serve.
+    expect(routing.shellPrefixCandidates('/')).toEqual([]);
+    expect(routing.shellPrefixCandidates('/rates')).toEqual(['/']);
+    expect(routing.shellPrefixCandidates('')).toEqual([]);
+    expect(routing.shellPrefixCandidates('community')).toEqual([]);
+    expect(routing.shellPrefixCandidates(undefined)).toEqual([]);
+  });
+});
