@@ -1,9 +1,18 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { PlanCatalog } from '@/shared/contracts/plans';
+import type { PlanCatalog, UsageState } from '@/shared/contracts/plans';
 
-vi.mock('@/frontend/ui/plans/current-plan-notice', () => ({
-  CurrentPlanNotice: () => null,
+const mocks = vi.hoisted(() => ({
+  session: { user: null as { id: string } | null, isLoading: false },
+  usage: { state: null as UsageState | null, loading: false, failed: false, reload: vi.fn() },
+}));
+
+vi.mock('@/frontend/state/session-provider', () => ({
+  useSession: () => mocks.session,
+}));
+
+vi.mock('@/frontend/state/plans/use-my-plan', () => ({
+  useMyUsage: () => mocks.usage,
 }));
 
 vi.mock('@/frontend/shared/constants', () => ({
@@ -52,6 +61,26 @@ const catalog: PlanCatalog = {
   ],
 };
 
+function usage(overrides: Partial<UsageState>): UsageState {
+  return {
+    plan: 'free',
+    unlimited: false,
+    cap: 250,
+    spent: 1,
+    remaining: 249,
+    windowDays: 30,
+    expiresAt: null,
+    ...overrides,
+  };
+}
+
+beforeEach(() => {
+  mocks.session.user = null;
+  mocks.session.isLoading = false;
+  mocks.usage.state = null;
+  mocks.usage.loading = false;
+});
+
 afterEach(cleanup);
 
 describe('PricingView', () => {
@@ -62,30 +91,62 @@ describe('PricingView', () => {
     expect(screen.getByText('5,000')).toBeInTheDocument();
     expect(screen.getByText('$12')).toBeInTheDocument();
 
-    // Caps and action costs come from the same rows, grouped as ASCII digits.
-    expect(screen.getByText('77')).toBeInTheDocument();
-    expect(screen.getByText('22')).toBeInTheDocument();
-    expect(screen.getByText('25 رصيد')).toBeInTheDocument();
-
-    // The visitor allowance is named for the guest reading the page.
-    expect(screen.getAllByText('7').length).toBeGreaterThan(0);
+    // What each allowance buys is derived from the same cap and cost rows.
+    expect(screen.getByText(/حتى 77 عادة/)).toBeInTheDocument();
+    expect(screen.getByText(/حتى 22 تطبيقات MCP/)).toBeInTheDocument();
   });
 
-  it('offers the paid plan through WhatsApp with the price in the message', () => {
+  it('sends a guest to sign-in with the price in the WhatsApp message', () => {
     render(<PricingView catalog={catalog} />);
+
+    expect(screen.getByRole('link', { name: 'ابدأ مجَّانًا' })).toHaveAttribute(
+      'href',
+      '/auth/login'
+    );
 
     const subscribe = screen
       .getAllByRole('link')
       .filter((link) => link.getAttribute('href')?.includes('wa.me'));
 
-    expect(subscribe.length).toBeGreaterThan(0);
+    expect(subscribe.length).toBe(1);
     expect(subscribe[0]?.getAttribute('href')).toContain(encodeURIComponent('$12'));
   });
 
-  it('keeps the comparison honest about reads and saved data', () => {
+  it('closes the free card for a member who already has it', () => {
+    mocks.session.user = { id: 'u1' };
+    mocks.usage.state = usage({ plan: 'free' });
     render(<PricingView catalog={catalog} />);
 
-    expect(screen.getByText(/القراءة دائماً مجانية/)).toBeInTheDocument();
-    expect(screen.getByText(/البيانات المحفوظة لا تُحذف/)).toBeInTheDocument();
+    expect(screen.getByText('الخطَّة الحاليَّة')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByRole('link', { name: 'ابدأ مجَّانًا' })).not.toBeInTheDocument();
+
+    // The paid plan is still theirs to buy.
+    expect(screen.getByRole('link', { name: 'اشترِك الآن' })).toBeInTheDocument();
+  });
+
+  it('marks the paid plan as current and drops the free card action for a member', () => {
+    mocks.session.user = { id: 'u1' };
+    mocks.usage.state = usage({ plan: 'pro', cap: 5000, remaining: 4999 });
+    render(<PricingView catalog={catalog} />);
+
+    expect(screen.getByText('الخطَّة الحاليَّة')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByRole('link', { name: 'اشترِك الآن' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'ابدأ مجَّانًا' })).not.toBeInTheDocument();
+  });
+
+  it('sells the two plans and nothing else', () => {
+    render(<PricingView catalog={catalog} />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'خطط التَّسعير' })).toBeInTheDocument();
+    expect(screen.getByText('موصَى به لك')).toBeInTheDocument();
+
+    // The reference tables, the guest line, the FAQ and the closing call to
+    // action live on `/account/faq` or nowhere; the plans are the whole page.
+    expect(screen.queryByText(/ما يستهلك الرصيد/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ما يمكنك حفظه/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ما لا يستهلك الرصيد/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/أسئلة شائعة/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/جاهز للبدء/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/متبقٍّ لك/)).not.toBeInTheDocument();
   });
 });

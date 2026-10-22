@@ -73,10 +73,7 @@ describe('AccountView', () => {
     );
 
     // The plans are public for a guest too, and the usage card is absent.
-    expect(screen.getByRole('link', { name: /الخطط والأسعار/ })).toHaveAttribute(
-      'href',
-      '/pricing'
-    );
+    expect(screen.getByRole('link', { name: /خطط التَّسعير/ })).toHaveAttribute('href', '/pricing');
     expect(screen.queryByText('الاستهلاك')).not.toBeInTheDocument();
 
     // The legal rows are public too — plain links for a guest.
@@ -136,10 +133,7 @@ describe('AccountView', () => {
       'href',
       '/account/faq'
     );
-    expect(screen.getByRole('link', { name: /الخطط والأسعار/ })).toHaveAttribute(
-      'href',
-      '/pricing'
-    );
+    expect(screen.getByRole('link', { name: /خطط التَّسعير/ })).toHaveAttribute('href', '/pricing');
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
   });
