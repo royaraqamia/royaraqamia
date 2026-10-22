@@ -61,6 +61,10 @@ function createSandbox({
   offlineReportRetryMs,
   precacheRoutes = [],
   cacheVersion = BUILD_A,
+  routeRefreshIdleMs = 0,
+  routeRefreshIntervalMs = 0,
+  routeRefreshBatch,
+  routeRefreshWindows,
   // A second worker over the same Cache Storage, i.e. what a release does.
   storage,
 } = {}) {
@@ -183,6 +187,13 @@ function createSandbox({
   if (routeBudgetBytes !== undefined) sandbox.ROUTE_PRECACHE_BUDGET_BYTES = routeBudgetBytes;
   if (navigationTimeoutMs !== undefined) sandbox.NAVIGATION_TIMEOUT_MS = navigationTimeoutMs;
   if (offlineReportRetryMs !== undefined) sandbox.OFFLINE_REPORT_RETRY_MS = offlineReportRetryMs;
+  // The route refresh runs in idle windows, which no test should have to wait
+  // for: zero delay unless a test supplies its own `requestIdleCallback`, and no
+  // interval between passes so a test drives every window it needs.
+  sandbox.ROUTE_REFRESH_IDLE_MS = routeRefreshIdleMs;
+  sandbox.ROUTE_REFRESH_INTERVAL_MS = routeRefreshIntervalMs;
+  if (routeRefreshBatch !== undefined) sandbox.ROUTE_REFRESH_BATCH = routeRefreshBatch;
+  if (routeRefreshWindows !== undefined) sandbox.ROUTE_REFRESH_WINDOWS = routeRefreshWindows;
   // Cache maintenance is Cache Storage only. A Local Store or Outbox write from
   // this worker would be a bug the suite must see, so opening IndexedDB throws.
   sandbox.indexedDB = {
@@ -238,9 +249,54 @@ async function boot({ keepFetchCalls = false, ...options } = {}) {
   vm.runInNewContext(SW_SOURCE, ctx.sandbox, { filename: 'sw.js' });
   await Promise.all(ctx.dispatch('install').waitUntilCalls);
   await Promise.all(ctx.dispatch('activate').waitUntilCalls);
+  // Activation starts the route refresh as a background pass (#489), so a booted
+  // worker is not quiescent yet: let its idle windows play out before anything
+  // asserts on what the cache holds.
+  await settle(ctx);
   // Install precaches through `fetch`; those calls are not what the tests below
   // are counting unless one is asking about the install itself.
   if (!keepFetchCalls) ctx.state.fetchCalls.length = 0;
+  return ctx;
+}
+
+/**
+ * Waits until the background route pass stops asking for routes. It is started
+ * by `activate` without being awaited, so this is the only signal a test has;
+ * the sandbox runs every idle window at zero delay.
+ */
+async function settle(ctx) {
+  for (let quiet = 0; quiet < 6;) {
+    const before = ctx.state.fetchCalls.length;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    quiet = ctx.state.fetchCalls.length === before ? quiet + 1 : 0;
+  }
+}
+
+/**
+ * Drives one same-origin GET through a booted worker, the way a page would. The
+ * route refresh already ran in `activate`; a fetch is how a pass that stopped
+ * early is asked to continue.
+ */
+async function runRouteRefresh(ctx) {
+  const event = new FakeEvent('fetch');
+  event.request = {
+    method: 'GET',
+    mode: 'navigate',
+    url: 'https://site.example/',
+    headers: { get: () => null },
+  };
+  event.respondWith = (response) => {
+    event.response = response;
+  };
+  ctx.dispatch('fetch', event);
+  await event.response;
+  await Promise.all(event.waitUntilCalls);
+}
+
+/** Boots a worker without dispatching `activate`, so install can be observed alone. */
+function installOnly(options) {
+  const ctx = createSandbox(options);
+  vm.runInNewContext(SW_SOURCE, ctx.sandbox, { filename: 'sw.js' });
   return ctx;
 }
 
@@ -608,7 +664,7 @@ describe('service worker cache durability', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const routes = ['/privacy', '/terms', '/security'];
 
-    const { caches } = await boot({
+    const ctx = await boot({
       precacheRoutes: routes,
       fetchImpl: async (url) => {
         if (String(url).includes('/terms')) return new Response('missing', { status: 404 });
@@ -623,8 +679,8 @@ describe('service worker cache durability', () => {
       },
     });
 
-    const cache = await caches.open(DATA_CACHE);
-    // The failed URL does not reject install or block the routes after it.
+    const cache = await ctx.caches.open(DATA_CACHE);
+    // The failed URL does not reject the pass or block the routes after it.
     expect(await cache.match('/privacy')).toBeTruthy();
     expect(await cache.match('/security')).toBeTruthy();
     expect(await cache.match('/terms')).toBeUndefined();
@@ -633,12 +689,16 @@ describe('service worker cache durability', () => {
     log.mockRestore();
   });
 
-  it('stops adding route shells at the install budget', async () => {
+  it('stops adding route shells at the route budget', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const { caches } = await boot({
+    const ctx = await boot({
       precacheRoutes: ['/a', '/b', '/c'],
       routeBudgetBytes: 500,
+      // One route per window keeps the spend strictly sequential, so the
+      // assertion is about the ceiling and not about two lanes racing for it.
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 3,
       fetchImpl: async () =>
         new Response('shell', {
           status: 200,
@@ -650,7 +710,7 @@ describe('service worker cache durability', () => {
         }),
     });
 
-    const cache = await caches.open(DATA_CACHE);
+    const cache = await ctx.caches.open(DATA_CACHE);
     // 300 fits; the second would take the list to 600, over the 500 ceiling.
     expect(await cache.match('/a')).toBeTruthy();
     expect(await cache.match('/b')).toBeUndefined();
@@ -663,9 +723,11 @@ describe('service worker cache durability', () => {
   it('does not spend cache budget it does not have on route shells', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const { caches } = await boot({
+    const ctx = await boot({
       budgetBytes: 100,
       precacheRoutes: ['/privacy'],
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 1,
       fetchImpl: async (url) => {
         // The fixed shell is empty, so the route has to fit in what is left.
         if (String(url) === '/privacy') {
@@ -685,7 +747,7 @@ describe('service worker cache durability', () => {
       },
     });
 
-    const cache = await caches.open(DATA_CACHE);
+    const cache = await ctx.caches.open(DATA_CACHE);
     expect(await cache.match('/privacy')).toBeUndefined();
     expect(log.mock.calls.flat().join(' ')).toContain('budget reached');
 
@@ -1363,7 +1425,14 @@ describe('service worker cache identity (#488)', () => {
     const storage = new Map();
     const routes = ['/privacy'];
 
-    await boot({ storage, cacheVersion: BUILD_A, precacheRoutes: routes });
+    const first = await boot({
+      storage,
+      cacheVersion: BUILD_A,
+      precacheRoutes: routes,
+      keepFetchCalls: true,
+    });
+    expect(first.state.fetchCalls.map((call) => call.url)).toContain('/privacy');
+
     const again = await boot({
       storage,
       cacheVersion: BUILD_A,
@@ -1381,5 +1450,217 @@ describe('service worker cache identity (#488)', () => {
       keepFetchCalls: true,
     });
     expect(release.state.fetchCalls.map((call) => call.url)).toContain('/privacy');
+  });
+});
+
+describe('service worker route-shell refresh (#489)', () => {
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  function shell() {
+    return new Response('shell', {
+      status: 200,
+      headers: {
+        'content-type': 'text/html',
+        'content-length': '5',
+        'cache-control': 'public, max-age=60',
+      },
+    });
+  }
+
+  it('installs with the fixed shell and no route document', async () => {
+    const ctx = installOnly({ precacheRoutes: ['/privacy', '/terms'] });
+    await Promise.all(ctx.dispatch('install').waitUntilCalls);
+
+    // The install is bounded by what it must have to boot: the two documents,
+    // the manifest and the four icons. Not the build's list, which arrives from
+    // `activate`.
+    expect(ctx.state.fetchCalls.map((call) => call.url).sort()).toEqual(
+      [
+        '/',
+        '/offline',
+        '/manifest.json',
+        '/icons/icon-192x192.png',
+        '/icons/icon-512x512.png',
+        '/icons/notification-icon-192x192.png',
+        '/icons/badge-icon-96x96.png',
+      ].sort()
+    );
+
+    const cache = await ctx.caches.open(DATA_CACHE);
+    expect(await cache.match('/privacy')).toBeUndefined();
+    expect(await cache.match('/terms')).toBeUndefined();
+  });
+
+  it('fetches the list at activation, two routes at a time', async () => {
+    const routes = ['/a', '/b', '/c', '/d'];
+    let inFlight = 0;
+    let peak = 0;
+
+    const ctx = await boot({
+      precacheRoutes: routes,
+      routeRefreshBatch: 4,
+      routeRefreshWindows: 1,
+      fetchImpl: async (url) => {
+        if (!routes.includes(String(url))) return new Response('ok', { status: 200 });
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        inFlight -= 1;
+        return shell();
+      },
+    });
+
+    expect(peak).toBe(2);
+    const cache = await ctx.caches.open(DATA_CACHE);
+    for (const route of routes) expect(await cache.match(route)).toBeTruthy();
+  });
+
+  it('does not fetch a route until the page is idle', async () => {
+    const ctx = installOnly({ precacheRoutes: ['/privacy'] });
+    const idle = [];
+    ctx.sandbox.requestIdleCallback = (callback) => {
+      idle.push(callback);
+      return idle.length;
+    };
+
+    await Promise.all(ctx.dispatch('install').waitUntilCalls);
+    ctx.state.fetchCalls.length = 0;
+
+    const activating = ctx.dispatch('activate');
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    // Activation is parked on the browser's idle signal, so no route is fetched
+    // beside the document that is still hydrating.
+    expect(ctx.state.fetchCalls.map((call) => call.url)).not.toContain('/privacy');
+    expect(idle).toHaveLength(1);
+
+    idle.shift()();
+    await Promise.all(activating.waitUntilCalls);
+    await settle(ctx);
+    expect(ctx.state.fetchCalls.map((call) => call.url)).toContain('/privacy');
+  });
+
+  it('resumes a stopped pass instead of starting over', async () => {
+    const storage = new Map();
+    const routes = ['/a', '/b', '/c', '/d'];
+    const options = {
+      storage,
+      precacheRoutes: routes,
+      routeRefreshBatch: 2,
+      routeRefreshWindows: 1,
+      fetchImpl: async () => shell(),
+    };
+
+    const first = await boot(options);
+    const firstCache = await first.caches.open(DATA_CACHE);
+    expect(await firstCache.match('/a')).toBeTruthy();
+    expect(await firstCache.match('/b')).toBeTruthy();
+    expect(await firstCache.match('/c')).toBeUndefined();
+
+    // The browser terminated that worker mid-list. The next one re-reads what
+    // the device holds, so its first window is the rest of the list.
+    const next = await boot(options);
+
+    const fetched = next.state.fetchCalls.map((call) => call.url);
+    expect(fetched).not.toContain('/a');
+    expect(fetched).not.toContain('/b');
+    const cache = await next.caches.open(DATA_CACHE);
+    expect(await cache.match('/c')).toBeTruthy();
+    expect(await cache.match('/d')).toBeTruthy();
+  });
+
+  it('continues a stopped pass on the next request, without waiting for the interval', async () => {
+    const storage = new Map();
+    const routes = ['/a', '/b'];
+    const options = {
+      storage,
+      precacheRoutes: routes,
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 1,
+      routeRefreshIntervalMs: 60_000,
+      fetchImpl: async () => shell(),
+    };
+
+    const first = await boot(options);
+    const cache = await first.caches.open(DATA_CACHE);
+    expect(await cache.match('/a')).toBeTruthy();
+    expect(await cache.match('/b')).toBeUndefined();
+
+    // The pass stopped with `b` still pending, so the next request continues
+    // even though a completed pass would be held off for a minute.
+    await runRouteRefresh(first);
+    expect(await cache.match('/b')).toBeTruthy();
+  });
+
+  it('does not walk the list again on every request once a pass completes', async () => {
+    const ctx = await boot({
+      precacheRoutes: ['/a'],
+      routeRefreshIntervalMs: 60_000,
+      fetchImpl: async () => shell(),
+    });
+    ctx.state.fetchCalls.length = 0;
+
+    await runRouteRefresh(ctx);
+
+    expect(ctx.state.fetchCalls.map((call) => call.url)).not.toContain('/a');
+  });
+
+  it('keeps what it fetched when the radio goes off mid-list', async () => {
+    const storage = new Map();
+    const routes = ['/a', '/b', '/c'];
+
+    const first = await boot({
+      storage,
+      precacheRoutes: routes,
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 1,
+      fetchImpl: async () => shell(),
+    });
+    const firstCache = await first.caches.open(DATA_CACHE);
+    expect(await firstCache.match('/a')).toBeTruthy();
+
+    // Offline for the next pass: nothing new lands, and nothing it already has
+    // is lost.
+    const offline = await boot({
+      storage,
+      precacheRoutes: routes,
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 2,
+      fetchImpl: async () => {
+        throw new Error('offline');
+      },
+    });
+    const keptCache = await offline.caches.open(DATA_CACHE);
+    expect(await keptCache.match('/a')).toBeTruthy();
+    expect(await keptCache.match('/b')).toBeUndefined();
+
+    // Back online: the next window continues from where the device stopped.
+    const online = await boot({
+      storage,
+      precacheRoutes: routes,
+      routeRefreshBatch: 1,
+      routeRefreshWindows: 2,
+      fetchImpl: async () => shell(),
+    });
+    const cache = await online.caches.open(DATA_CACHE);
+    expect(await cache.match('/a')).toBeTruthy();
+    expect(await cache.match('/b')).toBeTruthy();
+    expect(await cache.match('/c')).toBeTruthy();
   });
 });

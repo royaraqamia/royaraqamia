@@ -54,9 +54,11 @@ stated limit.
 
 - **A route never visited, opened offline for the first time, cannot render — and a dynamic detail
   route cannot even show its own chrome.** There is no cached HTML or RSC payload to serve, and
-  nothing can synthesise it. The install precaches every _static_ route's shell (ADR-0071), so for
-  those the window closes after one online visit. A detail route whose pages come from a dynamic
-  segment — `/u/[username]`, `/community/[slug]`, `/quran/[surah]`, `/verify/[code]` — is a pattern,
+  nothing can synthesise it. The worker refreshes every _static_ route's shell in the background
+  after it installs (ADR-0071, #489), so for those the window closes with the first online visit —
+  during it, once the refresh reaches that route — rather than with the install. A detail route
+  whose pages come from a dynamic segment — `/u/[username]`, `/community/[slug]`, `/quran/[surah]`,
+  `/verify/[code]` — is a pattern,
   not a document: the build has no shell to precache, so a first offline deep link lands on
   `/offline` (#473, and ADR-0071's #473 amendment records why the alternatives lost). That is the
   case a profile link opened from a message hits. One online visit caches the page like any other
@@ -223,13 +225,17 @@ never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache
 The caches themselves are named by **schema** (`royaraqamia-data-v1`, `royaraqamia-static-v1`), not by
 release, so a deployment keeps the device's whole library and only a schema bump discards it. Each
 entry is stamped with the build that produced it: a document from an earlier build is served at once
-and refreshed through the network, and an install skips a route shell the current build already holds
+and refreshed through the network, and the background route refresh skips a shell the current build
+already holds
 ([ADR-0069's #488 amendment](../adr/0069-the-public-cache-has-a-byte-budget.md#amendment-2026-10-22-488-the-cache-is-named-by-schema-not-by-release)).
 
-The build's public static routes are precached as HTML documents at install, derived from the build's
+The build's public static routes are cached as HTML documents by a **background refresh** after
+the worker installs — idle windows, four routes at a time, two fetches in flight, resumed from what
+the device holds (#489) — derived from the build's
 own route manifests and bounded to 6 MB (or what the cache budget has left), so a deep link to a route
-this device never opened still paints its own shell offline
-([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). Dynamic detail routes,
+this device never opened still paints its own shell offline once the refresh has reached it
+([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). The install itself fetches
+only `/`, `/offline`, the manifest and the icons. Dynamic detail routes,
 account tools' API prefixes and every never-cache prefix stay out; the product dashboard roots joined
 the list in #449 (ADR-0073) once they became data-free shells, and `/consultation/book`,
 `/downloader` and `/mcp/guide` in #450. On the #450 build the list is 29 documents and 1,705,315 bytes

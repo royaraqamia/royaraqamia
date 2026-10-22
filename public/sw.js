@@ -88,10 +88,27 @@ const PRECACHE_ROUTES = Array.isArray(self.PRECACHE_ROUTES)
     )
   : [];
 
-// Install-time ceiling for those shells, bytes. The public cache's own budget
-// (below) still wins: the worker only spends what is left of it. ADR-0071
-// documents both numbers and why the list carries HTML shells only.
+// Ceiling for those shells, bytes. The public cache's own budget (below) still
+// wins: the worker only spends what is left of it. ADR-0071 documents both
+// numbers and why the list carries HTML shells only.
 const ROUTE_PRECACHE_BUDGET_BYTES = self.ROUTE_PRECACHE_BUDGET_BYTES || 6 * 1024 * 1024;
+
+// How the background refresh spends that ceiling (#489). `install` fetches only
+// the fixed shell; the route list arrives after activation, a small batch per
+// idle window, two fetches at a time. One pass covers the generated cap of 32
+// routes (`MAX_PRECACHE_ROUTES`): 4 x 8.
+const ROUTE_REFRESH_BATCH = self.ROUTE_REFRESH_BATCH || 4;
+const ROUTE_REFRESH_WINDOWS = self.ROUTE_REFRESH_WINDOWS || 8;
+const ROUTE_REFRESH_CONCURRENCY = 2;
+// A completed pass is not repeated for a while: one page load issues dozens of
+// same-origin GETs, and each one is another chance to walk a list the device
+// already holds. A pass that stopped early skips this wait and continues.
+const ROUTE_REFRESH_INTERVAL_MS = self.ROUTE_REFRESH_INTERVAL_MS ?? 60_000;
+// The delay before a window when the realm has no `requestIdleCallback` (a
+// service worker does not, on today's browsers). Long enough to stay out of a
+// document's own hydration burst, short enough that one visit converges.
+const ROUTE_REFRESH_IDLE_MS = self.ROUTE_REFRESH_IDLE_MS ?? 500;
+const ROUTE_REFRESH_IDLE_TIMEOUT_MS = self.ROUTE_REFRESH_IDLE_TIMEOUT_MS ?? 5_000;
 
 // The public cache's byte ceiling (ADR-0069). A test may shrink it through the
 // same realm global; production always takes the spec's ~150 MB.
@@ -108,6 +125,9 @@ const CACHE_META_VERSION = 1;
 const PRECACHE_PATHS = new Set(
   [...PRECACHE_URLS, ...PRECACHE_ROUTES].map((url) => new URL(url, self.location.origin).pathname)
 );
+// The index keys route shells by absolute URL (`cacheKeyOf`), so the refresh
+// reads "what does this device already hold for the list" the same way.
+const PRECACHE_ROUTE_KEYS = PRECACHE_ROUTES.map((url) => cacheKeyOf(url));
 
 // Precaching is best-effort per URL. `cache.addAll` is all-or-nothing: one 404
 // would reject the install and leave the previous worker in place forever, so
@@ -136,80 +156,198 @@ async function precache(cache, urls) {
   await recordCachedEntries(cache, stored);
 }
 
-// The route shells are fetched one at a time so the budget can stop the list
-// before an entry is written. A single failed route is logged and skipped; it
-// never blocks the rest. `cache.add` cannot do this because it gives no answer
-// about the response's size until after it has already stored it.
-async function precacheRoutes(cache, urls) {
-  if (urls.length === 0) return;
+// ---------------------------------------------------------------------------
+// Route-shell refresh after activation (#489)
+//
+// `install` fetches the irreducible shell: `/`, `/offline`, the manifest and the
+// four icons. The build's route shells are not part of it — 29 documents and
+// 1.63 MB (ADR-0071) fetched one at a time competes with the page the user is
+// looking at, and the browser may terminate the worker mid-list.
+//
+// They arrive here instead: a few per idle window, two at a time, starting with
+// `activate` and continued by the fetch events that follow. The idle gate is
+// `requestIdleCallback` where the realm has one and a small delay otherwise,
+// which is what keeps a route fetch off a document that is still hydrating.
+// Progress is the cache itself — a pass skips a route this build already holds
+// — so a worker the browser stops, or a device that goes offline, resumes at
+// the next window rather than starting over.
+// ---------------------------------------------------------------------------
 
-  let budget = ROUTE_PRECACHE_BUDGET_BYTES;
+let routeRefresh = null;
+let lastRouteRefreshAt = 0;
+let routeRefreshPending = false;
+
+/** Resolves when the page is idle enough to carry a couple of route fetches. */
+function whenIdle() {
+  if (typeof self.requestIdleCallback === 'function') {
+    return new Promise((resolve) => {
+      self.requestIdleCallback(() => resolve(), { timeout: ROUTE_REFRESH_IDLE_TIMEOUT_MS });
+    });
+  }
+  return new Promise((resolve) => setTimeout(resolve, ROUTE_REFRESH_IDLE_MS));
+}
+
+// What this device may still spend on route shells: the list's own ceiling and
+// the cache budget (ADR-0069), minus what the shells already accounted for. A
+// resumable pass is measured against what it holds, not against this run's
+// writes alone.
+function routeRefreshBudget(index) {
+  const held = PRECACHE_ROUTE_KEYS.reduce(
+    (total, key) => total + ((index.entries[key] && index.entries[key].size) || 0),
+    0
+  );
+  return Math.max(
+    0,
+    Math.min(ROUTE_PRECACHE_BUDGET_BYTES - held, CACHE_BUDGET_BYTES - accountedBytes(index))
+  );
+}
+
+// One window's worth of routes, `ROUTE_REFRESH_CONCURRENCY` at a time. A 404, a
+// non-cacheable response or a network error is logged and skipped: the rest of
+// the list is worth more than the entry that failed. `held` carries each route
+// shell's current bytes, so a refresh that replaces a previous build's copy only
+// spends its growth. Returns the bytes left.
+async function refreshRouteWindow(cache, urls, budget, held) {
+  let remaining = budget;
+  let cursor = 0;
+  let exhausted = false;
+
+  const lane = async () => {
+    while (!exhausted && cursor < urls.length) {
+      const url = urls[cursor];
+      cursor += 1;
+      try {
+        const parsed = new URL(url, self.location.origin);
+        if (parsed.origin !== self.location.origin || isNeverCache(parsed)) continue;
+        // `no-cache` revalidates: an unchanged shell answers from the HTTP cache
+        // instead of transferring again, and a stale copy cannot become this
+        // build's shell.
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) {
+          console.log('[sw] route refresh failed:', url, response.status);
+          continue;
+        }
+        if (!isCacheable(response)) {
+          console.log('[sw] route refresh skipped (not cacheable):', url);
+          continue;
+        }
+        const size = await sizeOf(response);
+        const key = cacheKeyOf(url);
+        const growth = Math.max(0, size - (held.get(key) || 0));
+        // Claimed before the write is awaited, so two lanes cannot both spend
+        // the last bytes of the budget.
+        if (growth > remaining) {
+          exhausted = true;
+          console.log('[sw] route refresh budget reached; skipped:', url);
+          continue;
+        }
+        remaining -= growth;
+        held.set(key, size);
+        await cache.put(url, stampBuild(response));
+        await recordEntry(key, size);
+      } catch (error) {
+        console.log('[sw] route refresh failed:', url, String(error));
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: ROUTE_REFRESH_CONCURRENCY }, lane));
+  return remaining;
+}
+
+/** Runs one pass over the list and returns how many routes are still pending. */
+async function refreshRouteShells() {
+  const cache = await caches.open(CACHE);
+  const pending = [];
+  for (const url of PRECACHE_ROUTES) {
+    const existing = await cache.match(url);
+    // A shell this build already holds needs no request: a repeated pass (a
+    // re-registered worker, a device finishing a list it started yesterday)
+    // costs nothing, and a released build finds the previous stamp and refreshes
+    // the route once.
+    if (existing && buildOf(existing) === BUILD_ID) continue;
+    pending.push(url);
+  }
+  if (pending.length === 0) return 0;
+
+  let budget;
+  let held;
   try {
-    const accounted = await withIndex(async (index) => accountedBytes(index));
-    budget = Math.min(ROUTE_PRECACHE_BUDGET_BYTES, Math.max(0, CACHE_BUDGET_BYTES - accounted));
+    ({ budget, held } = await withIndex((index) => ({
+      budget: routeRefreshBudget(index),
+      held: new Map(
+        PRECACHE_ROUTE_KEYS.map((key) => [
+          key,
+          (index.entries[key] && index.entries[key].size) || 0,
+        ])
+      ),
+    })));
   } catch (error) {
-    // The index is an optimisation. If it cannot be read, the install-time
-    // ceiling still bounds the list; `recordEntry` enforces the cache budget.
-    console.log('[sw] route precache budget read failed', String(error));
+    // The index is an optimisation. Without it the list's own ceiling still
+    // bounds the pass, and `recordEntry` enforces the cache budget per write.
+    console.log('[sw] route refresh budget read failed', String(error));
+    budget = ROUTE_PRECACHE_BUDGET_BYTES;
+    held = new Map();
   }
 
-  let spent = 0;
-  let stoppedAt = urls.length;
-  for (let index = 0; index < urls.length; index += 1) {
-    const url = urls[index];
-    if (spent >= budget) {
-      stoppedAt = index;
-      break;
-    }
-    try {
-      const parsed = new URL(url, self.location.origin);
-      if (parsed.origin !== self.location.origin || isNeverCache(parsed)) continue;
-      // A shell this build already holds needs no request at all: the cache
-      // survives a release, so an install that repeats (a re-registered worker,
-      // a `CACHE_URLS` message) costs nothing. A new build finds the previous
-      // build's stamp and refreshes the route.
-      const existing = await cache.match(url);
-      if (existing && buildOf(existing) === BUILD_ID) continue;
-      // `no-cache` revalidates against the server instead of letting a stale
-      // HTTP-cache copy of a previous build become this build's shell.
-      const response = await fetch(url, { cache: 'no-cache' });
-      if (!response.ok) {
-        console.log('[sw] route precache failed:', url, response.status);
-        continue;
-      }
-      if (!isCacheable(response)) {
-        console.log('[sw] route precache skipped (not cacheable):', url);
-        continue;
-      }
-      const size = await sizeOf(response);
-      if (spent + size > budget) {
-        stoppedAt = index;
-        break;
-      }
-      await cache.put(url, stampBuild(response));
-      await recordEntry(cacheKeyOf(url), size);
-      spent += size;
-    } catch (error) {
-      // A failed URL must not reject `install`: that would leave the previous
-      // worker in place, and every other route it fetches goes to waste.
-      console.log('[sw] route precache failed:', url, String(error));
-    }
+  for (let window = 0; window < ROUTE_REFRESH_WINDOWS; window += 1) {
+    if (budget <= 0 || pending.length === 0) break;
+    await whenIdle();
+    budget = await refreshRouteWindow(cache, pending.splice(0, ROUTE_REFRESH_BATCH), budget, held);
   }
 
-  if (stoppedAt < urls.length) {
-    console.log(
-      '[sw] route precache budget reached; skipped:',
-      urls.slice(stoppedAt).join(', ')
-    );
+  // No budget left is a different stop from "the pass ran out of windows": a
+  // route that does not fit today will not fit on the next GET either, so the
+  // worker stops trying until the cache frees up (a new worker, or a release
+  // that replaces entries) instead of walking the list on every request.
+  if (budget <= 0) {
+    console.log('[sw] route refresh has no budget left:', pending.length, 'pending');
+    return 0;
   }
+
+  if (pending.length > 0) {
+    console.log('[sw] route refresh paused; next window continues:', pending.length);
+  }
+  return pending.length;
+}
+
+/**
+ * Starts (or continues) the background refresh and returns it for
+ * `event.waitUntil`, or null when there is nothing to do. `activate` calls it
+ * for the pass every install is guaranteed, and the fetch handler calls it so a
+ * pass that hit the budget, went offline or was cut short resumes on the next
+ * request instead of waiting for the next launch.
+ */
+function maybeRefreshRouteShells() {
+  if (PRECACHE_ROUTES.length === 0) return null;
+  if (routeRefresh) return routeRefresh;
+  const now = Date.now();
+  if (!routeRefreshPending && now - lastRouteRefreshAt < ROUTE_REFRESH_INTERVAL_MS) return null;
+  lastRouteRefreshAt = now;
+  routeRefresh = refreshRouteShells()
+    .then((pending) => {
+      // A pass that stopped early skips the interval, so the next event picks up
+      // the tail instead of waiting a minute for it.
+      routeRefreshPending = pending > 0;
+    })
+    .catch((error) => {
+      // A refresh must never surface as a failed event; the next window retries.
+      console.log('[sw] route refresh failed', String(error));
+    })
+    .finally(() => {
+      routeRefresh = null;
+    });
+  return routeRefresh;
 }
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
+      // The irreducible shell only (#489). The build's route shells follow in
+      // idle windows after activation, so the install is a handful of requests
+      // rather than the whole list competing with the page in front of the user.
       await precache(cache, PRECACHE_URLS);
-      await precacheRoutes(cache, PRECACHE_ROUTES);
     })()
   );
 });
@@ -239,6 +377,16 @@ self.addEventListener('activate', (event) => {
       // After the stale caches are gone, count what survived (and what the
       // previous worker wrote without bookkeeping) before serving from it.
       await rebuildIndex();
+      // The route-shell refresh starts here (#489), as a background pass: it is
+      // deliberately not awaited, because activation must not wait on a network
+      // list the page never asked for, and a stalled route fetch would hold up
+      // the swap it is meant to stay behind. `activate` is still the right hook
+      // — it is the one event every install is guaranteed after, and the page
+      // that triggered the install was uncontrolled while `install` ran, so it
+      // may never make a request this worker sees. A request that does arrive
+      // attaches to the same pass; a worker stopped mid-pass keeps what it
+      // wrote, and the next request or launch continues from the cache.
+      void maybeRefreshRouteShells();
     })()
   );
   self.clients.claim();
@@ -941,6 +1089,13 @@ self.addEventListener('fetch', (event) => {
 
   // Retry what a truly-offline serve could not send (ADR-0074's amendment).
   void flushOfflineReports();
+
+  // The build's route shells refresh in idle windows after activation, never
+  // during install (#489). The pass rides this event's lifetime: the page has
+  // already been answered, and keeping the worker alive is what lets a window
+  // finish instead of being cut between batches.
+  const routeRefreshPass = maybeRefreshRouteShells();
+  if (routeRefreshPass) event.waitUntil(routeRefreshPass);
 
   // Online-only surfaces bypass the cache entirely (ADR-0031).
   if (isNeverCache(url)) {
