@@ -1,6 +1,22 @@
 import type { Page } from '@playwright/test';
 
 /**
+ * Waits until the app has hydrated, using the root layout's own mark (#487,
+ * `frontend/ui/AppPerfObserver.tsx`). A spec that flips the radio off straight
+ * after `domcontentloaded` can win the race against the app's effects — the
+ * offline pill is up, but the freshness hint or a Local Store read has not run,
+ * and the assertion then describes a half-started page rather than the product.
+ *
+ * A `waitForFunction` and not `expect.poll`: the predicate reads one synchronous
+ * value, and the timeout matches the worker checks below.
+ */
+export async function waitForAppHydrated(page: Page): Promise<void> {
+  await page.waitForFunction(() => performance.getEntriesByName('roya:shell').length > 0, null, {
+    timeout: 30_000,
+  });
+}
+
+/**
  * Loads `path` and leaves the document under service-worker control, with the
  * worker's takeover already applied.
  *
@@ -21,4 +37,5 @@ export async function gotoUnderWorkerControl(page: Page, path: string): Promise<
     timeout: 30_000,
   });
   await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForAppHydrated(page);
 }

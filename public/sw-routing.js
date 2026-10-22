@@ -45,6 +45,23 @@
     return url.pathname.startsWith('/api/');
   }
 
+  // The ancestors a navigation falls back through when nothing exact is cached
+  // (#490), longest first: `/community/foo/bar` -> [`/community/foo`,
+  // `/community`, `/`]. The requested path is deliberately not a candidate — an
+  // exact entry is a cache hit, not a prefix serve — and `/` is last because the
+  // homepage is in the fixed shell, so it is the ancestor most likely to be on
+  // the device. A dynamic detail route has no shell of its own (ADR-0071), but
+  // the document of its parent segment usually does.
+  function shellPrefixCandidates(pathname) {
+    if (typeof pathname !== 'string' || !pathname.startsWith('/')) return [];
+    const segments = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
+    const candidates = [];
+    for (let end = segments.length - 1; end >= 0; end -= 1) {
+      candidates.push(`/${segments.slice(0, end).join('/')}`);
+    }
+    return candidates;
+  }
+
   // A response the server marked non-storable must never be persisted: serving
   // it later would fall back to stale authenticated/private data offline.
   function isCacheable(response) {
@@ -147,6 +164,7 @@
     isImage,
     isNextImage,
     isApiCall,
+    shellPrefixCandidates,
     isCacheable,
     isPubliclyCacheable,
     isNeverCache,

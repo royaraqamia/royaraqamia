@@ -126,3 +126,31 @@ What does not change: still no URL, user, session, client id, cookie, timing or
 size, and still no fourth-party script in the worker. The one new cost is the
 retry fetch — bounded by the next request after a failed one, and by the same
 "offline serves are nearly zero" argument as the beacon itself.
+
+## Amendment (2026-10-22): a graceful fallback is counted too, under its own door
+
+The decision above stands — one bounded beacon per serve, the door class and the
+tallies, nothing about the page — but its scope widens with #490. A navigation
+the worker has no copy of is no longer always answered with `/offline`: it is
+answered with the nearest cached ancestor shell, and the app draws the inline
+"this link is not available offline" card inside it (ADR-0071's #490 amendment).
+That serve is a fallback the field must be able to see, so it carries the same
+beacon and its own door:
+
+| door                | what happened                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| `navigation-prefix` | an ordinary navigation had no copy of its own; the nearest cached ancestor shell answered instead |
+
+`navigation-deadline` and `navigation-offline` now mean what the user actually
+saw: `/offline`. A deadline cut or a missing network that a prefix serve absorbed
+reports `navigation-prefix` instead, so neither door over-reports a regression
+that the app handled. Both remaining `/offline` doors are the empty cache and the
+never-cache surfaces (`/admin`), which is the floor the spec's "Limits of instant"
+now states.
+
+`navigation-prefix` is an accepted door: `info` in Sentry, no paging. The
+endpoint keeps its `/api/offline-serve` name and its payload — `{ version, door,
+cache }` — because the report is still "one fallback serve", and the schema's
+door enum is what grew (`shared/contracts/offline-metrics.ts`). The volume
+argument is unchanged: a prefix serve happens at most once per navigation and
+the beacon is droppable like every other one.

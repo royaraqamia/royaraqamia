@@ -267,11 +267,20 @@ test('a community load-more that never leaves keeps the loaded page and names th
   await expect(page.getByText('منشور تجريبيّ')).toBeVisible();
 });
 
-test('a never-visited dynamic detail route lands on /offline, then renders after one visit', async ({
+// The card a prefix serve draws (#490). Its own copy is the marker; the shared
+// needs-connection title rides along with it.
+const OFFLINE_ROUTE_CARD = 'هذا الرابط غير متاح دون اتصال';
+
+/** The `/offline` document's own heading, never a prefix-served shell's. */
+function offlinePageHeading(page: Page) {
+  return page.getByRole('heading', { name: /غير متَّصل/ });
+}
+
+test('a never-visited dynamic detail route keeps its parent shell and names the missing link', async ({
   browser,
   baseURL,
 }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
 
   const context = await browser.newContext({
     serviceWorkers: 'allow',
@@ -280,26 +289,48 @@ test('a never-visited dynamic detail route lands on /offline, then renders after
   const page = await context.newPage();
 
   // A dynamic segment is a pattern, not a document, so the route precache has
-  // no shell for `/quran/7` (ADR-0071's #473 amendment). This is the documented
-  // third door in the spec's "Limits of instant", pinned here so a precache
-  // change cannot move the limit without moving the document with it.
+  // no shell for `/quran/7` (ADR-0071). It does hold every static ancestor, and
+  // since #490 a miss is answered with the longest one the device has — which is
+  // the fix for the worst answer this worker used to give: `/offline`, a
+  // different screen replacing the one the user asked for.
   await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
+  await waitForCachedRoutes(page, ['/quran', '/verify', '/']);
 
   await context.setOffline(true);
-  await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
 
-  // The offline page answers: its retry control is the marker, and the surah's
-  // own heading is the negative control.
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toBeVisible();
+  // `/quran/<surah>`: the reader's own chrome answers at the requested URL, and
+  // the card says the surah itself is not on this device.
+  await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/quran\/7$/);
+  await expect(page.getByRole('heading', { name: 'القرآن الكريم' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
+  await expect(offlinePageHeading(page)).toHaveCount(0);
+  // The surah is what the link asked for, and it is not what rendered.
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toHaveCount(0);
 
+  // `/verify/<code>` borrows its segment's shell the same way.
+  await page.goto(`${baseURL}/verify/ABC-123`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/verify\/ABC-123$/);
+  await expect(page.getByRole('heading', { name: 'التَّحقُّق من الشَّهادة' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
+  await expect(offlinePageHeading(page)).toHaveCount(0);
+
+  // `/u` is a segment with no document of its own, so the chain walks past it to
+  // the homepage — the one ancestor every installed device holds.
+  await page.goto(`${baseURL}/u/someone`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/u\/someone$/);
+  await expect(page.getByRole('heading', { name: /شريكك الاستراتيجي/ })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
+  await expect(offlinePageHeading(page)).toHaveCount(0);
+
   // The limit is one visit deep, not one segment deep: opening the same detail
-  // route online caches its document like any other navigation, and the next
-  // offline open paints the surah instead of `/offline`.
+  // route online caches its document like any other navigation, so the card is
+  // gone and the next offline open paints the surah.
   await context.setOffline(false);
   await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toHaveCount(0);
 
   // The stored copy is written after the response is returned, so wait for the
   // entry rather than racing the reload against the background write.
@@ -312,6 +343,7 @@ test('a never-visited dynamic detail route lands on /offline, then renders after
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await context.close();
