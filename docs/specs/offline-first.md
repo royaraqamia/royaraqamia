@@ -87,12 +87,14 @@ stated limit.
 - **"Instant" is perceived latency, not a benchmark.** The property is that owned data paints from the
   Local Store with no network wait and a write applies on tap. It is not a claim that every route
   renders in zero milliseconds.
-- **A cold load waits no longer than ten seconds for the network.** `NAVIGATION_TIMEOUT_MS = 10000`
-  (`public/sw.js`, #447): a request with no cached copy races the network against the deadline, and
-  the fallback answers instead of the browser's own several-minute hang. The cut fetch keeps
-  running, so a late response still enters the cache and the next visit gets the real page. A cached
-  copy is never behind the deadline — stale paint stays instant — and never-cache API reads inside a
-  painted page rely on the page's own states rather than on this rule.
+- **A cold load waits no longer than three seconds for the network.** `NAVIGATION_TIMEOUT_MS = 3000`
+  (`public/sw.js`, #447, lowered by #491): a request with no cached copy races the network against
+  the deadline, and the nearest cached shell answers instead of the browser's own several-minute
+  hang. Ten seconds was the same rule with an unusable number — ten seconds of blank reads as a
+  broken app, not as protection. The cut fetch keeps running, so a late response still enters the
+  cache and the next visit gets the real page. A cached copy is never behind the deadline — stale
+  paint stays instant — and never-cache API reads inside a painted page rely on the page's own
+  states rather than on this rule.
 - **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
   `/spendtrack`, `/linksnap` and `/blogpress` used to be in the worker's never-cache list
   (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
@@ -349,11 +351,12 @@ moment it matters — with the reason stated, since the request is otherwise opa
 ## Phases
 
 **Phase 0 of the "never show `/offline`" roadmap (#447) landed on 2026-10-21.** Three diffs close the
-most-complained paths without touching the dashboard architecture: a ten-second deadline for every
-cold load (the limit above), the auth shells in the SWR cache with their forms answering offline
-submits inline (ADR-0031's amendment; the shells join ADR-0071's precache), and the Android shell's
-fallback page recovering exactly once when the radio returns (ADR-0067's amendment). With it,
-`/offline` ends up serving only a brand-new install hit with no network, and `/admin`.
+most-complained paths without touching the dashboard architecture: a cold-load deadline for every
+navigation (the limit above — ten seconds when it landed, three since #491), the auth shells in the SWR
+cache with their forms answering offline submits inline (ADR-0031's amendment; the shells join
+ADR-0071's precache), and the Android shell's fallback page recovering exactly once when the radio
+returns (ADR-0067's amendment). With it, `/offline` ends up serving only a brand-new install hit with no
+network, and `/admin`.
 
 **Phase 1 (#448) landed the same day:** the `/account` subtree's shells joined the SWR cache. The
 layout is no longer dynamic (`headers()` moved into `AccountFooter`), the guarded children guard
