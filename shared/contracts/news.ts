@@ -60,10 +60,55 @@ export interface NewsStory {
   headline: string;
   summary: string;
   whyItMatters: string | null;
+  /** The catalogue id the story came from, which is what a reader's selection filters on. */
+  sourceId: string;
   sourceName: string;
   sourceUrl: string;
   sourcePublishedAt: string | null;
 }
+
+/**
+ * One entry of the source catalogue (`data/news/sources.json`, plus whatever an
+ * admin approved in `news_sources`), as the reader-facing selection offers it.
+ *
+ * The feed URL and freshness window stay on the server: a reader picks a
+ * publication by name, and nothing in the picker needs to know where it is
+ * fetched from.
+ */
+export interface NewsSource {
+  id: string;
+  name: string;
+  category: NewsCategory;
+  region: NewsRegion;
+  tier: 1 | 2;
+}
+
+/** The ids a signed-in reader kept; empty means "every source". */
+export interface NewsSourcePreferences {
+  sourceIds: string[];
+}
+
+/**
+ * How many stories a reader's own selection must leave before the page stops
+ * honouring it. Below this the day is the full digest with a notice: filtering
+ * is a preference, not a way to empty the page.
+ */
+export const NEWS_PERSONAL_MIN_STORIES = 3;
+
+/** Catalogue ids are slugs; the pattern keeps a stored array free of anything else. */
+export const NEWS_SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
+
+/** The ceiling the table's check constraint enforces, mirrored for the contract. */
+export const NEWS_MAX_SELECTED_SOURCES = 64;
+
+export const newsSourcePreferencesSchema = z.object({
+  sourceIds: z
+    .array(z.string().trim().regex(NEWS_SOURCE_ID_PATTERN))
+    .max(NEWS_MAX_SELECTED_SOURCES)
+    .transform((ids) => [...new Set(ids)]),
+});
+
+export type NewsSourcePreferencesInput = z.infer<typeof newsSourcePreferencesSchema>;
 
 export interface NewsDigest {
   id: string;
@@ -105,6 +150,20 @@ export interface NewsBoard {
   search: NewsSearch | null;
   /** Whether any digest exists at all, so the page can tell "not yet" from "empty". */
   hasAnyDigest: boolean;
+  /**
+   * What the reader's own source selection did to `day`, or null when they have
+   * none (or are anonymous). `fellBack` is true when the selection left fewer
+   * than `NEWS_PERSONAL_MIN_STORIES` stories, so `day` is the full digest and
+   * the page says why instead of showing a nearly empty morning.
+   */
+  preferences: NewsPreferencesEffect | null;
+}
+
+export interface NewsPreferencesEffect {
+  /** How many sources the reader kept. */
+  selectedSources: number;
+  filtered: boolean;
+  fellBack: boolean;
 }
 
 export const NEWS_SEARCH_LIMIT = 60;

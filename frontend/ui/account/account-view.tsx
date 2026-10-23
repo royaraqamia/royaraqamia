@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Lock,
   Sparkles,
+  Newspaper,
 } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -124,6 +125,13 @@ export function AccountView() {
           href="/account/posts"
           icon={FileText}
           label="المنشورات"
+          onRequireAuth={setPromptHref}
+        />
+
+        <AccountRow
+          href="/account/news"
+          icon={Newspaper}
+          label="مصادر الأخبار"
           onRequireAuth={setPromptHref}
         />
 

@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { createNewsServiceFor } from '@/backend/config/news';
+import { identity } from '@/backend/config/identity';
+import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
 import { getPublicSupabase } from '@/backend/config/supabase';
 import { logger } from '@/backend/shared/logger';
 import { newsQuerySchema, type NewsBoard, type NewsQuery } from '@/shared/contracts/news';
@@ -47,14 +48,39 @@ const EMPTY_BOARD: NewsBoard = {
   dates: [],
   search: null,
   hasAnyDigest: false,
+  preferences: null,
 };
 
-export async function loadNewsBoard(params: NewsSearchParams = {}): Promise<NewsBoard> {
+/**
+ * The signed-in reader's source selection, or null for a visitor with none.
+ *
+ * `resolveOptional` is what keeps this off the anonymous path: no session cookie
+ * means no client is built and no auth round-trip happens, so the public page
+ * does not pay for a preference only members can have. A read failure is the
+ * same as no preference — showing the full digest is never wrong.
+ */
+export async function loadNewsSourcePreferences(): Promise<string[] | null> {
+  try {
+    const { user, client } = await identity.resolveOptional();
+    if (!user || !client) return null;
+
+    const sourceIds = await createNewsPreferencesServiceFor(client).get(user.id);
+    return sourceIds.length > 0 ? sourceIds : null;
+  } catch (error) {
+    logger.warn("Failed to read the reader's news source selection", { error: String(error) });
+    return null;
+  }
+}
+
+export async function loadNewsBoard(
+  params: NewsSearchParams = {},
+  sourceIds: readonly string[] | null = null
+): Promise<NewsBoard> {
   const query = parseNewsQuery(params);
 
   try {
     const service = createNewsServiceFor(getPublicSupabase());
-    return await service.getBoard(query);
+    return await service.getBoard(query, { sourceIds });
   } catch (error) {
     logger.error('Failed to load the news board', { error: String(error) });
     return EMPTY_BOARD;

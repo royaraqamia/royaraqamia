@@ -935,6 +935,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      news_source_preferences: {
+        Row: {
+          source_ids: string[];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          source_ids?: string[];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          source_ids?: string[];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       news_stories: {
         Row: {
           category: string;

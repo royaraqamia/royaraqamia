@@ -1,13 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { loadNewsBoard, parseNewsQuery, type NewsSearchParams } from '@/backend/loaders/news';
+import {
+  loadNewsBoard,
+  loadNewsSourcePreferences,
+  parseNewsQuery,
+  type NewsSearchParams,
+} from '@/backend/loaders/news';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsLiveRefresh } from '@/frontend/ui/news/NewsLiveRefresh';
 import { StoryCard } from '@/frontend/ui/news/StoryCard';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import {
   NEWS_CATEGORIES,
+  NEWS_PERSONAL_MIN_STORIES,
   NEWS_RETENTION_DAYS,
   formatDigestDate,
   type NewsCategory,
@@ -62,7 +68,10 @@ interface NewsPageProps {
 export default async function NewsPage({ searchParams }: NewsPageProps) {
   const params = await searchParams;
   const query = parseNewsQuery(params);
-  const board = await loadNewsBoard(params);
+  // A signed-in reader's source selection narrows the same shared digest; a
+  // visitor (or a member who never chose) reads it whole.
+  const sourceIds = await loadNewsSourcePreferences();
+  const board = await loadNewsBoard(params, sourceIds);
 
   const stories = board.day?.stories ?? [];
   const categories = uniqueCategories(
@@ -142,12 +151,27 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                     {board.day.digest.lede}
                   </p>
                   <p className="mt-3 text-[11px] text-muted-foreground">
-                    عدد الأخبار: {board.day.digest.storyCount}
-                    {query.category && stories.length !== board.day.digest.storyCount
-                      ? ` · في هذا القسم: ${stories.length}`
-                      : ''}{' '}
+                    عدد الأخبار:{' '}
+                    {board.preferences?.filtered ? stories.length : board.day.digest.storyCount}
+                    {board.preferences?.filtered
+                      ? ' · من مصادرك'
+                      : query.category && stories.length !== board.day.digest.storyCount
+                        ? ` · في هذا القسم: ${stories.length}`
+                        : ''}{' '}
                     · آخر تحديث {formatPublishedTime(board.day.digest.publishedAt)}
-                  </p>
+                  </p>{' '}
+                  {board.preferences?.fellBack ? (
+                    <p className="mx-auto mt-3 max-w-xl rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-[11px] leading-6 text-muted-foreground">
+                      ترك اختيارك من المصادر أقل من {NEWS_PERSONAL_MIN_STORIES} أخبار لهذا اليوم،
+                      فعرضنا المُلخَّص كاملًا.{' '}
+                      <Link
+                        href="/account/news"
+                        className="font-bold text-primary underline-offset-4 hover:underline"
+                      >
+                        تعديل مصادرك
+                      </Link>
+                    </p>
+                  ) : null}
                 </header>
 
                 {stories.length > 0 ? (
