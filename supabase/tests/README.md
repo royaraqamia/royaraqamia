@@ -36,8 +36,24 @@ test here.
   `INSERT`/`UPDATE`/`DELETE`, no write policy is left, and `upsert_short_link` refuses both
   roles while `service_role` keeps execute. The owner-scoped `short_links_read` stays.
 
-Every write attempt in the file is expected to be _refused_, so a failed rollback cannot
-leave data behind.
+`plan_cap_enforcement_test.sql` (#526):
+
+- The count a cap reads excludes tombstones.
+- A sixth habit is refused at the free cap, editing an existing row is not a new slot,
+  reviving a tombstone at the cap is refused, deleting still works, and the freed slot
+  accepts a revival.
+- The Admin exemption holds at the cap, and a non-admin at the cap is refused.
+- An eleventh published post is refused at the free cap.
+- A client cannot write `status`, `published_at`, `community_visible`, `view_count` or
+  `featured`; it keeps writing the editor-owned columns.
+- `publish_post`, `unpublish_post`, `set_post_featured` and `bulk_publish_posts` move the
+  server-owned columns for the owning author, refuse another account's post, and a batch
+  that publishes an already published row takes no new slot.
+- `anon` cannot execute `publish_post`.
+
+In `rls_authorization_test.sql` every write attempt is expected to be _refused_, so a failed
+rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
+cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
 
 ## Status
 
@@ -45,6 +61,10 @@ Scaffolded 2026-09-17 and **not yet executed** — the CLI and a local stack wer
 available when it was written. Expect the first run to need small adjustments. The
 `is_admin()` assertions reflect behaviour verified directly against the project; the
 certificate and `users` write assertions do not.
+
+`plan_cap_enforcement_test.sql` was written the same way (2026-10-23, no Docker on the
+writing machine), so treat its first run the same: the SQL it exercises is deployed by the
+drift workflow on merge, but the assertions themselves are unrehearsed.
 
 ## Worth adding next
 

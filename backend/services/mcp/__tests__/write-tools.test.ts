@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { McpUserContext } from '../session';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 
 const userCtx: McpUserContext = {
   userId: 'u1',
@@ -329,6 +330,47 @@ describe('spendtrack write tools', () => {
       restrictedCtx
     );
     expect(result.isError).toBe(true);
+  });
+
+  it('setBudgetHandler does not spend a slot when the month/category already has one', async () => {
+    const getBudget = vi.fn().mockResolvedValue({ amount: 500 });
+    const setBudget = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({ getBudget, setBudget }),
+    }));
+    const cap = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/plans', () => ({ createPlanGate: () => ({ cap }) }));
+
+    const { setBudgetHandler } = await import('../tools/spendtrack');
+    const result = await setBudgetHandler(
+      { month: '2026-08', amount: 1000, format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(getBudget).toHaveBeenCalledWith('u1', '2026-08', null);
+    // An update to an existing pair is not a new budget (#526).
+    expect(cap).not.toHaveBeenCalled();
+    expect(setBudget).toHaveBeenCalledWith('u1', '2026-08', 1000, null);
+  });
+
+  it('setBudgetHandler asks for the budget cap for a pair with no budget yet', async () => {
+    const getBudget = vi.fn().mockResolvedValue(null);
+    const setBudget = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({ getBudget, setBudget }),
+    }));
+    const cap = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/plans', () => ({ createPlanGate: () => ({ cap }) }));
+
+    const { setBudgetHandler } = await import('../tools/spendtrack');
+    const result = await setBudgetHandler(
+      { month: '2026-08', amount: 1000, format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(cap).toHaveBeenCalledWith('u1', OWNED_ITEMS.budgets);
   });
 });
 

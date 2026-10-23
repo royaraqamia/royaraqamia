@@ -16,6 +16,11 @@ import { toolErrorResponse } from './tool-utils';
  * A create through MCP fills the same standing slot its HTTP twin does, so the
  * cap belongs to the tool, not to the handler: one map, next to the registry
  * that names the tools, is what keeps the two paths from drifting.
+ *
+ * Only tools that always take a new slot belong here. `spendtrack_set_budget`
+ * does not: writing a month/category that already has a budget is an update, and
+ * the handler asks for the cap itself only when the row is new (#526), exactly
+ * as the HTTP controller does.
  */
 const CAPPED_TOOLS: Record<string, OwnedItemKey> = {
   [`${MCP_SERVER_NAME}_linksnap_create_link`]: OWNED_ITEMS.shortLinks,
@@ -24,7 +29,6 @@ const CAPPED_TOOLS: Record<string, OwnedItemKey> = {
   [`${MCP_SERVER_NAME}_community_create_category`]: OWNED_ITEMS.communityCategories,
   [`${MCP_SERVER_NAME}_spendtrack_create_expense`]: OWNED_ITEMS.expenses,
   [`${MCP_SERVER_NAME}_spendtrack_create_category`]: OWNED_ITEMS.expenseCategories,
-  [`${MCP_SERVER_NAME}_spendtrack_set_budget`]: OWNED_ITEMS.budgets,
   [`${MCP_SERVER_NAME}_habitflow_create_habit`]: OWNED_ITEMS.habits,
 };
 
