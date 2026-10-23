@@ -1036,6 +1036,14 @@ describe('service worker navigation deadline (#447)', () => {
     return event;
   }
 
+  it('gives a cold navigation a three-second deadline by default (#491)', () => {
+    // The tests below shrink the deadline through the realm global; this pins
+    // the production number so a refactor cannot quietly restore ten seconds.
+    expect(SW_SOURCE).toMatch(
+      /const NAVIGATION_TIMEOUT_MS = self\.NAVIGATION_TIMEOUT_MS \|\| 3_000;/
+    );
+  });
+
   it('answers a cached navigation instantly while the network hangs', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     const cache = await ctx.caches.open(DATA_CACHE);
