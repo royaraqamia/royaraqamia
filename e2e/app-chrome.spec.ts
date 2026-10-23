@@ -153,7 +153,15 @@ test.describe('a secondary child of a primary shell', () => {
 });
 
 test.describe('secondary pages', () => {
-  for (const path of ['/rates', '/privacy', '/terms', '/security', '/verify', '/app-info']) {
+  for (const path of [
+    '/rates',
+    '/privacy',
+    '/terms',
+    '/security',
+    '/verify',
+    '/app-info',
+    '/news',
+  ]) {
     test(`${path} drops the app chrome for a back header`, async ({ page }) => {
       await page.goto(path);
 
@@ -223,6 +231,7 @@ test.describe('the floating control never covers page content', () => {
     '/request-project',
     '/rates',
     '/account/faq',
+    '/news',
   ]) {
     test(`${path} starts below it`, async ({ page }) => {
       await page.goto(path);

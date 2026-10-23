@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { SYNC_HINT_TABLES as BLOGPRESS } from '@/frontend/state/blogpress/use-blogpress-store';
 import { SYNC_HINT_TABLES as HABITFLOW } from '@/frontend/state/habitflow/use-habit-sync';
 import { SYNC_HINT_TABLES as LINKSNAP } from '@/frontend/state/linksnap/use-linksnap';
+import { NEWS_SYNC_HINT_TABLES } from '@/frontend/api/news';
 import { SYNC_HINT_TABLES as QURAN } from '@/frontend/state/quran/use-quran-reader';
 import { SYNC_HINT_TABLES as SPENDTRACK } from '@/frontend/state/spendtrack/use-spendtrack';
 
@@ -53,7 +54,14 @@ function checkedTables(): string[] {
   return [...source.matchAll(/table:\s*'([a-z_]+)'/g)].map((match) => match[1]!);
 }
 
-const SUBSCRIBED = [...HABITFLOW, ...SPENDTRACK, ...LINKSNAP, ...QURAN, ...BLOGPRESS];
+const SUBSCRIBED = [
+  ...HABITFLOW,
+  ...SPENDTRACK,
+  ...LINKSNAP,
+  ...QURAN,
+  ...BLOGPRESS,
+  ...NEWS_SYNC_HINT_TABLES,
+];
 
 describe('Realtime sync hint tables', () => {
   it('subscribes to every table the publication migration publishes, and no other', () => {

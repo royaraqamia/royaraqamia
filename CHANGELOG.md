@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- publish a daily Arabic news digest to `/news` from a fixed source list
+
 ## [1.133.0] - 2026-10-22
 
 ### Changed

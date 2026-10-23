@@ -1,0 +1,182 @@
+# Daily Arabic news digest → Supabase → /news
+#
+# Runs at 03:00 UTC, which is 06:00 in Damascus year-round (Syria has kept UTC+3
+# since 2022), fetches the feeds in data/news/sources.json, asks OpenCode Go's
+# DeepSeek 4.1 Flash to select and summarise the day in Arabic, validates the
+# result against the fetched candidates, and only then writes to Supabase. The
+# page (/news) reads the tables and receives a Realtime INSERT, so a reader with
+# the page open sees the digest without reloading.
+#
+# The model never browses and never supplies a URL: it selects each story by the
+# candidate's short id, and scripts/news/validate-digest.mjs resolves that id
+# against the fetched list. A failed run publishes nothing — a missing digest is
+# better than a fabricated one.
+#
+# Why this shape:
+#   - The fetch is a deterministic script, so the "trusted sources" are the
+#     versioned list in the repo, not whatever the model recalls.
+#   - Publishing uses PostgREST with the service role, not an app route: no
+#     serverless time limit, and the web app stays read-only for these tables.
+#   - The prompt lives in scripts/news/build-prompt.mjs, so changing the editorial
+#     priorities is a reviewable diff rather than a YAML string.
+#
+# Secrets (repository → Actions):
+#   OPENCODE_API_KEY          - https://opencode.ai/auth (opencode-go provider)
+#   SUPABASE_SERVICE_ROLE_KEY - the deployment's key; only this job writes
+#   SUPABASE_URL              - optional, falls back to the project's public URL
+#
+# Manual runs: workflow_dispatch takes `date` (publish for another YYYY-MM-DD,
+# useful when a run failed) and `dry_run` (fetch, summarise and validate, write
+# nothing). Artifacts keep the candidates, prompt, raw model output and validated
+# digest for a week so a bad digest can be diagnosed without re-running the model.
+
+name: 'News Digest'
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Damascus day to publish for (YYYY-MM-DD); empty means today'
+        required: false
+      dry_run:
+        description: 'Fetch, summarise and validate without writing to Supabase'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+      NEWS_MODEL: opencode-go/deepseek-v4.1-flash
+      NEWS_VARIANT: high
+      # Pinned: the digest must not change behaviour because a global install moved.
+      OPENCODE_CLI_VERSION: '2.1.4'
+      OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: '32000'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Resolve the Damascus day
+        id: day
+        run: |
+          day="${{ inputs.date }}"
+          if [ -z "$day" ]; then
+            day="$(node -e "console.log(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Damascus' }).format(new Date()))")"
+          fi
+          if ! printf '%s' "$day" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::'$day' is not a YYYY-MM-DD date"
+            exit 1
+          fi
+          echo "date=$day" >> "$GITHUB_OUTPUT"
+          echo "Publishing for $day (Damascus)"
+
+      - name: Fetch candidate stories
+        run: node scripts/news/fetch-candidates.mjs --out .news/candidates.json --date "${{ steps.day.outputs.date }}"
+
+      - name: Build the editor prompt
+        run: node scripts/news/build-prompt.mjs --candidates .news/candidates.json --out .news/prompt.txt
+
+      - name: Install OpenCode CLI
+        run: npm install --global "@opencode/cli@${OPENCODE_CLI_VERSION}"
+
+      - name: Summarise with DeepSeek 4.1 Flash
+        run: |
+          set -o pipefail
+          # A scratch project, not the checkout: the job is one model call, and
+          # loading this repo's AGENTS.md/instructions (plus an agent free to edit
+          # files) would only widen what the run can touch. The prompt is passed on
+          # the command line, so nothing from the repo is needed here.
+          workdir="$RUNNER_TEMP/news-model"
+          mkdir -p "$workdir"
+          cat > "$workdir/opencode.json" <<'JSON'
+          {
+            "$schema": "https://opencode.ai/config.json",
+            "permissions": [
+              { "action": "edit", "resource": "*", "effect": "deny" },
+              { "action": "shell", "resource": "*", "effect": "deny" }
+            ]
+          }
+          JSON
+          cd "$workdir"
+          opencode run \
+            --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+            --standalone \
+            --auto \
+            "$(cat "$GITHUB_WORKSPACE/.news/prompt.txt")" | tee "$GITHUB_WORKSPACE/.news/model-output.txt"
+
+      - name: Validate the digest
+        run: |
+          node scripts/news/validate-digest.mjs \
+            --digest .news/model-output.txt \
+            --candidates .news/candidates.json \
+            --date "${{ steps.day.outputs.date }}" \
+            --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --out .news/resolved.json
+
+      - name: Publish to Supabase
+        if: ${{ !inputs.dry_run }}
+        run: node scripts/news/publish-digest.mjs --digest .news/resolved.json
+
+      - name: Dry run notice
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "::notice::Dry run: the validated digest was not written to Supabase."
+
+      - name: Summarise the run
+        if: always() && hashFiles('.news/resolved.json') != ''
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const digest = JSON.parse(fs.readFileSync(".news/resolved.json", "utf8"));
+            const lines = [
+              "## " + digest.digest_date + " - " + digest.title,
+              "",
+              digest.lede,
+              "",
+              "| # | " + "Category".padEnd(8) + " | Headline | Source |",
+              "| - | -------- | -------- | ------ |",
+              ...digest.stories.map((story) =>
+                "| " + story.position + " | " + story.category + " | " + story.headline_ar + " | " + story.source_name + " |"
+              ),
+            ];
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          '
+
+      - name: Upload digest artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: news-digest-${{ steps.day.outputs.date }}
+          path: |
+            .news/candidates.json
+            .news/prompt.txt
+            .news/model-output.txt
+            .news/resolved.json
+          if-no-files-found: ignore
+          retention-days: 7

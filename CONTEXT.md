@@ -485,6 +485,25 @@ The single seam a metered or capped write goes through: it reserves a credit, ch
 first, and refunds when the action behind it fails.
 _Avoid_: Middleware, interceptor, paywall
 
+### News
+
+**News Digest**:
+One Damascus day's Arabic summary of world news, published by the scheduled workflow and read on
+`/news`. A Digest owns its Stories and is unique per day; a re-run replaces the day rather than
+adding a second one.
+_Sold as_: أخبار اليوم
+_Avoid_: Bulletin, newsletter, feed, briefing
+
+**News Story**:
+One item a Digest selected: the model's Arabic headline and summary, plus the original source's name
+and URL. The source link is part of the Story, not decoration — the digest always points back.
+_Avoid_: Article, post, entry
+
+**Source List**:
+`data/news/sources.json`, the versioned feeds a Digest may be drawn from. A URL that is not in the
+day's fetched candidates can never be published.
+_Avoid_: Feed list, allowlist, whitelist
+
 ### Shared
 
 **Admin**:
