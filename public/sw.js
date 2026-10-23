@@ -27,8 +27,14 @@ const FALLBACK_URL = '/offline';
 // never behind this deadline — stale paint is instant — and a fetch the deadline
 // cuts keeps running in the background, so a late answer still lands in the
 // cache and the next visit gets the real page. A test may shrink it through the
-// same realm global; production always takes 10000.
-const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 10_000;
+// same realm global; production always takes 3000.
+//
+// Three seconds, not ten (#491): ten seconds of blank is not a deadline the user
+// experiences as protection, it is ten seconds of a broken app. The number is
+// the whole change — the write path is untouched, so what the cut fetch brings
+// back still lands in the cache. It is a separate constant from
+// `OFFLINE_REPORT_RETRY_MS`, which keeps its own meaning.
+const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 3_000;
 
 // Field telemetry (ADR-0074, #474). `/offline` serves are counted by the door
 // that led to them, and the cache outcomes tallied since the last report ride
