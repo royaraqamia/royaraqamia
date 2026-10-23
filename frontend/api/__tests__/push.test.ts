@@ -10,6 +10,7 @@ vi.mock('@/frontend/transport/http', () => ({
 import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
+  releasePushSubscription,
   setPushDisabledByUser,
   subscribeToPush,
   unsubscribeFromPush,
@@ -41,7 +42,10 @@ function installPushGlobals({ permission = 'granted', existing = false } = {}) {
     removeEventListener: vi.fn(),
   };
   Object.defineProperty(navigator, 'serviceWorker', {
-    value: { ready: Promise.resolve(registration) },
+    value: {
+      ready: Promise.resolve(registration),
+      getRegistration: vi.fn(async () => registration),
+    },
     configurable: true,
   });
   return { subscription, registration };
@@ -122,6 +126,52 @@ describe('push disabled preference', () => {
     mockRequest.mockRejectedValue(new Error('Failed to fetch'));
 
     expect(await subscribeToPush()).toBe('denied');
+  });
+});
+
+describe('releasePushSubscription', () => {
+  it('deletes the server row and unsubscribes the browser on sign-out', async () => {
+    const { subscription } = installPushGlobals({ existing: true });
+
+    await releasePushSubscription();
+
+    expect(mockRequest).toHaveBeenCalledWith('/api/push/subscribe', {
+      method: 'DELETE',
+      body: JSON.stringify({ endpoint: FAKE_ENDPOINT }),
+    });
+    expect(subscription.unsubscribe).toHaveBeenCalled();
+  });
+
+  it('does not opt the browser out, so the next account can subscribe silently', async () => {
+    installPushGlobals({ existing: true });
+
+    await releasePushSubscription();
+
+    expect(isPushDisabledByUser()).toBe(false);
+  });
+
+  it('still unsubscribes when the server delete fails', async () => {
+    const { subscription } = installPushGlobals({ existing: true });
+    mockRequest.mockRejectedValue(new Error('offline'));
+
+    await expect(releasePushSubscription()).resolves.toBeUndefined();
+
+    expect(subscription.unsubscribe).toHaveBeenCalled();
+  });
+
+  it('never rejects when the browser refuses to unsubscribe', async () => {
+    const { subscription } = installPushGlobals({ existing: true });
+    subscription.unsubscribe.mockRejectedValue(new Error('refused'));
+
+    await expect(releasePushSubscription()).resolves.toBeUndefined();
+  });
+
+  it('does nothing when the browser has no subscription', async () => {
+    installPushGlobals({ existing: false });
+
+    await releasePushSubscription();
+
+    expect(mockRequest).not.toHaveBeenCalled();
   });
 });
 

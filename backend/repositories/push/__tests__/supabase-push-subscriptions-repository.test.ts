@@ -239,6 +239,18 @@ describe('createPushSubscriptionsRepository', () => {
       });
     });
 
+    it('hands a shared browser endpoint to the account that subscribes last', async () => {
+      const { client, rows } = makeInMemoryClient();
+      const repo = createPushSubscriptionsRepository(client);
+      const endpoint = 'https://fcm.googleapis.com/fcm/send/shared-browser';
+
+      await repo.upsert('u-1', { endpoint, p256dh: 'p256', auth: 'auth-a', userAgent: null });
+      await repo.upsert('u-2', { endpoint, p256dh: 'p256', auth: 'auth-b', userAgent: null });
+
+      expect(rows.size).toBe(1);
+      expect(rows.get(endpoint)?.user_id).toBe('u-2');
+    });
+
     it('throws when the upsert fails', async () => {
       const { client } = makeClient({ upsertError: new Error('upsert failed') });
       const repo = createPushSubscriptionsRepository(client);
