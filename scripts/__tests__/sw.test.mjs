@@ -210,6 +210,10 @@ function createSandbox({
   };
 
   sandbox.registration = {
+    // Navigation preload (#492). `activate` enables it and the fetch handler
+    // collects `event.preloadResponse`; a test can drop the manager to stand in
+    // for an engine that has no such thing.
+    navigationPreload: { enable: vi.fn(async () => undefined) },
     pushManager: {
       getSubscription: vi.fn(async () => null),
       subscribe: vi.fn(async (options) => {
@@ -1137,6 +1141,210 @@ describe('service worker navigation deadline (#447)', () => {
     const offline = fetchEvent(request('/auth/login'));
     ctx.dispatch('fetch', offline);
     expect(await offline.response.then((r) => r.text())).toBe('login-shell');
+  });
+});
+
+describe('service worker RSC cache key and navigation preload (#492)', () => {
+  /**
+   * A request the App Router sends for an RSC payload. `headers` carries the
+   * router's own markers: `next-router-prefetch` for a speculative prefetch.
+   */
+  function request(path, mode = 'cors', headers = {}) {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: (name) => headers[name.toLowerCase()] ?? null },
+    };
+  }
+
+  function fetchEvent(req, preloadResponse) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    // A real FetchEvent always carries the promise; only a test that is about
+    // preload sets one.
+    if (preloadResponse !== undefined) event.preloadResponse = preloadResponse;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  /** A static route's payload: cacheable, which is what a shared key requires. */
+  function cacheable(body) {
+    return new Response(body, {
+      status: 200,
+      headers: { 'cache-control': 's-maxage=31536000' },
+    });
+  }
+
+  function noNetwork(ctx) {
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+  }
+
+  /** The cache entries under `pathname`, whatever their query. */
+  async function entriesFor(ctx, pathname) {
+    const cache = await ctx.caches.open(DATA_CACHE);
+    const keys = await cache.keys();
+    return keys.map((entry) => new URL(entry.url)).filter((url) => url.pathname === pathname);
+  }
+
+  it('answers a repeat navigation from the one key, whatever hash it arrives with', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('flight-payload'));
+
+    // The live payload a navigation fetches: `_rsc` is a hash of the router's
+    // own headers, so the next navigation to the same page arrives on a
+    // different URL — and, before #492, an empty entry.
+    const first = fetchEvent(request('/community?_rsc=first-state'));
+    ctx.dispatch('fetch', first);
+    expect(await first.response.then((response) => response.text())).toBe('flight-payload');
+    await Promise.all(first.waitUntilCalls);
+
+    noNetwork(ctx);
+    const second = fetchEvent(request('/community?_rsc=second-state'));
+    ctx.dispatch('fetch', second);
+
+    expect(await second.response.then((response) => response.text())).toBe('flight-payload');
+
+    const entries = await entriesFor(ctx, '/community');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].search).toBe('?_rsc=1');
+  });
+
+  it('never serves a prefetched body as the answer to a navigation', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('prefetched-partial'));
+
+    // A `Link` prefetch. Its body is partial by design, and Next refuses it as a
+    // navigation answer — handed one, the router abandons the soft navigation for
+    // a full document load, which is the round trip this change removes. So a
+    // prefetch keeps its own URL and never lands on the navigation's key.
+    const prefetch = fetchEvent(
+      request('/community?_rsc=prefetch', 'cors', { 'next-router-prefetch': '1' })
+    );
+    ctx.dispatch('fetch', prefetch);
+    expect(await prefetch.response.then((response) => response.text())).toBe('prefetched-partial');
+    await Promise.all(prefetch.waitUntilCalls);
+
+    expect(await ctx.caches.match('https://site.example/community?_rsc=1')).toBeFalsy();
+
+    // The navigation is a miss, so with the radio off it is not answered with the
+    // prefetched body.
+    noNetwork(ctx);
+    const navigation = fetchEvent(request('/community?_rsc=live'));
+    ctx.dispatch('fetch', navigation);
+    expect(await navigation.response.then((response) => response.text())).not.toBe(
+      'prefetched-partial'
+    );
+  });
+
+  it('never lets a flight payload answer the document of the same path', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('flight-payload'));
+
+    const navigation = fetchEvent(request('/community?_rsc=aaa'));
+    ctx.dispatch('fetch', navigation);
+    await navigation.response.then((response) => response.text());
+    await Promise.all(navigation.waitUntilCalls);
+
+    // The document is a different body, so it keeps its own key: a hard
+    // navigation cannot be handed a flight payload as HTML.
+    expect(await ctx.caches.match('https://site.example/community')).toBeFalsy();
+
+    noNetwork(ctx);
+    const document = fetchEvent(request('/community', 'navigate'));
+    ctx.dispatch('fetch', document);
+    expect(await document.response.then((response) => response.text())).not.toBe('flight-payload');
+  });
+
+  it('never keys or stores a payload on a never-cache surface', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('admin-flight'));
+
+    const event = fetchEvent(request('/admin/rates?_rsc=aaa'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((response) => response.text())).toBe('admin-flight');
+    expect(await entriesFor(ctx, '/admin/rates')).toHaveLength(0);
+  });
+
+  it('answers a navigation from the browser preload instead of a second request', async () => {
+    const ctx = await boot({
+      navigationTimeoutMs: 20,
+      fetchImpl: async () => {
+        throw new Error('the worker must not fetch a preloaded navigation');
+      },
+    });
+
+    const event = fetchEvent(
+      request('/community', 'navigate'),
+      Promise.resolve(cacheable('preloaded-shell'))
+    );
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((response) => response.text())).toBe('preloaded-shell');
+    // The win is structural: the document request the browser already started is
+    // the one that answered, and no second request was issued.
+    expect(ctx.state.fetchCalls).toHaveLength(0);
+
+    // It is still a cache write, so the next visit has a copy.
+    await Promise.all(event.waitUntilCalls);
+    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+  });
+
+  it('falls back to its own request when the browser preloaded nothing', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('fetched-shell'));
+
+    const event = fetchEvent(request('/community', 'navigate'), Promise.resolve(undefined));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((response) => response.text())).toBe('fetched-shell');
+  });
+
+  it('takes the preload on a never-cache navigation and stores nothing', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+
+    const event = fetchEvent(
+      request('/admin/rates', 'navigate'),
+      Promise.resolve(cacheable('preloaded-admin'))
+    );
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((response) => response.text())).toBe('preloaded-admin');
+    expect(await entriesFor(ctx, '/admin/rates')).toHaveLength(0);
+  });
+
+  it('still cuts a preload that never answers at the navigation deadline', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+
+    const event = fetchEvent(request('/community', 'navigate'), new Promise(() => undefined));
+    ctx.dispatch('fetch', event);
+
+    // The deadline answers with the nearest cached shell (`/`), and the hanging
+    // preload is never awaited into the response. The only request the page
+    // causes is the telemetry beacon a prefix serve sends.
+    expect(await event.response.then((response) => response.text())).toBe('ok');
+    const documentFetches = ctx.state.fetchCalls.filter(
+      (call) => !call.url.startsWith('/api/offline-serve')
+    );
+    expect(documentFetches).toHaveLength(0);
+  });
+
+  it('enables navigation preload during activation', async () => {
+    const ctx = await boot();
+    expect(ctx.sandbox.registration.navigationPreload.enable).toHaveBeenCalledTimes(1);
+  });
+
+  it('activates on an engine that has no navigation preload', async () => {
+    const ctx = installOnly();
+    delete ctx.sandbox.registration.navigationPreload;
+    await Promise.all(ctx.dispatch('install').waitUntilCalls);
+    // No throw, no rejection: the manager is simply absent.
+    await expect(Promise.all(ctx.dispatch('activate').waitUntilCalls)).resolves.toBeTruthy();
   });
 });
 

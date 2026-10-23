@@ -57,6 +57,47 @@ const OFFLINE_REPORT_RETRY_MS = self.OFFLINE_REPORT_RETRY_MS ?? 5 * 60_000;
 
 const cacheOutcomes = { hits: 0, misses: 0, failures: 0 };
 
+// ---------------------------------------------------------------------------
+// Navigation preload (#492)
+//
+// A navigation that reaches the network used to wait for this worker to boot
+// before the request even started. With preload enabled the browser issues the
+// document request alongside the worker start, and the fetch handler collects
+// the answer from `event.preloadResponse` instead of issuing a second one. The
+// strategies below all take it, so the same rule holds for a public document
+// (stale-while-revalidate) and for the never-cache surfaces (network-only).
+// ---------------------------------------------------------------------------
+
+/**
+ * The network leg of a navigation: the browser's own preload when it made one,
+ * otherwise a fetch this worker issues.
+ *
+ * A preload that resolves `undefined` means the browser preloaded nothing for
+ * this request (the API is absent, or the event carried no preload), so the
+ * fetch still has to happen. A *stale-build* refresh passes no preload at all:
+ * it has to reach the server rather than accept whatever the HTTP cache kept
+ * from the build it is trying to leave (#488).
+ */
+async function preloadedOrFetch(request, preload, init) {
+  if (preload) {
+    const response = await preload.catch(() => undefined);
+    if (response) return response;
+  }
+  return fetch(request, init);
+}
+
+async function enableNavigationPreload() {
+  const manager = self.registration && self.registration.navigationPreload;
+  if (!manager || typeof manager.enable !== 'function') return;
+  try {
+    await manager.enable();
+  } catch (error) {
+    // A refused preload costs the navigation the worker's boot, not the page:
+    // every strategy falls back to `fetch` on its own.
+    console.log('[sw] navigation preload enable failed', String(error));
+  }
+}
+
 // A transparent 1x1 SVG, used when an image variant has no cache entry at all.
 // The `img` box is fixed by the markup (a `fill` container or explicit
 // width/height), so the placeholder holds the layout and the browser never draws
@@ -540,6 +581,9 @@ const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
+      // Navigations begin at preload from now on (#492): the browser's own
+      // request runs while this worker boots, and the fetch handler collects it.
+      await enableNavigationPreload();
       // Only a schema bump (or the one-off move off the build-derived names
       // this replaced) changes one of these, so a release deletes nothing and
       // the offline library it was built on survives it (#488).
@@ -581,6 +625,7 @@ const {
   isNavigationRequest,
   isNextStaticAsset,
   isRSCPayload,
+  cacheKeyFor,
   isFont,
   isIcon,
   isImage,
@@ -985,12 +1030,17 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
   }
 }
 
-async function staleWhileRevalidate(request, onMiss, event) {
+async function staleWhileRevalidate(request, onMiss, event, options = {}) {
   const cache = await caches.open(CACHE);
-  const cached = await cache.match(request);
+  // The one entry a hit and a write share (#492). A document keeps its own URL; a
+  // live RSC payload is keyed by its normalised one, so a navigation answers the
+  // next navigation — and a document and a prefetched body keep entries of their
+  // own, which neither may answer from the other.
+  const key = options.cacheKey || request;
+  const cached = await cache.match(key);
   if (cached) {
     cacheOutcomes.hits += 1;
-    touchCache(request);
+    touchCache(key);
   } else {
     cacheOutcomes.misses += 1;
   }
@@ -1009,11 +1059,18 @@ async function staleWhileRevalidate(request, onMiss, event) {
     cacheOutcomes.failures += 1;
     return missResponse(request, onMiss, door);
   };
-  const revalidate = fetch(request, staleBuild ? { cache: 'no-cache' } : undefined)
+  const revalidate = preloadedOrFetch(
+    request,
+    // The browser's preload is the same request with the router's own headers,
+    // so it can be answered from the HTTP cache like any other; a stale build
+    // must not be, which is why it keeps the explicit revalidation.
+    staleBuild ? null : options.preload,
+    staleBuild ? { cache: 'no-cache' } : undefined
+  )
     .then(async (response) => {
       if (response.ok && isCacheable(response)) {
         const write = (async () => {
-          await store(CACHE, request, response.clone());
+          await store(CACHE, key, response.clone());
           await rememberImageFallback(new URL(request.url), response.clone());
         })().catch((error) => {
           // A bookkeeping failure must not turn a good response into an error.
@@ -1321,14 +1378,17 @@ async function offlineImage(request) {
 // after the deadline instead of whenever the browser's own timeout gives up.
 // Non-navigations (API reads on never-cache prefixes) stay unbounded — those
 // run inside an already-painted page whose failure state is the app's own job.
-async function networkOnly(request) {
+// A navigation takes the browser's preload when there is one (#492): this is the
+// surface that gains most from it, because the request it waits on is the only
+// thing between the tap and the guard that decides.
+async function networkOnly(request, preload) {
   const navigation = isNavigationRequest(request);
   try {
     if (!navigation) return await fetch(request);
     const deadlineSunder = new Promise((resolve) =>
       setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
     );
-    const winner = await Promise.race([fetch(request), deadlineSunder]);
+    const winner = await Promise.race([preloadedOrFetch(request, preload), deadlineSunder]);
     if (winner === undefined) {
       cacheOutcomes.failures += 1;
       return missResponse(request, undefined, 'online-only-deadline');
@@ -1369,9 +1429,15 @@ self.addEventListener('fetch', (event) => {
   const routeRefreshPass = maybeRefreshRouteShells();
   if (routeRefreshPass) event.waitUntil(routeRefreshPass);
 
+  // A navigation starts at preload (#492): the browser asked for the document
+  // while this worker was still booting, and `event.preloadResponse` is that
+  // answer. Every navigation strategy below takes it instead of issuing a second
+  // request; everything else has none to give.
+  const preload = isNavigationRequest(request) ? event.preloadResponse || null : null;
+
   // Online-only surfaces bypass the cache entirely (ADR-0031).
   if (isNeverCache(url)) {
-    event.respondWith(networkOnly(request));
+    event.respondWith(networkOnly(request, preload));
     return;
   }
 
@@ -1392,8 +1458,16 @@ self.addEventListener('fetch', (event) => {
 
   // Public navigations and RSC payloads paint from cache instantly, then
   // refresh in the background (stale-while-revalidate). Offline-first reads.
+  // A live RSC payload is stored under one normalised key so the next navigation
+  // to the same page answers from Cache Storage (#492); the key is computed only
+  // here, after the never-cache list above has had its say.
   if (isNavigationRequest(request) || isRSCPayload(url)) {
-    event.respondWith(staleWhileRevalidate(request, undefined, event));
+    event.respondWith(
+      staleWhileRevalidate(request, undefined, event, {
+        cacheKey: isRSCPayload(url) ? cacheKeyFor(request) : null,
+        preload,
+      })
+    );
     return;
   }
 

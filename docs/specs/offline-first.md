@@ -259,6 +259,16 @@ the list in #449 (ADR-0073) once they became data-free shells, and `/consultatio
 `/downloader` and `/mcp/guide` in #450. On the #450 build the list is 29 documents and 1,705,315 bytes
 (1.63 MB) measured from the build's own HTML, against the 32-route cap and the 6 MB ceiling.
 
+An RSC payload is stored **one per page, not one per router variant** (#492). The App Router appends
+`_rsc` to a flight request — a hash of the request's own headers — so two navigations to the same page
+from different router states arrive on different URLs and, keyed by the full URL, missed each other. A
+_live_ payload (the answer a navigation asks for) is keyed by its path and the caller's own query with
+that hash folded to a constant, so the second navigation paints from Cache Storage. A _prefetched_
+body is deliberately not shared: it is partial by design, and Next refuses it as a navigation answer
+by falling back to a full document load, so a prefetch keeps its own URL. Navigations also run through
+`NavigationPreloadManager`, so the document request starts while the worker is still booting rather
+than after it.
+
 ### Delivery states
 
 Property 3 needs a per-item state a user can read at a glance, the way a messenger's clock and ticks
