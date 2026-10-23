@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.134.0] - 2026-10-23
+
+### Changed
+- Push subscriptions now released on sign-out, handed over on subscribe. (#531)
+
 ### Added
+- a cold navigation gives up after three seconds (#535)
+- enforce caps and post publication rules in Postgres (#534)
 - publish a daily Arabic news digest to `/news` from a fixed source list
+
+### Fixed
+- normalise the RSC cache key and preload navigations (#537)
+- reconcile queued Download Jobs and size the stale deadline to the duration cap (#533)
+- bump ip-address to 10.7.4 for the zone-parse ReDoS (#532)
 
 ## [1.133.0] - 2026-10-22
 
