@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Link2,
   Megaphone,
+  Newspaper,
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
@@ -67,6 +68,12 @@ const SECTIONS = [
     label: 'الاشتراكات',
     description: 'تفعيل الخطط المدفوعة ومتابعة رصيد الاستهلاك لكل مستخدم',
     icon: Wallet,
+  },
+  {
+    href: '/admin/news',
+    label: 'مصادر الأخبار',
+    description: 'مراجعة المصادر التي يقترحها القرَّاء وقبولها أو رفضها',
+    icon: Newspaper,
   },
 ];
 

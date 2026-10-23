@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { NewsPreferences } from '@/frontend/ui/account/news-preferences';
+import { NewsSourceRequestForm } from '@/frontend/ui/account/news-source-request';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -23,6 +24,10 @@ export default function AccountNewsPage() {
       </header>
 
       <NewsPreferences />
+
+      <div className="border-t border-border/50 pt-6">
+        <NewsSourceRequestForm />
+      </div>
     </div>
   );
 }

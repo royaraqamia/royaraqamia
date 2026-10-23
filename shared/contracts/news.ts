@@ -110,6 +110,86 @@ export const newsSourcePreferencesSchema = z.object({
 
 export type NewsSourcePreferencesInput = z.infer<typeof newsSourcePreferencesSchema>;
 
+/** The states a reader's source proposal can be in. */
+export const NEWS_SOURCE_REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
+export type NewsSourceRequestStatus = (typeof NEWS_SOURCE_REQUEST_STATUSES)[number];
+
+export const NEWS_SOURCE_REQUEST_STATUS_LABELS: Record<NewsSourceRequestStatus, string> = {
+  pending: 'قيد المراجعة',
+  approved: 'مقبول',
+  rejected: 'مرفوض',
+};
+
+/**
+ * A feed a reader proposed. It is an intake record, not a catalogue entry: only
+ * an Admin's approval creates the `news_sources` row the fetch reads.
+ */
+export interface NewsSourceRequest {
+  id: string;
+  url: string;
+  name: string;
+  status: NewsSourceRequestStatus;
+  category: NewsCategory | null;
+  region: NewsRegion | null;
+  tier: 1 | 2 | null;
+  note: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+  sourceId: string | null;
+}
+
+export const NEWS_SOURCE_NAME_MAX = 120;
+export const NEWS_SOURCE_URL_MAX = 500;
+export const NEWS_SOURCE_NOTE_MAX = 500;
+
+/**
+ * The URL a proposal is deduplicated by: fragment and trailing slash dropped,
+ * host lowercased. Ports are kept, because `example.com:8080` may genuinely be a
+ * different feed from `example.com`.
+ */
+export function canonicalNewsFeedUrl(value: string): string | null {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    url.hash = '';
+    url.hostname = url.hostname.toLowerCase();
+    if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export const newsSourceRequestSchema = z.object({
+  url: z.string().trim().min(1).max(NEWS_SOURCE_URL_MAX),
+  name: z.string().trim().min(1).max(NEWS_SOURCE_NAME_MAX),
+});
+
+export type NewsSourceRequestInput = z.infer<typeof newsSourceRequestSchema>;
+
+/** What an Admin confirms when accepting a proposal; the request carries no defaults. */
+export const newsSourceApprovalSchema = z.object({
+  category: z.enum(NEWS_CATEGORIES),
+  region: z.enum(NEWS_REGIONS),
+  tier: z.union([z.literal(1), z.literal(2)]).default(2),
+  note: z.string().trim().max(NEWS_SOURCE_NOTE_MAX).optional(),
+});
+
+export type NewsSourceApprovalInput = z.infer<typeof newsSourceApprovalSchema>;
+
+export const newsSourceRejectionSchema = z.object({
+  note: z.string().trim().max(NEWS_SOURCE_NOTE_MAX).optional(),
+});
+
+export type NewsSourceRejectionInput = z.infer<typeof newsSourceRejectionSchema>;
+
+/** The admin list filter: one status, or every decided row when null. */
+export const newsSourceRequestListSchema = z.object({
+  status: z.enum(NEWS_SOURCE_REQUEST_STATUSES).optional().catch(undefined),
+});
+
+export type NewsSourceRequestListQuery = z.infer<typeof newsSourceRequestListSchema>;
+
 export interface NewsDigest {
   id: string;
   date: string;

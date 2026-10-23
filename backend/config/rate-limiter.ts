@@ -117,6 +117,20 @@ export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/**
+ * Filing a news source is an outbound fetch to a host the reader chose, so it is
+ * bounded per account rather than per request. One open request at a time is the
+ * product rule; this is the cheaper guard against a loop that never gets that far.
+ */
+export function newsSourceRequestRateLimitPolicy(userId: string): RateLimitPolicy {
+  return {
+    key: `news-source-request:${userId}`,
+    limit: 3,
+    windowMs: 24 * 60 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: إضافة مصدر محدودة بـ 3 محاولات في اليوم.',
+  };
+}
+
 const DOWNLOAD_WINDOW_MS = 10 * 60 * 1000;
 
 export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {

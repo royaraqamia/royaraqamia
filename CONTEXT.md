@@ -511,6 +511,17 @@ would leave fewer than three stories in a day is ignored in favour of the full D
 _Sold as_: مصادر الأخبار
 _Avoid_: Feed settings, subscriptions, personalisation rules
 
+**Source Request**:
+A feed a reader proposed, waiting for a decision. It is an intake record, not a source: only an
+Admin's approval turns it into an Approved Source, and a reader can hold one open request at a time.
+_Sold as_: أضف مصدرًا
+_Avoid_: Suggestion, submission, ticket
+
+**Approved Source**:
+An addition to the Source List that an Admin accepted, stored in `news_sources` and merged on top of
+the repo file by the daily fetch. The file wins any collision, so approval can add but never override.
+_Avoid_: Custom source, extra feed, user feed
+
 ### Shared
 
 **Admin**:

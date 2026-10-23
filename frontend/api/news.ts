@@ -3,7 +3,13 @@ import {
   type PostgresChangeHandlers,
 } from '@/frontend/transport/supabase/realtime';
 import { request } from '@/frontend/transport/http';
-import type { NewsSource } from '@/shared/contracts/news';
+import type {
+  NewsCategory,
+  NewsRegion,
+  NewsSource,
+  NewsSourceRequest,
+  NewsSourceRequestStatus,
+} from '@/shared/contracts/news';
 
 /**
  * The digest table the `/news` page watches.
@@ -52,4 +58,54 @@ export async function saveNewsSourceSelection(sourceIds: string[]): Promise<stri
   });
 
   return result.selected;
+}
+
+/** The proposals this account filed, newest first. */
+export async function getMyNewsSourceRequests(): Promise<NewsSourceRequest[]> {
+  const result = await request<{ success: boolean; requests: NewsSourceRequest[] }>(
+    '/api/me/news-source-requests',
+    { cache: 'no-store' }
+  );
+
+  return result.requests;
+}
+
+/** Files a feed for review; the server probes it before the row exists. */
+export async function submitNewsSourceRequest(input: {
+  url: string;
+  name: string;
+}): Promise<NewsSourceRequest> {
+  const result = await request<{ success: boolean; request: NewsSourceRequest }>(
+    '/api/me/news-source-requests',
+    { method: 'POST', body: JSON.stringify(input) }
+  );
+
+  return result.request;
+}
+
+/** The Admin Console's queue; `status` narrows it to one state. */
+export async function getAdminNewsSourceRequests(
+  status?: NewsSourceRequestStatus
+): Promise<NewsSourceRequest[]> {
+  const search = status ? `?status=${status}` : '';
+  const result = await request<{ success: boolean; requests: NewsSourceRequest[] }>(
+    `/api/admin/news/source-requests${search}`,
+    { cache: 'no-store' }
+  );
+
+  return result.requests;
+}
+
+export async function decideNewsSourceRequest(
+  id: string,
+  decision:
+    | { action: 'approve'; category: NewsCategory; region: NewsRegion; tier: 1 | 2; note?: string }
+    | { action: 'reject'; note?: string }
+): Promise<NewsSourceRequest> {
+  const result = await request<{ success: boolean; request: NewsSourceRequest }>(
+    `/api/admin/news/source-requests/${id}`,
+    { method: 'PATCH', body: JSON.stringify(decision) }
+  );
+
+  return result.request;
 }

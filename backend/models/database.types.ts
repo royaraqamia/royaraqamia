@@ -953,6 +953,99 @@ export type Database = {
         };
         Relationships: [];
       };
+      news_source_requests: {
+        Row: {
+          category: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          note: string | null;
+          region: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          source_id: string | null;
+          status: string;
+          tier: number | null;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          category?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          note?: string | null;
+          region?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_id?: string | null;
+          status?: string;
+          tier?: number | null;
+          url: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          region?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          source_id?: string | null;
+          status?: string;
+          tier?: number | null;
+          url?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      news_sources: {
+        Row: {
+          approved_at: string;
+          approved_by: string | null;
+          category: string;
+          created_at: string;
+          enabled: boolean;
+          fresh_hours: number | null;
+          id: string;
+          name: string;
+          region: string;
+          request_id: string | null;
+          tier: number;
+          url: string;
+        };
+        Insert: {
+          approved_at?: string;
+          approved_by?: string | null;
+          category: string;
+          created_at?: string;
+          enabled?: boolean;
+          fresh_hours?: number | null;
+          id: string;
+          name: string;
+          region: string;
+          request_id?: string | null;
+          tier?: number;
+          url: string;
+        };
+        Update: {
+          approved_at?: string;
+          approved_by?: string | null;
+          category?: string;
+          created_at?: string;
+          enabled?: boolean;
+          fresh_hours?: number | null;
+          id?: string;
+          name?: string;
+          region?: string;
+          request_id?: string | null;
+          tier?: number;
+          url?: string;
+        };
+        Relationships: [];
+      };
       news_stories: {
         Row: {
           category: string;

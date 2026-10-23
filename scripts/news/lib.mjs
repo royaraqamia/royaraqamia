@@ -254,3 +254,59 @@ export function chunk(values, size) {
   }
   return chunks;
 }
+
+/**
+ * The repo list plus the sources an Admin approved in `news_sources` (ADR-0078).
+ *
+ * The file is the base and wins a collision, by id and by URL: an approved row
+ * is an addition, never a way to override the reviewed list. A duplicate id
+ * would also break the candidate ids (`<source>:<n>`), so skipping is not merely
+ * cosmetic.
+ */
+export function mergeSources(base, additions) {
+  const seenIds = new Set(base.map((source) => source.id));
+  const seenUrls = new Set(base.map((source) => source.url));
+
+  const merged = [...base];
+  for (const source of additions) {
+    if (!source || seenIds.has(source.id) || seenUrls.has(source.url)) continue;
+    seenIds.add(source.id);
+    seenUrls.add(source.url);
+    merged.push(source);
+  }
+
+  return merged;
+}
+
+/**
+ * The approved sources, shaped like `readSources` returns them.
+ *
+ * A row that is disabled, malformed or not a known category/region is dropped
+ * rather than thrown on: a bad row in an operator's table must not cost the
+ * day's digest, which is the same reason the file's expander skips nothing but
+ * the fetch's failures are tolerated.
+ */
+export function toApprovedSource(row) {
+  const id = String(row?.id ?? '').trim();
+  const name = String(row?.name ?? '').trim();
+  const url = canonicalUrl(String(row?.url ?? ''));
+  if (!id || !name || !url) return null;
+  if (!CATEGORIES.includes(row?.category)) return null;
+  if (!REGIONS.includes(row?.region)) return null;
+
+  const freshHours =
+    row?.fresh_hours === undefined || row?.fresh_hours === null ? null : Number(row.fresh_hours);
+  if (freshHours !== null && (!Number.isFinite(freshHours) || freshHours < 1 || freshHours > 336)) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    url,
+    category: row.category,
+    region: row.region,
+    tier: row.tier === 1 ? 1 : 2,
+    freshHours,
+  };
+}
