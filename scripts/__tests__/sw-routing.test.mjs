@@ -205,6 +205,95 @@ describe('sw-routing predicates', () => {
   });
 });
 
+describe('RSC cache keys (#492)', () => {
+  /** A request the App Router sends for a live payload (a navigation). */
+  function rsc(path, headers = {}) {
+    return {
+      url: `https://site.example${path}`,
+      headers: {
+        get: (name) => headers[name.toLowerCase()] ?? null,
+      },
+    };
+  }
+
+  it('folds the router hash into one key, whatever its value', () => {
+    // `_rsc` is a hash of the request's own headers, so two navigations from
+    // different router states arrive as two URLs for one page.
+    expect(routing.cacheKeyFor(rsc('/community?_rsc=aaa'))).toBe(
+      routing.cacheKeyFor(rsc('/community?_rsc=bbb'))
+    );
+    expect(routing.cacheKeyFor(rsc('/community?_rsc=aaa'))).toBe(
+      'https://site.example/community?_rsc=1'
+    );
+  });
+
+  it('keeps the path and the query the caller meant', () => {
+    const key = routing.cacheKeyFor(rsc('/community?cursor=next&_rsc=aaa'));
+    expect(key).toBe('https://site.example/community?cursor=next&_rsc=1');
+    expect(routing.cacheKeyFor(rsc('/community?cursor=other&_rsc=aaa'))).not.toBe(key);
+  });
+
+  it('converges whatever position the hash arrives in', () => {
+    expect(routing.cacheKeyFor(rsc('/rates?_rsc=aaa&page=2'))).toBe(
+      'https://site.example/rates?page=2&_rsc=1'
+    );
+    expect(routing.cacheKeyFor(rsc('/rates?page=2&_rsc=bbb'))).toBe(
+      'https://site.example/rates?page=2&_rsc=1'
+    );
+  });
+
+  it('never shares a key with the document of the same path', () => {
+    // A flight payload served as HTML paints nothing, so the document must keep
+    // its own entry.
+    const document = routing.cacheKeyFor(rsc('/community'));
+    expect(document).toBe('https://site.example/community');
+    expect(routing.cacheKeyFor(rsc('/community?_rsc=aaa'))).not.toBe(document);
+    expect(routing.cacheKeyFor(rsc('/community?cursor=next'))).not.toBe(document);
+  });
+
+  it('keeps a prefetch on its own URL', () => {
+    // A prefetched body is partial by design, and Next refuses it as the answer
+    // to a navigation (it falls back to a full document load), so a prefetch must
+    // never be normalised into the entry a navigation reads.
+    expect(routing.cacheKeyFor(rsc('/community?_rsc=aaa', { 'next-router-prefetch': '1' }))).toBe(
+      'https://site.example/community?_rsc=aaa'
+    );
+    expect(
+      routing.cacheKeyFor(rsc('/community?_rsc=aaa', { 'next-router-segment-prefetch': 'x' }))
+    ).toBe('https://site.example/community?_rsc=aaa');
+  });
+
+  it('folds the referring page away with the hash', () => {
+    // The router sends `next-url` on every navigation, so keeping it would make
+    // each referrer its own entry. It only changes the payload for an
+    // interception route, and this app has none — the condition is recorded in
+    // `cacheKeyFor`.
+    expect(routing.cacheKeyFor(rsc('/community/x?_rsc=aaa', { 'next-url': '/community' }))).toBe(
+      routing.cacheKeyFor(rsc('/community/x?_rsc=bbb', { 'next-url': '/rates' }))
+    );
+  });
+
+  it('leaves every non-RSC GET on its own URL', () => {
+    expect(routing.cacheKeyFor(rsc('/api/rates?page=2'))).toBe(
+      'https://site.example/api/rates?page=2'
+    );
+    expect(routing.cacheKeyFor(rsc('/_next/static/chunk.js'))).toBe(
+      'https://site.example/_next/static/chunk.js'
+    );
+  });
+
+  it('normalises a live _next/data payload and leaves a prefetch alone', () => {
+    expect(routing.cacheKeyFor(rsc('/_next/data/build/rates.json?_rsc=aaa'))).toBe(
+      'https://site.example/_next/data/build/rates.json?_rsc=1'
+    );
+    expect(
+      routing.cacheKeyFor(
+        rsc('/_next/data/build/rates.json?_rsc=aaa', { 'next-router-prefetch': '1' })
+      )
+    ).toBe('https://site.example/_next/data/build/rates.json?_rsc=aaa');
+  });
+});
+
 describe('shell prefix candidates (#490)', () => {
   it('walks a dynamic detail route up to the cached ancestor', () => {
     // `/community/<slug>` has no document of its own (ADR-0071), so the miss

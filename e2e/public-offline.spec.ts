@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoUnderWorkerControl } from './worker-control';
+import { gotoUnderWorkerControl, waitForAppHydrated } from './worker-control';
 
 /**
  * Public-content offline read (#170): a previously visited public route paints
@@ -44,6 +44,38 @@ async function waitForCachedRoutes(page: Page, paths: string[]): Promise<void> {
           }
           return true;
         }, paths),
+      { timeout: 90_000, intervals: [250, 500, 1000] }
+    )
+    .toBe(true);
+}
+
+/**
+ * Waits until the background route refresh has fetched `path`'s document *and*
+ * the `/_next/static` chunks it names (#490), so the route can actually run
+ * offline rather than only paint. The worker queues those chunks itself; this
+ * reads the same references out of the cached document, which is the only
+ * honest signal a test has.
+ */
+async function waitForRunnableRoute(page: Page, path: string): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async (route) => {
+          const data = (await caches.keys()).find((key) => key.startsWith('royaraqamia-data-'));
+          if (!data) return false;
+          const cache = await caches.open(data);
+          const document = await cache.match(route);
+          if (!document) return false;
+          const html = await document.text();
+          const assets = [...html.matchAll(/(?:src|href)="(\/_next\/static\/[^"?#]+)"/g)].map(
+            (match) => match[1]
+          );
+          if (assets.length === 0) return false;
+          for (const asset of assets) {
+            if (!(await caches.match(asset as string))) return false;
+          }
+          return true;
+        }, path),
       { timeout: 90_000, intervals: [250, 500, 1000] }
     )
     .toBe(true);
@@ -345,6 +377,102 @@ test('a never-visited dynamic detail route keeps its parent shell and names the 
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+
+  await context.close();
+});
+
+/**
+ * The RSC cache key (#492). Every client navigation and prefetch appends `_rsc`
+ * to its URL — a hash of the request's own headers — so two navigations to the
+ * same page from different router states arrive on different URLs. Keyed by the
+ * full URL, the worker missed both and each miss was a network round trip inside
+ * an otherwise painted page. Live payloads now share one key, and this proves it
+ * where a user feels it: offline.
+ *
+ * A *prefetched* body is deliberately not shared — it is partial by design, and
+ * Next abandons the soft navigation for a full document load when it is handed
+ * one. That boundary is `sw.test.mjs`'s; here the payload under test is the one a
+ * navigation fetched.
+ */
+test('a repeat client navigation is answered from the cache with the radio off', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  /** The live flight entry this device holds for `/privacy`. */
+  const liveEntry = () =>
+    page.evaluate(async () => {
+      const name = (await caches.keys()).find((key) => key.startsWith('royaraqamia-data-'));
+      if (!name) return [];
+      const cache = await caches.open(name);
+      return (await cache.keys())
+        .map((request) => new URL(request.url))
+        .filter((url) => url.pathname === '/privacy' && url.search === '?_rsc=1')
+        .map((url) => url.search);
+    });
+
+  // The first navigation writes both halves of the page: the document, and the
+  // live flight payload under the normalised key. It has to be a *client*
+  // navigation — a hard load paints the document and never asks for flight data.
+  await gotoUnderWorkerControl(page, `${baseURL}/app-info`);
+  await page.locator('a[href="/privacy"]').first().click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole('heading', { name: /سياسة الخصوصيَّة/ })).toBeVisible();
+  await expect
+    .poll(liveEntry, { timeout: 30_000, intervals: [250, 500, 1000] })
+    .toEqual(['?_rsc=1']);
+
+  // A fresh router state, and the origin of the repeat navigation below.
+  await gotoUnderWorkerControl(page, `${baseURL}/app-info`);
+
+  // Both documents and their chunks have to be on this device before the radio
+  // goes off: the click below must be a client navigation, not a reload that
+  // happens to render.
+  await waitForCachedRoutes(page, ['/app-info', '/privacy']);
+  await waitForRunnableRoute(page, '/app-info');
+  await waitForRunnableRoute(page, '/privacy');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForAppHydrated(page);
+
+  await context.setOffline(true);
+
+  // A marker that only survives a client navigation: a document load would wipe
+  // it, and then this assertion — not the heading — is what fails.
+  await page.evaluate(() => {
+    (window as unknown as { __softNavigation?: boolean }).__softNavigation = true;
+  });
+  await page.locator('a[href="/privacy"]').first().click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole('heading', { name: /سياسة الخصوصيَّة/ })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __softNavigation?: boolean }).__softNavigation === true
+    )
+  ).toBe(true);
+
+  // And the key is why: a hash the worker has never seen — this navigation's own
+  // — is still answered from the one entry, with no network to ask.
+  const flight = await page.evaluate(async () => {
+    const response = await fetch('/privacy?_rsc=a-state-the-worker-never-saw');
+    return {
+      ok: response.ok,
+      type: response.headers.get('content-type') || '',
+      body: await response.text(),
+    };
+  });
+  expect(flight.ok).toBe(true);
+  expect(flight.type).not.toContain('text/html');
+  expect(flight.body.length).toBeGreaterThan(0);
+
+  // Still one entry: the repeat navigation read it, it did not add a second.
+  expect(await liveEntry()).toEqual(['?_rsc=1']);
 
   await context.close();
 });

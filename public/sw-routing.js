@@ -20,6 +20,63 @@
     return url.pathname.startsWith('/_next/data/') || url.searchParams.has('_rsc');
   }
 
+  // The App Router varies an RSC request's URL by `_rsc`, a hash of the request's
+  // own headers (Next's CDN guide). Two navigations to the same route from
+  // different router states are therefore different URLs for one page, so a worker
+  // keyed by the full URL writes both entries and misses on each (#492). The hash
+  // is a variant marker, not part of what the caller asked for: the path and the
+  // caller's own query are.
+  //
+  // The normalised key keeps a constant `_rsc` marker instead of dropping the
+  // parameter. A flight payload and the document of the same path are different
+  // bodies, and a navigation handed a flight payload as HTML paints nothing.
+  //
+  // A *prefetch* is deliberately not normalised. Its body is a different thing —
+  // partial by design, built from the prefetching router's state tree — and Next
+  // refuses it as the answer to a navigation: handed a prefetched body, the
+  // router falls back to a full document load, which is exactly the round trip
+  // this change exists to remove. Only a *live* payload (the answer a navigation
+  // asks for) is shared, and only ever with another live one.
+  const RSC_KEY_PARAM = '_rsc';
+  const RSC_KEY_TOKEN = '1';
+  // Both mark a speculative request: `next-router-prefetch` a whole-route
+  // prefetch, `next-router-segment-prefetch` one segment of it.
+  const RSC_PREFETCH_HEADERS = ['next-router-prefetch', 'next-router-segment-prefetch'];
+
+  function headerOf(request, name) {
+    const headers = request && request.headers;
+    return headers && typeof headers.get === 'function' ? headers.get(name) : null;
+  }
+
+  /**
+   * The Cache Storage key a request is stored and served under (#492).
+   *
+   * A document, and every non-RSC GET, keeps its URL untouched. A live RSC payload
+   * is keyed by its path plus the query the caller meant, with `_rsc` folded to
+   * one constant, so a navigation from one router state answers the next one.
+   *
+   * `next-url` is folded away with the hash: it names the page the navigation came
+   * from, and the router sends it on every navigation, so keeping it would make
+   * every referrer a separate entry. It only changes the payload for an
+   * *interception* route (`app/(.)`, `app/(..)`), where the tree rendered depends
+   * on where the user came from. This app has none; an app that adds one must stop
+   * normalising here, or a modal interception could be answered with the plain
+   * page.
+   *
+   * This never rewrites the *request*: the worker still fetches the URL the
+   * browser asked for, with Next's own hash, because the server answers a missing
+   * or stale `_rsc` with a redirect to the correct one.
+   */
+  function cacheKeyFor(request) {
+    const url = new URL(request.url);
+    if (!isRSCPayload(url)) return url.href;
+    if (RSC_PREFETCH_HEADERS.some((name) => headerOf(request, name))) return url.href;
+    const key = new URL(url.href);
+    key.searchParams.delete(RSC_KEY_PARAM);
+    key.searchParams.set(RSC_KEY_PARAM, RSC_KEY_TOKEN);
+    return key.href;
+  }
+
   function isFont(url) {
     return (
       url.pathname.startsWith('/fonts/') ||
@@ -159,6 +216,7 @@
     isNavigationRequest,
     isNextStaticAsset,
     isRSCPayload,
+    cacheKeyFor,
     isFont,
     isIcon,
     isImage,
