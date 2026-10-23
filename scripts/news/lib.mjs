@@ -232,7 +232,17 @@ export function parseFeed(xml) {
       publishedAt: toIsoDate(
         stripHtml(tagText(block, ['pubDate', 'dc:date', 'published', 'updated', 'date']))
       ),
-      excerpt: excerpt(tagText(block, ['description', 'content:encoded', 'summary', 'content'])),
+      // `media:description` is what a YouTube channel feed uses for the item
+      // text; without it a video arrives as a bare title.
+      excerpt: excerpt(
+        tagText(block, [
+          'description',
+          'content:encoded',
+          'summary',
+          'content',
+          'media:description',
+        ])
+      ),
     }))
     .filter((item) => item.title && item.url);
 }

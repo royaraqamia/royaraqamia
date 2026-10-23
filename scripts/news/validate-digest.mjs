@@ -34,7 +34,12 @@ import {
 const MIN_STORIES = 8;
 const MAX_STORIES = 12;
 
-const ARABIC_LETTER = /[\u0621-\u064A\u0660-\u0669\u0671-\u06D3]/;
+const ARABIC_LETTER = /[\u0621-\u064A\u0671-\u06D3]/;
+/** A translated story keeps its Arabic well above this; proper nouns are excluded. */
+const MIN_ARABIC_SHARE = 0.6;
+/** Four Latin words in a row is a sentence that was never translated. */
+const MAX_LATIN_RUN = 4;
+const PRIORITY_CATEGORIES = ['religion', 'politics', 'tech'];
 const NON_ASCII_DIGITS = /[\u0660-\u0669\u06F0-\u06F9]/;
 const TANWEEN_YA = /\u062C\u0627\u0631\u064B/;
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -100,6 +105,45 @@ function clean(value) {
     : '';
 }
 
+/**
+ * Share of the prose that is Arabic, ignoring digits, punctuation and names.
+ *
+ * A capitalised Latin token is treated as a name ("Vision Pro", "OpenAI"), not
+ * as untranslated prose: tech headlines legitimately carry product names, and
+ * counting their letters would reject a perfectly good Arabic headline. A
+ * lowercase Latin word is what an English sentence is made of, so it counts.
+ */
+export function arabicShare(value) {
+  let arabic = 0;
+  let foreign = 0;
+
+  for (const token of String(value).split(/[^\p{L}\p{N}]+/u)) {
+    const letters = token.replace(/[^\p{L}]/gu, '');
+    if (!letters) continue;
+    if (/^[\u0621-\u064A\u0671-\u06D3]/.test(letters)) arabic += letters.length;
+    else if (/[A-Z]/.test(token) || /\d/.test(token)) continue;
+    else foreign += letters.length;
+  }
+
+  const counted = arabic + foreign;
+  return counted === 0 ? 1 : arabic / counted;
+}
+
+/** The longest run of Latin words, which is how an untranslated sentence shows up. */
+export function latinWordsInARow(value) {
+  let longest = 0;
+  let run = 0;
+  for (const token of String(value).split(/[^\p{L}'’-]+/u)) {
+    if (/^[A-Za-z\u00C0-\u024F]/.test(token)) {
+      run += 1;
+      longest = Math.max(longest, run);
+    } else {
+      run = 0;
+    }
+  }
+  return longest;
+}
+
 function arabicTextProblems(label, value, maxLength, { required = true } = {}) {
   const problems = [];
   if (typeof value !== 'string') {
@@ -111,18 +155,56 @@ function arabicTextProblems(label, value, maxLength, { required = true } = {}) {
   if (required && !ARABIC_LETTER.test(value)) problems.push(`${label}: not Arabic`);
   if (NON_ASCII_DIGITS.test(value)) problems.push(`${label}: contains non-ASCII digits`);
   if (TANWEEN_YA.test(value)) problems.push(`${label}: uses the tanween spelling instead of جاري`);
+
+  // A single Arabic letter is not Arabic copy: the feeds include English sources,
+  // so a summary can arrive untranslated and still pass a "contains Arabic" test.
+  const share = arabicShare(value);
+  if (value.trim().length > 0 && share < MIN_ARABIC_SHARE) {
+    problems.push(
+      `${label}: only ${Math.round(share * 100)}% Arabic copy (needs ${MIN_ARABIC_SHARE * 100}%)`
+    );
+  }
+  const run = latinWordsInARow(value);
+  if (run >= MAX_LATIN_RUN) {
+    problems.push(`${label}: ${run} Latin words in a row, so a sentence was left untranslated`);
+  }
+
   return problems;
 }
 
 /**
+ * The editorial priorities live in the prompt, which the model can ignore without
+ * anything noticing. These are reported as annotations rather than failures: a
+ * quiet religion day must not cost the whole digest.
+ */
+function priorityWarnings(stories) {
+  if (stories.length === 0) return [];
+
+  const warnings = [];
+  const lead = stories[0];
+  if (lead.region === 'world') {
+    warnings.push('the lead story is from the rest of the world, not the Arab or Islamic world');
+  }
+  if (!stories.some((story) => story.region === 'arab' || story.region === 'islamic')) {
+    warnings.push('no story comes from the Arab or Islamic world');
+  }
+  if (!stories.some((story) => PRIORITY_CATEGORIES.includes(story.category))) {
+    warnings.push('no religion, politics or tech story, though those are the priority categories');
+  }
+  return warnings;
+}
+
+/**
  * Checks the digest against the candidates and returns
- * `{ problems, digest }` where `digest` is the resolved, publish-ready shape.
+ * `{ problems, digest, warnings }` where `digest` is the resolved, publish-ready
+ * shape and `warnings` are editorial annotations (a lead story outside the Arab
+ * world, no priority category) that never block publishing.
  */
 export function validateDigest({ digest, candidates, date, model = '', runUrl = '' }) {
   const problems = [];
 
   if (!digest || typeof digest !== 'object') {
-    return { problems: ['the model output is not an object'], digest: null };
+    return { problems: ['the model output is not an object'], digest: null, warnings: [] };
   }
 
   if (digest.digest_date !== date) {
@@ -227,7 +309,7 @@ export function validateDigest({ digest, candidates, date, model = '', runUrl = 
     }
   });
 
-  if (problems.length > 0) return { problems, digest: null };
+  if (problems.length > 0) return { problems, digest: null, warnings: [] };
 
   return {
     problems,
@@ -240,6 +322,7 @@ export function validateDigest({ digest, candidates, date, model = '', runUrl = 
       run_url: runUrl || null,
       stories: resolved,
     },
+    warnings: priorityWarnings(resolved),
   };
 }
 
@@ -273,6 +356,10 @@ async function main() {
   }
 
   await writeFile(options.out, `${JSON.stringify(result.digest, null, 2)}\n`, 'utf8');
+
+  // Annotations, not failures: the run page shows them without costing the day.
+  for (const warning of result.warnings) console.log(`::warning::${warning}`);
+
   console.log(
     `Digest accepted: ${result.digest.story_count} stories, ${normalizeTitle(result.digest.title)}`
   );

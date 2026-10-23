@@ -10,11 +10,12 @@ import {
   canonicalUrl,
   normalizeTitle,
   parseFeed,
+  readSources,
   stripHtml,
   titleSimilarity,
   toIsoDate,
 } from '../news/lib.mjs';
-import { extractJson, validateDigest } from '../news/validate-digest.mjs';
+import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -41,6 +42,20 @@ const ATOM = `<?xml version="1.0" encoding="utf-8"?>
     <link rel="alternate" href="https://keepandroidopen.org/"/>
     <published>2026-10-23T04:00:00Z</published>
     <summary>An update deadline.</summary>
+  </entry>
+</feed>`;
+
+const YOUTUBE = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>الجزيرة</title>
+  <entry>
+    <id>yt:video:l1X9hjFMaW0</id>
+    <title>وزير الخارجية التركي: اجتماع إسطنبول</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=l1X9hjFMaW0"/>
+    <published>2026-10-23T06:00:00+00:00</published>
+    <media:group>
+      <media:description>وصف الفيديو الذي يشرح ما دار في الاجتماع.</media:description>
+    </media:group>
   </entry>
 </feed>`;
 
@@ -94,6 +109,31 @@ describe('news digest contract parity', () => {
   });
 });
 
+describe('news sources', () => {
+  it('reads the video channels through the same loader as the article feeds', () => {
+    const sources = readSources(resolve(ROOT, 'data', 'news', 'sources.json'));
+    const video = sources.filter((source) =>
+      source.url.startsWith('https://www.youtube.com/feeds/videos.xml?')
+    );
+
+    expect(video.map((source) => source.id).sort()).toEqual([
+      'yt-alaraby',
+      'yt-aljazeera-ar',
+      'yt-asharq',
+      'yt-azhar',
+      'yt-elkamali',
+      'yt-sky-news-arabia',
+    ]);
+    for (const source of video) {
+      expect(source.url).toMatch(/channel_id=UC[\w-]{22}$/);
+    }
+    // Religion channels publish a few times a week, like the scholarly feeds.
+    for (const source of video.filter((entry) => entry.category === 'religion')) {
+      expect(source.freshHours).toBe(168);
+    }
+  });
+});
+
 describe('feed parsing', () => {
   it('reads RSS items, unwraps CDATA and strips campaign parameters', () => {
     const [item] = parseFeed(RSS);
@@ -114,6 +154,15 @@ describe('feed parsing', () => {
     expect(entry.title).toBe('Phone Is About to Stop Being Yours');
     expect(entry.url).toBe('https://keepandroidopen.org/');
     expect(entry.publishedAt).toBe('2026-10-23T04:00:00.000Z');
+  });
+
+  it('reads a YouTube channel entry, including its media description', () => {
+    const [entry] = parseFeed(YOUTUBE);
+
+    expect(entry.title).toBe('وزير الخارجية التركي: اجتماع إسطنبول');
+    expect(entry.url).toBe('https://www.youtube.com/watch?v=l1X9hjFMaW0');
+    expect(entry.publishedAt).toBe('2026-10-23T06:00:00.000Z');
+    expect(entry.excerpt).toContain('وصف الفيديو');
   });
 
   it('returns nothing for HTML, an empty body or a truncated document', () => {
@@ -304,5 +353,69 @@ describe('digest validation', () => {
 
     expect(result.problems.join('\n')).toContain('must be 8-12');
     expect(result.problems.join('\n')).toContain('duplicate story');
+  });
+
+  it('rejects a summary that was left in English', () => {
+    const list = stories();
+    list[0].summary = 'The minister said the meeting was productive and the talks will continue.';
+    const result = validateDigest({
+      digest: {
+        digest_date: date,
+        title: 'ملخص أخبار اليوم',
+        lede: 'أهم ما حدث اليوم.',
+        stories: list,
+      },
+      candidates: candidates(),
+      date,
+    });
+
+    const problems = result.problems.join('\n');
+    expect(result.digest).toBeNull();
+    expect(problems).toContain('Arabic copy');
+    expect(problems).toContain('Latin words in a row');
+  });
+
+  it('counts product names as names, not as untranslated prose', () => {
+    // A tech headline is allowed to carry names; it is not allowed to be English.
+    expect(arabicShare('آبل تطلق Vision Pro في 12 دولة')).toBe(1);
+    expect(arabicShare('قرار OpenAI جديد بشأن GPT-5')).toBe(1);
+    expect(arabicShare('The minister said the meeting was productive')).toBe(0);
+  });
+
+  it('warns, without failing, when the digest ignores the editorial priorities', () => {
+    const list = stories(8).map((story) => ({ ...story, category: 'other', region: 'world' }));
+    const result = validateDigest({
+      digest: {
+        digest_date: date,
+        title: 'ملخص أخبار اليوم',
+        lede: 'أهم ما حدث اليوم.',
+        stories: list,
+      },
+      candidates: candidates(),
+      date,
+    });
+
+    const warnings = result.warnings.join('\n');
+    expect(result.problems).toEqual([]);
+    expect(result.digest.story_count).toBe(8);
+    expect(warnings).toContain('lead story is from the rest of the world');
+    expect(warnings).toContain('Arab or Islamic world');
+    expect(warnings).toContain('religion, politics or tech');
+  });
+
+  it('warns about nothing when the priorities are respected', () => {
+    const result = validateDigest({
+      digest: {
+        digest_date: date,
+        title: 'ملخص أخبار اليوم',
+        lede: 'أهم ما حدث اليوم.',
+        stories: stories(),
+      },
+      candidates: candidates(),
+      date,
+    });
+
+    expect(result.problems).toEqual([]);
+    expect(result.warnings).toEqual([]);
   });
 });

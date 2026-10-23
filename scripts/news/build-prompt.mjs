@@ -83,6 +83,11 @@ WHAT TO SELECT
 - Prefer stories with real consequence and reach over curiosities. Never include two stories about the
   same event: pick the strongest one.
 - Vary categories when the day allows it, but coverage priorities matter more than even distribution.
+- A candidate may be an article or a video. A video arrives as a title and a short description only;
+  that is everything known about it, so never imply the footage itself was watched or summarised.
+- This is a briefing about information, not only events. A decision, a rule, an explainer or a piece of
+  knowledge that is still useful tomorrow is a story: prefer what leaves the reader better informed
+  over what is merely new.
 
 WHAT TO WRITE
 - "title": the digest's headline for the day, at most 90 characters, no trailing period.

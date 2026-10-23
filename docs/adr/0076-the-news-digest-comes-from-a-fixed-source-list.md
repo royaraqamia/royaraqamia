@@ -23,7 +23,8 @@ model does is Arabic prose about items that provably exist.
    religion, politics and tech before the rest, the Arab and Islamic world before the wider world.
 3. `opencode run --model opencode-go/deepseek-v4.1-flash#high` writes the digest as JSON.
 4. `validate-digest.mjs` re-checks every field: 8-12 stories, each `candidate_id` resolving to a
-   fetched story, ASCII digits, NFC Arabic, the repo's «جاري» spelling, no story used twice.
+   fetched story, ASCII digits, NFC Arabic, the repo's «جاري» spelling, at least 60% Arabic copy, no
+   story used twice. Priority misses are annotations, not failures.
 5. `publish-digest.mjs` writes through PostgREST with the service role — digest first with
    `story_count = 0`, then stories, then the count — so a failure never leaves a digest claiming
    stories it does not have.
@@ -45,6 +46,27 @@ Thirty days, then deleted by a pg_cron sweep (`20261023130200`). A month-old dig
 material, and third-party summaries should not be kept past the point they serve. Search therefore
 covers the retained month by construction, using a trigram index because Postgres has no Arabic
 text-search configuration.
+
+## Video sources (2026-10-23)
+
+Six YouTube channels join the list as ordinary Atom feeds (`youtube.com/feeds/videos.xml?channel_id=…`,
+no API key and no quota), so nothing downstream knows a candidate is a video: the feed parser reads
+`media:description` for the item text, and the validator resolves the `watch?v=` URL like any other.
+Four are Arabic news channels the site already follows; two are religion channels, which publish a few
+times a week and therefore carry the same `freshHours: 168` as the scholarly feeds.
+
+What a channel feed cannot give is the transcript. `captions.download` is owner-only, and scraping
+`timedtext` from a datacenter IP is both unreliable and against YouTube's terms, so a video is
+summarised from its title and description. That is accurate for the newsroom clips that dominate these
+channels; an analysis segment would be summarised from its blurb alone, which is why the prompt tells
+the model to never imply it watched the footage.
+
+The same change closed two gaps the prompt could not enforce. A field now needs 60% of its prose to be
+Arabic — capitalised names excluded — and no run of four Latin words: fifteen of the twenty-five feeds
+are English, so translation is the normal path, and "contains one Arabic letter" was not a check. And
+the editorial priorities (religion, politics, tech; Arab and Islamic world first) now emit
+`::warning::` annotations when the model ignores them instead of failing the run: a quiet religion day
+must not cost the whole digest.
 
 ## Considered options
 
