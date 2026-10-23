@@ -3,47 +3,54 @@ import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { RequestProjectFlow } from '@/frontend/ui/project-requests/request-project-flow';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { loadServiceDiscount } from '@/backend/loaders/service-discount';
+import { ProPrice, ServiceDiscountProvider } from '@/frontend/ui/plans/pro-price';
 import { PROJECT_REQUEST_WEBSITE_START_PRICE_USD } from '@/shared/contracts/project-requests';
 
 export default async function RequestProjectPage() {
   const { user } = await getOptionalUser();
+  const isPro = await loadServiceDiscount(user?.id);
 
   return (
-    <RequestProjectFlow
-      isAuthenticated={Boolean(user)}
-      summary={
-        /* Project summary — the page's own pitch, server-rendered so it stays
+    <ServiceDiscountProvider initialIsPro={isPro}>
+      <RequestProjectFlow
+        isAuthenticated={Boolean(user)}
+        summary={
+          /* Project summary — the page's own pitch, server-rendered so it stays
            out of the client bundle. */
-        <section
-          aria-label="تفاصيل طلب المشروع"
-          className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
-        >
-          <SectionTitle size="card">
-            <SectionTitleHighlight>طلب بناء مشروع</SectionTitleHighlight>
-          </SectionTitle>
-          <CollapsibleText
-            lines={2}
-            className="mt-2 text-sm text-muted-foreground leading-relaxed"
-            buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
+          <section
+            aria-label="تفاصيل طلب المشروع"
+            className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
           >
-            أخبرنا بفكرتك وهدفك، ونُحوِّلها إلى منتج جاهز للإطلاق والبيع. نبني مواقع وتطبيقات، وتملك
-            الكود بالكامل. بعد إرسال الطَّلب نُراجع التَّفاصيل ونُرسِل لك عرضًا واضحًا بالمُخرَجات
-            والسِّعر.
-          </CollapsibleText>
+            <SectionTitle size="card">
+              <SectionTitleHighlight>طلب بناء مشروع</SectionTitleHighlight>
+            </SectionTitle>
+            <CollapsibleText
+              lines={2}
+              className="mt-2 text-sm text-muted-foreground leading-relaxed"
+              buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
+            >
+              أخبرنا بفكرتك وهدفك، ونُحوِّلها إلى منتج جاهز للإطلاق والبيع. نبني مواقع وتطبيقات،
+              وتملك الكود بالكامل. بعد إرسال الطَّلب نُراجع التَّفاصيل ونُرسِل لك عرضًا واضحًا
+              بالمُخرَجات والسِّعر.
+            </CollapsibleText>
 
-          <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
-            <span className="text-xs font-medium text-muted-foreground">تبدأ من</span>
-            <span className="text-2xl font-black tracking-tight text-foreground">
-              {`$${PROJECT_REQUEST_WEBSITE_START_PRICE_USD}`}
-            </span>
-            <span className="text-xs text-muted-foreground">حسب نطاق المشروع</span>
-            <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              الدَّفع بالتَّقسيط مُتاح
-            </span>
-          </div>
-        </section>
-      }
-    />
+            <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
+              <span className="text-xs font-medium text-muted-foreground">تبدأ من</span>
+              <ProPrice
+                amountUsd={PROJECT_REQUEST_WEBSITE_START_PRICE_USD}
+                className="text-2xl font-black tracking-tight text-foreground"
+                originalClassName="text-sm font-medium text-muted-foreground"
+              />
+              <span className="text-xs text-muted-foreground">حسب نطاق المشروع</span>
+              <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                الدَّفع بالتَّقسيط مُتاح
+              </span>
+            </div>
+          </section>
+        }
+      />
+    </ServiceDiscountProvider>
   );
 }
