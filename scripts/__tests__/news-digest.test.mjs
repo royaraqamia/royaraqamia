@@ -10,6 +10,7 @@ import {
   canonicalUrl,
   normalizeTitle,
   parseFeed,
+  stripHtml,
   titleSimilarity,
   toIsoDate,
 } from '../news/lib.mjs';
@@ -119,6 +120,14 @@ describe('feed parsing', () => {
     expect(parseFeed('<!doctype html><html><body>Blocked</body></html>')).toEqual([]);
     expect(parseFeed('')).toEqual([]);
     expect(parseFeed('<rss><channel><item><title>half')).toEqual([]);
+  });
+
+  it('drops a script or style element even when its end tag has whitespace', () => {
+    // CodeQL's `js/bad-tag-filter`: `</script>` alone misses `</script >`, which
+    // leaves the script's text behind after the generic tag strip.
+    expect(stripHtml('<p>قبل</p><script>alert(1)</script ><p>بعد</p>')).toBe('قبل بعد');
+    expect(stripHtml('<script type="x">alert(2)</script foo><p>نص</p>')).toBe('نص');
+    expect(stripHtml('<style>.a{}</style ><p>نص</p>')).toBe('نص');
   });
 });
 

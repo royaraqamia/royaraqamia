@@ -46,8 +46,8 @@ export function decodeEntities(value) {
 export function stripHtml(value) {
   return decodeEntities(
     String(value ?? '')
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<script\b[\s\S]*?<\/script[^>]*>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style[^>]*>/gi, ' ')
       .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, ' $1 ')
       .replace(/<[^>]+>/g, ' ')
   )
