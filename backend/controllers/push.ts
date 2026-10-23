@@ -26,9 +26,18 @@ const WAKE_RATE_LIMIT = 60;
 const WAKE_RATE_WINDOW_MS = 3600_000;
 const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Registers (or refreshes) this browser's Web Push subscription.
+ *
+ * The write runs with the admin client on purpose, mirroring `registerDeviceToken`:
+ * an endpoint is unique per browser install, so when one user signs out and
+ * another signs in on the same browser the row has to change owner — a hand-over
+ * that "own rows only" RLS cannot express. The owner is still taken from the
+ * session, never from the body.
+ */
 export async function subscribePush(body: unknown, headers: Headers): Promise<HttpResult> {
   try {
-    const { user, supabase } = await getAuthUser();
+    const { user } = await getAuthUser();
     if (!user) {
       return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
     }
@@ -51,7 +60,7 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
     }
 
     // user_id always comes from the session, never from the client body.
-    await createPushSubscriptionsRepository(supabase).upsert(user.id, {
+    await createPushSubscriptionsRepository(getAdminSupabase()).upsert(user.id, {
       endpoint: parsed.data.endpoint,
       p256dh: parsed.data.keys.p256dh,
       auth: parsed.data.keys.auth,

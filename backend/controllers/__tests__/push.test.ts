@@ -4,6 +4,7 @@ const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockUpsert = vi.fn();
 const mockRemoveByEndpoint = vi.fn();
+const mockCreatePushSubscriptionsRepository = vi.fn();
 const mockDeviceUpsert = vi.fn();
 const mockDeviceRemoveByToken = vi.fn();
 const mockSendToUsers = vi.fn();
@@ -28,10 +29,8 @@ vi.mock('@/backend/config/rate-limiter', () => ({
 }));
 
 vi.mock('@/backend/repositories/push/supabase-repository', () => ({
-  createPushSubscriptionsRepository: () => ({
-    upsert: mockUpsert,
-    removeByEndpoint: mockRemoveByEndpoint,
-  }),
+  createPushSubscriptionsRepository: (...args: unknown[]) =>
+    mockCreatePushSubscriptionsRepository(...args),
 }));
 
 vi.mock('@/backend/repositories/push/supabase-device-tokens-repository', () => ({
@@ -83,6 +82,10 @@ describe('push controller', () => {
     mockCheckRateLimit.mockResolvedValue(true);
     mockUpsert.mockResolvedValue(undefined);
     mockRemoveByEndpoint.mockResolvedValue(undefined);
+    mockCreatePushSubscriptionsRepository.mockReturnValue({
+      upsert: mockUpsert,
+      removeByEndpoint: mockRemoveByEndpoint,
+    });
     mockDeviceUpsert.mockResolvedValue(undefined);
     mockDeviceRemoveByToken.mockResolvedValue(undefined);
     mockSendWake.mockResolvedValue(undefined);
@@ -170,6 +173,20 @@ describe('push controller', () => {
       );
     });
 
+    it('hands the endpoint over with the service-role client, taking the owner from the session', async () => {
+      const { subscribePush } = await importControllers();
+
+      const result = await subscribePush(validBody, sameOriginHeaders());
+
+      expect(result.status).toBe(200);
+      // A row's endpoint can belong to the previous account on this browser;
+      // only the admin client may reassign it. The owner is still the session.
+      expect(mockCreatePushSubscriptionsRepository).toHaveBeenCalledWith({
+        kind: 'admin-client',
+      });
+      expect(mockUpsert.mock.calls[0]?.[0]).toBe('u-1');
+    });
+
     it('returns 500 when the repository upsert fails', async () => {
       mockUpsert.mockRejectedValue(new Error('db down'));
       const { subscribePush } = await importControllers();
@@ -216,6 +233,14 @@ describe('push controller', () => {
 
       expect(result.status).toBe(200);
       expect(mockRemoveByEndpoint).toHaveBeenCalledWith('u-1', validBody.endpoint);
+    });
+
+    it('keeps the caller-scoped client: RLS is the owner guarantee', async () => {
+      const { unsubscribePush } = await importControllers();
+
+      await unsubscribePush({ endpoint: validBody.endpoint }, sameOriginHeaders());
+
+      expect(mockCreatePushSubscriptionsRepository).toHaveBeenCalledWith({});
     });
   });
 

@@ -113,6 +113,18 @@ async function postSubscription(subscription: PushSubscription): Promise<void> {
   });
 }
 
+/** Best-effort server-side removal: the dispatch prune covers a failed call. */
+async function deleteSubscriptionRow(endpoint: string): Promise<void> {
+  try {
+    await request('/api/push/subscribe', {
+      method: 'DELETE',
+      body: JSON.stringify({ endpoint }),
+    });
+  } catch {
+    // The server prunes dead endpoints on the next dispatch (404/410).
+  }
+}
+
 /**
  * Idempotent re-POST of an existing, still-valid subscription. Refreshes the
  * server-side liveness timestamp so the stale-subscription sweep never drops
@@ -168,14 +180,37 @@ export async function unsubscribeFromPush(): Promise<void> {
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
 
+  await deleteSubscriptionRow(subscription.endpoint);
+  await subscription.unsubscribe();
+}
+
+/**
+ * Releases this browser's push registration on sign-out, while the session still
+ * authorizes the DELETE. Both the server row and the browser subscription go, so
+ * the next account on this browser does not inherit the notifications and can
+ * subscribe again silently — the permission survives, and `subscribeToPush()`
+ * creates a fresh endpoint owned by the new user.
+ *
+ * Best-effort by design, the same contract as `unregisterNativePush`: a missing
+ * worker, a failed request or a refused unsubscribe must never block or fail a
+ * sign-out. Unlike the toggle, it does not set the opt-out flag: that preference
+ * belongs to the next person on the device, not to the account that left.
+ */
+export async function releasePushSubscription(): Promise<void> {
+  if (!isPushSupported()) return;
+
   try {
-    await request('/api/push/subscribe', {
-      method: 'DELETE',
-      body: JSON.stringify({ endpoint: subscription.endpoint }),
-    });
-  } catch {
-    // The server prunes dead endpoints on the next dispatch (404/410).
-  } finally {
+    // `ready` never settles when nothing ever registers, so ask for the current
+    // registration instead of waiting for one sign-out does not need.
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+
+    await deleteSubscriptionRow(subscription.endpoint);
     await subscription.unsubscribe();
+    window.localStorage.removeItem(PUSH_LAST_SYNC_KEY);
+  } catch {
+    // Push never gets a vote on whether the user can sign out.
   }
 }

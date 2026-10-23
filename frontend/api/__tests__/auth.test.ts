@@ -18,12 +18,51 @@ const { mockRequest, MockApiError } = vi.hoisted(() => {
   return { mockRequest: vi.fn(), MockApiError };
 });
 
+const {
+  mockReleasePushSubscription,
+  mockUnregisterNativePush,
+  mockCreateClient,
+  mockSignOut,
+  mockPurgeCaches,
+} = vi.hoisted(() => ({
+  mockReleasePushSubscription: vi.fn(),
+  mockUnregisterNativePush: vi.fn(),
+  mockCreateClient: vi.fn(),
+  mockSignOut: vi.fn(),
+  mockPurgeCaches: vi.fn(),
+}));
+
 vi.mock('@/frontend/transport/http', () => ({
   request: mockRequest,
   ApiError: MockApiError,
 }));
 
-import { login, resetPassword, resendOtp, signup, updatePassword, verifyOtp } from '../auth';
+vi.mock('@/frontend/api/push', () => ({
+  releasePushSubscription: mockReleasePushSubscription,
+}));
+
+vi.mock('@/frontend/api/push-native', () => ({
+  unregisterNativePush: mockUnregisterNativePush,
+}));
+
+vi.mock('@/frontend/transport/supabase/client', () => ({
+  createClient: mockCreateClient,
+}));
+
+vi.mock('@/frontend/shared/cache-maintenance', () => ({
+  purgeServiceWorkerCaches: mockPurgeCaches,
+}));
+
+import {
+  login,
+  logout,
+  resetPassword,
+  resendOtp,
+  signOutSession,
+  signup,
+  updatePassword,
+  verifyOtp,
+} from '../auth';
 
 // The forms act on this flag: a request that never left must not be reported as
 // a credential or validation error (ADR-0031, #368).
@@ -94,5 +133,49 @@ describe('auth failures know whether the request reached the server', () => {
         redirectTo: null,
       })
     ).resolves.toMatchObject({ ok: false, offline: true });
+  });
+});
+
+describe('sign-out releases this browser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReleasePushSubscription.mockResolvedValue(undefined);
+    mockUnregisterNativePush.mockResolvedValue(undefined);
+    mockSignOut.mockResolvedValue(undefined);
+    mockCreateClient.mockResolvedValue({ auth: { signOut: mockSignOut } });
+    mockPurgeCaches.mockResolvedValue(true);
+    mockRequest.mockResolvedValue({ success: true });
+  });
+
+  it('signOutSession releases browser push while the session is still valid', async () => {
+    const order: string[] = [];
+    mockReleasePushSubscription.mockImplementation(async () => {
+      order.push('release');
+    });
+    mockSignOut.mockImplementation(async () => {
+      order.push('signOut');
+    });
+
+    await signOutSession();
+
+    expect(order).toEqual(['release', 'signOut']);
+    expect(mockUnregisterNativePush).toHaveBeenCalledTimes(1);
+    expect(mockPurgeCaches).toHaveBeenCalledTimes(1);
+  });
+
+  it('logout releases browser push before ending the server session', async () => {
+    const order: string[] = [];
+    mockReleasePushSubscription.mockImplementation(async () => {
+      order.push('release');
+    });
+    mockRequest.mockImplementation(async (url: string) => {
+      if (url === '/auth/api/logout') order.push('logout');
+      return { success: true };
+    });
+
+    await logout();
+
+    expect(order).toEqual(['release', 'logout']);
+    expect(mockUnregisterNativePush).toHaveBeenCalledTimes(1);
   });
 });

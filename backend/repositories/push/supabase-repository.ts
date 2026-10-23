@@ -26,10 +26,12 @@ function toRecord(row: PushSubscriptionRow): PushSubscriptionRecord {
 /**
  * Supabase-backed push subscription repository. The same implementation is
  * created with two different clients:
- * - a caller-scoped client (RLS applies) for subscribe/unsubscribe — defense
- *   in depth so a caller can only ever touch their own rows;
- * - the admin (service-role) client for dispatch reads and dead-endpoint
- *   pruning, which must see every user's subscriptions.
+ * - the admin (service-role) client for subscribe, dispatch reads and
+ *   dead-endpoint pruning: an endpoint is unique per browser, so subscribing
+ *   after a user switch has to reassign a row RLS would not let the caller
+ *   touch;
+ * - a caller-scoped client (RLS applies) for unsubscribe, where "only my own
+ *   row" is exactly the right rule.
  */
 export function createPushSubscriptionsRepository(
   supabase: SupabaseClient<Database>

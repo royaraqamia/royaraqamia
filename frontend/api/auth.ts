@@ -3,6 +3,7 @@ import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { unregisterNativePush } from '@/frontend/api/push-native';
+import { releasePushSubscription } from '@/frontend/api/push';
 import type { Session, User } from '@supabase/supabase-js';
 
 export type { Session, User };
@@ -61,8 +62,10 @@ export function subscribeToSessionChanges(listener: SessionChangeListener): () =
 }
 
 export async function signOutSession(): Promise<void> {
-  // Every sign-out path drops the device token; see `logout()`.
+  // Every sign-out path releases this browser's push registration while the
+  // session still authorizes the DELETE; see `logout()`.
   await unregisterNativePush();
+  await releasePushSubscription();
   const client = await createClient();
   await client.auth.signOut();
   // Cache Storage is the one shared surface that could still answer with the
@@ -72,10 +75,12 @@ export async function signOutSession(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
-  // Drop this device's native push token while the session still authorizes the
-  // call, so the next person to use the phone does not inherit the
-  // notifications. Best-effort: never block a sign-out on it.
+  // Drop this device's native push token and browser subscription while the
+  // session still authorizes the calls, so the next person to use the device
+  // does not inherit the notifications. Best-effort: never block a sign-out on
+  // either.
   await unregisterNativePush();
+  await releasePushSubscription();
   try {
     await request('/auth/api/logout', { method: 'POST' });
   } catch {
