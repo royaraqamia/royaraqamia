@@ -325,6 +325,67 @@ describe('DownloaderService.dispatch', () => {
   });
 });
 
+describe('DownloaderService.dispatch setup failures', () => {
+  /**
+   * `dispatch` runs after the response, so a setup throw has no caller left to
+   * answer. Left uncaught it stranded the row in `queued` until the retention
+   * delete; these pin that every setup failure still ends the job `failed`.
+   */
+  it('fails the job when the settings read throws instead of leaving it queued', async () => {
+    const settings: DownloadSettingsRepository = {
+      get: () => Promise.reject(new Error('settings unavailable')),
+      save: () => Promise.resolve(),
+    };
+    const { repository, service, provider } = makeService({ settings });
+    const created = await service.create(INPUT);
+
+    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(provider.calls).toHaveLength(0);
+    expect(repository.events.map((event) => event.status)).toEqual(['queued', 'failed']);
+  });
+
+  it('fails the job when the concurrency check throws', async () => {
+    class FailingCountRepository extends InMemoryDownloadJobRepository {
+      override async countActive(): Promise<number> {
+        throw new Error('count failed');
+      }
+    }
+    const repository = new FailingCountRepository();
+    const provider = new FakeProvider();
+    const service = new DownloaderService(repository, provider);
+    const created = await service.create(INPUT);
+
+    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(provider.calls).toHaveLength(0);
+  });
+
+  it('fails the job when the running update throws', async () => {
+    class FailingRunningRepository extends InMemoryDownloadJobRepository {
+      override async updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob> {
+        if (patch.status === 'running') throw new Error('update failed');
+        return super.updateStatus(id, patch);
+      }
+    }
+    const repository = new FailingRunningRepository();
+    const provider = new FakeProvider();
+    const service = new DownloaderService(repository, provider);
+    const created = await service.create(INPUT);
+
+    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(provider.calls).toHaveLength(0);
+    expect(repository.events.map((event) => event.status)).toEqual(['queued', 'failed']);
+  });
+});
+
 describe('DownloaderService.recordResult', () => {
   it('completes a running job with the provider link', async () => {
     const { repository, service } = makeService();

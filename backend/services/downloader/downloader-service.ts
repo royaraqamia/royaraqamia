@@ -163,15 +163,19 @@ export class DownloaderService {
   }
 
   async dispatch(id: string, request: DownloadRequest): Promise<void> {
-    const settings = await this.effectiveSettings();
-    if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
-      await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
-      return;
-    }
-
-    await this.repository.updateStatus(id, { status: 'running' });
-
+    // Setup is inside the try on purpose. It runs off the response path, so a
+    // throw here has no caller left to answer and would strand the row in
+    // `queued` — where nothing but the retention delete would ever clear it.
+    // Every failure ends the job `failed` instead.
     try {
+      const settings = await this.effectiveSettings();
+      if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
+        await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
+        return;
+      }
+
+      await this.repository.updateStatus(id, { status: 'running' });
+
       await this.provider.dispatch({
         jobId: id,
         url: request.url,
