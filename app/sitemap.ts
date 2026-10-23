@@ -35,6 +35,13 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.9,
   },
   {
+    // Regenerated every morning by the digest workflow; the cron time is the
+    // only thing that changes the page's date, so `daily` is literal.
+    path: '/news',
+    changeFrequency: 'daily',
+    priority: 0.9,
+  },
+  {
     path: '/training/apply',
     changeFrequency: 'weekly',
     priority: 0.8,

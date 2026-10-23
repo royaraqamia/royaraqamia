@@ -64,6 +64,9 @@ next-env.d.ts
 Desktop.ini
 $RECYCLE.BIN/
 
+# The news digest workflow's working files (candidates, prompt, model output)
+.news/
+
 # auto-generated
 public/sw-version.js
 public/sw-precache.js

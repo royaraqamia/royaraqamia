@@ -6,6 +6,7 @@ import {
   Download,
   GraduationCap,
   Link2,
+  Newspaper,
   NotebookPen,
   ScanBarcode,
   ScanLine,
@@ -25,6 +26,7 @@ export type AppProduct =
   | 'downloader'
   | 'scan'
   | 'quran'
+  | 'news'
   | 'community';
 
 export interface AppProductDef {
@@ -37,6 +39,13 @@ export interface AppProductDef {
 }
 
 export const APP_PRODUCTS: AppProductDef[] = [
+  {
+    id: 'news',
+    label: 'أخبار اليوم',
+    appPath: '/news',
+    landingPath: '/news',
+    icon: Newspaper,
+  },
   {
     id: 'training',
     label: 'التَّسجيل في التَّدريب',

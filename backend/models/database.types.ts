@@ -899,6 +899,98 @@ export type Database = {
         };
         Relationships: [];
       };
+      news_digests: {
+        Row: {
+          created_at: string;
+          digest_date: string;
+          id: string;
+          lede: string;
+          model: string;
+          published_at: string;
+          run_url: string | null;
+          story_count: number;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          digest_date: string;
+          id?: string;
+          lede: string;
+          model: string;
+          published_at?: string;
+          run_url?: string | null;
+          story_count?: number;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          digest_date?: string;
+          id?: string;
+          lede?: string;
+          model?: string;
+          published_at?: string;
+          run_url?: string | null;
+          story_count?: number;
+          title?: string;
+        };
+        Relationships: [];
+      };
+      news_stories: {
+        Row: {
+          category: string;
+          created_at: string;
+          digest_id: string;
+          headline_ar: string;
+          id: string;
+          position: number;
+          region: string;
+          source_id: string;
+          source_name: string;
+          source_published_at: string | null;
+          source_url: string;
+          summary_ar: string;
+          why_it_matters_ar: string | null;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          digest_id: string;
+          headline_ar: string;
+          id?: string;
+          position: number;
+          region: string;
+          source_id: string;
+          source_name: string;
+          source_published_at?: string | null;
+          source_url: string;
+          summary_ar: string;
+          why_it_matters_ar?: string | null;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          digest_id?: string;
+          headline_ar?: string;
+          id?: string;
+          position?: number;
+          region?: string;
+          source_id?: string;
+          source_name?: string;
+          source_published_at?: string | null;
+          source_url?: string;
+          summary_ar?: string;
+          why_it_matters_ar?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'news_stories_digest_id_fkey';
+            columns: ['digest_id'];
+            isOneToOne: false;
+            referencedRelation: 'news_digests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notifications: {
         Row: {
           body: string | null;
