@@ -96,7 +96,7 @@ export function NewsFilters({
           type="search"
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="ابحث في أخبار آخر 30 يوماً"
+          placeholder="ابحث في أخبار آخر 30 يومًا"
           className="w-full rounded-2xl border border-border/60 bg-card/85 py-3 pe-12 ps-11 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         />
         {query ? (
