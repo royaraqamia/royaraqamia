@@ -1928,6 +1928,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      bulk_publish_posts: {
+        Args: { p_post_ids: string[]; p_publish: boolean };
+        Returns: string[];
+      };
       create_consultation_booking: {
         Args: {
           p_email?: string;
@@ -2013,6 +2017,10 @@ export type Database = {
         Returns: Json;
       };
       materialize_due_recurring_expenses: { Args: never; Returns: boolean };
+      publish_post: {
+        Args: { p_fields?: Json; p_post_id: string };
+        Returns: string;
+      };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;
@@ -2038,8 +2046,20 @@ export type Database = {
         };
         Returns: undefined;
       };
+      restore_post: {
+        Args: { p_snapshot: Json };
+        Returns: string;
+      };
+      schedule_post: {
+        Args: { p_post_id: string; p_publish_at: string };
+        Returns: string;
+      };
       send_daily_habit_reminders: { Args: never; Returns: undefined };
       send_recovery_nudges: { Args: never; Returns: undefined };
+      set_post_featured: {
+        Args: { p_featured: boolean; p_post_id: string };
+        Returns: string;
+      };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
       slugify_username: { Args: { raw: string }; Returns: string };
@@ -2060,6 +2080,7 @@ export type Database = {
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
       transliterate_arabic: { Args: { raw: string }; Returns: string };
+      unpublish_post: { Args: { p_post_id: string }; Returns: string };
       upsert_category: {
         Args: {
           p_client_id: string;

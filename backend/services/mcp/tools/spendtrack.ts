@@ -6,6 +6,8 @@ import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from
 import { requireAnyScope, requireUserId } from './guards';
 import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { createPlanGate } from '@/backend/config/plans';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import type { SpendtrackExpenseUpdateInput } from '@/backend/services/spendtrack/spendtrack-service';
 import {
   buildPaginationMeta,
@@ -538,6 +540,12 @@ export async function setBudgetHandler(
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Setting a budget');
     const service = createSpendtrackService(ctx.supabase as never);
+
+    // An update to an existing month/category is not a new slot, so the create
+    // cap only guards the first budget written for a pair — the same exemption
+    // the HTTP controller makes (#526). The database trigger enforces the rest.
+    const existing = await service.getBudget(userId, params.month, params.category_id ?? null);
+    if (!existing) await createPlanGate().cap(userId, OWNED_ITEMS.budgets);
 
     await service.setBudget(userId, params.month, params.amount, params.category_id ?? null);
     const output = {

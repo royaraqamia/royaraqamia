@@ -197,6 +197,12 @@ export class UsageService {
    * their allowance is reported as unlimited; existing over-cap data is
    * grandfathered by construction — the check runs before a new item is added,
    * never over what the account already holds.
+   *
+   * This is a fast refusal, not the enforcement point (#526): the row-level
+   * trigger in Postgres does the same count inside the writing transaction and
+   * under an advisory lock, so a direct Data API write or two concurrent creates
+   * cannot outrun it. What this adds on the happy path is the upgrade nudge
+   * before any work happens.
    */
   async assertOwnedItemCap(userId: string, item: OwnedItemKey, incoming = 1): Promise<UsageState> {
     const state = await this.repository.getState(userId);

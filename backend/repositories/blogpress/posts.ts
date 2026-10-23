@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/backend/models/database.types';
+import type { Database, Json } from '@/backend/models/database.types';
 import type {
   Post,
   PostSummary,
@@ -449,6 +449,11 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async updatePost(postId: string, authorId: string, data: PostInput): Promise<void> {
       // Never spread `data`: its camelCase offline fields are not DB columns and
       // PostgREST rejects them (PGRST204). Build the payload column by column.
+      //
+      // `status` and `publish_at` are deliberately absent: `posts` treats them as
+      // server-owned, a database trigger refuses a client write that moves them
+      // (#526), and every transition has its own endpoint — publish,
+      // save-and-publish, unpublish and schedule call the gated RPCs below.
       const payload: Database['public']['Tables']['posts']['Update'] = {
         updated_at: data.updatedAt ?? new Date().toISOString(),
         ...(data.slug !== undefined ? { slug: data.slug } : {}),
@@ -458,8 +463,6 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         ...(data.cover_image !== undefined ? { cover_image: data.cover_image } : {}),
         ...(data.meta_title !== undefined ? { meta_title: data.meta_title } : {}),
         ...(data.meta_desc !== undefined ? { meta_desc: data.meta_desc } : {}),
-        ...(data.status !== undefined ? { status: data.status } : {}),
-        ...(data.publish_at !== undefined ? { publish_at: data.publish_at } : {}),
         ...(data.clientId !== undefined ? { client_id: data.clientId } : {}),
       };
 
@@ -479,93 +482,80 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       }
     },
 
+    /**
+     * Publish a draft, optionally saving the editor's fields in the same write.
+     *
+     * The transition runs in `public.publish_post` (SECURITY DEFINER, #526): it
+     * resolves the author from `auth.uid()`, checks the published cap in the same
+     * transaction and sets the server-owned columns, so neither the browser's
+     * publishable key nor the MCP bridge session can reach that state any other
+     * way. `authorId` stays in the signature for the callers' contract; the
+     * database is what scopes the row.
+     */
     async saveAndPublishPost(
       postId: string,
-      authorId: string,
+      _authorId: string,
       data: PostInput
     ): Promise<{ slug: string }> {
-      const { data: updated, error } = await supabase
-        .from('posts')
-        .update({
-          slug: data.slug,
-          ...(data.content !== undefined
-            ? { content: data.content, reading_time_minutes: estimateReadingTime(data.content) }
-            : {}),
-          ...(data.cover_image !== undefined ? { cover_image: data.cover_image } : {}),
-          ...(data.meta_title !== undefined ? { meta_title: data.meta_title } : {}),
-          ...(data.meta_desc !== undefined ? { meta_desc: data.meta_desc } : {}),
-          status: 'published',
-          published_at: new Date().toISOString(),
-          community_visible: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', postId)
-        .eq('author_id', authorId)
-        .select('slug')
-        .single();
+      // The editor-owned columns only: the RPC sets the publication ones.
+      type PublishFields = Pick<
+        Database['public']['Tables']['posts']['Update'],
+        'slug' | 'content' | 'reading_time_minutes' | 'cover_image' | 'meta_title' | 'meta_desc'
+      >;
 
-      if (error) throw new Error('فشل نشر المنشور');
+      const fields: PublishFields = {
+        slug: data.slug,
+        ...(data.content !== undefined
+          ? { content: data.content, reading_time_minutes: estimateReadingTime(data.content) }
+          : {}),
+        ...(data.cover_image !== undefined ? { cover_image: data.cover_image } : {}),
+        ...(data.meta_title !== undefined ? { meta_title: data.meta_title } : {}),
+        ...(data.meta_desc !== undefined ? { meta_desc: data.meta_desc } : {}),
+      };
 
-      return { slug: updated.slug };
+      const { data: slug, error } = await supabase.rpc('publish_post', {
+        p_post_id: postId,
+        p_fields: fields as Json,
+      });
+
+      if (error || !slug) throw new Error('فشل نشر المنشور');
+
+      return { slug };
     },
 
-    async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
-      const { data, error } = await supabase
-        .from('posts')
-        .update({
-          status: 'published',
-          published_at: new Date().toISOString(),
-          community_visible: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', postId)
-        .eq('author_id', authorId)
-        .select('slug')
-        .single();
+    async publishPost(postId: string, _authorId: string): Promise<{ slug: string }> {
+      const { data: slug, error } = await supabase.rpc('publish_post', {
+        p_post_id: postId,
+      });
 
-      if (error) throw new Error('فشل نشر المنشور');
+      if (error || !slug) throw new Error('فشل نشر المنشور');
 
-      return { slug: data.slug };
+      return { slug };
     },
 
-    async unpublishPost(postId: string, authorId: string): Promise<{ slug: string }> {
-      const { data, error } = await supabase
-        .from('posts')
-        .update({
-          status: 'draft',
-          published_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', postId)
-        .eq('author_id', authorId)
-        .select('slug')
-        .single();
+    async unpublishPost(postId: string, _authorId: string): Promise<{ slug: string }> {
+      const { data: slug, error } = await supabase.rpc('unpublish_post', {
+        p_post_id: postId,
+      });
 
-      if (error) throw new Error('فشل إلغاء نشر المنشور');
+      if (error || !slug) throw new Error('فشل إلغاء نشر المنشور');
 
-      return { slug: data.slug };
+      return { slug };
     },
 
     async schedulePost(
       postId: string,
-      authorId: string,
+      _authorId: string,
       publishAt: string
     ): Promise<{ slug: string }> {
-      const { data, error } = await supabase
-        .from('posts')
-        .update({
-          status: 'scheduled',
-          publish_at: publishAt,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', postId)
-        .eq('author_id', authorId)
-        .select('slug')
-        .single();
+      const { data: slug, error } = await supabase.rpc('schedule_post', {
+        p_post_id: postId,
+        p_publish_at: publishAt,
+      });
 
-      if (error) throw new Error('فشل جدولة المنشور');
+      if (error || !slug) throw new Error('فشل جدولة المنشور');
 
-      return { slug: data.slug };
+      return { slug };
     },
 
     async deletePost(
@@ -595,39 +585,29 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { slug: data?.slug ?? null };
     },
 
-    async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
-      const { data, error } = await supabase
-        .from('posts')
-        .insert({
-          author_id: authorId,
-          slug: snapshot.slug,
-          content: snapshot.content,
-          status: snapshot.status,
-          cover_image: snapshot.cover_image,
-          meta_title: snapshot.meta_title,
-          meta_desc: snapshot.meta_desc,
-          published_at: snapshot.published_at,
-          publish_at: snapshot.publish_at,
-          view_count: snapshot.view_count,
-          featured: snapshot.featured,
-          community_visible: snapshot.community_visible,
-          reading_time_minutes: snapshot.reading_time_minutes,
-          updated_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
+    /**
+     * Undo a delete by re-inserting the Local Store snapshot (ADR-0060).
+     *
+     * The row carries server-owned columns, so the insert runs in
+     * `public.restore_post` (#526): the author comes from `auth.uid()`, views
+     * start at zero, and `featured`/`community_visible` are decided server-side
+     * rather than trusted from a client-held snapshot.
+     */
+    async restorePost(_authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
+      const { data: id, error } = await supabase.rpc('restore_post', {
+        p_snapshot: snapshot,
+      });
 
-      if (error) throw new Error('فشل استرجاع المنشور');
+      if (error || !id) throw new Error('فشل استرجاع المنشور');
 
-      return { id: data.id };
+      return { id };
     },
 
-    async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {
-      const { error } = await supabase
-        .from('posts')
-        .update({ featured, updated_at: new Date().toISOString() })
-        .eq('id', postId)
-        .eq('author_id', authorId);
+    async setPostFeatured(postId: string, _authorId: string, featured: boolean): Promise<void> {
+      const { error } = await supabase.rpc('set_post_featured', {
+        p_post_id: postId,
+        p_featured: featured,
+      });
 
       if (error) throw new Error('فشل تحديث تثبيت المنشور');
     },
@@ -789,33 +769,18 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         return { affected: deleted.length, slugs: deleted.map((row) => row.slug) };
       }
 
-      const update = (
-        action === 'publish'
-          ? {
-              status: 'published' as const,
-              published_at: new Date().toISOString(),
-              community_visible: true,
-              updated_at: new Date().toISOString(),
-            }
-          : {
-              status: 'draft' as const,
-              published_at: null,
-              updated_at: new Date().toISOString(),
-            }
-      ) satisfies Partial<Database['public']['Tables']['posts']['Row']> & {
-        published_at: string | null;
-      };
-
-      const { data: updated, error } = await supabase
-        .from('posts')
-        .update(update)
-        .in('id', postIds)
-        .eq('author_id', authorId)
-        .select('slug');
+      // The status transition is server-owned (#526), so the batch runs in
+      // `bulk_publish_posts`: one published-cap check for the rows that are not
+      // already published, one update, author resolved from `auth.uid()`.
+      const { data: updated, error } = await supabase.rpc('bulk_publish_posts', {
+        p_post_ids: postIds,
+        p_publish: action === 'publish',
+      });
 
       if (error) throw new Error('فشل تحديث حالة المنشورات');
 
-      return { affected: updated.length, slugs: updated.map((row) => row.slug) };
+      const slugs = updated ?? [];
+      return { affected: slugs.length, slugs };
     },
 
     async bulkSetPostCategories(

@@ -199,6 +199,11 @@ export class SupabaseUsageRepository implements UsageRepository {
    * product rule on top of ordinary tables, and a `count` per create keeps the
    * data model untouched. Tombstones are excluded — a deleted habit still grows
    * the history table, but it no longer holds a slot.
+   *
+   * This count feeds the fast pre-check only. The enforcement is the row-level
+   * trigger in Postgres (`private.assert_owned_item_cap`, #526), which counts and
+   * writes in one transaction; the two agree on every case listed here because
+   * `private.owned_item_count` is the same map.
    */
   async countOwned(item: OwnedItemKey, userId: string): Promise<number> {
     switch (item) {
