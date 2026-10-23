@@ -214,3 +214,32 @@ left open, decided here:
   judged worse than the occasional extra credit in a generous window, and the
   spend is visible on the account card. Local-counter reports are the exception:
   they are deduplicated by design.
+
+## Amendment (2026-10-23): "enforceable on the server" means in Postgres
+
+The amendment above treated `PlanGate` as the enforcement point. It is not: the
+caps were counted in Node and the row inserted afterwards, in another
+transaction, and the browser is handed the project URL and the publishable key,
+so an `authenticated` caller could write past them through the Data API, and two
+concurrent creates could outrun the count even through the app (#526).
+
+- **The row-level trigger is the cap.** Every capped owned item has a
+  `BEFORE INSERT OR UPDATE` trigger that counts the owner's live rows under an
+  advisory lock keyed on `(user_id, item)`, reads the effective plan from
+  `private.plan_window` and the caps from `plan_limits`, and refuses the write.
+  The count and the insert are one transaction, which is the property Node could
+  not give.
+- **`PlanGate.cap` survives as a fast refusal**, so the common case still answers
+  the upgrade nudge before doing any work. It is not what makes the rule true.
+- **Grandfathering is unchanged.** Only a new row or a tombstone revival is
+  checked; a live row being edited is not a new slot. Deleting still frees one.
+- **The publication columns belong to the server.** `status`, `published_at`,
+  `community_visible`, `view_count` and `featured` on `posts` are refused to the
+  `authenticated` role, and the transitions (publish, save-and-publish,
+  unpublish, schedule, feature, bulk publish, restore) run in `SECURITY DEFINER`
+  functions that scope by `auth.uid()`. HTTP, MCP and the offline replay
+  therefore take the same gated path, and none of them needs the service-role
+  key.
+- **Credits stay where they were.** The meter is still the request layer's, which
+  is why a publish is charged once; only the standing caps and the publication
+  rules moved into the write.
