@@ -1,4 +1,5 @@
 import { ConsultationBookingPage } from '@/frontend/ui/consultation/consultation-booking-page';
+import { ServiceDiscountProvider } from '@/frontend/ui/plans/pro-price';
 
 /**
  * A data-free shell since #450: the package read and the optional sign-in notice
@@ -8,5 +9,9 @@ import { ConsultationBookingPage } from '@/frontend/ui/consultation/consultation
  * booking stays online-only — a shell never queues a scarce slot (ADR-0031).
  */
 export default function ConsultationBookPage() {
-  return <ConsultationBookingPage />;
+  return (
+    <ServiceDiscountProvider>
+      <ConsultationBookingPage />
+    </ServiceDiscountProvider>
+  );
 }
