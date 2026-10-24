@@ -84,22 +84,16 @@ describe('blogpress post transitions go through the gated RPCs', () => {
     );
   });
 
-  it('restorePost re-inserts the snapshot through restore_post, never as a client insert', async () => {
+  it('restorePost revives the tombstone through restore_post, never as a client insert', async () => {
     const { client, rpc, from } = rpcClient({ data: 'post-id', error: null });
 
     const snapshot = {
+      id: 'post-id',
       slug: 'hello',
       content: 'body',
-      status: 'published' as const,
       cover_image: null,
       meta_title: null,
       meta_desc: null,
-      published_at: '2026-10-01T09:00:00Z',
-      publish_at: null,
-      view_count: 12,
-      featured: true,
-      community_visible: true,
-      reading_time_minutes: 1,
     };
 
     await expect(createPostsRepository(client).restorePost('u1', snapshot)).resolves.toEqual({
@@ -108,6 +102,23 @@ describe('blogpress post transitions go through the gated RPCs', () => {
 
     expect(rpc).toHaveBeenCalledWith('restore_post', { p_snapshot: snapshot });
     expect(from).not.toHaveBeenCalled();
+  });
+
+  it('a restore with no owned tombstone is a 404, not an infrastructure failure', async () => {
+    const { client } = rpcClient({
+      data: null,
+      error: { message: 'deleted post not found', code: 'P0002' },
+    });
+
+    await expect(
+      createPostsRepository(client).restorePost('u1', {
+        slug: 'hello',
+        content: 'body',
+        cover_image: null,
+        meta_title: null,
+        meta_desc: null,
+      })
+    ).rejects.toMatchObject({ statusCode: 404, message: 'المنشور المحذوف غير موجود' });
   });
 
   it('bulk publish and unpublish run in one bulk_publish_posts call', async () => {
