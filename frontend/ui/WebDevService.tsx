@@ -5,6 +5,7 @@ import {
   PROJECT_REQUEST_WEBSITE_START_PRICE_USD,
 } from '@/shared/contracts/project-requests';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
+import { ProPrice } from './plans/pro-price';
 import { Button } from './primitives/button';
 import { MotionReveal } from './MotionReveal';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
@@ -89,9 +90,11 @@ export function WebDevService() {
                   <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
                     يبدأ من
                   </span>
-                  <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    {`$${PROJECT_REQUEST_WEBSITE_START_PRICE_USD}`}
-                  </div>
+                  <ProPrice
+                    amountUsd={PROJECT_REQUEST_WEBSITE_START_PRICE_USD}
+                    className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono"
+                    originalClassName="text-base font-bold text-foreground/40 font-mono"
+                  />
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
                   </div>
@@ -115,9 +118,11 @@ export function WebDevService() {
                   <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
                     يبدأ من
                   </span>
-                  <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    {`$${PROJECT_REQUEST_APP_START_PRICE_USD}`}
-                  </div>
+                  <ProPrice
+                    amountUsd={PROJECT_REQUEST_APP_START_PRICE_USD}
+                    className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono"
+                    originalClassName="text-base font-bold text-foreground/40 font-mono"
+                  />
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
                   </div>
@@ -143,9 +148,11 @@ export function WebDevService() {
                   <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
                     فقط شهريًّا
                   </span>
-                  <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    {`$${RETAINER_DEFAULT_MONTHLY_FEE_USD}`}
-                  </div>
+                  <ProPrice
+                    amountUsd={RETAINER_DEFAULT_MONTHLY_FEE_USD}
+                    className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono"
+                    originalClassName="text-base font-bold text-foreground/40 font-mono"
+                  />
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     لتطوير وإدارة مشاريعك
                   </div>

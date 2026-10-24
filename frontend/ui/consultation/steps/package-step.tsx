@@ -3,6 +3,7 @@
 import { CheckCircle, Clock } from 'lucide-react';
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import { cn } from '@/frontend/shared/cn';
+import { ProPrice } from '@/frontend/ui/plans/pro-price';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 interface PackageStepProps {
@@ -66,9 +67,11 @@ export function PackageStep({ packages, selectedId, onSelect, error, onRetry }: 
             )}
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-auto">
-              <span className="text-2xl font-black bg-linear-to-l from-purple-500 to-indigo-400 bg-clip-text text-transparent">
-                ${pkg.price_usd}
-              </span>
+              <ProPrice
+                amountUsd={pkg.price_usd}
+                className="text-2xl font-black bg-linear-to-l from-purple-500 to-indigo-400 bg-clip-text text-transparent"
+                originalClassName="text-sm font-medium text-muted-foreground"
+              />
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="size-3.5" />
                 {pkg.duration_minutes} دقيقة للجلسة

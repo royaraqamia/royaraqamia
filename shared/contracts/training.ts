@@ -20,7 +20,8 @@ export interface TrainingCourse {
   trainer: string;
   duration: string;
   sessions: string;
-  price: string;
+  /** The advertised fee in USD; the subscriber price is derived from it. */
+  priceUsd: number;
   /** Whether applications are currently being accepted. */
   isOpen: boolean;
 }
@@ -39,7 +40,7 @@ export const TRAINING_COURSE: TrainingCourse = {
   trainer: 'م. أيْهَم العَلي',
   duration: '27 ساعة',
   sessions: '18 جلسة',
-  price: '$50',
+  priceUsd: 50,
   isOpen: true,
 };
 
