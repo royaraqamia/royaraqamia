@@ -160,7 +160,10 @@ jobs:
       - name: Plan — DeepSeek 4.1 Flash (Analyze and specify)
         id: plan
         if: steps.guard.outputs.run == 'true'
-        timeout-minutes: 35
+        # 35 minutes was not enough: run 40056488448 hit the wall at loop step 55
+        # with an `explore` subagent still reading ADRs, so the run died mid-analysis
+        # and nothing was published. The job allows 60; setup costs ~1 minute.
+        timeout-minutes: 50
         uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -171,7 +174,9 @@ jobs:
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
           model: opencode-go/deepseek-v4.1-flash
-          variant: high
+          # No `variant: high` here on purpose. The planner maps the repo rather than
+          # holding a long reasoning chain, and `high` is what turned a scan into a
+          # 55-step loop that outran the step timeout.
           share: 'false'
           prompt: |
             You are the Issue Planner for this repository (Next.js App Router + React 19 + TypeScript strict, Arabic-RTL SaaS, Supabase Postgres). You run unattended on a schedule. Do NOT run any git commands. Do NOT modify the working tree. Your only deliverable is a JSON file at /tmp/issues.json.
@@ -182,19 +187,18 @@ jobs:
             ${{ steps.context.outputs.context }}
             </current-state>
 
-            Skills: before starting, load these skills using the skill tool:
-            - `supabase` — database, auth, RLS and migration guidance
-            - `supabase-postgres-best-practices` — schema, indexes, RLS and migration rules
-            - `vercel-react-best-practices` — React/Next.js performance patterns
-            - `codebase-design` — architecture and deepening vocabulary
-            - `diagnosing-bugs` — load if a candidate finding looks like a real bug
+            Skills: load only the ones that match what you are about to scan — every skill is a
+            round trip, and this run has a wall clock:
+            - `supabase` and `supabase-postgres-best-practices` — load before any database,
+              RLS or migration finding
+            - `diagnosing-bugs` — load when a candidate finding looks like a real bug
 
             Connected tooling (installed for this run, authenticated by environment):
             - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only to ground findings in real deployments: `vercel ls --format json`, `vercel inspect <url> --logs`, `vercel env ls`. Do not deploy.
             - The Supabase MCP server is the only database surface: inspect with `list_tables`, `list_migrations` and `get_advisors`. Do not attempt database work through any other channel.
 
             Steps:
-            1. Read CONTEXT.md and the ADRs in docs/adr/ that touch the area you are about to scan (per docs/agents/domain.md), and use the glossary's vocabulary in every issue you write.
+            1. Read CONTEXT.md, then at most three ADRs in docs/adr/ whose title touches the area you are about to scan (per docs/agents/domain.md) — grep for the terms, do not read the directory. Use the glossary's vocabulary in every issue you write.
             2. Scan the codebase for concrete, high-confidence work items: correctness bugs, security gaps, missing error handling, performance regressions, RLS gaps, missing indexes, accessibility gaps, and small well-scoped improvements. Ground any database finding in reality with the supabase MCP tools (list_tables, list_migrations, get_advisors). Ignore speculative or cosmetic nitpicks.
             3. De-duplicate ruthlessly against the current state above: drop any finding already covered by an open issue or an open pull request, and drop near-duplicates of an existing issue rather than re-filing them.
             4. Keep at most the 5 highest-impact findings. A short list beats an exhaustive one.
