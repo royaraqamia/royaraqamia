@@ -42,3 +42,11 @@ reader sees and a stale row must stay editable. The catalogue is read from the s
 - **No account row; remember the selection in the browser.** Rejected: the selection is meant to
   follow the reader across devices, the account area already owns preferences, and an anonymous
   visitor can read the whole digest without one.
+
+## Amendment (2026-10-24): the page no longer announces the fallback
+
+The floor still applies — a selection that leaves fewer than three stories shows the full digest —
+but `/news` no longer says so. The digest's summary card (date, title, lede, story count and the
+last-updated line) came off the page, and the fallback notice lived inside that card, so the page now
+opens straight onto the story list. The narrow-to-selection behaviour and the "search is not
+narrowed" rule are unchanged.

@@ -16,6 +16,7 @@ import {
   type NewsBoard,
   type NewsPersonalView,
   type NewsQuery,
+  type NewsSearchSuggestions,
   type NewsSourcePreferences,
 } from '@/shared/contracts/news';
 
@@ -112,7 +113,6 @@ export async function loadNewsBoard(
   view: NewsView = 'mine'
 ): Promise<NewsBoard> {
   const query = parseNewsQuery(params);
-
   try {
     const reader = await readReader();
     const shared = await loadSharedBoard(query, reader?.preferences.sourceIds ?? null);
@@ -152,4 +152,18 @@ export async function loadNewsBoard(
     logger.error('Failed to load the news board', { error: String(error) });
     return EMPTY_BOARD;
   }
+}
+
+/**
+ * Story suggestions for the `/news` search combobox.
+ *
+ * Not cached: it is keyed on the visitor's keystrokes and served on the request
+ * path. A read failure is thrown rather than answered as "no results", so the
+ * combobox can name the failure instead of implying the month is empty
+ * (ADR-0031).
+ */
+export async function loadNewsSearch(term: string): Promise<NewsSearchSuggestions> {
+  const service = createNewsServiceFor(getPublicSupabase());
+  const hits = await service.searchSuggestions(term);
+  return { hits };
 }

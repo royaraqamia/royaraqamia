@@ -279,11 +279,37 @@ export interface NewsPreferencesEffect {
 
 export const NEWS_SEARCH_LIMIT = 60;
 
+/** How many suggestions the search combobox shows above the "view all" row. */
+export const NEWS_SEARCH_SUGGESTION_LIMIT = 8;
+
 /** `YYYY-MM-DD`, the only date form the page accepts in its URL. */
 export const NEWS_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+export const NEWS_SEARCH_QUERY_MAX_LENGTH = 80;
+
+/**
+ * The combobox's `q`: blank is valid and means "no search" (the route answers
+ * empty without touching the database); a real query is 1..80 after trimming.
+ */
+export const newsSearchQuerySchema = z.object({
+  q: z
+    .string()
+    .trim()
+    .max(
+      NEWS_SEARCH_QUERY_MAX_LENGTH,
+      `عبارة البحث طويلة جداً: الحدّ الأقصى ${NEWS_SEARCH_QUERY_MAX_LENGTH} حرفًا.`
+    ),
+});
+
+export type NewsSearchQuery = z.infer<typeof newsSearchQuerySchema>;
+
+/** The retained-month stories matching one term, for the search combobox. */
+export interface NewsSearchSuggestions {
+  hits: NewsSearchHit[];
+}
+
 export const newsQuerySchema = z.object({
-  q: z.string().trim().max(80).optional().catch(undefined),
+  q: z.string().trim().max(NEWS_SEARCH_QUERY_MAX_LENGTH).optional().catch(undefined),
   category: z.enum(NEWS_CATEGORIES).optional().catch(undefined),
   date: z.string().regex(NEWS_DATE_PATTERN).optional().catch(undefined),
 });

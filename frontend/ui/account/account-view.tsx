@@ -24,12 +24,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { AccountRow } from '@/frontend/ui/account/account-row';
 import { UsageCard } from '@/frontend/ui/account/usage-card';
@@ -90,14 +85,7 @@ export function AccountView() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
             <User size={24} />
           </div>
-          <div className="space-y-1">
-            <p className="text-base font-bold text-foreground sm:text-lg">
-              سجِّل الدُّخول إلى حسابك
-            </p>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              تابع طلباتك وبياناتك الشَّخصيَّة بعد تسجيل الدُّخول
-            </p>
-          </div>
+          <p className="text-base font-bold text-foreground sm:text-lg">سجِّل الدُّخول إلى حسابك</p>
           <SignInCta href="/auth/login?redirect=/account" className="mt-1 w-full sm:w-auto" />
         </section>
       ) : (
@@ -255,17 +243,12 @@ export function AccountView() {
           if (!next) setPromptHref(null);
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
               <Lock size={24} />
             </div>
-            <div className="space-y-1.5">
-              <DialogTitle className="leading-snug!">سجِّل الدُّخول للمتابعة</DialogTitle>
-              <DialogDescription className="text-pretty">
-                هذا القسم يتبع حسابك. سجِّل الدُّخول لعرضه ومزامنته على كلِّ أجهزتك.
-              </DialogDescription>
-            </div>
+            <DialogTitle className="leading-snug!">سجِّل الدُّخول للمتابعة</DialogTitle>
           </div>
 
           <DialogActions onCancel={() => setPromptHref(null)}>

@@ -1,8 +1,7 @@
 'use client';
 
-import { Search, X } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useTransition } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
 import { NEWS_CATEGORY_ICONS } from './news-format';
@@ -16,6 +15,7 @@ interface NewsFiltersProps {
   /** The selected day, or null for "latest". */
   date: string | null;
   category: NewsCategory | null;
+  /** The committed search term, kept across a chip or day change. */
   query: string;
   /** Every retained day, newest first, for the archive strip. */
   dates: string[];
@@ -30,9 +30,10 @@ interface NewsFiltersProps {
  *
  * Every control pushes a new `searchParams` value and the server component
  * re-renders, so a filtered view is shareable, back/forward works, and the page
- * needs no client-side copy of the digest. `replace` rather than `push` for the
- * day strip keeps a long archive walk out of the history stack; the search box
- * does push, because a query is a destination a reader returns to.
+ * needs no client-side copy of the digest. `replace` rather than `push` keeps a
+ * long archive walk out of the history stack; the search box (`NewsSearch`) owns
+ * the query itself and pushes, because a query is a destination a reader
+ * returns to.
  */
 export function NewsFilters({
   date,
@@ -45,72 +46,25 @@ export function NewsFilters({
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const [term, setTerm] = useState(query);
 
-  // The server is the source of truth (back/forward, a cleared query), so the
-  // field follows the URL rather than owning the value.
-  useEffect(() => {
-    setTerm(query);
-  }, [query]);
-
-  const navigate = (next: {
-    q?: string | null;
-    category?: NewsCategory | null;
-    date?: string | null;
-    push?: boolean;
-  }) => {
+  const navigate = (next: { category?: NewsCategory | null; date?: string | null }) => {
     const params = new URLSearchParams();
-    const nextQuery = next.q === undefined ? query : next.q;
     const nextCategory = next.category === undefined ? category : next.category;
     const nextDate = next.date === undefined ? date : next.date;
 
-    if (nextQuery) params.set('q', nextQuery);
+    if (query) params.set('q', query);
     if (nextCategory) params.set('category', nextCategory);
     // A search spans every retained day, so it supersedes the selected one.
-    if (nextDate && !nextQuery) params.set('date', nextDate);
+    if (nextDate && !query) params.set('date', nextDate);
 
     const href = params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
     startTransition(() => {
-      if (next.push) router.push(href, { scroll: false });
-      else router.replace(href, { scroll: false });
+      router.replace(href, { scroll: false });
     });
-  };
-
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    navigate({ q: term.trim() || null, date: null, push: true });
   };
 
   return (
     <div className={cn('space-y-4', isPending && 'opacity-60')} aria-busy={isPending}>
-      <form onSubmit={submitSearch} role="search" className="relative">
-        <label htmlFor="news-search" className="sr-only">
-          ابحث في الأخبار
-        </label>
-        <Search
-          className="pointer-events-none absolute inset-y-0 start-4 my-auto h-4 w-4 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <input
-          id="news-search"
-          type="search"
-          value={term}
-          onChange={(event) => setTerm(event.target.value)}
-          placeholder="ابحث في أخبار آخر 30 يومًا"
-          className="w-full rounded-2xl border border-border/60 bg-card/85 py-3 pe-12 ps-11 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-        />
-        {query ? (
-          <button
-            type="button"
-            onClick={() => navigate({ q: null, date: null })}
-            aria-label="مسح البحث"
-            className="absolute inset-y-0 end-3 my-auto flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        ) : null}
-      </form>
-
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

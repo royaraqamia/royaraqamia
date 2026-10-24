@@ -243,9 +243,6 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                     <p className="text-sm font-bold text-foreground">
                       سجِّل الدُّخول لمتابعة إشعاراتك
                     </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      تابع التَّنبيهات الخاصَّة بحسابك بعد تسجيل الدُّخول
-                    </p>
                     <SignInCta href={loginHref} onClick={() => setIsOpen(false)} className="mt-4" />
                   </div>
                 ) : isLoading ? (
