@@ -20,7 +20,7 @@
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { buildPrompt } from './build-prompt.mjs';
 
