@@ -23,10 +23,9 @@ describe('ProPrice', () => {
 
     expect(screen.getByText('$50')).toBeInTheDocument();
     expect(screen.queryByText('$40')).not.toBeInTheDocument();
-    expect(screen.queryByText('خصم المشتركين 20%')).not.toBeInTheDocument();
   });
 
-  it('quotes the subscriber price beside the struck list price and the badge', () => {
+  it('quotes the subscriber price beside the struck list price, with no badge', () => {
     const { container } = render(
       <ServiceDiscountProvider initialIsPro>
         <ProPrice amountUsd={50} />
@@ -35,7 +34,7 @@ describe('ProPrice', () => {
 
     expect(screen.getByText('$40')).toBeInTheDocument();
     expect(screen.getByText('$50')).toBeInTheDocument();
-    expect(screen.getByText('خصم المشتركين 20%')).toBeInTheDocument();
+    expect(screen.queryByText('خصم المشتركين 20%')).not.toBeInTheDocument();
     expect(container.querySelector('s')?.textContent).toBe('$50');
   });
 
@@ -48,16 +47,5 @@ describe('ProPrice', () => {
 
     expect(screen.getByText('$22')).toBeInTheDocument();
     expect(screen.getByText('$27.5')).toBeInTheDocument();
-  });
-
-  it('can drop the badge where the row is already busy', () => {
-    render(
-      <ServiceDiscountProvider initialIsPro>
-        <ProPrice amountUsd={300} showBadge={false} />
-      </ServiceDiscountProvider>
-    );
-
-    expect(screen.getByText('$240')).toBeInTheDocument();
-    expect(screen.queryByText('خصم المشتركين 20%')).not.toBeInTheDocument();
   });
 });
