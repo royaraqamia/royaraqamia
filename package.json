@@ -44,6 +44,8 @@
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",
     "perf:field": "node scripts/perf-field.mjs",
+    "perf:paint": "node scripts/perf-paint.mjs",
+    "perf:paint:update": "node scripts/perf-paint.mjs --update",
     "prune:deployments": "node scripts/prune-deployments.mjs",
     "android:sync": "cap sync android",
     "android:apk": "npm run android:sync && node scripts/android.mjs apk",

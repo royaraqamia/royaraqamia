@@ -167,8 +167,8 @@ log query (#487).
 - **`shell`** is the app chrome's first committed frame, marked once by
   `AppPerfObserver` in the root layout.
 - **`content`** is owned rows painted from the Local Store, marked by the product
-  dashboards (SpendTrack, HabitFlow, BlogPress, LinkSnap) — the surfaces ADR-0073
-  made cached shells.
+  dashboards (SpendTrack, HabitFlow, BlogPress, LinkSnap) and by the Quran reader
+  — the surfaces ADR-0073 made cached shells.
 - **`tap` → `paint`** brackets a local mutation's tap to the first frame after it
   updated the UI. Today that is the HabitFlow check-in (optimistic) and LinkSnap's
   link create (write → store subscriber → repaint); a new site is one
@@ -230,6 +230,70 @@ number does.
 A launch only sends when a content surface paints owned rows; a public/SEO route
 sends nothing, and neither does a dashboard that never paints (that case is the
 skeleton in its own state, not a sample).
+
+### The paint gate
+
+The field numbers above are the authority for real devices, and they cannot fail
+a pull request — no log query runs in CI, and the Hobby plan keeps an hour of
+logs. `e2e/perf-paint.spec.ts` is the web-side gate that closes that gap: it
+measures the same marks, on a build, before the change ships.
+
+```bash
+npm run perf:paint             # build, measure every budgeted surface, fail on a breach
+npm run perf:paint -- --update # build, measure, then record perf/paint-baseline.json
+npm run perf:paint -- --from <file>  # record from a CI artifact instead
+```
+
+The runner sets `CI=1`, which is what makes Playwright's `webServer` build and
+serve a production build: the worker does not register in development, so a dev
+server would answer every offline reload with nothing and fail the gate for the
+wrong reason.
+
+The `E2E: Offline` workflow runs it and uploads
+`node_modules/.playwright/paint-measurements.json`, which is the file the
+`--from` form takes.
+
+**What each number is here.** The three marks are the ones the client writes, so
+the gate asserts what `/api/app-perf` reports rather than a second definition:
+
+- **cold** — a first visit with the network on, in a fresh context with the
+  service worker blocked. The document genuinely comes over the wire, so the
+  number includes the request a cold open pays.
+- **warm** — an offline reload in a context the worker has taken over. This is the
+  promise ADR-0073 makes, and the strictest reading of "warm".
+- **tap** — one local mutation, driven by the `tap.steps` in the budget file
+  (LinkSnap's link create today). A surface that declares no steps is ungated for
+  that number, with the reason in `tapNote`.
+
+**Two-sided, like every other budget here.** `perf/paint-budget.json` holds an
+absolute ceiling per surface and per number, generous enough for CI noise — the
+"is it broken" line — and `perf/paint-baseline.json` holds the recorded numbers
+the gate compares against with a 10% tolerance (`regressionPct`) — the "did this
+pull request make it worse" line. The ceilings are **not** the program's design
+targets: #486's decision gate (900 ms cold, 150 ms warm, 50 ms tap) stays the
+target, and the ceilings sit two to three times above it on purpose.
+
+**The baseline is recorded where it is enforced.** These numbers are
+machine-sensitive the way `perf/baseline.json` is, so a baseline recorded on a
+laptop and enforced on a GitHub runner would fail every pull request. The file
+ships empty (`recorded: null`), which means the gate enforces the ceilings and
+skips the relative half until someone folds a CI run into it with
+`--from node_modules/.playwright/paint-measurements.json`. It then prints the
+deltas on every later run.
+
+**Flake control, stated rather than tuned away.** The medians come from
+`runs` samples with the first one always discarded (it pays the worker's install
+and the store's first seed); a surface needs the signed-in test account and is
+skipped — not failed — when the secrets are absent, so a fork's run gates Quran
+and nothing else; and the workflow already runs `--workers=1` for its own
+reasons, which is the serialisation this gate needs too.
+
+**Still ungated.** `/device`, the `/account` views, `/scan`, and the public
+snapshots (`/community`, `/rates`, `/verify`, `/u/`, `/news`) have no `content`
+mark yet, so nothing measures their paint path; `docs/specs/surfaces.md` shows an
+empty Paint cell for each, and `perf/surfaces.json` carries an `ungated` reason.
+The account views and the fifth product's remaining routes are #493's; the public
+ones arrive with #555.
 
 ## CI
 

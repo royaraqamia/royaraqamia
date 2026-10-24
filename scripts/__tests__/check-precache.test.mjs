@@ -1,7 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { auditPrecacheRoutes, parsePrecacheScript } from '../generate-sw-precache.mjs';
 import { errorsFor } from '../check-precache.mjs';
 
@@ -37,10 +34,6 @@ function audit(overrides = {}) {
     dynamicByDesign: overrides.dynamicByDesign ?? [],
     maxRoutes: overrides.maxRoutes,
   });
-}
-
-function tempRoot() {
-  return mkdtempSync(join(tmpdir(), 'precache-'));
 }
 
 describe('precache audit', () => {
@@ -80,36 +73,29 @@ describe('precache audit', () => {
 
 describe('precache check', () => {
   it('fails with the route named for an undeclared dynamic page', () => {
-    const root = tempRoot();
-    writeFileSync(join(root, 'placeholder'), '');
     const errors = errorsFor({
       result: { ...audit(), routes: [], truncated: [] },
       scriptSource: null,
-      root,
     });
 
     expect(errors.some((error) => error.includes('/feed'))).toBe(true);
     expect(errors.some((error) => error.includes('/news'))).toBe(true);
   });
 
-  it('fails when the committed script is stale, and says how many either side has', () => {
-    const root = tempRoot();
+  it('fails when the generated script is not what the build selects', () => {
     const result = audit({ dynamicByDesign: ['/news', '/feed'] });
     const errors = errorsFor({
       result,
       scriptSource: 'self.PRECACHE_ROUTES = ["/privacy"];',
-      root,
     });
     expect(errors.some((error) => error.includes('stale'))).toBe(true);
   });
 
   it('passes when the script matches and nothing is undeclared', () => {
-    const root = tempRoot();
     const result = audit({ dynamicByDesign: ['/news', '/feed'] });
     const errors = errorsFor({
       result,
       scriptSource: `self.PRECACHE_ROUTES = ${JSON.stringify(result.routes)};`,
-      root,
     });
     expect(errors).toEqual([]);
   });

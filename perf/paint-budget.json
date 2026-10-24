@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "runs": 3,
+  "regressionPct": 10,
+  "notes": "The ceilings here are the gate's 'is it broken' line, not the program's design target. #486's decision gate is 900 ms cold, 150 ms warm and 50 ms tap (#487); these are roughly two to three times that so a CI runner's noise cannot turn a green pull request red, while a lost shell, a blocking await or a dropped mark still fails. The design targets live in docs/performance.md and are enforced by the field p75, not here. A surface absent from this file is ungated, and docs/specs/surfaces.md says so per row.",
+  "surfaces": [
+    {
+      "id": "habitflow",
+      "path": "/habitflow",
+      "auth": true,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "The check-in toggle that calls beginTap() needs a habit the run creates first; LinkSnap's create gates the same mark until the suite has that fixture."
+    },
+    {
+      "id": "spendtrack",
+      "path": "/spendtrack",
+      "auth": true,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "The expense dialog is a lazy chunk warmed by a first interaction, so its tap is a chunk fetch on a cold dialog; not a paint number yet."
+    },
+    {
+      "id": "linksnap",
+      "path": "/linksnap",
+      "auth": true,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tap": {
+        "ceiling": 140,
+        "steps": [
+          { "action": "fill", "target": "#original-url", "value": "https://example.com/perf-tap" },
+          { "action": "fill", "target": "#custom-code", "value": "e2e{{run}}" },
+          { "action": "click", "target": "#btn-shorten-url" }
+        ],
+        "cleanup": "/linksnap/api/links?code=e2e{{run}}"
+      }
+    },
+    {
+      "id": "blogpress",
+      "path": "/blogpress",
+      "auth": true,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "The dashboard has no local mutation of its own; its editor is a separate dynamic route."
+    },
+    {
+      "id": "quran",
+      "path": "/quran",
+      "auth": false,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "Reading is not a local write: a position is saved off the paint path, so there is no optimistic frame to time."
+    }
+  ]
+}

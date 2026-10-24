@@ -1,5 +1,7 @@
 import {
   APP_PERF_LAUNCH_MAX_MS,
+  APP_PERF_MARK,
+  APP_PERF_MEASURE,
   APP_PERF_TAP_MAX_MS,
   type AppPerfPlatform,
 } from '@/shared/contracts/app-perf-limits';
@@ -7,17 +9,11 @@ import type { AppPerfReport } from '@/shared/contracts/app-perf';
 import { SHELL_USER_AGENT_TOKEN } from '@/frontend/shared/shell-update';
 
 /**
- * The three marks the instant-feel program measures (#487), on the User Timing
- * timeline so a profiler trace and a Vercel log line describe the same launch.
+ * The three marks and the measures they produce (#487) are declared in
+ * `shared/contracts/app-perf-limits` so the paint gate reads the same names the
+ * client writes (#558). Re-exported here because this is where a reader looks.
  */
-export const APP_PERF_MARK = {
-  /** `instrumentation-client.ts`, before hydration. */
-  boot: 'roya:boot',
-  /** The app chrome's first committed frame. */
-  shell: 'roya:shell',
-  /** Owned rows painted from the Local Store. */
-  content: 'roya:content',
-} as const;
+export { APP_PERF_MARK, APP_PERF_MEASURE };
 
 const REPORT_PATH = '/api/app-perf';
 const TAP_MARK_PREFIX = 'roya:tap';
@@ -134,13 +130,9 @@ export function createAppPerfMarks(deps: AppPerfMarksDeps = {}): AppPerfMarks {
       // launch; the two marks land in order, so neither duration is negative.
       if (!shellMarked) markShell();
       mark(APP_PERF_MARK.content);
-      const shellMs = measure(
-        `${APP_PERF_MARK.boot}-to-shell`,
-        APP_PERF_MARK.boot,
-        APP_PERF_MARK.shell
-      );
+      const shellMs = measure(APP_PERF_MEASURE.shell, APP_PERF_MARK.boot, APP_PERF_MARK.shell);
       const contentMs = measure(
-        `${APP_PERF_MARK.boot}-to-content`,
+        APP_PERF_MEASURE.content,
         APP_PERF_MARK.boot,
         APP_PERF_MARK.content
       );
@@ -167,15 +159,21 @@ export function createAppPerfMarks(deps: AppPerfMarksDeps = {}): AppPerfMarks {
       finished = true;
       afterPaint(() => {
         mark(paintMark);
-        const paintMs = measure(`${tapMark}-to-${PAINT_MARK_PREFIX}`, tapMark, paintMark);
         // One tap, one pair of marks: the taps that keep coming must not grow
-        // the timeline for the rest of the session.
+        // the timeline for the rest of the session. The measure stays — under a
+        // fixed name, replaced by the next tap — because the paint gate (#558)
+        // reads the same number the beacon reports, and so does a trace.
+        try {
+          perf.clearMeasures(APP_PERF_MEASURE.tap);
+        } catch {
+          // Clearing is housekeeping; the record is what matters.
+        }
+        const paintMs = measure(APP_PERF_MEASURE.tap, tapMark, paintMark);
         try {
           perf.clearMarks(tapMark);
           perf.clearMarks(paintMark);
-          perf.clearMeasures(`${tapMark}-to-${PAINT_MARK_PREFIX}`);
         } catch {
-          // Clearing is housekeeping; the record is what matters.
+          // Same.
         }
         if (paintMs === null || paintMs > APP_PERF_TAP_MAX_MS) return;
         remember({ version: 1, kind: 'tap', platform: platform(), paintMs });

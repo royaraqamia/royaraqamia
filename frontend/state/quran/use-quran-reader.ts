@@ -16,6 +16,7 @@ import {
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { logger } from '@/frontend/shared/logger';
+import { markContent } from '@/frontend/shared/perf-marks';
 import { useSession } from '@/frontend/state/session-provider';
 import { recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
@@ -162,6 +163,11 @@ export function useQuranReader(): QuranReaderState {
         await readIntoState(store);
         if (cancelled) return;
         setReady(true);
+        // The reader's own rows are in state and the surah is painted: this is
+        // the content frame the launch is measured to (#487, #558). Before this,
+        // the reader had no mark at all — the fifth Local-Store product was the
+        // one surface the paint program could not see.
+        markContent();
 
         // A completed local write is itself a flush trigger while online, so a
         // mark or a place reaches the account promptly instead of waiting for a
