@@ -34,6 +34,7 @@ export function subscribeToNewsDigestChanges(handlers: PostgresChangeHandlers): 
 export interface NewsSourceSelection {
   sources: NewsSource[];
   selected: string[];
+  personalEnabled: boolean;
 }
 
 /**
@@ -42,22 +43,35 @@ export interface NewsSourceSelection {
  * checklist on every open.
  */
 export async function getNewsSourceSelection(): Promise<NewsSourceSelection> {
-  const result = await request<{ success: boolean; sources: NewsSource[]; selected: string[] }>(
-    '/api/me/news-sources',
-    { cache: 'no-store' }
-  );
+  const result = await request<{
+    success: boolean;
+    sources: NewsSource[];
+    selected: string[];
+    personalEnabled: boolean;
+  }>('/api/me/news-sources', { cache: 'no-store' });
 
-  return { sources: result.sources, selected: result.selected };
+  return {
+    sources: result.sources,
+    selected: result.selected,
+    personalEnabled: result.personalEnabled,
+  };
 }
 
-/** Saves the kept ids; an empty list means "every source", now and later. */
-export async function saveNewsSourceSelection(sourceIds: string[]): Promise<string[]> {
-  const result = await request<{ success: boolean; selected: string[] }>('/api/me/news-sources', {
+/** Saves the kept ids and the opt-in; an empty source list means "every source". */
+export async function saveNewsSourceSelection(
+  sourceIds: string[],
+  personalEnabled: boolean
+): Promise<{ selected: string[]; personalEnabled: boolean }> {
+  const result = await request<{
+    success: boolean;
+    selected: string[];
+    personalEnabled: boolean;
+  }>('/api/me/news-sources', {
     method: 'PUT',
-    body: JSON.stringify({ sourceIds }),
+    body: JSON.stringify({ sourceIds, personalEnabled }),
   });
 
-  return result.selected;
+  return { selected: result.selected, personalEnabled: result.personalEnabled };
 }
 
 /** The proposals this account filed, newest first. */

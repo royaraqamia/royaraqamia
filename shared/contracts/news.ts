@@ -86,6 +86,8 @@ export interface NewsSource {
 /** The ids a signed-in reader kept; empty means "every source". */
 export interface NewsSourcePreferences {
   sourceIds: string[];
+  /** True once the reader asked for a digest of their own (ADR-0079). */
+  personalEnabled: boolean;
 }
 
 /**
@@ -106,9 +108,36 @@ export const newsSourcePreferencesSchema = z.object({
     .array(z.string().trim().regex(NEWS_SOURCE_ID_PATTERN))
     .max(NEWS_MAX_SELECTED_SOURCES)
     .transform((ids) => [...new Set(ids)]),
+  personalEnabled: z.boolean().optional(),
 });
 
 export type NewsSourcePreferencesInput = z.infer<typeof newsSourcePreferencesSchema>;
+
+/**
+ * A digest of the reader's own, generated after the shared one from the same
+ * fetched candidates and restricted to their sources (ADR-0079).
+ *
+ * It is smaller than the shared digest on purpose: a reader who follows six
+ * feeds does not have twelve stories, and padding it with sources they excluded
+ * would make the preference a lie. Below the minimum the nightly run publishes
+ * nothing and the reader keeps the shared digest.
+ */
+export const NEWS_PERSONAL_DIGEST_MIN_STORIES = 3;
+export const NEWS_PERSONAL_DIGEST_TARGET_STORIES = 8;
+export const NEWS_PERSONAL_DIGEST_MAX_STORIES = 12;
+
+/** What one generated personal digest costs (`news.digest.generate`). */
+export const NEWS_PERSONAL_DIGEST_COST = 5;
+
+/** How the page is presenting the reader's own digest, when they have one. */
+export interface NewsPersonalView {
+  /** The reader opted in. */
+  enabled: boolean;
+  /** A personal digest exists for the day being viewed. */
+  available: boolean;
+  /** The page is showing it rather than the shared digest. */
+  active: boolean;
+}
 
 /** The states a reader's source proposal can be in. */
 export const NEWS_SOURCE_REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
@@ -237,6 +266,8 @@ export interface NewsBoard {
    * the page says why instead of showing a nearly empty morning.
    */
   preferences: NewsPreferencesEffect | null;
+  /** The reader's own digest for this day, when it exists; null otherwise. */
+  personal: NewsPersonalView | null;
 }
 
 export interface NewsPreferencesEffect {

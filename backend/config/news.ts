@@ -2,11 +2,16 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createNewsRepository } from '@/backend/repositories/news';
+import { createNewsPersonalDigestRepository } from '@/backend/repositories/news/news-personal-digest';
 import { createNewsPreferencesRepository } from '@/backend/repositories/news/news-preferences';
 import { createNewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests';
 import { createNewsSourcesRepository } from '@/backend/repositories/news/news-sources';
 import { probeFeed } from '@/backend/services/news/feed-probe';
 import { createNewsCatalogue, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
+import {
+  createNewsPersonalDigestService,
+  type NewsPersonalDigestService,
+} from '@/backend/services/news/news-personal-digest-service';
 import {
   createNewsPreferencesService,
   type NewsPreferencesService,
@@ -74,4 +79,14 @@ export function createDefaultNewsAdminService(): NewsSourceAdminService {
     sources: createNewsSourcesRepository(supabase),
     catalogue: createNewsCatalogueFor(supabase),
   });
+}
+
+/**
+ * The reader's own digest (ADR-0079), read through their session so RLS answers
+ * for the row. Written only by the workflow, with the service role.
+ */
+export function createNewsPersonalDigestServiceFor(
+  supabase: SupabaseClient<Database>
+): NewsPersonalDigestService {
+  return createNewsPersonalDigestService(createNewsPersonalDigestRepository(supabase));
 }

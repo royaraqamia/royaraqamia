@@ -522,6 +522,13 @@ An addition to the Source List that an Admin accepted, stored in `news_sources` 
 the repo file by the daily fetch. The file wins any collision, so approval can add but never override.
 _Avoid_: Custom source, extra feed, user feed
 
+**Personal Digest**:
+The digest a reader opted into, built by the nightly run from the same fetched candidates narrowed to
+their Source Selection. It is not a second fetch: it is the shared candidate list with fewer items, and
+the same validator gates it.
+_Sold as_: مُلخَّصك الخاص
+_Avoid_: Private feed, custom digest, my newsletter
+
 ### Shared
 
 **Admin**:

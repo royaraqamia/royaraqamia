@@ -54,11 +54,17 @@ function compact(item) {
  * The prompt is written in English because instruction-following is sharper
  * there, but every output rule is about Arabic copy. The candidate block is the
  * only source of truth: no rule asks the model to recall anything.
+ *
+ * A personal digest (ADR-0079) is the same editor over a narrower candidate
+ * list, so it reuses every rule and only moves the size window: the reader who
+ * follows six feeds does not have ten stories, and padding with sources they
+ * excluded would make their selection a lie.
  */
-export function buildPrompt(candidates) {
+export function buildPrompt(candidates, options = {}) {
+  const { minStories = 8, targetStories = 10, maxStories = 12, personal = false } = options;
   const daily = candidates.items.map(compact);
 
-  return `You are the editor of a daily Arabic news digest published on a Syrian website (royaraqamia).
+  return `You are the editor of a ${personal ? 'personal' : 'daily'} Arabic news digest published on a Syrian website (royaraqamia).
 Your job: select the day's most important stories from the candidate list below and write a short,
 factual Arabic digest. The digest should read like a careful morning briefing, not like a link dump.
 
@@ -77,7 +83,8 @@ HARD RULES
 6. Output ONE JSON object and nothing else - no markdown fence, no commentary before or after.
 
 WHAT TO SELECT
-- Exactly 10 stories (8 is acceptable only when the candidate list is thin; never more than 12).
+- ${targetStories} stories. ${minStories} is acceptable when the candidate list is thin; never more than
+  ${maxStories}.
 - Priority order: region "arab" first, then "islamic", then "world"; and within a region, "religion",
   "politics" and "tech" before "economy", "world" and "other"; tier 1 before tier 2.
 - Prefer stories with real consequence and reach over curiosities. Never include two stories about the

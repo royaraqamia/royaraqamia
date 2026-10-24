@@ -114,6 +114,7 @@ export function createNewsService(repository: NewsRepository): NewsService {
           search: await search(query, term),
           hasAnyDigest: dates.length > 0,
           preferences: null,
+          personal: null,
         };
       }
 
@@ -124,6 +125,7 @@ export function createNewsService(repository: NewsRepository): NewsService {
         search: null,
         hasAnyDigest: dates.length > 0,
         preferences: selected.preferences,
+        personal: null,
       };
     },
   };
