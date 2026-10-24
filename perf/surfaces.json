@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "notes": "The surface matrix. Every app/**/page.tsx route must be covered by exactly one surface (an exact `routes` entry wins over a `prefix`). This file is authoritative: docs/specs/surfaces.md is generated from it, and scripts/check-surfaces.mjs fails the build when a route is uncovered, a claimed spec does not exist, or a surface marked `shell: precached` reads `searchParams`/cookies (which would mean it can never be precached). `shell` describes the REMOTE document; `bundle` describes the Android app, where a bundled SPA routes client-side and therefore handles dynamic segments the remote precache cannot. See #561, #557, #558 and #486.",
+  "defaultUngated": "No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.",
+  "surfaces": [
+    {
+      "id": "home",
+      "routes": ["/"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "pinned",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#487"
+    },
+    {
+      "id": "offline-page",
+      "routes": ["/offline"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "pinned",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#490"
+    },
+    {
+      "id": "marketing",
+      "routes": ["/pricing", "/privacy", "/security", "/terms", "/app-info"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"]
+    },
+    {
+      "id": "habitflow",
+      "routes": ["/habitflow"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": ["e2e/product-offline-render.spec.ts", "e2e/habitflow-sync-resume.spec.ts"],
+      "issue": "#493"
+    },
+    {
+      "id": "spendtrack",
+      "routes": ["/spendtrack", "/spendtrack/categories"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": ["e2e/product-offline-render.spec.ts", "e2e/spendtrack-offline.spec.ts"],
+      "issue": "#493"
+    },
+    {
+      "id": "linksnap",
+      "routes": ["/linksnap"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": ["e2e/product-offline-render.spec.ts", "e2e/linksnap-offline.spec.ts"],
+      "issue": "#493"
+    },
+    {
+      "id": "linksnap-unlock",
+      "routes": ["/linksnap/unlock/[code]"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": []
+    },
+    {
+      "id": "blogpress",
+      "routes": ["/blogpress", "/blogpress/calendar"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": ["e2e/product-offline-render.spec.ts", "e2e/blogpress-offline.spec.ts"],
+      "issue": "#493"
+    },
+    {
+      "id": "blogpress-editor",
+      "routes": ["/blogpress/editor/[id]"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "swr",
+      "bundle": "bundled",
+      "specs": []
+    },
+    {
+      "id": "quran",
+      "routes": ["/quran"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": ["e2e/quran-reader.spec.ts", "e2e/quran-marks.spec.ts", "e2e/quran-sync.spec.ts"],
+      "issue": "#493"
+    },
+    {
+      "id": "quran-surah",
+      "routes": ["/quran/[surah]"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "swr",
+      "bundle": "bundled",
+      "specs": ["e2e/quran-reader.spec.ts"],
+      "issue": "#559"
+    },
+    {
+      "id": "device",
+      "routes": ["/device"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "swr",
+      "bundle": "bundled",
+      "specs": []
+    },
+    {
+      "id": "account-owned",
+      "routes": ["/account", "/account/links", "/account/posts", "/account/submissions"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-server",
+      "routes": ["/account/plan", "/account/connected-apps", "/account/faq", "/account/news"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "community",
+      "routes": ["/community"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "community-post",
+      "routes": ["/community/[slug]"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "news",
+      "routes": ["/news"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": [],
+      "issue": "#555"
+    },
+    {
+      "id": "rates",
+      "routes": ["/rates"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "verify",
+      "routes": ["/verify"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "verify-code",
+      "routes": ["/verify/[code]"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "profile",
+      "routes": ["/u/[username]"],
+      "owner": "server",
+      "read": "snapshot",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"],
+      "issue": "#555"
+    },
+    {
+      "id": "scan",
+      "routes": ["/scan"],
+      "owner": "device",
+      "read": "store",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/scan.spec.ts"]
+    },
+    {
+      "id": "leads",
+      "routes": ["/training/apply", "/request-project", "/hire"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/lead-offline.spec.ts"]
+    },
+    {
+      "id": "consultation",
+      "routes": ["/consultation/book"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/lead-offline.spec.ts"]
+    },
+    {
+      "id": "downloader",
+      "routes": ["/downloader"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/downloader.spec.ts"]
+    },
+    {
+      "id": "auth",
+      "routes": [
+        "/auth/login",
+        "/auth/signup",
+        "/auth/verify-otp",
+        "/auth/reset-password",
+        "/auth/update-password",
+        "/auth/error"
+      ],
+      "owner": "static",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#501"
+    },
+    {
+      "id": "mcp-guide",
+      "routes": ["/mcp/guide"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": []
+    },
+    {
+      "id": "mcp-connect",
+      "routes": ["/mcp/connect"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "none",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"]
+    },
+    {
+      "id": "admin",
+      "prefix": "/admin",
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "none",
+      "bundle": "remote",
+      "specs": ["e2e/public-offline.spec.ts"]
+    }
+  ]
+}

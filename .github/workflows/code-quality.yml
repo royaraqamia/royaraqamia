@@ -41,6 +41,9 @@ jobs:
       - name: Digits Are ASCII
         run: npm run check:digits
 
+      - name: Surface Matrix
+        run: npm run check:surfaces
+
       - name: Lint
         run: npm run lint
 

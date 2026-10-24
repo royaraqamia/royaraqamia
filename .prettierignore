@@ -13,3 +13,4 @@ package-lock.json
 CHANGELOG.md
 package.json
 backend/config/generated/app-version.ts
+docs/specs/surfaces.md
