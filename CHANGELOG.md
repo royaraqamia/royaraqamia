@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.135.0] - 2026-10-24
+
+### Changed
+- trim the header and fix page copy (#544)
+- One-request community post publish via new RPC. (#541)
+- give the analysis step 50 minutes and drop the high variant (#542)
+- gate new public objects on explicit grants (#540)
+
+### Added
+- let a reader filter the digest by source (#545)
+- give subscribers 20% off the four services (#539)
+
+### Fixed
+- patch body-parser and fast-uri advisories (#543)
+
 ## [1.134.0] - 2026-10-23
 
 ### Changed
