@@ -35,6 +35,8 @@
     "fix:arabic": "node scripts/check-arabic-order.mjs --fix",
     "check:digits": "node scripts/check-digits.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
+    "check:surfaces": "node scripts/check-surfaces.mjs",
+    "check:precache": "node scripts/check-precache.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
     "check:migrations:grants": "node scripts/check-migration-grants.mjs",

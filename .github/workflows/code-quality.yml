@@ -41,6 +41,9 @@ jobs:
       - name: Digits Are ASCII
         run: npm run check:digits
 
+      - name: Surface Matrix
+        run: npm run check:surfaces
+
       - name: Lint
         run: npm run lint
 
@@ -111,3 +114,9 @@ jobs:
       # exceeds perf/budget.json. See docs/performance.md.
       - name: Shipped-weight budget
         run: npm run perf:check
+
+      # Also reads .next: the committed public/sw-precache.js has to match what
+      # the build derives, and every public page has to either be prerendered or
+      # be declared dynamic by design (#557).
+      - name: Precache list is complete and current
+        run: npm run check:precache
