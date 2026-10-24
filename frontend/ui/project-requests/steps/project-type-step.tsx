@@ -3,6 +3,7 @@
 import { Controller, type Control } from 'react-hook-form';
 import { CheckCircle, Wallet } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
+import { ProPrice } from '@/frontend/ui/plans/pro-price';
 import { FieldError } from '@/frontend/ui/shared/field-error';
 import {
   PROJECT_REQUEST_APP_START_PRICE_USD,
@@ -76,7 +77,12 @@ export function ProjectTypeStep({ control, error }: ProjectTypeStepProps) {
 
                   <span className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
                     <Wallet className="size-4" aria-hidden="true" />
-                    تبدأ من <span dir="ltr">${START_PRICES[type]}</span>
+                    تبدأ من{' '}
+                    <ProPrice
+                      amountUsd={START_PRICES[type]}
+                      className="text-base font-black text-foreground"
+                      originalClassName="text-xs font-medium text-muted-foreground"
+                    />
                   </span>
                 </button>
               );

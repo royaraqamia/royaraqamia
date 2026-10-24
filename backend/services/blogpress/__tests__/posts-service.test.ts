@@ -46,6 +46,7 @@ function makeRepo(
     getPostForUser: vi.fn(),
     getPostExcerptById: vi.fn(),
     createPost: vi.fn(),
+    createAndPublishPost: vi.fn(),
     updatePost: vi.fn(),
     saveAndPublishPost: vi.fn(),
     publishPost: vi.fn(),
@@ -106,6 +107,20 @@ describe('BlogpressPostsService publish visibility', () => {
     expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData);
   });
 
+  it('creates and publishes a new post in one repository call', async () => {
+    const { repository, service } = makeRepo();
+    (repository.createAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'p-9',
+      slug: 'post-abc12345',
+    });
+
+    await expect(service.createAndPublishPost('u-1', postData)).resolves.toEqual({
+      id: 'p-9',
+      slug: 'post-abc12345',
+    });
+    expect(repository.createAndPublishPost).toHaveBeenCalledWith('u-1', postData);
+  });
+
   it('publishes through publish', async () => {
     const { repository, service } = makeRepo();
     (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
@@ -151,6 +166,23 @@ describe('BlogpressPostsService publish notifier', () => {
       postId: 'p-1',
       authorId: 'u-1',
       slug: 'post-1',
+    });
+  });
+
+  it('fires after a create-and-publish', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.createAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'p-9',
+      slug: 'post-abc12345',
+    });
+
+    await service.createAndPublishPost('u-1', postData);
+
+    expect(onPostPublished).toHaveBeenCalledWith({
+      postId: 'p-9',
+      authorId: 'u-1',
+      slug: 'post-abc12345',
     });
   });
 

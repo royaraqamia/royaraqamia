@@ -2225,6 +2225,17 @@ export type Database = {
         Args: { p_post_ids: string[]; p_publish: boolean };
         Returns: string[];
       };
+      create_and_publish_post: {
+        Args: {
+          p_content: string | null;
+          p_cover_image: string | null;
+          p_meta_desc: string | null;
+          p_meta_title: string | null;
+          p_reading_time_minutes: number;
+          p_slug: string;
+        };
+        Returns: { id: string; slug: string }[];
+      };
       create_consultation_booking: {
         Args: {
           p_email?: string;

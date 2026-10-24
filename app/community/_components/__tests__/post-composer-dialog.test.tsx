@@ -63,9 +63,8 @@ describe('PostComposerDialog', () => {
     expect(mocks.createPost).not.toHaveBeenCalled();
   });
 
-  it('creates and publishes a new post', async () => {
-    mocks.createPost.mockResolvedValue({ id: 'p9' });
-    mocks.saveAndPublishPost.mockResolvedValue({ success: true });
+  it('creates and publishes a new post in one request', async () => {
+    mocks.createPost.mockResolvedValue({ id: 'p9', slug: 'post-abc12345' });
     const onSaved = vi.fn();
 
     render(<PostComposerDialog open onOpenChange={vi.fn()} onSaved={onSaved} />);
@@ -73,15 +72,15 @@ describe('PostComposerDialog', () => {
     fireEvent.change(screen.getByLabelText(/النَّص/), { target: { value: 'محتوى المنشور.' } });
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
-    await waitFor(() => expect(mocks.saveAndPublishPost).toHaveBeenCalledTimes(1));
-    expect(mocks.createPost).toHaveBeenCalledTimes(1);
-    expect(mocks.saveAndPublishPost).toHaveBeenCalledWith(
-      'p9',
+    await waitFor(() => expect(mocks.createPost).toHaveBeenCalledTimes(1));
+    expect(mocks.createPost).toHaveBeenCalledWith(
       expect.objectContaining({
         content: 'محتوى المنشور.',
         slug: expect.stringMatching(/^post-/),
+        status: 'published',
       })
     );
+    expect(mocks.saveAndPublishPost).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalledWith(expect.stringMatching(/^post-/));
     expect(mocks.updatePost).not.toHaveBeenCalled();
   });
