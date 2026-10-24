@@ -27,6 +27,7 @@ const STORY: StoredStory = {
   headline: 'عنوان الخبر',
   summary: 'ملخص الخبر.',
   whyItMatters: null,
+  sourceId: 'aljazeera-ar',
   sourceName: 'الجزيرة نت',
   sourceUrl: 'https://www.aljazeera.net/news/1',
   sourcePublishedAt: '2026-10-23T02:00:00.000Z',
@@ -120,5 +121,56 @@ describe('news service', () => {
     expect(repo.searchStories).not.toHaveBeenCalled();
     expect(board.search).toBeNull();
     expect(board.day?.digest.id).toBe('digest-1');
+  });
+
+  it('keeps only the sources the reader selected', async () => {
+    const stories = [
+      { ...STORY, id: 'story-1', sourceId: 'aljazeera-ar' },
+      { ...STORY, id: 'story-2', sourceId: 'bbc-arabic' },
+      { ...STORY, id: 'story-3', sourceId: 'the-verge' },
+      { ...STORY, id: 'story-4', sourceId: 'aljazeera-ar', position: 4 },
+      { ...STORY, id: 'story-5', sourceId: 'aljazeera-ar', position: 5 },
+    ];
+    const repo = repository({ listStories: vi.fn(async () => stories) });
+
+    const board = await createNewsService(repo).getBoard({}, { sourceIds: ['aljazeera-ar'] });
+
+    expect(board.day?.stories.map((story) => story.id)).toEqual(['story-1', 'story-4', 'story-5']);
+    expect(board.preferences).toEqual({ selectedSources: 1, filtered: true, fellBack: false });
+  });
+
+  it('shows the full digest when a selection leaves fewer than the minimum', async () => {
+    const stories = [
+      { ...STORY, id: 'story-1', sourceId: 'aljazeera-ar' },
+      { ...STORY, id: 'story-2', sourceId: 'bbc-arabic' },
+      { ...STORY, id: 'story-3', sourceId: 'the-verge' },
+    ];
+    const repo = repository({ listStories: vi.fn(async () => stories) });
+
+    const board = await createNewsService(repo).getBoard({}, { sourceIds: ['aljazeera-ar'] });
+
+    expect(board.day?.stories).toEqual(stories);
+    expect(board.preferences).toEqual({ selectedSources: 1, filtered: false, fellBack: true });
+  });
+
+  it('treats an empty selection as "every source" and reports no effect', async () => {
+    const repo = repository();
+    const board = await createNewsService(repo).getBoard({}, { sourceIds: [] });
+
+    expect(board.day?.stories).toEqual([STORY]);
+    expect(board.preferences).toBeNull();
+  });
+
+  it('does not narrow a search to the reader selection', async () => {
+    const hits: StoryWithDay[] = [{ ...(STORY as NewsStory), digestDate: '2026-10-20' }];
+    const repo = repository({ searchStories: vi.fn(async () => hits) });
+
+    const board = await createNewsService(repo).getBoard(
+      { q: 'غزة' },
+      { sourceIds: ['bbc-arabic'] }
+    );
+
+    expect(board.search?.hits).toEqual(hits);
+    expect(board.preferences).toBeNull();
   });
 });

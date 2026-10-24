@@ -57,6 +57,7 @@ function mapStory(row: StorySelectRow): StoredStory {
     headline: row.headline_ar,
     summary: row.summary_ar,
     whyItMatters: row.why_it_matters_ar,
+    sourceId: row.source_id,
     sourceName: row.source_name,
     sourceUrl: row.source_url,
     sourcePublishedAt: row.source_published_at,

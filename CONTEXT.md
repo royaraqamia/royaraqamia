@@ -504,6 +504,13 @@ _Avoid_: Article, post, entry
 day's fetched candidates can never be published.
 _Avoid_: Feed list, allowlist, whitelist
 
+**Source Selection**:
+The sources one reader kept from the Source List, stored per account and applied when `/news` is
+read. It filters the shared Digest; it never changes what the agent fetches, and a selection that
+would leave fewer than three stories in a day is ignored in favour of the full Digest.
+_Sold as_: مصادر الأخبار
+_Avoid_: Feed settings, subscriptions, personalisation rules
+
 ### Shared
 
 **Admin**:
