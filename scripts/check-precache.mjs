@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,12 +17,16 @@ import {
  * offline open fell through to the nearest ancestor (#490). Nothing failed when
  * the list outgrew its cap either — `slice()` dropped the tail in silence.
  *
- * Four questions, all after a build:
+ * Three questions, all after a build:
  *
  * 1. Is a public page dynamic without a `DYNAMIC_BY_DESIGN` declaration?
  * 2. Has a declaration gone stale (the page became static)?
  * 3. Did the cap drop routes?
- * 4. Does the committed `public/sw-precache.js` still match the build?
+ *
+ * And one consistency check: `public/sw-precache.js` has to be what this
+ * selection says it is. It is a build output — gitignored, like `sw-version.js` —
+ * so there is nothing to keep in sync with the repository; the file is compared
+ * so a generator run against older manifests, or a hand edit, is caught.
  *
  * Without `.next` (a bare checkout, a unit-test run) it says so and exits 0:
  * the answer needs the build, and a check that guesses is worse than no check.
@@ -50,22 +53,7 @@ export function audit({ root = ROOT } = {}) {
   });
 }
 
-/** Whether the committed artifact differs from the working tree's copy. */
-export function committedArtifactIsStale(root = ROOT) {
-  try {
-    execFileSync('git', ['diff', '--quiet', '--', 'public/sw-precache.js'], {
-      cwd: root,
-      stdio: 'ignore',
-    });
-    return false;
-  } catch (error) {
-    // Exit code 1 is "differs"; anything else (no git, a detached checkout)
-    // means the question cannot be answered, so do not claim a failure.
-    return error?.status === 1;
-  }
-}
-
-export function errorsFor({ result, scriptSource, root = ROOT }) {
+export function errorsFor({ result, scriptSource }) {
   const errors = [];
 
   for (const route of result.undeclaredDynamic) {
@@ -98,12 +86,6 @@ export function errorsFor({ result, scriptSource, root = ROOT }) {
         `public/sw-precache.js is stale: the build selects ${result.routes.length} routes and the file declares ${declared.length}`
       );
     }
-  }
-
-  if (committedArtifactIsStale(root)) {
-    errors.push(
-      'public/sw-precache.js has uncommitted changes after the build — commit the regenerated list'
-    );
   }
 
   return errors;

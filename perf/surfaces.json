@@ -44,7 +44,8 @@
       "shell": "precached",
       "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/habitflow-sync-resume.spec.ts"],
-      "issue": "#493"
+      "issue": "#493",
+      "paint": "habitflow"
     },
     {
       "id": "spendtrack",
@@ -55,7 +56,8 @@
       "shell": "precached",
       "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/spendtrack-offline.spec.ts"],
-      "issue": "#493"
+      "issue": "#493",
+      "paint": "spendtrack"
     },
     {
       "id": "linksnap",
@@ -66,7 +68,8 @@
       "shell": "precached",
       "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/linksnap-offline.spec.ts"],
-      "issue": "#493"
+      "issue": "#493",
+      "paint": "linksnap"
     },
     {
       "id": "linksnap-unlock",
@@ -87,7 +90,8 @@
       "shell": "precached",
       "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/blogpress-offline.spec.ts"],
-      "issue": "#493"
+      "issue": "#493",
+      "paint": "blogpress"
     },
     {
       "id": "blogpress-editor",
@@ -108,7 +112,8 @@
       "shell": "precached",
       "bundle": "bundled",
       "specs": ["e2e/quran-reader.spec.ts", "e2e/quran-marks.spec.ts", "e2e/quran-sync.spec.ts"],
-      "issue": "#493"
+      "issue": "#493",
+      "paint": "quran"
     },
     {
       "id": "quran-surah",

@@ -80,10 +80,9 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'reads `searchParams` on the server; #555 moves the filters client-side so it can be a shell',
   },
-  // The three lead forms reach the session through `getOptionalUser()` rather
-  // than touching `cookies()` in the page, so `check:surfaces`' source heuristic
-  // cannot see why they render per request. Their writes are outbox rows, so an
-  // offline open still gets the ancestor shell and the form's own
+  // The three lead forms call `getOptionalUser()` (and the price loaders) on the
+  // server, so they render per request. Their writes are outbox rows, so a
+  // visitor who opens one offline gets the ancestor shell and the form's own
   // needs-connection state, which is the promise the matrix makes for them.
   {
     route: '/hire',

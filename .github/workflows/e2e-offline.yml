@@ -80,6 +80,7 @@ on:
       - 'e2e/worker-control.ts'
       - 'e2e/public-offline.spec.ts'
       - 'e2e/responsive-offline.spec.ts'
+      - 'e2e/perf-paint.spec.ts'
       - 'e2e/spendtrack-offline.spec.ts'
       - 'e2e/habitflow-sync-resume.spec.ts'
       - 'e2e/product-offline-render.spec.ts'
@@ -88,6 +89,15 @@ on:
       - 'e2e/linksnap-offline.spec.ts'
       - 'e2e/blogpress-offline.spec.ts'
       - 'e2e/quran-sync.spec.ts'
+      - 'e2e/worker-control.ts'
+      - 'e2e/sign-in.ts'
+      - 'frontend/shared/perf-marks.ts'
+      - 'frontend/ui/AppPerfObserver.tsx'
+      - 'shared/contracts/app-perf-limits.ts'
+      - 'scripts/paint-budget.ts'
+      - 'scripts/perf-paint.mjs'
+      - 'perf/paint-budget.json'
+      - 'perf/paint-baseline.json'
       - 'playwright.config.ts'
       - '.github/workflows/e2e-offline.yml'
   workflow_dispatch:
@@ -152,6 +162,7 @@ jobs:
           npx playwright test
           e2e/public-offline.spec.ts
           e2e/responsive-offline.spec.ts
+          e2e/perf-paint.spec.ts
           e2e/spendtrack-offline.spec.ts
           e2e/habitflow-sync-resume.spec.ts
           e2e/linksnap-offline.spec.ts
@@ -168,6 +179,11 @@ jobs:
           --workers=1
         env:
           PUBLIC_OFFLINE_E2E: '1'
+          # The paint gate (#558). It measures the same marks the field reports;
+          # the owned surfaces skip when the account secrets are absent, and the
+          # numbers land in paint-measurements.json for `perf:paint --from`.
+          PAINT_E2E: '1'
+          PAINT_E2E_OUT: node_modules/.playwright/paint-measurements.json
           SPENDTRACK_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           HABITFLOW_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           LINKSNAP_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
@@ -184,3 +200,15 @@ jobs:
           name: e2e-offline-failure
           path: node_modules/.playwright/test-results/
           retention-days: 7
+
+      # Uploaded even on success: this is the file `npm run perf:paint -- --from`
+      # folds into perf/paint-baseline.json, and it has to be recorded on the
+      # runner family that enforces it (#558).
+      - name: Upload paint measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: paint-measurements
+          path: node_modules/.playwright/paint-measurements.json
+          if-no-files-found: ignore
+          retention-days: 14

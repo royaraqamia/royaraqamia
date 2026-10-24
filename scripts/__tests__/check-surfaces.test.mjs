@@ -159,6 +159,28 @@ describe('matrix validation', () => {
     });
     expect(errors.some((error) => error.includes('paint budget'))).toBe(true);
   });
+
+  it('ties a paint key to a budget the gate actually runs', () => {
+    const root = makeRepo({
+      'app/one/page.tsx': '',
+      'perf/paint-budget.json': JSON.stringify({ version: 1, surfaces: [{ id: 'one' }] }),
+    });
+
+    expect(
+      validate({
+        matrix: { surfaces: [surface({ paint: 'one' })] },
+        repoRoot: root,
+        routes: ['/one'],
+      })
+    ).toEqual([]);
+
+    const errors = validate({
+      matrix: { surfaces: [surface({ paint: 'missing' })] },
+      repoRoot: root,
+      routes: ['/one'],
+    });
+    expect(errors.some((error) => error.includes('paint budget "missing"'))).toBe(true);
+  });
 });
 
 describe('rendered table', () => {

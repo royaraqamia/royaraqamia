@@ -4,6 +4,7 @@ import {
   detectAppPerfPlatform,
   detectColdLaunch,
   APP_PERF_MARK,
+  APP_PERF_MEASURE,
 } from '@/frontend/shared/perf-marks';
 import type { AppPerfReport } from '@/shared/contracts/app-perf';
 
@@ -13,6 +14,7 @@ import type { AppPerfReport } from '@/shared/contracts/app-perf';
  */
 function userTiming() {
   const marks = new Map<string, number>();
+  const measures = new Map<string, number>();
   let now = 0;
 
   return {
@@ -20,22 +22,27 @@ function userTiming() {
       mark(name: string) {
         marks.set(name, now);
       },
-      measure(_name: string, start?: string, end?: string) {
+      measure(name: string, start?: string, end?: string) {
         const from = start === undefined ? 0 : marks.get(start);
         const to = end === undefined ? now : marks.get(end);
         if (from === undefined || to === undefined) throw new Error('missing mark');
+        measures.set(name, to - from);
         return { duration: to - from };
       },
       clearMarks(name?: string) {
         if (name === undefined) marks.clear();
         else marks.delete(name);
       },
-      clearMeasures() {},
+      clearMeasures(name?: string) {
+        if (name === undefined) measures.clear();
+        else measures.delete(name);
+      },
     },
     advance(ms: number) {
       now += ms;
     },
     marks,
+    measures,
   };
 }
 
@@ -172,6 +179,9 @@ describe('app perf marks', () => {
     ]);
     const leftover = [...timing.marks.keys()].filter((name) => name.includes('tap'));
     expect(leftover).toEqual([]);
+    // The measure survives so the paint gate and a trace can read the number the
+    // beacon reported (#558): one entry, replaced by the next tap.
+    expect(timing.measures.get(APP_PERF_MEASURE.tap)).toBe(12);
   });
 
   it('finishes a tap once, so a double call cannot double count', () => {

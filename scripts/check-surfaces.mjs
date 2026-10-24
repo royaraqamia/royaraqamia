@@ -166,6 +166,19 @@ export function dynamicMarker(sources) {
   return null;
 }
 
+/** The surface ids `perf/paint-budget.json` gates, or `null` when there is no file. */
+export function paintBudgetIds(path) {
+  if (!existsSync(path)) return null;
+  try {
+    const file = JSON.parse(readFileSync(path, 'utf8'));
+    return new Set((file.surfaces ?? []).map((surface) => surface.id));
+  } catch {
+    // A malformed budget is its own failure; an empty set makes the row that
+    // names it report the problem rather than hide it.
+    return new Set();
+  }
+}
+
 function checkEnums(surface, errors) {
   const where = `surface "${surface.id}"`;
   if (!surface.id) errors.push('a surface has no id');
@@ -189,6 +202,7 @@ export function validate({ matrix, repoRoot = ROOT, routes = pageRoutes() }) {
   const errors = [];
   const surfaces = matrix.surfaces ?? [];
   const defaultUngated = matrix.defaultUngated;
+  const paintIds = paintBudgetIds(join(repoRoot, 'perf', 'paint-budget.json'));
 
   const seenIds = new Set();
   for (const surface of surfaces) {
@@ -205,6 +219,14 @@ export function validate({ matrix, repoRoot = ROOT, routes = pageRoutes() }) {
     if (!surface.paint && !surface.ungated && !defaultUngated) {
       errors.push(
         `surface "${surface.id}" has no paint budget and no ungated reason — #558 needs one or the other`
+      );
+    }
+
+    // A row that claims a paint budget has to name one the gate actually runs, or
+    // the matrix says "gated" while nothing measures it (#558).
+    if (surface.paint && paintIds !== null && !paintIds.has(surface.paint)) {
+      errors.push(
+        `surface "${surface.id}" names paint budget "${surface.paint}", which perf/paint-budget.json does not define`
       );
     }
 
@@ -257,6 +279,7 @@ function cells(surface) {
     (surface.specs ?? []).length > 0
       ? surface.specs.map((spec) => `\`${spec.split('/').pop()}\``).join('<br>')
       : '_ungated_',
+    surface.paint ? `\`paint:${surface.paint}\`` : '',
     surface.issue ?? '',
   ];
 }
@@ -271,14 +294,16 @@ export function renderMarkdown(matrix) {
     'This is the scope of the offline program (#486): a route added without a row fails ' +
     '`npm run check:surfaces`, and so does a `precached` claim on a page that cannot be prerendered.\n\n' +
     '`shell` describes the remote document; `bundle` describes the Android app, where a bundled SPA ' +
-    'routes client-side and so handles dynamic segments the remote precache cannot.\n\n';
+    'routes client-side and so handles dynamic segments the remote precache cannot. `Paint` names the ' +
+    'row in `perf/paint-budget.json` that the paint gate measures (#558); an empty cell is a row the ' +
+    'gate cannot see yet.\n\n';
 
   const rows = (matrix.surfaces ?? [])
     .map((surface) => `| ${cells(surface).join(' | ')} |`)
     .join('\n');
   const table =
-    '| Surface | Routes | Owner | Offline read | Offline write | Shell | Bundle | Verified by | Issue |\n' +
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n' +
+    '| Surface | Routes | Owner | Offline read | Offline write | Shell | Bundle | Verified by | Paint | Issue |\n' +
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n' +
     `${rows}\n\n`;
 
   const ungated = matrix.defaultUngated ? `_ungated_ — ${matrix.defaultUngated}\n` : '';
