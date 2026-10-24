@@ -80,6 +80,25 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'reads `searchParams` on the server; #555 moves the filters client-side so it can be a shell',
   },
+  // The three lead forms reach the session through `getOptionalUser()` rather
+  // than touching `cookies()` in the page, so `check:surfaces`' source heuristic
+  // cannot see why they render per request. Their writes are outbox rows, so an
+  // offline open still gets the ancestor shell and the form's own
+  // needs-connection state, which is the promise the matrix makes for them.
+  {
+    route: '/hire',
+    reason:
+      'calls `getOptionalUser()` and `loadServiceDiscount()` — the price and the signed-in state come from the request',
+  },
+  {
+    route: '/request-project',
+    reason:
+      'same as `/hire`: `getOptionalUser()` and `loadServiceDiscount()` decide what the page says',
+  },
+  {
+    route: '/training/apply',
+    reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
+  },
 ];
 
 /**

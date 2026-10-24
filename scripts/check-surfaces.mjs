@@ -17,7 +17,12 @@ import { fileURLToPath } from 'node:url';
  *    added without a decision fails here.
  * 2. Does every surface marked `shell: precached` have a source that can be
  *    prerendered? A page that reads `searchParams` or cookies can never appear
- *    in `PRECACHE_ROUTES`, which is how `/news` silently lost its shell.
+ *    in `PRECACHE_ROUTES`, which is how `/news` silently lost its shell. This is
+ *    a source heuristic and it is deliberately narrow: it sees the page and its
+ *    layouts, not a helper they import, so `/hire` — which reads the session
+ *    through `getOptionalUser()` — passes here and is caught by the build
+ *    instead (`npm run check:precache`). The heuristic is the cheap early
+ *    warning; the build is the verdict.
  * 3. Does every claimed spec exist on disk? The first version of this table
  *    named four spec files that do not exist.
  * 4. Does `docs/specs/surfaces.md` still match the JSON it is generated from?
