@@ -261,7 +261,7 @@ export function ScanPage() {
     if (identityUserId(identity)) {
       return !usage || usage.unlimited || usage.remaining > 0;
     }
-    return localUsageToday('scanner.scan') < ANONYMOUS_DAILY_CREDITS_FALLBACK;
+    return localUsageToday(identity, 'scanner.scan') < ANONYMOUS_DAILY_CREDITS_FALLBACK;
   }
 
   /** The one place a decoded code becomes a result: camera and loop both stop. */
@@ -270,7 +270,7 @@ export function ScanPage() {
       setLimitReached(true);
       return;
     }
-    recordLocalUsage('scanner.scan');
+    recordLocalUsage(identityFromUser(user), 'scanner.scan');
     haltLoop();
     stopStream();
     if (typeof navigator.vibrate === 'function') navigator.vibrate(60);

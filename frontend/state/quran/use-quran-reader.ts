@@ -267,21 +267,28 @@ export function useQuranReader(): QuranReaderState {
   }, [pull]);
 
   /** Records where the reader is. Out-of-range refs are ignored, not thrown at. */
-  const savePosition = useCallback(async (surah: number, ayah: number) => {
-    const store = storeRef.current;
-    if (!store || !isAyahRef(surah, ayah)) return;
+  const savePosition = useCallback(
+    async (surah: number, ayah: number) => {
+      const store = storeRef.current;
+      if (!store || !isAyahRef(surah, ayah)) return;
 
-    // Reading a surah is metered once a day, and counted on the device: the
-    // reader works offline, and the count is reported for reconciliation
-    // (ADR-0075) rather than fetched before the page paints (ADR-0073).
-    recordLocalUsage('quran.surah.read', `quran:${surah}:${new Date().toISOString().slice(0, 10)}`);
+      // Reading a surah is metered once a day, and counted on the device: the
+      // reader works offline, and the count is reported for reconciliation
+      // (ADR-0075) rather than fetched before the page paints (ADR-0073).
+      recordLocalUsage(
+        identity,
+        'quran.surah.read',
+        `quran:${surah}:${new Date().toISOString().slice(0, 10)}`
+      );
 
-    try {
-      await store.saveReadingPosition(surah, ayah);
-    } catch (error) {
-      logger.error('Failed to save the reading position', { error: String(error) });
-    }
-  }, []);
+      try {
+        await store.saveReadingPosition(surah, ayah);
+      } catch (error) {
+        logger.error('Failed to save the reading position', { error: String(error) });
+      }
+    },
+    [identity]
+  );
 
   const toggleBookmark = useCallback(async (surah: number, ayah: number) => {
     const store = storeRef.current;
