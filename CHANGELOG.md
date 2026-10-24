@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.138.0] - 2026-10-24
+
+### Added
+- the program's three numbers are gated on the web, not only measured (#566)
+
 ## [1.137.0] - 2026-10-24
 
 ### Changed
