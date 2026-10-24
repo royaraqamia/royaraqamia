@@ -6,12 +6,7 @@ import { PenLine } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { PostComposerDialog } from './post-composer-dialog';
 
@@ -62,17 +57,12 @@ export function ComposeFab() {
       <PostComposerDialog open={open} onOpenChange={setOpen} onSaved={handleSaved} />
 
       <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
               <PenLine size={24} />
             </div>
-            <div className="space-y-1.5">
-              <DialogTitle className="leading-snug!">سجِّل الدُّخول للنَّشر في المجتمع</DialogTitle>
-              <DialogDescription className="text-pretty">
-                لنشر منشور في المجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
-              </DialogDescription>
-            </div>
+            <DialogTitle className="leading-snug!">سجِّل الدُّخول للنَّشر في المجتمع</DialogTitle>
           </div>
 
           <DialogActions onCancel={() => setAuthPromptOpen(false)}>

@@ -96,7 +96,6 @@ export function TrainingCourses() {
                           amountUsd={course.priceUsd}
                           className="text-4xl sm:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-200 via-white to-purple-300"
                           originalClassName="text-lg font-bold text-purple-200/60"
-                          tone="dark"
                         />
                       </div>
                       <div className="text-[11px] text-purple-300/70 mt-1.5 font-medium flex items-center justify-center md:justify-start gap-1">

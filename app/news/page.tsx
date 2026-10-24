@@ -9,15 +9,10 @@ import {
 } from '@/backend/loaders/news';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsLiveRefresh } from '@/frontend/ui/news/NewsLiveRefresh';
+import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
 import { StoryCard } from '@/frontend/ui/news/StoryCard';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import {
-  NEWS_CATEGORIES,
-  NEWS_PERSONAL_MIN_STORIES,
-  NEWS_RETENTION_DAYS,
-  formatDigestDate,
-  type NewsCategory,
-} from '@/shared/contracts/news';
+import { NEWS_CATEGORIES, NEWS_RETENTION_DAYS, type NewsCategory } from '@/shared/contracts/news';
 
 export const metadata: Metadata = {
   title: 'أخبار اليوم',
@@ -41,17 +36,6 @@ export const metadata: Metadata = {
     images: ['/OG Image.webp'],
   },
 };
-
-/** Damascus publication time, formatted on the server so hydration cannot drift. */
-function formatPublishedTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('ar-SY-u-nu-latn', {
-    timeZone: 'Asia/Damascus',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
 
 function uniqueCategories(values: readonly NewsCategory[]): NewsCategory[] {
   const seen = new Set<NewsCategory>();
@@ -138,14 +122,18 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
             </div>
           ) : null}
 
-          <NewsFilters
-            date={query.date ?? null}
-            category={query.category ?? null}
-            query={query.q ?? ''}
-            dates={board.dates}
-            categories={categories}
-            isSearching={board.search !== null}
-          />
+          <div className="space-y-4">
+            <NewsSearch query={query.q ?? ''} category={query.category ?? null} />
+
+            <NewsFilters
+              date={query.date ?? null}
+              category={query.category ?? null}
+              query={query.q ?? ''}
+              dates={board.dates}
+              categories={categories}
+              isSearching={board.search !== null}
+            />
+          </div>
 
           <div className="mt-8">
             {board.search ? (
@@ -183,52 +171,15 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                 ) : null}
               </section>
             ) : board.day ? (
-              <section aria-labelledby="news-digest-heading">
-                <header className="rounded-3xl border border-border/60 bg-card/85 p-6 text-center">
-                  <p className="text-xs font-bold text-primary">
-                    {formatDigestDate(board.day.digest.date)}
-                  </p>
-                  <h2
-                    id="news-digest-heading"
-                    className="mt-2 text-2xl font-extrabold leading-snug"
-                  >
-                    {board.day.digest.title}
-                  </h2>
-                  <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                    {board.day.digest.lede}
-                  </p>
-                  <p className="mt-3 text-[11px] text-muted-foreground">
-                    عدد الأخبار:{' '}
-                    {board.preferences?.filtered ? stories.length : board.day.digest.storyCount}
-                    {board.preferences?.filtered
-                      ? ' · من مصادرك'
-                      : query.category && stories.length !== board.day.digest.storyCount
-                        ? ` · في هذا القسم: ${stories.length}`
-                        : ''}{' '}
-                    · آخر تحديث {formatPublishedTime(board.day.digest.publishedAt)}
-                  </p>{' '}
-                  {board.preferences?.fellBack ? (
-                    <p className="mx-auto mt-3 max-w-xl rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-[11px] leading-6 text-muted-foreground">
-                      ترك اختيارك من المصادر أقل من {NEWS_PERSONAL_MIN_STORIES} أخبار لهذا اليوم،
-                      فعرضنا المُلخَّص كاملًا.{' '}
-                      <Link
-                        href="/account/news"
-                        className="font-bold text-primary underline-offset-4 hover:underline"
-                      >
-                        تعديل مصادرك
-                      </Link>
-                    </p>
-                  ) : null}
-                </header>
-
+              <section aria-label="مُلخَّص اليوم">
                 {stories.length > 0 ? (
-                  <div className="mt-6 space-y-4">
+                  <div className="space-y-4">
                     {stories.map((story) => (
                       <StoryCard key={story.id} story={story} />
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-6 rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
+                  <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
                     لا أخبار في هذا القسم لهذا اليوم.
                   </p>
                 )}
