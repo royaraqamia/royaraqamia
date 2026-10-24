@@ -21,6 +21,12 @@ export const PostSchema = z.object({
 
 export type PostInput = z.infer<typeof PostSchema>;
 
+/**
+ * The publication state a client may request on create. `published_at` and
+ * `community_visible` are server-owned and are never part of this contract.
+ */
+export type PostStatusInput = NonNullable<PostInput['status']>;
+
 /** Public community post slug, validated before it is used in a view-count request. */
 export const PostSlugSchema = z
   .string()

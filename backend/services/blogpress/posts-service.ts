@@ -30,6 +30,21 @@ export class BlogpressPostsService {
     return result;
   }
 
+  /**
+   * A brand-new post that is published in the same write (#527): the composer
+   * no longer creates a draft first, so a free account holding its draft
+   * allowance can still publish. The server sets the publication columns; the
+   * published notifier fires exactly as it does for save-and-publish.
+   */
+  async createAndPublishPost(
+    authorId: string,
+    data: PostInput
+  ): Promise<{ id: string; slug: string }> {
+    const result = await this.repository.createAndPublishPost(authorId, data);
+    this.onPostPublished?.({ postId: result.id, authorId, slug: result.slug });
+    return result;
+  }
+
   async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
     const result = await this.repository.publishPost(postId, authorId);
     this.onPostPublished?.({ postId, authorId, slug: result.slug });
