@@ -3,8 +3,11 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { vet } from '../check-migration-grants.mjs';
 import {
+  findMissingGrants,
   findUnsafeStatements,
+  grantRemedy,
   main,
   pendingMigrations,
   statements,
@@ -130,6 +133,161 @@ describe('findUnsafeStatements', () => {
   });
 });
 
+describe('findMissingGrants', () => {
+  const names = (sql) => findMissingGrants(sql).map((finding) => `${finding.kind} ${finding.name}`);
+
+  it('leaves an object that carries its own grant alone', () => {
+    expect(
+      names(`
+        create table if not exists public.widgets (id uuid primary key);
+        alter table public.widgets enable row level security;
+        grant select on public.widgets to anon, authenticated;
+      `)
+    ).toEqual([]);
+  });
+
+  it('reports a table, view or sequence with no grant', () => {
+    expect(names('create table public.widgets (id uuid primary key);')).toEqual([
+      'table public.widgets',
+    ]);
+    expect(names('create view public.widget_names as select id from public.widgets;')).toEqual([
+      'view public.widget_names',
+    ]);
+    expect(names('create sequence public.widget_seq;')).toEqual(['sequence public.widget_seq']);
+  });
+
+  it('accepts a grant on a view and a sequence', () => {
+    expect(
+      names(`
+        create or replace view public.widget_names as select id from public.widgets;
+        grant select on public.widget_names to authenticated;
+        create sequence public.widget_seq;
+        grant usage, select on sequence public.widget_seq to service_role;
+      `)
+    ).toEqual([]);
+  });
+
+  it('ignores the private schema, which the Data API does not expose', () => {
+    expect(names('create table private.widgets (id uuid primary key);')).toEqual([]);
+  });
+
+  it('needs a grant per object, not per file', () => {
+    expect(
+      names(`
+        create table public.widgets (id uuid primary key);
+        create table public.gadgets (id uuid primary key);
+        grant select on public.widgets to authenticated;
+      `)
+    ).toEqual(['table public.gadgets']);
+  });
+
+  it('does not count a grant on a different table', () => {
+    expect(
+      names(`
+        create table public.widgets (id uuid primary key);
+        grant select on public.gadgets to authenticated;
+      `)
+    ).toEqual(['table public.widgets']);
+  });
+
+  it('requires a sequence grant for a serial column', () => {
+    expect(
+      names(`
+        create table public.widgets (id bigserial primary key);
+        grant select on public.widgets to authenticated;
+      `)
+    ).toEqual(['sequence public.widgets_id_seq']);
+
+    expect(
+      names(`
+        create table public.widgets (id bigserial primary key);
+        grant select, insert on public.widgets to authenticated;
+        grant usage, select on sequence public.widgets_id_seq to authenticated;
+      `)
+    ).toEqual([]);
+  });
+
+  it('accepts the bulk grants for the schema', () => {
+    expect(
+      names(`
+        create table public.widgets (id uuid primary key);
+        grant select on all tables in schema public to authenticated;
+      `)
+    ).toEqual([]);
+    expect(
+      names(`
+        create table public.widgets (id bigserial primary key);
+        grant select on public.widgets to authenticated;
+        grant usage, select on all sequences in schema public to authenticated;
+      `)
+    ).toEqual([]);
+  });
+
+  it('handles quoted and unqualified identifiers', () => {
+    expect(names('create table "Widgets" (id uuid primary key);')).toEqual([
+      'table public.widgets',
+    ]);
+    expect(
+      names(`
+        create table Widgets (id uuid primary key);
+        grant select on public.widgets to authenticated;
+      `)
+    ).toEqual([]);
+  });
+
+  it('does not mistake a function grant for a table grant', () => {
+    expect(
+      names(`
+        create table public.widgets (id uuid primary key);
+        grant execute on function public.widget_count() to authenticated;
+      `)
+    ).toEqual(['table public.widgets']);
+  });
+
+  it('describes the grant to add', () => {
+    expect(grantRemedy({ name: 'public.widgets', kind: 'table' })).toContain(
+      'grant select, insert, update, delete on public.widgets'
+    );
+    expect(grantRemedy({ name: 'public.widget_seq', kind: 'sequence' })).toContain(
+      'grant usage, select on sequence public.widget_seq'
+    );
+  });
+});
+
+describe('vet', () => {
+  const file = (name, sql) => join(migrationsDir({ [name]: sql }), name);
+
+  it('passes a change whose new objects carry a grant', () => {
+    const { lines, log } = collect();
+    const target = file(
+      '20260101000000_first.sql',
+      'create table public.widgets (id uuid primary key);\n' +
+        'grant select on public.widgets to authenticated;\n'
+    );
+
+    expect(vet([target], undefined, log)).toBe(0);
+    expect(lines.join('\n')).toContain('has a grant');
+  });
+
+  it('fails a change that creates an object without one', () => {
+    const { lines, log } = collect();
+    const target = file(
+      '20260101000000_first.sql',
+      'create table public.widgets (id uuid primary key);\n'
+    );
+
+    expect(vet([target], undefined, log)).toBe(1);
+    expect(lines.join('\n')).toContain('public.widgets (table)');
+  });
+
+  it('says nothing is wrong when the change has no migrations', () => {
+    const { lines, log } = collect();
+
+    expect(vet([], undefined, log)).toBe(0);
+    expect(lines.join('\n')).toContain('No migrations to vet');
+  });
+});
+
 describe('pendingMigrations', () => {
   it('keeps the repo order and drops what the project has already recorded', () => {
     const local = [
@@ -147,10 +305,15 @@ describe('pendingMigrations', () => {
 describe('main', () => {
   const safe = migrationsDir({
     '20260101000000_first.sql':
-      'create table if not exists public.widgets (id bigint primary key);\n',
+      'create table if not exists public.widgets (id bigint primary key);\n' +
+      'grant select on public.widgets to authenticated;\n',
   });
   const unsafe = migrationsDir({
     '20260101000000_first.sql': 'drop table public.widgets;\n',
+  });
+  const ungranted = migrationsDir({
+    '20260101000000_first.sql':
+      'create table if not exists public.widgets (id bigint primary key);\n',
   });
 
   const remote = (versions) =>
@@ -191,6 +354,18 @@ describe('main', () => {
     const output = lines.join('\n');
     expect(output).toContain('20260101000000_first.sql: drops a table or a schema');
     expect(output).toContain('supabase link --project-ref <ref> && supabase db push');
+  });
+
+  it('refuses a new public object with no grant', async () => {
+    const { lines, log } = collect();
+
+    expect(await main({ env, log, fetchImpl: async () => remote([]), localDir: ungranted })).toBe(
+      1
+    );
+    const output = lines.join('\n');
+    expect(output).toContain('20260101000000_first.sql: public.widgets (table)');
+    expect(output).toContain('grant select, insert, update, delete on public.widgets');
+    expect(output).toContain('42501');
   });
 
   it('fails when the history cannot be read', async () => {

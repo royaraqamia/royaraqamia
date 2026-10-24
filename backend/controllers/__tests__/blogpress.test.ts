@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
+const planMocks = vi.hoisted(() => ({
+  cap: vi.fn(),
+  meter: vi.fn(),
+  meterMany: vi.fn(),
+}));
 const mockPosts = {
   publishPost: vi.fn(),
+  createAndPublishPost: vi.fn(),
 };
 const mockRepository = {
   createPost: vi.fn(),
@@ -30,11 +36,11 @@ vi.mock('@/backend/config/blogpress', () => ({
 
 vi.mock('@/backend/config/plans', () => ({
   createPlanGate: () => ({
-    meter: async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run(),
-    meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
+    meter: planMocks.meter,
+    meterMany: planMocks.meterMany,
     reserve: async () => 'event-1',
     release: async () => {},
-    cap: async () => {},
+    cap: planMocks.cap,
     caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
   }),
@@ -60,6 +66,14 @@ describe('blogpress controller', () => {
     mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
+    mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
+    planMocks.cap.mockResolvedValue(undefined);
+    planMocks.meter.mockImplementation(
+      async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
+    );
+    planMocks.meterMany.mockImplementation(
+      async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run()
+    );
   });
 
   it('returns 401 when there is no session user', async () => {
@@ -68,6 +82,73 @@ describe('blogpress controller', () => {
     const result = await createPost();
 
     expect(result).toEqual(expect.objectContaining({ status: 401, body: { error: 'غير مصرح' } }));
+    expect(mockRepository.createPost).not.toHaveBeenCalled();
+  });
+
+  it('creates a draft through the draft cap, not the publish gate', async () => {
+    const result = await createPost({ slug: 'draft-post', content: 'مسوَّدة' });
+
+    expect(mockRepository.createPost).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ slug: 'draft-post', content: 'مسوَّدة' })
+    );
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_drafts');
+    expect(planMocks.meter).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 200, body: { id: 'p-1' } });
+  });
+
+  it('creates and publishes a new post in one metered request', async () => {
+    const result = await createPost({
+      slug: 'post-abc12345',
+      content: 'منشور جديد',
+      status: 'published',
+    });
+
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published');
+    expect(planMocks.meter).toHaveBeenCalledTimes(1);
+    expect(planMocks.meter).toHaveBeenCalledWith(
+      { userId: 'u-1' },
+      'community.post.publish',
+      expect.any(Function)
+    );
+    expect(mockPosts.createAndPublishPost).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ slug: 'post-abc12345', content: 'منشور جديد', status: 'published' })
+    );
+    expect(mockRepository.createPost).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: 200,
+      body: { id: 'p-9', slug: 'post-abc12345' },
+      revalidate: expect.arrayContaining([{ path: '/community/post-abc12345' }]),
+    });
+  });
+
+  it('writes nothing when the published cap refuses the new post', async () => {
+    planMocks.cap.mockRejectedValue(new Error('cap reached'));
+
+    const result = await createPost({
+      slug: 'post-abc12345',
+      content: 'منشور جديد',
+      status: 'published',
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: 500 }));
+    expect(planMocks.meter).not.toHaveBeenCalled();
+    expect(mockPosts.createAndPublishPost).not.toHaveBeenCalled();
+    expect(mockRepository.createPost).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when the publish credit is refused', async () => {
+    planMocks.meter.mockRejectedValue(new Error('no credits'));
+
+    const result = await createPost({
+      slug: 'post-abc12345',
+      content: 'منشور جديد',
+      status: 'published',
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: 500 }));
+    expect(mockPosts.createAndPublishPost).not.toHaveBeenCalled();
     expect(mockRepository.createPost).not.toHaveBeenCalled();
   });
 

@@ -5,6 +5,7 @@ import { ScrollAnimation } from './ScrollAnimations';
 import { CollapsibleText } from './shared/collapsible-text';
 import { CourseSummaryText } from './training/course-summary';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
+import { ProPrice } from './plans/pro-price';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export function TrainingCourses() {
@@ -91,9 +92,12 @@ export function TrainingCourses() {
                         رسوم الاستثمار
                       </div>
                       <div className="flex items-baseline justify-center md:justify-start gap-1">
-                        <span className="text-4xl sm:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-200 via-white to-purple-300">
-                          {course.price}
-                        </span>
+                        <ProPrice
+                          amountUsd={course.priceUsd}
+                          className="text-4xl sm:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-200 via-white to-purple-300"
+                          originalClassName="text-lg font-bold text-purple-200/60"
+                          tone="dark"
+                        />
                       </div>
                       <div className="text-[11px] text-purple-300/70 mt-1.5 font-medium flex items-center justify-center md:justify-start gap-1">
                         <Wallet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />

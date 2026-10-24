@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { FreePlanCta, PaidPlanCta, PlanViewerProvider } from '@/frontend/ui/plans/plan-ctas';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { formatCount } from '@/frontend/shared/format';
+import { PRO_SERVICE_DISCOUNT_PERCENT } from '@/shared/service-pricing';
 import type { PlanCatalog, UsageActionKey } from '@/shared/contracts/plans';
 
 const FREE = 'free' as const;
@@ -138,6 +139,10 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'mcp_connected_apps', PRO))} تطبيقات MCP متَّصلة.
+              </PlanPoint>
+              <PlanPoint>
+                خصم {PRO_SERVICE_DISCOUNT_PERCENT}% على التَّدريب والاستشارات وبناء المشاريع
+                والتَّعاقُد الشَّهري.
               </PlanPoint>
               <PlanPoint>دعم مباشر عبر واتساب.</PlanPoint>
             </ul>

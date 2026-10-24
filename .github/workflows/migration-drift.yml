@@ -14,12 +14,18 @@
 #     reviewed, with no migration file to roll it back.
 #
 # On main the order is: plan, vet, apply, verify. `scripts/check-migration-safety.mjs`
-# refuses to apply anything destructive unattended (see its header), so those
-# migrations stay pending and the verify step reports them until a person applies
-# them by hand. The apply itself uses the same credentials the plan already used
-# — the access token, plus SUPABASE_DB_PASSWORD when the repository has one: the
-# CLI can mint its own login role for a linked project, which is what "Finished
-# supabase link" plus a dry run that connects proves.
+# refuses to apply anything destructive unattended, and anything that creates a
+# `public` object without an explicit grant (see its header), so those migrations
+# stay pending and the verify step reports them until a person applies them by
+# hand. The apply itself uses the same credentials the plan already used — the
+# access token, plus SUPABASE_DB_PASSWORD when the repository has one: the CLI can
+# mint its own login role for a linked project, which is what "Finished supabase
+# link" plus a dry run that connects proves.
+#
+# `scripts/check-migration-grants.mjs` runs on the pull request too. Supabase
+# stopped granting the Data API roles on new objects in `public` on 2026-10-30, so
+# a migration that forgets its grant applies cleanly and then answers 42501; the
+# pull request is where that is cheap to catch, without the management API.
 #
 # A pull-request run only checks, and is relaxed about being ahead: the migration
 # it adds is applied by main after the merge.
@@ -35,6 +41,7 @@ on:
       - 'supabase/migrations/**'
       - 'scripts/check-migration-drift.mjs'
       - 'scripts/check-migration-safety.mjs'
+      - 'scripts/check-migration-grants.mjs'
       - 'scripts/__tests__/migration-*.test.mjs'
       - '.github/workflows/migration-drift.yml'
   push:
@@ -43,6 +50,7 @@ on:
       - 'supabase/migrations/**'
       - 'scripts/check-migration-drift.mjs'
       - 'scripts/check-migration-safety.mjs'
+      - 'scripts/check-migration-grants.mjs'
       - '.github/workflows/migration-drift.yml'
   schedule:
     # 05:23 UTC, an hour before the health heartbeat, so a drift that arrives
@@ -79,6 +87,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The grants step below diffs the pull request against origin/main.
+          fetch-depth: 0
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
@@ -86,6 +97,12 @@ jobs:
           node-version: '22'
           install-web-deps: 'false'
           cache-next: 'false'
+
+      # Runs on the pull request as well: a migration that creates a public
+      # object without a grant applies cleanly and then answers 42501, and the
+      # pull request is where that is cheap to catch. No credentials needed.
+      - name: Vet grants on the migrations in this change
+        run: node scripts/check-migration-grants.mjs
 
       - name: Setup Supabase CLI
         if: github.event_name != 'pull_request'

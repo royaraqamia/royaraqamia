@@ -7,7 +7,7 @@ import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
-import { createPost, saveAndPublishPost, updatePost } from '@/frontend/api/blogpress';
+import { createPost, updatePost } from '@/frontend/api/blogpress';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 
 const BODY_MAX = 20000;
@@ -89,13 +89,13 @@ export function PostComposerDialog({
         }
 
         const newSlug = buildSlug();
-        const { id } = await createPost();
-        await saveAndPublishPost(id, {
+        await createPost({
           slug: newSlug,
           content: trimmedBody,
           cover_image: '',
           meta_title: '',
           meta_desc: trimmedBody.slice(0, DESCRIPTION_PREVIEW),
+          status: 'published',
         });
         toast.success('تمَّ نشر منشورك');
         onOpenChange(false);
