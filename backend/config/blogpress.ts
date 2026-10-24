@@ -10,7 +10,6 @@ import {
 } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
 import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
-import { env } from '@/backend/config/env';
 
 /**
  * The Blogpress post module and the repository it rules over, wired to one
@@ -28,7 +27,7 @@ export function createBlogpressPostsModule(
   const repository = createPostsRepository(supabase);
   return {
     repository,
-    posts: new BlogpressPostsService(repository, env.adminEmails, createPostPublishedNotifier()),
+    posts: new BlogpressPostsService(repository, createPostPublishedNotifier()),
   };
 }
 

@@ -6,7 +6,7 @@ import {
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { createPostPublishedNotifier } from '@/backend/config/blogpress';
 import { createNotificationFanout } from '@/backend/config/notifications';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, RestorePostSnapshot } from '@/shared/contracts/blogpress';
 
 const postFixture = {
   id: 'p-1',
@@ -73,25 +73,19 @@ function makeRepo(
   };
   return {
     repository,
-    service: new BlogpressPostsService(repository, ['admin@example.com'], onPostPublished),
+    service: new BlogpressPostsService(repository, onPostPublished),
   };
 }
 
 const postData = { slug: 'post-1' };
 
 const snapshotBase = {
+  id: 'p-1',
   slug: 'post-1',
   content: null,
-  status: 'draft' as const,
   cover_image: null,
   meta_title: null,
   meta_desc: null,
-  published_at: null,
-  publish_at: null,
-  view_count: 0,
-  featured: false,
-  community_visible: true,
-  reading_time_minutes: 0,
 };
 
 describe('BlogpressPostsService publish visibility', () => {
@@ -243,39 +237,45 @@ describe('BlogpressPostsService.restorePost', () => {
     expect(repository.restorePost).not.toHaveBeenCalled();
   });
 
-  it('hides a non-admin restore and re-attaches the snapshot tags', async () => {
+  it('revives through the repository and re-attaches the snapshot tags', async () => {
     const { repository, service } = makeRepo();
     (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
     (repository.setPostTags as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     await expect(
-      service.restorePost('u-1', { ...snapshotBase, tagIds: ['t-1', 't-2'] }, 'user@example.com')
+      service.restorePost('u-1', { ...snapshotBase, tagIds: ['t-1', 't-2'] })
     ).resolves.toEqual({ id: 'p-2' });
 
-    expect(repository.restorePost).toHaveBeenCalledWith(
-      'u-1',
-      expect.objectContaining({ community_visible: false })
-    );
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', {
+      ...snapshotBase,
+      tagIds: ['t-1', 't-2'],
+    });
     expect(repository.setPostTags).toHaveBeenCalledWith('p-2', 'u-1', ['t-1', 't-2']);
   });
 
-  it('keeps blog visibility for an admin restore', async () => {
+  it('never forwards server-owned fields a caller tries to forge', async () => {
     const { repository, service } = makeRepo();
     (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+    const forged = {
+      ...snapshotBase,
+      status: 'published',
+      published_at: '2026-10-01T09:00:00.000Z',
+      view_count: 999,
+      featured: true,
+      community_visible: true,
+      reading_time_minutes: 99,
+    } as unknown as RestorePostSnapshot;
 
-    await service.restorePost('u-1', snapshotBase, 'admin@example.com');
+    await service.restorePost('u-1', forged);
 
-    expect(repository.restorePost).toHaveBeenCalledWith(
-      'u-1',
-      expect.objectContaining({ community_visible: true })
-    );
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshotBase);
   });
 
   it('skips tag re-attachment when the snapshot has no tags', async () => {
     const { repository, service } = makeRepo();
     (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
 
-    await service.restorePost('u-1', snapshotBase, 'user@example.com');
+    await service.restorePost('u-1', snapshotBase);
 
     expect(repository.setPostTags).not.toHaveBeenCalled();
   });

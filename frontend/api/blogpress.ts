@@ -1,5 +1,9 @@
 import { request } from '@/frontend/transport/http';
-import type { Post, PostTag, BlogpressSyncSnapshot } from '@/shared/contracts/blogpress';
+import type {
+  PostTag,
+  BlogpressSyncSnapshot,
+  RestorePostSnapshot,
+} from '@/shared/contracts/blogpress';
 import type { PostStatusInput } from '@/shared/contracts/community';
 
 export interface PostFields {
@@ -13,9 +17,7 @@ export interface PostFields {
   updatedAt?: string;
 }
 
-export async function restorePost(
-  snapshot: Omit<Post, 'id' | 'author_id' | 'created_at' | 'updated_at'> & { tagIds?: string[] }
-): Promise<{ id: string }> {
+export async function restorePost(snapshot: RestorePostSnapshot): Promise<{ id: string }> {
   return request<{ success: boolean; id: string }>('/api/blogpress/posts/restore', {
     method: 'POST',
     body: JSON.stringify(snapshot),
