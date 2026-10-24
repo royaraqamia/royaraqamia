@@ -2,6 +2,7 @@
 
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { ProPrice } from '@/frontend/ui/plans/pro-price';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 interface BookingSummaryProps {
@@ -38,9 +39,11 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
       {startingPrice !== null && (
         <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
           <span className="text-xs font-medium text-muted-foreground">تبدأ من</span>
-          <span className="text-2xl font-black tracking-tight text-foreground">
-            {`$${startingPrice}`}
-          </span>
+          <ProPrice
+            amountUsd={startingPrice}
+            className="text-2xl font-black tracking-tight text-foreground"
+            originalClassName="text-sm font-medium text-muted-foreground"
+          />
           <span className="text-xs text-muted-foreground">حسب الباقة</span>
         </div>
       )}
