@@ -134,6 +134,14 @@ describe('PricingView', () => {
     expect(screen.queryByRole('link', { name: 'ابدأ مجَّانًا' })).not.toBeInTheDocument();
   });
 
+  it('tells the reader the paid plan discounts the four services', () => {
+    render(<PricingView catalog={catalog} />);
+
+    expect(
+      screen.getByText('خصم 20% على التَّدريب والاستشارات وبناء المشاريع والتَّعاقُد الشَّهري.')
+    ).toBeInTheDocument();
+  });
+
   it('sells the two plans and nothing else', () => {
     render(<PricingView catalog={catalog} />);
 

@@ -37,6 +37,42 @@ A merged migration needs no hand-applying: the merge **is** the apply. The `main
 - **Never edit an applied migration**
 - Base schema lives on remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW files only
 - Prefer additive, reversible migrations; include a rollback note in the PR body
+- A migration that creates a table, view or sequence in `public` grants the roles that need it in the
+  same file — see [New public objects need explicit grants](#new-public-objects-need-explicit-grants)
+
+## New public objects need explicit grants
+
+Since **2026-10-30** Supabase no longer applies its default grants to objects created in the `public`
+schema. A new table, view or sequence is reachable through the Data API only if the migration grants
+the role itself; without one, every request — including through the service-role client — fails with
+`42501 permission denied`. Existing tables keep the grants they already have, so nothing needs to be
+backfilled. A from-scratch replay is not how this repo works anyway: the base schema lives on the
+project and the first migration is a stub.
+
+- **RLS is not access control.** Policies choose rows; grants decide whether the role reaches the
+  object at all. A table with perfect policies and no grant is invisible.
+- **`service_role` needs a grant too.** It bypasses row level security, not privileges. A server-written
+  table without `grant all ... to service_role` fails on its first write from the admin client, a cron
+  job or a workflow.
+- Grant only what the object serves:
+
+```sql
+-- public read, server writes (the news digest)
+grant select on public.news_digests to anon, authenticated;
+grant all on public.news_digests to service_role;
+
+-- signed-in users read and write their own rows
+grant select, insert, update, delete on public.quran_bookmarks to authenticated;
+
+-- views read like tables; sequences have their own grant (only `serial`, not `identity`)
+grant select on public.widget_summary to anon, authenticated;
+grant usage, select on sequence public.widgets_id_seq to authenticated;
+```
+
+The gate runs in two places: `scripts/check-migration-grants.mjs` vets the migrations a pull request
+adds or edits, and `scripts/check-migration-safety.mjs` refuses to apply a pending migration that
+creates a `public` object with no grant. Both read the files only. An `apply_migration` through MCP
+bypasses them, so the grant belongs in the statement list applied there **and** in the mirrored file.
 
 ## Drift check and apply
 

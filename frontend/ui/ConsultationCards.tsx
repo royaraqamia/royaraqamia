@@ -2,6 +2,7 @@ import { ArrowLeft, CalendarDays, User, Wallet } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
+import { ProPrice } from './plans/pro-price';
 import { CONSULTATION_START_PRICE_USD } from '@/shared/contracts/consultation';
 
 const SESSION_SPECS = [
@@ -60,12 +61,12 @@ export function ConsultationCards() {
                   <div>
                     <dt className="text-xs font-medium text-purple-200/70">تبدأ من</dt>
                     <dd className="flex items-baseline gap-2">
-                      <span
-                        dir="ltr"
+                      <ProPrice
+                        amountUsd={CONSULTATION_START_PRICE_USD}
                         className="bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-2xl font-black tracking-tight text-transparent"
-                      >
-                        {`$${CONSULTATION_START_PRICE_USD}`}
-                      </span>
+                        originalClassName="text-sm font-bold text-slate-400"
+                        tone="dark"
+                      />
                       <span className="text-xs text-slate-400">حسب الباقة</span>
                     </dd>
                   </div>

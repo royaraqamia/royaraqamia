@@ -60,18 +60,23 @@ export async function createPost(body?: Record<string, unknown> | null): Promise
         }
         input = validated.data;
       }
-      const { repository } = createBlogpressPostsModule(supabase);
+      const { posts, repository } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
 
       // A draft takes a draft slot; a post that arrives already published pays
-      // the publish credit and takes a published slot (an offline replay of a
-      // composer publish lands here).
+      // the publish credit and takes a published slot in the same request
+      // (#527). The composer sends the fields and `status: 'published'`, so it
+      // never needs a spare draft slot and a refused publish writes nothing.
       if (input?.status === 'published') {
         await plan.cap(userId, OWNED_ITEMS.communityPublished);
-        const { id } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
-          repository.createPost(userId, input)
+        const { id, slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
+          posts.createAndPublishPost(userId, input)
         );
-        return jsonResult(200, { id });
+        return jsonResult(
+          200,
+          { id, slug },
+          { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
+        );
       }
 
       await plan.cap(userId, OWNED_ITEMS.communityDrafts);

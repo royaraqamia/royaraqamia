@@ -37,6 +37,7 @@
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
+    "check:migrations:grants": "node scripts/check-migration-grants.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",

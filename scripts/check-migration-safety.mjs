@@ -7,9 +7,13 @@
  * the automation is allowed the migrations docs/supabase.md calls routine, and
  * stops at the ones its "Forbidden without explicit human approval" section
  * names: dropping tables or columns, truncating, turning row level security off,
- * rewriting the Auth or Storage schemas, and unbounded deletes. What it refuses
- * is still just a file in a pull request — a person applies it by hand, with
- * `supabase db push`, after reading it.
+ * rewriting the Auth or Storage schemas, and unbounded deletes. It also refuses a
+ * migration that creates a table, view or sequence in `public` without an
+ * explicit `grant`: since 2026-10-30 Supabase no longer grants the Data API roles
+ * on new objects, so such a migration applies cleanly and then answers every
+ * request with `42501 permission denied`. What it refuses is still just a file in
+ * a pull request — a person applies it by hand, with `supabase db push`, after
+ * reading it.
  *
  * The matching is statement-accurate on purpose, because the obvious keyword
  * search is wrong on this repo's own migrations:
@@ -145,6 +149,140 @@ export function findUnsafeStatements(sql) {
   return findings;
 }
 
+/** New objects whose reachability depends on a grant in the same file. */
+const CREATES_PUBLIC = [
+  {
+    kind: 'table',
+    pattern:
+      /^create\s+(?:(?:unlogged|temporary|temp|foreign)\s+)?table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/i,
+  },
+  {
+    kind: 'view',
+    pattern:
+      /^create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?([\w."]+)/i,
+  },
+  {
+    kind: 'sequence',
+    pattern: /^create\s+sequence\s+(?:if\s+not\s+exists\s+)?([\w."]+)/i,
+  },
+];
+
+/** `public.<object>` for a name in `public`, or for an unqualified name. */
+function publicName(token) {
+  const parts = token.replace(/"/g, '').toLowerCase().split('.');
+  if (parts.length === 1) return `public.${parts[0]}`;
+  return parts[0] === 'public' && parts.length === 2 ? `${parts[0]}.${parts[1]}` : null;
+}
+
+/** The public objects one `grant` statement covers. */
+function grantedObjects(statement) {
+  const covered = {
+    tables: new Set(),
+    sequences: new Set(),
+    allTables: false,
+    allSequences: false,
+  };
+  const match = /^grant\s+.+?\s+on\s+(.+?)\s+to\s+/is.exec(statement);
+  if (!match) return covered;
+
+  let clause = match[1].trim();
+  const lower = clause.toLowerCase();
+
+  if (/^all\s+tables\s+in\s+schema\s+public\b/.test(lower)) covered.allTables = true;
+  if (/^all\s+sequences\s+in\s+schema\s+public\b/.test(lower)) covered.allSequences = true;
+  if (covered.allTables || covered.allSequences) return covered;
+
+  // `all tables in schema private`, functions, types, schemas: not this gate's objects.
+  if (/^all\s+(?:tables|sequences|functions|routines|procedures)\b/.test(lower)) return covered;
+  if (/^(?:function|procedure|routine|schema|database|type|domain)\b/.test(lower)) return covered;
+
+  const isSequence = /^sequence\s+/.test(lower);
+  clause = clause.replace(/^(?:table|sequence)\s+/i, '');
+
+  for (const entry of clause.split(',')) {
+    const name = publicName(entry.trim().split(/\s+/)[0] ?? '');
+    if (!name) continue;
+    if (isSequence) covered.sequences.add(name);
+    else covered.tables.add(name);
+  }
+  return covered;
+}
+
+/** The implicit sequences a `serial` column creates, named the way Postgres names them. */
+function serialSequences(statement, table) {
+  const sequences = [];
+  for (const match of statement.matchAll(/([\w"]+)\s+(?:big|small)?serial\b/gi)) {
+    sequences.push(`${table}_${match[1].replace(/"/g, '').toLowerCase()}_seq`);
+  }
+  return sequences;
+}
+
+/**
+ * The public tables, views and sequences a migration creates without a `grant`
+ * of their own in the same file. `service_role` bypasses row level security but
+ * not privileges, so a grant is required even for a table only the server reads.
+ * Whether a given role should get one is the migration author's decision; this
+ * only insists that the decision is written down.
+ */
+export function findMissingGrants(sql) {
+  const parts = statements(sql);
+  const covered = {
+    tables: new Set(),
+    sequences: new Set(),
+    allTables: false,
+    allSequences: false,
+  };
+
+  for (const statement of parts) {
+    const granted = grantedObjects(statement);
+    for (const table of granted.tables) covered.tables.add(table);
+    for (const sequence of granted.sequences) covered.sequences.add(sequence);
+    covered.allTables ||= granted.allTables;
+    covered.allSequences ||= granted.allSequences;
+  }
+
+  const missing = new Map();
+  const add = (name, kind) => {
+    if (!missing.has(name)) missing.set(name, { name, kind });
+  };
+
+  for (const statement of parts) {
+    for (const { kind, pattern } of CREATES_PUBLIC) {
+      const match = pattern.exec(statement);
+      if (!match) continue;
+
+      const name = publicName(match[1]);
+      if (!name) continue;
+
+      if (kind === 'sequence') {
+        if (!covered.allSequences && !covered.sequences.has(name)) add(name, 'sequence');
+        continue;
+      }
+
+      if (!covered.allTables && !covered.tables.has(name)) add(name, kind);
+
+      if (kind === 'table') {
+        for (const sequence of serialSequences(statement, name)) {
+          if (!covered.allSequences && !covered.sequences.has(sequence)) add(sequence, 'sequence');
+        }
+      }
+    }
+  }
+
+  return [...missing.values()];
+}
+
+/** The grant a missing object most likely wants, shown in the refusal. */
+export function grantRemedy({ name, kind }) {
+  if (kind === 'sequence') {
+    return `grant usage, select on sequence ${name} to authenticated;  -- only the roles that need it`;
+  }
+  if (kind === 'view') {
+    return `grant select on ${name} to authenticated;  -- add anon if it is public, service_role if the server reads it`;
+  }
+  return `grant select, insert, update, delete on ${name} to authenticated;  -- only the roles that need it, service_role included if the server writes it`;
+}
+
 /** The migrations on disk the project has not recorded, oldest first. */
 export function pendingMigrations(local, remote) {
   const recorded = new Set(remote);
@@ -187,33 +325,62 @@ export async function main({
   for (const migration of pending) log(`  - ${migration.file}`);
 
   const refused = [];
+  const missingGrants = [];
   for (const migration of pending) {
     const sql = readFile(join(localDir, migration.file), 'utf8');
     for (const finding of findUnsafeStatements(sql)) {
       refused.push({ file: migration.file, ...finding });
     }
+    for (const finding of findMissingGrants(sql)) {
+      missingGrants.push({ file: migration.file, ...finding });
+    }
   }
 
   log('');
-  if (refused.length === 0) {
+  if (refused.length === 0 && missingGrants.length === 0) {
     log(
-      'Safe to apply unattended: nothing here drops, truncates, disables row level security, or wipes rows.'
+      'Safe to apply unattended: nothing here drops, truncates, disables row level security, or wipes rows,'
     );
+    log('and every new public table, view and sequence carries its own grant.');
     return 0;
   }
 
-  log(`${refused.length} statement(s) need a human before they run unattended:`);
-  for (const finding of refused) {
-    log(`  - ${finding.file}: ${finding.reason}`);
-    log(`      ${finding.statement.slice(0, 160)}`);
+  if (refused.length > 0) {
+    log(`${refused.length} statement(s) need a human before they run unattended:`);
+    for (const finding of refused) {
+      log(`  - ${finding.file}: ${finding.reason}`);
+      log(`      ${finding.statement.slice(0, 160)}`);
+    }
+    log('');
   }
-  log('');
+
+  if (missingGrants.length > 0) {
+    log(`${missingGrants.length} new public object(s) have no explicit grant:`);
+    for (const finding of missingGrants) {
+      log(`  - ${finding.file}: ${finding.name} (${finding.kind})`);
+      log(`      ${grantRemedy(finding)}`);
+    }
+    log('');
+    log(
+      'Since 2026-10-30 Supabase grants the Data API roles on new public objects only through an'
+    );
+    log('explicit grant, so this migration would apply and then answer 42501.');
+    log('Add the grant to the same migration; applying this file as it stands does not fix it.');
+    log('');
+  }
+
+  if (refused.length > 0) {
+    log(
+      'Refusing to apply. Read the file, then either replace the statement in a follow-up migration,'
+    );
+    log('or merge this one and apply it yourself once you have approved it:');
+    log('  supabase link --project-ref <ref> && supabase db push');
+  } else {
+    log('Refusing to apply until the grants are in the migration.');
+  }
   log(
-    'Refusing to apply. Read the file, then either replace the statement in a follow-up migration,'
+    'See docs/supabase.md ("Forbidden without explicit human approval", "New public objects need explicit grants").'
   );
-  log('or merge this one and apply it yourself once you have approved it:');
-  log('  supabase link --project-ref <ref> && supabase db push');
-  log('See docs/supabase.md ("Forbidden without explicit human approval").');
   return 1;
 }
 
