@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.137.0] - 2026-10-24
+
+### Changed
+- Bulk publish now charges only actual transitions. (#564)
+
+### Added
+- the services menu follows the visitor's order (#565)
+
 ## [1.136.2] - 2026-10-24
 
 ### Changed
