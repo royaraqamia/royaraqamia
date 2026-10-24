@@ -16,12 +16,12 @@ import {
 export const metadata: Metadata = {
   title: 'أخبار اليوم',
   description:
-    'ملخّص يومي لأهم أخبار العالم من مصادر موثوقة: التقنية والسياسة والدين أولاً، وأولوية للعالم العربي والإسلامي، مع رابط المصدر الأصلي لكل خبر.',
+    'مُلخَّص يومي لأهم أخبار العالم من مصادر موثوقة: التقنية والسياسة والدين أولاً، وأولوية للعالم العربي والإسلامي، مع رابط المصدر الأصلي لكل خبر.',
   alternates: { canonical: '/news' },
   openGraph: {
     title: 'أخبار اليوم | رؤى رقميّة',
     description:
-      'ملخّص يومي لأهم أخبار العالم من مصادر موثوقة، بترتيب يعطي الأولوية للعالم العربي والإسلامي وللأخبار التقنية والسياسية والدينية.',
+      'مُلخَّص يومي لأهم أخبار العالم من مصادر موثوقة، بترتيب يعطي الأولوية للعالم العربي والإسلامي وللأخبار التقنية والسياسية والدينية.',
     url: '/news',
     siteName: 'رؤى رقميّة',
     locale: 'ar_SY',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'أخبار اليوم | رؤى رقميّة',
-    description: 'ملخّص يومي لأهم أخبار العالم من مصادر موثوقة، مع رابط المصدر الأصلي لكل خبر.',
+    description: 'مُلخَّص يومي لأهم أخبار العالم من مصادر موثوقة، مع رابط المصدر الأصلي لكل خبر.',
     images: ['/OG Image.webp'],
   },
 };
@@ -70,7 +70,6 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
       ? board.search.hits.map((hit) => hit.category)
       : stories.map((story) => story.category)
   );
-  const lastPublishedLabel = board.day ? formatPublishedTime(board.day.digest.publishedAt) : null;
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
@@ -80,11 +79,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
             <SectionTitle as="h1">
               <SectionTitleHighlight>أخبار اليوم</SectionTitleHighlight>
             </SectionTitle>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-              ملخّص يومي يقرأ أهم ما نُشر في مصادر موثوقة: التقنية والسياسة والدين أولاً، ثم بقية
-              المجالات، وأولوية للعالم العربي والإسلامي. كل خبر يحمل رابط مصدره الأصلي.
-            </p>
-            <NewsLiveRefresh lastPublishedLabel={lastPublishedLabel} />
+            <NewsLiveRefresh />
           </header>
 
           <NewsFilters
@@ -121,7 +116,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                   </div>
                 ) : (
                   <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-                    لا نتائج مطابقة في أخبار آخر {NEWS_RETENTION_DAYS} يوماً.
+                    لا نتائج مطابقة في أخبار آخر {NEWS_RETENTION_DAYS} يومًا.
                   </p>
                 )}
 
@@ -169,28 +164,23 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
               </section>
             ) : (
               <section className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center">
-                <h2 className="text-xl font-extrabold">لا يوجد ملخّص لهذا اليوم</h2>
+                <h2 className="text-xl font-extrabold">لا يوجد مُلخَّص لهذا اليوم</h2>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
                   {board.hasAnyDigest
-                    ? 'قد يكون هذا اليوم خارج مدة الاحتفاظ (30 يوماً) أو لم يُنشر فيه ملخّص بعد.'
-                    : 'لم يُنشر أي ملخّص بعد. يُنشر الملخّص كل صباح بعد الساعة السادسة بتوقيت دمشق.'}
+                    ? 'قد يكون هذا اليوم خارج مدة الاحتفاظ (30 يومًا) أو لم يُنشَر فيه مُلخَّص بعد.'
+                    : 'لم يُنشَر أي مُلخَّص بعد. يُنشَر المُلخَّص كل صباح بعد السَّاعة السَّادسة بتوقيت دمشق.'}
                 </p>
                 {board.hasAnyDigest ? (
                   <Link
                     href="/news"
                     className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    أحدث ملخّص
+                    أحدث مُلخَّص
                   </Link>
                 ) : null}
               </section>
             )}
           </div>
-
-          <p className="mx-auto mt-10 max-w-2xl text-center text-[11px] leading-6 text-muted-foreground">
-            الملخّصات تُكتب آلياً انطلاقاً من عناوين ومقتطفات المصادر المنشورة، وليست بديلاً عن
-            قراءة الخبر الأصلي. تُحذف الملخّصات تلقائياً بعد {NEWS_RETENTION_DAYS} يوماً.
-          </p>
         </div>
       </main>
     </div>

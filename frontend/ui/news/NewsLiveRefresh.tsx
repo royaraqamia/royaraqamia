@@ -8,16 +8,11 @@ import { subscribeToNewsDigestChanges } from '@/frontend/api/news';
 /** Folds a burst of changes (a re-run deletes and re-inserts) into one refresh. */
 const REFRESH_DEBOUNCE_MS = 1200;
 
-interface NewsLiveRefreshProps {
-  /**
-   * Server-formatted, so the pill cannot disagree with the HTML it hydrates:
-   * an Intl call in the browser may not match the server's locale data.
-   */
-  lastPublishedLabel: string | null;
-}
-
 /**
  * Turns a published digest into a visible one without a reload.
+ *
+ * Renders nothing: the page shows no freshness indicator, but the subscription
+ * is kept so a digest that lands while someone is reading still appears.
  *
  * The subscription is the same `postgres_changes` signal the products use for
  * sync hints (ADR-0060), pointed at a public table: `news_digests` is in the
@@ -26,7 +21,7 @@ interface NewsLiveRefreshProps {
  * channel that cannot open costs freshness, never the page — the next navigation
  * or focus still reads the server.
  */
-export function NewsLiveRefresh({ lastPublishedLabel }: NewsLiveRefreshProps) {
+export function NewsLiveRefresh(): null {
   const router = useRouter();
 
   useEffect(() => {
@@ -57,13 +52,5 @@ export function NewsLiveRefresh({ lastPublishedLabel }: NewsLiveRefreshProps) {
     };
   }, [router]);
 
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-        تحديث مباشر
-      </span>
-      {lastPublishedLabel ? <span>آخر إصدار: {lastPublishedLabel}</span> : null}
-    </div>
-  );
+  return null;
 }
