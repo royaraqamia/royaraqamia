@@ -55,11 +55,16 @@ export const PostTagIdsSchema = z.object({
 
 export type PostTagIdsInput = z.infer<typeof PostTagIdsSchema>;
 
+/** Upper bound on one bulk request, so a malformed client cannot fan out an unbounded batch. */
+export const BULK_POSTS_MAX = 100;
+
 export const BulkPostsActionSchema = z.object({
   action: z.enum(['publish', 'unpublish', 'delete', 'setCategory']),
   postIds: z
     .array(z.string().uuid('معرِّف منشور غير صالح'))
-    .min(1, 'اختر منشوراً واحداً على الأقل'),
+    .min(1, 'اختر منشوراً واحداً على الأقل')
+    .max(BULK_POSTS_MAX, `الحد الأقصى ${BULK_POSTS_MAX} منشور`)
+    .transform((ids) => Array.from(new Set(ids))),
   categoryId: z.string().uuid('معرِّف تصنيف غير صالح').nullable().optional(),
 });
 

@@ -62,6 +62,15 @@ export interface PostsRepository {
     authorId: string,
     action: 'publish' | 'unpublish' | 'delete'
   ): Promise<{ affected: number; slugs: string[] }>;
+  /**
+   * Splits a bulk-publish selection into the owned posts that still have to
+   * transition and the owned posts that are already published. Ids the caller
+   * does not own, and tombstones, appear in neither list.
+   */
+  resolveBulkPublishTargets(
+    postIds: string[],
+    authorId: string
+  ): Promise<{ transitionIds: string[]; alreadyPublishedIds: string[] }>;
   bulkSetPostCategories(postIds: string[], authorId: string, categoryId: string): Promise<void>;
   listCategoriesByAuthor(authorId: string): Promise<PostCategory[]>;
   createCategory(authorId: string, name: string, slug: string): Promise<PostCategory>;
