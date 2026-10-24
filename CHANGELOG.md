@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.136.1] - 2026-10-24
+
+### Changed
+- make the news controls read as the hero CTA (#560)
+- trim guest prompts, rebuild news search, drop price badge (#556)
+- Restore now revives the tombstone. (#554)
+- drop the unused dirname import (#553)
+
 ## [1.136.0] - 2026-10-24
 
 ### Added
