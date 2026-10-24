@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { getMyNewsSourceRequests, submitNewsSourceRequest } from '@/frontend/api/news';
 import { useSession } from '@/frontend/state/session-provider';
 import { ApiError } from '@/frontend/transport/http';
 import { Badge } from '@/frontend/ui/primitives/badge';
-import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
   NEWS_SOURCE_NAME_MAX,
@@ -121,10 +120,9 @@ export function NewsSourceRequestForm() {
             </label>
           </div>
 
-          <Button type="submit" size="sm" disabled={submitting} variant="outline">
-            <Send aria-hidden="true" />
+          <HeroCtaButton type="submit" disabled={submitting}>
             {submitting ? 'جاري الإرسال…' : 'إرسال الطلب'}
-          </Button>
+          </HeroCtaButton>
         </form>
       )}
 

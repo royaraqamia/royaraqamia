@@ -69,16 +69,43 @@ function isUnderPrefix(route, prefix) {
 }
 
 /**
- * Selects the shell routes from the build manifests. Pure so the rules are
- * unit-tested against fixtures rather than only against whatever the current
- * build happens to contain.
+ * Public pages that are expected to have no shell, with the reason they cannot
+ * have one (#557). A page in this list is not an error; a page that is dynamic
+ * and is *not* in this list is, because nothing declared that its shell was
+ * meant to disappear — which is exactly how `/news` lost one.
  */
-export function selectPrecacheRoutes({
-  appPaths,
-  prerendered,
-  neverCachePrefixes,
-  maxRoutes = MAX_PRECACHE_ROUTES,
-}) {
+export const DYNAMIC_BY_DESIGN = [
+  {
+    route: '/news',
+    reason:
+      'reads `searchParams` on the server; #555 moves the filters client-side so it can be a shell',
+  },
+  // The three lead forms reach the session through `getOptionalUser()` rather
+  // than touching `cookies()` in the page, so `check:surfaces`' source heuristic
+  // cannot see why they render per request. Their writes are outbox rows, so an
+  // offline open still gets the ancestor shell and the form's own
+  // needs-connection state, which is the promise the matrix makes for them.
+  {
+    route: '/hire',
+    reason:
+      'calls `getOptionalUser()` and `loadServiceDiscount()` — the price and the signed-in state come from the request',
+  },
+  {
+    route: '/request-project',
+    reason:
+      'same as `/hire`: `getOptionalUser()` and `loadServiceDiscount()` decide what the page says',
+  },
+  {
+    route: '/training/apply',
+    reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
+  },
+];
+
+/**
+ * Every page route that passes the exclusions, before the prerender test — the
+ * set the "undeclared dynamic page" rule is measured against.
+ */
+function shellCandidates({ appPaths, neverCachePrefixes }) {
   const pages = new Set();
   for (const [key, route] of Object.entries(appPaths ?? {})) {
     // Route handlers (`/api/.../route`) are not pages and have no shell.
@@ -87,23 +114,61 @@ export function selectPrecacheRoutes({
     pages.add(route);
   }
 
+  return (
+    [...pages]
+      .filter((route) => route.startsWith('/'))
+      .filter((route) => !route.includes('[') && !route.includes(']'))
+      .filter((route) => !route.includes('?') && !route.includes('#'))
+      // Internal routes (`/_not-found`) have no user-facing shell.
+      .filter((route) => !route.startsWith('/_'))
+      .filter((route) => !route.includes('.'))
+      // `/` and `/offline` are already in the worker's fixed precache list.
+      .filter((route) => route !== '/' && route !== '/offline')
+      .filter((route) => !NON_PUBLIC_ROUTES.some((excluded) => isUnderPrefix(route, excluded)))
+      .filter((route) => !neverCachePrefixes.some((prefix) => isUnderPrefix(route, prefix)))
+      .sort()
+  );
+}
+
+/**
+ * The selection plus everything a check needs to say *why* it is incomplete
+ * (#557): a public page the build did not prerender and nobody declared, a
+ * declaration that has gone stale because the page became static, and a list
+ * that outgrew the cap. `selectPrecacheRoutes` is the same function's `routes`.
+ */
+export function auditPrecacheRoutes({
+  appPaths,
+  prerendered,
+  neverCachePrefixes,
+  dynamicByDesign = DYNAMIC_BY_DESIGN,
+  maxRoutes = MAX_PRECACHE_ROUTES,
+}) {
   const staticRoutes = new Set(Object.keys(prerendered ?? {}));
+  const declared = new Set(
+    dynamicByDesign.map((entry) => (typeof entry === 'string' ? entry : entry.route))
+  );
 
-  const routes = [...pages]
-    .filter((route) => route.startsWith('/'))
-    .filter((route) => !route.includes('[') && !route.includes(']'))
-    .filter((route) => !route.includes('?') && !route.includes('#'))
-    // Internal routes (`/_not-found`) have no user-facing shell.
-    .filter((route) => !route.startsWith('/_'))
-    .filter((route) => !route.includes('.'))
-    // `/` and `/offline` are already in the worker's fixed precache list.
-    .filter((route) => route !== '/' && route !== '/offline')
-    .filter((route) => staticRoutes.has(route))
-    .filter((route) => !NON_PUBLIC_ROUTES.some((excluded) => isUnderPrefix(route, excluded)))
-    .filter((route) => !neverCachePrefixes.some((prefix) => isUnderPrefix(route, prefix)))
-    .sort();
+  const candidates = shellCandidates({ appPaths, neverCachePrefixes });
+  const full = candidates.filter((route) => staticRoutes.has(route));
 
-  return routes.slice(0, maxRoutes);
+  return {
+    routes: full.slice(0, maxRoutes),
+    total: full.length,
+    truncated: full.length > maxRoutes ? full.slice(maxRoutes) : [],
+    undeclaredDynamic: candidates.filter(
+      (route) => !staticRoutes.has(route) && !declared.has(route)
+    ),
+    staleDeclarations: [...declared].filter((route) => staticRoutes.has(route)).sort(),
+  };
+}
+
+/**
+ * Selects the shell routes from the build manifests. Pure so the rules are
+ * unit-tested against fixtures rather than only against whatever the current
+ * build happens to contain.
+ */
+export function selectPrecacheRoutes(options) {
+  return auditPrecacheRoutes(options).routes;
 }
 
 export function renderPrecacheScript(routes) {
@@ -136,15 +201,41 @@ export function main() {
   }
 
   const neverCachePrefixes = readNeverCachePrefixes(readFileSync(ROUTING, 'utf8'));
-  const routes = selectPrecacheRoutes({
+  const audit = auditPrecacheRoutes({
     appPaths,
     prerendered: prerenderManifest.routes,
     neverCachePrefixes,
   });
 
-  writeFileSync(OUTPUT, renderPrecacheScript(routes));
-  console.log(`  ✓ ${OUTPUT} → ${routes.length} route shell${routes.length === 1 ? '' : 's'}`);
-  return routes;
+  writeFileSync(OUTPUT, renderPrecacheScript(audit.routes));
+  console.log(
+    `  ✓ ${OUTPUT} → ${audit.routes.length} route shell${audit.routes.length === 1 ? '' : 's'}`
+  );
+
+  // Not fatal here: `npm run build` must not fail because a new page needs a
+  // decision. `npm run check:precache` is what fails, and it names the route.
+  for (const route of audit.undeclaredDynamic) {
+    console.log(
+      `  ! ${route} is public but not prerendered — declare it in DYNAMIC_BY_DESIGN or fix the page (#557)`
+    );
+  }
+  for (const route of audit.staleDeclarations) {
+    console.log(
+      `  ! ${route} is declared dynamic by design but the build prerendered it — drop it`
+    );
+  }
+  for (const route of audit.truncated) {
+    console.log(`  ! ${route} was dropped by the ${MAX_PRECACHE_ROUTES}-route cap (#557)`);
+  }
+
+  return audit.routes;
+}
+
+/** The routes a rendered `sw-precache.js` declares, for the check to compare. */
+export function parsePrecacheScript(source) {
+  const match = /self\.PRECACHE_ROUTES\s*=\s*(\[[\s\S]*?\]);/.exec(source);
+  if (!match) throw new Error('sw-precache.js does not declare PRECACHE_ROUTES');
+  return JSON.parse(match[1]);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

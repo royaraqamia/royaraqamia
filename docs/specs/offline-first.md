@@ -47,6 +47,13 @@ worth revisiting per surface: drafting a lead offline is already supported, and 
 loses nothing an operator cannot reconcile should join it. Consultation Booking stays online-only
 because it reserves a scarce resource (ADR-0031).
 
+The per-route version of this table is generated from `perf/surfaces.json` into
+[surfaces.md](surfaces.md) and checked by `npm run check:surfaces` (#561): every `app/**/page.tsx`
+route must belong to exactly one row, and a row marked `precached` must be a page the build can
+prerender. Where the two disagree, the generated table is the scope and this summary is the intent —
+#493 and #555 reconcile the rows they own (the fifth Local-Store product, and public read-only
+content).
+
 ## Limits of instant
 
 Being honest about the floor is part of the spec, because a promise we cannot keep is worse than a

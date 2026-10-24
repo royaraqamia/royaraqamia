@@ -1,6 +1,6 @@
 {
   "name": "رؤيَة رقَميَّة",
-  "version": "1.136.0",
+  "version": "1.136.1",
   "description": "نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات.",
   "author": "م. أيْهَم العَلي",
   "license": "UNLICENSED",
@@ -35,6 +35,8 @@
     "fix:arabic": "node scripts/check-arabic-order.mjs --fix",
     "check:digits": "node scripts/check-digits.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
+    "check:surfaces": "node scripts/check-surfaces.mjs",
+    "check:precache": "node scripts/check-precache.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
     "check:migrations:grants": "node scripts/check-migration-grants.mjs",

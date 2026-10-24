@@ -3,12 +3,14 @@ import {
   NEWS_PERSONAL_MIN_STORIES,
   NEWS_RETENTION_DAYS,
   NEWS_SEARCH_LIMIT,
+  NEWS_SEARCH_SUGGESTION_LIMIT,
   sanitizeNewsQuery,
   type NewsBoard,
   type NewsDay,
   type NewsPreferencesEffect,
   type NewsQuery,
   type NewsSearch,
+  type NewsSearchHit,
   type NewsStory,
 } from '@/shared/contracts/news';
 
@@ -20,6 +22,13 @@ export interface NewsBoardOptions {
 export interface NewsService {
   /** Everything the page renders for one request. */
   getBoard(query: NewsQuery, options?: NewsBoardOptions): Promise<NewsBoard>;
+
+  /**
+   * Story suggestions for the search combobox, over the retained month. The
+   * term is sanitised here rather than trusted, so the route cannot hand raw
+   * input to the repository's PostgREST filter.
+   */
+  searchSuggestions(term: string): Promise<NewsSearchHit[]>;
 }
 
 /**
@@ -127,6 +136,17 @@ export function createNewsService(repository: NewsRepository): NewsService {
         preferences: selected.preferences,
         personal: null,
       };
+    },
+
+    async searchSuggestions(term: string): Promise<NewsSearchHit[]> {
+      const sanitized = sanitizeNewsQuery(term);
+      if (!sanitized) return [];
+
+      return repository.searchStories({
+        query: sanitized,
+        category: null,
+        limit: NEWS_SEARCH_SUGGESTION_LIMIT,
+      });
     },
   };
 }

@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import { cn } from '@/frontend/shared/cn';
 import { useMyUsage } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
-import { PRO_SERVICE_DISCOUNT_PERCENT, subscriberPriceUsd } from '@/shared/service-pricing';
+import { subscriberPriceUsd } from '@/shared/service-pricing';
 
 /**
  * Whether the reader is a paid subscriber, resolved once per page.
@@ -48,10 +48,6 @@ interface ProPriceProps {
   className?: string;
   /** Classes for the struck-through list price. */
   originalClassName?: string;
-  /** The discount pill is on by default; off where the row is already busy. */
-  showBadge?: boolean;
-  /** `dark` for the purple and slate sections, `light` for the plain cards. */
-  tone?: 'light' | 'dark';
 }
 
 /**
@@ -61,13 +57,7 @@ interface ProPriceProps {
  * leaves the type scale to the caller: the same component is a 5xl gradient
  * headline on the training card and a 2xl figure in a booking summary.
  */
-export function ProPrice({
-  amountUsd,
-  className,
-  originalClassName,
-  showBadge = true,
-  tone = 'light',
-}: ProPriceProps) {
+export function ProPrice({ amountUsd, className, originalClassName }: ProPriceProps) {
   const isPro = useContext(ServiceDiscountContext);
   const listPrice = usdLabel(amountUsd);
 
@@ -88,22 +78,6 @@ export function ProPrice({
       <s dir="ltr" className={cn('line-through', originalClassName)}>
         {listPrice}
       </s>
-      {showBadge && <DiscountBadge tone={tone} />}
-    </span>
-  );
-}
-
-function DiscountBadge({ tone }: { tone: 'light' | 'dark' }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold leading-tight',
-        tone === 'dark'
-          ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
-          : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-      )}
-    >
-      خصم المشتركين {PRO_SERVICE_DISCOUNT_PERCENT}%
     </span>
   );
 }

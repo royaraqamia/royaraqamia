@@ -65,20 +65,22 @@ export interface BlogpressSyncSnapshot {
   posts: Post[];
 }
 
-/** Full snapshot of a deleted post, re-sent by the client to undo a delete. */
+/**
+ * The content half of a deleted post, re-sent by the client to undo a delete.
+ *
+ * Only editor-owned fields are accepted: `status`, the publication dates,
+ * `view_count`, `featured`, `community_visible` and `reading_time_minutes` stay
+ * on the tombstoned row the server revives, never on the request (#528). `id`
+ * is an optional lookup hint; the server also finds the tombstone by slug, and
+ * refuses both when the row is not the caller's.
+ */
 export const RestorePostSnapshotSchema = z.object({
+  id: z.string().uuid('معرِّف منشور غير صالح').optional(),
   slug: z.string().min(1, 'الرَّابط مطلوب'),
   content: z.string().nullable(),
-  status: z.enum(['draft', 'published', 'scheduled']),
   cover_image: z.string().nullable(),
   meta_title: z.string().nullable(),
   meta_desc: z.string().nullable(),
-  published_at: z.string().nullable(),
-  publish_at: z.string().nullable(),
-  view_count: z.number().int().min(0),
-  featured: z.boolean(),
-  community_visible: z.boolean(),
-  reading_time_minutes: z.number().int().min(0),
   tagIds: z.array(z.string().uuid('معرِّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
 });
 

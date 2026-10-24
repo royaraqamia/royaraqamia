@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Lock, Newspaper, RotateCcw } from 'lucide-react';
+import { Check, Lock, Newspaper } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { getNewsSourceSelection, saveNewsSourceSelection } from '@/frontend/api/news';
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import {
@@ -15,7 +16,6 @@ import {
   NEWS_CATEGORY_LABELS,
   NEWS_PERSONAL_DIGEST_COST,
   NEWS_PERSONAL_DIGEST_MIN_STORIES,
-  NEWS_PERSONAL_MIN_STORIES,
   NEWS_REGION_LABELS,
   type NewsSource,
 } from '@/shared/contracts/news';
@@ -156,12 +156,6 @@ export function NewsPreferences() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm leading-7 text-muted-foreground">
-        اختر المصادر التي تريد أن تقرأ أخبارها. هذا الاختيار يرشِّح المُلخَّص العام ولا يغيِّر ما
-        يجمعه المحرِّر. وإذا ترك اختيارك في يوم ما أقل من {NEWS_PERSONAL_MIN_STORIES} أخبار، عرضنا
-        لك المُلخَّص كاملًا.
-      </p>
-
       {NEWS_CATEGORIES.map((category) => {
         const group = (sources ?? []).filter((source) => source.category === category);
         if (group.length === 0) return null;
@@ -204,7 +198,7 @@ export function NewsPreferences() {
                       className={cn(
                         'flex size-6 shrink-0 items-center justify-center rounded-full border',
                         checked
-                          ? 'border-primary bg-primary text-primary-foreground'
+                          ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-[0_6px_16px_-8px_rgba(147,51,234,0.6)]'
                           : 'border-border/70 bg-background'
                       )}
                       aria-hidden="true"
@@ -220,9 +214,9 @@ export function NewsPreferences() {
       })}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" onClick={() => void save()} disabled={saving} size="sm">
+        <HeroCtaButton type="button" onClick={() => void save()} disabled={saving}>
           {saving ? 'جاري الحفظ…' : 'حفظ الاختيار'}
-        </Button>
+        </HeroCtaButton>
 
         <Button
           type="button"
@@ -231,7 +225,7 @@ export function NewsPreferences() {
           onClick={reset}
           disabled={saving || allSelected}
         >
-          <RotateCcw aria-hidden="true" />
+          <Check aria-hidden="true" />
           اختيار كل المصادر
         </Button>
       </div>
@@ -253,15 +247,18 @@ export function NewsPreferences() {
             aria-checked={personalEnabled}
             aria-label="مُلخَّص خاص بي"
             onClick={() => setPersonalEnabled((current) => !current)}
+            dir="ltr"
             className={cn(
-              'relative mt-1 inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors',
-              personalEnabled ? 'border-primary bg-primary' : 'border-border/70 bg-muted'
+              'relative mt-1 inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
+              personalEnabled
+                ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
+                : 'border-border/70 bg-muted'
             )}
           >
             <span
               className={cn(
-                'inline-block size-5 rounded-full bg-background shadow-sm transition-transform',
-                personalEnabled ? 'translate-x-1' : '-translate-x-5'
+                'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
+                personalEnabled ? 'translate-x-0' : 'translate-x-[18px]'
               )}
               aria-hidden="true"
             />

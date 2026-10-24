@@ -65,7 +65,6 @@ export function ConsultationCards() {
                         amountUsd={CONSULTATION_START_PRICE_USD}
                         className="bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-2xl font-black tracking-tight text-transparent"
                         originalClassName="text-sm font-bold text-slate-400"
-                        tone="dark"
                       />
                       <span className="text-xs text-slate-400">حسب الباقة</span>
                     </dd>
