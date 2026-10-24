@@ -446,6 +446,36 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { id: winner.id };
     },
 
+    /**
+     * Create and publish a new post in one write (#527).
+     *
+     * The server-owned columns are set by `public.create_and_publish_post`
+     * (SECURITY DEFINER), never sent from the browser: `upsert_post` runs as the
+     * caller and the column guard refuses a client insert that sets `status`,
+     * `published_at` or `community_visible`. The function resolves the author
+     * from `auth.uid()` like every other publication transition.
+     */
+    async createAndPublishPost(
+      _authorId: string,
+      input: PostInput
+    ): Promise<{ id: string; slug: string }> {
+      const { data, error } = await supabase.rpc('create_and_publish_post', {
+        p_slug: input.slug,
+        p_content: input.content ?? null,
+        p_cover_image: input.cover_image ?? null,
+        p_meta_title: input.meta_title ?? null,
+        p_meta_desc: input.meta_desc ?? null,
+        p_reading_time_minutes: input.content ? estimateReadingTime(input.content) : 0,
+      });
+
+      if (error) throw new Error('فشل نشر المنشور');
+
+      const stored = data?.[0];
+      if (!stored) throw new Error('فشل نشر المنشور');
+
+      return { id: stored.id, slug: stored.slug };
+    },
+
     async updatePost(postId: string, authorId: string, data: PostInput): Promise<void> {
       // Never spread `data`: its camelCase offline fields are not DB columns and
       // PostgREST rejects them (PGRST204). Build the payload column by column.

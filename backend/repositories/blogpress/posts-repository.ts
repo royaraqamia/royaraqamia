@@ -44,6 +44,7 @@ export interface PostsRepository {
   getPostExcerptById(id: string): Promise<string | null>;
   getPostForUser(id: string, userId: string): Promise<Post | null>;
   createPost(authorId: string, input?: PostInput): Promise<{ id: string }>;
+  createAndPublishPost(authorId: string, input: PostInput): Promise<{ id: string; slug: string }>;
   updatePost(postId: string, authorId: string, data: PostInput): Promise<void>;
   saveAndPublishPost(postId: string, authorId: string, data: PostInput): Promise<{ slug: string }>;
   publishPost(postId: string, authorId: string): Promise<{ slug: string }>;
