@@ -1,5 +1,6 @@
 import { request } from '@/frontend/transport/http';
 import type { Post, PostTag, BlogpressSyncSnapshot } from '@/shared/contracts/blogpress';
+import type { PostStatusInput } from '@/shared/contracts/community';
 
 export interface PostFields {
   slug: string;
@@ -29,8 +30,14 @@ export async function getSyncSnapshot(): Promise<BlogpressSyncSnapshot> {
   return request<BlogpressSyncSnapshot>('/api/blogpress/sync');
 }
 
-export async function createPost(payload?: PostFields & { id?: string }): Promise<{ id: string }> {
-  return request<{ id: string }>('/api/blogpress/posts', {
+export async function createPost(
+  payload?: PostFields & {
+    id?: string;
+    /** A new post published in the same request (#527); drafts omit it. */
+    status?: PostStatusInput;
+  }
+): Promise<{ id: string; slug?: string }> {
+  return request<{ id: string; slug?: string }>('/api/blogpress/posts', {
     method: 'POST',
     body: payload ? JSON.stringify(payload) : undefined,
   });
