@@ -1,7 +1,6 @@
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
-import { isAdmin } from '@/backend/shared/admin-validator';
 
 export interface PostPublishedNotifier {
   (info: { postId: string; authorId: string; slug: string }): void;
@@ -16,7 +15,6 @@ export interface PostPublishedNotifier {
 export class BlogpressPostsService {
   constructor(
     private readonly repository: PostsRepository,
-    private readonly adminEmails: string[],
     private readonly onPostPublished?: PostPublishedNotifier
   ) {}
 
@@ -51,19 +49,22 @@ export class BlogpressPostsService {
     return result;
   }
 
-  async restorePost(
-    authorId: string,
-    snapshot: RestorePostSnapshot,
-    authorEmail = ''
-  ): Promise<{ id: string }> {
+  async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
     if (!snapshot.slug || !snapshot.slug.trim()) {
       throw new Error('المعرِّف (slug) مطلوب');
     }
 
-    const communityVisible = isAdmin(authorEmail, this.adminEmails) && snapshot.community_visible;
+    // Only the content fields cross the seam. The repository revives the
+    // tombstone, so the status and publication columns keep the values the
+    // deleted row already had (#528).
     const { id } = await this.repository.restorePost(authorId, {
-      ...snapshot,
-      community_visible: communityVisible,
+      ...(snapshot.id ? { id: snapshot.id } : {}),
+      slug: snapshot.slug.trim(),
+      content: snapshot.content,
+      cover_image: snapshot.cover_image,
+      meta_title: snapshot.meta_title,
+      meta_desc: snapshot.meta_desc,
+      ...(snapshot.tagIds ? { tagIds: snapshot.tagIds } : {}),
     });
     if (snapshot.tagIds && snapshot.tagIds.length > 0) {
       await this.repository.setPostTags(id, authorId, snapshot.tagIds);

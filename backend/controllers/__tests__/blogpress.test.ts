@@ -9,6 +9,7 @@ const planMocks = vi.hoisted(() => ({
 const mockPosts = {
   publishPost: vi.fn(),
   createAndPublishPost: vi.fn(),
+  restorePost: vi.fn(),
 };
 const mockRepository = {
   createPost: vi.fn(),
@@ -51,8 +52,10 @@ import {
   deletePost,
   listBlogTags,
   publishPost,
+  restorePost,
   updatePost,
 } from '@/backend/controllers/blogpress';
+import { AppError } from '@/backend/shared/errors';
 
 describe('blogpress controller', () => {
   beforeEach(() => {
@@ -67,6 +70,7 @@ describe('blogpress controller', () => {
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
+    mockPosts.restorePost.mockResolvedValue({ id: 'p-1' });
     planMocks.cap.mockResolvedValue(undefined);
     planMocks.meter.mockImplementation(
       async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
@@ -219,6 +223,52 @@ describe('blogpress controller', () => {
 
     expect(result).toEqual(
       expect.objectContaining({ status: 500, body: { error: 'فشل حذف المنشور' } })
+    );
+  });
+
+  it('restores with only the content fields, dropping forged server-owned values', async () => {
+    const result = await restorePost({
+      id: '11111111-1111-4111-8111-111111111111',
+      slug: 'hello',
+      content: 'body',
+      cover_image: null,
+      meta_title: null,
+      meta_desc: null,
+      status: 'published',
+      published_at: '2026-10-01T09:00:00.000Z',
+      view_count: 999,
+      featured: true,
+      community_visible: true,
+      reading_time_minutes: 99,
+    });
+
+    expect(mockPosts.restorePost).toHaveBeenCalledWith('u-1', {
+      id: '11111111-1111-4111-8111-111111111111',
+      slug: 'hello',
+      content: 'body',
+      cover_image: null,
+      meta_title: null,
+      meta_desc: null,
+    });
+    expect(result).toMatchObject({ status: 200, body: { success: true, id: 'p-1' } });
+  });
+
+  it('maps a restore with no owned tombstone to 404', async () => {
+    mockPosts.restorePost.mockRejectedValue(new AppError('المنشور المحذوف غير موجود', 404));
+
+    const result = await restorePost({
+      slug: 'hello',
+      content: 'body',
+      cover_image: null,
+      meta_title: null,
+      meta_desc: null,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 404,
+        body: { error: 'المنشور المحذوف غير موجود' },
+      })
     );
   });
 });

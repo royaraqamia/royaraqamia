@@ -47,18 +47,12 @@ interface PostActionsMenuProps {
 
 function buildSnapshot(post: ActionablePost) {
   return {
+    id: post.id,
     slug: post.slug,
     content: post.content,
-    status: post.status,
     cover_image: post.cover_image,
     meta_title: post.meta_title,
     meta_desc: post.meta_desc,
-    published_at: post.published_at,
-    publish_at: post.publish_at,
-    view_count: post.view_count ?? 0,
-    featured: post.featured,
-    community_visible: post.community_visible,
-    reading_time_minutes: post.reading_time_minutes ?? 0,
   };
 }
 
