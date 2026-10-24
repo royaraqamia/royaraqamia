@@ -186,18 +186,17 @@ async function warmSamples(
     }
 
     if (surface.tap) {
-      // Every sample above reloaded with the radio off, so this document is the
-      // worker's copy of an offline page: the signed-in controls (`#custom-code`
-      // needs a session) only exist on a page that has a network. Reload once
-      // the loop has put the radio back, or the first `fill` waits for a
-      // control that will never render.
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await readContent(page);
-
       for (let run = 0; run < budget.runs; run += 1) {
         // A token per tap: the create needs a fresh code, and the same token is
         // what the cleanup URL below deletes.
         const token = `${Date.now().toString(36)}${run}`;
+        // Each sample starts from the surface as a visitor meets it, on a
+        // document the network answered. A successful tap replaces the form
+        // with its result — LinkSnap swaps the form for the shortened link —
+        // and the samples above leave a page the worker served with the radio
+        // off, so without this the second sample fills a form that is gone.
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await readContent(page);
         // The measure survives the previous tap, so clear it first — otherwise
         // the wait below returns the old number and the gate measures nothing.
         await page.evaluate((name) => performance.clearMeasures(name), APP_PERF_MEASURE.tap);
