@@ -3,6 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 
+vi.mock('@/backend/shared/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}));
+vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+const DB_ERROR = { message: 'db down', code: '08006' };
+
 /**
  * The publication transitions are server-owned (#526). A client write that moves
  * `status`, `published_at`, `community_visible`, `view_count` or `featured` is
@@ -160,5 +167,62 @@ describe('blogpress post edits leave the server-owned columns alone', () => {
     expect(payload).toMatchObject({ slug: 'hello', content: 'body' });
     expect(payload).not.toHaveProperty('status');
     expect(payload).not.toHaveProperty('publish_at');
+  });
+});
+
+describe('blogpress bulk publish targets', () => {
+  function selectionClient(result: { data: unknown; error: unknown }) {
+    const filters: string[] = [];
+    const builder: Record<string, unknown> = {};
+    builder.select = vi.fn(() => builder);
+    builder.in = vi.fn((column: string, values: unknown) => {
+      filters.push(`in ${column}=${String(values)}`);
+      return builder;
+    });
+    builder.eq = vi.fn((column: string, value: unknown) => {
+      filters.push(`eq ${column}=${String(value)}`);
+      return builder;
+    });
+    builder.is = vi.fn((column: string, value: unknown) => {
+      filters.push(`is ${column}=${String(value)}`);
+      return builder;
+    });
+    builder.then = (onFulfilled: (value: unknown) => unknown) =>
+      Promise.resolve(result).then(onFulfilled);
+
+    return {
+      client: { from: vi.fn(() => builder) } as unknown as SupabaseClient<Database>,
+      filters,
+    };
+  }
+
+  it('splits owned posts and drops ids the caller does not own', async () => {
+    const { client, filters } = selectionClient({
+      data: [
+        { id: 'p-1', status: 'draft' },
+        { id: 'p-2', status: 'scheduled' },
+        { id: 'p-3', status: 'published' },
+      ],
+      error: null,
+    });
+
+    await expect(
+      createPostsRepository(client).resolveBulkPublishTargets(['p-1', 'p-2', 'p-3', 'p-4'], 'u-1')
+    ).resolves.toEqual({
+      transitionIds: ['p-1', 'p-2'],
+      alreadyPublishedIds: ['p-3'],
+    });
+
+    expect(filters).toContain('in id=p-1,p-2,p-3,p-4');
+    expect(filters).toContain('eq author_id=u-1');
+    expect(filters).toContain('is deleted_at=null');
+  });
+
+  it('surfaces a failed selection read', async () => {
+    const { client } = selectionClient({ data: null, error: DB_ERROR });
+
+    await expect(
+      createPostsRepository(client).resolveBulkPublishTargets(['p-1'], 'u-1')
+    ).rejects.toThrow('Repository operation failed: blogpress.resolveBulkPublishTargets');
   });
 });

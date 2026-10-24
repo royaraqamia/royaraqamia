@@ -9,11 +9,14 @@ const planMocks = vi.hoisted(() => ({
 const mockPosts = {
   publishPost: vi.fn(),
   createAndPublishPost: vi.fn(),
+  bulkActionPosts: vi.fn(),
 };
 const mockRepository = {
   createPost: vi.fn(),
   updatePost: vi.fn(),
   deletePost: vi.fn(),
+  bulkSetPostCategories: vi.fn(),
+  resolveBulkPublishTargets: vi.fn(),
   listTagsByAuthor: vi.fn(),
 };
 
@@ -47,6 +50,7 @@ vi.mock('@/backend/config/plans', () => ({
 }));
 
 import {
+  bulkPostsAction,
   createPost,
   deletePost,
   listBlogTags,
@@ -67,6 +71,12 @@ describe('blogpress controller', () => {
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
+    mockPosts.bulkActionPosts.mockResolvedValue({ affected: 0, slugs: [] });
+    mockRepository.resolveBulkPublishTargets.mockResolvedValue({
+      transitionIds: [],
+      alreadyPublishedIds: [],
+    });
+    mockRepository.bulkSetPostCategories.mockResolvedValue(undefined);
     planMocks.cap.mockResolvedValue(undefined);
     planMocks.meter.mockImplementation(
       async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
@@ -220,5 +230,128 @@ describe('blogpress controller', () => {
     expect(result).toEqual(
       expect.objectContaining({ status: 500, body: { error: 'فشل حذف المنشور' } })
     );
+  });
+});
+
+describe('blogpress bulk publish', () => {
+  const P1 = '00000000-0000-4000-8000-000000000001';
+  const P2 = '00000000-0000-4000-8000-000000000002';
+  const P3 = '00000000-0000-4000-8000-000000000003';
+  const P4 = '00000000-0000-4000-8000-000000000004';
+  const P5 = '00000000-0000-4000-8000-000000000005';
+  const P6 = '00000000-0000-4000-8000-000000000006';
+  const requested = [P1, P2, P3, P4, P5];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUser.mockResolvedValue({
+      user: { id: 'u-1', email: 'author@b.com' },
+      supabase: {},
+    });
+    planMocks.cap.mockResolvedValue(undefined);
+    planMocks.meterMany.mockImplementation(
+      async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run()
+    );
+  });
+
+  it('caps and meters only the posts that will transition', async () => {
+    mockRepository.resolveBulkPublishTargets.mockResolvedValue({
+      transitionIds: [P1, P2, P3],
+      alreadyPublishedIds: [P4, P5],
+    });
+    mockPosts.bulkActionPosts.mockResolvedValue({
+      affected: 3,
+      slugs: ['a', 'b', 'c'],
+    });
+
+    const result = await bulkPostsAction({ action: 'publish', postIds: requested });
+
+    expect(mockRepository.resolveBulkPublishTargets).toHaveBeenCalledWith(requested, 'u-1');
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 3);
+    expect(planMocks.meterMany).toHaveBeenCalledWith(
+      'u-1',
+      'community.post.publish',
+      3,
+      expect.any(Function)
+    );
+    expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1, P2, P3], 'u-1', 'publish');
+    expect(result).toMatchObject({ status: 200, body: { success: true, affected: 3 } });
+  });
+
+  it('charges duplicate ids once', async () => {
+    mockRepository.resolveBulkPublishTargets.mockResolvedValue({
+      transitionIds: [P1, P2],
+      alreadyPublishedIds: [],
+    });
+    mockPosts.bulkActionPosts.mockResolvedValue({ affected: 2, slugs: ['a', 'b'] });
+
+    const result = await bulkPostsAction({
+      action: 'publish',
+      postIds: [P1, P1, P2, P2],
+    });
+
+    expect(mockRepository.resolveBulkPublishTargets).toHaveBeenCalledWith([P1, P2], 'u-1');
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 2);
+    expect(planMocks.meterMany).toHaveBeenCalledWith(
+      'u-1',
+      'community.post.publish',
+      2,
+      expect.any(Function)
+    );
+    expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1, P2], 'u-1', 'publish');
+    expect(result).toMatchObject({ status: 200, body: { success: true, affected: 2 } });
+  });
+
+  it('charges nothing for ids the caller does not own', async () => {
+    mockRepository.resolveBulkPublishTargets.mockResolvedValue({
+      transitionIds: [P1],
+      alreadyPublishedIds: [],
+    });
+    mockPosts.bulkActionPosts.mockResolvedValue({ affected: 1, slugs: ['a'] });
+
+    const result = await bulkPostsAction({
+      action: 'publish',
+      postIds: [P1, P6],
+    });
+
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 1);
+    expect(planMocks.meterMany).toHaveBeenCalledWith(
+      'u-1',
+      'community.post.publish',
+      1,
+      expect.any(Function)
+    );
+    expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1], 'u-1', 'publish');
+    expect(result).toMatchObject({ status: 200, body: { success: true, affected: 1 } });
+  });
+
+  it('does nothing when every selected post is already published', async () => {
+    mockRepository.resolveBulkPublishTargets.mockResolvedValue({
+      transitionIds: [],
+      alreadyPublishedIds: [P4, P5],
+    });
+
+    const result = await bulkPostsAction({
+      action: 'publish',
+      postIds: [P4, P5],
+    });
+
+    expect(planMocks.cap).not.toHaveBeenCalled();
+    expect(planMocks.meterMany).not.toHaveBeenCalled();
+    expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 200, body: { success: true, affected: 0 } });
+  });
+
+  it('rejects a selection above the bound before touching the module', async () => {
+    const tooMany = Array.from(
+      { length: 101 },
+      (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+    );
+
+    const result = await bulkPostsAction({ action: 'publish', postIds: tooMany });
+
+    expect(result).toEqual(expect.objectContaining({ status: 400 }));
+    expect(mockRepository.resolveBulkPublishTargets).not.toHaveBeenCalled();
+    expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
   });
 });

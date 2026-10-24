@@ -275,15 +275,26 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         );
       }
 
+      let targets = postIds;
+
       if (action === 'publish') {
-        await plan.cap(userId, OWNED_ITEMS.communityPublished, postIds.length);
+        const { transitionIds } = await repository.resolveBulkPublishTargets(postIds, userId);
+        if (transitionIds.length === 0) {
+          return jsonResult(
+            200,
+            { success: true, affected: 0 },
+            { revalidate: [], tags: COMMUNITY_MUTATION_TAGS }
+          );
+        }
+        targets = transitionIds;
+        await plan.cap(userId, OWNED_ITEMS.communityPublished, targets.length);
       }
 
       const { affected, slugs } = await plan.meterMany(
         userId,
         USAGE_ACTIONS.communityPostPublish,
-        action === 'publish' ? postIds.length : 0,
-        () => posts.bulkActionPosts(postIds, userId, action)
+        action === 'publish' ? targets.length : 0,
+        () => posts.bulkActionPosts(targets, userId, action)
       );
 
       if (action === 'publish' || action === 'unpublish') {

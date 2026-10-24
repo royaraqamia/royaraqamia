@@ -813,6 +813,34 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { affected: slugs.length, slugs };
     },
 
+    async resolveBulkPublishTargets(
+      postIds: string[],
+      authorId: string
+    ): Promise<{ transitionIds: string[]; alreadyPublishedIds: string[] }> {
+      if (postIds.length === 0) return { transitionIds: [], alreadyPublishedIds: [] };
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('id, status')
+        .in('id', postIds)
+        .eq('author_id', authorId)
+        .is('deleted_at', null);
+
+      if (error) throw repositoryFailure('blogpress.resolveBulkPublishTargets', error);
+
+      const transitionIds: string[] = [];
+      const alreadyPublishedIds: string[] = [];
+      for (const row of data ?? []) {
+        if (row.status === 'published') {
+          alreadyPublishedIds.push(row.id);
+        } else {
+          transitionIds.push(row.id);
+        }
+      }
+
+      return { transitionIds, alreadyPublishedIds };
+    },
+
     async bulkSetPostCategories(
       postIds: string[],
       authorId: string,
