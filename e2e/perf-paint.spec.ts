@@ -186,6 +186,14 @@ async function warmSamples(
     }
 
     if (surface.tap) {
+      // Every sample above reloaded with the radio off, so this document is the
+      // worker's copy of an offline page: the signed-in controls (`#custom-code`
+      // needs a session) only exist on a page that has a network. Reload once
+      // the loop has put the radio back, or the first `fill` waits for a
+      // control that will never render.
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await readContent(page);
+
       for (let run = 0; run < budget.runs; run += 1) {
         // A token per tap: the create needs a fresh code, and the same token is
         // what the cleanup URL below deletes.
@@ -196,8 +204,10 @@ async function warmSamples(
 
         for (const step of surface.tap.steps) {
           const value = (step.value ?? '').replace('{{run}}', token);
-          if (step.action === 'fill') await page.fill(step.target, value);
-          else await page.click(step.target);
+          // A missing control is a broken step in the budget file, not a slow
+          // machine: say so in fifteen seconds instead of at the test's ceiling.
+          if (step.action === 'fill') await page.fill(step.target, value, { timeout: 15_000 });
+          else await page.click(step.target, { timeout: 15_000 });
         }
 
         // The measure lands on the first frame after the optimistic update.
