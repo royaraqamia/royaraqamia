@@ -89,6 +89,19 @@ export function communitySearchRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/**
+ * The `/news` search combobox: anonymous and one database query per keystroke
+ * burst, so it shares the community search's single 60/minute bucket shape.
+ */
+export function newsSearchRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `news-search:${ip}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: البحث في الأخبار محدود بـ 60 طلبًا في الدقيقة.',
+  };
+}
+
 export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `username-availability:${userId}`,
