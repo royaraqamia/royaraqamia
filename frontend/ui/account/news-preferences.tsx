@@ -13,6 +13,8 @@ import { ApiError } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORIES,
   NEWS_CATEGORY_LABELS,
+  NEWS_PERSONAL_DIGEST_COST,
+  NEWS_PERSONAL_DIGEST_MIN_STORIES,
   NEWS_PERSONAL_MIN_STORIES,
   NEWS_REGION_LABELS,
   type NewsSource,
@@ -35,6 +37,7 @@ export function NewsPreferences() {
   const { user, isLoading: sessionLoading } = useSession();
   const [sources, setSources] = useState<NewsSource[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [personalEnabled, setPersonalEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,6 +49,7 @@ export function NewsPreferences() {
     try {
       const result = await getNewsSourceSelection();
       setSources(result.sources);
+      setPersonalEnabled(result.personalEnabled);
       // "Everything" is stored as an empty list; the picker shows it as all
       // ticked, because that is what the reader sees on /news.
       const kept = result.selected.length > 0 ? result.selected : result.sources.map((s) => s.id);
@@ -110,9 +114,13 @@ export function NewsPreferences() {
     try {
       // All ticked is "everything", stored as an empty list so sources approved
       // later are included by default.
-      await saveNewsSourceSelection(allSelected ? [] : [...selected]);
+      await saveNewsSourceSelection(allSelected ? [] : [...selected], personalEnabled);
       toast.success(
-        allSelected ? 'سترى كل المصادر من الآن.' : 'حفظنا اختيارك. ستعرض الأخبار هذه المصادر.'
+        personalEnabled
+          ? 'حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.'
+          : allSelected
+            ? 'سترى كل المصادر من الآن.'
+            : 'حفظنا اختيارك. ستعرض الأخبار هذه المصادر.'
       );
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'تعذّر حفظ اختيارك. أعد المحاولة.');
@@ -227,6 +235,39 @@ export function NewsPreferences() {
           اختيار كل المصادر
         </Button>
       </div>
+
+      <section className="rounded-2xl border border-border/50 bg-card/60 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">مُلخَّص خاص بي</p>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">
+              مُلخَّص يومي من مصادرك وحدها، يُنشأ صباحًا بعد المُلخَّص العام. يكفي أن يوفّر{' '}
+              {NEWS_PERSONAL_DIGEST_MIN_STORIES} أخبار على الأقل، ويُخصم من رصيدك{' '}
+              {NEWS_PERSONAL_DIGEST_COST} اعتمادات عند إنشائه.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={personalEnabled}
+            aria-label="مُلخَّص خاص بي"
+            onClick={() => setPersonalEnabled((current) => !current)}
+            className={cn(
+              'relative mt-1 inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors',
+              personalEnabled ? 'border-primary bg-primary' : 'border-border/70 bg-muted'
+            )}
+          >
+            <span
+              className={cn(
+                'inline-block size-5 rounded-full bg-background shadow-sm transition-transform',
+                personalEnabled ? 'translate-x-1' : '-translate-x-5'
+              )}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

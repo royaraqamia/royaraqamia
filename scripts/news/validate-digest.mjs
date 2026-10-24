@@ -52,6 +52,7 @@ function parseArgs(argv) {
     model: '',
     runUrl: '',
     out: resolve('.news', 'resolved.json'),
+    minStories: MIN_STORIES,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -64,6 +65,8 @@ function parseArgs(argv) {
     else if (flag === '--model') options.model = value;
     else if (flag === '--run-url') options.runUrl = value;
     else if (flag === '--out') options.out = resolve(value);
+    else if (flag === '--min-stories')
+      options.minStories = Math.max(1, Number(value) || MIN_STORIES);
     else continue;
     index += 1;
   }
@@ -200,7 +203,15 @@ function priorityWarnings(stories) {
  * shape and `warnings` are editorial annotations (a lead story outside the Arab
  * world, no priority category) that never block publishing.
  */
-export function validateDigest({ digest, candidates, date, model = '', runUrl = '' }) {
+export function validateDigest({
+  digest,
+  candidates,
+  date,
+  model = '',
+  runUrl = '',
+  minStories = MIN_STORIES,
+  maxStories = MAX_STORIES,
+}) {
   const problems = [];
 
   if (!digest || typeof digest !== 'object') {
@@ -217,8 +228,8 @@ export function validateDigest({ digest, candidates, date, model = '', runUrl = 
   problems.push(...arabicTextProblems('lede', lede, 400));
 
   const stories = Array.isArray(digest.stories) ? digest.stories : [];
-  if (stories.length < MIN_STORIES || stories.length > MAX_STORIES) {
-    problems.push(`stories: ${stories.length} (must be ${MIN_STORIES}-${MAX_STORIES})`);
+  if (stories.length < minStories || stories.length > maxStories) {
+    problems.push(`stories: ${stories.length} (must be ${minStories}-${maxStories})`);
   }
 
   // The model returns the candidate's short ASCII `id`, not a URL: a retyped URL
@@ -345,6 +356,7 @@ async function main() {
     date: options.date,
     model: options.model,
     runUrl: options.runUrl,
+    minStories: options.minStories,
   });
 
   if (result.problems.length > 0 || !result.digest) {

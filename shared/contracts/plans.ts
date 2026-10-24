@@ -35,6 +35,7 @@ export const USAGE_ACTIONS = {
   retainerSubmit: 'retainer.submit',
   scannerScan: 'scanner.scan',
   quranSurahRead: 'quran.surah.read',
+  newsDigestGenerate: 'news.digest.generate',
 } as const;
 
 export type UsageActionKey = (typeof USAGE_ACTIONS)[keyof typeof USAGE_ACTIONS];

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -18,6 +20,7 @@ import {
   toIsoDate,
 } from '../news/lib.mjs';
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
+import { narrowCandidates, preparePersonalDigests } from '../news/personal-digests.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -482,5 +485,55 @@ describe('approved sources', () => {
 
     expect(toApprovedSource({ ...base[0], category: 'sport' })).toBeNull();
     expect(toApprovedSource({ ...base[0], url: 'javascript:alert(1)' })).toBeNull();
+  });
+});
+
+describe('personal digests', () => {
+  const items = [
+    { id: 'a:1', title: 'one', sourceId: 'a' },
+    { id: 'a:2', title: 'two', sourceId: 'a' },
+    { id: 'a:3', title: 'three', sourceId: 'a' },
+    { id: 'b:1', title: 'other', sourceId: 'b' },
+  ];
+  const candidateSet = { digestDate: '2026-10-23', items };
+
+  it('keeps only the candidates from the reader sources', () => {
+    expect(narrowCandidates(items, ['a']).map((item) => item.id)).toEqual(['a:1', 'a:2', 'a:3']);
+  });
+
+  it('skips a reader with no selection, and one whose sources are too thin', async () => {
+    const out = join(await mkdtemp(join(tmpdir(), 'news-personal-')), 'run');
+    const manifest = await preparePersonalDigests({
+      readers: [
+        { userId: 'u-empty', sourceIds: [] },
+        { userId: 'u-thin', sourceIds: ['b'] },
+        { userId: 'u-ok', sourceIds: ['a'] },
+      ],
+      candidates: candidateSet,
+      out,
+      log: () => {},
+    });
+
+    expect(manifest.users.map((user) => user.userId)).toEqual(['u-ok']);
+    expect(manifest.skipped.map((skip) => skip.userId)).toEqual(['u-empty', 'u-thin']);
+    expect(await readFile(join(out, 'u-ok', 'prompt.txt'), 'utf8')).toContain('personal');
+  });
+
+  it('accepts a three-story personal digest, which the shared rule rejects', () => {
+    const list = stories(3);
+    const digest = {
+      digest_date: '2026-10-23',
+      title: 'ملخص أخبار اليوم',
+      lede: 'أهم ما حدث اليوم.',
+      stories: list,
+    };
+
+    expect(
+      validateDigest({ digest, candidates: candidates(), date: '2026-10-23' }).problems
+    ).toEqual(expect.arrayContaining([expect.stringContaining('must be 8-12')]));
+    expect(
+      validateDigest({ digest, candidates: candidates(), date: '2026-10-23', minStories: 3 })
+        .problems
+    ).toEqual([]);
   });
 });

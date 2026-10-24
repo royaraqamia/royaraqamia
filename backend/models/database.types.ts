@@ -937,16 +937,19 @@ export type Database = {
       };
       news_source_preferences: {
         Row: {
+          personal_enabled: boolean;
           source_ids: string[];
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          personal_enabled?: boolean;
           source_ids?: string[];
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          personal_enabled?: boolean;
           source_ids?: string[];
           updated_at?: string;
           user_id?: string;
@@ -1043,6 +1046,93 @@ export type Database = {
           request_id?: string | null;
           tier?: number;
           url?: string;
+        };
+        Relationships: [];
+      };
+      news_user_digests: {
+        Row: {
+          created_at: string;
+          digest_date: string;
+          id: string;
+          lede: string;
+          model: string;
+          published_at: string;
+          run_url: string | null;
+          story_count: number;
+          title: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          digest_date: string;
+          id?: string;
+          lede: string;
+          model: string;
+          published_at?: string;
+          run_url?: string | null;
+          story_count?: number;
+          title: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          digest_date?: string;
+          id?: string;
+          lede?: string;
+          model?: string;
+          published_at?: string;
+          run_url?: string | null;
+          story_count?: number;
+          title?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      news_user_stories: {
+        Row: {
+          category: string;
+          created_at: string;
+          digest_id: string;
+          headline_ar: string;
+          id: string;
+          position: number;
+          region: string;
+          source_id: string;
+          source_name: string;
+          source_published_at: string | null;
+          source_url: string;
+          summary_ar: string;
+          why_it_matters_ar: string | null;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          digest_id: string;
+          headline_ar: string;
+          id?: string;
+          position: number;
+          region: string;
+          source_id: string;
+          source_name: string;
+          source_published_at?: string | null;
+          source_url: string;
+          summary_ar: string;
+          why_it_matters_ar?: string | null;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          digest_id?: string;
+          headline_ar?: string;
+          id?: string;
+          position?: number;
+          region?: string;
+          source_id?: string;
+          source_name?: string;
+          source_published_at?: string | null;
+          source_url?: string;
+          summary_ar?: string;
+          why_it_matters_ar?: string | null;
         };
         Relationships: [];
       };

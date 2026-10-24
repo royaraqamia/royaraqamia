@@ -33,12 +33,17 @@ export async function getMyNewsSources(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const service = createNewsPreferencesServiceFor(supabase);
-      const [sources, selected] = await Promise.all([
+      const [sources, preferences] = await Promise.all([
         createNewsCatalogueFor(supabase).list(),
         service.get(userId),
       ]);
 
-      return jsonResult(200, { success: true, sources, selected });
+      return jsonResult(200, {
+        success: true,
+        sources,
+        selected: preferences.sourceIds,
+        personalEnabled: preferences.personalEnabled,
+      });
     },
     { mapError: messageError(500, 'تعذّر تحميل مصادر الأخبار.') }
   );
@@ -56,11 +61,16 @@ export async function updateMyNewsSources(body: unknown, headers: Headers): Prom
         return jsonResult(400, { success: false, error: 'اختيار غير صالح.' });
       }
 
-      const selected = await createNewsPreferencesServiceFor(supabase).save(
-        userId,
-        parsed.data.sourceIds
-      );
-      return jsonResult(200, { success: true, selected });
+      const preferences = await createNewsPreferencesServiceFor(supabase).save(userId, {
+        sourceIds: parsed.data.sourceIds,
+        personalEnabled: parsed.data.personalEnabled,
+      });
+
+      return jsonResult(200, {
+        success: true,
+        selected: preferences.sourceIds,
+        personalEnabled: preferences.personalEnabled,
+      });
     },
     { mapError: messageError(500, 'تعذّر حفظ مصادر الأخبار.') }
   );

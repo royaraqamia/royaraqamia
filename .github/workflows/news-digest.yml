@@ -29,6 +29,12 @@
 # useful when a run failed) and `dry_run` (fetch, summarise and validate, write
 # nothing). Artifacts keep the candidates, prompt, raw model output and validated
 # digest for a week so a bad digest can be diagnosed without re-running the model.
+#
+# Readers who opted into a digest of their own (ADR-0079) get one after the
+# shared digest publishes: the same candidate list, narrowed to their sources,
+# one prompt per reader and the same validator with a 3-12 window. The credit
+# (`news.digest.generate`) is spent at publish time, so a failed or rejected run
+# costs nothing and a reader with no allowance keeps the shared digest.
 
 name: 'News Digest'
 
@@ -55,7 +61,7 @@ concurrency:
 jobs:
   digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 90
 
     env:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -143,6 +149,52 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: node scripts/news/publish-digest.mjs --digest .news/resolved.json
 
+      # One prompt per reader who opted in (ADR-0079). The candidates are the
+      # ones this job already fetched — nothing is fetched again — and each
+      # reader's digest is validated by the same gate, with the size window
+      # moved down to 3-12 because their selection is narrower.
+      - name: Prepare personal digests
+        if: ${{ !inputs.dry_run }}
+        run: node scripts/news/personal-digests.mjs --candidates .news/candidates.json --out .news/personal
+
+      - name: Generate personal digests
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -uo pipefail
+          manifest="$GITHUB_WORKSPACE/.news/personal/manifest.json"
+          [ -f "$manifest" ] || { echo "No personal digests to generate."; exit 0; }
+          node -e 'const m=require(process.env.GITHUB_WORKSPACE + "/.news/personal/manifest.json"); for (const u of m.users) console.log(u.userId)' > "$GITHUB_WORKSPACE/.news/personal/users.txt"
+
+          while read -r user; do
+            [ -n "$user" ] || continue
+            dir="$GITHUB_WORKSPACE/.news/personal/$user"
+            cd "$RUNNER_TEMP/news-model"
+
+            if ! opencode run \
+              --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+              --standalone \
+              --auto \
+              "$(cat "$dir/prompt.txt")" > "$dir/model-output.txt" 2>&1; then
+              echo "::warning::the model run failed for $user; that reader keeps the shared digest"
+              continue
+            fi
+
+            if ! node "$GITHUB_WORKSPACE/scripts/news/validate-digest.mjs" \
+              --digest "$dir/model-output.txt" \
+              --candidates "$dir/candidates.json" \
+              --date "${{ steps.day.outputs.date }}" \
+              --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+              --min-stories 3 \
+              --out "$dir/resolved.json"; then
+              echo "::warning::the digest was rejected for $user; that reader keeps the shared digest"
+              continue
+            fi
+
+            node "$GITHUB_WORKSPACE/scripts/news/publish-personal-digest.mjs" \
+              --digest "$dir/resolved.json" \
+              --user "$user" || echo "::warning::publishing failed for $user"
+          done < "$GITHUB_WORKSPACE/.news/personal/users.txt"
+
       - name: Dry run notice
         if: ${{ inputs.dry_run }}
         run: |
@@ -178,5 +230,7 @@ jobs:
             .news/prompt.txt
             .news/model-output.txt
             .news/resolved.json
+            .news/personal/manifest.json
+            .news/personal/*/resolved.json
           if-no-files-found: ignore
           retention-days: 7

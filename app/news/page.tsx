@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 import {
   loadNewsBoard,
-  loadNewsSourcePreferences,
   parseNewsQuery,
+  parseNewsView,
   type NewsSearchParams,
 } from '@/backend/loaders/news';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
@@ -68,10 +68,10 @@ interface NewsPageProps {
 export default async function NewsPage({ searchParams }: NewsPageProps) {
   const params = await searchParams;
   const query = parseNewsQuery(params);
-  // A signed-in reader's source selection narrows the same shared digest; a
-  // visitor (or a member who never chose) reads it whole.
-  const sourceIds = await loadNewsSourcePreferences();
-  const board = await loadNewsBoard(params, sourceIds);
+  const view = parseNewsView(params);
+  // The reader's own digest replaces the shared one (or their selection narrows
+  // it); a visitor reads the shared digest whole.
+  const board = await loadNewsBoard(params, view);
 
   const stories = board.day?.stories ?? [];
   const categories = uniqueCategories(
@@ -79,6 +79,17 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
       ? board.search.hits.map((hit) => hit.category)
       : stories.map((story) => story.category)
   );
+
+  /** The same page, asked for the other digest. */
+  const otherViewHref = (() => {
+    const next = new URLSearchParams();
+    if (query.q) next.set('q', query.q);
+    if (query.date) next.set('date', query.date);
+    if (query.category) next.set('category', query.category);
+    if (board.personal?.active) next.set('view', 'public');
+    const search = next.toString();
+    return search ? `/news?${search}` : '/news';
+  })();
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
@@ -90,6 +101,42 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
             </SectionTitle>
             <NewsLiveRefresh />
           </header>
+
+          {board.personal && !board.search ? (
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
+              {board.personal.active ? (
+                <>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-bold text-primary">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                    مُلخَّصك الخاص
+                  </span>
+                  <Link
+                    href={otherViewHref}
+                    className="font-bold text-primary underline-offset-4 hover:underline"
+                  >
+                    عرض المُلخَّص العام
+                  </Link>
+                </>
+              ) : board.personal.available ? (
+                <Link
+                  href={otherViewHref}
+                  className="font-bold text-primary underline-offset-4 hover:underline"
+                >
+                  لديك مُلخَّص خاص لهذا اليوم — اعرضه
+                </Link>
+              ) : (
+                <span>
+                  لم نُنشئ مُلخَّصك الخاص لهذا اليوم بعد؛ يُنشأ صباحًا بعد المُلخَّص العام.{' '}
+                  <Link
+                    href="/account/news"
+                    className="font-bold text-primary underline-offset-4 hover:underline"
+                  >
+                    إعدادات مصادرك
+                  </Link>
+                </span>
+              )}
+            </div>
+          ) : null}
 
           <NewsFilters
             date={query.date ?? null}

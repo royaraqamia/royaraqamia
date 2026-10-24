@@ -1,10 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import type { NewsPreferencesRepository } from '@/backend/repositories/news/news-preferences-repository';
+import type {
+  NewsPreferencesRepository,
+  StoredNewsPreferences,
+} from '@/backend/repositories/news/news-preferences-repository';
 
 /**
- * The reader's own source selection, keyed by user.
+ * The reader's own source selection and opt-in, keyed by user.
  *
  * The write is an upsert on `user_id`, because the row is created on first save
  * rather than at signup — the same lazy shape `user_settings` uses. The explicit
@@ -15,22 +18,27 @@ export function createNewsPreferencesRepository(
   supabase: SupabaseClient<Database>
 ): NewsPreferencesRepository {
   return {
-    async getSourceIds(userId: string): Promise<string[] | null> {
+    async getPreferences(userId: string): Promise<StoredNewsPreferences | null> {
       const { data, error } = await supabase
         .from('news_source_preferences')
-        .select('source_ids')
+        .select('source_ids, personal_enabled')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (error) throw new Error(error.message);
-      return data ? data.source_ids : null;
+      if (!data) return null;
+      return { sourceIds: data.source_ids, personalEnabled: data.personal_enabled };
     },
 
-    async saveSourceIds(userId: string, sourceIds: readonly string[]): Promise<void> {
+    async savePreferences(
+      userId: string,
+      preferences: { sourceIds: readonly string[]; personalEnabled: boolean }
+    ): Promise<void> {
       const { error } = await supabase.from('news_source_preferences').upsert(
         {
           user_id: userId,
-          source_ids: [...sourceIds],
+          source_ids: [...preferences.sourceIds],
+          personal_enabled: preferences.personalEnabled,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id' }
