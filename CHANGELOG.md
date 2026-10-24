@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.136.2] - 2026-10-24
+
+### Changed
+- the surface matrix becomes a checked file, and the precache list is checked (#562)
+
 ## [1.136.1] - 2026-10-24
 
 ### Changed
