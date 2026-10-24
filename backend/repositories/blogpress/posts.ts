@@ -18,6 +18,7 @@ import { decodeFeedCursor, encodeFeedCursor, feedCursorFilter } from './feed-cur
 import { estimateReadingTime, postExcerpt } from '@/shared/reading-time';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
+import { AppError } from '@/backend/shared/errors';
 
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
@@ -616,19 +617,26 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     /**
-     * Undo a delete by re-inserting the Local Store snapshot (ADR-0060).
+     * Undo a delete by reviving its tombstone (#528).
      *
-     * The row carries server-owned columns, so the insert runs in
-     * `public.restore_post` (#526): the author comes from `auth.uid()`, views
-     * start at zero, and `featured`/`community_visible` are decided server-side
-     * rather than trusted from a client-held snapshot.
+     * `public.restore_post` looks the row up by id or slug under
+     * `auth.uid()`, clears `deleted_at` and applies only the content fields, so
+     * the server-owned columns keep what they had before the delete. A missing
+     * tombstone writes nothing and answers `P0002`, which surfaces as a 404
+     * instead of the 500 an infrastructure failure would get.
      */
     async restorePost(_authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
       const { data: id, error } = await supabase.rpc('restore_post', {
         p_snapshot: snapshot,
       });
 
-      if (error || !id) throw new Error('فشل استرجاع المنشور');
+      if (error) {
+        if ((error as { code?: string }).code === 'P0002') {
+          throw new AppError('المنشور المحذوف غير موجود', 404);
+        }
+        throw new Error('فشل استرجاع المنشور');
+      }
+      if (!id) throw new Error('فشل استرجاع المنشور');
 
       return { id };
     },

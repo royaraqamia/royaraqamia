@@ -3,7 +3,7 @@ import {
   createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
 import { createPlanGate } from '@/backend/config/plans';
-import { errorResult } from '@/backend/middleware/http';
+import { errorResult, errorResultAt } from '@/backend/middleware/http';
 import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
 import {
   PostSchema,
@@ -162,14 +162,14 @@ export async function duplicatePost(id: string): Promise<HttpResult> {
 
 export async function restorePost(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
-    async ({ userId, userEmail, supabase }) => {
+    async ({ userId, supabase }) => {
       const validated = RestorePostSnapshotSchema.safeParse(body);
       if (!validated.success) {
         return jsonResult(400, { error: 'بيانات استرجاع المنشور غير صالحة' });
       }
 
       const { posts } = createBlogpressPostsModule(supabase);
-      const { id } = await posts.restorePost(userId, validated.data, userEmail);
+      const { id } = await posts.restorePost(userId, validated.data);
 
       return jsonResult(
         200,
@@ -180,7 +180,7 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
         }
       );
     },
-    { mapError: messageError(500, 'فشل استرجاع المنشور') }
+    { mapError: errorResultAt(500, 'فشل استرجاع المنشور') }
   );
 }
 
