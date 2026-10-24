@@ -31,7 +31,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `verify-code` | `/verify/[code]` | server | snapshot | none | swr | remote | `public-offline.spec.ts` | #555 |
 | `profile` | `/u/[username]` | server | snapshot | none | swr | remote | `public-offline.spec.ts` | #555 |
 | `scan` | `/scan` | device | store | none | precached | remote | `scan.spec.ts` |  |
-| `leads` | `/training/apply`<br>`/request-project`<br>`/hire` | server | needs-connection | outbox | precached | remote | `lead-offline.spec.ts` |  |
+| `leads` | `/training/apply`<br>`/request-project`<br>`/hire` | server | needs-connection | outbox | swr | remote | `lead-offline.spec.ts` |  |
 | `consultation` | `/consultation/book` | server | needs-connection | none | precached | remote | `lead-offline.spec.ts` |  |
 | `downloader` | `/downloader` | server | needs-connection | none | precached | remote | `downloader.spec.ts` |  |
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | static | needs-connection | none | precached | bundled | _ungated_ | #501 |

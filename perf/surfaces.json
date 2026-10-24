@@ -246,9 +246,10 @@
       "owner": "server",
       "read": "needs-connection",
       "write": "outbox",
-      "shell": "precached",
+      "shell": "swr",
       "bundle": "remote",
-      "specs": ["e2e/lead-offline.spec.ts"]
+      "specs": ["e2e/lead-offline.spec.ts"],
+      "ungated": "The lead forms render per request (getOptionalUser + price), so the document is SWR-cached after a visit rather than precached; the outbox write is the offline promise."
     },
     {
       "id": "consultation",
