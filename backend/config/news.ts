@@ -1,11 +1,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
+import { getAdminSupabase } from '@/backend/config/supabase';
 import { createNewsRepository } from '@/backend/repositories/news';
 import { createNewsPreferencesRepository } from '@/backend/repositories/news/news-preferences';
+import { createNewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests';
+import { createNewsSourcesRepository } from '@/backend/repositories/news/news-sources';
+import { probeFeed } from '@/backend/services/news/feed-probe';
+import { createNewsCatalogue, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
 import {
   createNewsPreferencesService,
   type NewsPreferencesService,
 } from '@/backend/services/news/news-preferences-service';
+import {
+  createNewsAdminService,
+  createNewsSourceRequestsService,
+  type NewsSourceAdminService,
+  type NewsSourceRequestsService,
+} from '@/backend/services/news/news-source-requests-service';
 import { createNewsService, type NewsService } from '@/backend/services/news/news-service';
 
 /**
@@ -18,6 +29,15 @@ export function createNewsServiceFor(supabase: SupabaseClient<Database>): NewsSe
 }
 
 /**
+ * The catalogue the picker offers: the repo-versioned list plus the sources an
+ * Admin approved, merged on top (ADR-0078). Read through whatever client the
+ * caller holds — the additions are publicly readable.
+ */
+export function createNewsCatalogueFor(supabase: SupabaseClient<Database>): NewsCatalogue {
+  return createNewsCatalogue(() => createNewsSourcesRepository(supabase).listEnabled());
+}
+
+/**
  * The reader's own selection, wired to the session-scoped client so RLS answers
  * for the row. Separate from `createNewsServiceFor` because the digest reader is
  * public and this one is not.
@@ -25,5 +45,33 @@ export function createNewsServiceFor(supabase: SupabaseClient<Database>): NewsSe
 export function createNewsPreferencesServiceFor(
   supabase: SupabaseClient<Database>
 ): NewsPreferencesService {
-  return createNewsPreferencesService(createNewsPreferencesRepository(supabase));
+  return createNewsPreferencesService(
+    createNewsPreferencesRepository(supabase),
+    createNewsCatalogueFor(supabase)
+  );
+}
+
+/** A reader's own proposal path: submit, and read back what they filed. */
+export function createNewsSourceRequestsServiceFor(
+  supabase: SupabaseClient<Database>
+): NewsSourceRequestsService {
+  return createNewsSourceRequestsService({
+    requests: createNewsSourceRequestsRepository(supabase),
+    sources: createNewsSourcesRepository(supabase),
+    probe: (url) => probeFeed(url),
+  });
+}
+
+/**
+ * The Admin queue. Service-role on purpose: the request table has no admin
+ * policy, so the decision path is the only thing that can move a row out of
+ * `pending`, and it is reachable only behind `withAdminUser`.
+ */
+export function createDefaultNewsAdminService(): NewsSourceAdminService {
+  const supabase = getAdminSupabase();
+  return createNewsAdminService({
+    requests: createNewsSourceRequestsRepository(supabase),
+    sources: createNewsSourcesRepository(supabase),
+    catalogue: createNewsCatalogueFor(supabase),
+  });
 }

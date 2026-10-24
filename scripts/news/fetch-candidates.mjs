@@ -27,9 +27,11 @@ import {
   excerpt,
   isFresh,
   isPublishableUrl,
+  mergeSources,
   parseFeed,
   readSources,
   titleSimilarity,
+  toApprovedSource,
 } from './lib.mjs';
 
 const MAX_ITEMS_PER_SOURCE = 4;
@@ -137,6 +139,33 @@ async function loadRecentlyPublishedUrls(env = process.env) {
   }
 }
 
+/**
+ * The sources an Admin approved in `news_sources`, read with the service role.
+ *
+ * A missing configuration or a failed read is not an error: the fetch falls back
+ * to the repo list, because a new source is worth having but never worth the
+ * day's digest. A malformed row is dropped by `toApprovedSource`.
+ */
+async function loadApprovedSources(env = process.env) {
+  const url = env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return [];
+
+  const endpoint = `${url}/rest/v1/news_sources?select=id,name,url,category,region,tier,fresh_hours&enabled=is.true`;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { apikey: key, authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) return [];
+    const rows = await response.json();
+    return (Array.isArray(rows) ? rows : []).map(toApprovedSource).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 function rank(candidate) {
   const published = candidate.publishedAt ? new Date(candidate.publishedAt).getTime() : 0;
   return [candidate.tier, published];
@@ -229,7 +258,9 @@ async function main() {
   if (options.date && !/^\d{4}-\d{2}-\d{2}$/.test(options.date)) {
     throw new Error(`--date must be YYYY-MM-DD, got "${options.date}"`);
   }
-  const sources = readSources(options.sources);
+  const fileSources = readSources(options.sources);
+  const approved = await loadApprovedSources();
+  const sources = mergeSources(fileSources, approved);
   const recentlyPublished = await loadRecentlyPublishedUrls();
   const { items, failures, fetched } = await collectCandidates({ sources, recentlyPublished });
 
@@ -248,6 +279,11 @@ async function main() {
   await writeFile(options.out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 
   console.log(`Sources: ${sources.length}, fetched items: ${fetched}, candidates: ${items.length}`);
+  if (approved.length > 0) {
+    console.log(
+      `  ${sources.length - fileSources.length} approved source(s) merged from the database`
+    );
+  }
   for (const failure of failures) console.log(`  skipped ${failure.source}: ${failure.error}`);
   if (recentlyPublished.size > 0) {
     console.log(`Dropped ${recentlyPublished.size} recently published URL(s).`);

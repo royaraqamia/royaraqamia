@@ -12,12 +12,15 @@ import {
 /**
  * The catalogue a reader's source selection is drawn from.
  *
- * The digest is written from `data/news/sources.json` (ADR-0076), and this is
- * that same file read for the picker: one list, so a source cannot be selectable
- * yet unfetchable or fetched yet unselectable. The file is repo-versioned and
- * validated by `scripts/news/lib.mjs` before the workflow uses it, so a malformed
- * entry is dropped here rather than throwing — a bad row must not take the whole
- * picker, or the page that reads it, down.
+ * The base is `data/news/sources.json` — the same file the workflow fetches
+ * (ADR-0076) — so a source cannot be selectable yet unfetchable. The file is
+ * repo-versioned and validated by `scripts/news/lib.mjs` before the workflow
+ * uses it, so a malformed entry is dropped here rather than throwing: a bad row
+ * must not take the whole picker, or the page that reads it, down.
+ *
+ * Sources an Admin approved live in `news_sources` (ADR-0078) and are merged on
+ * top, file first. A failed read of the additions costs the picker its new rows
+ * for one request, never the catalogue itself.
  *
  * A row's feed URL and freshness window are deliberately not part of
  * `NewsSource`: the browser needs a name to tick, not a feed to fetch.
@@ -48,7 +51,7 @@ function toNewsSource(value: RawSource): NewsSource | null {
   };
 }
 
-const SOURCES: NewsSource[] = (rawSources.sources as RawSource[]).flatMap((value) => {
+const FILE_SOURCES: NewsSource[] = (rawSources.sources as RawSource[]).flatMap((value) => {
   const source = toNewsSource(value);
   if (!source) {
     logger.warn('Dropped a malformed news source from the catalogue', {
@@ -59,19 +62,54 @@ const SOURCES: NewsSource[] = (rawSources.sources as RawSource[]).flatMap((value
   return [source];
 });
 
-const BY_ID = new Map(SOURCES.map((source) => [source.id, source]));
+const FILE_BY_ID = new Map(FILE_SOURCES.map((source) => [source.id, source]));
 
-/** Every source a reader may pick, in the catalogue's own order. */
-export function listNewsSources(): readonly NewsSource[] {
-  return SOURCES;
+/** The repo-versioned list, in its own order. */
+export function listFileSources(): readonly NewsSource[] {
+  return FILE_SOURCES;
 }
 
-export function findNewsSource(id: string): NewsSource | undefined {
-  return BY_ID.get(id);
+export function findFileSource(id: string): NewsSource | undefined {
+  return FILE_BY_ID.get(id);
 }
 
-/** Keeps the ids the catalogue knows, in catalogue order, dropping unknown ones. */
-export function knownNewsSourceIds(ids: readonly string[]): string[] {
+/**
+ * The file list first, then approved additions it does not already carry. The
+ * file wins a collision: the reviewed list is the authority on its own ids.
+ */
+export function mergeNewsSources(
+  base: readonly NewsSource[],
+  added: readonly NewsSource[]
+): NewsSource[] {
+  const seen = new Set(base.map((source) => source.id));
+  return [...base, ...added.filter((source) => !seen.has(source.id))];
+}
+
+/** Keeps the ids a catalogue knows, in its order, dropping everything else. */
+export function keepKnownSourceIds(
+  ids: readonly string[],
+  sources: readonly NewsSource[]
+): string[] {
   const wanted = new Set(ids);
-  return SOURCES.filter((source) => wanted.has(source.id)).map((source) => source.id);
+  return sources.filter((source) => wanted.has(source.id)).map((source) => source.id);
+}
+
+/** The list as the picker and the preferences write need it. */
+export interface NewsCatalogue {
+  list(): Promise<readonly NewsSource[]>;
+}
+
+export function createNewsCatalogue(
+  loadApproved: () => Promise<readonly NewsSource[]>
+): NewsCatalogue {
+  return {
+    async list(): Promise<readonly NewsSource[]> {
+      try {
+        return mergeNewsSources(FILE_SOURCES, await loadApproved());
+      } catch (error) {
+        logger.warn('Fell back to the repo source list only', { error: String(error) });
+        return FILE_SOURCES;
+      }
+    },
+  };
 }

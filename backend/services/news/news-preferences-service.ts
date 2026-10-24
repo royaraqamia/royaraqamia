@@ -1,5 +1,5 @@
 import type { NewsPreferencesRepository } from '@/backend/repositories/news/news-preferences-repository';
-import { knownNewsSourceIds } from '@/backend/services/news/news-catalogue';
+import { keepKnownSourceIds, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
 
 /**
  * A reader's saved source selection.
@@ -17,16 +17,18 @@ export interface NewsPreferencesService {
 }
 
 export function createNewsPreferencesService(
-  repository: NewsPreferencesRepository
+  repository: NewsPreferencesRepository,
+  catalogue: NewsCatalogue
 ): NewsPreferencesService {
   return {
     async get(userId: string): Promise<string[]> {
       const stored = await repository.getSourceIds(userId);
-      return stored ? knownNewsSourceIds(stored) : [];
+      if (!stored) return [];
+      return keepKnownSourceIds(stored, await catalogue.list());
     },
 
     async save(userId: string, sourceIds: readonly string[]): Promise<string[]> {
-      const kept = knownNewsSourceIds(sourceIds);
+      const kept = keepKnownSourceIds(sourceIds, await catalogue.list());
       await repository.saveSourceIds(userId, kept);
       return kept;
     },

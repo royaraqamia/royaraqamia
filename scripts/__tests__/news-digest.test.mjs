@@ -8,11 +8,13 @@ import {
   CATEGORIES,
   REGIONS,
   canonicalUrl,
+  mergeSources,
   normalizeTitle,
   parseFeed,
   readSources,
   stripHtml,
   titleSimilarity,
+  toApprovedSource,
   toIsoDate,
 } from '../news/lib.mjs';
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
@@ -417,5 +419,68 @@ describe('digest validation', () => {
 
     expect(result.problems).toEqual([]);
     expect(result.warnings).toEqual([]);
+  });
+});
+
+describe('approved sources', () => {
+  const base = [
+    {
+      id: 'aljazeera-ar',
+      name: 'الجزيرة نت',
+      url: 'https://www.aljazeera.net/rss',
+      category: 'politics',
+      region: 'arab',
+      tier: 1,
+      freshHours: null,
+    },
+  ];
+
+  it('appends an approved row after the repo list', () => {
+    const approved = {
+      id: 'example-com',
+      name: 'مثال',
+      url: 'https://example.com/rss',
+      category: 'world',
+      region: 'world',
+      tier: 2,
+      freshHours: null,
+    };
+
+    expect(mergeSources(base, [approved]).map((source) => source.id)).toEqual([
+      'aljazeera-ar',
+      'example-com',
+    ]);
+  });
+
+  it('keeps the repo list when an approved row repeats an id or a URL', () => {
+    const sameId = { ...base[0], url: 'https://other.example/rss' };
+    const sameUrl = { ...base[0], id: 'other-example' };
+
+    expect(mergeSources(base, [sameId, sameUrl])).toEqual(base);
+  });
+
+  it('shapes a database row like a file entry, dropping a malformed one', () => {
+    expect(
+      toApprovedSource({
+        id: 'example-com',
+        name: 'مثال',
+        url: 'https://example.com/rss/',
+        category: 'tech',
+        region: 'world',
+        tier: 1,
+        fresh_hours: 72,
+      })
+    ).toEqual({
+      id: 'example-com',
+      name: 'مثال',
+      url: 'https://example.com/rss',
+      category: 'tech',
+      region: 'world',
+      tier: 1,
+      freshHours: 72,
+    });
+
+    expect(toApprovedSource({ ...base[0], category: 'sport' })).toBeNull();
+    expect(toApprovedSource({ ...base[0], url: 'javascript:alert(1)' })).toBeNull();
   });
 });
