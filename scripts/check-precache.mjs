@@ -35,7 +35,6 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const APP_PATHS = resolve(ROOT, '.next', 'app-path-routes-manifest.json');
 const PRERENDER = resolve(ROOT, '.next', 'prerender-manifest.json');
-const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 const OUTPUT = resolve(ROOT, 'public', 'sw-precache.js');
 
 export function audit({ root = ROOT } = {}) {
