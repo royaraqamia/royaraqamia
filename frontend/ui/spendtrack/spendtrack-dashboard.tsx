@@ -55,7 +55,8 @@ export function SpendtrackDashboard({
   onCurrencyChange?: (next: string) => void;
 }) {
   const context = useSpendtrackContext();
-  const ready = context?.ready ?? false;
+  // The rows are paintable from the store or the last painted screen (#495).
+  const ready = context?.painted ?? false;
   const categories = useMemo(() => context?.categories ?? [], [context?.categories]);
   const expenses = useMemo(() => context?.expenses ?? [], [context?.expenses]);
 

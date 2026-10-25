@@ -21,7 +21,7 @@ import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 
 function useReadyData() {
   const context = useSpendtrackContext();
-  return context?.ready ? context : null;
+  return context?.painted ? context : null;
 }
 
 export function CategoryPieChartLive({

@@ -28,7 +28,14 @@ import {
   type DeviceCopyRemoval,
   type DeviceStoreCopy,
 } from '@/frontend/shared/local-store/device-copy';
-import { userIdentity } from '@/frontend/shared/local-store/identity';
+import { userIdentity, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import {
+  PUBLIC_SNAPSHOT_SCOPE,
+  clearSnapshotsFor,
+  screenful,
+  useSnapshot,
+  writeSnapshot,
+} from '@/frontend/shared/local-store/snapshot';
 import { useSession } from '@/frontend/state/session-provider';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
@@ -47,6 +54,25 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
  */
 
 type LoadStatus = 'loading' | 'ready' | 'unsupported' | 'error';
+
+/**
+ * The page's snapshot (#495), under the public scope on purpose: what it lists is
+ * what this browser already holds without a session, so it is not account-bearing
+ * — and a borrowed device is exactly when `/device` is opened, after someone has
+ * signed out and the identity-scoped snapshots are gone.
+ */
+const DEVICE_ROUTE = '/device';
+
+interface DeviceSnapshot {
+  status: 'ready' | 'unsupported';
+  copies: DeviceStoreCopy[];
+}
+
+/** The byte budget's second pass over the copies. */
+function trimDevice(data: DeviceSnapshot): DeviceSnapshot | null {
+  const copies = data.copies.slice(0, Math.ceil(data.copies.length / 2));
+  return copies.length === 0 ? { status: data.status, copies: [] } : { ...data, copies };
+}
 
 interface CopyGroup {
   identity: string;
@@ -138,15 +164,37 @@ export function DeviceView() {
   /** The identity whose copy the confirm dialog is about. */
   const [pendingIdentity, setPendingIdentity] = useState<string | null>(null);
 
+  // The list this page last painted (#495), read during render so a cold open of
+  // `/device` — the page a device is inspected on, often offline — is not a
+  // skeleton while IndexedDB is asked.
+  const snapshot = useSnapshot<DeviceSnapshot>(PUBLIC_SNAPSHOT_SCOPE, DEVICE_ROUTE);
+
   const load = useCallback(async () => {
     try {
-      setCopies(await readDeviceCopies());
+      const next = await readDeviceCopies();
+      setCopies(next);
       // The bridge is the shell's own; a browser answers null, and the page's
       // background tier stays out entirely.
       setLastFlush(readShellLastFlush());
       setStatus('ready');
+      writeSnapshot(
+        PUBLIC_SNAPSHOT_SCOPE,
+        DEVICE_ROUTE,
+        { status: 'ready', copies: screenful(next) },
+        { trim: trimDevice }
+      );
     } catch (error) {
-      setStatus(error instanceof DeviceListingUnsupportedError ? 'unsupported' : 'error');
+      const unsupported = error instanceof DeviceListingUnsupportedError;
+      setStatus(unsupported ? 'unsupported' : 'error');
+      // "No action can be taken" is not worth recording — the next visit
+      // re-derives it synoptically — and a failed read says nothing about the
+      // copies, so neither replaces the last good list.
+      if (unsupported) {
+        writeSnapshot(PUBLIC_SNAPSHOT_SCOPE, DEVICE_ROUTE, {
+          status: 'unsupported',
+          copies: [],
+        });
+      }
     }
   }, []);
 
@@ -162,6 +210,17 @@ export function DeviceView() {
   }, [user?.id]);
 
   const groups = useMemo(() => groupByCopy(copies), [copies]);
+
+  // What the page shows: the read once it answers, the last painted list before
+  // that, and the last painted list under a failed refresh — the error banner is
+  // its own line rather than a replacement for what the device holds. A refresh
+  // keeps the rows on screen while it re-reads.
+  const listStatus: LoadStatus =
+    status === 'ready' || status === 'unsupported' ? status : (snapshot?.status ?? status);
+  const shownGroups = useMemo(
+    () => (status === 'ready' ? groups : groupByCopy(snapshot?.copies ?? [])),
+    [status, groups, snapshot]
+  );
 
   const retry = useCallback(
     async (copy: DeviceStoreCopy, seq: number) => {
@@ -193,20 +252,20 @@ export function DeviceView() {
   const pending = useMemo(() => {
     if (!pendingIdentity) return null;
 
-    if (status === 'unsupported') {
+    if (listStatus === 'unsupported') {
       const names = derived
         .filter((copy) => copy.identity === pendingIdentity)
         .map((copy) => copy.name);
       return { names, stores: names.length, queued: null as number | null };
     }
 
-    const copies = groups.find((group) => group.identity === pendingIdentity)?.copies ?? [];
+    const copies = shownGroups.find((group) => group.identity === pendingIdentity)?.copies ?? [];
     return {
       names: copies.map((copy) => copy.name),
       stores: copies.length,
       queued: copies.reduce((total, copy) => total + copy.entries.length, 0),
     };
-  }, [derived, groups, pendingIdentity, status]);
+  }, [derived, shownGroups, pendingIdentity, listStatus]);
 
   const remove = useCallback(async () => {
     if (!pendingIdentity || !pending) return;
@@ -217,6 +276,15 @@ export function DeviceView() {
     try {
       const removal = await removeDeviceCopies(pending.names);
       setNotice(removeMessage(removal, pendingIdentity, pending.queued !== null));
+      // The rows are gone from IndexedDB, so the snapshots of them go too: a
+      // removed partition must not repaint on the next cold open (#495).
+      for (const name of removal.removed) {
+        const separator = name.indexOf('__');
+        const identity = separator > 0 ? name.slice(separator + 2) : '';
+        if (identity === 'guest' || identity.startsWith('user:')) {
+          clearSnapshotsFor(identity as LocalIdentity);
+        }
+      }
       setPendingIdentity(null);
       await load();
     } catch {
@@ -254,7 +322,7 @@ export function DeviceView() {
         </p>
       )}
 
-      {status === 'loading' && (
+      {listStatus === 'loading' && (
         <div className="space-y-3" aria-busy="true" aria-label="جاري قراءة التَّخزين المحلِّي">
           <div className="h-24 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
           <div className="h-24 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
@@ -267,7 +335,7 @@ export function DeviceView() {
         </p>
       )}
 
-      {status === 'unsupported' && (
+      {listStatus === 'unsupported' && (
         <section className="space-y-3">
           <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground sm:text-sm">
             لا يستطيع هذا المتصفِّح سرد مخازن الجهاز، فلا يمكن عرض قائمة الانتظار هنا. تبقى إزالة
@@ -300,7 +368,7 @@ export function DeviceView() {
         </section>
       )}
 
-      {status === 'ready' && groups.length === 0 && (
+      {listStatus === 'ready' && shownGroups.length === 0 && (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
           <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80">
             <HardDrive size={24} />
@@ -314,8 +382,8 @@ export function DeviceView() {
         </section>
       )}
 
-      {status === 'ready' &&
-        groups.map((group) => (
+      {listStatus === 'ready' &&
+        shownGroups.map((group) => (
           <CopyGroupCard
             key={group.identity}
             group={group}

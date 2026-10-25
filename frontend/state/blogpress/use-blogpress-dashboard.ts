@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BlogpressLocalStore, postFromDraft } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine, type SyncStatus } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
@@ -11,6 +11,12 @@ import {
   identityUserId,
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
@@ -49,6 +55,19 @@ const IDLE: SyncStatus = {
   lastFailedType: null,
 };
 
+/** The surface's snapshot (#495): the posts the dashboard last painted. */
+export const BLOGPRESS_SNAPSHOT_ROUTE = 'blogpress';
+
+interface BlogpressSnapshot {
+  posts: Post[];
+}
+
+/** The byte budget's second pass over the list. */
+function trimBlogpress(data: BlogpressSnapshot): BlogpressSnapshot | null {
+  const posts = halveList(data.posts);
+  return posts.length === 0 ? null : { posts };
+}
+
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
@@ -70,12 +89,21 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
    */
   const authorId = identityUserId(identity) ?? '';
   const isGuest = identity === GUEST_IDENTITY;
+  /**
+   * The identity the store read answered, or `null` before the first read.
+   * Tagged rather than a boolean so an identity change cannot paint the previous
+   * account's drafts while the new store opens.
+   */
+  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
+
+  // The last screen this identity painted (#495), read during render.
+  const snapshot = useSnapshot<BlogpressSnapshot>(identity, BLOGPRESS_SNAPSHOT_ROUTE);
   const [store, setStore] = useState<BlogpressLocalStore | null>(null);
-  const [ready, setReady] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [status, setStatus] = useState<SyncStatus>(IDLE);
   const [online, setOnline] = useState(isOnline);
   const engineRef = useRef<BlogpressSyncEngine | null>(null);
+  const ready = readyFor === identity;
 
   useEffect(() => {
     const sync = () => setOnline(isOnline());
@@ -116,7 +144,7 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
         setStore(localStore);
         await readIntoState(localStore);
         if (cancelled) return;
-        setReady(true);
+        setReadyFor(identity);
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -206,5 +234,16 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
     if (store) await readIntoState(store);
   }, [store, readIntoState]);
 
-  return { ready, posts, sync: { ...status, online, retry }, refresh };
+  const recorded = useMemo(() => (ready ? { posts: screenful(posts) } : null), [ready, posts]);
+  useSnapshotRecorder(identity, BLOGPRESS_SNAPSHOT_ROUTE, recorded, { trim: trimBlogpress });
+
+  // The store's rows once it has answered, the last painted screen before that.
+  // The empty list is the fallback rather than the state, which may belong to an
+  // identity this one replaced.
+  return {
+    ready: ready || snapshot !== null,
+    posts: ready ? posts : (snapshot?.posts ?? []),
+    sync: { ...status, online, retry },
+    refresh,
+  };
 }

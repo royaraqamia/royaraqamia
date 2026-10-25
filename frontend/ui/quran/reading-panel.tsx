@@ -18,14 +18,15 @@ interface ReadingPanelProps {
 
 /**
  * What a reader brings back to the index: where they stopped, and what they
- * marked. Both live in the Local Store (ADR-0056), so this renders nothing until
- * it opens on the client — the index itself is static HTML and never waits on
- * it.
+ * marked. Both live in the Local Store (ADR-0056), and the index itself is static
+ * HTML that never waits on it — so this paints the last screen it recorded
+ * (#495) and replaces it when the store answers, rather than rendering nothing
+ * for the first frame.
  */
 export function ReadingPanel({ names }: ReadingPanelProps) {
   const reader = useQuranReader();
   const { ready, readingPosition, bookmarks, removeBookmark } = reader;
-  if (!ready || (!readingPosition && bookmarks.length === 0)) return null;
+  if (!readingPosition && bookmarks.length === 0) return null;
 
   const nameOf = (surah: number) => names[surah - 1] ?? '';
 
@@ -75,8 +76,9 @@ export function ReadingPanel({ names }: ReadingPanelProps) {
                 <button
                   type="button"
                   onClick={() => void removeBookmark(bookmark.clientId)}
+                  disabled={!ready}
                   aria-label={`إزالة علامة ${nameOf(bookmark.surah)} الآية ${bookmark.ayah}`}
-                  className="rounded-md p-1 text-muted-foreground transition-safe hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-primary"
+                  className="rounded-md p-1 text-muted-foreground transition-safe hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
                 >
                   <X aria-hidden="true" className="size-3.5" />
                 </button>

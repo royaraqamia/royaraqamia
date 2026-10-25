@@ -3,6 +3,7 @@ import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { clearPersistedIdentity } from '@/frontend/shared/local-store/identity';
+import { clearIdentitySnapshots } from '@/frontend/shared/local-store/snapshot';
 import { unregisterNativePush } from '@/frontend/api/push-native';
 import { releasePushSubscription } from '@/frontend/api/push';
 import type { Session, User } from '@supabase/supabase-js';
@@ -74,6 +75,9 @@ export async function signOutSession(): Promise<void> {
   // (#493). The rows stay on disk — "Remove this device's copy" (#370) is how
   // they leave.
   clearPersistedIdentity();
+  // The last screens go with the pointer (#495): a snapshot is rows a list
+  // rendered, so it would paint the account that just left on the next boot.
+  clearIdentitySnapshots();
   // Cache Storage is the one shared surface that could still answer with the
   // previous account's render. IndexedDB is not touched: the Local Store and
   // Outbox survive sign-out until "Remove this device's copy" (#370).
@@ -94,8 +98,10 @@ export async function logout(): Promise<void> {
   }
   // The second sign-out path, and the one the account menu uses: forget the
   // account's partition before the redirect, or the boot on `/` paints the
-  // rows of the account that just left (#493).
+  // rows of the account that just left (#493) — and every snapshot with it
+  // (#495).
   clearPersistedIdentity();
+  clearIdentitySnapshots();
   // The session is gone server-side: drop account-bearing Cache Storage entries
   // before the redirect, while this document still controls the worker.
   await purgeServiceWorkerCaches();

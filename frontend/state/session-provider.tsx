@@ -20,6 +20,7 @@ import {
   readPersistedIdentity,
   userIdentity,
 } from '@/frontend/shared/local-store/identity';
+import { clearIdentitySnapshots } from '@/frontend/shared/local-store/snapshot';
 import type { Me } from '@/frontend/api/me';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -144,8 +145,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (prevSession && !session) {
           clearPlanLimits(prevSession.user.id);
           // The account is gone: no Local Store of it may paint behind a guest
-          // session, and the expiry sends the page to the login form anyway.
+          // session, and the expiry sends the page to the login form anyway —
+          // the last screens it painted go with the pointer (#495).
           clearPersistedIdentity();
+          clearIdentitySnapshots();
           // An expiry is a sign-out the user did not perform: the cached renders
           // may still belong to the account that just lost its session.
           void purgeServiceWorkerCaches();

@@ -10,6 +10,12 @@ import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { isIndexedDbSupported } from '@/frontend/shared/local-store/idb';
 import { GUEST_IDENTITY, identityUserId } from '@/frontend/shared/local-store/identity';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { logger } from '@/frontend/shared/logger';
 import { markContent } from '@/frontend/shared/perf-marks';
@@ -66,6 +72,27 @@ const EMPTY_STATUS: SyncStatus = {
   lastFailedType: null,
 };
 
+/**
+ * The surface's snapshot (#495): where the reader stopped and what they marked.
+ *
+ * The reader's own records are the surface's first frame — the index is static
+ * HTML — so without this a returning reader's first frame was the top of the
+ * sura list rather than the place they left.
+ */
+export const QURAN_SNAPSHOT_ROUTE = 'quran';
+
+interface QuranSnapshot {
+  readingPosition: ReadingPosition | null;
+  bookmarks: Bookmark[];
+}
+
+/** The byte budget's second pass over the marks; the position is one row. */
+function trimQuran(data: QuranSnapshot): QuranSnapshot | null {
+  const bookmarks = halveList(data.bookmarks);
+  if (data.readingPosition === null && bookmarks.length === 0) return null;
+  return { readingPosition: data.readingPosition, bookmarks };
+}
+
 export function useQuranReader(): QuranReaderState {
   // The partition comes from the remembered identity, not `session.user`: a
   // session-derived identity paints `quran__guest` first and reopens on
@@ -74,9 +101,19 @@ export function useQuranReader(): QuranReaderState {
   const { identity } = useLocalIdentity();
   const isSignedIn = identity !== GUEST_IDENTITY;
 
-  const [ready, setReady] = useState(false);
+  /**
+   * The identity the store read answered, or `null` before the first read.
+   * Tagged rather than a boolean so an identity change cannot paint the previous
+   * reader's place while the new store opens.
+   */
+  const [readyFor, setReadyFor] = useState<typeof identity | null>(null);
   const [readingPosition, setReadingPosition] = useState<ReadingPosition | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const ready = readyFor === identity;
+
+  // The last screen this identity painted (#495), read during render: a
+  // returning reader's first frame is their place, not the top of the index.
+  const snapshot = useSnapshot<QuranSnapshot>(identity, QURAN_SNAPSHOT_ROUTE);
   // Hydration-safe: the server (Node exposes a partial `navigator`) and the
   // first client render must agree, so start "online" and read the real value in
   // an effect.
@@ -161,7 +198,7 @@ export function useQuranReader(): QuranReaderState {
         storeRef.current = store;
         await readIntoState(store);
         if (cancelled) return;
-        setReady(true);
+        setReadyFor(identity);
         // The reader's own rows are in state and the surah is painted: this is
         // the content frame the launch is measured to (#487, #558). Before this,
         // the reader had no mark at all — the fifth Local-Store product was the
@@ -199,7 +236,6 @@ export function useQuranReader(): QuranReaderState {
       unsubscribe?.();
       engine?.dispose();
       engineRef.current = null;
-      setReady(false);
 
       // A session's cleanup flushes where the reader stopped through
       // `savePosition`, which reads `storeRef` — and React runs passive-effect
@@ -314,13 +350,32 @@ export function useQuranReader(): QuranReaderState {
     void engineRef.current?.retry();
   }, []);
 
+  // What the surfaces paint with, and what they record (#495): the store's rows
+  // once it has answered, the last painted screen before that. Empty is the
+  // fallback rather than the state, which may belong to an identity this one
+  // replaced.
+  const renderedPosition = ready ? readingPosition : (snapshot?.readingPosition ?? null);
+  const renderedBookmarks = useMemo(
+    () => (ready ? bookmarks : (snapshot?.bookmarks ?? [])),
+    [ready, bookmarks, snapshot]
+  );
+
+  const recorded = useMemo(
+    () => (ready ? { readingPosition, bookmarks: screenful(bookmarks) } : null),
+    [ready, readingPosition, bookmarks]
+  );
+  useSnapshotRecorder(identity, QURAN_SNAPSHOT_ROUTE, recorded, { trim: trimQuran });
+
   return useMemo(
     () => ({
+      // Where the reader left off is paintable from the store or from the last
+      // painted screen (#495); `ready` stays the store's own answer, so a write
+      // (a mark, a place) is still only offered once it can land.
       ready,
       isSignedIn,
       online,
-      readingPosition,
-      bookmarks,
+      readingPosition: renderedPosition,
+      bookmarks: renderedBookmarks,
       savePosition,
       toggleBookmark,
       removeBookmark,
@@ -335,8 +390,8 @@ export function useQuranReader(): QuranReaderState {
       ready,
       isSignedIn,
       online,
-      readingPosition,
-      bookmarks,
+      renderedPosition,
+      renderedBookmarks,
       savePosition,
       toggleBookmark,
       removeBookmark,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardList, Pencil, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -8,6 +8,13 @@ import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { useSession } from '@/frontend/state/session-provider';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { ApiError } from '@/frontend/transport/http';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
@@ -54,6 +61,29 @@ const KIND_LABELS: Record<Kind, string> = {
   training_application: 'التحاق بالتَّدريب',
   consultation_booking: 'حجز استشارة',
 };
+
+/** The surface's snapshot (#495): the four lists the view turned into rows. */
+const ACCOUNT_SUBMISSIONS_ROUTE = '/account/submissions';
+
+interface SubmissionsSnapshot {
+  projectRequests: ProjectRequest[];
+  retainers: Retainer[];
+  applications: TrainingApplication[];
+  bookings: ConsultationBooking[];
+}
+
+/** The byte budget's second pass over each list. */
+function trimSubmissions(data: SubmissionsSnapshot): SubmissionsSnapshot | null {
+  const next: SubmissionsSnapshot = {
+    projectRequests: halveList(data.projectRequests),
+    retainers: halveList(data.retainers),
+    applications: halveList(data.applications),
+    bookings: halveList(data.bookings),
+  };
+
+  const empty = Object.values(next).every((rows) => rows.length === 0);
+  return empty ? null : next;
+}
 
 function toSubmissions(
   requests: ProjectRequest[],
@@ -142,6 +172,7 @@ function SubmissionsSkeleton({ label }: { label: string }) {
  */
 export function MySubmissionsView() {
   const { user, isLoading } = useSession();
+  const { identity } = useLocalIdentity();
   const [projectRequests, setProjectRequests] = useState<ProjectRequest[] | null>(null);
   const [retainers, setRetainers] = useState<Retainer[] | null>(null);
   const [applications, setApplications] = useState<TrainingApplication[] | null>(null);
@@ -149,6 +180,29 @@ export function MySubmissionsView() {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadOffline, setLoadOffline] = useState(false);
+
+  // The last screen this identity's submissions painted (#495): the lists are
+  // network reads, so the snapshot is what stops the first frame being a
+  // skeleton for a visitor who just looked at them.
+  const snapshot = useSnapshot<SubmissionsSnapshot>(identity, ACCOUNT_SUBMISSIONS_ROUTE);
+  const loaded = useMemo(() => {
+    if (!projectRequests || !retainers || !applications || !bookings) return null;
+    return {
+      projectRequests: screenful(projectRequests),
+      retainers: screenful(retainers),
+      applications: screenful(applications),
+      bookings: screenful(bookings),
+    };
+  }, [projectRequests, retainers, applications, bookings]);
+  useSnapshotRecorder(identity, ACCOUNT_SUBMISSIONS_ROUTE, loaded, {
+    trim: trimSubmissions,
+  });
+
+  // What the lists paint with: the response once it lands, the last screen before.
+  const requests = projectRequests ?? snapshot?.projectRequests ?? null;
+  const retainerRows = retainers ?? snapshot?.retainers ?? null;
+  const applicationRows = applications ?? snapshot?.applications ?? null;
+  const bookingRows = bookings ?? snapshot?.bookings ?? null;
 
   const load = useCallback(async () => {
     setLoadFailed(false);
@@ -175,7 +229,9 @@ export function MySubmissionsView() {
     void load();
   }, [isLoading, user, load]);
 
-  if (loadFailed) {
+  // A failed load with a snapshot on screen keeps the last rows: the error state
+  // is for "nothing to show", not for "the newest read failed" (#495).
+  if (loadFailed && !snapshot) {
     if (loadOffline) {
       return (
         <NeedsConnection
@@ -200,20 +256,20 @@ export function MySubmissionsView() {
     );
   }
 
-  if (isLoading) return <SubmissionsSkeleton label="جاري تحميل طلباتك" />;
+  if (isLoading && !snapshot) return <SubmissionsSkeleton label="جاري تحميل طلباتك" />;
 
   if (!user) return <SignInCta href="/auth/login?redirect=/account/submissions" />;
 
   if (
-    projectRequests === null ||
-    retainers === null ||
-    applications === null ||
-    bookings === null
+    requests === null ||
+    retainerRows === null ||
+    applicationRows === null ||
+    bookingRows === null
   ) {
     return <SubmissionsSkeleton label="جاري تحميل طلباتك" />;
   }
 
-  const submissions = toSubmissions(projectRequests, retainers, applications, bookings);
+  const submissions = toSubmissions(requests, retainerRows, applicationRows, bookingRows);
 
   if (submissions.length === 0) {
     return (
@@ -282,7 +338,7 @@ export function MySubmissionsView() {
               <div className="mt-5 border-t border-border/50 pt-5">
                 {submission.kind === 'project_request' && (
                   <ProjectRequestEditForm
-                    request={projectRequests.find((row) => row.id === submission.id)!}
+                    request={requests.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
                       setProjectRequests(
                         (rows) =>
@@ -295,7 +351,7 @@ export function MySubmissionsView() {
                 )}
                 {submission.kind === 'retainer' && (
                   <RetainerEditForm
-                    retainer={retainers.find((row) => row.id === submission.id)!}
+                    retainer={retainerRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
                       setRetainers(
                         (rows) =>
@@ -308,7 +364,7 @@ export function MySubmissionsView() {
                 )}
                 {submission.kind === 'training_application' && (
                   <TrainingApplicationEditForm
-                    application={applications.find((row) => row.id === submission.id)!}
+                    application={applicationRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
                       setApplications(
                         (rows) =>
@@ -321,7 +377,7 @@ export function MySubmissionsView() {
                 )}
                 {submission.kind === 'consultation_booking' && (
                   <ConsultationBookingEditForm
-                    booking={bookings.find((row) => row.id === submission.id)!}
+                    booking={bookingRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
                       setBookings(
                         (rows) =>

@@ -51,7 +51,8 @@ vi.mock('@/frontend/api/quran/sync-transport', async (importOriginal) => {
 import { pullQuranSync } from '@/frontend/api/quran/sync-api';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { GUEST_IDENTITY, userIdentity } from '@/frontend/shared/local-store/identity';
-import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
+import { QURAN_SNAPSHOT_ROUTE, useQuranReader } from '@/frontend/state/quran/use-quran-reader';
+import { clearSnapshots, writeSnapshot } from '@/frontend/shared/local-store/snapshot';
 import type { QuranSyncSnapshot } from '@/shared/contracts/quran';
 
 const EMPTY: QuranSyncSnapshot = { position: null, bookmarks: [], cursor: null };
@@ -59,6 +60,8 @@ const EMPTY: QuranSyncSnapshot = { position: null, bookmarks: [], cursor: null }
 describe('useQuranReader', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
+    window.localStorage.clear();
+    clearSnapshots();
     sessionUser = null;
     sentTypes.length = 0;
     hintSources = null;
@@ -179,5 +182,27 @@ describe('useQuranReader', () => {
     });
 
     await waitFor(() => expect(vi.mocked(pullQuranSync).mock.calls.length).toBe(before + 1));
+  });
+
+  /**
+   * #495, and the acceptance names this one: the Quran reader's first frame is
+   * the reader's place, not the top of the index. The store read is still a
+   * promise, so the recorded screen is what the first commit paints.
+   */
+  it('paints the recorded position before the store opens', async () => {
+    writeSnapshot(GUEST_IDENTITY, QURAN_SNAPSHOT_ROUTE, {
+      readingPosition: { surah: 18, ayah: 10, updatedAt: '2026-10-20T09:00:00.000Z' },
+      bookmarks: [],
+    });
+
+    const { result } = renderHook(() => useQuranReader());
+
+    // Synchronously, on the first client commit — no `waitFor`.
+    expect(result.current.readingPosition).toMatchObject({ surah: 18, ayah: 10 });
+
+    // The store answered with no position, and the snapshot is replaced rather
+    // than merged into it.
+    await waitFor(() => expect(result.current.readingPosition).toBeNull());
+    expect(result.current.ready).toBe(true);
   });
 });
