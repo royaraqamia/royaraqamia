@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.139.0] - 2026-10-25
+
+### Changed
+- put Prettier in the local pre-flight (#576)
+
+### Added
+- paint the Local Store before the session resolves (#575)
+
+### Fixed
+- approve a source request in one transaction (#572) (#574)
+
 ## [1.138.2] - 2026-10-25
 
 ### Fixed
