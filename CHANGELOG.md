@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.140.0] - 2026-10-25
+
+### Added
+- one boot connection per identity, mirrored in memory (#579)
+
+### Fixed
+- dedupe feed proposals against the source file and the indexes (#578)
+- keep a published post's date on re-publish (#577)
+
 ## [1.139.0] - 2026-10-25
 
 ### Changed
