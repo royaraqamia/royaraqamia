@@ -35,13 +35,31 @@ export const AUDIO_BUDGET_BYTES = 128 * 1024 * 1024;
 export const AUDIO_INDEX_DB = 'quran-audio';
 
 const COPIES_STORE = 'copies';
-const CACHE_NAME = 'quran-audio-v1';
+const MANIFESTS_STORE = 'manifests';
+/**
+ * The Cache Storage cache the fallback store uses. `public/sw.js` names it in
+ * its activate keep-list: the worker deletes every cache it does not recognise,
+ * and a release would otherwise evict the reader's copies on the browsers that
+ * have no OPFS (#559's "a download survives a release").
+ */
+export const AUDIO_CACHE = 'quran-audio-v1';
 
 const migrations: readonly LocalStoreMigration[] = [
   {
     version: 1,
     migrate(db) {
       db.createObjectStore(COPIES_STORE, { keyPath: 'key' });
+    },
+  },
+  {
+    // The manifest is what makes a kept Surah playable with the radio off: the
+    // Ayah list and the host it came from are otherwise fetched, and offline
+    // there is nothing to fetch (#559).
+    version: 2,
+    migrate(db) {
+      if (!db.objectStoreNames.contains(MANIFESTS_STORE)) {
+        db.createObjectStore(MANIFESTS_STORE, { keyPath: 'id' });
+      }
     },
   },
 ];
@@ -254,8 +272,8 @@ export async function listDownloadedSuras(factory?: IDBFactory): Promise<SurahAu
   return [...grouped.values()].sort((a, b) => b.lastUsedAt - a.lastUsedAt || a.surah - b.surah);
 }
 
-/** `none` when nothing is held, `complete` when every Ayah is, `partial` between. */
-export type SurahAudioState = 'none' | 'partial' | 'complete';
+/** `none` when nothing is held, `complete` when every Ayah is, `partial` between. */ export type SurahAudioState =
+  'none' | 'partial' | 'complete';
 
 export async function readSurahAudioState(
   edition: string,
@@ -266,6 +284,69 @@ export async function readSurahAudioState(
   const copies = await listSurahAudioCopies(edition, surah, factory);
   if (copies.length === 0) return 'none';
   return copies.length >= ayahCount ? 'complete' : 'partial';
+}
+
+/** A kept Surah's manifest, and the host its Ayat came from. */
+export interface StoredManifest<T> {
+  readonly baseUrl: string;
+  readonly manifest: T;
+}
+
+interface ManifestRow<T> {
+  readonly id: string;
+  readonly baseUrl: string;
+  readonly manifest: T;
+}
+
+function manifestId(edition: string, surah: number): string {
+  return `${edition}:${surah}`;
+}
+
+/**
+ * Keeps a Surah's manifest beside its Ayat, so playback offline does not need a
+ * fetch to know which files exist or where they were served from.
+ */
+export async function saveSurahManifest<T>(
+  entry: {
+    readonly edition: string;
+    readonly surah: number;
+    readonly baseUrl: string;
+    readonly manifest: T;
+  },
+  factory?: IDBFactory
+): Promise<void> {
+  await withIndex(async (db) => {
+    const transaction = db.transaction(MANIFESTS_STORE, 'readwrite');
+    transaction.objectStore(MANIFESTS_STORE).put({
+      id: manifestId(entry.edition, entry.surah),
+      baseUrl: entry.baseUrl,
+      manifest: entry.manifest,
+    } satisfies ManifestRow<T>);
+    await transactionDone(transaction);
+  }, factory);
+}
+
+/** The manifest kept for a Surah, or null when it was never downloaded. */
+export async function readSurahManifest<T>(
+  edition: string,
+  surah: number,
+  factory?: IDBFactory
+): Promise<StoredManifest<T> | null> {
+  return withIndex(async (db) => {
+    const transaction = db.transaction(MANIFESTS_STORE, 'readonly');
+    const row = await promisifyRequest(
+      transaction.objectStore(MANIFESTS_STORE).get(manifestId(edition, surah)) as IDBRequest<
+        ManifestRow<T> | undefined
+      >
+    );
+    return row ? { baseUrl: row.baseUrl, manifest: row.manifest } : null;
+  }, factory);
+}
+
+async function deleteManifest(db: IDBDatabase, edition: string, surah: number): Promise<void> {
+  const transaction = db.transaction(MANIFESTS_STORE, 'readwrite');
+  transaction.objectStore(MANIFESTS_STORE).delete(manifestId(edition, surah));
+  await transactionDone(transaction);
 }
 
 /** The bytes of one Ayah's copy, or null when the device does not hold it. */
@@ -421,6 +502,9 @@ export async function removeSurahAudio(
     await options.store.remove(copy.key);
     await withIndex((db) => deleteCopy(db, copy.key), options.factory);
   }
+  // The manifest goes with the bytes: a kept manifest with no Ayat would be a
+  // promise to play files this device no longer has.
+  await withIndex((db) => deleteManifest(db, edition, surah), options.factory);
   return copies.length;
 }
 
@@ -430,6 +514,9 @@ export async function removeAllAudio(options: StoreOptions): Promise<number> {
   for (const copy of copies) {
     await options.store.remove(copy.key);
     await withIndex((db) => deleteCopy(db, copy.key), options.factory);
+  }
+  for (const summary of await listDownloadedSuras(options.factory)) {
+    await withIndex((db) => deleteManifest(db, summary.edition, summary.surah), options.factory);
   }
   return copies.length;
 }
@@ -544,7 +631,7 @@ export async function openAudioBytesStore(): Promise<AudioBytesStore | null> {
 
   if (typeof caches !== 'undefined') {
     try {
-      return cacheStore(await caches.open(CACHE_NAME));
+      return cacheStore(await caches.open(AUDIO_CACHE));
     } catch {
       return null;
     }

@@ -43,6 +43,10 @@ vi.mock('@/frontend/api/quran/audio', async (importOriginal) => {
     ...actual,
     loadSurahAudio: vi.fn(async () => recording.playlist),
     loadAudioEdition: vi.fn(async () => recording.edition),
+    loadPlayableSurah: vi.fn(async () => ({
+      manifest: recording.playlist,
+      baseUrl: recording.edition.baseUrl,
+    })),
     readDownloadedSurah: vi.fn(async () => recording.saved),
     downloadSurahAudio: recording.download,
   };
