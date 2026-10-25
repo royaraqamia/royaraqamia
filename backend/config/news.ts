@@ -76,7 +76,6 @@ export function createDefaultNewsAdminService(): NewsSourceAdminService {
   const supabase = getAdminSupabase();
   return createNewsAdminService({
     requests: createNewsSourceRequestsRepository(supabase),
-    sources: createNewsSourcesRepository(supabase),
     catalogue: createNewsCatalogueFor(supabase),
   });
 }

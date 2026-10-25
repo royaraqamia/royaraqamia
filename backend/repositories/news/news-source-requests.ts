@@ -16,10 +16,26 @@ import type {
 
 type RequestRow = Database['public']['Tables']['news_source_requests']['Row'];
 
+/** The columns every read here selects, and the shape the approval RPC returns. */
+type RequestSelectRow = Pick<
+  RequestRow,
+  | 'id'
+  | 'url'
+  | 'name'
+  | 'status'
+  | 'category'
+  | 'region'
+  | 'tier'
+  | 'note'
+  | 'created_at'
+  | 'reviewed_at'
+  | 'source_id'
+>;
+
 const REQUEST_COLUMNS =
   'id, url, name, status, category, region, tier, note, created_at, reviewed_at, source_id';
 
-function mapRequest(row: RequestRow): NewsSourceRequest {
+function mapRequest(row: RequestSelectRow): NewsSourceRequest {
   return {
     id: row.id,
     url: row.url,
@@ -118,22 +134,29 @@ export function createNewsSourceRequestsRepository(
       return data ? mapRequest(data as RequestRow) : null;
     },
 
-    async markApproved(input: ApproveNewsSourceRequest): Promise<void> {
-      const { error } = await supabase
-        .from('news_source_requests')
-        .update({
-          status: 'approved',
-          category: input.category,
-          region: input.region,
-          tier: input.tier,
-          note: input.note,
-          reviewed_by: input.reviewedBy,
-          reviewed_at: new Date().toISOString(),
-          source_id: input.sourceId,
-        })
-        .eq('id', input.id);
+    /**
+     * The atomic approval (#572): the source insert and the request's decision
+     * are one transaction, so a failure leaves neither behind. The RPC's SQLSTATE
+     * travels on `code` for the service to translate.
+     */
+    async approve(input: ApproveNewsSourceRequest): Promise<NewsSourceRequest> {
+      const { data, error } = await supabase.rpc('approve_news_source_request', {
+        p_request_id: input.id,
+        p_source_id: input.sourceId,
+        p_source_name: input.sourceName,
+        p_source_url: input.sourceUrl,
+        p_category: input.category,
+        p_region: input.region,
+        p_tier: input.tier,
+        p_note: input.note,
+        p_reviewed_by: input.reviewedBy,
+      });
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
+
+      const row = data?.[0];
+      if (!row) throw new Error('approve_news_source_request returned no request row');
+      return mapRequest(row);
     },
 
     async markRejected(input: RejectNewsSourceRequest): Promise<void> {

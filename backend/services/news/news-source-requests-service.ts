@@ -64,6 +64,25 @@ export class NewsSourceRequestDecidedError extends AppError {
 const USER_REQUESTS_LIMIT = 20;
 const ADMIN_REQUESTS_LIMIT = 100;
 
+/** The id suffixes one approval may try before giving up (the loop this replaces). */
+const MAX_SOURCE_ID_ATTEMPTS = 99;
+
+/**
+ * SQLSTATEs `public.approve_news_source_request` raises (#572). The RPC does both
+ * writes in one transaction, so the service can translate a refusal into the
+ * Admin's 409/404 without having written a source first.
+ */
+const SOURCE_ID_TAKEN = 'NS001';
+const REQUEST_DECIDED = 'NS002';
+const SOURCE_URL_TAKEN = 'NS003';
+const REQUEST_MISSING = 'P0002';
+
+function errorCode(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const { code } = error as { code?: unknown };
+  return typeof code === 'string' ? code : null;
+}
+
 export interface NewsSourceRequestsService {
   submit(userId: string, input: NewsSourceRequestInput): Promise<NewsSourceRequest>;
   listMine(userId: string): Promise<NewsSourceRequest[]>;
@@ -92,6 +111,9 @@ interface RequestsDeps {
 
 /** Submission needs no catalogue: a proposal is deduplicated by URL, not by id. */
 type SubmitDeps = Omit<RequestsDeps, 'catalogue'>;
+
+/** A decision needs no source read: the approval RPC owns both writes. */
+type ApprovalDeps = Pick<RequestsDeps, 'requests' | 'catalogue'>;
 
 /** A host-derived slug: `example.com` → `example-com`, the id a story publishes under. */
 function slugForHost(hostname: string): string {
@@ -135,9 +157,8 @@ export function createNewsSourceRequestsService({
 
 export function createNewsAdminService({
   requests,
-  sources,
   catalogue,
-}: Omit<RequestsDeps, 'probe'>): NewsSourceAdminService {
+}: ApprovalDeps): NewsSourceAdminService {
   async function pendingOrThrow(id: string): Promise<NewsSourceRequest> {
     const request = await requests.findById(id);
     if (!request) throw new NewsSourceRequestNotFoundError();
@@ -145,11 +166,32 @@ export function createNewsAdminService({
     return request;
   }
 
+  /** The refusals the RPC raises that the Admin's form has a sentence for. */
+  function approvalError(error: unknown): never {
+    switch (errorCode(error)) {
+      case SOURCE_URL_TAKEN:
+        throw new NewsSourceAlreadyKnownError();
+      case REQUEST_DECIDED:
+        throw new NewsSourceRequestDecidedError();
+      case REQUEST_MISSING:
+        throw new NewsSourceRequestNotFoundError();
+      default:
+        throw error;
+    }
+  }
+
   return {
     list(status: NewsSourceRequestStatus | null): Promise<NewsSourceRequest[]> {
       return requests.listForAdmin(status, ADMIN_REQUESTS_LIMIT);
     },
 
+    /**
+     * One call to `public.approve_news_source_request`: the Approved Source and
+     * the request's decision commit together, so a failure leaves the request
+     * `pending` and the retry safe (#572). The slug is still chosen here, from
+     * the catalogue; if it was taken between that read and the RPC, the next
+     * suffix is tried.
+     */
     async approve(
       id: string,
       input: NewsSourceApprovalInput,
@@ -160,35 +202,28 @@ export function createNewsAdminService({
       const taken = new Set((await catalogue.list()).map((source) => source.id));
       const base = slugForHost(new URL(request.url).hostname) || 'source';
 
-      let sourceId = base;
-      for (let suffix = 2; taken.has(sourceId); suffix += 1) {
-        sourceId = `${base}-${suffix}`;
-        if (suffix > 99)
-          throw new AppError('تعذّر توليد معرِّف للمصدر.', 500, 'source_id_exhausted');
+      for (let attempt = 1; attempt <= MAX_SOURCE_ID_ATTEMPTS; attempt += 1) {
+        const sourceId = attempt === 1 ? base : `${base}-${attempt}`;
+        if (taken.has(sourceId)) continue;
+
+        try {
+          return await requests.approve({
+            id: request.id,
+            sourceId,
+            sourceName: request.name,
+            sourceUrl: request.url,
+            category: input.category,
+            region: input.region,
+            tier: input.tier,
+            note: input.note ?? null,
+            reviewedBy,
+          });
+        } catch (error) {
+          if (errorCode(error) !== SOURCE_ID_TAKEN) approvalError(error);
+        }
       }
 
-      await sources.insert({
-        id: sourceId,
-        name: request.name,
-        url: request.url,
-        category: input.category,
-        region: input.region,
-        tier: input.tier,
-        approvedBy: reviewedBy,
-        requestId: request.id,
-      });
-
-      await requests.markApproved({
-        id: request.id,
-        sourceId,
-        category: input.category,
-        region: input.region,
-        tier: input.tier,
-        note: input.note ?? null,
-        reviewedBy,
-      });
-
-      return (await requests.findById(request.id)) ?? { ...request, status: 'approved', sourceId };
+      throw new AppError('تعذّر توليد معرِّف للمصدر.', 500, 'source_id_exhausted');
     },
 
     async reject(

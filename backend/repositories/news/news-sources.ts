@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type {
   ApprovedNewsSource,
-  NewApprovedNewsSource,
   NewsSourcesRepository,
 } from '@/backend/repositories/news/news-sources-repository';
 import type { NewsCategory, NewsRegion, NewsSource } from '@/shared/contracts/news';
@@ -73,21 +72,6 @@ export function createNewsSourcesRepository(
 
       if (error) throw new Error(error.message);
       return data ? toNewsSource(mapSource(data)) : null;
-    },
-
-    async insert(source: NewApprovedNewsSource): Promise<void> {
-      const { error } = await supabase.from('news_sources').insert({
-        id: source.id,
-        name: source.name,
-        url: source.url,
-        category: source.category,
-        region: source.region,
-        tier: source.tier,
-        approved_by: source.approvedBy,
-        request_id: source.requestId,
-      });
-
-      if (error) throw new Error(error.message);
     },
   };
 }
