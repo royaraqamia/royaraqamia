@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.141.1] - 2026-10-25
+
+### Changed
+- mount motion per route instead of in the root layout (#587)
+- drop the unused ROUTING constant in check:precache (#585)
+
+### Fixed
+- align the services row and neutralise testimonial surfaces (#588)
+- publish a scheduled post when its time comes (#586)
+- refuse blocked and expired links on unlock (#583)
+
 ## [1.141.0] - 2026-10-25
 
 ### Added
