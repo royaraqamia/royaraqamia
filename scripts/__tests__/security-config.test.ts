@@ -30,6 +30,15 @@ describe('security configuration', () => {
     expect(config).toContain('upgrade-insecure-requests');
   });
 
+  it('allows exactly the audio host for offline downloads, and blob: for local playback', () => {
+    // ADR-0081: a downloaded surah is fetched from audio.royaraqamia.com by the
+    // page itself and played from a blob: URL. Widening either beyond this —
+    // `connect-src https:` or another host — is a different decision.
+    const config = read('next.config.js');
+    expect(config).toMatch(/connect-src [^;]*https:\/\/audio\.royaraqamia\.com/);
+    expect(config).toMatch(/media-src [^;]*https:\/\/audio\.royaraqamia\.com[^;]*blob:/);
+  });
+
   it('does not allow CORS wildcard with credentials', () => {
     const config = read('next.config.js');
     expect(config).not.toContain('Access-Control-Allow-Origin');
