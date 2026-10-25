@@ -11,9 +11,16 @@ export interface NewNewsSourceRequest {
   name: string;
 }
 
+/**
+ * One approval: the source it creates and the decision it records. Both halves
+ * are written by `public.approve_news_source_request` in one transaction (#572),
+ * so a refusal leaves the request `pending` and safe to retry.
+ */
 export interface ApproveNewsSourceRequest {
   id: string;
   sourceId: string;
+  sourceName: string;
+  sourceUrl: string;
   category: NewsCategory;
   region: NewsRegion;
   tier: 1 | 2;
@@ -41,6 +48,10 @@ export interface NewsSourceRequestsRepository {
   /** Pending first, newest first; `status` narrows to one state. */
   listForAdmin(status: NewsSourceRequestStatus | null, limit: number): Promise<NewsSourceRequest[]>;
   findById(id: string): Promise<NewsSourceRequest | null>;
-  markApproved(input: ApproveNewsSourceRequest): Promise<void>;
+  /**
+   * Creates the Approved Source and marks the request in one transaction,
+   * returning the decided row. Refusals carry the RPC's SQLSTATE as `code`.
+   */
+  approve(input: ApproveNewsSourceRequest): Promise<NewsSourceRequest>;
   markRejected(input: RejectNewsSourceRequest): Promise<void>;
 }

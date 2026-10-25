@@ -2221,6 +2221,32 @@ export type Database = {
         };
         Returns: Json;
       };
+      approve_news_source_request: {
+        Args: {
+          p_category: string;
+          p_note: string | null;
+          p_region: string;
+          p_request_id: string;
+          p_reviewed_by: string;
+          p_source_id: string;
+          p_source_name: string;
+          p_source_url: string;
+          p_tier: number;
+        };
+        Returns: {
+          category: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          note: string | null;
+          region: string | null;
+          reviewed_at: string | null;
+          source_id: string | null;
+          status: string;
+          tier: number | null;
+          url: string;
+        }[];
+      };
       bulk_publish_posts: {
         Args: { p_post_ids: string[]; p_publish: boolean };
         Returns: string[];

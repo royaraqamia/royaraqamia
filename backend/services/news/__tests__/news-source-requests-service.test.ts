@@ -18,6 +18,11 @@ const CATALOGUE: NewsSource[] = [
   { id: 'aljazeera-ar', name: 'الجزيرة نت', category: 'politics', region: 'arab', tier: 1 },
 ];
 
+/** The SQLSTATE the approval RPC raises for a taken id, as PostgREST reports it. */
+function rpcError(code: string, message = 'approval refused') {
+  return Object.assign(new Error(message), { code });
+}
+
 function request(overrides: Partial<NewsSourceRequest> = {}): NewsSourceRequest {
   return {
     id: 'request-1',
@@ -47,7 +52,17 @@ function requests(
     listForUser: vi.fn(async () => []),
     listForAdmin: vi.fn(async () => []),
     findById: vi.fn(async () => request()),
-    markApproved: vi.fn(async () => undefined),
+    approve: vi.fn(async (input) =>
+      request({
+        status: 'approved',
+        category: input.category,
+        region: input.region,
+        tier: input.tier,
+        note: input.note,
+        reviewedAt: '2026-10-25T00:00:00.000Z',
+        sourceId: input.sourceId,
+      })
+    ),
     markRejected: vi.fn(async () => undefined),
     ...overrides,
   } satisfies NewsSourceRequestsRepository;
@@ -58,7 +73,6 @@ function sources(overrides: Partial<NewsSourcesRepository> = {}): NewsSourcesRep
     listEnabled: vi.fn(async () => []),
     findIdByUrl: vi.fn(async () => null),
     findById: vi.fn(async () => null),
-    insert: vi.fn(async () => undefined),
     ...overrides,
   } satisfies NewsSourcesRepository;
 }
@@ -149,59 +163,135 @@ describe('news source requests service', () => {
 });
 
 describe('news admin service', () => {
-  it('approves with a host slug and writes the catalogue row first', async () => {
+  const approval = { category: 'world', region: 'world', tier: 2, note: 'جيد' } as const;
+
+  function admin(
+    repo: NewsSourceRequestsRepository,
+    list: NewsSource[] = CATALOGUE
+  ): ReturnType<typeof createNewsAdminService> {
+    return createNewsAdminService({ requests: repo, catalogue: catalogue(list) });
+  }
+
+  it('approves through one RPC call with a host slug', async () => {
     const repo = requests();
-    const sourcesRepo = sources();
-    const service = createNewsAdminService({
-      requests: repo,
-      sources: sourcesRepo,
-      catalogue: catalogue(),
-    });
 
-    await service.approve(
-      'request-1',
-      { category: 'world', region: 'world', tier: 2, note: 'جيد' },
-      'admin-1'
-    );
+    const approved = await admin(repo).approve('request-1', approval, 'admin-1');
 
-    expect(sourcesRepo.insert).toHaveBeenCalledWith({
-      id: 'example-com',
-      name: 'مثال',
-      url: 'https://example.com/rss',
+    expect(repo.approve).toHaveBeenCalledWith({
+      id: 'request-1',
+      sourceId: 'example-com',
+      sourceName: 'مثال',
+      sourceUrl: 'https://example.com/rss',
       category: 'world',
       region: 'world',
       tier: 2,
-      approvedBy: 'admin-1',
-      requestId: 'request-1',
+      note: 'جيد',
+      reviewedBy: 'admin-1',
     });
-    expect(repo.markApproved).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'request-1', sourceId: 'example-com' })
-    );
+    expect(approved.status).toBe('approved');
+    expect(approved.sourceId).toBe('example-com');
   });
 
   it('suffixes an id the catalogue already holds', async () => {
-    const sourcesRepo = sources();
-    const service = createNewsAdminService({
-      requests: requests(),
-      sources: sourcesRepo,
-      catalogue: catalogue([
-        { id: 'example-com', name: 'قديم', category: 'world', region: 'world', tier: 2 },
-      ]),
-    });
+    const repo = requests();
 
-    await service.approve('request-1', { category: 'world', region: 'world', tier: 2 }, 'admin-1');
+    await admin(repo, [
+      { id: 'example-com', name: 'قديم', category: 'world', region: 'world', tier: 2 },
+    ]).approve('request-1', approval, 'admin-1');
 
-    expect(sourcesRepo.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'example-com-2' })
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+    expect(repo.approve).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceId: 'example-com-2' })
     );
   });
 
-  it('refuses to decide a request twice', async () => {
-    const service = createNewsAdminService({
-      requests: requests({ findById: vi.fn(async () => request({ status: 'approved' })) }),
-      sources: sources(),
-      catalogue: catalogue(),
+  it('takes the next suffix when the id is claimed between the read and the RPC', async () => {
+    const repo = requests({
+      approve: vi
+        .fn()
+        .mockRejectedValueOnce(rpcError('NS001'))
+        .mockImplementationOnce(async (input) =>
+          request({ status: 'approved', sourceId: input.sourceId })
+        ),
     });
+
+    const approved = await admin(repo).approve('request-1', approval, 'admin-1');
+
+    expect(repo.approve).toHaveBeenCalledTimes(2);
+    expect(repo.approve).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ sourceId: 'example-com' })
+    );
+    expect(repo.approve).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sourceId: 'example-com-2' })
+    );
+    expect(approved.sourceId).toBe('example-com-2');
+  });
+
+  it('propagates a failed approval without a retry or a second write', async () => {
+    const repo = requests({
+      approve: vi.fn(async () => {
+        throw rpcError('XX000', 'boom');
+      }),
+    });
+
+    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toThrow('boom');
+
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+    expect(repo.findById).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps an already-decided refusal to the 409 the queue shows', async () => {
+    const repo = requests({
+      approve: vi.fn(async () => {
+        throw rpcError('NS002');
+      }),
+    });
+
+    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
+      NewsSourceRequestDecidedError
+    );
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a feed that already has a source to the known-source 409', async () => {
+    const repo = requests({
+      approve: vi.fn(async () => {
+        throw rpcError('NS003');
+      }),
+    });
+
+    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
+      NewsSourceAlreadyKnownError
+    );
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it('approves exactly once and refuses the retry', async () => {
+    let status: NewsSourceRequest['status'] = 'pending';
+    const repo = requests({
+      findById: vi.fn(async () => request({ status })),
+      approve: vi.fn(async (input) => {
+        status = 'approved';
+        return request({ status: 'approved', sourceId: input.sourceId });
+      }),
+    });
+    const service = admin(repo);
+
+    const approved = await service.approve('request-1', approval, 'admin-1');
+    await expect(service.approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
+      NewsSourceRequestDecidedError
+    );
+
+    expect(approved.sourceId).toBe('example-com');
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to decide a request twice', async () => {
+    const service = admin(
+      requests({ findById: vi.fn(async () => request({ status: 'approved' })) })
+    );
 
     await expect(service.reject('request-1', {}, 'admin-1')).rejects.toBeInstanceOf(
       NewsSourceRequestDecidedError
@@ -210,13 +300,8 @@ describe('news admin service', () => {
 
   it('records the rejection note and the reviewer', async () => {
     const repo = requests();
-    const service = createNewsAdminService({
-      requests: repo,
-      sources: sources(),
-      catalogue: catalogue(),
-    });
 
-    await service.reject('request-1', { note: 'ليست خلاصة' }, 'admin-1');
+    await admin(repo).reject('request-1', { note: 'ليست خلاصة' }, 'admin-1');
 
     expect(repo.markRejected).toHaveBeenCalledWith({
       id: 'request-1',
