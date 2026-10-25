@@ -56,6 +56,58 @@ describe('audioManifestUrl', () => {
   });
 });
 
+describe('downloadSurahAudio', () => {
+  const EDITION = {
+    id: 'ar.alafasy',
+    reciter: 'مشاري راشد العفاسي',
+    reciterLatin: 'Mishary Rashid Alafasy',
+    style: 'Murattal',
+    bitrateKbps: 64,
+    container: 'mp3',
+    baseUrl: 'https://audio.example.com',
+    sourceUrl: 'https://cdn.example.com/{ayah}.mp3',
+    attribution: 'مشاري راشد العفاسي',
+    license: 'test',
+    suras: 114,
+    ayat: 6236,
+    bytes: 1,
+    complete: true,
+  };
+
+  /** Both manifests the download needs: the sura's files and the edition's host. */
+  const servingManifests = () =>
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/index.json')) {
+        return respond({
+          source: 'test',
+          license: 'test',
+          attribution: 'test',
+          editions: [EDITION],
+        });
+      }
+      return respond({ ...MANIFEST, surah: 1, ayahCount: 1, files: [FILE] });
+    });
+
+  it('refuses a metered connection before it fetches anything', async () => {
+    const { downloadSurahAudio } = await loadModule();
+    const fetchMock = servingManifests();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', { connection: { saveData: true } });
+
+    await expect(downloadSurahAudio(1)).rejects.toMatchObject({ refusal: 'metered' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('says the device cannot keep a copy when it has neither OPFS nor Cache Storage', async () => {
+    const { downloadSurahAudio } = await loadModule();
+    vi.stubGlobal('fetch', servingManifests());
+    vi.stubGlobal('navigator', { connection: { effectiveType: '4g' } });
+
+    await expect(downloadSurahAudio(1)).rejects.toMatchObject({ refusal: 'unavailable' });
+  });
+});
+
 describe('loadSurahAudio', () => {
   it('refetches after a rejected load instead of remembering the failure', async () => {
     const { loadSurahAudio } = await loadModule();

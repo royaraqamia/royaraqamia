@@ -4,6 +4,20 @@ import type {
   QuranAudioIndex,
   QuranSurahAudio,
 } from '@/shared/contracts/quran-audio';
+import {
+  currentConnection,
+  isMeteredConnection,
+  openAudioBytesStore,
+  readAudioCopy,
+  readSurahAudioState,
+  removeSurahAudio,
+  saveSurahAudio,
+  type AudioBytesStore,
+  type AudioProgress,
+  type SaveAudioResult,
+  type SurahAudioState,
+} from '@/frontend/shared/local-store/audio';
+import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 /**
  * The client's view of a Recitation (ADR-0062).
@@ -77,4 +91,141 @@ export function loadSurahAudio(surah: number): Promise<QuranSurahAudio | null> {
 
   manifests.set(surah, tracked);
   return tracked;
+}
+
+/**
+ * The offline side of the recitation (#559, ADR-0081).
+ *
+ * The bytes come from `audio.royaraqamia.com` directly — the manifest's
+ * `baseUrl` — because ADR-0081 rejected proxying them and refused to widen the
+ * worker's same-origin rule. The store, the budget and the LRU live in
+ * `frontend/shared/local-store/audio`; this module is the composition: manifest
+ * plus edition plus store, in the order the player and the download control
+ * need them.
+ */
+
+/** Why a download did not start. */
+export type AudioDownloadRefusal = 'unavailable' | 'metered';
+
+export class SurahAudioDownloadError extends Error {
+  constructor(
+    readonly refusal: AudioDownloadRefusal,
+    message: string
+  ) {
+    super(message);
+    this.name = 'SurahAudioDownloadError';
+  }
+}
+
+let bytesStorePromise: Promise<AudioBytesStore | null> | null = null;
+
+/**
+ * The device's bytes store, opened once per page session. A browser that has
+ * neither OPFS nor Cache Storage resolves to `null`, and every caller treats
+ * that as "this device cannot keep a copy" rather than an error.
+ */
+export function audioBytesStore(): Promise<AudioBytesStore | null> {
+  if (!bytesStorePromise) bytesStorePromise = openAudioBytesStore();
+  return bytesStorePromise;
+}
+
+export interface DownloadSurahOptions {
+  readonly onProgress?: (progress: AudioProgress) => void;
+  /**
+   * Start on a connection the browser calls metered. Off by default: the
+   * control asks first and passes `true` on the reader's confirmation.
+   */
+  readonly allowMetered?: boolean;
+}
+
+/** What this device holds for one Surah. */
+export async function readDownloadedSurah(
+  surah: number,
+  ayahCount: number
+): Promise<SurahAudioState> {
+  return readSurahAudioState(AUDIO_EDITION, surah, ayahCount);
+}
+
+/** Whether this connection is one a download should not start on unasked. */
+export function onMeteredConnection(): boolean {
+  return isMeteredConnection(currentConnection());
+}
+
+/**
+ * Downloads a Surah's Recitation for offline listening.
+ *
+ * Refuses on a metered connection unless the reader confirmed, and refuses on a
+ * device with no store. Everything else — consent, size, progress — is the
+ * caller's: this function only moves bytes it was asked to move.
+ */
+export async function downloadSurahAudio(
+  surah: number,
+  options: DownloadSurahOptions = {}
+): Promise<SaveAudioResult> {
+  // Consent before bytes: a refused download should not even fetch a manifest.
+  if (!options.allowMetered && onMeteredConnection()) {
+    throw new SurahAudioDownloadError('metered', 'this connection is metered');
+  }
+
+  const [playlist, edition] = await Promise.all([loadSurahAudio(surah), loadAudioEdition()]);
+  if (!playlist || playlist.files.length === 0) {
+    throw new SurahAudioDownloadError('unavailable', 'this surah has no recitation to keep');
+  }
+
+  const store = await audioBytesStore();
+  if (!store) {
+    throw new SurahAudioDownloadError('unavailable', 'this device cannot keep an audio copy');
+  }
+
+  // A committed copy is the gesture browsers weigh when deciding whether to
+  // make the origin's storage durable.
+  requestPersistentStorageOnce();
+
+  return saveSurahAudio({
+    edition: AUDIO_EDITION,
+    surah,
+    files: playlist.files,
+    store,
+    urlFor: (file) => audioFileUrl(edition.baseUrl, file as QuranAudioFile),
+    onProgress: options.onProgress,
+  });
+}
+
+/** Removes this Surah's copies, and says how many went. */
+export async function removeDownloadedSurah(surah: number): Promise<number> {
+  const store = await audioBytesStore();
+  if (!store) return 0;
+  return removeSurahAudio(AUDIO_EDITION, surah, { store });
+}
+
+export interface AudioPlaybackSource {
+  /** A `blob:` URL when the copy is local, the CDN URL otherwise. */
+  readonly url: string;
+  /** True when this came from the device, which is what offline playback means. */
+  readonly local: boolean;
+}
+
+/**
+ * Where to play one Ayah from: the device's copy when it has one, the host
+ * otherwise (ADR-0081).
+ *
+ * A local source is a `blob:` URL the caller owns and must revoke; a remote one
+ * is the same `?v=<sha256>` URL the player has always used.
+ */
+export async function audioPlaybackSource(
+  baseUrl: string,
+  surah: number,
+  file: QuranAudioFile
+): Promise<AudioPlaybackSource> {
+  const store = await audioBytesStore();
+  if (store) {
+    try {
+      const blob = await readAudioCopy(file, { store, edition: AUDIO_EDITION, surah });
+      if (blob) return { url: URL.createObjectURL(blob), local: true };
+    } catch {
+      // A broken copy is a reason to stream, not a reason to fail the Ayah.
+    }
+  }
+
+  return { url: audioFileUrl(baseUrl, file), local: false };
 }
