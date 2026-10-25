@@ -3,6 +3,10 @@
 > **Amended by [ADR 0065](0065-the-quran-pages-carry-no-colophon.md)**, which removes the colophon
 > from the Quran pages.
 
+> **Amended by [ADR 0081](0081-the-offline-recitation-is-fetched-from-the-audio-host.md)**, which fixes
+> how a downloaded Surah reaches the reader: the page fetches this host directly, and the copy is kept
+> in OPFS.
+
 The reader has its text (ADR-0057) and its reading state (ADR-0056); the missing piece is the
 recitation. The rule that governs every asset in this product is that **nothing ships without a
 licence we can read**, and exactly one source of Ayah-level Quran audio publishes terms that cover
