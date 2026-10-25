@@ -184,6 +184,7 @@ export async function downloadSurahAudio(
   return saveSurahAudio({
     edition: AUDIO_EDITION,
     surah,
+    name: playlist.name,
     files: playlist.files,
     store,
     urlFor: (file) => audioFileUrl(edition.baseUrl, file as QuranAudioFile),

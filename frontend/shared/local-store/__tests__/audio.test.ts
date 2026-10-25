@@ -16,6 +16,7 @@ import {
   removeAllAudio,
   removeSurahAudio,
   saveSurahAudio,
+  listDownloadedSuras,
   type AudioBytesStore,
   type StoredAudioFile,
 } from '@/frontend/shared/local-store/audio';
@@ -341,6 +342,44 @@ describe('the device state', () => {
 
   it('has no bytes store in an environment without OPFS or Cache Storage', async () => {
     expect(await openAudioBytesStore()).toBeNull();
+  });
+});
+
+describe('the device listing', () => {
+  const save = (store: MemoryStore, surah: number, name: string, now: number) =>
+    saveSurahAudio({
+      edition: 'ar.alafasy',
+      surah,
+      name,
+      files: filesFor(2, 3, surah),
+      store,
+      urlFor,
+      fetcher: servingFetcher(),
+      factory,
+      now: () => now,
+    });
+
+  it('groups a Surah into one row with its name, its Ayat and what they cost', async () => {
+    await save(new MemoryStore(), 1, 'الفاتحة', 10);
+
+    expect(await listDownloadedSuras(factory)).toEqual([
+      {
+        edition: 'ar.alafasy',
+        surah: 1,
+        name: 'الفاتحة',
+        ayat: 2,
+        bytes: 6,
+        lastUsedAt: 10,
+      },
+    ]);
+  });
+
+  it('lists the most recently used Surah first', async () => {
+    const store = new MemoryStore();
+    await save(store, 1, 'الفاتحة', 10);
+    await save(store, 112, 'الإخلاص', 20);
+
+    expect((await listDownloadedSuras(factory)).map((row) => row.surah)).toEqual([112, 1]);
   });
 });
 
