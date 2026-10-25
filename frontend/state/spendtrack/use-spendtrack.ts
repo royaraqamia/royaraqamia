@@ -207,6 +207,28 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identity]);
 
+  // The guest's default categories are fetched behind the first paint (#493), so
+  // they reach the store as a second, idempotent seed input: `seedIfEmpty` is a
+  // no-op once the store holds rows, which makes this safe to run on every seed
+  // change and invisible to a returning visitor.
+  useEffect(() => {
+    const target = storeRef.current;
+    if (!target || seed.categories.length === 0) return undefined;
+
+    let cancelled = false;
+    void (async () => {
+      await target.seedIfEmpty(seed);
+      if (!cancelled) await readIntoState(target);
+    })().catch(() => {
+      // A seed that could not be written leaves the store empty, which is the
+      // state it was already in; the next open tries again.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seed, readIntoState]);
+
   useEffect(() => {
     if (!ready || !isSignedIn) return;
     const userId = identityUserId(identity);

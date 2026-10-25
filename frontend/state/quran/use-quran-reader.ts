@@ -8,16 +8,12 @@ import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { isIndexedDbSupported } from '@/frontend/shared/local-store/idb';
-import {
-  GUEST_IDENTITY,
-  identityFromUser,
-  identityUserId,
-} from '@/frontend/shared/local-store/identity';
+import { GUEST_IDENTITY, identityUserId } from '@/frontend/shared/local-store/identity';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { logger } from '@/frontend/shared/logger';
 import { markContent } from '@/frontend/shared/perf-marks';
-import { useSession } from '@/frontend/state/session-provider';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import type { Bookmark, ReadingPosition } from '@/shared/contracts/quran';
@@ -71,8 +67,11 @@ const EMPTY_STATUS: SyncStatus = {
 };
 
 export function useQuranReader(): QuranReaderState {
-  const { user } = useSession();
-  const identity = identityFromUser(user);
+  // The partition comes from the remembered identity, not `session.user`: a
+  // session-derived identity paints `quran__guest` first and reopens on
+  // `user:<id>` when the session lands, which flashes the guest's rows and
+  // resets a reading position mid-read (#493).
+  const { identity } = useLocalIdentity();
   const isSignedIn = identity !== GUEST_IDENTITY;
 
   const [ready, setReady] = useState(false);

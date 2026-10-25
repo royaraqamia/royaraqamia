@@ -3,7 +3,7 @@ import { gotoUnderWorkerControl } from './worker-control';
 import { signIn } from './sign-in';
 
 /**
- * The offline-render drill for the four product dashboards (#449, ADR-0073).
+ * The offline-render drill for the five product dashboards (#449, ADR-0073).
  *
  * Before Phase 2 every one of these roots was `force-dynamic` and on the
  * worker's never-cache list, so a reload with the radio off landed on
@@ -11,6 +11,11 @@ import { signIn } from './sign-in';
  * reload it offline, and assert the product's own chrome — and, where the root
  * shows owned rows, the row written while offline — instead of the offline page's
  * retry link.
+ *
+ * Since #493 it also asserts the other half of that promise: the rows are the
+ * session-independent part, so no product may show its dashboard skeleton on
+ * that reload. `expectNoStoreSkeleton` is what holds the boot identity to
+ * `useLocalIdentity` instead of `getSession()`.
  *
  * Gated behind PRODUCT_OFFLINE_E2E=1 because it needs a live Supabase project
  * plus the E2E test user:
@@ -26,6 +31,19 @@ const OFFLINE_RETRY = 'إعادة المحاولة';
 /** Asserts this is the product's own document, not `/offline`. */
 async function expectNotOffline(page: Page) {
   await expect(page.getByRole('link', { name: OFFLINE_RETRY })).toHaveCount(0);
+}
+
+/**
+ * The dashboard skeleton is the bug (#493), not the cost of a slow disk: it only
+ * renders while the product waits for the session to say whose store to open.
+ * The rows are on screen by the time this is called, so a skeleton still in the
+ * tree means the gate is back.
+ *
+ * Every product skeleton carries `data-local-store-skeleton`; matching the
+ * Arabic label instead would break the day the copy changes.
+ */
+async function expectNoStoreSkeleton(page: Page) {
+  await expect(page.locator('[data-local-store-skeleton]')).toHaveCount(0);
 }
 
 /** The shared pill's offline state: the connection is named, not implied. */
@@ -61,6 +79,7 @@ test('HabitFlow reloads offline and keeps the habit written with the radio off',
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
   await expect(page.getByText(name)).toBeVisible();
+  await expectNoStoreSkeleton(page);
   await expectNotOffline(page);
 
   // Clean up so the suite is idempotent.
@@ -118,6 +137,7 @@ test('SpendTrack reloads offline and keeps the expense written with the radio of
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'تتبُّع المصاريف' })).toBeVisible();
   await expect(page.getByText(description)).toBeVisible();
+  await expectNoStoreSkeleton(page);
   await expectNotOffline(page);
 
   // Clean up so the suite is idempotent.
@@ -161,6 +181,7 @@ test('LinkSnap reloads offline and reports the link it queued', async ({ browser
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
   await expect(page.locator('#original-url')).toBeVisible();
+  await expectNoStoreSkeleton(page);
   await expectOfflinePill(page);
   await expectNotOffline(page);
 
@@ -213,6 +234,7 @@ test('BlogPress reloads offline and paints its posts and stats', async ({ browse
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByText('إجمالي المنشورات')).toBeVisible();
   await expect(page.getByRole('link', { name })).toBeVisible();
+  await expectNoStoreSkeleton(page);
   await expectNotOffline(page);
 
   // Clean up so the suite is idempotent.
@@ -221,6 +243,45 @@ test('BlogPress reloads offline and paints its posts and stats', async ({ browse
     method: 'DELETE',
     data: {},
   });
+
+  await context.close();
+});
+
+/**
+ * The fifth Local-Store product, and the one whose bug was the mirror image
+ * (#493).
+ *
+ * Quran derived its partition from `useSession().user`, so an offline reload
+ * painted `quran__guest` first and reopened on `user:<id>` when the session
+ * arrived — a guest row flash, a store reopen, and a reading position reset
+ * mid-read. The partition now comes from the remembered identity, so the store
+ * that opens is the account's, on the first render.
+ */
+test('Quran reloads offline in the remembered identity', async ({ browser, baseURL }) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  await signIn(context, baseURL!);
+
+  const page = await context.newPage();
+  await gotoUnderWorkerControl(page, `${baseURL}/quran/2`);
+
+  // `data-quran-signed-in` is the reader's own claim about which store it opened.
+  const status = page.locator('[data-quran-ready="true"][data-quran-signed-in="true"]');
+  await expect(status).toBeAttached();
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  // The account's store, not the guest's — with the radio off, so the session
+  // check has nothing to reach and only the remembered identity can answer.
+  await expect(page.locator('[data-quran-signed-in="true"]')).toBeAttached();
+  await expectNoStoreSkeleton(page);
+  await expectNotOffline(page);
+
+  // The reading position is the row the reopen used to lose: the surah's own
+  // chrome is painted from the same store.
+  await expect(page.locator('[data-quran-ready="true"]')).toBeAttached();
 
   await context.close();
 });

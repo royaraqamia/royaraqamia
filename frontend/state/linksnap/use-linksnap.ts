@@ -16,8 +16,8 @@ import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import {
   GUEST_IDENTITY,
-  identityFromUser,
   identityUserId,
+  type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
@@ -79,7 +79,7 @@ function recordToLink(row: LinkRecord): ShortenedLink {
  * to the store + Outbox; the Sync Engine replays them on reconnection (ADR-0027
  * / ADR-0029, ticket #167).
  */
-export function useLinksnap({ user }: { user: { id: string } | null }): LinksnapStoreState {
+export function useLinksnap({ identity }: { identity: LocalIdentity }): LinksnapStoreState {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<LinksnapLocalStore | null>(null);
@@ -93,7 +93,6 @@ export function useLinksnap({ user }: { user: { id: string } | null }): Linksnap
   const storeRef = useRef<LinksnapLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
 
-  const identity = identityFromUser(user);
   const isSignedIn = identity !== GUEST_IDENTITY;
 
   const readIntoState = useCallback(async (store: LinksnapLocalStore) => {

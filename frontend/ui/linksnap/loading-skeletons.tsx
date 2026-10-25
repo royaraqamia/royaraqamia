@@ -4,7 +4,7 @@ export function DashboardSkeleton() {
   return (
     <section
       aria-label="جاري تحميل المحتوى"
-      aria-busy="true"
+      data-local-store-skeleton="true" aria-busy="true"
       className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500"
     >
       {/* Top Navigation / Section Header */}
@@ -52,7 +52,7 @@ export function AnalyticsSkeleton() {
   return (
     <section
       aria-label="جاري تحميل المحتوى"
-      aria-busy="true"
+      data-local-store-skeleton="true" aria-busy="true"
       className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500"
     >
       {/* Metric Summary Grid */}
@@ -105,7 +105,7 @@ export function AdminSkeleton() {
   return (
     <section
       aria-label="جاري تحميل المحتوى"
-      aria-busy="true"
+      data-local-store-skeleton="true" aria-busy="true"
       className="w-full space-y-6 animate-in fade-in-50 duration-500"
     >
       {/* Refresh control row (mirrors AdminPanel) */}

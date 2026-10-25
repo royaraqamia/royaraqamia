@@ -13,6 +13,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { refreshPlanLimits, clearPlanLimits } from '@/frontend/shared/plans/plan-limits';
+import {
+  GUEST_IDENTITY,
+  clearPersistedIdentity,
+  persistIdentity,
+  readPersistedIdentity,
+  userIdentity,
+} from '@/frontend/shared/local-store/identity';
 import type { Me } from '@/frontend/api/me';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -61,6 +68,25 @@ const AUTH_PATHS = [
   '/auth/update-password',
 ];
 
+/**
+ * Records the identity a session check just resolved, so the next boot can open
+ * that Local Store before this work runs again (#493).
+ *
+ * A "nobody" answer does **not** overwrite a remembered account: an expired
+ * session, or a cookie the browser dropped, is not a sign-out, and the products
+ * keep painting the last-known rows read-only rather than swapping the guest
+ * namespace in under them (ADR-0031). Sign-out is the decision that clears the
+ * pointer, and both of its paths do so explicitly — `signOutSession()`,
+ * `logout()`, and the expiry branch below.
+ */
+function rememberResolvedIdentity(user: User | null): void {
+  if (user?.id) {
+    persistIdentity(userIdentity(user.id));
+    return;
+  }
+  if (readPersistedIdentity() === null) persistIdentity(GUEST_IDENTITY);
+}
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -80,6 +106,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     let unsubscribe: (() => void) | null = null;
 
     if (!hasBrowserSessionToken()) {
+      // No cookie: the browser is not holding a session at all. Nothing to
+      // check, so the boot identity is already the answer.
+      rememberResolvedIdentity(null);
       setIsLoading(false);
       return;
     }
@@ -87,13 +116,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     void import('@/frontend/api/auth').then(({ getSession, subscribeToSessionChanges }) => {
       if (!active) return;
 
-      getSession().then((session) => {
-        if (!active) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-        prevSessionRef.current = session;
-      });
+      getSession()
+        .then((session) => {
+          if (!active) return;
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+          prevSessionRef.current = session;
+          rememberResolvedIdentity(session?.user ?? null);
+        })
+        .catch(() => {
+          // A check that could not answer is not a sign-out: leave the
+          // remembered identity alone so its rows stay on screen (ADR-0031),
+          // and stop reporting "still loading" so nothing waits on it.
+          if (active) setIsLoading(false);
+        });
 
       unsubscribe = subscribeToSessionChanges((session) => {
         if (!active) return;
@@ -106,6 +143,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         // Session expired (had a session, now null) — not on an auth page
         if (prevSession && !session) {
           clearPlanLimits(prevSession.user.id);
+          // The account is gone: no Local Store of it may paint behind a guest
+          // session, and the expiry sends the page to the login form anyway.
+          clearPersistedIdentity();
           // An expiry is a sign-out the user did not perform: the cached renders
           // may still belong to the account that just lost its session.
           void purgeServiceWorkerCaches();
@@ -117,7 +157,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 : '/auth/login?session_expired=1';
             router.push(loginPath);
           }
+          return;
         }
+
+        rememberResolvedIdentity(session?.user ?? null);
       });
     });
 
