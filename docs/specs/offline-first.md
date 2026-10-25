@@ -76,6 +76,13 @@ stated limit.
   close. Since #447–#450 that state lives inside a cached document for every one of them except
   `/admin` and the MCP consent screen, which still ask the network for their document — the boundary
   the next bullet states.
+- **A recitation is offline only where the reader kept it.** The text and the reading position paint
+  from the Local Store, but an Ayah's audio is served by `audio.royaraqamia.com` (ADR-0062). Since
+  #559 a reader can keep one sura on the device: the files are verified against the manifest's
+  `sha256` before the device records them, a 128 MiB budget evicts the least recently used sura,
+  playback prefers the local copy and falls back to the host, and a sura that was not kept says it
+  needs a connection rather than failing silently (ADR-0081). What remains out of reach: a sura
+  nobody downloaded, and the bulk "download this juz" action, which is not shipped yet.
 - **The Android app's cold start is capped by the WebView.** The shell loads a remote URL (ADR-0036),
   so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
   messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen
