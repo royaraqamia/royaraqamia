@@ -3,6 +3,7 @@ import 'server-only';
 import rawSources from '@/data/news/sources.json';
 import { logger } from '@/backend/shared/logger';
 import {
+  canonicalNewsFeedUrl,
   isNewsCategory,
   isNewsRegion,
   type NewsRegion,
@@ -29,6 +30,7 @@ import {
 interface RawSource {
   id?: unknown;
   name?: unknown;
+  url?: unknown;
   category?: unknown;
   region?: unknown;
   tier?: unknown;
@@ -63,6 +65,29 @@ const FILE_SOURCES: NewsSource[] = (rawSources.sources as RawSource[]).flatMap((
 });
 
 const FILE_BY_ID = new Map(FILE_SOURCES.map((source) => [source.id, source]));
+
+/**
+ * The feeds the file already carries, canonicalized exactly as a reader's
+ * proposal is (`canonicalNewsFeedUrl`): a trailing slash, an uppercase host, a
+ * fragment or a default port is the same feed, not a second one.
+ *
+ * The file wins a URL collision in the fetch's merge (`scripts/news/lib.mjs`), so
+ * a proposal for one of these can be approved and then dropped, which reads to
+ * the reader as a source that was added and never appears (#551). A malformed
+ * URL contributes nothing here: rejecting it is the workflow validator's job.
+ */
+const FILE_URLS: ReadonlySet<string> = new Set(
+  (rawSources.sources as RawSource[]).flatMap((value) => {
+    const url = typeof value.url === 'string' ? canonicalNewsFeedUrl(value.url) : null;
+    return url === null ? [] : [url];
+  })
+);
+
+/** Whether the repo-versioned list already carries this feed. */
+export function hasFileSourceUrl(url: string): boolean {
+  const canonical = canonicalNewsFeedUrl(url);
+  return canonical !== null && FILE_URLS.has(canonical);
+}
 
 /** The repo-versioned list, in its own order. */
 export function listFileSources(): readonly NewsSource[] {

@@ -1,11 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import type {
-  ApproveNewsSourceRequest,
-  NewNewsSourceRequest,
-  NewsSourceRequestsRepository,
-  RejectNewsSourceRequest,
+import {
+  NewsSourceRequestDbError,
+  type ApproveNewsSourceRequest,
+  type NewNewsSourceRequest,
+  type NewsSourceRequestsRepository,
+  type RejectNewsSourceRequest,
 } from '@/backend/repositories/news/news-source-requests-repository';
 import type {
   NewsCategory,
@@ -35,6 +36,23 @@ type RequestSelectRow = Pick<
 const REQUEST_COLUMNS =
   'id, url, name, status, category, region, tier, note, created_at, reviewed_at, source_id';
 
+/**
+ * PostgREST reports a violation only as text (`duplicate key value violates
+ * unique constraint "uq_news_source_requests_open_url"`), so the constraint has
+ * to be read out of the message. Keeping it, plus the SQLSTATE, is what lets the
+ * submit path answer the index that refused it (#551) instead of flattening a
+ * duplicate into the generic failure text.
+ */
+const CONSTRAINT_NAME = /constraint "([^"]+)"/;
+
+function dbError(error: { code?: string; message: string }): never {
+  throw new NewsSourceRequestDbError(
+    error.code ?? null,
+    CONSTRAINT_NAME.exec(error.message)?.[1] ?? null,
+    error.message
+  );
+}
+
 function mapRequest(row: RequestSelectRow): NewsSourceRequest {
   return {
     id: row.id,
@@ -62,7 +80,7 @@ export function createNewsSourceRequestsRepository(
         .eq('user_id', userId)
         .eq('status', 'pending');
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return count ?? 0;
     },
 
@@ -74,7 +92,7 @@ export function createNewsSourceRequestsRepository(
         .eq('status', 'pending')
         .maybeSingle();
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return data?.id ?? null;
     },
 
@@ -90,7 +108,7 @@ export function createNewsSourceRequestsRepository(
         .select(REQUEST_COLUMNS)
         .single();
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return mapRequest(data as RequestRow);
     },
 
@@ -102,7 +120,7 @@ export function createNewsSourceRequestsRepository(
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return (data ?? []).map((row) => mapRequest(row as RequestRow));
     },
 
@@ -119,7 +137,7 @@ export function createNewsSourceRequestsRepository(
       if (status) query = query.eq('status', status);
 
       const { data, error } = await query;
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return (data ?? []).map((row) => mapRequest(row as RequestRow));
     },
 
@@ -130,7 +148,7 @@ export function createNewsSourceRequestsRepository(
         .eq('id', id)
         .maybeSingle();
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return data ? mapRequest(data as RequestRow) : null;
     },
 
@@ -170,7 +188,7 @@ export function createNewsSourceRequestsRepository(
         })
         .eq('id', input.id);
 
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
     },
   };
 }

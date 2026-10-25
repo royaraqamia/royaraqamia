@@ -1,8 +1,13 @@
 import { AppError } from '@/backend/shared/errors';
-import type { NewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests-repository';
+import {
+  NewsSourceRequestDbError,
+  OPEN_REQUEST_URL_CONSTRAINT,
+  OPEN_REQUEST_USER_CONSTRAINT,
+  type NewsSourceRequestsRepository,
+} from '@/backend/repositories/news/news-source-requests-repository';
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
 import { FeedProbeError, type FeedProbeResult } from '@/backend/services/news/feed-probe';
-import type { NewsCatalogue } from '@/backend/services/news/news-catalogue';
+import { hasFileSourceUrl, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
 import {
   canonicalNewsFeedUrl,
   type NewsSourceApprovalInput,
@@ -83,6 +88,22 @@ function errorCode(error: unknown): string | null {
   return typeof code === 'string' ? code : null;
 }
 
+/**
+ * The refusals the partial unique indexes raise (#551), which the pre-checks
+ * cannot see: another reader's open request is hidden by RLS, and two submits
+ * from one account can race past `countPending`. Anything else — a broken
+ * connection, a permissions change — stays a failure, not a duplicate.
+ */
+function submissionError(error: unknown): never {
+  if (error instanceof NewsSourceRequestDbError) {
+    if (error.constraint === OPEN_REQUEST_URL_CONSTRAINT) throw new NewsSourceAlreadyQueuedError();
+    if (error.constraint === OPEN_REQUEST_USER_CONSTRAINT) {
+      throw new NewsSourceRequestPendingError();
+    }
+  }
+  throw error;
+}
+
 export interface NewsSourceRequestsService {
   submit(userId: string, input: NewsSourceRequestInput): Promise<NewsSourceRequest>;
   listMine(userId: string): Promise<NewsSourceRequest[]>;
@@ -109,7 +130,7 @@ interface RequestsDeps {
   probe: (url: string) => Promise<FeedProbeResult>;
 }
 
-/** Submission needs no catalogue: a proposal is deduplicated by URL, not by id. */
+/** Submission needs no catalogue read: a proposal is deduplicated by URL. */
 type SubmitDeps = Omit<RequestsDeps, 'catalogue'>;
 
 /** A decision needs no source read: the approval RPC owns both writes. */
@@ -135,6 +156,9 @@ export function createNewsSourceRequestsService({
       const url = canonicalNewsFeedUrl(input.url);
       if (!url) throw new FeedUnavailableError('not-a-feed');
 
+      // The file list is the base the fetch merges onto and wins a URL collision,
+      // so a feed already in it would be queued, approved and then dropped (#551).
+      if (hasFileSourceUrl(url)) throw new NewsSourceAlreadyKnownError();
       if (await sources.findIdByUrl(url)) throw new NewsSourceAlreadyKnownError();
       if (await requests.findPendingIdByUrl(url)) throw new NewsSourceAlreadyQueuedError();
       if ((await requests.countPending(userId)) > 0) throw new NewsSourceRequestPendingError();
@@ -146,7 +170,11 @@ export function createNewsSourceRequestsService({
         throw error;
       }
 
-      return requests.insert({ userId, url, name: input.name.trim() });
+      try {
+        return await requests.insert({ userId, url, name: input.name.trim() });
+      } catch (error) {
+        submissionError(error);
+      }
     },
 
     listMine(userId: string): Promise<NewsSourceRequest[]> {
@@ -198,6 +226,10 @@ export function createNewsAdminService({
       reviewedBy: string
     ): Promise<NewsSourceRequest> {
       const request = await pendingOrThrow(id);
+
+      // The feed may have reached the file after it was proposed, and the file
+      // wins the merge — approving would write a row the fetch then drops (#551).
+      if (hasFileSourceUrl(request.url)) throw new NewsSourceAlreadyKnownError();
 
       const taken = new Set((await catalogue.list()).map((source) => source.id));
       const base = slugForHost(new URL(request.url).hostname) || 'source';

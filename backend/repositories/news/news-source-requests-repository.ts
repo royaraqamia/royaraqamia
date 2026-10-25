@@ -34,6 +34,29 @@ export interface RejectNewsSourceRequest {
   reviewedBy: string;
 }
 
+/** The partial unique index that refuses a second open request for one feed. */
+export const OPEN_REQUEST_URL_CONSTRAINT = 'uq_news_source_requests_open_url';
+
+/** The partial unique index that refuses a second open request from one reader. */
+export const OPEN_REQUEST_USER_CONSTRAINT = 'uq_news_source_requests_open_user';
+
+/**
+ * A failed repository call with the SQLSTATE and constraint Postgres named
+ * (#551). The partial unique indexes are the real dedupe, so a caller has to be
+ * able to tell which one refused it instead of answering every collision with
+ * the same sentence.
+ */
+export class NewsSourceRequestDbError extends Error {
+  constructor(
+    readonly code: string | null,
+    readonly constraint: string | null,
+    message: string
+  ) {
+    super(message);
+    this.name = 'NewsSourceRequestDbError';
+  }
+}
+
 /**
  * The intake queue a reader's proposal moves through: `pending` until an Admin
  * approves or rejects it. A reader can only insert a pending row (RLS), so every
@@ -41,8 +64,15 @@ export interface RejectNewsSourceRequest {
  */
 export interface NewsSourceRequestsRepository {
   countPending(userId: string): Promise<number>;
-  /** The id of an open request for this canonical URL, whoever filed it. */
+  /**
+   * The id of the caller's own open request for this URL — RLS scopes the read,
+   * so another reader's row is invisible here even when it exists (#551).
+   */
   findPendingIdByUrl(url: string): Promise<string | null>;
+  /**
+   * Files a pending proposal. A collision with either partial unique index is a
+   * `NewsSourceRequestDbError` naming that index (#551).
+   */
   insert(input: NewNewsSourceRequest): Promise<NewsSourceRequest>;
   listForUser(userId: string, limit: number): Promise<NewsSourceRequest[]>;
   /** Pending first, newest first; `status` narrows to one state. */
