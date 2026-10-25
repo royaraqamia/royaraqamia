@@ -578,6 +578,16 @@ self.addEventListener('install', (event) => {
 
 const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
 
+/**
+ * The Quran's offline recitation, kept by the page (`frontend/shared/local-store/
+ * audio.ts`, ADR-0081). The worker never reads or writes it — it belongs to the
+ * page, keyed by content hash — but activation deletes every cache it does not
+ * name, and a release must not take a reader's downloaded surah with it (#559).
+ * The name is asserted against that module by `frontend/shared/local-store/__tests__/
+ * audio.test.ts`, so the two cannot drift apart silently.
+ */
+const AUDIO_CACHE = 'quran-audio-v1';
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
@@ -595,7 +605,8 @@ self.addEventListener('activate', (event) => {
             key !== STATIC_CACHE &&
             key !== PUSH_PREF_CACHE &&
             key !== CACHE_META_NAME &&
-            key !== OFFLINE_REPORT_STORE
+            key !== OFFLINE_REPORT_STORE &&
+            key !== AUDIO_CACHE
           ) {
             return caches.delete(key);
           }

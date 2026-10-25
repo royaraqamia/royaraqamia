@@ -10,8 +10,10 @@ import {
   openAudioBytesStore,
   readAudioCopy,
   readSurahAudioState,
+  readSurahManifest,
   removeSurahAudio,
   saveSurahAudio,
+  saveSurahManifest,
   type AudioBytesStore,
   type AudioProgress,
   type SaveAudioResult,
@@ -181,7 +183,7 @@ export async function downloadSurahAudio(
   // make the origin's storage durable.
   requestPersistentStorageOnce();
 
-  return saveSurahAudio({
+  const result = await saveSurahAudio({
     edition: AUDIO_EDITION,
     surah,
     name: playlist.name,
@@ -190,6 +192,43 @@ export async function downloadSurahAudio(
     urlFor: (file) => audioFileUrl(edition.baseUrl, file as QuranAudioFile),
     onProgress: options.onProgress,
   });
+
+  // The manifest is what makes the copy playable offline: without it a player
+  // has no list of files and no host, and would fall back to a network fetch it
+  // cannot complete.
+  await saveSurahManifest({
+    edition: AUDIO_EDITION,
+    surah,
+    baseUrl: edition.baseUrl,
+    manifest: playlist,
+  });
+
+  return result;
+}
+
+/** A Surah ready to play: its Ayat and the host they came from. */
+export interface PlayableSurah {
+  readonly manifest: QuranSurahAudio;
+  /** Empty when this device has the manifest but not the host — offline playback. */
+  readonly baseUrl: string;
+}
+
+/**
+ * A Surah's playlist, from the host when it answers and from this device's own
+ * copy of the manifest when it does not (#559).
+ *
+ * The manifest is small and committed, so the network usually answers; the
+ * stored copy is what makes a downloaded surah playable on a plane, where the
+ * fetch fails before the first Ayah is even reached.
+ */
+export async function loadPlayableSurah(surah: number): Promise<PlayableSurah | null> {
+  try {
+    const [manifest, edition] = await Promise.all([loadSurahAudio(surah), loadAudioEdition()]);
+    return manifest ? { manifest, baseUrl: edition.baseUrl } : null;
+  } catch {
+    const stored = await readSurahManifest<QuranSurahAudio>(AUDIO_EDITION, surah);
+    return stored ? { manifest: stored.manifest, baseUrl: stored.baseUrl } : null;
+  }
 }
 
 /** Removes this Surah's copies, and says how many went. */
@@ -228,5 +267,7 @@ export async function audioPlaybackSource(
     }
   }
 
-  return { url: audioFileUrl(baseUrl, file), local: false };
+  // No copy and no known host — offline with a manifest that was kept but the
+  // host was not. An empty URL is the caller's signal to say so.
+  return { url: baseUrl ? audioFileUrl(baseUrl, file) : '', local: false };
 }
