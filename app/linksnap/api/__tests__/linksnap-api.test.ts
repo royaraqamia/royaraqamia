@@ -572,4 +572,38 @@ describe('POST /linksnap/api/unlock', () => {
     expect(res.status).toBe(401);
     expect(readBody(res)).toEqual({ success: false, error: 'كلمة المرور غير صحيحة.' });
   });
+
+  it('returns 403 for a blocked link and exposes no original URL', async () => {
+    const message = 'الرمز المختصر /abc123 تم إلغاء تنشيطه بسبب انتهاك إرشادات المجتمع.';
+    mockUnlock.execute.mockRejectedValue(new AppError(message, 403));
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 's3cret' }));
+
+    expect(res.status).toBe(403);
+    expect(readBody(res)).toEqual({ success: false, error: message });
+  });
+
+  it('returns 410 for an expired link and exposes no original URL', async () => {
+    const message = 'انتهت صلاحية الرمز المختصر /abc123.';
+    mockUnlock.execute.mockRejectedValue(new AppError(message, 410));
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 's3cret' }));
+
+    expect(res.status).toBe(410);
+    expect(readBody(res)).toEqual({ success: false, error: message });
+  });
+
+  it('returns 404 when the link is missing or deleted', async () => {
+    mockUnlock.execute.mockRejectedValue(
+      new ShortLinkRedirectError('Short link not found.', 'not-found')
+    );
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 's3cret' }));
+
+    expect(res.status).toBe(404);
+    expect(readBody(res)).toEqual({
+      success: false,
+      error: 'الرمز المختصر /abc123 غير موجود.',
+    });
+  });
 });
