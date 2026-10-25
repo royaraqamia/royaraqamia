@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.142.0] - 2026-10-25
+
+### Changed
+- load the services sheet and review dialog on intent (#591)
+- record the seam a downloaded surah rides on (#589)
+
+### Added
+- keep a surah's recitation for offline listening (#590)
+
 ## [1.141.1] - 2026-10-25
 
 ### Changed
