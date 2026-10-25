@@ -47,12 +47,20 @@ export async function saveQuranReadingPosition(body: QuranPositionWrite): Promis
 export async function saveQuranBookmark(body: QuranBookmarkWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      // A mark takes a slot; clearing one (a tombstone) gives it back.
+      const service = createQuranSyncService(supabase);
+
+      // A mark takes a slot only when it creates a row or revives a tombstone:
+      // re-marking a live Ayah is an idempotent update that already holds its
+      // slot, and an unmark frees one (ADR-0075). The DB trigger enforces the
+      // same transition, so a raced check still cannot overfill the plan.
       if (!body.deletedAt) {
-        await createPlanGate().cap(userId, OWNED_ITEMS.quranBookmarks);
+        const existing = await service.getBookmark(userId, body.surah, body.ayah);
+        if (!existing || existing.deletedAt) {
+          await createPlanGate().cap(userId, OWNED_ITEMS.quranBookmarks);
+        }
       }
 
-      await createQuranSyncService(supabase).setBookmark(
+      await service.setBookmark(
         userId,
         { surah: body.surah, ayah: body.ayah, deletedAt: body.deletedAt ?? null },
         { clientId: body.clientId, updatedAt: body.updatedAt }

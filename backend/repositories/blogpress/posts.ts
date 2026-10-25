@@ -410,6 +410,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return (data as Post) ?? null;
     },
 
+    getPostByClientId,
+
     async createPost(authorId: string, input?: PostInput): Promise<{ id: string }> {
       // An offline-created draft carries the id its device minted (ADR-0029), so
       // the row the server creates is the same row the Local Store already keys

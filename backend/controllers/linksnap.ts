@@ -129,7 +129,10 @@ function errorResponse(err: unknown, log: string): HttpResult {
   // broke the shorten route, so the log named nothing at all (#518).
   logger.error(log, { error: describeError(err) });
   const status = err instanceof AppError ? err.statusCode : 500;
-  return jsonResult(status, { success: false, error: getErrorMessage(err) });
+  // A plan refusal carries its code, so the client can pick the remedy rather
+  // than match Arabic copy.
+  const code = err instanceof AppError && err.code ? { code: err.code } : {};
+  return jsonResult(status, { success: false, error: getErrorMessage(err), ...code });
 }
 
 /**
@@ -264,17 +267,24 @@ export async function shortenUrl(
     if (rateLimitResult) return rateLimitResult;
 
     const plan = createPlanGate();
-    // The standing cap is the account's shelf; a visitor has none to fill.
-    if (userId) await plan.cap(userId, OWNED_ITEMS.shortLinks);
+    const shorten = createShortenUrlService();
+    const meta = offlineCreateMeta(body);
+    // The standing cap is the account's shelf; a visitor has none to fill. A
+    // replayed create whose row is still live already holds its slot, so only a
+    // first write or a tombstone revival checks the cap (ADR-0075).
+    if (userId) {
+      const replayed = meta.clientId ? await shorten.findByClientId(userId, meta.clientId) : null;
+      if (!replayed || replayed.deletedAt) await plan.cap(userId, OWNED_ITEMS.shortLinks);
+    }
 
     const newLink = await plan.meter({ userId, ip }, USAGE_ACTIONS.shortLinkCreate, () =>
-      createShortenUrlService().execute(
+      shorten.execute(
         originalUrl as string,
         userId,
         customCode as string | undefined,
         parseExpiresAt(body.expiresAt),
         typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
-        offlineCreateMeta(body)
+        meta
       )
     );
 

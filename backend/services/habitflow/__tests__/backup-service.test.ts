@@ -12,6 +12,7 @@ import {
 function makeRepository() {
   const repository: HabitRepository = {
     getHabits: vi.fn().mockResolvedValue([]),
+    findHabitByClientId: vi.fn().mockResolvedValue(null),
     createHabit: vi.fn(),
     updateHabit: vi.fn(),
     deleteHabit: vi.fn(),

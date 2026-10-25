@@ -79,7 +79,13 @@ export async function createPost(body?: Record<string, unknown> | null): Promise
         );
       }
 
-      await plan.cap(userId, OWNED_ITEMS.communityDrafts);
+      // A draft replay whose row is still live already holds its slot; only a
+      // first write or a tombstone revival checks the cap (ADR-0075).
+      const replayKey = input?.clientId ?? input?.id;
+      const replayed = replayKey ? await repository.getPostByClientId(userId, replayKey) : null;
+      if (!replayed || replayed.deleted_at) {
+        await plan.cap(userId, OWNED_ITEMS.communityDrafts);
+      }
       const { id } = await repository.createPost(userId, input);
       return jsonResult(200, { id });
     },

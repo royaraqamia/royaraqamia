@@ -3,7 +3,7 @@ import type {
   QuranSyncRepository,
   QuranWriteMeta,
 } from '@/backend/repositories/quran/quran-sync-repository';
-import type { QuranSyncSnapshot, ReadingPosition } from '@/shared/contracts/quran';
+import type { Bookmark, QuranSyncSnapshot, ReadingPosition } from '@/shared/contracts/quran';
 
 /**
  * The server half of the Quran's sync (ADR-0056, P1b).
@@ -28,6 +28,15 @@ export class QuranSyncService {
     meta?: QuranWriteMeta
   ): Promise<void> {
     return this.repository.saveReadingPosition(userId, position, meta);
+  }
+
+  /**
+   * The row an Ayah's mark would replace, tombstone included — the fact the
+   * cap check needs to tell an idempotent update, a revival, and a new mark
+   * apart.
+   */
+  async getBookmark(userId: string, surah: number, ayah: number): Promise<Bookmark | null> {
+    return this.repository.getBookmark(userId, surah, ayah);
   }
 
   async setBookmark(

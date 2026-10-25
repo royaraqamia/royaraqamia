@@ -14,6 +14,7 @@ const mockPosts = {
 };
 const mockRepository = {
   createPost: vi.fn(),
+  getPostByClientId: vi.fn(),
   updatePost: vi.fn(),
   deletePost: vi.fn(),
   bulkSetPostCategories: vi.fn(),
@@ -60,6 +61,10 @@ import {
   updatePost,
 } from '@/backend/controllers/blogpress';
 import { AppError } from '@/backend/shared/errors';
+import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
+
+const CLIENT_ID = '11111111-1111-7111-8111-111111111111';
 
 describe('blogpress controller', () => {
   beforeEach(() => {
@@ -69,6 +74,7 @@ describe('blogpress controller', () => {
       supabase: {},
     });
     mockRepository.createPost.mockResolvedValue({ id: 'p-1' });
+    mockRepository.getPostByClientId.mockResolvedValue(null);
     mockRepository.updatePost.mockResolvedValue(undefined);
     mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
@@ -109,6 +115,44 @@ describe('blogpress controller', () => {
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_drafts');
     expect(planMocks.meter).not.toHaveBeenCalled();
     expect(result).toMatchObject({ status: 200, body: { id: 'p-1' } });
+  });
+
+  it('lets a replayed draft through at the cap', async () => {
+    mockRepository.getPostByClientId.mockResolvedValue({
+      id: 'p-1',
+      client_id: CLIENT_ID,
+      deleted_at: null,
+    });
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityDrafts, 5, 5)
+    );
+
+    const result = await createPost({
+      slug: 'draft-post',
+      content: 'مسوَّدة',
+      clientId: CLIENT_ID,
+      updatedAt: '2026-10-05T00:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ status: 200, body: { id: 'p-1' } });
+    expect(mockRepository.getPostByClientId).toHaveBeenCalledWith('u-1', CLIENT_ID);
+    expect(planMocks.cap).not.toHaveBeenCalled();
+    expect(mockRepository.createPost).toHaveBeenCalled();
+  });
+
+  it('refuses a draft with a new client id at the cap', async () => {
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityDrafts, 5, 5)
+    );
+
+    const result = await createPost({
+      slug: 'draft-post',
+      content: 'مسوَّدة',
+      clientId: CLIENT_ID,
+    });
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockRepository.createPost).not.toHaveBeenCalled();
   });
 
   it('creates and publishes a new post in one metered request', async () => {

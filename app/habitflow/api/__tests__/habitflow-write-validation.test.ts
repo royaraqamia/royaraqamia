@@ -3,6 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 
 const mockResolveSession = vi.fn();
 const mockService = {
+  findLiveByClientId: vi.fn(),
   createHabit: vi.fn(),
   updateHabit: vi.fn(),
   toggleHabitLog: vi.fn(),
@@ -76,6 +77,7 @@ beforeEach(() => {
     client: {},
   });
   mockService.createHabit.mockResolvedValue({ id: HABIT_ID, name: 'قراءة' });
+  mockService.findLiveByClientId.mockResolvedValue(false);
   mockService.updateHabit.mockResolvedValue({ id: HABIT_ID });
   mockService.toggleHabitLog.mockResolvedValue({ id: 'l-1' });
   mockService.setHabitLogNote.mockResolvedValue({ id: 'l-1' });

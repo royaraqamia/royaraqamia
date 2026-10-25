@@ -16,6 +16,15 @@ export class HabitService {
     return this.repository.getHabits();
   }
 
+  /**
+   * Whether a create replay names a row the account already holds live. A
+   * tombstoned row is not a replay: reviving it takes a slot (ADR-0075).
+   */
+  async findLiveByClientId(clientId: string): Promise<boolean> {
+    const habit = await this.repository.findHabitByClientId(clientId);
+    return Boolean(habit && !habit.deletedAt);
+  }
+
   async createHabit(data: Partial<Habit>): Promise<Habit> {
     if (!data.name || data.name.trim() === '') {
       throw new AppError('اسم العادة مطلوب', 400);

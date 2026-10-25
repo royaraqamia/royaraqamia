@@ -11,6 +11,7 @@ import type {
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
 import type {
+  ExistingOwnedRow,
   ExpenseUpdateInput,
   SpendtrackRepository,
 } from '@/backend/repositories/spendtrack/spendtrack-repository';
@@ -335,6 +336,36 @@ export function createSpendtrackRepository(
 
       await attachSplits(expenses as unknown as Array<Record<string, unknown>>);
       return expenses;
+    },
+
+    async findExpenseByClientId(
+      userId: string,
+      clientId: string
+    ): Promise<ExistingOwnedRow | null> {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('deleted_at')
+        .eq('user_id', userId)
+        .eq('client_id', clientId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+
+      return data ? { deletedAt: data.deleted_at ?? null } : null;
+    },
+
+    async findCategoryByClientId(
+      userId: string,
+      clientId: string
+    ): Promise<ExistingOwnedRow | null> {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('deleted_at')
+        .eq('user_id', userId)
+        .eq('client_id', clientId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+
+      return data ? { deletedAt: data.deleted_at ?? null } : null;
     },
 
     async createExpense(input: {

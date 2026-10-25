@@ -304,6 +304,23 @@ export class SpendtrackService {
     await this.validateSplits(input.splits ?? [], input.amount, userId);
   }
 
+  /**
+   * Whether a create replay names a row the account already holds live. A
+   * tombstoned row does not count: the write is not an update of a live slot
+   * (ADR-0075).
+   */
+  async isLiveExpenseReplay(userId: string, clientId?: string | null): Promise<boolean> {
+    if (!clientId) return false;
+    const existing = await this.repository.findExpenseByClientId(userId, clientId);
+    return Boolean(existing && !existing.deletedAt);
+  }
+
+  async isLiveCategoryReplay(userId: string, clientId?: string | null): Promise<boolean> {
+    if (!clientId) return false;
+    const existing = await this.repository.findCategoryByClientId(userId, clientId);
+    return Boolean(existing && !existing.deletedAt);
+  }
+
   async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<string> {
     await this.validateExpenseInput(input, userId);
 

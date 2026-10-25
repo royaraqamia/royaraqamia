@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
+const mockCap = vi.fn();
 const mockService = {
   getSyncSnapshot: vi.fn(),
+  getBookmark: vi.fn(),
   saveReadingPosition: vi.fn(),
   setBookmark: vi.fn(),
 };
@@ -29,13 +31,15 @@ vi.mock('@/backend/config/plans', () => ({
     meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
     reserve: async () => 'event-1',
     release: async () => {},
-    cap: async () => {},
+    cap: mockCap,
     caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
   }),
 }));
 
 import { RepositoryError } from '@/backend/shared/repository-error';
+import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   saveQuranBookmark,
   saveQuranReadingPosition,
@@ -43,6 +47,21 @@ import {
 } from '@/backend/controllers/quran';
 
 const CLIENT_ID = '11111111-1111-7111-8111-111111111111';
+
+function bookmark(deletedAt: string | null = null) {
+  return {
+    clientId: CLIENT_ID,
+    surah: 2,
+    ayah: 255,
+    createdAt: '2026-10-05T00:00:00.000Z',
+    updatedAt: '2026-10-05T00:00:00.000Z',
+    deletedAt,
+  };
+}
+
+function atTheCap() {
+  return new OwnedItemCapReachedError(OWNED_ITEMS.quranBookmarks, 5, 5);
+}
 
 describe('quran controller', () => {
   beforeEach(() => {
@@ -52,8 +71,10 @@ describe('quran controller', () => {
       supabase: {},
     });
     mockService.getSyncSnapshot.mockResolvedValue({ position: null, bookmarks: [], cursor: null });
+    mockService.getBookmark.mockResolvedValue(null);
     mockService.saveReadingPosition.mockResolvedValue(undefined);
     mockService.setBookmark.mockResolvedValue(undefined);
+    mockCap.mockResolvedValue(undefined);
   });
 
   it('answers 401 without a session, so reading stays anonymous', async () => {
@@ -120,6 +141,52 @@ describe('quran controller', () => {
       { surah: 2, ayah: 255, deletedAt: null },
       { clientId: CLIENT_ID, updatedAt: undefined }
     );
+  });
+
+  it('lets a mark on a live Bookmark through at the cap', async () => {
+    mockService.getBookmark.mockResolvedValue(bookmark(null));
+    mockCap.mockRejectedValue(atTheCap());
+
+    const result = await saveQuranBookmark({ surah: 2, ayah: 255, clientId: CLIENT_ID });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockCap).not.toHaveBeenCalled();
+    expect(mockService.setBookmark).toHaveBeenCalled();
+  });
+
+  it('refuses a new mark at the cap', async () => {
+    mockCap.mockRejectedValue(atTheCap());
+
+    const result = await saveQuranBookmark({ surah: 2, ayah: 255, clientId: CLIENT_ID });
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockService.setBookmark).not.toHaveBeenCalled();
+  });
+
+  it('refuses a mark that revives a tombstone at the cap', async () => {
+    mockService.getBookmark.mockResolvedValue(bookmark('2026-10-06T00:00:00.000Z'));
+    mockCap.mockRejectedValue(atTheCap());
+
+    const result = await saveQuranBookmark({ surah: 2, ayah: 255, clientId: CLIENT_ID });
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockService.setBookmark).not.toHaveBeenCalled();
+  });
+
+  it('always lets an unmark through, even at the cap', async () => {
+    mockCap.mockRejectedValue(atTheCap());
+
+    const result = await saveQuranBookmark({
+      surah: 2,
+      ayah: 255,
+      deletedAt: '2026-10-06T00:00:00.000Z',
+      clientId: CLIENT_ID,
+    });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockCap).not.toHaveBeenCalled();
+    expect(mockService.getBookmark).not.toHaveBeenCalled();
+    expect(mockService.setBookmark).toHaveBeenCalled();
   });
 
   it('answers 500 for a data-access failure, so the Outbox retries instead of failing it', async () => {

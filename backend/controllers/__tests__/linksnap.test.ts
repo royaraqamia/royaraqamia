@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthenticatedUser = vi.fn();
 const mockGetSessionUser = vi.fn();
-const mockShorten = { execute: vi.fn() };
+const mockCap = vi.fn();
+const mockShorten = { execute: vi.fn(), findByClientId: vi.fn() };
 const mockListLinks = { execute: vi.fn(), executeIncludingDeleted: vi.fn() };
 const mockBulkAction = { execute: vi.fn() };
 const mockModerate = { execute: vi.fn() };
@@ -48,7 +49,7 @@ vi.mock('@/backend/config/plans', () => ({
     meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
     reserve: async () => 'event-1',
     release: async () => {},
-    cap: async () => {},
+    cap: mockCap,
     caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
   }),
@@ -60,8 +61,29 @@ import {
   listLinksForSync,
   moderateLink,
   redirectShortCode,
+  shortenUrl,
 } from '@/backend/controllers/linksnap';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
+import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
+
+const CLIENT_ID = '11111111-1111-7111-8111-111111111111';
+
+function storedLink(overrides: Record<string, unknown> = {}) {
+  return {
+    code: 'abc123',
+    originalUrl: 'https://example.com',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    userId: 'u-1',
+    expiresAt: null,
+    isBlocked: false,
+    passwordHash: null,
+    clientId: CLIENT_ID,
+    deletedAt: null,
+    ...overrides,
+  };
+}
 
 function link(overrides: Record<string, unknown> = {}) {
   return {
@@ -84,6 +106,8 @@ describe('linksnap controller', () => {
     mockListLinks.executeIncludingDeleted.mockResolvedValue([link()]);
     mockBulkAction.execute.mockResolvedValue({ affected: 2 });
     mockModerate.execute.mockResolvedValue(link({ isBlocked: true }));
+    mockShorten.findByClientId.mockResolvedValue(null);
+    mockCap.mockResolvedValue(undefined);
   });
 
   it('returns the linksnap 401 body when the bearer token is rejected', async () => {
@@ -175,6 +199,43 @@ describe('linksnap controller', () => {
       undefined,
       { clientId: undefined, updatedAt: undefined }
     );
+  });
+
+  it('lets a replayed create through at the cap and answers the stored row', async () => {
+    mockGetSessionUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockShorten.findByClientId.mockResolvedValue(storedLink());
+    mockShorten.execute.mockResolvedValue(storedLink());
+    mockCap.mockRejectedValue(new OwnedItemCapReachedError(OWNED_ITEMS.shortLinks, 5, 5));
+
+    const result = await shortenUrl(null, '1.2.3.4', {
+      originalUrl: 'https://example.com',
+      clientId: CLIENT_ID,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: 200 }));
+    expect(mockShorten.findByClientId).toHaveBeenCalledWith('u-1', CLIENT_ID);
+    expect(mockCap).not.toHaveBeenCalled();
+    expect(mockShorten.execute).toHaveBeenCalled();
+  });
+
+  it('still refuses a create with a new client id at the cap', async () => {
+    mockGetSessionUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockCap.mockRejectedValue(new OwnedItemCapReachedError(OWNED_ITEMS.shortLinks, 5, 5));
+
+    const result = await shortenUrl(null, '1.2.3.4', {
+      originalUrl: 'https://example.com',
+      clientId: CLIENT_ID,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 402,
+        body: expect.objectContaining({ code: 'owned_item_cap' }),
+      })
+    );
+    expect(mockShorten.execute).not.toHaveBeenCalled();
   });
 
   it('maps a thrown AppError to its status code', async () => {

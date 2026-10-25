@@ -44,6 +44,7 @@ function makeRepo(
     listPostsByAuthor: vi.fn(),
     listPostsByAuthorIncludingDeleted: vi.fn(),
     getPostForUser: vi.fn(),
+    getPostByClientId: vi.fn(),
     getPostExcerptById: vi.fn(),
     createPost: vi.fn(),
     createAndPublishPost: vi.fn(),
