@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.138.2] - 2026-10-25
+
+### Fixed
+- harden feed probe against SSRF (#573)
+
 ## [1.138.1] - 2026-10-24
 
 ### Changed
