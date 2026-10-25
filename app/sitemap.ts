@@ -7,14 +7,17 @@ import {
 import { loadSurahNumbers } from '@/backend/loaders/quran';
 
 // The sitemap reads published posts from the DB, so it is ISR rather than
-// build-static. This keeps newly scheduled/auto-published posts flowing in even
-// when they bypass the blogpress controller's revalidation hint.
+// build-static. This keeps newly published posts flowing in even when they
+// bypass the blogpress controller's revalidation hint.
 //
-// 300s (not 60s): the published filter admits `scheduled AND publish_at <= now`
-// rows without any write, so time is the only signal for those — but crawlers
-// re-fetch this URL constantly and every regeneration is an ISR write plus
-// render CPU. Publishing revalidates `/sitemap.xml` explicitly, so only the
-// scheduled-publish path depends on this window.
+// 300s (not 60s): a due scheduled post is promoted by the
+// `publish-due-scheduled-posts` pg_cron job (`publish_due_scheduled_posts()`,
+// every 5 minutes), and that write happens in Postgres, where nothing can
+// revalidate this URL — so time is the only signal for the scheduled path.
+// Crawlers re-fetch the sitemap constantly and every regeneration is an ISR
+// write plus render CPU, so the window is the floor for both: publishing through
+// the app revalidates `/sitemap.xml` explicitly, a promotion waits up to this
+// long.
 export const revalidate = 300;
 
 interface SitemapEntryConfig {
