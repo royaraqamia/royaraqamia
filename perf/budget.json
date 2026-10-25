@@ -1,5 +1,5 @@
 {
-  "measure": ["/", "/scan"],
+  "measure": ["/", "/community", "/scan"],
   "default": {
     "totalGzipKb": 560,
     "jsGzipKb": 260,

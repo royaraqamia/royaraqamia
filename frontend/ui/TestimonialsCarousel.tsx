@@ -1,78 +1,27 @@
 'use client';
 
 import { useState, useMemo, useCallback, memo } from 'react';
-import { CheckCircle2, ChevronLeft, UserRound } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { ChevronLeft, UserRound } from 'lucide-react';
 import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
+import { tolerateChunkFailure } from './shared/lazy-chunk';
+import { getTestimonialMeta, VerifiedBadge } from './testimonials-meta';
 import { testimonials, type Testimonial } from '../../data/testimonials';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogScrollArea,
-} from './primitives/dialog';
 
-// Deterministic pastel/vibrant gradient generator based on user name
-const AVATAR_GRADIENTS = [
-  'from-violet-600 via-indigo-600 to-purple-500',
-  'from-fuchsia-600 via-purple-600 to-pink-500',
-  'from-cyan-600 via-blue-600 to-indigo-500',
-  'from-emerald-600 via-teal-600 to-cyan-500',
-  'from-amber-600 via-orange-600 to-rose-500',
-  'from-rose-600 via-pink-600 to-purple-500',
-];
+const loadReviewDialog = () =>
+  import('./TestimonialReviewDialog').then((m) => ({ default: m.TestimonialReviewDialog }));
 
-function getInitials(name: string): string {
-  if (!name) return 'ع';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return (parts[0] ?? '').slice(0, 2);
-  const first = parts[0];
-  const last = parts[parts.length - 1];
-  return `${first?.[0] ?? ''}${last?.[0] ?? ''}`;
-}
-
-function getGradientByName(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_GRADIENTS.length;
-  return AVATAR_GRADIENTS[index] ?? 'from-violet-600 via-indigo-600 to-purple-500';
-}
-
-interface TestimonialMeta {
-  gradient: string;
-  initials: string;
-}
-
-// Precomputed once at module load — no per-render hash/string work for every card
-const TESTIMONIAL_META = new Map<string, TestimonialMeta>(
-  testimonials.map((t) => [
-    t.name,
-    { gradient: getGradientByName(t.name), initials: getInitials(t.name) },
-  ])
+/**
+ * The expanded review, kept off the initial graph. The carousel is fully
+ * interactive without it — the dialog primitive (portal, focus scope, scroll
+ * lock) is fetched when a card is hovered or opened.
+ */
+const LazyReviewDialog = dynamic(
+  tolerateChunkFailure('testimonial review dialog', loadReviewDialog),
+  { ssr: false, loading: () => null }
 );
-
-function getTestimonialMeta(name: string): TestimonialMeta {
-  return (
-    TESTIMONIAL_META.get(name) ?? {
-      gradient: 'from-violet-600 via-indigo-600 to-purple-500',
-      initials: 'ع',
-    }
-  );
-}
-
-// Micro-Component: Verified Customer Badge
-function VerifiedBadge({ label = 'مُوثَّق' }: { label?: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-xs">
-      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-      <span>{label}</span>
-    </span>
-  );
-}
 
 interface TestimonialCardProps {
   testimonial: Testimonial;
@@ -182,9 +131,17 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
   } = useHorizontalScroll(420);
 
   const [selectedReviewIndex, setSelectedReviewIndex] = useState<number | null>(null);
+  // The dialog is mounted on first open and stays mounted, so its close
+  // animation still runs; the chunk itself is prefetched on first intent.
+  const [isReviewDialogMounted, setIsReviewDialogMounted] = useState(false);
+
+  const prefetchReviewDialog = useCallback(() => {
+    void loadReviewDialog().catch(() => {});
+  }, []);
 
   const openReviewSheet = useCallback(
     (index: number) => {
+      setIsReviewDialogMounted(true);
       setSelectedReviewIndex(index);
       setIsReviewSheetOpen(true);
     },
@@ -224,6 +181,8 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           role="region"
           aria-label="آراء وتجارب العملاء"
           tabIndex={0}
+          onPointerEnter={prefetchReviewDialog}
+          onFocus={prefetchReviewDialog}
           className="horizontal-scroll testimonials-scroll-track pb-10 flex items-stretch overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
         >
           {testimonials.map((testimonial, index) => (
@@ -237,65 +196,14 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           ))}
         </div>
       </div>
-
-      {/* Expanded Modal View — same zoom dialog primitive as the compose modal */}
-      <Dialog
-        open={selectedReviewIndex !== null}
-        onOpenChange={(open) => {
-          if (!open) closeReviewSheet();
-        }}
-      >
-        <DialogContent
-          hideClose
-          className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-neutral-900 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden"
-        >
-          {/* Mobile Handle Indicator */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
-
-          {activeReview && (
-            <DialogScrollArea className="p-6 sm:p-8 flex flex-col justify-between">
-              <DialogTitle className="sr-only">تقييم من {activeReview.name}</DialogTitle>
-              <DialogDescription className="sr-only">
-                التَّقييم الكامل من {activeReview.name}
-              </DialogDescription>
-
-              {/* Expanded Review Content */}
-              <div className="my-6 relative">
-                <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
-                  {activeReview.content}
-                </p>
-              </div>
-
-              {/* Detailed Author Profile Footer */}
-              <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className={`
-                      w-12 h-12 sm:w-13 sm:h-13 rounded-full 
-                      bg-linear-to-tr ${getTestimonialMeta(activeReview.name).gradient}
-                      flex items-center justify-center 
-                      text-white font-bold text-base sm:text-lg 
-                      ring-2 ring-white/20 shrink-0
-                    `}
-                  >
-                    {getTestimonialMeta(activeReview.name).initials || (
-                      <UserRound className="w-5 h-5" />
-                    )}
-                  </div>
-
-                  <div className="flex flex-col min-w-0">
-                    <h3 className="font-bold text-base sm:text-lg text-white truncate">
-                      {activeReview.name}
-                    </h3>
-                  </div>
-                </div>
-
-                <VerifiedBadge label="مُوثَّق" />
-              </div>
-            </DialogScrollArea>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Expanded review — the chunk is fetched on first intent, mounted on first open */}
+      {isReviewDialogMounted && (
+        <LazyReviewDialog
+          review={activeReview}
+          open={selectedReviewIndex !== null}
+          onClose={closeReviewSheet}
+        />
+      )}
     </section>
   );
 });

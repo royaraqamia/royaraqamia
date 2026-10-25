@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-10-25T13:02:58.787Z",
+  "generatedAt": "2026-10-25T14:13:10.902Z",
   "note": "Program performance baseline. Regenerate with `npm run perf:baseline:update` after `npm run build`.",
   "routes": {
     "/": {
       "html": {
-        "raw": 208005,
-        "gzip": 29851,
+        "raw": 207775,
+        "gzip": 29745,
         "count": 1
       },
       "js": {
-        "raw": 702994,
-        "gzip": 220470,
-        "count": 15
+        "raw": 645643,
+        "gzip": 200979,
+        "count": 14
       },
       "css": {
-        "raw": 534240,
-        "gzip": 62378,
+        "raw": 534173,
+        "gzip": 62382,
         "count": 2
       },
       "fonts": {
@@ -29,25 +29,57 @@
         "count": 1
       },
       "total": {
-        "raw": 1609591,
-        "gzip": 477051,
-        "count": 21
+        "raw": 1551943,
+        "gzip": 457458,
+        "count": 20
+      }
+    },
+    "/community": {
+      "html": {
+        "raw": 226065,
+        "gzip": 26326,
+        "count": 1
+      },
+      "js": {
+        "raw": 784794,
+        "gzip": 245899,
+        "count": 19
+      },
+      "css": {
+        "raw": 534173,
+        "gzip": 62382,
+        "count": 2
+      },
+      "fonts": {
+        "raw": 164352,
+        "gzip": 164352,
+        "count": 3
+      },
+      "legacy": {
+        "raw": 112594,
+        "gzip": 39627,
+        "count": 1
+      },
+      "total": {
+        "raw": 1709384,
+        "gzip": 498959,
+        "count": 25
       }
     },
     "/scan": {
       "html": {
         "raw": 38995,
-        "gzip": 9716,
+        "gzip": 9710,
         "count": 1
       },
       "js": {
         "raw": 594343,
-        "gzip": 184309,
+        "gzip": 184310,
         "count": 13
       },
       "css": {
-        "raw": 534240,
-        "gzip": 62378,
+        "raw": 534173,
+        "gzip": 62382,
         "count": 2
       },
       "fonts": {
@@ -61,8 +93,8 @@
         "count": 1
       },
       "total": {
-        "raw": 1331930,
-        "gzip": 420755,
+        "raw": 1331863,
+        "gzip": 420754,
         "count": 19
       }
     }
