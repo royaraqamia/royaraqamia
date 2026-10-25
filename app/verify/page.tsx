@@ -9,6 +9,7 @@ import { VerifySearchCard } from '@/frontend/ui/verify/verify-search-card';
 import { VerifyLoadingState } from '@/frontend/ui/verify/verify-loading-state';
 import { VerifyErrorState } from '@/frontend/ui/verify/verify-error-state';
 import { CertificateResultCard } from '@/frontend/ui/verify/certificate-result-card';
+import { Certificate } from '@/frontend/ui/Certificate';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export default function VerifyPage() {
@@ -122,6 +123,10 @@ export default function VerifyPage() {
           </AnimatePresence>
         </m.div>
       </div>
+
+      {/* Moved from the homepage: the sample certificate now sits with the page
+          that verifies certificates. */}
+      <Certificate />
     </div>
   );
 }
