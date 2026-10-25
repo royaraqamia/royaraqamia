@@ -19,6 +19,12 @@ export class UnlockLinkService {
    * Verifies the password of a protected short link. On success it records the
    * click (the request that actually reaches the destination) and returns the
    * original URL so the caller can redirect.
+   *
+   * The usability rules mirror `RedirectUrlService`: a blocked or expired link
+   * refuses before the password is verified, so knowing the password cannot
+   * reach a destination the redirect path would have refused (#569). The copy is
+   * the one the redirect page shows (`RedirectErrorBanner`), because the unlock
+   * form renders the API's error message verbatim.
    */
   async execute(
     code: string,
@@ -28,6 +34,15 @@ export class UnlockLinkService {
     const link = await this.shortLinkRepository.findByCode(code);
     if (!link || link.deletedAt) {
       throw new ShortLinkRedirectError('Short link not found.', 'not-found');
+    }
+    if (link.isBlocked) {
+      throw new AppError(
+        `الرمز المختصر /${code} تم إلغاء تنشيطه بسبب انتهاك إرشادات المجتمع.`,
+        403
+      );
+    }
+    if (link.expiresAt && link.expiresAt.getTime() < Date.now()) {
+      throw new AppError(`انتهت صلاحية الرمز المختصر /${code}.`, 410);
     }
     if (!link.passwordHash) {
       throw new AppError('هذا الرَّابط ليس محمياً بكلمة مرور.', 400);

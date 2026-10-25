@@ -96,6 +96,96 @@ describe('UnlockLinkService.execute', () => {
     ).rejects.toThrow(ShortLinkRedirectError);
   });
 
+  it('throws a not-found redirect error when the link is deleted', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...protectedLink,
+      deletedAt: now,
+    });
+
+    const service = new UnlockLinkService(shortLinkRepository, analyticsRepository);
+
+    await expect(
+      service.execute('abc123', 's3cret', {
+        referrer: null,
+        userAgent: null,
+        ipCountry: null,
+      })
+    ).rejects.toMatchObject({ kind: 'not-found' });
+    expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
+  });
+
+  it('refuses a blocked link with 403 even on the correct password', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...protectedLink,
+      isBlocked: true,
+    });
+    const notifyLinkClicked = vi.fn(async () => {});
+
+    const service = new UnlockLinkService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked
+    );
+
+    await expect(
+      service.execute('abc123', 's3cret', {
+        referrer: null,
+        userAgent: null,
+        ipCountry: null,
+      })
+    ).rejects.toMatchObject({ statusCode: 403 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
+    expect(notifyLinkClicked).not.toHaveBeenCalled();
+  });
+
+  it('refuses an expired link with 410 even on the correct password', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...protectedLink,
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+    const notifyLinkClicked = vi.fn(async () => {});
+
+    const service = new UnlockLinkService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked
+    );
+
+    await expect(
+      service.execute('abc123', 's3cret', {
+        referrer: null,
+        userAgent: null,
+        ipCountry: null,
+      })
+    ).rejects.toMatchObject({ statusCode: 410 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
+    expect(notifyLinkClicked).not.toHaveBeenCalled();
+  });
+
+  it('still unlocks a link whose expiry is in the future', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...protectedLink,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+
+    const service = new UnlockLinkService(shortLinkRepository, analyticsRepository);
+
+    await expect(
+      service.execute('abc123', 's3cret', {
+        referrer: null,
+        userAgent: null,
+        ipCountry: null,
+      })
+    ).resolves.toBe('https://example.com');
+  });
+
   it('throws when the link is not protected', async () => {
     const { shortLinkRepository, analyticsRepository } = makeDeps();
     (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
