@@ -5,7 +5,6 @@ import './global.css';
 import './toast.css';
 import { RoyaToaster } from '@/frontend/ui/shared/toaster';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
-import { MotionProvider } from '../frontend/ui/MotionProvider';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
@@ -165,30 +164,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ErrorBoundary>
           <DirectionProvider dir={DIRECTION}>
             <SessionProvider>
-              <MotionProvider>
-                <UIProvider>
-                  <NotificationProvider>
-                    <SpeedInsights />
-                    <Analytics />
-                    <PWAProvider>
-                      <RouteChangeFocus />
-                      <AppPerfObserver />
-                      {/* App chrome is route-aware: primary routes keep the top
-                          nav + bottom tab bar, secondary pages swap both for a
-                          floating back control. */}
-                      <NavHistoryTracker />
-                      <SecondaryHeader />
-                      <OfflineRouteCard />
-                      {children}
-                      <FloatingActions />
-                      <BottomTabBar />
-                      <ConnectivityIndicator />
-                      <UpdatePrompt />
-                    </PWAProvider>
-                    <RoyaToaster />
-                  </NotificationProvider>
-                </UIProvider>
-              </MotionProvider>
+              <UIProvider>
+                <NotificationProvider>
+                  <SpeedInsights />
+                  <Analytics />
+                  <PWAProvider>
+                    <RouteChangeFocus />
+                    <AppPerfObserver />
+                    {/* App chrome is route-aware: primary routes keep the top
+                        nav + bottom tab bar, secondary pages swap both for a
+                        floating back control. */}
+                    <NavHistoryTracker />
+                    <SecondaryHeader />
+                    <OfflineRouteCard />
+                    {children}
+                    <FloatingActions />
+                    <BottomTabBar />
+                    <ConnectivityIndicator />
+                    <UpdatePrompt />
+                  </PWAProvider>
+                  <RoyaToaster />
+                </NotificationProvider>
+              </UIProvider>
             </SessionProvider>
           </DirectionProvider>
         </ErrorBoundary>

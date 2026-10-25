@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ShieldCheck } from 'lucide-react';
 import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
+import { MotionRoot } from '@/frontend/ui/MotionRoot';
 
 export const metadata: Metadata = {
   title: 'إدارة الشَّهادات',
@@ -16,7 +17,7 @@ export default function AdminCertificatesLayout({ children }: { children: React.
         description="إصدار وتعديل وحذف شهادات الطُّلاب"
       />
 
-      {children}
+      <MotionRoot>{children}</MotionRoot>
     </div>
   );
 }

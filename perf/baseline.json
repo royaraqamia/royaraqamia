@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-10-12T13:43:28.818Z",
+  "generatedAt": "2026-10-25T13:02:58.787Z",
   "note": "Program performance baseline. Regenerate with `npm run perf:baseline:update` after `npm run build`.",
   "routes": {
     "/": {
       "html": {
-        "raw": 386051,
-        "gzip": 53826,
+        "raw": 208005,
+        "gzip": 29851,
         "count": 1
       },
       "js": {
-        "raw": 815538,
-        "gzip": 257739,
-        "count": 17
+        "raw": 702994,
+        "gzip": 220470,
+        "count": 15
       },
       "css": {
-        "raw": 536165,
-        "gzip": 62130,
+        "raw": 534240,
+        "gzip": 62378,
         "count": 2
       },
       "fonts": {
@@ -29,25 +29,25 @@
         "count": 1
       },
       "total": {
-        "raw": 1902106,
-        "gzip": 538047,
-        "count": 23
+        "raw": 1609591,
+        "gzip": 477051,
+        "count": 21
       }
     },
     "/scan": {
       "html": {
-        "raw": 60203,
-        "gzip": 13088,
+        "raw": 38995,
+        "gzip": 9716,
         "count": 1
       },
       "js": {
-        "raw": 765097,
-        "gzip": 244814,
-        "count": 17
+        "raw": 594343,
+        "gzip": 184309,
+        "count": 13
       },
       "css": {
-        "raw": 536165,
-        "gzip": 62130,
+        "raw": 534240,
+        "gzip": 62378,
         "count": 2
       },
       "fonts": {
@@ -61,9 +61,9 @@
         "count": 1
       },
       "total": {
-        "raw": 1525817,
-        "gzip": 484384,
-        "count": 23
+        "raw": 1331930,
+        "gzip": 420755,
+        "count": 19
       }
     }
   }

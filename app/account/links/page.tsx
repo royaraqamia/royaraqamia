@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { MyLinksView } from '@/frontend/ui/account/my-links-view';
+import { MotionRoot } from '@/frontend/ui/MotionRoot';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function AccountLinksPage() {
         </SectionTitle>
       </header>
 
-      <MyLinksView />
+      <MotionRoot>
+        <MyLinksView />
+      </MotionRoot>
     </div>
   );
 }

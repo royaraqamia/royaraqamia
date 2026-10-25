@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppShell } from '@/frontend/ui/app-shell/app-shell';
+import { MotionRoot } from '@/frontend/ui/MotionRoot';
 
 export const metadata: Metadata = {
   title: {
@@ -17,5 +18,9 @@ export const metadata: Metadata = {
  * post's contents.
  */
 export default function BlogPressAppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <MotionRoot>{children}</MotionRoot>
+    </AppShell>
+  );
 }
