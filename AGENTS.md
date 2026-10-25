@@ -9,6 +9,7 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 - `npm ci` — install deps
 - `npx tsc --noEmit` — type check
 - `npm run lint` — lint (ESLint); `npm run lint:fix` to auto-fix
+- `npm run format` — Prettier; CI gates on `format:check`, and ESLint does not format
 - `npm test` — unit tests (Vitest)
 - `npm run build` — full build (requires `NEXT_PUBLIC_WHATSAPP_PHONE`)
 
