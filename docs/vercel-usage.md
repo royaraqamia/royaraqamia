@@ -105,9 +105,12 @@ still works; only the Git integration's per-branch previews are off.
 
 Community caching stays correct because every mutation already invalidates by
 tag (`COMMUNITY_MUTATION_TAGS` via `backend/transport/http-result.ts`), so the
-300s window is a floor for **scheduled** posts — the published filter admits
-`scheduled AND publish_at <= now` rows with no write — not the freshness
-mechanism for edits.
+300s window is a floor for **scheduled** posts only: promotion to published
+happens in Postgres (`publish_due_scheduled_posts()`, pg_cron every 5 minutes),
+where no write can invalidate the Next.js cache, so a promoted post can take up
+to the window to appear. The published filter's `scheduled AND publish_at <= now`
+clause stays as a belt for the gap before the job runs. The window is not the
+freshness mechanism for edits.
 
 `/verify/[code]` and the certificate loaders stay at 60s on purpose: a
 certificate page showing a revoked credential for five minutes is worse than the
