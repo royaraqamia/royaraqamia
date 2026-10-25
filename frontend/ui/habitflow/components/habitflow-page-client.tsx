@@ -24,7 +24,12 @@ import { DashboardShell } from '@/frontend/ui/habitflow/components/dashboard-she
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6" data-local-store-skeleton="true" aria-busy="true" aria-label="جاري فتح التَّخزين المحلِّي">
+    <div
+      className="space-y-6"
+      data-local-store-skeleton="true"
+      aria-busy="true"
+      aria-label="جاري فتح التَّخزين المحلِّي"
+    >
       <div className="h-16 animate-pulse rounded-2xl border border-zinc-200/60 bg-zinc-100/60 dark:border-zinc-800/60 dark:bg-zinc-900/40" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((key) => (

@@ -32,7 +32,12 @@ import { AutoCreatePost } from '@/app/blogpress/_components/auto-create-post';
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6" data-local-store-skeleton="true" aria-busy="true" aria-label="جاري فتح التَّخزين المحلِّي">
+    <div
+      className="space-y-6"
+      data-local-store-skeleton="true"
+      aria-busy="true"
+      aria-label="جاري فتح التَّخزين المحلِّي"
+    >
       <div className="h-10 w-64 animate-pulse rounded-xl bg-neutral-200/60 dark:bg-neutral-800/60" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((key) => (

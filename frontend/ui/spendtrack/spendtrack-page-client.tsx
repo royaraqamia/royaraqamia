@@ -47,7 +47,12 @@ function getDateRange(range: string, from?: string, to?: string) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-4" data-local-store-skeleton="true" aria-busy="true" aria-label="جاري فتح التَّخزين المحلِّي">
+    <div
+      className="space-y-4"
+      data-local-store-skeleton="true"
+      aria-busy="true"
+      aria-label="جاري فتح التَّخزين المحلِّي"
+    >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="h-44 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
         <div className="h-44 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
