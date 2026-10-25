@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+import { isHttpUrl, isPublicHttpUrl, normalizeHostname } from '@/shared/network';
+
+export { isHttpUrl, isPublicHttpUrl, normalizeHostname };
+
 // ------------------------------------------------------------
 // Enums & primitives
 // ------------------------------------------------------------
@@ -162,64 +166,6 @@ export function mediaKindOfFormat(format: DownloadFormat): MediaKind {
   if (format.startsWith('image')) return 'image';
   if (format.startsWith('audio')) return 'audio';
   return 'video';
-}
-
-/** The one definition of "a link a Download may target"; shared by the schema and the provider. */
-export function isHttpUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Normalize a host for comparison. DNS's absolute form of a name (`example.com.`)
- * resolves identically to the relative form but compares differently, so every
- * host check strips a single trailing dot and lowercases first. Shared so the
- * Blocklist, the Platform allowlist and the SSRF guard cannot drift apart.
- */
-export function normalizeHostname(host: string): string {
-  return host.toLowerCase().replace(/\.$/, '');
-}
-
-const PRIVATE_IPV4 = (a: number, b: number): boolean => {
-  if (a === 0 || a === 10 || a === 127) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 169 && b === 254) return true;
-  return false;
-};
-
-/**
- * SSRF guard: an http(s) URL whose host is a public name or address. Rejects
- * loopback and the private/link-local IPv4 ranges, and refuses every IPv6
- * literal (including IPv4-mapped forms like `::ffff:127.0.0.1`) rather than
- * trying to classify them. Hostnames that *resolve* to a private address are
- * the provider host's concern, not this client-side check.
- */
-export function isPublicHttpUrl(value: string): boolean {
-  if (!isHttpUrl(value)) return false;
-
-  let host: string;
-  try {
-    host = normalizeHostname(new URL(value).hostname.replace(/^\[|\]$/g, ''));
-  } catch {
-    return false;
-  }
-
-  if (host.length === 0) return false;
-  if (host === 'localhost' || host.endsWith('.localhost')) return false;
-  if (host.includes(':')) return false;
-
-  const octets = host.split('.');
-  if (octets.length === 4 && octets.every((octet) => /^\d+$/.test(octet))) {
-    const [a = -1, b = -1] = octets.map(Number);
-    if (PRIVATE_IPV4(a, b)) return false;
-  }
-
-  return true;
 }
 
 // ------------------------------------------------------------
