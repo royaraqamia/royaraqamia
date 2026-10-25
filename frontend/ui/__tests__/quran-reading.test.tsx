@@ -187,11 +187,9 @@ describe('remembering where the reader stopped', () => {
   });
 
   it('writes it anyway when the reader leaves inside the debounce window', async () => {
-    // Closing the connection is what must *not* be skipped for the sake of the
-    // flush: `LocalStoreConnection.close()` refuses any operation that starts
-    // after it, so a teardown that ran first would drop this write entirely.
-    const closed = vi.spyOn(IDBDatabase.prototype, 'close');
-
+    // A teardown must flush before it releases the store: closing it refuses
+    // any operation that starts afterwards (#204), so a cleanup that ran first
+    // would drop this write entirely — and the position below would be null.
     const { unmount } = renderSurah();
     const observer = await whenReady(screen.getByRole('button', { name: 'علامة على الآية 1' }));
     const ayah = document.getElementById('ayah-2')!;
@@ -203,8 +201,6 @@ describe('remembering where the reader stopped', () => {
     // Leaving the sura is the last chance to record this ayah: the debounce has
     // not fired, so only the cleanup's flush can write it.
     unmount();
-
-    await waitFor(() => expect(closed).toHaveBeenCalled());
 
     expect(await (await readerStore()).getReadingPosition()).toMatchObject({
       surah: 2,

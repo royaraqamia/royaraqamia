@@ -9,12 +9,12 @@ import type {
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
 import {
-  openLocalStore,
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
+import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
+import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
 import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
@@ -78,15 +78,21 @@ function logKind(value: string | null | undefined): HabitLogKind | undefined {
  * transaction; the Sync Engine (#164) replays those intents to the server.
  */
 export class HabitLocalStore implements HabitRepository {
-  private readonly connection: LocalStoreConnection;
+  private readonly connection: LocalStoreLease;
   private readonly outbox: OutboxStore;
+  private readonly mirror: LocalStoreMirror;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    db: IDBDatabase,
+    connection: LocalStoreLease,
     readonly identity: LocalIdentity
   ) {
-    this.connection = new LocalStoreConnection(db);
+    this.connection = connection;
+    this.mirror = connection.mirror;
+    this.mirror.declare({
+      [HABITS_STORE]: 'id',
+      [LOGS_STORE]: 'id',
+    });
     this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
@@ -110,27 +116,37 @@ export class HabitLocalStore implements HabitRepository {
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<HabitLocalStore> {
-    const db = await openLocalStore(
+    const connection = await acquireLocalStore(
       localStoreName(PRODUCT, identity),
       habitStoreMigrations,
       factory
     );
-    return new HabitLocalStore(db, identity);
+    return new HabitLocalStore(connection, identity);
   }
 
   /**
-   * Closes the connection: work already in flight settles first, and every
-   * operation after this one resolves without touching IndexedDB (#204).
+   * Closes this holder's lease: work already in flight settles first, and every
+   * operation after this one resolves without touching IndexedDB (#204). The
+   * shared connection itself stays open for the document (#494).
    */
   close(): void {
     this.connection.close();
   }
 
   private async readAll<T>(store: string): Promise<T[]> {
-    return this.connection.run(async (db) => {
+    if (this.connection.isClosed) return [];
+
+    // A copy: the mirror's array belongs to every holder, and a caller that
+    // sorts its list in place must not reorder the next one.
+    const mirrored = this.mirror.read<T>(store);
+    if (mirrored) return [...mirrored];
+
+    const rows = await this.connection.run(async (db) => {
       const transaction = db.transaction(store, 'readonly');
       return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
     }, []);
+    if (!this.connection.isClosed) this.mirror.fill(store, rows);
+    return rows;
   }
 
   private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
@@ -171,7 +187,12 @@ export class HabitLocalStore implements HabitRepository {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (committed) this.notifyWrites();
+    if (committed) {
+      // The mirror is updated in the same tick the write commits, so a
+      // subscriber that reads on `notifyWrites` sees the new rows (#494).
+      for (const [store, value] of writes) this.mirror.put(store, value);
+      this.notifyWrites();
+    }
     return committed;
   }
 
@@ -479,7 +500,11 @@ export class HabitLocalStore implements HabitRepository {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (restored) this.notifyWrites();
+    if (restored) {
+      this.mirror.fill(HABITS_STORE, habits);
+      this.mirror.fill(LOGS_STORE, logs);
+      this.notifyWrites();
+    }
   }
 
   /** Seeds the server loader's data once, then the store is authoritative. */
@@ -653,7 +678,11 @@ export class HabitLocalStore implements HabitRepository {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (cleared) this.notifyWrites();
+    if (cleared) {
+      this.mirror.drop(HABITS_STORE);
+      this.mirror.drop(LOGS_STORE);
+      this.notifyWrites();
+    }
   }
 
   /** True when the store has received no writes yet (safe to seed). */

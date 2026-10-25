@@ -191,17 +191,25 @@ Honest list of what stands between us and the bar, each with the file that shows
 
 1. **Local Store** — one durable IndexedDB database per identity (`guest` | `user:<id>`), per product.
    Holds Owned data and the Outbox. Forward-only, additive migrations (native IDB `version` +
-   `onupgradeneeded`).
-2. **Outbox** — ordered intents replayed to the server. Client-minted UUIDv7 `client_id`, idempotent
+   `onupgradeneeded`). One connection per database per document, leased to each store (`#494`): a route
+   change opens nothing, and a store's `close()` releases its lease instead of closing the database. The
+   connection is closed when the identity changes, or when another tab migrates the schema past it.
+2. **Local Store mirror** (`#494`) — each store's rows held in memory and fed by the writes that commit,
+   so a list that has been read once is answered synchronously on the next surface, and a write paints in
+   the tick it commits. Hydration is explicit: a store nobody has read is not cached, and a write to it is
+   ignored rather than served as a fragment. Returning to the tab clears the mirror, because another
+   tab's IndexedDB write is invisible from here and a missed invalidation may cost a read but never a
+   wrong row.
+3. **Outbox** — ordered intents replayed to the server. Client-minted UUIDv7 `client_id`, idempotent
    upserts, tombstones for deletes, exponential backoff + jitter, surfaced permanent failures. It is
    the **only** writer to the server; nothing else in this spec is allowed to become a second one.
-3. **Service worker** (`public/sw.js`, grown not replaced) — cache tiers + the never-cache list, plus
+4. **Service worker** (`public/sw.js`, grown not replaced) — cache tiers + the never-cache list, plus
    the `sync` handler that answers Background Sync. The handler is glue; the drain itself is the app's
    own code, bundled by `scripts/build-sw-outbox.mjs` into a git-ignored `public/sw-outbox.js` and
    loaded with `importScripts`, so the worker replays through the same engine, the same transports and
    the same Outbox access as the page rather than a second implementation of them. `activate` touches
    Cache Storage only, never IndexedDB.
-4. **Sync coordination** — Web Locks leader for flushing; BroadcastChannel for cross-tab
+5. **Sync coordination** — Web Locks leader for flushing; BroadcastChannel for cross-tab
    invalidation. Triggers are now three tiers, in the order they are worth relying on:
    1. **In-page** — `online` / `visibilitychange` / focus / manual retry. Present today, and the
       fallback everywhere.
@@ -211,7 +219,7 @@ Honest list of what stands between us and the bar, each with the file that shows
       story.
    3. **Native Android** — a silent high-priority FCM data message wakes a WorkManager job that drains
       the Outbox (ADR-0059). This is the only tier that works with the app killed.
-5. **Sync hints** (ADR-0060) — a server→client signal that there is new data to pull: Supabase Realtime
+6. **Sync hints** (ADR-0060) — a server→client signal that there is new data to pull: Supabase Realtime
    `postgres_changes` while foregrounded, and the FCM data message while backgrounded. A hint triggers a
    **pull**, never a blind merge: the payload is ignored beyond "something changed", so our own write
    echoed back costs one wasted request, and the merge that follows is the same pending-aware

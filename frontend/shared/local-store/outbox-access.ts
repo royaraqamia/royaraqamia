@@ -4,6 +4,15 @@ import { OUTBOX_STORE, type OutboxEntry } from '@/frontend/shared/local-store/ou
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 
 /**
+ * The one operation the Outbox needs from a connection: a gated `run`. A
+ * `LocalStoreConnection` and a `LocalStoreLease` both answer it, so the queue
+ * works whichever of the two the caller holds.
+ */
+export interface LocalStoreRunner {
+  run<T>(operation: (db: IDBDatabase) => Promise<T>, whenClosed: T): Promise<T>;
+}
+
+/**
  * The Outbox half of a Local Store, on its own so a realm that did not create
  * the database can still drain it.
  *
@@ -18,7 +27,7 @@ import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
  * flush-on-write the subscribers do.
  */
 export function createOutboxAccess(
-  connection: LocalStoreConnection,
+  connection: LocalStoreRunner,
   onWrite?: () => void
 ): OutboxStore {
   /** All queued intents in strict replay order (`seq` ascending). */

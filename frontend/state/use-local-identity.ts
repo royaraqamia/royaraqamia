@@ -1,7 +1,8 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useEffect, useRef } from 'react';
 import { useSession } from '@/frontend/state/session-provider';
+import { closeIdentityStores } from '@/frontend/shared/local-store/connection';
 import {
   GUEST_IDENTITY,
   readPersistedIdentity,
@@ -78,6 +79,18 @@ export function useLocalIdentity(): LocalIdentityState {
 
   const sessionIdentity = user ? userIdentity(user.id) : null;
   const identity = sessionIdentity ?? persisted ?? GUEST_IDENTITY;
+
+  // An identity change is the one thing that closes a store (#494): the
+  // previous partition's connection is not left open for the rest of the
+  // document, and the next surface opens the new one. A route change within the
+  // same identity closes nothing, which is the point of the registry.
+  const previousIdentity = useRef(identity);
+  useEffect(() => {
+    const previous = previousIdentity.current;
+    if (previous === identity) return;
+    previousIdentity.current = identity;
+    void closeIdentityStores(previous);
+  }, [identity]);
 
   return {
     identity,

@@ -9,12 +9,12 @@ import type {
 } from '@/shared/contracts/spendtrack';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
-  openLocalStore,
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
+import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
+import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
 import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
@@ -100,15 +100,23 @@ export function budgetKey(month: string, categoryId: string | null): string {
  * transaction; the Sync Engine replays those intents to the server.
  */
 export class SpendtrackLocalStore {
-  private readonly connection: LocalStoreConnection;
+  private readonly connection: LocalStoreLease;
   private readonly outbox: OutboxStore;
+  private readonly mirror: LocalStoreMirror;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    db: IDBDatabase,
+    connection: LocalStoreLease,
     readonly identity: LocalIdentity
   ) {
-    this.connection = new LocalStoreConnection(db);
+    this.connection = connection;
+    this.mirror = connection.mirror;
+    this.mirror.declare({
+      [CATEGORIES_STORE]: 'id',
+      [EXPENSES_STORE]: 'id',
+      [BUDGETS_STORE]: 'id',
+      [RECURRING_STORE]: 'id',
+    });
     this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
@@ -127,27 +135,37 @@ export class SpendtrackLocalStore {
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<SpendtrackLocalStore> {
-    const db = await openLocalStore(
+    const connection = await acquireLocalStore(
       localStoreName(PRODUCT, identity),
       spendtrackStoreMigrations,
       factory
     );
-    return new SpendtrackLocalStore(db, identity);
+    return new SpendtrackLocalStore(connection, identity);
   }
 
   /**
-   * Closes the connection: work already in flight settles first, and every
-   * operation after this one resolves without touching IndexedDB (#204).
+   * Closes this holder's lease: work already in flight settles first, and every
+   * operation after this one resolves without touching IndexedDB (#204). The
+   * shared connection itself stays open for the document (#494).
    */
   close(): void {
     this.connection.close();
   }
 
   private async readAll<T>(store: string): Promise<T[]> {
-    return this.connection.run(async (db) => {
+    if (this.connection.isClosed) return [];
+
+    // A copy: the mirror's array belongs to every holder, and a caller that
+    // sorts its list in place must not reorder the next one.
+    const mirrored = this.mirror.read<T>(store);
+    if (mirrored) return [...mirrored];
+
+    const rows = await this.connection.run(async (db) => {
       const transaction = db.transaction(store, 'readonly');
       return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
     }, []);
+    if (!this.connection.isClosed) this.mirror.fill(store, rows);
+    return rows;
   }
 
   private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
@@ -186,7 +204,10 @@ export class SpendtrackLocalStore {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (committed) this.notifyWrites();
+    if (committed) {
+      for (const [store, value] of writes) this.mirror.put(store, value);
+      this.notifyWrites();
+    }
     return committed;
   }
 
@@ -722,7 +743,10 @@ export class SpendtrackLocalStore {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (cleared) this.notifyWrites();
+    if (cleared) {
+      for (const store of stores) this.mirror.drop(store);
+      this.notifyWrites();
+    }
   }
 
   /** True when the store has received no writes yet (safe to seed). */

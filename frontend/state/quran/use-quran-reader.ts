@@ -210,10 +210,10 @@ export function useQuranReader(): QuranReaderState {
       // (#355).
       //
       // A microtask is enough to fix the order. The unmount pass is synchronous,
-      // so the flush has already run — and started its transaction — by the time
-      // this lands. `close()` then waits for that operation to settle before
-      // closing for real (`LocalStoreConnection`), so the write is never yanked
-      // and the connection is still closed by the end of the task.
+      // so the flush has already run — and started its operation — by the time
+      // this lands. `close()` refuses anything that has not started yet (#204),
+      // and the operation already inside the store still settles, so the write is
+      // never yanked (#494: the lease closes, the shared connection stays).
       const store = opened;
       opened = null;
       queueMicrotask(() => {
