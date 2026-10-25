@@ -16,7 +16,8 @@ describe('ServicesMenu (hero CTA)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'تصفَّح خدماتنا' }));
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    // The sheet is a lazy chunk now, so the first open resolves an import too.
+    expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('طلب بناء مشروع')).toBeInTheDocument();
     // The bottom sheet no longer renders a header or its own close control.
     expect(screen.queryByText('إغلاق')).not.toBeInTheDocument();
@@ -29,7 +30,8 @@ describe('NavDropdown (navbar services menu)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: SERVICES_LINK.label }));
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    // The sheet is a lazy chunk now, so the first open resolves an import too.
+    expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('طلب بناء مشروع')).toBeInTheDocument();
   });
 });
