@@ -10,6 +10,14 @@ const mocks = vi.hoisted(() => ({
   readShellLastFlush: vi.fn(),
 }));
 
+const audioMocks = vi.hoisted(() => ({
+  listDownloadedSuras: vi.fn(),
+  audioUsageBytes: vi.fn(),
+  openAudioBytesStore: vi.fn(),
+  removeSurahAudio: vi.fn(),
+  removeAllAudio: vi.fn(),
+}));
+
 vi.mock('@/frontend/shared/local-store/device-copy', () => {
   class DeviceListingUnsupportedError extends Error {}
 
@@ -30,6 +38,15 @@ vi.mock('@/frontend/shared/local-store/background-sync', () => ({
   requestOutboxFlush: mocks.requestOutboxFlush,
   requestShellFlush: mocks.requestShellFlush,
   readShellLastFlush: mocks.readShellLastFlush,
+}));
+
+vi.mock('@/frontend/shared/local-store/audio', () => ({
+  AUDIO_BUDGET_BYTES: 128 * 1024 * 1024,
+  listDownloadedSuras: audioMocks.listDownloadedSuras,
+  audioUsageBytes: audioMocks.audioUsageBytes,
+  openAudioBytesStore: audioMocks.openAudioBytesStore,
+  removeSurahAudio: audioMocks.removeSurahAudio,
+  removeAllAudio: audioMocks.removeAllAudio,
 }));
 
 vi.mock('@/frontend/state/session-provider', () => ({
@@ -88,6 +105,11 @@ beforeEach(() => {
   mocks.removeDeviceCopies.mockResolvedValue({ removed: [ACCOUNT], blocked: [], queued: 1 });
   mocks.requestOutboxFlush.mockResolvedValue(true);
   mocks.readShellLastFlush.mockReturnValue(null);
+  audioMocks.listDownloadedSuras.mockResolvedValue([]);
+  audioMocks.audioUsageBytes.mockResolvedValue(0);
+  audioMocks.openAudioBytesStore.mockResolvedValue({ kind: 'opfs' });
+  audioMocks.removeSurahAudio.mockResolvedValue(2);
+  audioMocks.removeAllAudio.mockResolvedValue(4);
 });
 
 afterEach(cleanup);
@@ -242,5 +264,70 @@ describe('DeviceView', () => {
     expect(await screen.findByText('لا توجد نسخة محلِّيَّة على هذا الجهاز')).toBeInTheDocument();
     expect(screen.queryByText('المزامنة في الخلفية')).not.toBeInTheDocument();
     expect(screen.queryByText(/تنبيه الإيقاظ لا يصل إليه/)).not.toBeInTheDocument();
+  });
+
+  it('lists a kept recitation with its Ayat and cost, beside the Local Store copies', async () => {
+    audioMocks.listDownloadedSuras.mockResolvedValue([
+      {
+        edition: 'ar.alafasy',
+        surah: 1,
+        name: 'الفاتحة',
+        ayat: 7,
+        bytes: 381489,
+        lastUsedAt: 1,
+      },
+    ]);
+    audioMocks.audioUsageBytes.mockResolvedValue(381489);
+
+    render(<DeviceView />);
+
+    expect(await screen.findByText('الفاتحة')).toBeInTheDocument();
+    expect(screen.getByText('الفاتحة').closest('li')).toHaveTextContent('7 آيات');
+    expect(screen.getByRole('heading', { name: 'التِّلاوات المحفوظة' })).toBeInTheDocument();
+  });
+
+  it('removes one kept recitation by Surah, from its own store', async () => {
+    const kept = {
+      edition: 'ar.alafasy',
+      surah: 1,
+      name: 'الفاتحة',
+      ayat: 7,
+      bytes: 381489,
+      lastUsedAt: 1,
+    };
+    audioMocks.listDownloadedSuras.mockResolvedValueOnce([kept]).mockResolvedValue([]);
+
+    render(<DeviceView />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /إزالة تلاوة الفاتحة/ }));
+
+    await waitFor(() =>
+      expect(audioMocks.removeSurahAudio).toHaveBeenCalledWith('ar.alafasy', 1, {
+        store: { kind: 'opfs' },
+      })
+    );
+    expect(await screen.findByText(/أُزيلت تلاوة الفاتحة من هذا الجُهاز/)).toBeInTheDocument();
+    expect(await screen.findByText(/لا توجد تلاوة محفوظة على هذا الجُهاز/)).toBeInTheDocument();
+  });
+
+  it('offers to free every recitation at once when more than one is kept', async () => {
+    const base = { edition: 'ar.alafasy', ayat: 3, bytes: 1000, lastUsedAt: 1 };
+    audioMocks.listDownloadedSuras
+      .mockResolvedValueOnce([
+        { ...base, surah: 1, name: 'الفاتحة' },
+        { ...base, surah: 112, name: 'الإخلاص' },
+      ])
+      .mockResolvedValue([]);
+
+    render(<DeviceView />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /إزالة كل التِّلاوات/ }));
+
+    await waitFor(() =>
+      expect(audioMocks.removeAllAudio).toHaveBeenCalledWith({ store: { kind: 'opfs' } })
+    );
+    expect(
+      await screen.findByText(/أُزيلت كلُّ التِّلاوات المحفوظة من هذا الجُهاز/)
+    ).toBeInTheDocument();
   });
 });

@@ -59,9 +59,23 @@ export interface AudioCopy {
   readonly sha256: string;
   /** The manifest's size for the file, which is what the budget counts. */
   readonly bytes: number;
+  /** The Surah's name as the manifest published it, for `/device` to show. */
+  readonly name: string | null;
   readonly storedAt: number;
   readonly lastUsedAt: number;
   readonly kind: AudioStorageKind;
+}
+
+/** One kept Surah, grouped from its Ayat — what `/device` lists and removes. */
+export interface SurahAudioCopySummary {
+  readonly edition: string;
+  readonly surah: number;
+  readonly name: string | null;
+  /** How many Ayat this device holds for it. */
+  readonly ayat: number;
+  /** What they weigh together, from the manifest. */
+  readonly bytes: number;
+  readonly lastUsedAt: number;
 }
 
 /**
@@ -102,6 +116,8 @@ export interface SaveAudioResult {
 export interface SaveAudioOptions {
   readonly edition: string;
   readonly surah: number;
+  /** The Surah's name, so `/device` can name what it lists without a fetch. */
+  readonly name?: string;
   readonly files: readonly StoredAudioFile[];
   readonly store: AudioBytesStore;
   /** The URL a file's bytes come from; the CDN URL the player also uses. */
@@ -217,6 +233,27 @@ export async function listSurahAudioCopies(
   return copies.filter((copy) => copy.edition === edition && copy.surah === surah);
 }
 
+/** Every kept Surah on this device, most recently used first — what `/device` lists. */
+export async function listDownloadedSuras(factory?: IDBFactory): Promise<SurahAudioCopySummary[]> {
+  const copies = await listAudioCopies(factory);
+
+  const grouped = new Map<string, SurahAudioCopySummary>();
+  for (const copy of copies) {
+    const id = `${copy.edition}:${copy.surah}`;
+    const existing = grouped.get(id);
+    grouped.set(id, {
+      edition: copy.edition,
+      surah: copy.surah,
+      name: copy.name ?? existing?.name ?? null,
+      ayat: (existing?.ayat ?? 0) + 1,
+      bytes: (existing?.bytes ?? 0) + copy.bytes,
+      lastUsedAt: Math.max(existing?.lastUsedAt ?? 0, copy.lastUsedAt),
+    });
+  }
+
+  return [...grouped.values()].sort((a, b) => b.lastUsedAt - a.lastUsedAt || a.surah - b.surah);
+}
+
 /** `none` when nothing is held, `complete` when every Ayah is, `partial` between. */
 export type SurahAudioState = 'none' | 'partial' | 'complete';
 
@@ -315,6 +352,7 @@ export async function saveSurahAudio(options: SaveAudioOptions): Promise<SaveAud
           ayah: file.ayah,
           sha256: file.sha256,
           bytes: file.bytes,
+          name: options.name ?? null,
           storedAt: at,
           lastUsedAt: at,
           kind: options.store.kind,

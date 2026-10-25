@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { formatBytes } from '@/frontend/shared/format-bytes';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import {
   readShellLastFlush,
@@ -19,6 +20,15 @@ import {
   requestShellFlush,
   type ShellLastFlush,
 } from '@/frontend/shared/local-store/background-sync';
+import {
+  AUDIO_BUDGET_BYTES,
+  audioUsageBytes,
+  listDownloadedSuras,
+  openAudioBytesStore,
+  removeAllAudio,
+  removeSurahAudio,
+  type SurahAudioCopySummary,
+} from '@/frontend/shared/local-store/audio';
 import {
   DeviceListingUnsupportedError,
   derivedDeviceCopies,
@@ -34,6 +44,7 @@ import {
   clearSnapshotsFor,
   screenful,
   useSnapshot,
+  useSnapshotRecorder,
   writeSnapshot,
 } from '@/frontend/shared/local-store/snapshot';
 import { useSession } from '@/frontend/state/session-provider';
@@ -66,6 +77,14 @@ const DEVICE_ROUTE = '/device';
 interface DeviceSnapshot {
   status: 'ready' | 'unsupported';
   copies: DeviceStoreCopy[];
+  /** The recitation copies, listed beside the Local Store copies (ADR-0081). */
+  audio?: DeviceAudioState | null;
+}
+
+/** What the Quran's offline copies cost, and which suras they are. */
+interface DeviceAudioState {
+  readonly usage: number;
+  readonly suras: SurahAudioCopySummary[];
 }
 
 /** The byte budget's second pass over the copies. */
@@ -157,6 +176,8 @@ export function DeviceView() {
   const { user } = useSession();
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [copies, setCopies] = useState<DeviceStoreCopy[]>([]);
+  /** The Quran's kept recitations; null until read, or when the index failed. */
+  const [audio, setAudio] = useState<DeviceAudioState | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   /** What the shell recorded of its last background drain (#455); null without a shell. */
@@ -169,7 +190,22 @@ export function DeviceView() {
   // skeleton while IndexedDB is asked.
   const snapshot = useSnapshot<DeviceSnapshot>(PUBLIC_SNAPSHOT_SCOPE, DEVICE_ROUTE);
 
+  /**
+   * The recitation copies, read from their own index. Kept out of the copies
+   * read on purpose: a browser that cannot list its databases can still hold
+   * audio, and a failure here must not turn the page into a listing failure.
+   */
+  const readAudio = useCallback(async () => {
+    try {
+      const [suras, usage] = await Promise.all([listDownloadedSuras(), audioUsageBytes()]);
+      setAudio({ suras, usage });
+    } catch {
+      setAudio(null);
+    }
+  }, []);
+
   const load = useCallback(async () => {
+    void readAudio();
     try {
       const next = await readDeviceCopies();
       setCopies(next);
@@ -177,12 +213,6 @@ export function DeviceView() {
       // background tier stays out entirely.
       setLastFlush(readShellLastFlush());
       setStatus('ready');
-      writeSnapshot(
-        PUBLIC_SNAPSHOT_SCOPE,
-        DEVICE_ROUTE,
-        { status: 'ready', copies: screenful(next) },
-        { trim: trimDevice }
-      );
     } catch (error) {
       const unsupported = error instanceof DeviceListingUnsupportedError;
       setStatus(unsupported ? 'unsupported' : 'error');
@@ -196,7 +226,7 @@ export function DeviceView() {
         });
       }
     }
-  }, []);
+  }, [readAudio]);
 
   useEffect(() => {
     void load();
@@ -221,6 +251,18 @@ export function DeviceView() {
     () => (status === 'ready' ? groups : groupByCopy(snapshot?.copies ?? [])),
     [status, groups, snapshot]
   );
+
+  /** The kept recitations to render: this read, or the last one painted (#495). */
+  const shownAudio = audio ?? snapshot?.audio ?? null;
+
+  // The list this page painted, recorded after paint: a cold open of `/device`
+  // carries both what the Local Store holds and what the Quran kept.
+  const snapshotData = useMemo(
+    () =>
+      status === 'ready' ? { status: 'ready' as const, copies: screenful(copies), audio } : null,
+    [status, copies, audio]
+  );
+  useSnapshotRecorder(PUBLIC_SNAPSHOT_SCOPE, DEVICE_ROUTE, snapshotData, { trim: trimDevice });
 
   const retry = useCallback(
     async (copy: DeviceStoreCopy, seq: number) => {
@@ -293,6 +335,37 @@ export function DeviceView() {
       setBusy(null);
     }
   }, [load, pending, pendingIdentity]);
+
+  /**
+   * Removing a kept recitation. Its own handler rather than the copies' one:
+   * audio lives in a store that is not a Local Store partition, so it is
+   * removed by Surah and not by identity (ADR-0081).
+   */
+  const removeAudio = useCallback(
+    async (summary: SurahAudioCopySummary | null) => {
+      setBusy(summary ? `audio:${summary.surah}` : 'audio:all');
+      setNotice(null);
+
+      try {
+        const store = await openAudioBytesStore();
+        if (store) {
+          if (summary) await removeSurahAudio(summary.edition, summary.surah, { store });
+          else await removeAllAudio({ store });
+        }
+        setNotice(
+          summary
+            ? `أُزيلت تلاوة ${summary.name ?? `السُّورة ${summary.surah}`} من هذا الجُهاز.`
+            : 'أُزيلت كلُّ التِّلاوات المحفوظة من هذا الجُهاز.'
+        );
+        await readAudio();
+      } catch {
+        setNotice('تعذَّرت إزالة التِّلاوة. أعد فتح الصَّفحة ثمَّ جرِّب مرَّة أخرى.');
+      } finally {
+        setBusy(null);
+      }
+    },
+    [readAudio]
+  );
 
   return (
     <div className="space-y-6">
@@ -393,6 +466,15 @@ export function DeviceView() {
           />
         ))}
 
+      {listStatus !== 'loading' && (
+        <AudioCard
+          audio={shownAudio}
+          busy={busy}
+          onRemove={(summary) => void removeAudio(summary)}
+          onRemoveAll={() => void removeAudio(null)}
+        />
+      )}
+
       {lastFlush && (
         <section className="space-y-2 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -436,6 +518,110 @@ export function DeviceView() {
         onCancel={() => setPendingIdentity(null)}
       />
     </div>
+  );
+}
+
+/**
+ * The Quran's kept recitations (#559), beside the Local Store copies and in the
+ * same vocabulary (ADR-0070): what this device holds, what it costs, and one
+ * action that frees it. Not a second storage screen — the same page, one more
+ * kind of byte.
+ */
+function AudioCard({
+  audio,
+  busy,
+  onRemove,
+  onRemoveAll,
+}: {
+  audio: DeviceAudioState | null;
+  busy: string | null;
+  onRemove: (summary: SurahAudioCopySummary) => void;
+  onRemoveAll: () => void;
+}) {
+  const suras = audio?.suras ?? [];
+  const used = audio && audio.usage > 0 ? formatBytes(audio.usage) : null;
+  const budget = formatBytes(AUDIO_BUDGET_BYTES);
+
+  return (
+    <section
+      aria-labelledby="device-audio"
+      className="space-y-3 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="device-audio" className="text-sm font-bold text-foreground sm:text-base">
+            التِّلاوات المحفوظة
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">
+            {used
+              ? `${used} من ${budget ?? ''} مخصَّصة للتِّلاوة`
+              : 'لا تشغل التِّلاوات أيَّ مساحة'}
+          </p>
+        </div>
+        {suras.length > 1 && (
+          <button
+            type="button"
+            onClick={onRemoveAll}
+            disabled={busy === 'audio:all'}
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-destructive/30 px-3.5 py-1.5 text-xs font-bold text-destructive transition-safe duration-150 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:opacity-60"
+          >
+            {busy === 'audio:all' ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span>إزالة كل التِّلاوات</span>
+          </button>
+        )}
+      </div>
+
+      {suras.length === 0 ? (
+        <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+          لا توجد تلاوة محفوظة على هذا الجُهاز. تُحفظ التِّلاوة من صفحة السُّورة، وتُشغَّل بعدها دون
+          اتِّصال.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {suras.map((summary) => {
+            const key = `${summary.edition}:${summary.surah}`;
+            const isBusy = busy === `audio:${summary.surah}`;
+            const size = formatBytes(summary.bytes);
+
+            return (
+              <li
+                key={key}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/40 p-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground sm:text-sm">
+                    {summary.name ?? `السُّورة ${summary.surah}`}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">
+                    <span className="font-heading">{summary.ayat}</span>{' '}
+                    {summary.ayat === 1 ? 'آية' : 'آيات'}
+                    {size ? ` · ${size}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemove(summary)}
+                  disabled={isBusy}
+                  aria-label={`إزالة تلاوة ${summary.name ?? `السُّورة ${summary.surah}`}`}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-bold text-foreground transition-safe duration-150 hover:border-destructive/30 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:opacity-60"
+                >
+                  {isBusy ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                  <span>إزالة</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
