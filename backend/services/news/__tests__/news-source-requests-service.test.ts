@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { NewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests-repository';
+import rawSources from '@/data/news/sources.json';
+import {
+  NewsSourceRequestDbError,
+  OPEN_REQUEST_URL_CONSTRAINT,
+  OPEN_REQUEST_USER_CONSTRAINT,
+  type NewsSourceRequestsRepository,
+} from '@/backend/repositories/news/news-source-requests-repository';
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
 import type { NewsCatalogue } from '@/backend/services/news/news-catalogue';
 import {
@@ -17,6 +23,17 @@ import type { NewsSource, NewsSourceRequest } from '@/shared/contracts/news';
 const CATALOGUE: NewsSource[] = [
   { id: 'aljazeera-ar', name: 'الجزيرة نت', category: 'politics', region: 'arab', tier: 1 },
 ];
+
+/**
+ * A feed `data/news/sources.json` really carries: the file is the subject of the
+ * dedupe, so a fixture would test a list that is not the shipped one.
+ */
+function shippedFeedUrl(): URL {
+  const first = rawSources.sources[0];
+  const value = first && typeof first.url === 'string' ? first.url : null;
+  if (!value) throw new Error('data/news/sources.json carries no feed URL');
+  return new URL(value);
+}
 
 /** The SQLSTATE the approval RPC raises for a taken id, as PostgREST reports it. */
 function rpcError(code: string, message = 'approval refused') {
@@ -135,6 +152,95 @@ describe('news source requests service', () => {
     await expect(
       service.submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
+  });
+
+  it('refuses a feed the source file already lists, before probing', async () => {
+    const repo = requests();
+    const probeOnce = vi.fn(async () => ({ itemCount: 2 }));
+    const service = createNewsSourceRequestsService(deps({ requests: repo, probe: probeOnce }));
+
+    await expect(
+      service.submit('user-1', { name: 'مثال', url: shippedFeedUrl().toString() })
+    ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
+
+    expect(probeOnce).not.toHaveBeenCalled();
+    expect(repo.insert).not.toHaveBeenCalled();
+  });
+
+  it('compares a proposal to the file canonically', async () => {
+    const feed = shippedFeedUrl();
+    const port = feed.protocol === 'https:' ? 443 : 80;
+    const variants = [
+      `${feed.origin}${feed.pathname}/`,
+      `${feed.protocol}//${feed.hostname.toUpperCase()}${feed.pathname}`,
+      `${feed.origin}${feed.pathname}#latest`,
+      `${feed.protocol}//${feed.hostname}:${port}${feed.pathname}`,
+    ];
+    const service = createNewsSourceRequestsService(deps());
+
+    for (const url of variants) {
+      await expect(service.submit('user-1', { name: 'مثال', url })).rejects.toBeInstanceOf(
+        NewsSourceAlreadyKnownError
+      );
+    }
+  });
+
+  it('answers the open-URL index as a feed another reader has queued', async () => {
+    const repo = requests({
+      insert: vi.fn(async () => {
+        throw new NewsSourceRequestDbError(
+          '23505',
+          OPEN_REQUEST_URL_CONSTRAINT,
+          `duplicate key value violates unique constraint "${OPEN_REQUEST_URL_CONSTRAINT}"`
+        );
+      }),
+    });
+    const service = createNewsSourceRequestsService(deps({ requests: repo }));
+
+    const refusal = await service
+      .submit('user-2', { name: 'مثال', url: 'https://example.com/rss' })
+      .catch((error: unknown) => error);
+
+    expect(refusal).toBeInstanceOf(NewsSourceAlreadyQueuedError);
+    expect(refusal).toMatchObject({ code: 'source_queued', statusCode: 409 });
+  });
+
+  it('answers the open-user index as this account already having a request', async () => {
+    const repo = requests({
+      insert: vi.fn(async () => {
+        throw new NewsSourceRequestDbError(
+          '23505',
+          OPEN_REQUEST_USER_CONSTRAINT,
+          `duplicate key value violates unique constraint "${OPEN_REQUEST_USER_CONSTRAINT}"`
+        );
+      }),
+    });
+    const service = createNewsSourceRequestsService(deps({ requests: repo }));
+
+    const refusal = await service
+      .submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
+      .catch((error: unknown) => error);
+
+    expect(refusal).toBeInstanceOf(NewsSourceRequestPendingError);
+    expect(refusal).toMatchObject({ code: 'request_pending', statusCode: 409 });
+  });
+
+  it('keeps an unrelated database failure a failure', async () => {
+    const boom = new NewsSourceRequestDbError(
+      '23503',
+      'news_source_requests_user_id_fkey',
+      'insert or update on table "news_source_requests" violates foreign key constraint'
+    );
+    const repo = requests({
+      insert: vi.fn(async () => {
+        throw boom;
+      }),
+    });
+    const service = createNewsSourceRequestsService(deps({ requests: repo }));
+
+    await expect(
+      service.submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
+    ).rejects.toBe(boom);
   });
 
   it('holds one open request per account', async () => {
@@ -266,6 +372,17 @@ describe('news admin service', () => {
       NewsSourceAlreadyKnownError
     );
     expect(repo.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to approve a feed the source file lists by now', async () => {
+    const repo = requests({
+      findById: vi.fn(async () => request({ url: shippedFeedUrl().toString() })),
+    });
+
+    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
+      NewsSourceAlreadyKnownError
+    );
+    expect(repo.approve).not.toHaveBeenCalled();
   });
 
   it('approves exactly once and refuses the retry', async () => {
