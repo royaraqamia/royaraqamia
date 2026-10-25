@@ -26,9 +26,9 @@ export function BudgetCardLive({
   const context = useSpendtrackContext();
 
   const total = useMemo(() => {
-    if (!context?.ready) return initialTotal;
+    if (!context?.painted) return initialTotal;
     return totalExpenses(context.expenses, start, end, []);
-  }, [context?.ready, context?.expenses, initialTotal, start, end]);
+  }, [context?.painted, context?.expenses, initialTotal, start, end]);
 
   return <BudgetCard month={month} total={total} currency={currency} />;
 }

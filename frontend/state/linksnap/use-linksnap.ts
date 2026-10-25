@@ -19,6 +19,12 @@ import {
   identityUserId,
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
@@ -59,6 +65,19 @@ const EMPTY_STATUS: SyncStatus = {
   lastFailedType: null,
 };
 
+/** The surface's snapshot (#495): the links the dashboard last painted. */
+export const LINKSNAP_SNAPSHOT_ROUTE = 'linksnap';
+
+interface LinksnapSnapshot {
+  links: ShortenedLink[];
+}
+
+/** The byte budget's second pass over the list. */
+function trimLinksnap(data: LinksnapSnapshot): LinksnapSnapshot | null {
+  const links = halveList(data.links);
+  return links.length === 0 ? null : { links };
+}
+
 function recordToLink(row: LinkRecord): ShortenedLink {
   return {
     clientId: row.clientId,
@@ -80,7 +99,12 @@ function recordToLink(row: LinkRecord): ShortenedLink {
  * / ADR-0029, ticket #167).
  */
 export function useLinksnap({ identity }: { identity: LocalIdentity }): LinksnapStoreState {
-  const [ready, setReady] = useState(false);
+  /**
+   * The identity whose rows the store read answered, or `null` before the first
+   * read. Tagged rather than a boolean so an identity change cannot paint the
+   * previous account's links while the new store opens.
+   */
+  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState<LinksnapLocalStore | null>(null);
   // Hydration-safe: the server (Node exposes a partial `navigator`) and the
@@ -94,6 +118,11 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
   const engineRef = useRef<SyncEngine | null>(null);
 
   const isSignedIn = identity !== GUEST_IDENTITY;
+  const ready = readyFor === identity;
+
+  // The last screen this identity painted (#495), read during render: the store
+  // read below is what used to make the first frame an empty list.
+  const snapshot = useSnapshot<LinksnapSnapshot>(identity, LINKSNAP_SNAPSHOT_ROUTE);
 
   const readIntoState = useCallback(async (store: LinksnapLocalStore) => {
     const rows = await store.getLinks();
@@ -127,7 +156,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
         await readIntoState(store);
         if (cancelled) return;
         setStore(store);
-        setReady(true);
+        setReadyFor(identity);
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -275,14 +304,28 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
     return recordToLink(await store.restoreLink(clientId));
   }, []);
 
+  // What the list paints with, and what it records (#495): the store's rows once
+  // they have answered, the last painted screen before that. The empty list is
+  // the fallback rather than the state, which may belong to an identity this one
+  // replaced.
+  const renderedLinks = useMemo(
+    () => (ready ? links : (snapshot?.links ?? [])),
+    [ready, links, snapshot]
+  );
+
+  const recorded = useMemo(() => (ready ? { links: screenful(links) } : null), [ready, links]);
+  useSnapshotRecorder(identity, LINKSNAP_SNAPSHOT_ROUTE, recorded, { trim: trimLinksnap });
+
   return useMemo(
     () => ({
       ready,
-      loading,
+      // The skeleton is for "nothing painted yet": a snapshot is a painted list,
+      // so it replaces the wait rather than sitting behind it.
+      loading: ready ? loading : snapshot === null,
       online,
       isSignedIn,
       store,
-      links,
+      links: renderedLinks,
       syncing: status.syncing,
       pending: status.pending,
       failed: status.failed,
@@ -298,10 +341,11 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
     [
       ready,
       loading,
+      snapshot,
       online,
       isSignedIn,
       store,
-      links,
+      renderedLinks,
       status,
       retry,
       refresh,

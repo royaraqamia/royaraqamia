@@ -10,7 +10,14 @@ import {
   GUEST_IDENTITY,
   identityFromUser,
   identityUserId,
+  type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
@@ -37,7 +44,10 @@ export interface SpendtrackSeed {
 }
 
 export interface SpendtrackStoreState {
+  /** The store answered: writes and the sync engine are available. */
   ready: boolean;
+  /** The rows below are renderable — the store's rows, or the last painted screen. */
+  painted: boolean;
   online: boolean;
   isSignedIn: boolean;
   store: SpendtrackLocalStore | null;
@@ -62,13 +72,41 @@ const EMPTY_STATUS: SyncStatus = {
   lastFailedType: null,
 };
 
+/** The surface's snapshot (#495): the rows the dashboard last painted. */
+export const SPENDTRACK_SNAPSHOT_ROUTE = 'spendtrack';
+
+interface SpendtrackSnapshot {
+  categories: Category[];
+  expenses: Expense[];
+  budgets: Budget[];
+  recurring: RecurringExpense[];
+}
+
+/** The byte budget's second pass over each list. */
+function trimSpendtrack(data: SpendtrackSnapshot): SpendtrackSnapshot | null {
+  const next: SpendtrackSnapshot = {
+    categories: halveList(data.categories),
+    expenses: halveList(data.expenses),
+    budgets: halveList(data.budgets),
+    recurring: halveList(data.recurring),
+  };
+
+  const empty = Object.values(next).every((rows) => rows.length === 0);
+  return empty ? null : next;
+}
+
 /**
  * Opens the identity-scoped SpendTrack Local Store, seeds it once from the RSC
  * loader, then treats it as the source of truth the UI renders from. Writes go
  * to the store + Outbox; the Sync Engine (#166) replays them on reconnection.
  */
 export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
-  const [ready, setReady] = useState(false);
+  /**
+   * The identity the store read answered, or `null` before the first read.
+   * Tagged rather than a boolean so an identity change cannot paint the previous
+   * account's rows while the new store opens.
+   */
+  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
   const [store, setStore] = useState<SpendtrackLocalStore | null>(null);
   // Hydration-safe: the server (Node exposes a partial `navigator`) and the
   // first client render must agree, so start "online" and read the real value
@@ -85,6 +123,12 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
 
   const identity = identityFromUser(seed.user);
   const isSignedIn = identity !== GUEST_IDENTITY;
+  const ready = readyFor === identity;
+
+  // The last screen this identity painted (#495), read during render: the rows
+  // are on this device already, and the store read is what used to make the
+  // first frame empty.
+  const snapshot = useSnapshot<SpendtrackSnapshot>(identity, SPENDTRACK_SNAPSHOT_ROUTE);
 
   const readIntoState = useCallback(async (store: SpendtrackLocalStore) => {
     const data = await store.getLocalData();
@@ -165,7 +209,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         await readIntoState(store);
         if (cancelled) return;
         setStore(store);
-        setReady(true);
+        setReadyFor(identity);
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -276,16 +320,52 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
     void engineRef.current?.retry();
   }, []);
 
+  // What the list paints with, and what it records (#495): the store's rows once
+  // they have answered, the last painted screen before that. The seed is the
+  // fallback rather than the state, because the state may still belong to the
+  // identity this one replaced.
+  const rendered = useMemo(
+    () =>
+      ready
+        ? { categories, expenses, budgets, recurring }
+        : {
+            categories: [...(snapshot?.categories ?? seed.categories)],
+            expenses: [...(snapshot?.expenses ?? seed.expenses)],
+            budgets: [...(snapshot?.budgets ?? seed.budgets)],
+            recurring: [...(snapshot?.recurring ?? seed.recurring)],
+          },
+    [ready, snapshot, seed, categories, expenses, budgets, recurring]
+  );
+
+  const recorded = useMemo(
+    () =>
+      ready
+        ? {
+            categories: screenful(categories),
+            expenses: screenful(expenses),
+            budgets: screenful(budgets),
+            recurring: screenful(recurring),
+          }
+        : null,
+    [ready, categories, expenses, budgets, recurring]
+  );
+  useSnapshotRecorder(identity, SPENDTRACK_SNAPSHOT_ROUTE, recorded, { trim: trimSpendtrack });
+
   return useMemo(
     () => ({
+      // What the store itself answered. The rows below may also be the last
+      // painted screen (#495); a write still needs the store, so `ready` stays
+      // the store's own answer.
       ready,
+      // Rows are renderable: the store answered, or the last screen stands in.
+      painted: ready || snapshot !== null,
       online,
       isSignedIn,
       store,
-      categories,
-      expenses,
-      budgets,
-      recurring,
+      categories: rendered.categories,
+      expenses: rendered.expenses,
+      budgets: rendered.budgets,
+      recurring: rendered.recurring,
       syncing: status.syncing,
       pending: status.pending,
       failed: status.failed,
@@ -294,18 +374,6 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
       retry,
       refresh,
     }),
-    [
-      ready,
-      online,
-      isSignedIn,
-      store,
-      categories,
-      expenses,
-      budgets,
-      recurring,
-      status,
-      retry,
-      refresh,
-    ]
+    [ready, snapshot, online, isSignedIn, store, rendered, status, retry, refresh]
   );
 }

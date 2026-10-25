@@ -1,9 +1,47 @@
-import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
-import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
+import {
+  GUEST_IDENTITY,
+  identityFromUser,
+  type LocalIdentity,
+} from '@/frontend/shared/local-store/identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { markContent } from '@/frontend/shared/perf-marks';
+
+/**
+ * The surface's snapshot (#495): the habits and logs the list last rendered.
+ *
+ * The identity is resolved synchronously (#493) and the store is one connection
+ * (#494), but the read is still a promise — so before it answers, this is what
+ * the first frame paints.
+ */
+export const HABITFLOW_SNAPSHOT_ROUTE = 'habitflow';
+
+interface DashboardSnapshot {
+  habits: Habit[];
+  logs: HabitLog[];
+}
+
+/** The byte budget's second pass: half the rows, and nothing once they are gone. */
+function trimDashboard(data: DashboardSnapshot): DashboardSnapshot | null {
+  const habits = halveList(data.habits);
+  const logs = halveList(data.logs);
+  return habits.length === 0 && logs.length === 0 ? null : { habits, logs };
+}
 
 /**
  * Moves anything a guest wrote before signing in into the account store
@@ -63,13 +101,26 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   const [mode, setMode] = useState<'supabase' | 'local'>(seed.mode);
   const [user, setUser] = useState(seed.user);
   const [store, setStore] = useState<HabitLocalStore | null>(null);
+  /**
+   * The identity whose rows the store read answered, or `null` before the first
+   * read. Tagged with the identity rather than a boolean so an identity change
+   * cannot paint the previous account's rows while the new store opens.
+   */
+  const [loadedFor, setLoadedFor] = useState<LocalIdentity | null>(null);
 
   const identity = identityFromUser(user);
   const isSignedIn = identity !== GUEST_IDENTITY;
+  const loaded = loadedFor === identity;
+
+  // The last screen this identity painted (#495), read during render so the
+  // first frame after a cold navigation carries it instead of empty markup.
+  const snapshot = useSnapshot<DashboardSnapshot>(identity, HABITFLOW_SNAPSHOT_ROUTE);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // An identity change is a different partition: the previous account's rows
+    // must not stand in for this one while its store opens (`loadedFor`).
     let cancelled = false;
     let opened: HabitLocalStore | null = null;
 
@@ -102,6 +153,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
         setStore(localStore);
         setHabits(visibleHabits(data.habits));
         setLogs(visibleLogs(data.logs));
+        setLoadedFor(identity);
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
       })
@@ -139,9 +191,25 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
     [user]
   );
 
+  /**
+   * Records the screen the list just painted (#495). `null` before the store
+   * answers: an unresolved read is not "this account has no habits", and must
+   * never overwrite the last good snapshot with an empty list.
+   */
+  const recorded = useMemo(
+    () => (loaded ? { habits: screenful(habits), logs: screenful(logs) } : null),
+    [loaded, habits, logs]
+  );
+  useSnapshotRecorder(identity, HABITFLOW_SNAPSHOT_ROUTE, recorded, { trim: trimDashboard });
+
+  // Before the store answers, the last screen stands in; a device that has never
+  // painted this account has no snapshot and keeps the seed it always had.
+  const renderedHabits = loaded ? habits : (snapshot?.habits ?? seed.habits);
+  const renderedLogs = loaded ? logs : (snapshot?.logs ?? seed.logs);
+
   return {
-    habits,
-    logs,
+    habits: renderedHabits,
+    logs: renderedLogs,
     mode,
     user,
     isSignedIn,

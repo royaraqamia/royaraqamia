@@ -28,9 +28,9 @@ export function TotalSpendCardLive({
   const context = useSpendtrackContext();
 
   const total = useMemo(() => {
-    if (!context?.ready) return initialTotal;
+    if (!context?.painted) return initialTotal;
     return totalExpenses(context.expenses, start, end, filterCategories);
-  }, [context?.ready, context?.expenses, initialTotal, start, end, filterCategories]);
+  }, [context?.painted, context?.expenses, initialTotal, start, end, filterCategories]);
 
   return <TotalSpendCard total={total} start={start} end={end} currency={currency} />;
 }

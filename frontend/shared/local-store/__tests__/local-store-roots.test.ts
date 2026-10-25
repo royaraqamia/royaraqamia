@@ -5,15 +5,16 @@ import { describe, expect, it } from 'vitest';
 import { LOCAL_STORE_PRODUCTS, LOCAL_STORE_ROOTS } from '@/frontend/shared/local-store/device-copy';
 
 /**
- * The guard for #493.
+ * The guard for #493 and #495.
  *
  * Every product with a Local Store paints from it before the session resolves,
- * and the only way that stays true is if each product's root resolves the
- * identity through `useLocalIdentity` instead of `useSession().user`. A product
- * added to `LOCAL_STORE_PRODUCTS` without an entry in `LOCAL_STORE_ROOTS` — or
- * whose root reaches for the session directly — is exactly the regression this
- * fails on, so a seventh product cannot ship a store and quietly re-introduce
- * the skeleton.
+ * and carries the last screen it painted into the next cold first frame. The only
+ * way that stays true is if each product's root resolves the identity through
+ * `useLocalIdentity` instead of `useSession().user`, and its store hook reads and
+ * records a snapshot. A product added to `LOCAL_STORE_PRODUCTS` without an entry
+ * in `LOCAL_STORE_ROOTS` — or whose root reaches for the session directly, or
+ * whose hook forgot the snapshot — is exactly the regression this fails on, so a
+ * seventh product cannot ship a store and quietly re-introduce the skeleton.
  *
  * It reads source text rather than mounting the components: the roots import
  * next/navigation, the auth client and five product stores, so a render test
@@ -29,7 +30,16 @@ const RESOLVER = 'useLocalIdentity(';
 /** Reads the session's user — a credential, never a partition. */
 const SESSION_USER = 'useSession().user';
 
+/**
+ * The two halves of the first-frame path: read it during render, record it after
+ * paint. Matched as names rather than calls because the read is generic in every
+ * product (`useSnapshot<DashboardSnapshot>(…)`).
+ */
+const SNAPSHOT_READ = 'useSnapshot';
+const SNAPSHOT_WRITE = 'useSnapshotRecorder';
+
 const CHECKED = LOCAL_STORE_ROOTS.filter((entry) => entry.root !== null);
+const SNAPSHOTTED = LOCAL_STORE_ROOTS.filter((entry) => entry.snapshot !== null);
 
 describe('LOCAL_STORE_ROOTS', () => {
   it('names a root for every registered product', () => {
@@ -49,12 +59,20 @@ describe('LOCAL_STORE_ROOTS', () => {
 
   it('exempts a product only with a stated reason', () => {
     for (const entry of LOCAL_STORE_ROOTS) {
-      if (entry.root === null) {
+      if (entry.root === null || entry.snapshot === null) {
         expect(entry.exemption, entry.product).toBeTruthy();
       } else {
         expect(entry.exemption, entry.product).toBeUndefined();
       }
     }
+  });
+
+  it('names a snapshot for every product that paints owned rows', () => {
+    const missing = LOCAL_STORE_ROOTS.filter(
+      (entry) => entry.snapshot === null && !entry.exemption
+    );
+
+    expect(missing.map((entry) => entry.product)).toEqual([]);
   });
 
   it.each(CHECKED.map((entry) => [entry.product, entry.root as string]))(
@@ -66,6 +84,16 @@ describe('LOCAL_STORE_ROOTS', () => {
       expect(text, `${product}: ${root} derives the partition from the session`).not.toContain(
         SESSION_USER
       );
+    }
+  );
+
+  it.each(SNAPSHOTTED.map((entry) => [entry.product, entry.snapshot as string]))(
+    '%s paints its last screen in the first frame',
+    (product, snapshot) => {
+      const text = readFileSync(resolve(ROOT, snapshot), 'utf8');
+
+      expect(text, `${product}: ${snapshot} does not read a snapshot`).toContain(SNAPSHOT_READ);
+      expect(text, `${product}: ${snapshot} does not record one`).toContain(SNAPSHOT_WRITE);
     }
   );
 });

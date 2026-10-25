@@ -1,10 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
 
 import { getMyPosts } from '@/frontend/api/me';
 import { useSession } from '@/frontend/state/session-provider';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { ApiError } from '@/frontend/transport/http';
 import { PostCard } from '@/app/community/_components/post-card';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -12,6 +19,19 @@ import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+
+/** The surface's snapshot (#495): the posts this view last painted. */
+const ACCOUNT_POSTS_ROUTE = '/account/posts';
+
+interface PostsSnapshot {
+  posts: PostSummary[];
+}
+
+/** The byte budget's second pass over the list. */
+function trimPosts(data: PostsSnapshot): PostsSnapshot | null {
+  const posts = halveList(data.posts);
+  return posts.length === 0 ? null : { posts };
+}
 
 function PostsSkeleton() {
   return (
@@ -43,9 +63,19 @@ function PostsSkeleton() {
  */
 export function MyPostsView() {
   const { user, isLoading } = useSession();
+  const { identity } = useLocalIdentity();
   const [posts, setPosts] = useState<PostSummary[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadOffline, setLoadOffline] = useState(false);
+
+  // The last screen this identity's posts painted (#495): the list is a network
+  // read, so the snapshot is what keeps the first frame from being a skeleton.
+  const snapshot = useSnapshot<PostsSnapshot>(identity, ACCOUNT_POSTS_ROUTE);
+  const recorded = useMemo(() => (posts === null ? null : { posts: screenful(posts) }), [posts]);
+  useSnapshotRecorder(identity, ACCOUNT_POSTS_ROUTE, recorded, { trim: trimPosts });
+
+  /** What the view paints with: the response once it lands, the last screen before. */
+  const rows = posts ?? snapshot?.posts ?? null;
 
   const load = useCallback(async () => {
     setLoadFailed(false);
@@ -64,11 +94,13 @@ export function MyPostsView() {
     void load();
   }, [isLoading, user, load]);
 
-  if (isLoading) return <PostsSkeleton />;
+  if (isLoading && rows === null) return <PostsSkeleton />;
 
   if (!user) return <SignInCta href="/auth/login?redirect=/account/posts" />;
 
-  if (loadFailed) {
+  // A failed load with a snapshot on screen keeps the last rows (#495): the
+  // error state is for "nothing to show", not for "the newest read failed".
+  if (loadFailed && rows === null) {
     if (loadOffline) {
       return (
         <NeedsConnection
@@ -88,9 +120,9 @@ export function MyPostsView() {
     );
   }
 
-  if (posts === null) return <PostsSkeleton />;
+  if (rows === null) return <PostsSkeleton />;
 
-  if (posts.length === 0) {
+  if (rows.length === 0) {
     return (
       <EmptyState
         icon={FileText}
@@ -103,7 +135,7 @@ export function MyPostsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      {posts.map((post, index) => (
+      {rows.map((post, index) => (
         <PostCard key={post.id} post={post} index={index} />
       ))}
     </div>
