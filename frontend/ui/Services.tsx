@@ -116,31 +116,33 @@ export function Services() {
             ماذا <SectionTitleHighlight>نُقدِّم</SectionTitleHighlight>؟
           </SectionTitle>
         </MotionReveal>
-
-        {/* Horizontally scrolling row — swipe on touch, arrows on desktop */}
-        <MotionReveal from="none" className="relative">
-          <div
-            ref={scrollContainerRef}
-            className="overflow-x-auto snap-x snap-mandatory scroll-smooth pt-4 pb-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          >
-            <ul role="list" className="flex gap-6 sm:gap-8 w-max">
-              {services.map((service) => (
-                <li key={service.href} className="w-[18rem] sm:w-[20rem] shrink-0 snap-start flex">
-                  <ServiceCard service={service} />
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <HorizontalScrollArrows
-            onScroll={scroll}
-            canScrollLeft={canScrollLeft}
-            canScrollRight={canScrollRight}
-            ariaLabelLeft="الخدمة التَّالية"
-            ariaLabelRight="الخدمة السَّابقة"
-          />
-        </MotionReveal>
       </div>
+
+      {/* Horizontally scrolling row — full-bleed on the viewport, exactly like
+          the testimonials track, so cards are not clipped at the 7xl container
+          edge. Swipe on touch, arrows on desktop. */}
+      <MotionReveal from="none" className="relative z-10">
+        <div
+          ref={scrollContainerRef}
+          className="horizontal-scroll services-scroll-track scrollbar-none pt-4 pb-6"
+        >
+          <ul role="list" className="flex gap-6 sm:gap-8 w-max">
+            {services.map((service) => (
+              <li key={service.href} className="w-[18rem] sm:w-[20rem] shrink-0 snap-start flex">
+                <ServiceCard service={service} />
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <HorizontalScrollArrows
+          onScroll={scroll}
+          canScrollLeft={canScrollLeft}
+          canScrollRight={canScrollRight}
+          ariaLabelLeft="الخدمة التَّالية"
+          ariaLabelRight="الخدمة السَّابقة"
+        />
+      </MotionReveal>
 
       {/* Bottom Ambient Divider Line */}
       <div className="absolute bottom-0 inset-x-0 h-px bg-linear-to-r from-transparent via-slate-800 to-transparent pointer-events-none" />

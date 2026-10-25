@@ -972,7 +972,9 @@ select,
   border-radius: calc(1rem - 1px);
 }
 
-/* Scrollbar hide */
+/* Scrollbar hide. Unlayered on purpose: unlayered CSS outranks every Tailwind
+   utility, so `[scrollbar-width:none]` on an element loses to the global `*`
+   scrollbar rule below. Use these classes to actually hide a bar. */
 .scrollbar-hide,
 .scrollbar-none {
   -ms-overflow-style: none;
@@ -1012,9 +1014,16 @@ select,
   }
 }
 
-.testimonials-scroll-track {
+/* Full-bleed horizontal tracks (services, testimonials): the scrollport is the
+   viewport and the inline padding keeps the first/last card aligned with the
+   7xl content column. Both rows share it so they cannot drift apart. */
+.testimonials-scroll-track,
+.services-scroll-track {
   padding-inline: max(20px, calc((100vw - 1320px) / 2 + 64px));
   scroll-padding-inline: 48px;
+}
+
+.testimonials-scroll-track {
   gap: 24px;
 }
 
