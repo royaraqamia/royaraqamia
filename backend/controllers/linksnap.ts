@@ -467,6 +467,15 @@ export async function unlockLinkPassword(
 
     return jsonResult(200, { success: true, originalUrl });
   } catch (err: unknown) {
+    // A missing or tombstoned link is a 404: the shared mapper only knows
+    // `AppError`, so a redirect error would otherwise fall through to 500 (#569).
+    if (err instanceof ShortLinkRedirectError && err.kind === 'not-found') {
+      const code = typeof body.code === 'string' ? body.code : '';
+      return jsonResult(404, {
+        success: false,
+        error: `الرمز المختصر /${code} غير موجود.`,
+      });
+    }
     return errorResponse(err, 'Error in unlock link API route:');
   }
 }
