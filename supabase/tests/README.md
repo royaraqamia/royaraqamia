@@ -49,6 +49,9 @@ test here.
 - `publish_post`, `unpublish_post`, `set_post_featured` and `bulk_publish_posts` move the
   server-owned columns for the owning author, refuse another account's post, and a batch
   that publishes an already published row takes no new slot.
+- A re-publish keeps the post's original `published_at` — the feed orders by it, so a fresh
+  date would float an old post back to the top — while a draft stamped into published gets
+  one, and a mixed bulk batch stamps only the drafts (#552).
 - `anon` cannot execute `publish_post`.
 
 In `rls_authorization_test.sql` every write attempt is expected to be _refused_, so a failed

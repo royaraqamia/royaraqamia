@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(20);
+select plan(28);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -86,6 +86,25 @@ values (
   'body',
   'draft'
 );
+
+-- Two more drafts for the same account, for the published-date checks (#552):
+-- the account owns one published post, so both fit under the free cap.
+insert into public.posts (id, author_id, slug, content, status)
+values
+  (
+    '00000000-0000-0000-0000-000000000a03',
+    '00000000-0000-0000-0000-00000000ca04',
+    'other-second-draft',
+    'body',
+    'draft'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000a04',
+    '00000000-0000-0000-0000-00000000ca04',
+    'other-bulk-draft',
+    'body',
+    'draft'
+  );
 
 set local session_replication_role = origin;
 
@@ -298,6 +317,95 @@ select results_eq(
     )$$,
   $$values ('cap-published-3')$$,
   'a batch that publishes an already published row takes no new slot'
+);
+
+-- ---------------------------------------------------------------------------
+-- Posts: publishing keeps the first publication's date (#552)
+--
+-- Re-publishing is not a new publication, so it must not refresh
+-- `published_at` — the feed orders by that column, and a fresh date would float
+-- an old post to the top for free. A draft still gets its date on the way out.
+-- ---------------------------------------------------------------------------
+
+-- Pin a known date on the already published row, the way an earlier publish
+-- would have. The client roles cannot write this column, so this runs as the
+-- migration role.
+reset role;
+
+update public.posts
+   set published_at = timestamptz '2026-10-01 09:00:00+00'
+ where id = '00000000-0000-0000-0000-000000000a02';
+
+set local role authenticated;
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-00000000ca04","email":"cap-other@example.invalid"}',
+  true
+);
+
+select is(
+  public.publish_post('00000000-0000-0000-0000-000000000a02'),
+  'other-draft',
+  'publish_post re-saves an already published post'
+);
+
+reset role;
+
+select is(
+  (select published_at from public.posts where id = '00000000-0000-0000-0000-000000000a02'),
+  timestamptz '2026-10-01 09:00:00+00',
+  'a re-publish keeps the original published_at'
+);
+
+select ok(
+  (select published_at is null from public.posts
+    where id = '00000000-0000-0000-0000-000000000a03'),
+  'a draft carries no published_at'
+);
+
+set local role authenticated;
+
+select is(
+  public.publish_post('00000000-0000-0000-0000-000000000a03'),
+  'other-second-draft',
+  'publish_post publishes the second draft'
+);
+
+reset role;
+
+select ok(
+  (select published_at is not null from public.posts
+    where id = '00000000-0000-0000-0000-000000000a03'),
+  'publishing a draft stamps published_at'
+);
+
+set local role authenticated;
+
+select results_eq(
+  $$select slug from public.bulk_publish_posts(
+      array[
+        '00000000-0000-0000-0000-000000000a02'::uuid,
+        '00000000-0000-0000-0000-000000000a04'::uuid
+      ],
+      true
+    )$$,
+  $$values ('other-draft'), ('other-bulk-draft')$$,
+  'a mixed bulk publish returns every row it touched'
+);
+
+reset role;
+
+select is(
+  (select published_at from public.posts where id = '00000000-0000-0000-0000-000000000a02'),
+  timestamptz '2026-10-01 09:00:00+00',
+  'a bulk publish leaves an already published date alone'
+);
+
+select ok(
+  (select published_at is not null from public.posts
+    where id = '00000000-0000-0000-0000-000000000a04'),
+  'a bulk publish stamps the draft in the same batch'
 );
 
 -- ---------------------------------------------------------------------------
