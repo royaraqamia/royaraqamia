@@ -26,41 +26,6 @@ test.skip(!ENABLED, 'requires PUBLIC_OFFLINE_E2E=1 (production build)');
 
 const HERO_HEADING = 'شريكك الاستراتيجي';
 
-/** Scrolls the portfolio into view so its lazy responsive images are fetched. */
-async function warmPortfolioImages(page: Page): Promise<void> {
-  await page.locator('#portfolio').scrollIntoViewIfNeeded();
-  const images = page.locator('#portfolio img');
-  await expect
-    .poll(
-      () =>
-        images.evaluateAll(
-          (nodes) =>
-            nodes.filter((node) => {
-              const image = node as HTMLImageElement;
-              return image.complete && image.currentSrc !== '' && image.naturalWidth > 0;
-            }).length
-        ),
-      { message: 'the portfolio should paint at least one real image' }
-    )
-    .toBeGreaterThan(0);
-
-  // Bring the last card into view too. It is the one an online visit at a wider
-  // breakpoint is least likely to have requested, so offline it exercises the
-  // fallback rather than a cache hit.
-  const last = images.last();
-  await last.scrollIntoViewIfNeeded();
-  await expect
-    .poll(
-      () =>
-        last.evaluate((node) => {
-          const image = node as HTMLImageElement;
-          return image.complete ? image.naturalWidth : -1;
-        }),
-      { message: 'the last portfolio image should settle instead of staying broken' }
-    )
-    .toBeGreaterThan(0);
-}
-
 /**
  * An `img` that has finished loading with no intrinsic size is the browser's
  * broken-image state. The scope is the viewport on purpose: an off-screen
@@ -98,7 +63,7 @@ function collectImageFailures(page: Page): string[] {
   return failures;
 }
 
-test('a visited public page paints offline with its heading, content and images', async ({
+test('a visited public page paints offline with its heading and content', async ({
   page,
   context,
 }) => {
@@ -108,15 +73,13 @@ test('a visited public page paints offline with its heading, content and images'
   await gotoUnderWorkerControl(page, '/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
   await expect(page.getByText('نبني منتجات رقميَّة', { exact: false })).toBeVisible();
-  await warmPortfolioImages(page);
 
-  // Radio off: both the document and the responsive images must come from cache.
+  // Radio off: both the document and any image the page paints must come from cache.
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
   await expect(page.getByText('نبني منتجات رقميَّة', { exact: false })).toBeVisible();
-  await warmPortfolioImages(page);
 
   expect(await brokenImages(page)).toEqual([]);
   expect(imageFailures).toEqual([]);
@@ -130,7 +93,6 @@ test('a width first used offline falls back gracefully, never with a 503', async
   const imageFailures = collectImageFailures(page);
 
   await gotoUnderWorkerControl(page, '/');
-  await warmPortfolioImages(page);
 
   await context.setOffline(true);
 
@@ -157,7 +119,6 @@ test('a width first used offline falls back gracefully, never with a 503', async
   await page.reload({ waitUntil: 'domcontentloaded' });
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
-  await warmPortfolioImages(page);
   expect(await brokenImages(page)).toEqual([]);
   expect(imageFailures).toEqual([]);
 });

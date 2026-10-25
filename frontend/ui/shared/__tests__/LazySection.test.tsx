@@ -9,7 +9,7 @@ const { loadHomeSectionMock } = vi.hoisted(() => {
 });
 
 vi.mock('../../lazy-sections', () => ({
-  HOME_SECTION_IDS: ['portfolio', 'testimonials'],
+  HOME_SECTION_IDS: ['testimonials'],
   HOME_SECTIONS: {},
   loadHomeSection: loadHomeSectionMock,
 }));
@@ -67,22 +67,22 @@ describe('LazySection', () => {
   it('loads the section immediately when IntersectionObserver is unavailable', async () => {
     globalThis.IntersectionObserver = undefined as unknown as typeof IntersectionObserver;
 
-    render(<LazySection id="portfolio" />);
+    render(<LazySection id="testimonials" />);
     await waitFor(() => expect(screen.getByTestId('loaded-section')).toBeInTheDocument());
-    expect(loadHomeSectionMock).toHaveBeenCalledWith('portfolio');
+    expect(loadHomeSectionMock).toHaveBeenCalledWith('testimonials');
   });
 
   it('loads the section once the placeholder intersects the viewport', async () => {
     globalThis.IntersectionObserver =
       FakeIntersectionObserver as unknown as typeof IntersectionObserver;
 
-    render(<LazySection id="portfolio" />);
+    render(<LazySection id="testimonials" />);
     expect(screen.queryByTestId('loaded-section')).not.toBeInTheDocument();
     expect(loadHomeSectionMock).not.toHaveBeenCalled();
 
     FakeIntersectionObserver.instances[0]?.trigger();
     await waitFor(() => expect(screen.getByTestId('loaded-section')).toBeInTheDocument());
-    expect(loadHomeSectionMock).toHaveBeenCalledWith('portfolio');
+    expect(loadHomeSectionMock).toHaveBeenCalledWith('testimonials');
   });
 
   it('preloads a section when an in-page anchor pointing to it is clicked', async () => {

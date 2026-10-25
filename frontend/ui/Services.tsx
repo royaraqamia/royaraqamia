@@ -1,83 +1,103 @@
-import { MotionReveal } from './MotionReveal';
-import { ServiceCard, type ServiceIconKey } from './services/ServiceCard';
-import type { ColorKey } from './services/colorConfigs';
-import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
+'use client';
 
-// Interfaces remain identical for seamless drop-in
-interface ServiceItem {
-  icon: ServiceIconKey;
-  title: string;
-  description: string;
-  features: string[];
-  pricing: {
-    cta: string;
+import { Package, type LucideIcon } from 'lucide-react';
+
+import { useHorizontalScroll } from '@/frontend/shared/use-horizontal-scroll';
+import { HorizontalScrollArrows } from './HorizontalScrollArrows';
+import { MotionReveal } from './MotionReveal';
+import type { ColorKey } from './services/colorConfigs';
+import { ServiceCard, type ServiceCardModel } from './services/ServiceCard';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
+import type { NavLink } from './navbar/NavDropdown';
+import { SERVICES_LINK } from './navbar/services-link';
+
+/**
+ * Presentation-only copy for each entry of the `خدماتنا` menu. Titles, icons and
+ * routes come from the menu itself, so the homepage row and the sheet never list
+ * different services.
+ */
+const SERVICE_COPY: Record<string, { description: string; colorKey: ColorKey }> = {
+  '/request-project': {
+    description: 'أخبرنا بمشروعك واحصل على رقم طلب فورًا.',
+    colorKey: 'indigo',
+  },
+  '/hire': {
+    description: 'فريق تِقنيّ يتولَّى صيانة مشاريعك وتطويرها شهريًّا.',
+    colorKey: 'violet',
+  },
+  '/news': {
+    description: 'مُلخَّص يوميّ لأهم أخبار العالم من مصادر موثوقة.',
+    colorKey: 'cyan',
+  },
+  '/training/apply': {
+    description: 'سجِّل في المسار التَّدريبيّ وابنِ مشاريعك دون كتابة كود.',
+    colorKey: 'purple',
+  },
+  '/verify': {
+    description: 'تأكَّد من أصالة شهادة صادرة عنَّا برمز التَّحقُّق.',
+    colorKey: 'emerald',
+  },
+  '/consultation/book': {
+    description: 'احجز جلستك الاستشاريَّة واختر الموعد المناسب.',
+    colorKey: 'blue',
+  },
+  '/rates': {
+    description: 'أسعار صرف العملات والذَّهب والفِضَّة لحظة بلحظة.',
+    colorKey: 'amber',
+  },
+  '/downloader': {
+    description: 'حمِّل الصَّوت أو الفيديو من رابط على منصَّات التَّواصل.',
+    colorKey: 'pink',
+  },
+  '/scan': {
+    description: 'اقرأ رموز QR والباركود بكاميرا هاتفك دون إرسال صور.',
+    colorKey: 'teal',
+  },
+  '/quran': {
+    description: 'اقرأ القرآن الكريم كاملًا برواية حفصٍ عن عاصم.',
+    colorKey: 'lime',
+  },
+  '/linksnap': {
+    description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة.',
+    colorKey: 'rose',
+  },
+  '/habitflow': {
+    description: 'تتبَّع عاداتك اليوميَّة والأسبوعيَّة وراقب تقدُّمك.',
+    colorKey: 'coral',
+  },
+  '/spendtrack': {
+    description: 'تتبَّع مصاريفك وحلِّل أنماط إنفاقك.',
+    colorKey: 'orange',
+  },
+  '/mcp/guide': {
+    description: 'اربط وكلاء البرمجة بأدواتنا عبر بروتوكول MCP.',
+    colorKey: 'indigo',
+  },
+};
+
+function toServiceCard(item: NavLink): ServiceCardModel {
+  const copy = SERVICE_COPY[item.href];
+  const Icon: LucideIcon = item.icon ?? Package;
+
+  return {
+    icon: Icon,
+    title: item.label,
+    description: copy?.description ?? '',
+    colorKey: copy?.colorKey ?? 'indigo',
+    href: item.href,
   };
-  colorKey: ColorKey;
-  shadowColor: string;
-  hoverShadow: string;
-  href: string;
-  categories: ('merchants' | 'students')[];
 }
 
-const services: ServiceItem[] = [
-  {
-    icon: 'code',
-    title: 'بناء',
-    description: 'خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.',
-    features: [
-      'بناء متكامل من الألف إلى الياء',
-      'تقنيات حديثة وأفضل الممارسات',
-      'بنية آمنة وقابلة للتَّوسُّع',
-    ],
-    pricing: { cta: 'قراءة المزيد' },
-    colorKey: 'indigo',
-    shadowColor: 'shadow-indigo-500/30',
-    hoverShadow: 'group-hover/item:shadow-indigo-500/50',
-    href: '#web-dev-service',
-    categories: ['merchants'],
-  },
-  {
-    icon: 'chat',
-    title: 'تدريب',
-    description:
-      'المسار التَّدريبي العربي المتكامل الذي يُعلِّمك بناء مواقع وتطبيقات دون كتابة كود.',
-    features: [
-      'يُدرِّبك خبير متخصِّص في المجال',
-      'لا تحتاج لكتابة أي سطر كود',
-      'التَّدريب أونلاين مع مجموعة',
-    ],
-    pricing: { cta: 'قراءة المزيد' },
-    colorKey: 'teal',
-    shadowColor: 'shadow-purple-700/30',
-    hoverShadow: 'group-hover/item:shadow-purple-700/50',
-    href: '#training',
-    categories: ['students'],
-  },
-  {
-    icon: 'bulb',
-    title: 'استشارات',
-    description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
-    features: [
-      'استشارة متخصِّصة بالمواقع والتَّطبيقات',
-      'نُجنِّبك خسائر الوقت والمال',
-      'الاستشارة فرديَّة أونلاين صوتيَّة',
-    ],
-    pricing: { cta: 'قراءة المزيد' },
-    colorKey: 'violet',
-    shadowColor: 'shadow-violet-500/30',
-    hoverShadow: 'group-hover/item:shadow-violet-500/50',
-    href: '#consultation',
-    categories: ['students'],
-  },
-];
-
-// --- Scroll reveal (IO island + CSS animations) ---
+const services = (SERVICES_LINK.subItems ?? []).map(toServiceCard);
 
 export function Services() {
+  const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(360);
+
   return (
     <section
       id="services"
       dir="rtl"
+      aria-labelledby="services-heading"
       className="relative py-24 sm:py-32 lg:py-40 overflow-hidden bg-[#030712] text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200"
     >
       {/* Top Ambient Highlight Border */}
@@ -92,26 +112,33 @@ export function Services() {
           from="translateY(-30px)"
           className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center"
         >
-          {/* Heading */}
-          <SectionTitle tone="inverse">
+          <SectionTitle tone="inverse" id="services-heading">
             ماذا <SectionTitleHighlight>نُقدِّم</SectionTitleHighlight>؟
           </SectionTitle>
         </MotionReveal>
 
-        {/* Dynamic Grid Layout */}
-        <MotionReveal
-          from="none"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-8 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none"
-        >
-          {services.map((service, index) => (
-            <div
-              key={index}
-              className=" h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
-              style={{ ['--ld' as string]: `${0.15 + index * 0.12}s` } as React.CSSProperties}
-            >
-              <ServiceCard service={service} />
-            </div>
-          ))}
+        {/* Horizontally scrolling row — swipe on touch, arrows on desktop */}
+        <MotionReveal from="none" className="relative">
+          <div
+            ref={scrollContainerRef}
+            className="overflow-x-auto snap-x snap-mandatory scroll-smooth pt-4 pb-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <ul role="list" className="flex gap-6 sm:gap-8 w-max">
+              {services.map((service) => (
+                <li key={service.href} className="w-[18rem] sm:w-[20rem] shrink-0 snap-start flex">
+                  <ServiceCard service={service} />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <HorizontalScrollArrows
+            onScroll={scroll}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            ariaLabelLeft="الخدمة التَّالية"
+            ariaLabelRight="الخدمة السَّابقة"
+          />
         </MotionReveal>
       </div>
 

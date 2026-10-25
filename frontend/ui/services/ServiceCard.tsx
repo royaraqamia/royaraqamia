@@ -1,54 +1,32 @@
 'use client';
 
-import { ElementType } from 'react';
-import { Code, Lightbulb, MessageCircle } from 'lucide-react';
+import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
-// Lucide components cannot cross the RSC boundary, so the server sends a
-// serializable key and the icon is resolved here in the client bundle.
-const serviceIcons = {
-  code: Code,
-  chat: MessageCircle,
-  bulb: Lightbulb,
-} as const;
-export type ServiceIconKey = keyof typeof serviceIcons;
-const iconMap: Record<ServiceIconKey, ElementType> = serviceIcons;
-
-// Types remain the same for perfect drop-in compatibility
-interface ServicePricing {
-  cta: string;
-  monthly?: string;
-  yearly?: string;
-  training?: string;
-  consultation?: string;
-  free?: string;
-  employer?: string;
-  small?: string;
-  large?: string;
-  oneTime?: string;
-  basic?: string;
-  webapp?: string;
-  mobile?: string;
-}
-
-interface Service {
-  icon: ServiceIconKey;
+export interface ServiceCardModel {
+  icon: LucideIcon;
   title: string;
   description: string;
-  features: string[];
-  pricing: ServicePricing;
   colorKey: ColorKey;
-  shadowColor: string;
-  hoverShadow: string;
   href: string;
 }
 
-export function ServiceCard({ service }: { service: Service }) {
-  const Icon = iconMap[service.icon]!;
+/**
+ * One service in the horizontally scrolling services row. The whole card is the
+ * link — there is no separate CTA — so pressing anywhere on the surface opens
+ * the service's own page.
+ */
+export function ServiceCard({ service }: { service: ServiceCardModel }) {
+  const Icon = service.icon;
   const colors = colorConfigs[service.colorKey];
 
   return (
-    <article className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10">
+    <Link
+      href={service.href}
+      aria-label={service.title}
+      className="group/service relative rounded-4xl p-6 sm:p-8 w-full h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 z-10"
+    >
       {/* Dynamic Linear/Vercel-style Top Specular Highlight Line */}
       <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent opacity-70 group-hover/service:via-white/50 transition-safe duration-500 pointer-events-none" />
 
@@ -70,49 +48,12 @@ export function ServiceCard({ service }: { service: Service }) {
           {service.title}
         </h3>
 
-        <p className="text-sm sm:text-base text-neutral-400 leading-relaxed mb-6 sm:mb-8 text-center group-hover/service:text-neutral-300 transition-colors duration-500 font-normal">
-          {service.description}
-        </p>
-
-        {/* Features List — each point gets a rounded surface for visual weight */}
-        <div className="grow flex flex-col">
-          <ul className="space-y-3 sm:space-y-3.5 mb-8 sm:mb-10 grow" role="list">
-            {service.features.map((feature, idx) => (
-              <li
-                key={idx}
-                className="group/item flex items-center justify-center px-4 py-2.5 rounded-2xl border border-white/8 bg-white/4 transition-[background-color,border-color] duration-300 hover:border-white/16 hover:bg-white/8"
-              >
-                <span
-                  className={`bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent text-xs sm:text-sm md:text-base font-medium leading-relaxed text-center transition-[filter] duration-200 group-hover/item:brightness-125`}
-                >
-                  {feature}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Premium CTA Button */}
-          {service.pricing && (
-            <div className="mt-auto pt-6 border-t border-white/10 relative flex justify-center">
-              <a
-                href={service.href}
-                className="group/cta relative inline-flex w-auto h-13 sm:h-14 min-w-44 sm:min-w-50 items-center justify-center gap-2.5 px-6 sm:px-8 rounded-full font-bold text-base sm:text-lg text-white overflow-hidden transition-[background-color,border-color,transform] duration-300 border border-white/15 bg-neutral-800/60 hover:bg-neutral-800/90 hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-[0.98] shadow-md shadow-black/30"
-                aria-label={`${service.pricing.cta} - ${service.title}`}
-              >
-                {/* Background gradient injection */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover/cta:opacity-100 transition-opacity duration-500 -z-10"
-                  style={{ background: colors.gradient }}
-                />
-
-                <span className="relative z-10 transition-transform duration-300 group-hover/cta:-translate-x-0.5 rtl:group-hover/cta:translate-x-0.5">
-                  {service.pricing.cta}
-                </span>
-              </a>
-            </div>
-          )}
-        </div>
+        {service.description && (
+          <p className="text-sm sm:text-base text-neutral-400 leading-relaxed text-center group-hover/service:text-neutral-300 transition-colors duration-500 font-normal">
+            {service.description}
+          </p>
+        )}
       </div>
-    </article>
+    </Link>
   );
 }

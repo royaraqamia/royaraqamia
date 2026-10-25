@@ -4,7 +4,7 @@ import { APP_PRODUCTS } from '../app-shell/constants';
 import type { NavLink } from './NavDropdown';
 
 export const SERVICES_LINK: NavLink = {
-  href: '#projects',
+  href: '#services',
   label: 'خدماتنا',
   icon: Package,
   isRoute: false,
