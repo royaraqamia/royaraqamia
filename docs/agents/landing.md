@@ -61,6 +61,7 @@ the full suite on the pull request regardless, so this step is a fast local pre-
 ```powershell
 npm run typecheck            # always — `tsc --noEmit`, the cheapest broad signal
 npm run lint:fix             # always
+npm run format               # always — `format:check` is a CI step; ESLint does not format
 npx vitest run <path>        # the test file(s) beside what you changed
 npx vitest run --changed     # or everything the diff reaches, resolved from git
 ```
@@ -68,6 +69,13 @@ npx vitest run --changed     # or everything the diff reaches, resolved from git
 - **Tests:** the related files, or `--changed` when the blast radius is not obvious. Reach for the
   full `npm test` only when the change really is repo-wide — a shared type, a base component, a
   repository contract interface.
+- **Formatting:** `npm run lint:fix` fixes lint rules and leaves layout alone, so a file written by
+  hand — or an attribute inserted with a script — passes every other local gate and fails the
+  `Format Check` step on the pull request, after the branch is already pushed (#575). The fix is
+  one command and costs seconds.
+- **The cheap copy gates:** `check:arabic`, `check:digits`, `check:env-docs` and `check:surfaces`
+  run in that same job and each takes seconds. Run the ones the diff can move — Arabic copy, a
+  digit, an `example.env` key, a new surface — rather than meeting them in CI.
 - **Build:** leave `npm run build` alone. Run it only when nothing cheaper would catch a broken
   build — `next.config.js`, routing, `proxy.ts`, a dependency, a server/client boundary, or a
   generated module — and then say in the pull request that you did.
