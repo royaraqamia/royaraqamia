@@ -16,6 +16,15 @@ interface ShortenMeta {
 export class ShortenUrlService {
   constructor(private shortLinkRepository: ShortLinkRepository) {}
 
+  /**
+   * The stored link a replayed offline create names, tombstone included. It is
+   * read before the plan cap so an already-applied create does not take a
+   * second slot (ADR-0075).
+   */
+  async findByClientId(userId: string, clientId: string): Promise<ShortLink | null> {
+    return this.shortLinkRepository.findByClientId(userId, clientId);
+  }
+
   async execute(
     originalUrl: string,
     userId: string | null,

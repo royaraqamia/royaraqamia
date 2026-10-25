@@ -43,8 +43,12 @@ export async function getHabitSync(): Promise<HttpResult> {
 export async function createHabit(body: HabitWrite): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createPlanGate().cap(userId, OWNED_ITEMS.habits);
       const { service, mode } = createHabitService(userId, supabase);
+      // An offline create replay that names a live row already holds its slot;
+      // only a first write (or a tombstone revival) checks the cap (ADR-0075).
+      if (!(await service.findLiveByClientId(body.clientId))) {
+        await createPlanGate().cap(userId, OWNED_ITEMS.habits);
+      }
       const habit = await service.createHabit(body);
       return jsonResult(201, { habit, mode });
     },

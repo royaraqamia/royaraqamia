@@ -167,7 +167,11 @@ export class SupabaseHabitRepository implements HabitRepository {
         return toHabit(inserted as HabitRow);
       }
 
-      return this.getHabitByClientId(clientId);
+      // A stale replay loses the LWW comparison, so the stored winner is read
+      // back and reported as the create's success.
+      const winner = await this.findHabitByClientId(clientId);
+      if (!winner) throw new AppError('العادة غير موجودة', 404);
+      return winner;
     }
 
     const { data, error } = await this.client.from('habits').insert(row).select().single();
@@ -180,11 +184,12 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   /**
-   * The stored row for a client id, returned when a create replay loses the
-   * last-write-wins comparison — the write is a no-op success that reports the
-   * winner rather than surfacing an error.
+   * The stored row for a client id, tombstone included. A create replay reads
+   * it to tell an idempotent update from a write that takes a slot (ADR-0075),
+   * and it is also how a replay that loses the last-write-wins comparison
+   * reports the winner rather than surfacing an error.
    */
-  private async getHabitByClientId(clientId: string): Promise<Habit> {
+  async findHabitByClientId(clientId: string): Promise<Habit | null> {
     let query = this.client.from('habits').select('*').eq('client_id', clientId);
 
     if (this.userId) {
@@ -196,10 +201,8 @@ export class SupabaseHabitRepository implements HabitRepository {
     if (error) {
       throw error;
     }
-    if (!data) {
-      throw new AppError('العادة غير موجودة', 404);
-    }
-    return toHabit(data as HabitRow);
+
+    return data ? toHabit(data as HabitRow) : null;
   }
 
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {

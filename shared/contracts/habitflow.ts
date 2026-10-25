@@ -99,6 +99,11 @@ export type HabitLogNoteWrite = z.infer<typeof HabitLogNoteWriteSchema>;
 
 export interface HabitRepository {
   getHabits(): Promise<Habit[]>;
+  /**
+   * The stored row for a client-minted id, tombstone included. A create replay
+   * reads it before the plan cap: a live row already holds its slot (ADR-0075).
+   */
+  findHabitByClientId(clientId: string): Promise<Habit | null>;
   createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit>;
   updateHabit(id: string, updates: Partial<Habit>): Promise<Habit>;
   deleteHabit(id: string, meta?: { updatedAt?: string }): Promise<boolean>;

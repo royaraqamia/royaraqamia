@@ -78,11 +78,21 @@ export interface BudgetWriteMeta {
   updatedAt?: string;
 }
 
+/**
+ * The row a create replay names, reduced to the tombstone the cap check needs:
+ * a live row holds its slot, a tombstoned one does not (ADR-0075).
+ */
+export interface ExistingOwnedRow {
+  deletedAt: string | null;
+}
+
 export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
   /** The shared defaults: readable without a session so a guest store can seed them (#449). */
   getDefaultCategories(): Promise<Category[]>;
   getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot>;
+  findExpenseByClientId(userId: string, clientId: string): Promise<ExistingOwnedRow | null>;
+  findCategoryByClientId(userId: string, clientId: string): Promise<ExistingOwnedRow | null>;
   getTotalExpenses(
     userId: string,
     start: string,

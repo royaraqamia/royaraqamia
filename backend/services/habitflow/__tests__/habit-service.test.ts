@@ -22,6 +22,7 @@ const logFixture: HabitLog = {
 function makeRepo(overrides: Partial<HabitRepository> = {}) {
   const repository: HabitRepository = {
     getHabits: vi.fn(),
+    findHabitByClientId: vi.fn(),
     createHabit: vi.fn(),
     updateHabit: vi.fn(),
     deleteHabit: vi.fn(),

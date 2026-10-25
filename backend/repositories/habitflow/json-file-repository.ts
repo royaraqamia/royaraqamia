@@ -67,6 +67,10 @@ export class JsonFileHabitRepository implements HabitRepository {
     return db.habits.filter((h) => !h.archived);
   }
 
+  async findHabitByClientId(clientId: string): Promise<Habit | null> {
+    return this.readDb().habits.find((habit) => habit.clientId === clientId) ?? null;
+  }
+
   async createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit> {
     const db = this.readDb();
     const newHabit: Habit = {

@@ -126,17 +126,23 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { amount, category_id, date, description, currency, splits } = body;
+      const service = createSpendtrackService(supabase);
+      const meta = offlineWriteFields(body);
 
-      await createPlanGate().cap(userId, OWNED_ITEMS.expenses);
+      // A replay whose row is already live holds its slot; only a first write
+      // (or a tombstone revival) checks the cap (ADR-0075).
+      if (!(await service.isLiveExpenseReplay(userId, meta.clientId))) {
+        await createPlanGate().cap(userId, OWNED_ITEMS.expenses);
+      }
 
-      await createSpendtrackService(supabase).createExpense(userId, {
+      await service.createExpense(userId, {
         amount: amount as SpendtrackExpenseInput['amount'],
         category_id: category_id as SpendtrackExpenseInput['category_id'],
         date: date as SpendtrackExpenseInput['date'],
         description: (description ?? null) as SpendtrackExpenseInput['description'],
         currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
         splits: splits as SpendtrackExpenseInput['splits'],
-        ...offlineWriteFields(body),
+        ...meta,
       });
 
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
@@ -317,13 +323,18 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
     async ({ userId, supabase }) => {
       const name = String(body.name ?? '').trim();
       const colorHex = String(body.color_hex ?? '').trim();
+      const service = createSpendtrackService(supabase);
+      const meta = offlineWriteFields(body);
 
-      await createPlanGate().cap(userId, OWNED_ITEMS.expenseCategories);
+      // A replay whose category is already live holds its slot (ADR-0075).
+      if (!(await service.isLiveCategoryReplay(userId, meta.clientId))) {
+        await createPlanGate().cap(userId, OWNED_ITEMS.expenseCategories);
+      }
 
-      await createSpendtrackService(supabase).createCategory(userId, {
+      await service.createCategory(userId, {
         name,
         colorHex,
-        ...offlineWriteFields(body),
+        ...meta,
       } satisfies SpendtrackCategoryInput);
 
       return jsonResult(

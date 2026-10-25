@@ -43,6 +43,12 @@ export interface PostsRepository {
   listPostsByAuthorIncludingDeleted(authorId: string): Promise<Post[]>;
   getPostExcerptById(id: string): Promise<string | null>;
   getPostForUser(id: string, userId: string): Promise<Post | null>;
+  /**
+   * The stored row for `(author_id, client_id)`, tombstone included. A create
+   * replay reads it before the plan cap so an already-live draft does not take
+   * a second slot (ADR-0075).
+   */
+  getPostByClientId(authorId: string, clientId: string): Promise<Post | null>;
   createPost(authorId: string, input?: PostInput): Promise<{ id: string }>;
   createAndPublishPost(authorId: string, input: PostInput): Promise<{ id: string; slug: string }>;
   updatePost(postId: string, authorId: string, data: PostInput): Promise<void>;

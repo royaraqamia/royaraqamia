@@ -10,6 +10,8 @@ function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
     getUserCategories: vi.fn(),
     getDefaultCategories: vi.fn(),
     getSyncSnapshot: vi.fn(),
+    findExpenseByClientId: vi.fn(),
+    findCategoryByClientId: vi.fn(),
     getTotalExpenses: vi.fn(),
     getCategoryBreakdown: vi.fn(),
     getDailyTotals: vi.fn(),

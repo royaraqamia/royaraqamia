@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
+const mockCap = vi.fn();
 const mockService = {
   getTransactions: vi.fn(),
   getSyncSnapshot: vi.fn(),
+  isLiveExpenseReplay: vi.fn(),
+  isLiveCategoryReplay: vi.fn(),
   createExpense: vi.fn(),
   createCategory: vi.fn(),
   getBudget: vi.fn(),
@@ -32,7 +35,7 @@ vi.mock('@/backend/config/plans', () => ({
     meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
     reserve: async () => 'event-1',
     release: async () => {},
-    cap: async () => {},
+    cap: mockCap,
     caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
   }),
@@ -45,6 +48,10 @@ import {
   setBudget,
   syncSpendtrack,
 } from '@/backend/controllers/spendtrack';
+import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
+
+const CLIENT_ID = '11111111-1111-7111-8111-111111111111';
 
 describe('spendtrack controller', () => {
   beforeEach(() => {
@@ -54,9 +61,12 @@ describe('spendtrack controller', () => {
       supabase: {},
     });
     mockService.getTransactions.mockResolvedValue({ expenses: [{ id: 'e-1' }] });
+    mockService.isLiveExpenseReplay.mockResolvedValue(false);
+    mockService.isLiveCategoryReplay.mockResolvedValue(false);
     mockService.createExpense.mockResolvedValue(undefined);
     mockService.createCategory.mockResolvedValue(undefined);
     mockService.setBudget.mockResolvedValue(undefined);
+    mockCap.mockResolvedValue(undefined);
   });
 
   it('returns 401 with the product body when there is no session user', async () => {
@@ -102,6 +112,52 @@ describe('spendtrack controller', () => {
         revalidate: [{ path: '/spendtrack', type: 'layout' }],
       })
     );
+  });
+
+  it('lets a replayed expense through at the cap and writes nothing new', async () => {
+    mockService.isLiveExpenseReplay.mockResolvedValue(true);
+    mockCap.mockRejectedValue(new OwnedItemCapReachedError(OWNED_ITEMS.expenses, 5, 5));
+
+    const result = await createExpense({
+      amount: 10,
+      category_id: 'c-1',
+      date: '2026-01-01',
+      clientId: CLIENT_ID,
+    });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockService.isLiveExpenseReplay).toHaveBeenCalledWith('u-1', CLIENT_ID);
+    expect(mockCap).not.toHaveBeenCalled();
+    expect(mockService.createExpense).toHaveBeenCalled();
+  });
+
+  it('refuses an expense with a new client id at the cap', async () => {
+    mockCap.mockRejectedValue(new OwnedItemCapReachedError(OWNED_ITEMS.expenses, 5, 5));
+
+    const result = await createExpense({
+      amount: 10,
+      category_id: 'c-1',
+      date: '2026-01-01',
+      clientId: CLIENT_ID,
+    });
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockService.createExpense).not.toHaveBeenCalled();
+  });
+
+  it('lets a replayed category through at the cap', async () => {
+    mockService.isLiveCategoryReplay.mockResolvedValue(true);
+    mockCap.mockRejectedValue(new OwnedItemCapReachedError(OWNED_ITEMS.expenseCategories, 5, 5));
+
+    const result = await createCategory({
+      name: 'Food',
+      color_hex: '#aabbcc',
+      clientId: CLIENT_ID,
+    });
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockCap).not.toHaveBeenCalled();
+    expect(mockService.createCategory).toHaveBeenCalled();
   });
 
   it('maps a category failure to 500, preserving the distinct status', async () => {

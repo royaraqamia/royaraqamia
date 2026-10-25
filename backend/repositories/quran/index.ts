@@ -116,6 +116,21 @@ export function createQuranSyncRepository(supabase: SupabaseClient<Database>): Q
       };
     },
 
+    async getBookmark(userId: string, surah: number, ayah: number): Promise<Bookmark | null> {
+      // Tombstones are included on purpose: a mark on a live row is an update,
+      // but one on a tombstone revives it and takes a slot (ADR-0075).
+      const { data, error } = await supabase
+        .from('quran_bookmarks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('surah', surah)
+        .eq('ayah', ayah)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+
+      return data ? toBookmark(data as BookmarkRow) : null;
+    },
+
     async saveReadingPosition(
       userId: string,
       position: { surah: number; ayah: number },

@@ -1,4 +1,4 @@
-import type { QuranSyncSnapshot, ReadingPosition } from '@/shared/contracts/quran';
+import type { Bookmark, QuranSyncSnapshot, ReadingPosition } from '@/shared/contracts/quran';
 
 /**
  * The client's half of every owned write (ADR-0029): `clientId` is the id the
@@ -30,6 +30,12 @@ export interface QuranBookmarkWrite {
 export interface QuranSyncRepository {
   /** Every owned record, Bookmark tombstones included, from `since` onward. */
   getSyncSnapshot(userId: string, since?: string | null): Promise<QuranSyncSnapshot>;
+  /**
+   * The row that holds an Ayah's natural key, tombstones included: a replay is
+   * an update of this row, while an absent or tombstoned row is what a mark has
+   * to take a slot for (ADR-0075).
+   */
+  getBookmark(userId: string, surah: number, ayah: number): Promise<Bookmark | null>;
   /** Moves the reader's place. An older replay is dropped, not applied. */
   saveReadingPosition(
     userId: string,

@@ -385,3 +385,33 @@ describe('setBookmark', () => {
     });
   });
 });
+
+describe('getBookmark', () => {
+  it('reads the natural key without filtering tombstones', async () => {
+    const tombstoned = { ...BOOKMARK_ROW, deleted_at: '2026-10-04T00:00:00.000Z' };
+    const { client, calls } = makeClient(() => ({ data: tombstoned, error: null }));
+    const repo = createQuranSyncRepository(client);
+
+    const bookmark = await repo.getBookmark('u-1', 2, 255);
+
+    expect(bookmark).toEqual({
+      clientId: BOOKMARK_ROW.client_id,
+      surah: 2,
+      ayah: 255,
+      createdAt: '2026-10-02T00:00:00.000Z',
+      updatedAt: '2026-10-03T00:00:00.000Z',
+      deletedAt: '2026-10-04T00:00:00.000Z',
+    });
+    expect(calls).toContain('quran_bookmarks:eq user_id=u-1');
+    expect(calls).toContain('quran_bookmarks:eq surah=2');
+    expect(calls).toContain('quran_bookmarks:eq ayah=255');
+    expect(calls.some((call) => call.startsWith('quran_bookmarks:is deleted_at'))).toBe(false);
+  });
+
+  it('answers null when the Ayah holds no row yet', async () => {
+    const { client } = makeClient();
+    const repo = createQuranSyncRepository(client);
+
+    await expect(repo.getBookmark('u-1', 2, 255)).resolves.toBeNull();
+  });
+});

@@ -228,6 +228,11 @@ export class HabitLocalStore implements HabitRepository {
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
+  async findHabitByClientId(clientId: string): Promise<Habit | null> {
+    const habits = await this.readAll<Habit>(HABITS_STORE);
+    return habits.find((habit) => habit.clientId === clientId) ?? null;
+  }
+
   async createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit> {
     assertOwnedItemSlot(this.identity, 'habits', (await this.getHabits()).length);
     const now = new Date().toISOString();
