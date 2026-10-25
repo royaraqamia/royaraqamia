@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
 import androidx.core.splashscreen.SplashScreen;
 
@@ -60,6 +61,56 @@ public class MainActivity extends BridgeActivity {
         // signal cannot — a shell that was killed before it could ask.
         installSyncBridge(getBridge());
         SyncScheduler.ensurePeriodic(this);
+        installBackExit();
+    }
+
+    /**
+     * Lets the system back button close the app once there is nothing left to go
+     * back to.
+     *
+     * Capacitor's App plugin owns the back press (`AppPlugin`, EVENT_BACK_BUTTON):
+     * with no page listener it calls `canGoBack()`/`goBack()`, and when the
+     * history is exhausted it returns without doing anything — the press is
+     * swallowed, so the activity never finishes and Back can never leave the
+     * app. This callback is installed after the plugin's (which is registered
+     * while the bridge is built, inside `super.onCreate`), and
+     * `OnBackPressedDispatcher` offers a press to the most recently added
+     * enabled callback first, so this one answers it instead.
+     *
+     * Walking the WebView's history is kept as it was; only the dead end
+     * changes, from "nothing happens" to the task ending — what Android's own
+     * root back press does. The history in question is the WebView's: on a
+     * System WebView that carries the site's client-side navigations — the
+     * behaviour reported on the device that raised this, where Back walked the
+     * site page by page and then stopped on the home page — that is the whole
+     * of the user's history. On an older WebView it is not: 124 was measured
+     * dropping same-document entries, where `canGoBack()` answers false after
+     * following a link while the document's own `history.length` is 2 — so
+     * there Back ends the task from the page it cannot walk. Nothing in this
+     * class can tell the two apart: the page is the only place that knows, and
+     * the site's own back control is the in-app way up on those builds.
+     *
+     * The page's `backButton` event is not fired by this path. That is
+     * deliberate: no page code listens for it, and a press that depended on the
+     * Capacitor bridge would do nothing at all on a launch where the bridge
+     * failed to inject into the remote document (ADR-0043).
+     */
+    private void installBackExit() {
+        getOnBackPressedDispatcher().addCallback(
+            this,
+            new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    Bridge bridge = getBridge();
+                    WebView webView = bridge != null ? bridge.getWebView() : null;
+                    if (webView != null && webView.canGoBack()) {
+                        webView.goBack();
+                        return;
+                    }
+                    finish();
+                }
+            }
+        );
     }
 
     /**

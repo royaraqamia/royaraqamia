@@ -151,7 +151,7 @@ changes rather than only on the machine that wrote them.
 | Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                     | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
 | Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                     | Working                                                                                                                                                                                            |
 | Custom-scheme OAuth return                      | manifest + `MainActivity`                                             | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`           | Working                                                                                                                                                                                            |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`           | Working — Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                                                                        |
 | Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed                 | Installed, unused by app code yet                                                                                                                                                                  |
 | Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                         | Installed, unused by app code yet                                                                                                                                                                  |
 | Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                        | Scaffolding only, by decision                                                                                                                                                                      |
@@ -485,6 +485,46 @@ adb logcat -s RoySyncFlush:*   # what the worker did with the wake, or with its 
 # Exactly one MESSAGING_EVENT service, and it is com.royaraqamia.app.SyncMessagingService:
 Select-String -Path android/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml -Pattern 'MESSAGING_EVENT'
 ```
+
+### The system back button
+
+The system press is the navigation control Android owns, and in a one-activity shell it has to be able
+to end the task. It could not: Capacitor's App plugin answers the press (`AppPlugin`, `EVENT_BACK_BUTTON`)
+by calling `WebView.canGoBack()`/`goBack()` and, when the history is exhausted, returning without doing
+anything — the press is consumed and the activity never finishes, so the last press did nothing at all.
+`MainActivity.installBackExit()` (ADR-0082) installs its own `OnBackPressedCallback` after the plugin's,
+which is what puts it first: the plugin registers while the bridge is built, inside `super.onCreate`, and
+`OnBackPressedDispatcher` offers a press to the most recently added enabled callback. It keeps the
+navigation and replaces the dead end with `finish()`.
+
+What counts as the dead end is the WebView's own history, and that is version-dependent. Measured on
+`Roy_API_35` (System WebView 124.0.6367.219) after following a link from `/` to `/news`, a same-document
+navigation:
+
+| Probe                         | Value                |
+| ----------------------------- | -------------------- |
+| `history.length`              | `2`                  |
+| `window.navigation.canGoBack` | `true`               |
+| `Page.getNavigationHistory`   | one entry, index `0` |
+| `WebView.canGoBack()`         | `false`              |
+
+So on that engine Back ends the task from a page the WebView cannot walk, and the site's own back
+control (`frontend/ui/shared/back-button.tsx`) is the in-app way up. On a WebView that carries the site's
+client-side navigations — the behaviour reported on the device that raised this, where Back walked the
+site page by page and then stopped on the home page — Back walks them as it always did and only the last
+press closes. That report is also why this is native code and not a page listener: a press answered
+through the Capacitor bridge would do nothing whenever the bridge failed to inject (ADR-0043).
+
+Check both branches with a debug build:
+
+```powershell
+adb shell input keyevent 4   # at the root: the app leaves the foreground; `topResumedActivity` moves on
+adb shell dumpsys activity activities | Select-String 'topResumedActivity'
+adb shell input keyevent 4   # on a page reached by an App Link: back should walk, not exit
+```
+
+The shell's counter moves for this (ADR-0043): a shell installed before it keeps the old behaviour until
+it takes the update prompt.
 
 ### The system bar band
 
