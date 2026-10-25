@@ -42,7 +42,7 @@ import { LinksnapProvider, useLinksnapContext } from '@/frontend/state/linksnap/
 import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <LinksnapProvider user={{ id: 'u-1' }}>{children}</LinksnapProvider>;
+  return <LinksnapProvider identity="user:u-1">{children}</LinksnapProvider>;
 }
 
 async function renderBulk(code: string) {

@@ -8,7 +8,7 @@ import { pullBlogpressData } from '@/frontend/api/blogpress/pull';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import {
   GUEST_IDENTITY,
-  userIdentity,
+  identityUserId,
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
@@ -62,8 +62,14 @@ async function claimGuestData(userStore: BlogpressLocalStore): Promise<void> {
   }
 }
 
-export function useBlogpressDashboard(userId: string | null): BlogpressDashboardState {
-  const identity: LocalIdentity | null = userId ? userIdentity(userId) : null;
+export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboardState {
+  /**
+   * A guest draft has no author row. `postFromDraft` stamps whatever string it
+   * is given, and a guest row is never pushed (the sync engine does not run for
+   * `guest`), so the empty string is honest rather than a fake id.
+   */
+  const authorId = identityUserId(identity) ?? '';
+  const isGuest = identity === GUEST_IDENTITY;
   const [store, setStore] = useState<BlogpressLocalStore | null>(null);
   const [ready, setReady] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -84,15 +90,14 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
 
   const readIntoState = useCallback(
     async (localStore: BlogpressLocalStore) => {
-      if (!userId) return;
       const drafts = await localStore.getDrafts();
-      setPosts(drafts.map((draft) => postFromDraft(draft, userId)));
+      setPosts(drafts.map((draft) => postFromDraft(draft, authorId)));
     },
-    [userId]
+    [authorId]
   );
 
   useEffect(() => {
-    if (!identity || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
     let cancelled = false;
     let opened: BlogpressLocalStore | null = null;
@@ -101,10 +106,13 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
       .then(async (localStore) => {
         opened = localStore;
         if (cancelled) return;
-        await claimGuestData(localStore).catch((error) => {
-          logger.error('Failed to claim guest BlogPress data', { error: String(error) });
-        });
-        if (cancelled) return;
+        // A guest claiming its own namespace would move rows onto themselves.
+        if (!isGuest) {
+          await claimGuestData(localStore).catch((error) => {
+            logger.error('Failed to claim guest BlogPress data', { error: String(error) });
+          });
+          if (cancelled) return;
+        }
         setStore(localStore);
         await readIntoState(localStore);
         if (cancelled) return;
@@ -112,7 +120,7 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
-        if (isOnline()) {
+        if (!isGuest && isOnline()) {
           await pullBlogpressData(localStore)
             .then(() => readIntoState(localStore))
             .catch((error) => {
@@ -128,10 +136,10 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
       cancelled = true;
       opened?.close();
     };
-  }, [identity, readIntoState]);
+  }, [identity, isGuest, readIntoState]);
 
   useEffect(() => {
-    if (!store || !userId) return;
+    if (!store || isGuest) return;
 
     const engine = new BlogpressSyncEngine({
       store,
@@ -165,7 +173,7 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
     engine.onSync(() => void pull());
 
     const stopHints = subscribeToSyncHints(
-      userSyncHints(SYNC_HINT_TABLES, userId, 'author_id'),
+      userSyncHints(SYNC_HINT_TABLES, authorId, 'author_id'),
       () => void pull()
     );
 
@@ -188,7 +196,7 @@ export function useBlogpressDashboard(userId: string | null): BlogpressDashboard
       engine.dispose();
       engineRef.current = null;
     };
-  }, [store, userId, readIntoState]);
+  }, [store, authorId, isGuest, readIntoState]);
 
   const retry = useCallback(() => {
     void engineRef.current?.retry();

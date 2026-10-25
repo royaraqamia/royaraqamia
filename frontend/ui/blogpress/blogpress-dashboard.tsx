@@ -4,8 +4,9 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { BarChart3, CalendarClock, CalendarRange, Eye, FileText } from 'lucide-react';
-import { useSession } from '@/frontend/state/session-provider';
 import { useBlogpressDashboard } from '@/frontend/state/blogpress/use-blogpress-dashboard';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import { GUEST_IDENTITY } from '@/frontend/shared/local-store/identity';
 import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { PostList } from '@/app/blogpress/_components/post-list';
@@ -19,14 +20,24 @@ import { AutoCreatePost } from '@/app/blogpress/_components/auto-create-post';
  * the guard and the post list were server renders, so the document could never
  * be cached and an offline reload landed on `/offline`. The layout is now open
  * (its editor keeps its own server guard) and this component resolves the
- * session, paints the Local Store's drafts, and shows the same sign-in prompt a
- * guest gets from `/account`. Categories and tags are still server reads, so
- * offline the filter row and tag chips are absent rather than wrong.
+ * identity (#493), paints that identity's Local Store's drafts, and keeps the
+ * sign-in prompt as an affordance beside them. Categories and tags are still
+ * server reads, so offline the filter row and tag chips are absent rather than
+ * wrong.
+ *
+ * A guest has drafts of their own — the editor writes them and `claimFrom`
+ * hands them to the account on sign-in — so the guest namespace is painted
+ * rather than hidden behind a sign-in card (#493).
  */
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="جاري فتح التَّخزين المحلِّي">
+    <div
+      className="space-y-6"
+      data-local-store-skeleton="true"
+      aria-busy="true"
+      aria-label="جاري فتح التَّخزين المحلِّي"
+    >
       <div className="h-10 w-64 animate-pulse rounded-xl bg-neutral-200/60 dark:bg-neutral-800/60" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((key) => (
@@ -52,29 +63,12 @@ export function BlogpressDashboard() {
 
 function BlogpressDashboardContent() {
   const searchParams = useSearchParams();
-  const { user, isLoading } = useSession();
-  const { ready, posts, sync } = useBlogpressDashboard(user?.id ?? null);
-
-  if (isLoading) return <DashboardSkeleton />;
-
-  if (!user) {
-    return (
-      <section className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/60 p-10 text-center dark:border-neutral-800 dark:bg-neutral-900/30">
-        <FileText className="size-10 text-neutral-400" aria-hidden="true" />
-        <div className="space-y-1.5">
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-            سجِّل الدُّخول لعرض منشوراتك
-          </h2>
-          <p className="max-w-md text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
-            لوحة BlogPress تعرض مسودَّاتك ومنشوراتك، وهي محفوظة على هذا الجهاز بعد أوَّل زيارة.
-          </p>
-        </div>
-        <SignInCta href="/auth/login?redirect=/blogpress" className="mt-1" />
-      </section>
-    );
-  }
+  const { identity } = useLocalIdentity();
+  const { ready, posts, sync } = useBlogpressDashboard(identity);
 
   if (!ready) return <DashboardSkeleton />;
+
+  const isGuest = identity === GUEST_IDENTITY;
 
   const stats = {
     total: posts.length,
@@ -124,6 +118,15 @@ function BlogpressDashboardContent() {
         </div>
         <SyncStatusPill status={sync} />
       </div>
+
+      {isGuest ? (
+        <section className="mb-8 flex flex-col gap-3 rounded-2xl border border-dashed border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            مسودَّاتك محفوظة على هذا الجهاز؛ سجِّل الدُّخول لنشرها ومزامنتها بين أجهزتك.
+          </p>
+          <SignInCta href="/auth/login?redirect=/blogpress" className="h-11 min-w-0 sm:min-w-40" />
+        </section>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {statCards.map((stat) => {

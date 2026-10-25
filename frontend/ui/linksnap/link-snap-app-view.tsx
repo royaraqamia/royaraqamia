@@ -6,6 +6,7 @@ import { UrlShortener } from '@/frontend/ui/linksnap/url-shortener';
 import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banner';
 import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { useSession } from '@/frontend/state/session-provider';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { LinksnapProvider } from '@/frontend/state/linksnap/linksnap-context';
 
 interface RedirectError {
@@ -13,8 +14,19 @@ interface RedirectError {
   code?: string;
 }
 
+/**
+ * The LinkSnap root (#449, #493).
+ *
+ * The store's partition comes from {@link useLocalIdentity}, not from
+ * `session?.user`: deriving it from the session paints `linksnap__guest` first
+ * and reopens on `user:<id>` when the session lands — a guest row flash and a
+ * reopen under the reader, the same bug the Quran reader had. The session is
+ * still the source of the access token, which is what the shortener's own
+ * write needs.
+ */
 export function LinkSnapAppView() {
   const { session } = useSession();
+  const { identity } = useLocalIdentity();
   const [redirectError, setRedirectError] = useState<RedirectError | null>(null);
   const token = session?.access_token ?? null;
 
@@ -49,7 +61,7 @@ export function LinkSnapAppView() {
   }, []);
 
   return (
-    <LinksnapProvider user={session?.user ?? null}>
+    <LinksnapProvider identity={identity}>
       <div className="relative flex flex-col min-h-full overflow-hidden">
         <div className="flex justify-end mb-2">
           <LinksnapSyncStatus />

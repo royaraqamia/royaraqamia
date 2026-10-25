@@ -69,7 +69,7 @@ describe('useLinksnap', () => {
   it('pulls when a Realtime hint says another device wrote', async () => {
     const listLinks = vi.mocked(listLinksIncludingDeleted);
 
-    const { result } = renderHook(() => useLinksnap({ user: { id: 'u-1' } }));
+    const { result } = renderHook(() => useLinksnap({ identity: userIdentity('u-1') }));
     await waitFor(() => expect(result.current.ready).toBe(true));
     await waitFor(() => expect(hintCallbacks).toHaveLength(1));
 
@@ -98,7 +98,7 @@ describe('useLinksnap', () => {
     };
 
     try {
-      const { result, unmount } = renderHook(() => useLinksnap({ user: { id: 'u-1' } }));
+      const { result, unmount } = renderHook(() => useLinksnap({ identity: userIdentity('u-1') }));
       await waitFor(() => expect(result.current.ready).toBe(true));
 
       unmount();
@@ -127,7 +127,7 @@ describe('useLinksnap', () => {
     });
 
     try {
-      const { result, unmount } = renderHook(() => useLinksnap({ user: { id: 'u-1' } }));
+      const { result, unmount } = renderHook(() => useLinksnap({ identity: userIdentity('u-1') }));
       await waitFor(() => expect(result.current.ready).toBe(true));
       // The flush has picked the intent up and is parked inside `send`.
       await waitFor(() => expect(sentTypes).toContain('link.create'));
@@ -150,7 +150,7 @@ describe('useLinksnap', () => {
   });
 
   it('flushes a write made after mount without waiting for a focus event', async () => {
-    const { result } = renderHook(() => useLinksnap({ user: { id: 'u-1' } }));
+    const { result } = renderHook(() => useLinksnap({ identity: userIdentity('u-1') }));
     await waitFor(() => expect(result.current.ready).toBe(true));
 
     // Nothing is queued at mount, so the write itself is the only thing that can
