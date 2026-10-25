@@ -4,12 +4,11 @@ import {
   type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import {
-  openLocalStore,
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { LocalStoreConnection } from '@/frontend/shared/local-store/connection';
+import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import {
@@ -131,15 +130,15 @@ export function isAyahRef(surah: number, ayah: number): boolean {
  * connection.
  */
 export class QuranLocalStore {
-  private readonly connection: LocalStoreConnection;
+  private readonly connection: LocalStoreLease;
   private readonly outbox: OutboxStore;
   private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    db: IDBDatabase,
+    connection: LocalStoreLease,
     readonly identity: LocalIdentity
   ) {
-    this.connection = new LocalStoreConnection(db);
+    this.connection = connection;
     this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
@@ -158,17 +157,18 @@ export class QuranLocalStore {
     identity: LocalIdentity = GUEST_IDENTITY,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<QuranLocalStore> {
-    const db = await openLocalStore(
+    const connection = await acquireLocalStore(
       localStoreName(PRODUCT, identity),
       quranStoreMigrations,
       factory
     );
-    return new QuranLocalStore(db, identity);
+    return new QuranLocalStore(connection, identity);
   }
 
   /**
-   * Closes the connection: work already in flight settles first, and every
-   * operation after this one resolves without touching IndexedDB (#204).
+   * Closes this holder's lease: work already in flight settles first, and every
+   * operation after this one resolves without touching IndexedDB (#204). The
+   * shared connection itself stays open for the document (#494).
    */
   close(): void {
     this.connection.close();
