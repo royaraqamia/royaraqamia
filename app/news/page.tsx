@@ -86,7 +86,9 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
             <NewsLiveRefresh />
           </header>
 
-          {board.personal && !board.search ? (
+          {board.personal &&
+          !board.search &&
+          (board.personal.active || board.personal.available) ? (
             <div className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
               {board.personal.active ? (
                 <>
@@ -101,23 +103,13 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                     عرض المُلخَّص العام
                   </Link>
                 </>
-              ) : board.personal.available ? (
+              ) : (
                 <Link
                   href={otherViewHref}
                   className="font-bold text-primary underline-offset-4 hover:underline"
                 >
                   لديك مُلخَّص خاص لهذا اليوم — اعرضه
                 </Link>
-              ) : (
-                <span>
-                  لم نُنشئ مُلخَّصك الخاص لهذا اليوم بعد؛ يُنشأ صباحًا بعد المُلخَّص العام.{' '}
-                  <Link
-                    href="/account/news"
-                    className="font-bold text-primary underline-offset-4 hover:underline"
-                  >
-                    إعدادات مصادرك
-                  </Link>
-                </span>
               )}
             </div>
           ) : null}
@@ -150,12 +142,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                 {board.search.hits.length > 0 ? (
                   <div className="space-y-4">
                     {board.search.hits.map((hit) => (
-                      <StoryCard
-                        key={hit.id}
-                        story={hit}
-                        digestDate={hit.digestDate}
-                        showPosition={false}
-                      />
+                      <StoryCard key={hit.id} story={hit} digestDate={hit.digestDate} />
                     ))}
                   </div>
                 ) : (

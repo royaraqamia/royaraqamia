@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { QuranIndexPage } from '@/frontend/ui/quran/quran-index';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
 import type { QuranIndex, Surah, SurahSummary } from '@/shared/contracts/quran';
@@ -59,10 +59,9 @@ describe('the sura reader', () => {
   it('renders every ayah with an addressable id', () => {
     render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
 
-    expect(screen.getByText(/آية أولى/)).toBeInTheDocument();
-    expect(screen.getByText(/آية ثانية/)).toBeInTheDocument();
-    expect(document.getElementById('ayah-1')).not.toBeNull();
-    expect(document.getElementById('ayah-2')).not.toBeNull();
+    // The closing number is its own node, so the Ayah is read off its paragraph.
+    expect(document.getElementById('ayah-1')).toHaveTextContent('آية أولى');
+    expect(document.getElementById('ayah-2')).toHaveTextContent('آية ثانية');
   });
 
   it('gives every ayah its own card', () => {
@@ -70,6 +69,23 @@ describe('the sura reader', () => {
 
     expect(document.querySelectorAll('[data-ayah-card]')).toHaveLength(2);
     expect(document.querySelectorAll('[data-tafsir-slot]')).toHaveLength(2);
+  });
+
+  it('closes the ayah with its number, and marks it from beside the number', () => {
+    render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+
+    const first = document.getElementById('ayah-1')!;
+    const tail = first.lastElementChild as HTMLElement;
+    const marker = tail.querySelector('[data-ayah-marker="1"]')!;
+
+    // The number is the last thing in the text, not a row of its own above it.
+    expect(marker).toHaveTextContent('1');
+    // The control that saves the Ayah is a control in its own right — the
+    // number only names the Ayah.
+    expect(marker.querySelector('button')).toBeNull();
+    expect(tail.querySelector('[data-bookmark-ayah="1"]')).toBe(
+      screen.getByRole('button', { name: 'علامة على الآية 1' })
+    );
   });
 
   it('shows the basmalah only when the sura has one', () => {
@@ -89,11 +105,10 @@ describe('the sura reader', () => {
     render(
       <SurahReader surah={surah()} summary={summary()} audio={{ ayahCount: 2, bytes: 2048 }} />
     );
-    // The size is stated up front: on mobile data it is part of the decision.
-    expect(screen.getByRole('button', { name: 'استمع للسُّورة' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'تلاوة السُّورة' })).toHaveTextContent(
-      '2 آيات · 2 ك.ب'
-    );
+    // One float, and nothing else: play is the whole recitation control.
+    const player = screen.getByRole('region', { name: 'تلاوة السُّورة' });
+    expect(within(player).getByRole('button', { name: 'استمع للسُّورة' })).toBeInTheDocument();
+    expect(within(player).getAllByRole('button')).toHaveLength(1);
   });
 
   it('names the sura and states where it was revealed', () => {

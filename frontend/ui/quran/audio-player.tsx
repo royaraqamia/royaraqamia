@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, Download, Loader2, Pause, Play, Square } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, Pause, Play, Square } from 'lucide-react';
 import {
   audioPlaybackSource,
   downloadSurahAudio,
@@ -11,7 +11,6 @@ import {
 } from '@/frontend/api/quran/audio';
 import { formatBytes } from '@/frontend/shared/format-bytes';
 import { logger } from '@/frontend/shared/logger';
-import { Button } from '@/frontend/ui/primitives/button';
 import type { QuranSurahAudio } from '@/shared/contracts/quran-audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
 
@@ -42,6 +41,15 @@ interface SurahAudioPlayerProps {
  * Plays a sura's Recitation, one Ayah file after another (ADR-0062), and lets
  * the reader keep a copy of it for listening offline (#559, ADR-0081).
  *
+ * The controls float over the reader as bare round buttons, the way the app's
+ * other floats do: play, stop and the Ayah being played stay reachable wherever
+ * the reader has scrolled to, and the reading column keeps its full width.
+ *
+ * Play is also the only way to keep a sura offline now: pressing it starts the
+ * first Ayah straight away and keeps the rest on the device in the background,
+ * so a reader who never asks for a download still ends up able to listen
+ * without a network. A metered connection is the one case that still asks.
+ *
  * The files are one Ayah each, so playback is a queue: when a file ends the next
  * one begins. That costs a small gap at each Ayah — which the reciter's own pause
  * absorbs — and buys two things a single two-hour file cannot: the Ayah being
@@ -50,8 +58,7 @@ interface SurahAudioPlayerProps {
  *
  * Playback prefers a copy on this device and falls back to the host, so a reader
  * on a plane and a reader on mobile data take the same code path. Nothing is
- * fetched until play or download is pressed: merely reading a sura costs no
- * audio bandwidth, and no copy exists that the reader did not ask for.
+ * fetched until play is pressed: merely reading a sura costs no audio bandwidth.
  */
 export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: SurahAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -97,15 +104,16 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     };
   }, [surah, ayahCount]);
 
+  /** Plays one Ayah file; says whether sound is actually coming out. */
   const playAt = useCallback(
-    async (position: number) => {
+    async (position: number): Promise<boolean> => {
       const audio = audioRef.current;
       const file = playlistRef.current?.files[position];
       const baseUrl = baseUrlRef.current;
       if (!audio || !baseUrl || !file) {
         setStatus('idle');
         onAyahChange?.(null);
-        return;
+        return false;
       }
 
       positionRef.current = position;
@@ -119,7 +127,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
       if (!source.url) {
         setStatus('offline');
         onAyahChange?.(null);
-        return;
+        return false;
       }
 
       audio.src = source.url;
@@ -128,11 +136,13 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         await audio.play();
         setStatus('playing');
         onAyahChange?.(file.ayah);
+        return true;
       } catch {
         // A refusal to play while the device is offline is a state to name, not
         // a failure: the Ayah it wanted is on the host, and the host is away.
         setStatus(source.local ? 'error' : 'offline');
         onAyahChange?.(null);
+        return false;
       }
     },
     [onAyahChange, releaseObjectUrl, surah]
@@ -163,6 +173,62 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     setStatus('idle');
   }, [onAyahChange, releaseObjectUrl]);
 
+  /**
+   * Keeps this Surah on the device.
+   *
+   * `confirmed` is the reader's answer to the metered prompt: the whole
+   * difference between "kept without asking" and consent. The play button calls
+   * this itself once the first Ayah is playing, so a reader who never asks for a
+   * download still ends up able to listen offline.
+   */
+  const startDownload = useCallback(
+    async (confirmed: boolean) => {
+      setDownload({ phase: 'working', done: 0, total: ayahCount });
+
+      try {
+        const result = await downloadSurahAudio(surah, {
+          allowMetered: confirmed,
+          onProgress: (progress) =>
+            setDownload({ phase: 'working', done: progress.done, total: progress.total }),
+        });
+        setSaved(result.stored > 0 || result.reused > 0 ? 'complete' : saved);
+        setDownload(IDLE_DOWNLOAD);
+      } catch (error) {
+        if (error instanceof SurahAudioDownloadError) {
+          // A meter is the reader's decision to make; a device that simply
+          // cannot keep a copy is not, and saying so would answer a question
+          // nobody asked.
+          setDownload(
+            error.refusal === 'metered'
+              ? { phase: 'metered', done: 0, total: 0 }
+              : { phase: 'unsupported', done: 0, total: 0 }
+          );
+          return;
+        }
+        setDownload({ phase: 'failed', done: 0, total: 0 });
+        logger.error('surah audio download failed', {
+          surah,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+    [ayahCount, saved, surah]
+  );
+
+  const keepInBackground = useCallback(() => {
+    // A keep that the device cannot do, or that the reader has not answered for
+    // yet, is not retried behind their back on the next press.
+    if (
+      saved === 'complete' ||
+      download.phase === 'working' ||
+      download.phase === 'unsupported' ||
+      download.phase === 'metered'
+    ) {
+      return;
+    }
+    void startDownload(false);
+  }, [saved, download.phase, startDownload]);
+
   const toggle = useCallback(async () => {
     const audio = audioRef.current;
     if (!audio || status === 'loading') return;
@@ -191,11 +257,13 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         setStatus('offline');
         return;
       }
-      await playAt(from);
+      // Playback comes first: the first Ayah is already sounding, so keeping the
+      // rest can take as long as it takes.
+      if (await playAt(from)) keepInBackground();
     } catch {
       setStatus('offline');
     }
-  }, [status, prepare, playAt]);
+  }, [status, prepare, playAt, keepInBackground]);
 
   const advance = useCallback(() => {
     const total = playlistRef.current?.files.length ?? 0;
@@ -204,41 +272,6 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     else stop();
   }, [playAt, stop]);
 
-  /**
-   * Downloads this Surah, asking first on a connection the browser calls
-   * metered. `confirmed` is the reader's second press, which is the whole
-   * difference between "downloaded without asking" and consent.
-   */
-  const startDownload = useCallback(
-    async (confirmed: boolean) => {
-      setDownload({ phase: 'working', done: 0, total: ayahCount });
-
-      try {
-        const result = await downloadSurahAudio(surah, {
-          allowMetered: confirmed,
-          onProgress: (progress) =>
-            setDownload({ phase: 'working', done: progress.done, total: progress.total }),
-        });
-        setSaved(result.stored > 0 || result.reused > 0 ? 'complete' : saved);
-        setDownload(IDLE_DOWNLOAD);
-      } catch (error) {
-        if (error instanceof SurahAudioDownloadError) {
-          setDownload(
-            error.refusal === 'metered'
-              ? { phase: 'metered', done: 0, total: 0 }
-              : { phase: 'unsupported', done: 0, total: 0 }
-          );
-          return;
-        }
-        setDownload({ phase: 'failed', done: 0, total: 0 });
-        logger.error('surah audio download failed', {
-          surah,
-          reason: error instanceof Error ? error.message : String(error),
-        });
-      }
-    },
-    [ayahCount, saved, surah]
-  );
   const isPlaying = status === 'playing';
   const isBusy = status === 'loading';
   const label = isPlaying
@@ -259,7 +292,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         : Play;
 
   const size = formatBytes(bytes);
-  const saveable = saved === null || saved === 'none' || saved === 'partial';
+  const showCounter = isPlaying || status === 'paused';
 
   return (
     <section
@@ -267,85 +300,64 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
       // What this device holds for the sura, once that has been read. A browser
       // test waits on it rather than guessing when hydration finished.
       data-audio-state={saved ?? 'unknown'}
-      className="rounded-xl border border-border/60 bg-card/60 px-3 py-2.5"
+      className="fixed inset-e-4 bottom-[calc(3.5rem+var(--roy-safe-bottom))] z-40 flex w-fit max-w-[calc(100vw-2rem)] flex-col items-end gap-1.5"
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-foreground">تلاوة السُّورة</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground" aria-live="polite">
-            {isPlaying || status === 'paused' ? (
-              <>
-                الآية <span className="font-heading">{ayah}</span> من{' '}
-                <span className="font-heading">{ayahCount}</span>
-              </>
-            ) : (
-              <>
-                <span className="font-heading">{ayahCount}</span> آيات ·{' '}
-                <span className="font-heading">{Math.max(1, Math.round(bytes / 1024))}</span> ك.ب
-              </>
-            )}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {(isPlaying || status === 'paused') && (
-            <button
-              type="button"
-              onClick={stop}
-              aria-label="إيقاف التِّلاوة"
-              title="إيقاف التِّلاوة"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-safe hover:border-border/90 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              <Square aria-hidden="true" className="size-3.5" />
-            </button>
-          )}
-          <Button
+      <div className="flex items-center gap-2">
+        {(isPlaying || status === 'paused') && (
+          <button
             type="button"
-            variant="hero"
-            size="sm"
-            onClick={() => void toggle()}
-            disabled={isBusy}
-            className="gap-1.5 px-4 text-xs font-bold"
+            onClick={stop}
+            aria-label="إيقاف التِّلاوة"
+            title="إيقاف التِّلاوة"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground shadow-md shadow-foreground/10 transition-safe hover:border-border hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Icon aria-hidden="true" className={`size-3.5 ${isBusy ? 'animate-spin' : ''}`} />
-            {label}
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 pt-2">
-        {saved === 'complete' ? (
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary">
-            <Check aria-hidden="true" className="size-3.5" />
-            محفوظة على هذا الجُهاز، تعمل دون اتِّصال
-          </p>
-        ) : download.phase === 'working' ? (
-          <p className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-            جاري الحفظ… <span className="font-heading">{download.done}</span> من{' '}
-            <span className="font-heading">{download.total}</span>
-          </p>
-        ) : (
-          saveable && (
-            <button
-              type="button"
-              onClick={() => void startDownload(false)}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground transition-safe hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              <Download aria-hidden="true" className="size-3.5" />
-              حفظ التِّلاوة{size ? ` (${size})` : ''}
-            </button>
-          )
+            <Square aria-hidden="true" className="size-3.5" />
+          </button>
         )}
 
-        {saved === 'partial' && download.phase !== 'working' && (
-          <p className="text-[11px] text-muted-foreground">بعض آياتها محفوظة فقط</p>
-        )}
+        <button
+          type="button"
+          onClick={() => void toggle()}
+          disabled={isBusy}
+          aria-label={label}
+          title={label}
+          className="inline-flex size-14 items-center justify-center rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] transition-safe hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+        >
+          <Icon aria-hidden="true" className={`size-6 ${isBusy ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {download.phase === 'metered' && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          أنت على اتِّصال مدفوع. الحفظ ينزّل التِّلاوة كاملة:{' '}
+      {showCounter ? (
+        <p
+          aria-live="polite"
+          className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm"
+        >
+          الآية <span className="font-heading">{ayah}</span> من{' '}
+          <span className="font-heading">{ayahCount}</span>
+        </p>
+      ) : null}
+
+      {download.phase === 'working' ? (
+        <p
+          aria-live="polite"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm"
+        >
+          <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+          جاري الحفظ… <span className="font-heading">{download.done}</span> من{' '}
+          <span className="font-heading">{download.total}</span>
+        </p>
+      ) : saved === 'complete' ? (
+        <p className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-bold text-primary shadow-sm">
+          <Check aria-hidden="true" className="size-3" />
+          محفوظة على هذا الجُهاز، تعمل دون اتِّصال
+        </p>
+      ) : saved === 'partial' ? (
+        <p className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
+          بعض آياتها محفوظة فقط
+        </p>
+      ) : download.phase === 'metered' ? (
+        <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm">
+          أنت على اتِّصال مدفوع. حفظ التِّلاوة كاملة ينزّل {size ?? 'بيانات'} إضافيَّة:{' '}
           <button
             type="button"
             onClick={() => void startDownload(true)}
@@ -354,31 +366,15 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
             احفظ على أي حال
           </button>
         </p>
-      )}
-
-      {download.phase === 'unsupported' && (
-        <p className="mt-2 text-xs text-destructive">
-          تعذَّر حفظ التِّلاوة على هذا الجُهاز، ويمكنك الاستماع إليها بالاتِّصال.
-        </p>
-      )}
-
-      {download.phase === 'failed' && (
-        <p className="mt-2 text-xs text-destructive">
-          لم يكتمل الحفظ. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.
-        </p>
-      )}
-
-      {status === 'offline' && (
-        <p className="mt-2 text-xs text-destructive">
+      ) : status === 'offline' ? (
+        <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
           هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها.
         </p>
-      )}
-
-      {status === 'error' && (
-        <p className="mt-2 text-xs text-destructive">
+      ) : status === 'error' ? (
+        <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
           تعذَّر تشغيل التِّلاوة. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.
         </p>
-      )}
+      ) : null}
 
       <audio
         ref={audioRef}

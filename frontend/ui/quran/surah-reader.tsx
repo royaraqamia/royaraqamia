@@ -1,3 +1,6 @@
+import { Bookmark } from 'lucide-react';
+
+import { cn } from '@/frontend/shared/cn';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranReadingClient } from './quran-reading-client';
 import { revelationLabel } from './format';
@@ -20,7 +23,9 @@ interface SurahReaderProps {
  * A server component: the text is vendored, so the whole sura renders into the
  * HTML at build time and reading it needs no client bundle. Each ayah is its own
  * card with a stable id, which is what a Bookmark and a Reading position point
- * at, and its ayah number doubles as the control that marks it.
+ * at. The ayah's number closes its text inside the mushaf's own rosette
+ * (`app/quran/quran.css`), and the mark beside it is the control that saves it —
+ * the number itself only names the Ayah.
  *
  * The card is the seam for the next phase: Tafsir will sit in the reserved slot
  * below each ayah's text, without rearranging the reading surface.
@@ -30,7 +35,26 @@ interface SurahReaderProps {
  */
 export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-8 sm:py-12">
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-3xl flex-col px-4 py-8 sm:py-12',
+        // The recitation control floats over the reader, so the last Ayah has to
+        // end above it rather than under it.
+        audio && 'pb-32 sm:pb-36'
+      )}
+    >
+      {/* One hero gradient, defined once: a saved Ayah's mark is filled with it,
+          and every mark on the page points at this definition by id. */}
+      <svg aria-hidden="true" focusable="false" className="absolute size-0">
+        <defs>
+          <linearGradient id="ayah-mark-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#9333ea" />
+            <stop offset="50%" stopColor="#7c3aed" />
+            <stop offset="100%" stopColor="#4f46e5" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       <header className="flex flex-col items-center gap-2 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>{summary.name}</SectionTitleHighlight>
@@ -44,32 +68,42 @@ export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
       <QuranReadingClient surah={summary.n} bismillah={surah.bismillah} audio={audio}>
         {surah.ayahs.map((ayah, position) => {
           const number = position + 1;
+          // The number and the mark close the Ayah, so they stay on the line the
+          // text ends on: the last word travels with them rather than leaving
+          // them alone on a line of their own.
+          const lastSpace = ayah.lastIndexOf(' ');
+          const head = lastSpace === -1 ? '' : ayah.slice(0, lastSpace + 1);
+          const lastWord = lastSpace === -1 ? ayah : ayah.slice(lastSpace + 1);
+
           return (
             <article
               key={number}
               data-ayah-card={number}
               className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
             >
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  data-bookmark-ayah={number}
-                  aria-pressed="false"
-                  disabled
-                  aria-label={`علامة على الآية ${number}`}
-                  title="إضافة علامة أو إزالتها"
-                  className="inline-flex size-8 select-none items-center justify-center rounded-full border border-primary/25 bg-primary/5 font-heading text-sm font-bold text-primary transition-safe hover:border-primary/60 hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground disabled:opacity-60"
-                >
-                  {number}
-                </button>
-              </div>
-
               <p
                 id={`ayah-${number}`}
                 data-ayah={number}
-                className="font-quran mt-3 scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+                className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
               >
-                {ayah}
+                {head}
+                <span className="ayah-tail">
+                  {lastWord}
+                  <span className="ayah-marker" data-ayah-marker={number}>
+                    <span className="ayah-marker-number">{number}</span>
+                  </span>
+                  <button
+                    type="button"
+                    data-bookmark-ayah={number}
+                    aria-pressed="false"
+                    disabled
+                    aria-label={`علامة على الآية ${number}`}
+                    title="إضافة علامة أو إزالتها"
+                    className="ayah-mark"
+                  >
+                    <Bookmark aria-hidden="true" />
+                  </button>
+                </span>
               </p>
 
               {/* The Tafsir slot is reserved now, so the next phase only fills it. */}

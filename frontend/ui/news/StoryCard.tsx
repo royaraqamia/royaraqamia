@@ -14,8 +14,6 @@ interface StoryCardProps {
   story: NewsStory | NewsSearchHit;
   /** Set on search results so every hit says which day it came from. */
   digestDate?: string;
-  /** The digest's own numbering; search results carry none. */
-  showPosition?: boolean;
 }
 
 function isSearchHit(story: NewsStory | NewsSearchHit): story is NewsSearchHit {
@@ -30,7 +28,7 @@ function isSearchHit(story: NewsStory | NewsSearchHit): story is NewsSearchHit {
  * model's Arabic text as published — the page never rewrites it, and the source
  * link is the reader's way back to the original.
  */
-export function StoryCard({ story, digestDate, showPosition = true }: StoryCardProps) {
+export function StoryCard({ story, digestDate }: StoryCardProps) {
   const CategoryIcon = NEWS_CATEGORY_ICONS[story.category];
   const relative = formatRelativeTime(story.sourcePublishedAt);
   const day = digestDate ?? (isSearchHit(story) ? story.digestDate : undefined);
@@ -50,11 +48,6 @@ export function StoryCard({ story, digestDate, showPosition = true }: StoryCardP
         <span className="text-[11px] font-medium text-muted-foreground">
           {NEWS_REGION_LABELS[story.region]}
         </span>
-        {showPosition ? (
-          <span className="ms-auto rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
-            {story.position}
-          </span>
-        ) : null}
       </div>
 
       <h3 className="mt-3 text-lg font-extrabold leading-snug text-foreground">{story.headline}</h3>

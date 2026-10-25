@@ -19,3 +19,83 @@
     background-color 200ms ease,
     box-shadow 200ms ease;
 }
+
+/* An Ayah's number, closing its text the way a printed Mushaf does. The circle
+   is drawn here rather than borrowed from the Uthmani face's U+06DD rosette:
+   that glyph's ornamental nubs take the room a three-digit number needs. */
+
+/* The number and the mark travel together: wrapping between them would leave
+   the circle at the end of one line and its control alone on the next. */
+.ayah-tail {
+  white-space: nowrap;
+}
+
+.ayah-marker {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.35em;
+  block-size: 1.35em;
+  margin-inline-start: 0.4em;
+  border: 1.5px solid hsl(var(--primary) / 0.5);
+  border-radius: 9999px;
+  color: hsl(var(--primary));
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Aref Ruqaa's numerals, like every other read-only number on the site. The
+   nudge centres the ink rather than the box: in a 1em line box the face sets its
+   digits 0.136em below the middle (1221/244 ascent/descent, ink 720/-15 of 1000),
+   and that offset is exactly what reads as "not centred". */
+.ayah-marker-number {
+  font-family: var(--font-heading);
+  font-size: 0.52em;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-0.136em);
+}
+
+/* The control that saves an Ayah: the same circle, on the same line, as the
+   number it sits beside. It is painted here — not by React — because the
+   reading session sets its pressed state from the index directly. */
+.ayah-mark {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.35em;
+  block-size: 1.35em;
+  margin-inline-start: 0.35em;
+  border-radius: 9999px;
+  color: hsl(var(--muted-foreground));
+  vertical-align: middle;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.ayah-mark svg {
+  inline-size: 0.62em;
+  block-size: 0.62em;
+}
+
+.ayah-mark:hover:not(:disabled):not([aria-pressed='true']) {
+  color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+.ayah-mark:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.ayah-mark:disabled {
+  opacity: 0.4;
+}
+
+/* A save is the site's hero action, so a saved Ayah's mark is drawn in the hero
+   gradient — the icon itself fills in, with no chip behind it. The gradient is
+   defined once by `SurahReader` and referenced here by id. */
+.ayah-mark[aria-pressed='true'] svg {
+  fill: url(#ayah-mark-gradient);
+  stroke: url(#ayah-mark-gradient);
+}
