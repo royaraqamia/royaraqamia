@@ -111,11 +111,11 @@ const TestimonialCard = memo(function TestimonialCard({
         w-[82vw] sm:w-95 md:w-105 
         snap-start rounded-3xl p-6 sm:p-7 md:p-8 
         flex flex-col justify-between 
-        bg-slate-900/95 hover:bg-slate-900
+        bg-neutral-900/70 hover:bg-neutral-900
         border border-white/10 hover:border-violet-500/40 
         ring-1 ring-white/5 
         transition-[border-color,background-color] duration-400 ease-out 
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
         cursor-pointer overflow-hidden
       `}
     >
@@ -247,7 +247,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
       >
         <DialogContent
           hideClose
-          className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden"
+          className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-neutral-900 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden"
         >
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
