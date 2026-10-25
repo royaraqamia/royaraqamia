@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.141.0] - 2026-10-25
+
+### Added
+- carry the last screen into the first frame (#582)
+- trim the homepage to a scrolling services row (#581)
+
+### Fixed
+- let an idempotent create replay past the item cap (#580)
+
 ## [1.140.0] - 2026-10-25
 
 ### Added
