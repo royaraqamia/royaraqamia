@@ -1,10 +1,10 @@
 {
-  "versionCode": 20017,
-  "versionName": "1.0.17",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.17.apk",
-  "sha256": "f220f29f1e28cf099c7c54b48074ce21a4595036c8e00e09b3d7c85077f55655",
-  "sizeBytes": 8054944,
+  "versionCode": 20018,
+  "versionName": "1.0.18",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.18.apk",
+  "sha256": "20b4e1650211cb834da8c5f70f60a65d6ecdc52c92bf0b6ef24af0c9867681eb",
+  "sizeBytes": 10693436,
   "minSupportedVersionCode": 20000,
-  "notes": "refactor(device): remove the device diagnostics page (#608)",
+  "notes": "feat(quran): play the recitation natively in the shell (#614)",
   "releasedAt": "2026-10-26"
 }
