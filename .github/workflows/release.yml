@@ -200,7 +200,7 @@ jobs:
       # sourcemaps into this same release (next.config.js release name).
       - name: Associate Sentry release with commits
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true && steps.sentry.outputs.enabled == 'true'
-        uses: getsentry/action-release@6fb9aeade7061441cf3864e34fbe11a1457ad7dc # v3.7.1
+        uses: getsentry/action-release@e6703d0b00208e0b3687ba660d18ab5af7892821 # v3.7.2
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
