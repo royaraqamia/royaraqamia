@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.148.0] - 2026-10-26
+
+### Added
+- play the recitation natively in the shell (#614)
+- paint public rows from a route-scoped snapshot (#613)
+
 ## [1.147.1] - 2026-10-26
 
 ### Changed
