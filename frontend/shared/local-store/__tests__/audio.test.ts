@@ -1,9 +1,12 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createHash, webcrypto } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  AUDIO_CACHE,
   AUDIO_INDEX_DB,
   audioCopyKey,
   audioUsageBytes,
@@ -13,9 +16,11 @@ import {
   openAudioBytesStore,
   readAudioCopy,
   readSurahAudioState,
+  readSurahManifest,
   removeAllAudio,
   removeSurahAudio,
   saveSurahAudio,
+  saveSurahManifest,
   listDownloadedSuras,
   type AudioBytesStore,
   type StoredAudioFile,
@@ -380,6 +385,57 @@ describe('the device listing', () => {
     await save(store, 112, 'الإخلاص', 20);
 
     expect((await listDownloadedSuras(factory)).map((row) => row.surah)).toEqual([112, 1]);
+  });
+});
+
+describe('the kept manifest', () => {
+  const save = (store: MemoryStore, surah: number) =>
+    saveSurahAudio({
+      edition: 'ar.alafasy',
+      surah,
+      files: filesFor(1, 3, surah),
+      store,
+      urlFor,
+      fetcher: servingFetcher(),
+      factory,
+    });
+
+  it('is what lets a kept Surah play with the radio off, so it is stored with it', async () => {
+    const manifest = { surah: 1, ayahCount: 1, files: filesFor(1) };
+    await saveSurahManifest(
+      { edition: 'ar.alafasy', surah: 1, baseUrl: 'https://audio.test', manifest },
+      factory
+    );
+
+    expect(await readSurahManifest('ar.alafasy', 1, factory)).toEqual({
+      baseUrl: 'https://audio.test',
+      manifest,
+    });
+    expect(await readSurahManifest('ar.alafasy', 2, factory)).toBeNull();
+  });
+
+  it('goes when its Surah is removed, so no manifest promises bytes that are gone', async () => {
+    const store = new MemoryStore();
+    await save(store, 1);
+    await saveSurahManifest(
+      { edition: 'ar.alafasy', surah: 1, baseUrl: 'https://audio.test', manifest: filesFor(1) },
+      factory
+    );
+
+    await removeSurahAudio('ar.alafasy', 1, { store, factory });
+
+    expect(await readSurahManifest('ar.alafasy', 1, factory)).toBeNull();
+  });
+});
+
+describe('a release', () => {
+  it('does not take the Cache Storage copies with it', () => {
+    // The worker deletes every cache it does not name on activate. The audio
+    // fallback is the page's, so the worker has to be told to leave it alone —
+    // and the two names have to be the same string.
+    const worker = readFileSync(resolve(process.cwd(), 'public', 'sw.js'), 'utf8');
+    expect(worker).toContain(`const AUDIO_CACHE = '${AUDIO_CACHE}'`);
+    expect(worker).toMatch(/key !== AUDIO_CACHE/);
   });
 });
 

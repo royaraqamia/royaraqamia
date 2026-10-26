@@ -5,12 +5,12 @@ import { AlertTriangle, Check, Download, Loader2, Pause, Play, Square } from 'lu
 import {
   audioPlaybackSource,
   downloadSurahAudio,
-  loadAudioEdition,
-  loadSurahAudio,
+  loadPlayableSurah,
   readDownloadedSurah,
   SurahAudioDownloadError,
 } from '@/frontend/api/quran/audio';
 import { formatBytes } from '@/frontend/shared/format-bytes';
+import { logger } from '@/frontend/shared/logger';
 import { Button } from '@/frontend/ui/primitives/button';
 import type { QuranSurahAudio } from '@/shared/contracts/quran-audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
@@ -113,6 +113,15 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
       const source = await audioPlaybackSource(baseUrl, surah, file);
       releaseObjectUrl();
       if (source.local) objectUrlRef.current = source.url;
+
+      // Nothing local and no host to ask: the state to name, not a failure to
+      // retry blindly.
+      if (!source.url) {
+        setStatus('offline');
+        onAyahChange?.(null);
+        return;
+      }
+
       audio.src = source.url;
 
       try {
@@ -122,7 +131,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
       } catch {
         // A refusal to play while the device is offline is a state to name, not
         // a failure: the Ayah it wanted is on the host, and the host is away.
-        setStatus(!source.local && isOffline() ? 'offline' : 'error');
+        setStatus(source.local ? 'error' : 'offline');
         onAyahChange?.(null);
       }
     },
@@ -132,11 +141,11 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
   const prepare = useCallback(async () => {
     if (playlistRef.current) return true;
 
-    const [playlist, edition] = await Promise.all([loadSurahAudio(surah), loadAudioEdition()]);
-    if (!playlist || playlist.files.length === 0) return false;
+    const playable = await loadPlayableSurah(surah);
+    if (!playable || playable.manifest.files.length === 0) return false;
 
-    playlistRef.current = playlist;
-    baseUrlRef.current = edition.baseUrl;
+    playlistRef.current = playable.manifest;
+    baseUrlRef.current = playable.baseUrl;
     return true;
   }, [surah]);
 
@@ -168,7 +177,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         await audio.play();
         setStatus('playing');
       } catch {
-        setStatus(objectUrlRef.current ? 'error' : isOffline() ? 'offline' : 'error');
+        setStatus(objectUrlRef.current ? 'error' : 'offline');
       }
       return;
     }
@@ -177,12 +186,14 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     setStatus('loading');
     try {
       if (!(await prepare())) {
-        setStatus('error');
+        // No playlist could be read: offline, that is the surah not being kept
+        // rather than a failure of this one.
+        setStatus('offline');
         return;
       }
       await playAt(from);
     } catch {
-      setStatus('error');
+      setStatus('offline');
     }
   }, [status, prepare, playAt]);
 
@@ -220,11 +231,14 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
           return;
         }
         setDownload({ phase: 'failed', done: 0, total: 0 });
+        logger.error('surah audio download failed', {
+          surah,
+          reason: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [ayahCount, saved, surah]
   );
-
   const isPlaying = status === 'playing';
   const isBusy = status === 'loading';
   const label = isPlaying
@@ -250,6 +264,9 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
   return (
     <section
       aria-label="تلاوة السُّورة"
+      // What this device holds for the sura, once that has been read. A browser
+      // test waits on it rather than guessing when hydration finished.
+      data-audio-state={saved ?? 'unknown'}
       className="rounded-xl border border-border/60 bg-card/60 px-3 py-2.5"
     >
       <div className="flex items-center justify-between gap-3">
@@ -370,16 +387,11 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         onError={() => {
           // Clearing the source on stop is not a failure.
           if (audioRef.current?.getAttribute('src')) {
-            setStatus(objectUrlRef.current ? 'error' : isOffline() ? 'offline' : 'error');
+            setStatus(objectUrlRef.current ? 'error' : 'offline');
           }
         }}
         className="hidden"
       />
     </section>
   );
-}
-
-/** Whether the browser says there is no network. Unknown counts as connected. */
-function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
