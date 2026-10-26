@@ -23,6 +23,11 @@ interface NewsFiltersProps {
   categories: NewsCategory[];
   /** Search results are site-wide, so the day strip is hidden while searching. */
   isSearching: boolean;
+  /**
+   * True while the page is showing a snapshot (#555): a chip or a day is a read,
+   * and a read with no connection is the state the page has already named.
+   */
+  disabled?: boolean;
 }
 
 /**
@@ -42,12 +47,14 @@ export function NewsFilters({
   dates,
   categories,
   isSearching,
+  disabled = false,
 }: NewsFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
   const navigate = (next: { category?: NewsCategory | null; date?: string | null }) => {
+    if (disabled) return;
     const params = new URLSearchParams();
     const nextCategory = next.category === undefined ? category : next.category;
     const nextDate = next.date === undefined ? date : next.date;
@@ -64,11 +71,16 @@ export function NewsFilters({
   };
 
   return (
-    <div className={cn('space-y-4', isPending && 'opacity-60')} aria-busy={isPending}>
+    <div
+      className={cn('space-y-4', isPending && 'opacity-60', disabled && 'opacity-70')}
+      aria-busy={isPending}
+      aria-disabled={disabled}
+    >
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           aria-pressed={category === null}
+          disabled={disabled}
           onClick={() => navigate({ category: null })}
           className={cn(
             'rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
@@ -87,6 +99,7 @@ export function NewsFilters({
               key={value}
               type="button"
               aria-pressed={selected}
+              disabled={disabled}
               onClick={() => navigate({ category: selected ? null : value })}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
@@ -107,6 +120,7 @@ export function NewsFilters({
           <button
             type="button"
             aria-pressed={date === null}
+            disabled={disabled}
             onClick={() => navigate({ date: null })}
             className={cn(
               'shrink-0 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors',
@@ -122,6 +136,7 @@ export function NewsFilters({
               key={value}
               type="button"
               aria-pressed={date === value}
+              disabled={disabled}
               onClick={() => navigate({ date: value })}
               className={cn(
                 'shrink-0 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors',

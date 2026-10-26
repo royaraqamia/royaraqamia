@@ -476,3 +476,131 @@ test('a repeat client navigation is answered from the cache with the radio off',
 
   await context.close();
 });
+
+/**
+ * The public snapshot store (#555): a surface's last-seen rows paint with the
+ * radio off instead of a skeleton or `/offline`.
+ *
+ * `/news` is the case the store was built for. Its document used to read
+ * `searchParams` on the server, which is exactly what kept it out of the
+ * precache, so an offline open answered from `/` — a different screen. The page
+ * is a data-free shell now, its digest is a client read, and the rows it rendered
+ * are in the public scope of the snapshot store. The assertions below are the
+ * two halves of that: `/news` is on the device after install-and-refresh, and the
+ * reload with the radio off paints rows rather than the pulse skeleton.
+ */
+test('the news digest paints from its snapshot with the radio off', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  await gotoUnderWorkerControl(page, `${baseURL}/news`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // The board settles once, from the API read; the recorder writes after the
+  // paint it is given, so polling the store is the honest signal that the frame
+  // this test reloads has been recorded.
+  const snapshotRows = () =>
+    page.evaluate(() => {
+      const raw = window.localStorage.getItem('royaraqamia:snapshot:public:/news');
+      if (!raw) return -1;
+      try {
+        const envelope = JSON.parse(raw) as { data?: { day?: { stories?: unknown[] } } };
+        return envelope.data?.day?.stories?.length ?? 0;
+      } catch {
+        return -1;
+      }
+    });
+
+  await expect.poll(snapshotRows, { timeout: 60_000 }).toBeGreaterThan(0);
+  const rows = await snapshotRows();
+  const onlineCards = await page.locator('#main-content article').count();
+  expect(onlineCards).toBeGreaterThan(0);
+
+  // The shell is in the build's precache (ADR-0071): this is what makes an
+  // offline open paint News' own chrome instead of falling through to `/`.
+  await waitForCachedRoutes(page, ['/news']);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForAppHydrated(page);
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL(/\/news$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // Rows, not a skeleton and not the offline page's retry link.
+  await expect(page.locator('#main-content article').first()).toBeVisible();
+  expect(await page.locator('#main-content article').count()).toBeGreaterThanOrEqual(rows);
+  await expect(page.locator('#main-content .animate-pulse')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /العودة للرئيسية/ })).toHaveCount(0);
+
+  // Stale is named, not hidden: the shared offline indicator reports the cached
+  // copy's age, and the snapshot's own line says when it was taken.
+  await expect(page.getByRole('status').filter({ hasText: 'غير متَّصل' }).first()).toBeVisible();
+
+  await context.close();
+});
+
+/**
+ * The filtered Community feed (#555).
+ *
+ * Page one of `/community` is prerendered into the document, so it came back
+ * offline before this store existed. A filtered read is a never-cache API call
+ * with no document of its own, and that is the page the snapshot answers: the
+ * rows this device last showed under the same query, read-only and marked stale.
+ */
+test('a filtered community page paints its snapshot rows with the radio off', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+
+  await gotoUnderWorkerControl(page, `${baseURL}/community`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('#main-content article').first()).toBeVisible();
+
+  const onlineCards = await page.locator('#main-content article').count();
+  const snapshotPosts = () =>
+    page.evaluate(() => {
+      const raw = window.localStorage.getItem('royaraqamia:snapshot:public:/community');
+      if (!raw) return -1;
+      try {
+        const envelope = JSON.parse(raw) as { data?: { posts?: unknown[] } };
+        return envelope.data?.posts?.length ?? 0;
+      } catch {
+        return -1;
+      }
+    });
+
+  await expect.poll(snapshotPosts, { timeout: 60_000 }).toBeGreaterThan(0);
+
+  await waitForCachedRoutes(page, ['/community']);
+  await waitForAppHydrated(page);
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL(/\/community$/);
+  await expect(page.locator('#main-content article').first()).toBeVisible();
+  expect(await page.locator('#main-content article').count()).toBeGreaterThanOrEqual(
+    Math.min(onlineCards, 1)
+  );
+  await expect(page.locator('#main-content .animate-pulse')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /العودة للرئيسية/ })).toHaveCount(0);
+
+  await context.close();
+});

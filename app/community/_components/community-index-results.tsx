@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
-import { request } from '@/frontend/transport/http';
+import {
+  halveList,
+  screenful,
+  usePublicSnapshot,
+  usePublicSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
+import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
+import { requestWithMeta } from '@/frontend/transport/http';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import {
   ReadFailureNotice,
   toReadFailure,
@@ -21,6 +29,29 @@ interface IndexData {
   nextCursor: string | null;
 }
 
+/**
+ * The feed as this device last painted it (#555).
+ *
+ * Page one is rendered on the server (ISR) and cached with the document, so an
+ * offline reload of `/community` already has its rows. What does not come back
+ * offline is a filtered or paginated page: those are reads of a never-cache API,
+ * and a query the reader typed yesterday is a destination they return to. This is
+ * the copy that answers it, holding the fields the cards render and no more.
+ */
+interface CommunitySnapshot extends IndexData {
+  capturedAt: string;
+}
+
+/**
+ * The byte budget's trim: the first screenful, then half of it per pass. A feed
+ * page is already bounded by its own page size, so this only bites on posts with
+ * long excerpts.
+ */
+function trimCommunitySnapshot(snapshot: CommunitySnapshot): CommunitySnapshot | null {
+  const posts = halveList(screenful(snapshot.posts));
+  return posts.length === 0 ? null : { ...snapshot, posts };
+}
+
 const PAGE_ERROR = 'تعذَّر تحميل المنشورات. أعد المحاولة.';
 const LOAD_MORE_ERROR = 'تعذَّر تحميل المزيد من المنشورات. أعد المحاولة.';
 
@@ -28,15 +59,19 @@ function fetchIndex(
   cursor: string | null,
   query: string,
   signal?: AbortSignal
-): Promise<IndexData> {
+): ReturnType<typeof requestWithMeta<IndexData>> {
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
   if (query) params.set('q', query);
   const search = params.toString();
 
   // Through the transport so a request that never left is distinguishable from a
-  // server that answered with a failure (#475): the two get different states.
-  return request<IndexData>(`/api/community/index${search ? `?${search}` : ''}`, { signal });
+  // server that answered with a failure (#475): the two get different states. The
+  // metadata says whether the answer may be kept at all — a response the server
+  // marked `no-store` is never recorded (#555).
+  return requestWithMeta<IndexData>(`/api/community/index${search ? `?${search}` : ''}`, {
+    signal,
+  });
 }
 
 function CommunityFeedSkeleton() {
@@ -80,6 +115,7 @@ export function CommunityIndexResults({
   const cursor = searchParams.get('cursor');
   const query = searchParams.get('q')?.trim() ?? '';
   const isDefault = !cursor && !query;
+  const route = normaliseSnapshotRoute('/community', searchParams.toString());
 
   const [posts, setPosts] = useState(initialPosts);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
@@ -88,6 +124,9 @@ export function CommunityIndexResults({
   const [pageError, setPageError] = useState<ReadFailure | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<ReadFailure | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [recordable, setRecordable] = useState<CommunitySnapshot | null>(null);
+
+  const snapshot = usePublicSnapshot<CommunitySnapshot>(route);
 
   useEffect(() => {
     if (isDefault) {
@@ -97,6 +136,17 @@ export function CommunityIndexResults({
       setIsLoadingMore(false);
       setPageError(null);
       setLoadMoreError(null);
+      // The server rendered page one into the document; the rows it drew are
+      // what this device can show again without a server.
+      setRecordable(
+        initialPosts.length === 0
+          ? null
+          : {
+              posts: initialPosts,
+              nextCursor: initialNextCursor,
+              capturedAt: new Date().toISOString(),
+            }
+      );
       return;
     }
 
@@ -107,10 +157,19 @@ export function CommunityIndexResults({
     setLoadMoreError(null);
 
     fetchIndex(cursor, query, controller.signal)
-      .then((json) => {
-        setPosts(json.posts);
-        setNextCursor(json.nextCursor);
+      .then(({ data, keepable }) => {
+        setPosts(data.posts);
+        setNextCursor(data.nextCursor);
         setReady(true);
+        setRecordable(
+          keepable && data.posts.length > 0
+            ? {
+                posts: data.posts,
+                nextCursor: data.nextCursor,
+                capturedAt: new Date().toISOString(),
+              }
+            : null
+        );
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -127,9 +186,19 @@ export function CommunityIndexResults({
     setIsLoadingMore(true);
     setLoadMoreError(null);
     fetchIndex(requestCursor, query)
-      .then((json) => {
-        setPosts((prev) => [...prev, ...json.posts]);
-        setNextCursor(json.nextCursor);
+      .then(({ data, keepable }) => {
+        setPosts((prev) => {
+          const next = [...prev, ...data.posts];
+          if (keepable) {
+            setRecordable({
+              posts: next,
+              nextCursor: data.nextCursor,
+              capturedAt: new Date().toISOString(),
+            });
+          }
+          return next;
+        });
+        setNextCursor(data.nextCursor);
       })
       .catch((error: unknown) => {
         setLoadMoreError(toReadFailure(error, LOAD_MORE_ERROR));
@@ -139,7 +208,33 @@ export function CommunityIndexResults({
 
   const handleRetryPage = useCallback(() => setReloadKey((key) => key + 1), []);
 
+  usePublicSnapshotRecorder(route, recordable, { trim: trimCommunitySnapshot });
+
   if (!ready) return <CommunityFeedSkeleton />;
+
+  // A read that never reached the server keeps the rows this device last showed
+  // instead of an empty screen, and says so (#555). Without a snapshot there is
+  // nothing to paint, and the failure is the whole answer.
+  if (pageError && snapshot) {
+    return (
+      <div className="space-y-4">
+        <NeedsConnection
+          variant="inline"
+          message="هذه آخر مشاركات ظهرت لك في هذا القسم. لا يمكن تحديثها أو البحث بلا اتصال."
+          onRetry={handleRetryPage}
+        />
+        <CommunityResults
+          posts={snapshot.posts}
+          nextCursor={null}
+          query={query}
+          onLoadMore={handleLoadMore}
+          isLoadingMore={isLoadingMore}
+          loadMoreError={loadMoreError}
+          onRetryLoadMore={handleLoadMore}
+        />
+      </div>
+    );
+  }
 
   if (pageError) {
     return (

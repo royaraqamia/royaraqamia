@@ -25,6 +25,12 @@ interface NewsSearchProps {
   query: string;
   /** The active category chip, kept when a search is committed. */
   category: NewsCategory | null;
+  /**
+   * True while the page is showing a snapshot (#555): the field stays in the
+   * page so the reader sees which query the rows answered, but committing one
+   * is a read and the page has already named the connection.
+   */
+  disabled?: boolean;
 }
 
 /**
@@ -37,7 +43,7 @@ interface NewsSearchProps {
  * goes too. Committing a term drops the selected day, because the search spans
  * every retained day (`NewsFilters`).
  */
-export function NewsSearch({ query, category }: NewsSearchProps) {
+export function NewsSearch({ query, category, disabled = false }: NewsSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -52,6 +58,7 @@ export function NewsSearch({ query, category }: NewsSearchProps) {
 
   const commitQuery = useCallback(
     (next: string) => {
+      if (disabled) return;
       const params = new URLSearchParams();
       if (next) params.set('q', next);
       if (category) params.set('category', category);
@@ -59,7 +66,7 @@ export function NewsSearch({ query, category }: NewsSearchProps) {
       const search = params.toString();
       router.push(search ? `${pathname}?${search}` : pathname, { scroll: false });
     },
-    [category, pathname, router]
+    [category, disabled, pathname, router]
   );
 
   // Keep the field in step with the URL (back/forward, a cleared query).
@@ -70,6 +77,13 @@ export function NewsSearch({ query, category }: NewsSearchProps) {
   // Debounced suggestions.
   useEffect(() => {
     const trimmed = value.trim();
+    if (disabled) {
+      setHits([]);
+      setOpen(false);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     if (!trimmed) {
       setHits([]);
       setOpen(false);
@@ -108,7 +122,7 @@ export function NewsSearch({ query, category }: NewsSearchProps) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value, retryKey]);
+  }, [value, retryKey, disabled]);
 
   // Dismiss on outside pointer down.
   useEffect(() => {
@@ -190,6 +204,7 @@ export function NewsSearch({ query, category }: NewsSearchProps) {
       <input
         type="text"
         value={value}
+        disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
         onFocus={() => value.trim() && setOpen(true)}
         onKeyDown={handleKeyDown}

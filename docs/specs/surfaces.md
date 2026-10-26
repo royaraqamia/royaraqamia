@@ -24,7 +24,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `community` | `/community` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |
 | `community-post` | `/community/[slug]` | server | snapshot | none | swr | remote | `public-offline.spec.ts` |  | #555 |
-| `news` | `/news` | server | snapshot | none | swr | remote | _ungated_ |  | #555 |
+| `news` | `/news` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |
 | `rates` | `/rates` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |
 | `verify` | `/verify` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |
 | `verify-code` | `/verify/[code]` | server | snapshot | none | swr | remote | `public-offline.spec.ts` |  | #555 |

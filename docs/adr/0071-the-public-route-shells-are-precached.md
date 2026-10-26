@@ -237,3 +237,19 @@ until that item has been opened online once` — paid without a wrong screen at 
 for a product subroute; `scripts/__tests__/sw.test.mjs` proves the prefix order, the homepage walk,
 the marker's lifetime, that the chunks arrive with the document and resume from the queue, and that
 `/offline` still answers an empty cache and `/admin`.
+
+## Amendment (2026-10-26, #555): `/news` becomes a shell, and the cap moves to 33
+
+[#555](https://github.com/royaraqamia/royaraqamia/issues/555) closed the case this ADR's #557 rule was
+written for: `/news` reads its own `searchParams` on the server, so the build never prerendered it
+and it was the one public page outside the list, answered offline by the ancestor fallback. The
+filters and the digest moved to the client (a data-free shell, the ADR-0073 shape the product roots
+took), so the build prerenders it and the generated list includes it.
+
+That made the list 33 shells with `/news` in and `/verify` out — the cap had to drop public content
+from the tail, which is the exact failure #449 raised it for. The cap therefore moves from 32 to 33,
+measured rather than estimated: the #555 build's own HTML for those 33 documents is **1,931,124 bytes
+(1.84 MB)**, against the unchanged 6 MB install ceiling — 31% of it — and the refresh derives its window count from the list, so
+one pass still covers it: nine idle windows of four routes at 33. Raising it further is a routing-mistake question, not a
+byte one: the 146-route measurement in the amendment above is why the cap tracks what a _visit_ is
+worth fetching, not what would fit.

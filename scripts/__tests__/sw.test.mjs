@@ -1879,6 +1879,21 @@ describe('service worker route-shell refresh (#489)', () => {
     for (const route of routes) expect(await cache.match(route)).toBeTruthy();
   });
 
+  it('covers a list longer than the old fixed 4 x 8 in one pass', async () => {
+    // #555 raised the cap to 33 and the worker kept fetching 32 a pass, so the
+    // last route waited for a pass no request would start: `/verify` was simply
+    // absent from a device that had visited the site.
+    const routes = Array.from({ length: 33 }, (_, index) => `/page-${index}`);
+
+    const ctx = await boot({
+      precacheRoutes: routes,
+      fetchImpl: async () => shell(),
+    });
+
+    const cache = await ctx.caches.open(DATA_CACHE);
+    for (const route of routes) expect(await cache.match(route)).toBeTruthy();
+  });
+
   it('does not fetch a route until the page is idle', async () => {
     const ctx = installOnly({ precacheRoutes: ['/privacy'] });
     const idle = [];

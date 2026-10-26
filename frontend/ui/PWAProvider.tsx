@@ -31,6 +31,39 @@ export function PWAProvider({ children }: PWAProviderProps) {
 
   const pwa = usePWA();
 
+  // The snapshot store is this device's other copy of the pages the worker
+  // caches, so a schema change is dropped from both in the same boot: the
+  // worker clears its caches in `activate` when `CACHE_SCHEMA` moves (#488), and
+  // this drops every snapshot an older shape wrote (#555). Readers ignore a
+  // stale version anyway; this is what stops the old bytes outliving it.
+  //
+  // It is housekeeping, so it stays out of the first frame: the module arrives
+  // after hydration in an idle window rather than joining the root chunk, and
+  // the walk happens then. Every route's paint is budgeted (`perf/paint-budget.json`)
+  // and a prune no reader can see is not worth a millisecond of it — the same
+  // reason the recitation player is fetched after hydration (#614).
+  useEffect(() => {
+    const prune = () => {
+      void import('@/frontend/shared/local-store/snapshot').then(({ pruneSnapshots }) =>
+        pruneSnapshots()
+      );
+    };
+
+    const idle = (
+      window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+
+    if (typeof idle === 'function') {
+      const handle = idle(prune, { timeout: 5_000 });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+
+    const handle = window.setTimeout(prune, 1_200);
+    return () => window.clearTimeout(handle);
+  }, []);
+
   useEffect(() => {
     if (registered.current) return;
     if (IS_DEVELOPMENT) return;
