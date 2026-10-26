@@ -3,6 +3,8 @@ import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SurahAudioDownloadError } from '@/frontend/api/quran/audio';
+import { RecitationEngine } from '@/frontend/shared/recitation/engine';
+import { QuranPlayerProvider } from '@/frontend/state/quran/player-context';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
@@ -68,8 +70,18 @@ const surah: Surah = {
   ayahs: ['آية أولى', 'آية ثانية'],
 };
 
+let engine: RecitationEngine;
+
+function renderReader() {
+  return render(
+    <QuranPlayerProvider engine={engine}>
+      <SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />
+    </QuranPlayerProvider>
+  );
+}
+
 function renderPlaying() {
-  render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
+  renderReader();
   fireEvent.click(screen.getByRole('button', { name: 'استمع للسُّورة' }));
 }
 
@@ -77,6 +89,8 @@ beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
   recording.saved = 'none';
   recording.download.mockResolvedValue({ stored: 2, reused: 0, bytes: 80, evicted: 0 });
+  // Prefetching would reach for the audio host, which a unit test must not do.
+  engine = new RecitationEngine({ prefetch: false, storage: null });
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
   vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {});
@@ -84,6 +98,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  engine.dispose();
   vi.restoreAllMocks();
 });
 
@@ -153,7 +168,7 @@ describe('the offline copy', () => {
   it('shows a kept surah as kept before anything is pressed', async () => {
     recording.saved = 'complete';
 
-    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
+    renderReader();
 
     expect(await screen.findByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /حفظ التِّلاوة/ })).not.toBeInTheDocument();
@@ -162,7 +177,7 @@ describe('the offline copy', () => {
   it('names the state when an unkept surah cannot reach the host', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValue(new DOMException('no source'));
 
-    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
+    renderReader();
     fireEvent.click(screen.getByRole('button', { name: 'استمع للسُّورة' }));
 
     // No local copy and no playable host is the state to name, whether the cause

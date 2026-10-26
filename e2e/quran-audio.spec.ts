@@ -99,21 +99,18 @@ test('plays a sura one Ayah file after another, from the host the manifest names
   await expect(firstAyah).toHaveAttribute('aria-current', 'true');
   await expect(secondAyah).not.toHaveAttribute('aria-current');
 
-  const audio = page.locator('audio');
+  const audio = page.locator('[data-quran-audio]');
   await expect(audio).toHaveAttribute(
     'src',
     `https://audio.royaraqamia.com/${FIRST.key}?v=${FIRST.sha256.slice(0, 8)}`
   );
 
-  // The first file ends, and the second begins — the queue, not a playlist.
-  await expect(audio).toHaveAttribute(
-    'src',
-    `https://audio.royaraqamia.com/${SECOND.key}?v=${SECOND.sha256.slice(0, 8)}`,
-    { timeout: 15_000 }
-  );
-  await expect(secondAyah).toHaveAttribute('aria-current', 'true');
+  // The first file ends, and the second begins — the queue, not a playlist. It
+  // was fetched while the first played, so it starts from a local blob.
+  await expect(secondAyah).toHaveAttribute('aria-current', 'true', { timeout: 15_000 });
+  await expect(audio).toHaveAttribute('src', /^blob:/);
   await expect(firstAyah).not.toHaveAttribute('aria-current');
-  expect(played.length).toBeGreaterThanOrEqual(2);
+  expect(played.some((url) => url.includes(SECOND.key))).toBe(true);
 });
 
 test('offers no player for a sura with no vendored recitation', async ({ page }) => {
@@ -131,4 +128,65 @@ test('offers no player for a sura with no vendored recitation', async ({ page })
 
   await expect(page.getByRole('region', { name: 'تلاوة السُّورة' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'استمع للسُّورة' })).toHaveCount(0);
+});
+
+test('keeps the recitation playing across a page navigation', async ({ page }) => {
+  const played = await stubRecitation(page);
+  await page.goto('/quran/1');
+
+  await page.getByRole('button', { name: 'استمع للسُّورة' }).click();
+  await expect(page.getByRole('button', { name: 'إيقاف مؤقّت' })).toBeVisible();
+
+  // The lock screen's title comes from the Media Session, not from the page.
+  await expect
+    .poll(() => page.evaluate(() => navigator.mediaSession.metadata?.title ?? null))
+    .toBe('سورة الفاتحة');
+
+  // The back control is a client-side navigation. Nothing in the reader owns the
+  // element, so the sound survives it (ADR-0085).
+  await page.getByRole('button', { name: 'رجوع' }).click();
+  await page.waitForURL('**/quran');
+
+  const bar = page.getByRole('region', { name: 'مُشغِّل التِّلاوة' });
+  await expect(bar).toBeVisible();
+  await expect(bar.getByText('سورة الفاتحة')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (document.querySelector('[data-quran-audio]') as HTMLAudioElement | null)?.paused
+      )
+    )
+    .toBe(false);
+  expect(played.length).toBeGreaterThan(0);
+
+  // The bar returns to the Ayah that is playing.
+  await bar.getByRole('link').click();
+  await page.waitForURL('**/quran/1#ayah-*');
+  await expect(page.getByRole('region', { name: 'تلاوة السُّورة' })).toBeVisible();
+  await page.getByRole('button', { name: 'إيقاف التِّلاوة' }).click();
+});
+
+test('comes back paused on the same sura after a reload', async ({ page }) => {
+  await stubRecitation(page);
+  await page.goto('/quran/1');
+
+  await page.getByRole('button', { name: 'استمع للسُّورة' }).click();
+  await expect(page.getByRole('button', { name: 'إيقاف مؤقّت' })).toBeVisible();
+
+  await page.reload();
+
+  // The float is the control on this sura's own reader; the mini player is the
+  // same state seen from another page.
+  const resume = page.getByRole('button', { name: 'متابعة' });
+  await expect(resume).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (document.querySelector('[data-quran-audio]') as HTMLAudioElement | null)?.paused
+      )
+    )
+    .toBe(true);
+
+  await resume.click();
+  await expect(page.getByRole('button', { name: 'إيقاف مؤقّت' })).toBeVisible();
 });
