@@ -142,10 +142,14 @@ const ROUTE_PRECACHE_BUDGET_BYTES = self.ROUTE_PRECACHE_BUDGET_BYTES || 6 * 1024
 
 // How the background refresh spends that ceiling (#489). `install` fetches only
 // the fixed shell; the route list arrives after activation, a small batch per
-// idle window, two fetches at a time. One pass covers the generated cap of 32
-// routes (`MAX_PRECACHE_ROUTES`): 4 x 8.
+// idle window, two fetches at a time. The window count follows the list, so one
+// pass always covers it however far the cap grows: a fixed 4 x 8 covered 32
+// routes, and at 33 it silently left the last one (`/verify`) for a pass the
+// next request would have to start (#555).
 const ROUTE_REFRESH_BATCH = self.ROUTE_REFRESH_BATCH || 4;
-const ROUTE_REFRESH_WINDOWS = self.ROUTE_REFRESH_WINDOWS || 8;
+const ROUTE_REFRESH_WINDOWS =
+  self.ROUTE_REFRESH_WINDOWS ||
+  Math.max(8, Math.ceil((self.PRECACHE_ROUTES || []).length / ROUTE_REFRESH_BATCH));
 const ROUTE_REFRESH_CONCURRENCY = 2;
 // The chunks those documents name are collected in the same windows (#490), a
 // smaller handful per window: `/_next/static` files are what make a shell run, and

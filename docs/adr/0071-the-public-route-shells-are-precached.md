@@ -249,7 +249,7 @@ took), so the build prerenders it and the generated list includes it.
 That made the list 33 shells with `/news` in and `/verify` out — the cap had to drop public content
 from the tail, which is the exact failure #449 raised it for. The cap therefore moves from 32 to 33,
 measured rather than estimated: the #555 build's own HTML for those 33 documents is **1,931,124 bytes
-(1.84 MB)**, against the unchanged 6 MB install ceiling — 31% of it — and the refresh still covers the
-list in eight idle windows of four routes. Raising it further is a routing-mistake question, not a
+(1.84 MB)**, against the unchanged 6 MB install ceiling — 31% of it — and the refresh derives its window count from the list, so
+one pass still covers it: nine idle windows of four routes at 33. Raising it further is a routing-mistake question, not a
 byte one: the 146-route measurement in the amendment above is why the cap tracks what a _visit_ is
 worth fetching, not what would fit.

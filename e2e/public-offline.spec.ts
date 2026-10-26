@@ -544,12 +544,7 @@ test('the news digest paints from its snapshot with the radio off', async ({
 
   // Stale is named, not hidden: the shared offline indicator reports the cached
   // copy's age, and the snapshot's own line says when it was taken.
-  await expect(
-    page
-      .getByRole('status')
-      .filter({ hasText: /بلا اتصال/ })
-      .first()
-  ).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'غير متَّصل' }).first()).toBeVisible();
 
   await context.close();
 });

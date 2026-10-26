@@ -38,8 +38,8 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // build lists 29. Raised again to 33 in #555, when `/news` became a data-free
 // shell: on that build the 33 shells measure 1,931,124 bytes (1.84 MB) from the
 // build's own HTML, against the 6 MB ceiling below. The worker fetches the list
-// in idle windows after activation (#489), four routes per window over eight
-// windows, so one pass covers this cap.
+// in idle windows after activation (#489), four routes per window, and as many
+// windows as the list needs, so one pass covers this cap.
 export const MAX_PRECACHE_ROUTES = 33;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
