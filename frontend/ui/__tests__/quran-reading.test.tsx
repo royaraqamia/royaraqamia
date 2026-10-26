@@ -114,14 +114,14 @@ afterEach(() => {
 
 describe('marking an ayah', () => {
   it('stays unpressable until the store behind it is open', () => {
-    // The number is a control the moment it renders, but a press before the
+    // The mark is a control the moment it renders, but a press before the
     // store is open could not be saved — and a control that silently does
     // nothing is worse than one that says it cannot.
     renderSurah();
     expect(screen.getByRole('button', { name: 'علامة على الآية 1' })).toBeDisabled();
   });
 
-  it('marks an ayah when its number is pressed, and stores it', async () => {
+  it('marks an ayah when its mark is pressed, and stores it', async () => {
     renderSurah();
     const button = screen.getByRole('button', { name: 'علامة على الآية 2' });
 
@@ -136,7 +136,7 @@ describe('marking an ayah', () => {
     ]);
   });
 
-  it('takes the mark off when the same number is pressed again', async () => {
+  it('takes the mark off when the same mark is pressed again', async () => {
     renderSurah();
     const button = screen.getByRole('button', { name: 'علامة على الآية 1' });
 
@@ -160,7 +160,7 @@ describe('marking an ayah', () => {
 
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByText(/آية أولى/)).toBeInTheDocument();
+    expect(document.getElementById('ayah-1')).toHaveTextContent('آية أولى');
   });
 });
 

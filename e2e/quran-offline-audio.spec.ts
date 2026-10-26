@@ -128,12 +128,12 @@ test('a kept surah plays from the device with the radio off', async ({ context, 
   const player = page.getByRole('region', { name: 'تلاوة السُّورة' });
   await expect(player).toHaveAttribute('data-audio-state', 'none');
 
-  // Consent first: nothing is fetched until this press.
-  const keep = page.getByRole('button', { name: /حفظ التِّلاوة/ });
-  await keep.click();
-
+  // Play is the keep: the first Ayah streams, the rest is stored behind it.
+  await page.getByRole('button', { name: 'استمع للسُّورة' }).click();
+  await expect(player).toHaveAttribute('data-audio-state', 'complete', { timeout: 30_000 });
   await expect(page.getByText(/محفوظة على هذا الجُهاز/)).toBeVisible({ timeout: 30_000 });
 
+  await page.getByRole('button', { name: 'إيقاف التِّلاوة' }).click();
   recitation.goOffline();
   await context.setOffline(true);
 

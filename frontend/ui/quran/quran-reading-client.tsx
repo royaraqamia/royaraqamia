@@ -18,14 +18,12 @@ export function QuranReadingClient({ surah, bismillah, audio, children }: QuranR
   return (
     <>
       {audio ? (
-        <div className="mt-6">
-          <SurahAudioPlayer
-            surah={surah}
-            ayahCount={audio.ayahCount}
-            bytes={audio.bytes}
-            onAyahChange={onAyahChange}
-          />
-        </div>
+        <SurahAudioPlayer
+          surah={surah}
+          ayahCount={audio.ayahCount}
+          bytes={audio.bytes}
+          onAyahChange={onAyahChange}
+        />
       ) : null}
 
       {bismillah ? (

@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { SurahAudioDownloadError } from '@/frontend/api/quran/audio';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
@@ -114,18 +115,37 @@ describe('the Ayah being played', () => {
 });
 
 describe('the offline copy', () => {
-  it('offers the download with the size it costs, then shows the surah as kept', async () => {
-    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2, bytes: 80 }} />);
+  it('keeps the surah as the first Ayah starts, and says so', async () => {
+    renderPlaying();
 
-    const download = await screen.findByRole('button', { name: /حفظ التِّلاوة/ });
-    expect(download).toHaveTextContent('ك.ب');
+    // Play is the only control, and it is also the download: no second button
+    // to find, and no size to weigh before pressing it.
+    expect(screen.queryByRole('button', { name: /حفظ التِّلاوة/ })).not.toBeInTheDocument();
 
-    fireEvent.click(download);
-
-    await waitFor(() => expect(screen.getByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument());
+    expect(await screen.findByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument();
     expect(recording.download).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ allowMetered: false })
+    );
+  });
+
+  it('asks before spending mobile data on the copy', async () => {
+    recording.download.mockRejectedValueOnce(
+      new SurahAudioDownloadError('metered', 'this connection is metered')
+    );
+
+    renderPlaying();
+
+    // Playback started anyway — the question is about the copy, not the Ayah.
+    expect(await screen.findByRole('button', { name: 'إيقاف مؤقّت' })).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'احفظ على أي حال' }));
+
+    await waitFor(() =>
+      expect(recording.download).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ allowMetered: true })
+      )
     );
   });
 
@@ -140,17 +160,16 @@ describe('the offline copy', () => {
 
   it('names the state when an unkept surah cannot reach the host', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValue(new DOMException('no source'));
-    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false });
 
     render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2, bytes: 80 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'استمع للسُّورة' }));
 
+    // No local copy and no playable host is the state to name, whether the cause
+    // is a plane or a host that never answers.
     expect(
       await screen.findByText(
         /هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها\./
       )
     ).toBeInTheDocument();
-
-    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: true });
   });
 });
