@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.147.1] - 2026-10-26
+
+### Changed
+- publish shell 1.0.17 (20017)
+
+### Fixed
+- publish a digest and its stories in one transaction (#611)
+
+## [1.147.0] - 2026-10-26
+
+### Changed
+- remove the device diagnostics page (#608)
+
+### Added
+- keep the recitation playing across pages (#612)
+
+### Fixed
+- charge a drafts slot when a post is unpublished (#610)
+- fire habit reminders on the Damascus clock (#609)
+
 ## [1.146.2] - 2026-10-26
 
 ### Changed
