@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.147.1] - 2026-10-26
+
+### Changed
+- publish shell 1.0.17 (20017)
+
+### Fixed
+- publish a digest and its stories in one transaction (#611)
+
 ## [1.147.0] - 2026-10-26
 
 ### Changed
