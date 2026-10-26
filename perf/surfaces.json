@@ -127,16 +127,6 @@
       "issue": "#559"
     },
     {
-      "id": "device",
-      "routes": ["/device"],
-      "owner": "local-store",
-      "read": "store",
-      "write": "outbox",
-      "shell": "swr",
-      "bundle": "bundled",
-      "specs": []
-    },
-    {
       "id": "account-owned",
       "routes": ["/account", "/account/links", "/account/posts", "/account/submissions"],
       "owner": "local-store",

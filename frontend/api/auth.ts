@@ -3,7 +3,7 @@ import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { clearPersistedIdentity } from '@/frontend/shared/local-store/identity';
-import { clearIdentitySnapshots } from '@/frontend/shared/local-store/snapshot';
+import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
 import { unregisterNativePush } from '@/frontend/api/push-native';
 import { releasePushSubscription } from '@/frontend/api/push';
 import type { Session, User } from '@supabase/supabase-js';
@@ -72,15 +72,15 @@ export async function signOutSession(): Promise<void> {
   await client.auth.signOut();
   // A sign-out is a decision, not a failed check: the pointer to this account's
   // Local Store goes before the purge, so the next paint is the guest namespace
-  // (#493). The rows stay on disk — "Remove this device's copy" (#370) is how
-  // they leave.
+  // (#493). The rows stay on disk — there is no in-app control that deletes them
+  // (ADR-0084), so clearing site data is the only way out.
   clearPersistedIdentity();
   // The last screens go with the pointer (#495): a snapshot is rows a list
   // rendered, so it would paint the account that just left on the next boot.
-  clearIdentitySnapshots();
+  clearSnapshots();
   // Cache Storage is the one shared surface that could still answer with the
   // previous account's render. IndexedDB is not touched: the Local Store and
-  // Outbox survive sign-out until "Remove this device's copy" (#370).
+  // Outbox survive sign-out by design (ADR-0028).
   await purgeServiceWorkerCaches();
 }
 
@@ -101,7 +101,7 @@ export async function logout(): Promise<void> {
   // rows of the account that just left (#493) — and every snapshot with it
   // (#495).
   clearPersistedIdentity();
-  clearIdentitySnapshots();
+  clearSnapshots();
   // The session is gone server-side: drop account-bearing Cache Storage entries
   // before the redirect, while this document still controls the worker.
   await purgeServiceWorkerCaches();

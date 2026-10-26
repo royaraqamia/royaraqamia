@@ -83,9 +83,9 @@ private spelling of the same state.
 
 ### Filed
 
-- **[#370](https://github.com/royaraqamia/royaraqamia/issues/370)** — closed by `/device` (ADR-0070): the
-  queue is inspectable per item, retryable, and "Remove this device's copy" deletes the account namespace
-  and reports what it took.
+- **[#370](https://github.com/royaraqamia/royaraqamia/issues/370)** — the queue was inspectable per
+  item and "Remove this device's copy" deleted the account namespace at `/device` (ADR-0070). That
+  page is withdrawn (ADR-0084), so the gap is open again.
 - **[#368](https://github.com/royaraqamia/royaraqamia/issues/368)** — in-page needs-connection states for
   auth, admin and MCP, and the admin reads that swallow their failures.
 - **[#369](https://github.com/royaraqamia/royaraqamia/issues/369)** — a failed pull leaves the sync pill
@@ -194,7 +194,7 @@ The audit's last two mechanical rows needed a cause, not a string.
   this is the half that stops them from blaming the connection for a 400 or a 429.
 - **BlogPress keeps the Arabic message.** The raw `Failed to fetch` was the transport's own unwrapped
   rejection, fixed for every product by #402. What remained was the queued-attachment replay, whose
-  "answered without a URL" branch threw an English literal the sync pill and `/device` render; it now
+  "answered without a URL" branch threw an English literal the sync pill renders; it now
   says `فشل رفع الصُّورة. أعد المحاولة.`, and a unit test pins that a media upload that never left
   reports the Arabic transport message rather than a browser string.
 

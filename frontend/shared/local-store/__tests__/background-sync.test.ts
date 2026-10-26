@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   flushOutbox,
   OUTBOX_SYNC_TAG,
-  readShellLastFlush,
   requestOutboxFlush,
   requestShellFlush,
 } from '@/frontend/shared/local-store/background-sync';
@@ -246,85 +245,6 @@ describe('requestShellFlush', () => {
     await settle();
 
     expect(schedule).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
-  });
-});
-
-describe('readShellLastFlush', () => {
-  it('answers null in a browser, which has no shell and no record', () => {
-    expect(readShellLastFlush()).toBe(null);
-  });
-
-  it('answers null where the bridge does not carry the method', () => {
-    // An older shell injected before #455: the tier stays out entirely.
-    vi.stubGlobal('RoyShellSync', { schedule: () => {} });
-    expect(readShellLastFlush()).toBe(null);
-    vi.unstubAllGlobals();
-  });
-
-  it('reads the record the shell persisted, field for field', () => {
-    const record = {
-      at: 1_760_000_000_000,
-      delivered: 3,
-      left: 1,
-      pulled: 4,
-      error: null,
-    };
-    vi.stubGlobal('RoyShellSync', { lastFlush: () => JSON.stringify(record) });
-
-    expect(readShellLastFlush()).toEqual(record);
-    vi.unstubAllGlobals();
-  });
-
-  it('keeps the error, and reads a missing pull as nothing pulled', () => {
-    vi.stubGlobal('RoyShellSync', {
-      lastFlush: () => JSON.stringify({ at: 1_760_000_000_000, delivered: 0, left: 0 }),
-    });
-
-    expect(readShellLastFlush()).toEqual({
-      at: 1_760_000_000_000,
-      delivered: 0,
-      left: 0,
-      pulled: 0,
-      error: null,
-    });
-    vi.unstubAllGlobals();
-  });
-
-  it('answers null when there is no record to read', () => {
-    // The Java method answers null over the bridge before there is a drain.
-    vi.stubGlobal('RoyShellSync', { lastFlush: () => null });
-    expect(readShellLastFlush()).toBe(null);
-    vi.unstubAllGlobals();
-  });
-
-  it('answers null on anything unreadable, never a guess', () => {
-    vi.stubGlobal('RoyShellSync', { lastFlush: () => '{{not json' });
-    expect(readShellLastFlush()).toBe(null);
-    vi.unstubAllGlobals();
-  });
-
-  it('answers null on a body that is not the record', () => {
-    vi.stubGlobal('RoyShellSync', { lastFlush: () => JSON.stringify([]) });
-    expect(readShellLastFlush()).toBe(null);
-    vi.unstubAllGlobals();
-  });
-
-  it('answers null on a record missing the counts it claims', () => {
-    vi.stubGlobal('RoyShellSync', {
-      lastFlush: () => JSON.stringify({ at: 1_760_000_000_000 }),
-    });
-    expect(readShellLastFlush()).toBe(null);
-    vi.unstubAllGlobals();
-  });
-
-  it('answers null when the bridge throws', () => {
-    vi.stubGlobal('RoyShellSync', {
-      lastFlush: () => {
-        throw new Error('no persistence');
-      },
-    });
-    expect(readShellLastFlush()).toBe(null);
     vi.unstubAllGlobals();
   });
 });

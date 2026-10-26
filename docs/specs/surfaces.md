@@ -20,7 +20,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `blogpress-editor` | `/blogpress/editor/[id]` | local-store | store | outbox | swr | bundled | _ungated_ |  |  |
 | `quran` | `/quran` | local-store | store | outbox | precached | bundled | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | bundled | `quran-reader.spec.ts` |  | #559 |
-| `device` | `/device` | local-store | store | outbox | swr | bundled | _ungated_ |  |  |
 | `account-owned` | `/account`<br>`/account/links`<br>`/account/posts`<br>`/account/submissions` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
 | `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `community` | `/community` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |

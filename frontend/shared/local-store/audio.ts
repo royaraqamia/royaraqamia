@@ -28,9 +28,9 @@ import {
 export const AUDIO_BUDGET_BYTES = 128 * 1024 * 1024;
 
 /**
- * The index's database name. No `__`, so `/device`'s listing — which parses
- * `<product>__<identity>` — cannot mistake it for a Local Store copy: audio is
- * not per-account, and the same device keeps one copy for whoever reads on it.
+ * The index's database name. No `__`, so a Local Store listing that parses
+ * `<product>__<identity>` cannot mistake it for a copy: audio is not
+ * per-account, and the same device keeps one copy for whoever reads on it.
  */
 export const AUDIO_INDEX_DB = 'quran-audio';
 
@@ -77,23 +77,11 @@ export interface AudioCopy {
   readonly sha256: string;
   /** The manifest's size for the file, which is what the budget counts. */
   readonly bytes: number;
-  /** The Surah's name as the manifest published it, for `/device` to show. */
+  /** The Surah's name as the manifest published it, so it can be shown without a fetch. */
   readonly name: string | null;
   readonly storedAt: number;
   readonly lastUsedAt: number;
   readonly kind: AudioStorageKind;
-}
-
-/** One kept Surah, grouped from its Ayat — what `/device` lists and removes. */
-export interface SurahAudioCopySummary {
-  readonly edition: string;
-  readonly surah: number;
-  readonly name: string | null;
-  /** How many Ayat this device holds for it. */
-  readonly ayat: number;
-  /** What they weigh together, from the manifest. */
-  readonly bytes: number;
-  readonly lastUsedAt: number;
 }
 
 /**
@@ -134,7 +122,7 @@ export interface SaveAudioResult {
 export interface SaveAudioOptions {
   readonly edition: string;
   readonly surah: number;
-  /** The Surah's name, so `/device` can name what it lists without a fetch. */
+  /** The Surah's name, so a kept Surah can be named without a fetch. */
   readonly name?: string;
   readonly files: readonly StoredAudioFile[];
   readonly store: AudioBytesStore;
@@ -249,27 +237,6 @@ export async function listSurahAudioCopies(
 ): Promise<AudioCopy[]> {
   const copies = await listAudioCopies(factory);
   return copies.filter((copy) => copy.edition === edition && copy.surah === surah);
-}
-
-/** Every kept Surah on this device, most recently used first — what `/device` lists. */
-export async function listDownloadedSuras(factory?: IDBFactory): Promise<SurahAudioCopySummary[]> {
-  const copies = await listAudioCopies(factory);
-
-  const grouped = new Map<string, SurahAudioCopySummary>();
-  for (const copy of copies) {
-    const id = `${copy.edition}:${copy.surah}`;
-    const existing = grouped.get(id);
-    grouped.set(id, {
-      edition: copy.edition,
-      surah: copy.surah,
-      name: copy.name ?? existing?.name ?? null,
-      ayat: (existing?.ayat ?? 0) + 1,
-      bytes: (existing?.bytes ?? 0) + copy.bytes,
-      lastUsedAt: Math.max(existing?.lastUsedAt ?? 0, copy.lastUsedAt),
-    });
-  }
-
-  return [...grouped.values()].sort((a, b) => b.lastUsedAt - a.lastUsedAt || a.surah - b.surah);
 }
 
 /** `none` when nothing is held, `complete` when every Ayah is, `partial` between. */ export type SurahAudioState =
@@ -505,19 +472,6 @@ export async function removeSurahAudio(
   // The manifest goes with the bytes: a kept manifest with no Ayat would be a
   // promise to play files this device no longer has.
   await withIndex((db) => deleteManifest(db, edition, surah), options.factory);
-  return copies.length;
-}
-
-/** Removes every copy this device holds, and says how many went. */
-export async function removeAllAudio(options: StoreOptions): Promise<number> {
-  const copies = await listAudioCopies(options.factory);
-  for (const copy of copies) {
-    await options.store.remove(copy.key);
-    await withIndex((db) => deleteCopy(db, copy.key), options.factory);
-  }
-  for (const summary of await listDownloadedSuras(options.factory)) {
-    await withIndex((db) => deleteManifest(db, summary.edition, summary.surah), options.factory);
-  }
   return copies.length;
 }
 

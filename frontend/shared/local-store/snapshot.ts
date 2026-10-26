@@ -18,32 +18,21 @@ import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
  * it is synchronous, so the first render can have the rows, which is the entire
  * point.
  *
- * Two scopes, one store:
- *
- * - **Owned** (`LocalIdentity`) — the same partition the Local Store uses, so a
- *   snapshot can only ever be read by the identity that wrote it, and a sign-out
- *   removes them (`clearIdentitySnapshots`).
- * - **Public** (`'public'`) — a surface whose rows are not identity-partitioned:
- *   #555's public pages, and `/device`'s own list of what this browser holds.
- *   These are not account-bearing by construction, so they survive a sign-out —
- *   a borrowed device is exactly when `/device` is opened.
+ * One scope, one store: a snapshot belongs to the same partition the Local
+ * Store uses (`LocalIdentity`), so it can only ever be read by the identity that
+ * wrote it, and a sign-out removes them (`clearSnapshots`).
  *
  * Bounds: one entry per route (last visit wins), the first screenful a surface
  * writes (through {@link screenful}), and {@link SNAPSHOT_MAX_BYTES} of JSON per
  * entry — a write that cannot fit drops the tail through the caller's `trim`, and
  * removes the entry if it still does not fit. Nothing credential-shaped is
  * stored: a surface passes the rows it renders, never a token (a snapshot is not
- * a hidden session — the Local Store already holds these rows on this device,
- * ADR-0070's rule).
+ * a hidden session — the Local Store already holds these rows on this device).
  *
  * A schema change rotates {@link SNAPSHOT_SCHEMA_VERSION}: a snapshot written by
  * an older one is ignored rather than rendered, so a field that changed meaning
  * cannot paint a lie, and the next successful paint replaces it.
  */
-export type SnapshotScope = LocalIdentity | 'public';
-
-/** The scope for a surface that is not identity-partitioned (#555). */
-export const PUBLIC_SNAPSHOT_SCOPE = 'public' satisfies SnapshotScope;
 
 /**
  * The shape the rows are written with. Bump it when a stored field changes
@@ -94,12 +83,8 @@ function browserStorage(): Storage | null {
 }
 
 /** `<prefix><scope>:<route>` — the scope segment is before the first route colon. */
-export function snapshotKey(scope: SnapshotScope, route: string): string {
+export function snapshotKey(scope: LocalIdentity, route: string): string {
   return `${KEY_PREFIX}${scope}:${route}`;
-}
-
-function isPublicKey(key: string): boolean {
-  return key.startsWith(`${KEY_PREFIX}${PUBLIC_SNAPSHOT_SCOPE}:`);
 }
 
 /**
@@ -130,7 +115,7 @@ function parseEnvelope<T>(raw: string | null, version: number): T | null {
  * are none. Synchronous by design: this is called from a render.
  */
 export function readSnapshot<T>(
-  scope: SnapshotScope,
+  scope: LocalIdentity,
   route: string,
   version: number = SNAPSHOT_SCHEMA_VERSION,
   storage: Storage | null = browserStorage()
@@ -165,7 +150,7 @@ export function readSnapshot<T>(
  * `false` means the value did not fit and the entry was removed instead.
  */
 export function writeSnapshot<T>(
-  scope: SnapshotScope,
+  scope: LocalIdentity,
   route: string,
   data: T,
   options: SnapshotWriteOptions<T> = {},
@@ -213,7 +198,7 @@ export function writeSnapshot<T>(
 
 /** Forgets one route's snapshot. */
 export function removeSnapshot(
-  scope: SnapshotScope,
+  scope: LocalIdentity,
   route: string,
   storage: Storage | null = browserStorage()
 ): void {
@@ -228,34 +213,10 @@ export function removeSnapshot(
 }
 
 /**
- * The sign-out purge (#495): every identity-scoped snapshot goes, guest and
- * account alike, so the next boot cannot paint the account that just left.
- *
- * `public` snapshots stay. They are not account-bearing — `/device`'s list is
- * what this browser already exposes without a session, and #555's public rows
- * are public — and `/device` is the page a borrowed device is opened to after
- * someone signs out.
+ * Forgets every snapshot: the sign-out purge (#495), guest and account alike,
+ * so the next boot cannot paint the account that just left. Also the hard reset
+ * a test needs.
  */
-export function clearIdentitySnapshots(storage: Storage | null = browserStorage()): void {
-  if (!storage) return;
-  removeWhere(storage, (key) => !isPublicKey(key));
-}
-
-/**
- * Forgets one identity's snapshots. "Remove this device's copy" (#370) calls
- * this for each partition it deletes: the rows are gone from IndexedDB, so a
- * snapshot of them must not repaint on the next cold open.
- */
-export function clearSnapshotsFor(
-  identity: LocalIdentity,
-  storage: Storage | null = browserStorage()
-): void {
-  if (!storage) return;
-  const prefix = `${KEY_PREFIX}${identity}:`;
-  removeWhere(storage, (key) => key.startsWith(prefix));
-}
-
-/** Forgets every snapshot, both scopes. Tests and a hard reset. */
 export function clearSnapshots(storage: Storage | null = browserStorage()): void {
   if (!storage) return;
   removeWhere(storage, () => true);
@@ -340,7 +301,7 @@ export function subscribeToSnapshots(listener: () => void): () => void {
  * exactly the empty frame #495 exists to remove.
  */
 export function useSnapshot<T>(
-  scope: SnapshotScope,
+  scope: LocalIdentity,
   route: string,
   version: number = SNAPSHOT_SCHEMA_VERSION
 ): T | null {
@@ -363,7 +324,7 @@ export function useSnapshot<T>(
  * frame's critical path.
  */
 export function useSnapshotRecorder<T>(
-  scope: SnapshotScope,
+  scope: LocalIdentity,
   route: string,
   data: T | null,
   options: SnapshotWriteOptions<T> = {}

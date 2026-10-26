@@ -8,7 +8,7 @@
  * Best-effort by design: a browser without a controlling worker, or a worker
  * that never answers, must not delay or fail a sign-out. IndexedDB (the Local
  * Store and Outbox) is deliberately out of scope — the durable per-identity copy
- * survives sign-out until "Remove this device's copy" (#370).
+ * survives sign-out by design (ADR-0028).
  */
 
 const PURGE_TIMEOUT_MS = 2000;

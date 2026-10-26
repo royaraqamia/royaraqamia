@@ -170,8 +170,8 @@ describe('createBlogpressHttpSyncTransport', () => {
     } as Partial<BlogpressLocalStore>);
     uploadImage.mockResolvedValue({});
 
-    // The queue renders this reason in the sync pill and on /device, so it must
-    // be Arabic like the rest of the failure vocabulary (#475).
+    // The queue renders this reason in the sync pill, so it must be Arabic like
+    // the rest of the failure vocabulary (#475).
     await expect(
       createBlogpressHttpSyncTransport(store).send(
         entry('post.save', {

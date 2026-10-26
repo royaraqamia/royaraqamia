@@ -334,9 +334,8 @@ server until each is acknowledged.
 _Avoid_: write queue, sync queue, pending writes
 
 **Device copy**:
-The Local Store databases one identity holds on this device — data and Outbox together — and the
-`/device` page that inspects, retries and removes them. Sign-out keeps a copy; that page is how a
-shared device drops it.
+The Local Store databases one identity holds on this device — data and Outbox together. Sign-out
+keeps a copy, and there is no in-app control that deletes it (ADR-0084).
 _Avoid_: local data, cache, account namespace
 
 **Claim**:

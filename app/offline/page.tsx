@@ -66,16 +66,6 @@ export default function OfflinePage() {
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
               <span className="relative z-10">إعادة المحاولة</span>
             </a>
-
-            {/* The one surface that still has something to say with no network.
-                A plain anchor, not a client navigation: the document itself is
-                what the worker holds (ADR-0070). */}
-            <a
-              href="/device"
-              className="text-center text-xs font-bold text-slate-500 underline-offset-4 transition-colors hover:text-slate-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:text-sm dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              بيانات هذا الجهاز
-            </a>
           </div>
         </article>
       </main>
