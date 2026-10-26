@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.146.0] - 2026-10-26
+
+### Changed
+- bump @hookform/resolvers from 5.9.1 to 6.0.0 (#597)
+- bump actions/cache from 4.3.0 to 6.1.0 (#599)
+- bump the minor-and-patch group with 4 updates (#598)
+- Atomic HabitFlow backup restore with id remap. (#605)
+
+### Added
+- keep a range of suras at once, from the index (#606)
+
 ## [1.145.0] - 2026-10-26
 
 ### Changed
