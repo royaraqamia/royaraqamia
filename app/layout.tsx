@@ -12,6 +12,8 @@ import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
+import { QuranPlayerProvider } from '@/frontend/state/quran/player-context';
+import { GlobalPlayer } from '@/frontend/ui/quran/global-player';
 import { ConnectivityIndicator } from '@/frontend/ui/shared/connectivity-indicator';
 import { OfflineRouteCard } from '@/frontend/ui/shared/offline-route-card';
 import { UpdatePrompt } from '@/frontend/ui/shared/update-prompt';
@@ -163,30 +165,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ErrorBoundary>
           <DirectionProvider dir={DIRECTION}>
-            <SessionProvider>
-              <UIProvider>
-                <NotificationProvider>
-                  <SpeedInsights />
-                  <Analytics />
-                  <PWAProvider>
-                    <RouteChangeFocus />
-                    <AppPerfObserver />
-                    {/* App chrome is route-aware: primary routes keep the top
+            <QuranPlayerProvider>
+              <SessionProvider>
+                <UIProvider>
+                  <NotificationProvider>
+                    <SpeedInsights />
+                    <Analytics />
+                    <PWAProvider>
+                      <RouteChangeFocus />
+                      <AppPerfObserver />
+                      {/* App chrome is route-aware: primary routes keep the top
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}
-                    <NavHistoryTracker />
-                    <SecondaryHeader />
-                    <OfflineRouteCard />
-                    {children}
-                    <FloatingActions />
-                    <BottomTabBar />
-                    <ConnectivityIndicator />
-                    <UpdatePrompt />
-                  </PWAProvider>
-                  <RoyaToaster />
-                </NotificationProvider>
-              </UIProvider>
-            </SessionProvider>
+                      <NavHistoryTracker />
+                      <SecondaryHeader />
+                      <OfflineRouteCard />
+                      {children}
+                      <FloatingActions />
+                      <BottomTabBar />
+                      <GlobalPlayer />
+                      <ConnectivityIndicator />
+                      <UpdatePrompt />
+                    </PWAProvider>
+                    <RoyaToaster />
+                  </NotificationProvider>
+                </UIProvider>
+              </SessionProvider>
+            </QuranPlayerProvider>
           </DirectionProvider>
         </ErrorBoundary>
       </body>
