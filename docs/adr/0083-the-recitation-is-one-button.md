@@ -1,5 +1,8 @@
 # The Recitation is one button, and an Ayah's number is not its Bookmark
 
+> **Amended 2026-10-26**: the metered prompt is gone — on a metered connection the keep is skipped
+> silently — and `/quran` no longer offers a sura range. See the amendment at the end.
+
 The reader had grown three surfaces where it needed one. The recitation was a card with its own title,
 its own size line, a play control and a separate download control; the Ayah's number was a button that
 doubled as the Bookmark control, sitting on a row of its own above the text. Each was defensible on its
@@ -63,3 +66,22 @@ This replaces them with one float and one inline tail.
   from `app/quran/quran.css`; a per-Ayah definition would be a `<defs>` in every card.
 - The tests pin the new shape: one button in the recitation region, the number inside the Ayah's
   paragraph with the mark beside it, and play keeping the Surah.
+
+## Amendment (2026-10-26): the meter is silent, and the index keeps no range
+
+Part 2's "a metered connection still asks first" is withdrawn. The prompt was the only control the
+metered path had, and it asked the wrong person at the wrong moment: a reader who pressed play had
+already decided to spend that Ayah's bytes, and the copy behind it is a background favour rather
+than a second purchase to authorise. The connection is checked exactly as before — `allowMetered`
+stays `false` — but on a metered connection nothing is kept and nothing is said: play streams, the
+float stays quiet, and the reader is not handed a control they cannot answer without their data plan
+in front of them.
+
+ADR-0081's consent rule is stricter under this, not looser: nothing is spent without the reader's own
+press. What it gives up is the escape hatch — there is no longer a way to force a keep on a metered
+connection, so a reader on mobile data cannot make a sura offline-capable from the reader itself.
+
+The index's sura-range control (#606) is removed in the same pass: `/quran` is a list of suras, and
+keeping audio is an action on the sura it belongs to. `KeepRange`, its quote-before-download tests and
+the size line in the Consequences above are gone with it; the consequences that remain — one control,
+the number in the text, play as the keep — are unchanged.

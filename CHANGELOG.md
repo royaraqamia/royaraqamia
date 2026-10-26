@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- the sura-range keep control on the index, and the metered notice under the recitation float
+
 ## [1.146.1] - 2026-10-26
 
 ### Changed
