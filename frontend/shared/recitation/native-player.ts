@@ -1,4 +1,3 @@
-import { isNativeApp, nativePlugin } from '@/frontend/shared/native-shell';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
 import {
   INITIAL_RECITATION_STATE,
@@ -19,7 +18,33 @@ import {
  * Android owns all three while the screen is off; this class is the page's
  * half — send commands, receive state, and resync when a frozen WebView comes
  * back and has missed events.
+ *
+ * The bridge is read off `globalThis` rather than imported from
+ * `native-shell.ts`: that module carries the auth contract for the OAuth
+ * callback, and this chunk loads on every page to paint the mini player.
  */
+
+interface CapacitorBridge {
+  isNativePlatform?: () => boolean;
+  Plugins?: Record<string, unknown>;
+}
+
+function bridge(): CapacitorBridge | undefined {
+  return (globalThis as { Capacitor?: CapacitorBridge }).Capacitor;
+}
+
+function isNativeApp(): boolean {
+  try {
+    return bridge()?.isNativePlatform?.() === true;
+  } catch {
+    return false;
+  }
+}
+
+function nativePlugin<T>(name: string): T | undefined {
+  const plugin = bridge()?.Plugins?.[name];
+  return typeof plugin === 'object' && plugin !== null ? (plugin as T) : undefined;
+}
 
 export interface NativeQuranStatePayload {
   readonly status: string;

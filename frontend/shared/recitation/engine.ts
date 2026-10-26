@@ -8,7 +8,7 @@ import {
   type AudioPlaybackSource,
   type PlayableSurah,
 } from '@/frontend/api/quran/audio';
-import { logger } from '@/frontend/shared/logger';
+import { logRecitationFailure } from './log';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
 import type { QuranAudioEdition, QuranAudioFile } from '@/shared/contracts/quran-audio';
 import {
@@ -933,8 +933,4 @@ export function recitationEngine(): RecitationEngine {
 export function resetRecitationEngine(): void {
   shared?.dispose();
   shared = null;
-}
-
-export function logRecitationFailure(message: string, error: unknown): void {
-  logger.error(message, { reason: error instanceof Error ? error.message : String(error) });
 }

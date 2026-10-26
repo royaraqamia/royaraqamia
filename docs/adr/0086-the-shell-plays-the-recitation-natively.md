@@ -42,7 +42,8 @@ screen, no media keys. The page could not fix either problem from inside the Web
    is still playing from the background, the plugin connects and the saved record becomes the live
    state on the next event, so the page shows what is actually playing instead of restarting it.
 
-6. **The engine is chosen at start-up.** `recitationPlayer()` returns the native player when the
+6. **The engine is chosen after hydration.** The app shell imports the player through a dynamic chunk
+   rather than into every route's first bundle; `recitationPlayer()` returns the native player when the
    plugin is present and the web engine otherwise. A missing bridge — the upstream Capacitor case
    ADR-0043 measured — degrades to the web engine instead of a dead control. In the shell the web
    engine is not created at all, so there is no second audio element to double-play.
@@ -79,6 +80,7 @@ screen, no media keys. The page could not fix either problem from inside the Web
 - The shell counter moves (20018) and a release has to be signed; this machine has no keystore, so the
   build that was verified here is a debug APK plus the JVM tests. The on-device pass — play, screen
   off, swipe, notification controls — is the owner's.
+- The recitation is a lazy chunk on every page, so a route's first bundle no longer carries the audio engine, the manifest reader or the keep (about 40 KB gzip). The mini player appears a beat after hydration, and every action awaits the chunk before it runs.
 - The manifest gains `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK` and
   `ACCESS_NETWORK_STATE`; `POST_NOTIFICATIONS` was already there. A device that refused notifications
   still plays, but the shade has no controls until it is granted.
