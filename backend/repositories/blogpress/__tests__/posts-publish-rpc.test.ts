@@ -237,3 +237,72 @@ describe('blogpress bulk publish targets', () => {
     ).rejects.toThrow('Repository operation failed: blogpress.resolveBulkPublishTargets');
   });
 });
+
+/**
+ * The bulk unpublish pre-check (#603) needs the number of selected rows that are
+ * published right now, because only those take a drafts slot on the way back.
+ */
+describe('blogpress post status counts', () => {
+  function countClient(result: { count: number | null; error: unknown }) {
+    const filters: string[] = [];
+    let options: unknown;
+    const builder: Record<string, unknown> = {};
+    builder.select = vi.fn((_columns: string, selectOptions?: unknown) => {
+      options = selectOptions;
+      return builder;
+    });
+    builder.in = vi.fn((column: string, values: unknown) => {
+      filters.push(`in ${column}=${String(values)}`);
+      return builder;
+    });
+    builder.eq = vi.fn((column: string, value: unknown) => {
+      filters.push(`eq ${column}=${String(value)}`);
+      return builder;
+    });
+    builder.is = vi.fn((column: string, value: unknown) => {
+      filters.push(`is ${column}=${String(value)}`);
+      return builder;
+    });
+    builder.then = (onFulfilled: (value: unknown) => unknown) =>
+      Promise.resolve(result).then(onFulfilled);
+
+    return {
+      client: { from: vi.fn(() => builder) } as unknown as SupabaseClient<Database>,
+      filters,
+      options: () => options,
+    };
+  }
+
+  it('counts the owned rows in the requested status only', async () => {
+    const { client, filters, options } = countClient({ count: 2, error: null });
+
+    await expect(
+      createPostsRepository(client).countPostsInStatus(['p-1', 'p-2', 'p-3'], 'u-1', 'published')
+    ).resolves.toBe(2);
+
+    expect(options()).toEqual({ count: 'exact', head: true });
+    expect(filters).toContain('in id=p-1,p-2,p-3');
+    expect(filters).toContain('eq author_id=u-1');
+    expect(filters).toContain('eq status=published');
+    expect(filters).toContain('is deleted_at=null');
+  });
+
+  it('answers zero for an empty selection without a query', async () => {
+    const from = vi.fn();
+    const client = { from } as unknown as SupabaseClient<Database>;
+
+    await expect(
+      createPostsRepository(client).countPostsInStatus([], 'u-1', 'published')
+    ).resolves.toBe(0);
+
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a failed count', async () => {
+    const { client } = countClient({ count: null, error: DB_ERROR });
+
+    await expect(
+      createPostsRepository(client).countPostsInStatus(['p-1'], 'u-1', 'published')
+    ).rejects.toThrow('Repository operation failed: blogpress.countPostsInStatus');
+  });
+});
