@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { QuranIndexPage } from '@/frontend/ui/quran/quran-index';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
 import type { QuranIndex, Surah, SurahSummary } from '@/shared/contracts/quran';
@@ -52,6 +52,40 @@ describe('the sura index', () => {
   it('numbers the suras with Latin digits', () => {
     render(<QuranIndexPage index={index} />);
     expect(screen.getByRole('link', { name: /الثانية/ })).toHaveTextContent('مدنيَّة · 2 آيات');
+  });
+});
+
+describe('the sura search box', () => {
+  const type = (value: string) =>
+    fireEvent.change(screen.getByRole('textbox', { name: 'ابحث عن سُورة' }), {
+      target: { value },
+    });
+
+  it('narrows the list to the name typed', () => {
+    render(<QuranIndexPage index={index} />);
+
+    type('الثانية');
+
+    expect(screen.queryByRole('link', { name: /الأولى/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /الثانية/ })).toBeInTheDocument();
+  });
+
+  it('matches a name written without its hamza', () => {
+    render(<QuranIndexPage index={index} />);
+
+    type('الاولى');
+
+    expect(screen.getByRole('link', { name: /الأولى/ })).toBeInTheDocument();
+  });
+
+  it('names an empty result and restores the list when cleared', () => {
+    render(<QuranIndexPage index={index} />);
+
+    type('الكهف');
+    expect(screen.getByText('لا توجد سُورة بهذا الاسم.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'إلغاء البحث' }));
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 });
 
