@@ -7,7 +7,7 @@ import { SurahAudioPlayer } from './audio-player';
 interface QuranReadingClientProps {
   surah: number;
   bismillah: string | null;
-  audio: { ayahCount: number; bytes: number } | null;
+  audio: { ayahCount: number } | null;
   children: ReactNode;
 }
 
@@ -18,12 +18,7 @@ export function QuranReadingClient({ surah, bismillah, audio, children }: QuranR
   return (
     <>
       {audio ? (
-        <SurahAudioPlayer
-          surah={surah}
-          ayahCount={audio.ayahCount}
-          bytes={audio.bytes}
-          onAyahChange={onAyahChange}
-        />
+        <SurahAudioPlayer surah={surah} ayahCount={audio.ayahCount} onAyahChange={onAyahChange} />
       ) : null}
 
       {bismillah ? (

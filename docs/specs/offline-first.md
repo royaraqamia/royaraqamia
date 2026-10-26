@@ -81,11 +81,10 @@ stated limit.
   #559 a reader can keep one sura on the device: the files are verified against the manifest's
   `sha256` before the device records them, a 128 MiB budget evicts the least recently used sura,
   playback prefers the local copy and falls back to the host, and a sura that was not kept says it
-  needs a connection rather than failing silently (ADR-0081). A range of suras can be kept at once
-  from `/quran`, with its size quoted before it starts — a sura range rather than "this juz", because
-  the vendored index carries no juz-to-sura map and inventing one would publish Quran structure we
-  did not verify. The page that listed and removed kept recitations is withdrawn (ADR-0084), so
-  freeing that space is clearing site data. What remains out of reach: a sura nobody downloaded.
+  needs a connection rather than failing silently (ADR-0081). Play is the only keep: there is no
+  separate download control, and a metered connection keeps nothing — the sura streams and no copy is
+  written or asked about. The page that listed and removed kept recitations is withdrawn (ADR-0084),
+  so freeing that space is clearing site data. What remains out of reach: a sura nobody downloaded.
 - **The Android app's cold start is capped by the WebView.** The shell loads a remote URL (ADR-0036),
   so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
   messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen

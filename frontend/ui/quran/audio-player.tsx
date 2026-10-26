@@ -9,7 +9,6 @@ import {
   readDownloadedSurah,
   SurahAudioDownloadError,
 } from '@/frontend/api/quran/audio';
-import { formatBytes } from '@/frontend/shared/format-bytes';
 import { logger } from '@/frontend/shared/logger';
 import type { QuranSurahAudio } from '@/shared/contracts/quran-audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
@@ -31,8 +30,6 @@ const IDLE_DOWNLOAD: DownloadState = { phase: 'idle', done: 0, total: 0 };
 interface SurahAudioPlayerProps {
   surah: number;
   ayahCount: number;
-  /** What the whole sura weighs, which is what it costs a reader on mobile data. */
-  bytes: number;
   /** The Ayah currently playing, or null once the recitation has stopped. */
   onAyahChange?: (ayah: number | null) => void;
 }
@@ -48,7 +45,8 @@ interface SurahAudioPlayerProps {
  * Play is also the only way to keep a sura offline now: pressing it starts the
  * first Ayah straight away and keeps the rest on the device in the background,
  * so a reader who never asks for a download still ends up able to listen
- * without a network. A metered connection is the one case that still asks.
+ * without a network. A metered connection is never asked about and never kept:
+ * play streams, and the background copy is simply skipped.
  *
  * The files are one Ayah each, so playback is a queue: when a file ends the next
  * one begins. That costs a small gap at each Ayah — which the reciter's own pause
@@ -60,7 +58,7 @@ interface SurahAudioPlayerProps {
  * on a plane and a reader on mobile data take the same code path. Nothing is
  * fetched until play is pressed: merely reading a sura costs no audio bandwidth.
  */
-export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: SurahAudioPlayerProps) {
+export function SurahAudioPlayer({ surah, ayahCount, onAyahChange }: SurahAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playlistRef = useRef<QuranSurahAudio | null>(null);
   const baseUrlRef = useRef<string | null>(null);
@@ -176,48 +174,44 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
   /**
    * Keeps this Surah on the device.
    *
-   * `confirmed` is the reader's answer to the metered prompt: the whole
-   * difference between "kept without asking" and consent. The play button calls
-   * this itself once the first Ayah is playing, so a reader who never asks for a
-   * download still ends up able to listen offline.
+   * The play button calls this itself once the first Ayah is playing, so a
+   * reader who never asks for a download still ends up able to listen offline.
+   * A metered connection is not asked about: the keep simply does not happen.
    */
-  const startDownload = useCallback(
-    async (confirmed: boolean) => {
-      setDownload({ phase: 'working', done: 0, total: ayahCount });
+  const startDownload = useCallback(async () => {
+    setDownload({ phase: 'working', done: 0, total: ayahCount });
 
-      try {
-        const result = await downloadSurahAudio(surah, {
-          allowMetered: confirmed,
-          onProgress: (progress) =>
-            setDownload({ phase: 'working', done: progress.done, total: progress.total }),
-        });
-        setSaved(result.stored > 0 || result.reused > 0 ? 'complete' : saved);
-        setDownload(IDLE_DOWNLOAD);
-      } catch (error) {
-        if (error instanceof SurahAudioDownloadError) {
-          // A meter is the reader's decision to make; a device that simply
-          // cannot keep a copy is not, and saying so would answer a question
-          // nobody asked.
-          setDownload(
-            error.refusal === 'metered'
-              ? { phase: 'metered', done: 0, total: 0 }
-              : { phase: 'unsupported', done: 0, total: 0 }
-          );
-          return;
-        }
-        setDownload({ phase: 'failed', done: 0, total: 0 });
-        logger.error('surah audio download failed', {
-          surah,
-          reason: error instanceof Error ? error.message : String(error),
-        });
+    try {
+      const result = await downloadSurahAudio(surah, {
+        allowMetered: false,
+        onProgress: (progress) =>
+          setDownload({ phase: 'working', done: progress.done, total: progress.total }),
+      });
+      setSaved(result.stored > 0 || result.reused > 0 ? 'complete' : saved);
+      setDownload(IDLE_DOWNLOAD);
+    } catch (error) {
+      if (error instanceof SurahAudioDownloadError) {
+        // A meter is silent by design: nothing was asked for, so nothing is
+        // said. A device that simply cannot keep a copy is equally not the
+        // reader's question to answer, so it is not named either.
+        setDownload(
+          error.refusal === 'metered'
+            ? { phase: 'metered', done: 0, total: 0 }
+            : { phase: 'unsupported', done: 0, total: 0 }
+        );
+        return;
       }
-    },
-    [ayahCount, saved, surah]
-  );
+      setDownload({ phase: 'failed', done: 0, total: 0 });
+      logger.error('surah audio download failed', {
+        surah,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }, [ayahCount, saved, surah]);
 
   const keepInBackground = useCallback(() => {
-    // A keep that the device cannot do, or that the reader has not answered for
-    // yet, is not retried behind their back on the next press.
+    // A keep that the device cannot do, or that a metered connection refused,
+    // is not retried behind the reader's back on the next press.
     if (
       saved === 'complete' ||
       download.phase === 'working' ||
@@ -226,7 +220,7 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
     ) {
       return;
     }
-    void startDownload(false);
+    void startDownload();
   }, [saved, download.phase, startDownload]);
 
   const toggle = useCallback(async () => {
@@ -291,7 +285,6 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
         ? AlertTriangle
         : Play;
 
-  const size = formatBytes(bytes);
   const showCounter = isPlaying || status === 'paused';
 
   return (
@@ -354,17 +347,6 @@ export function SurahAudioPlayer({ surah, ayahCount, bytes, onAyahChange }: Sura
       ) : saved === 'partial' ? (
         <p className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
           بعض آياتها محفوظة فقط
-        </p>
-      ) : download.phase === 'metered' ? (
-        <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm">
-          أنت على اتِّصال مدفوع. حفظ التِّلاوة كاملة ينزّل {size ?? 'بيانات'} إضافيَّة:{' '}
-          <button
-            type="button"
-            onClick={() => void startDownload(true)}
-            className="font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            احفظ على أي حال
-          </button>
         </p>
       ) : status === 'offline' ? (
         <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
