@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 
 import {
   CATEGORIES,
@@ -21,6 +21,7 @@ import {
 } from '../news/lib.mjs';
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
 import { narrowCandidates, preparePersonalDigests } from '../news/personal-digests.mjs';
+import { publishDigest } from '../news/publish-digest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -535,5 +536,117 @@ describe('personal digests', () => {
       validateDigest({ digest, candidates: candidates(), date: '2026-10-23', minStories: 3 })
         .problems
     ).toEqual([]);
+  });
+});
+
+describe('publishing a digest', () => {
+  const digest = {
+    digest_date: '2026-10-23',
+    title: 'ملخص أخبار اليوم',
+    lede: 'أهم ما حدث اليوم شرقاً وغرباً.',
+    story_count: 8,
+    model: 'opencode-go/deepseek-v4.1-flash',
+    run_url: 'https://github.com/royaraqamia/royaraqamia/actions/runs/123',
+    stories: stories(8).map((story, index) => ({
+      position: index + 1,
+      category: story.category,
+      region: story.region,
+      headline_ar: story.headline,
+      summary_ar: story.summary,
+      why_it_matters_ar: story.why_it_matters,
+      source_id: `source-${index + 1}`,
+      source_name: `Source ${index + 1}`,
+      source_url: story.url,
+      source_published_at: '2026-10-23T04:00:00.000Z',
+    })),
+  };
+
+  const config = { url: 'https://project.supabase.co', key: 'service-role' };
+
+  function json(body, status = 200) {
+    return {
+      ok: status < 400,
+      status,
+      text: async () => JSON.stringify(body),
+    };
+  }
+
+  function stubFetch(handler) {
+    const calls = [];
+    vi.stubGlobal('fetch', async (url, init) => {
+      calls.push({ url, init, body: init.body ? JSON.parse(init.body) : null });
+      return handler(url, init, calls.length);
+    });
+    return calls;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('publishes nothing on a dry run', async () => {
+    const calls = stubFetch(() => json([]));
+
+    const result = await publishDigest({ config, digest, dryRun: true, log: () => {} });
+
+    expect(result).toEqual({ id: null, dryRun: true });
+    expect(calls).toHaveLength(0);
+  });
+
+  it('writes the digest and its stories in one request, then reads the count back', async () => {
+    const calls = stubFetch((url) =>
+      url.includes('/rpc/publish_news_digest')
+        ? json([{ digest_id: 'digest-1', story_count: 8 }])
+        : json(digest.stories.map((_, index) => ({ id: `story-${index + 1}` })))
+    );
+
+    const result = await publishDigest({ config, digest, log: () => {} });
+
+    expect(result).toEqual({ id: 'digest-1', dryRun: false });
+
+    // One write, one read-back: no digest upsert, delete or patch of its own.
+    expect(calls.map((call) => `${call.init.method} ${call.url}`)).toEqual([
+      'POST https://project.supabase.co/rest/v1/rpc/publish_news_digest',
+      'GET https://project.supabase.co/rest/v1/news_stories?select=id&digest_id=eq.digest-1',
+    ]);
+
+    const [publish] = calls;
+    expect(publish.body.p_digest).toEqual(
+      expect.objectContaining({
+        digest_date: '2026-10-23',
+        title: digest.title,
+        lede: digest.lede,
+        model: digest.model,
+        run_url: digest.run_url,
+      })
+    );
+    // `story_count` belongs to the function, which counts what it inserted; the
+    // digest id belongs to the insert.
+    expect(publish.body.p_digest).not.toHaveProperty('story_count');
+    expect(publish.body.p_stories).toHaveLength(8);
+    expect(publish.body.p_stories[0]).toEqual(
+      expect.objectContaining({ position: 1, source_id: 'source-1' })
+    );
+    expect(publish.body.p_stories[0]).not.toHaveProperty('digest_id');
+  });
+
+  it('fails the run when the function reports fewer stories than were sent', async () => {
+    stubFetch(() => json([{ digest_id: 'digest-1', story_count: 7 }]));
+
+    await expect(publishDigest({ config, digest, log: () => {} })).rejects.toThrow(
+      'reported 7 stories, expected 8'
+    );
+  });
+
+  it('fails the run when the stored stories do not match', async () => {
+    stubFetch((url) =>
+      url.includes('/rpc/publish_news_digest')
+        ? json([{ digest_id: 'digest-1', story_count: 8 }])
+        : json([{ id: 'story-1' }])
+    );
+
+    await expect(publishDigest({ config, digest, log: () => {} })).rejects.toThrow(
+      'verification failed: expected 8 stories, found 1'
+    );
   });
 });

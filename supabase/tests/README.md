@@ -73,6 +73,19 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 It asserts through `habit_reminder_is_due` / `habit_reminders_due` with a pinned `p_now`, because
 `send_daily_habit_reminders()` itself inserts notifications and posts to the push webhook.
 
+`publish_news_digest_test.sql` (#602):
+
+- A fresh day stores the stories the function was given, and the digest row carries that count.
+- A run whose second story the table refuses rolls back the digest upsert, the delete of the previous
+  stories and the count, so the day keeps exactly the digest a reader could see before it started.
+- A successful re-run keeps the day's digest id, replaces its stories rather than appending, and sets
+  `story_count` to what it stored.
+- `anon` and `authenticated` cannot execute `publish_news_digest`; `service_role` can. It is
+  `security definer` with a pinned `search_path`.
+
+Its body was checked against the linked project inside a rolled-back transaction (the function, the
+rollback path and the privileges), so only the pgTAP harness around it is unrehearsed.
+
 ## Status
 
 Scaffolded 2026-09-17 and **not yet executed** — the CLI and a local stack were not
