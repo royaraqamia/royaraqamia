@@ -11,6 +11,7 @@ import type {
   PublishedFeedResult,
   RestorePostSnapshot,
   PostSitemapEntry,
+  PostStatus,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
@@ -849,6 +850,35 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       }
 
       return { transitionIds, alreadyPublishedIds };
+    },
+
+    /**
+     * How many of the selected owned posts sit in `status` right now (#603).
+     *
+     * The bulk unpublish pre-check charges one drafts slot per row that leaves
+     * `published`, which the selection length cannot answer: an already-draft
+     * row is a no-op and a scheduled row is already counted in the drafts
+     * bucket. The RPC's own `assert_owned_item_cap` remains the enforcement
+     * point; this read only decides what the 402 nudge is measured against.
+     */
+    async countPostsInStatus(
+      postIds: string[],
+      authorId: string,
+      status: PostStatus
+    ): Promise<number> {
+      if (postIds.length === 0) return 0;
+
+      const { count, error } = await supabase
+        .from('posts')
+        .select('id', { count: 'exact', head: true })
+        .in('id', postIds)
+        .eq('author_id', authorId)
+        .eq('status', status)
+        .is('deleted_at', null);
+
+      if (error) throw repositoryFailure('blogpress.countPostsInStatus', error);
+
+      return count ?? 0;
     },
 
     async bulkSetPostCategories(

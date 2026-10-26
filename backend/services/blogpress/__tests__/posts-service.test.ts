@@ -58,6 +58,7 @@ function makeRepo(
     setPostFeatured: vi.fn(),
     bulkActionPosts: vi.fn(),
     resolveBulkPublishTargets: vi.fn(),
+    countPostsInStatus: vi.fn(),
     bulkSetPostCategories: vi.fn(),
     listCategoriesByAuthor: vi.fn(),
     createCategory: vi.fn(),

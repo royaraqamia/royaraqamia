@@ -17,6 +17,8 @@ const mockRepository = {
   getPostByClientId: vi.fn(),
   updatePost: vi.fn(),
   deletePost: vi.fn(),
+  unpublishPost: vi.fn(),
+  countPostsInStatus: vi.fn(),
   bulkSetPostCategories: vi.fn(),
   resolveBulkPublishTargets: vi.fn(),
   listTagsByAuthor: vi.fn(),
@@ -58,6 +60,7 @@ import {
   listBlogTags,
   publishPost,
   restorePost,
+  unpublishPost,
   updatePost,
 } from '@/backend/controllers/blogpress';
 import { AppError } from '@/backend/shared/errors';
@@ -77,6 +80,8 @@ describe('blogpress controller', () => {
     mockRepository.getPostByClientId.mockResolvedValue(null);
     mockRepository.updatePost.mockResolvedValue(undefined);
     mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
+    mockRepository.unpublishPost.mockResolvedValue({ slug: 'hello' });
+    mockRepository.countPostsInStatus.mockResolvedValue(0);
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
@@ -327,6 +332,50 @@ describe('blogpress controller', () => {
   });
 });
 
+describe('blogpress unpublish', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUser.mockResolvedValue({
+      user: { id: 'u-1', email: 'author@b.com' },
+      supabase: {},
+    });
+    planMocks.cap.mockResolvedValue(undefined);
+    mockRepository.unpublishPost.mockResolvedValue({ slug: 'hello' });
+    mockRepository.countPostsInStatus.mockResolvedValue(0);
+  });
+
+  it('charges a drafts slot for a post that is published right now', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(1);
+
+    const result = await unpublishPost('p-1');
+
+    expect(mockRepository.countPostsInStatus).toHaveBeenCalledWith(['p-1'], 'u-1', 'published');
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_drafts', 1);
+    expect(mockRepository.unpublishPost).toHaveBeenCalledWith('p-1', 'u-1');
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+  });
+
+  it('takes no slot for a post that is already a draft', async () => {
+    const result = await unpublishPost('p-1');
+
+    expect(planMocks.cap).not.toHaveBeenCalled();
+    expect(mockRepository.unpublishPost).toHaveBeenCalledWith('p-1', 'u-1');
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+  });
+
+  it('answers a full drafts bucket with 402 and writes nothing', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(1);
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityDrafts, 5, 5)
+    );
+
+    const result = await unpublishPost('p-1');
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockRepository.unpublishPost).not.toHaveBeenCalled();
+  });
+});
+
 describe('blogpress bulk publish', () => {
   const P1 = '00000000-0000-4000-8000-000000000001';
   const P2 = '00000000-0000-4000-8000-000000000002';
@@ -343,9 +392,34 @@ describe('blogpress bulk publish', () => {
       supabase: {},
     });
     planMocks.cap.mockResolvedValue(undefined);
+    mockRepository.countPostsInStatus.mockResolvedValue(0);
     planMocks.meterMany.mockImplementation(
       async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run()
     );
+  });
+
+  it('charges a bulk unpublish the rows that leave published, not the selection', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(1);
+    mockPosts.bulkActionPosts.mockResolvedValue({ affected: 1, slugs: ['a'] });
+
+    const result = await bulkPostsAction({ action: 'unpublish', postIds: requested });
+
+    expect(mockRepository.countPostsInStatus).toHaveBeenCalledWith(requested, 'u-1', 'published');
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_drafts', 1);
+    expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith(requested, 'u-1', 'unpublish');
+    expect(result).toMatchObject({ status: 200, body: { success: true, affected: 1 } });
+  });
+
+  it('answers a bulk unpublish into a full drafts bucket with 402', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(2);
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityDrafts, 5, 5)
+    );
+
+    const result = await bulkPostsAction({ action: 'unpublish', postIds: requested });
+
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
   });
 
   it('caps and meters only the posts that will transition', async () => {

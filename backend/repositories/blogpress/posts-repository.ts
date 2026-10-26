@@ -8,6 +8,7 @@ import type {
   PublishedFeedResult,
   RestorePostSnapshot,
   PostSitemapEntry,
+  PostStatus,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 
@@ -77,6 +78,13 @@ export interface PostsRepository {
     postIds: string[],
     authorId: string
   ): Promise<{ transitionIds: string[]; alreadyPublishedIds: string[] }>;
+  /**
+   * How many of the selected owned posts currently sit in `status`. The bulk
+   * unpublish charges one drafts slot per row that leaves `published`, and the
+   * selection length is not that number: a draft is a no-op and a scheduled
+   * row already holds a drafts slot (#603).
+   */
+  countPostsInStatus(postIds: string[], authorId: string, status: PostStatus): Promise<number>;
   bulkSetPostCategories(postIds: string[], authorId: string, categoryId: string): Promise<void>;
   listCategoriesByAuthor(authorId: string): Promise<PostCategory[]>;
   createCategory(authorId: string, name: string, slug: string): Promise<PostCategory>;
