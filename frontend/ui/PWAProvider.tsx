@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { usePWA, type PWAState } from '../shared/use-pwa';
 import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
-import { pruneSnapshots } from '@/frontend/shared/local-store/snapshot';
 
 const SW_PATH = '/sw.js';
 
@@ -37,8 +36,32 @@ export function PWAProvider({ children }: PWAProviderProps) {
   // worker clears its caches in `activate` when `CACHE_SCHEMA` moves (#488), and
   // this drops every snapshot an older shape wrote (#555). Readers ignore a
   // stale version anyway; this is what stops the old bytes outliving it.
+  //
+  // It is housekeeping, so it stays out of the first frame: the module arrives
+  // after hydration in an idle window rather than joining the root chunk, and
+  // the walk happens then. Every route's paint is budgeted (`perf/paint-budget.json`)
+  // and a prune no reader can see is not worth a millisecond of it — the same
+  // reason the recitation player is fetched after hydration (#614).
   useEffect(() => {
-    pruneSnapshots();
+    const prune = () => {
+      void import('@/frontend/shared/local-store/snapshot').then(({ pruneSnapshots }) =>
+        pruneSnapshots()
+      );
+    };
+
+    const idle = (
+      window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+
+    if (typeof idle === 'function') {
+      const handle = idle(prune, { timeout: 5_000 });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+
+    const handle = window.setTimeout(prune, 1_200);
+    return () => window.clearTimeout(handle);
   }, []);
 
   useEffect(() => {
