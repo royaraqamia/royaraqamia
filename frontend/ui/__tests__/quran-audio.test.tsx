@@ -69,7 +69,7 @@ const surah: Surah = {
 };
 
 function renderPlaying() {
-  render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2, bytes: 80 }} />);
+  render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
   fireEvent.click(screen.getByRole('button', { name: 'استمع للسُّورة' }));
 }
 
@@ -129,30 +129,31 @@ describe('the offline copy', () => {
     );
   });
 
-  it('asks before spending mobile data on the copy', async () => {
+  it('keeps nothing on a metered connection, and asks nothing', async () => {
     recording.download.mockRejectedValueOnce(
       new SurahAudioDownloadError('metered', 'this connection is metered')
     );
 
     renderPlaying();
 
-    // Playback started anyway — the question is about the copy, not the Ayah.
+    // Playback started anyway — only the copy is skipped, and it is skipped
+    // silently: the float offers no consent control to answer.
     expect(await screen.findByRole('button', { name: 'إيقاف مؤقّت' })).toBeInTheDocument();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'احفظ على أي حال' }));
-
-    await waitFor(() =>
-      expect(recording.download).toHaveBeenLastCalledWith(
-        1,
-        expect.objectContaining({ allowMetered: true })
-      )
+    await waitFor(() => expect(recording.download).toHaveBeenCalledTimes(1));
+    expect(recording.download).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ allowMetered: false })
     );
+    expect(screen.queryByText(/اتِّصال مدفوع/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /احفظ على أي حال/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/محفوظة على هذا الجُهاز/)).not.toBeInTheDocument();
   });
 
   it('shows a kept surah as kept before anything is pressed', async () => {
     recording.saved = 'complete';
 
-    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2, bytes: 80 }} />);
+    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
 
     expect(await screen.findByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /حفظ التِّلاوة/ })).not.toBeInTheDocument();
@@ -161,7 +162,7 @@ describe('the offline copy', () => {
   it('names the state when an unkept surah cannot reach the host', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValue(new DOMException('no source'));
 
-    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2, bytes: 80 }} />);
+    render(<SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />);
     fireEvent.click(screen.getByRole('button', { name: 'استمع للسُّورة' }));
 
     // No local copy and no playable host is the state to name, whether the cause

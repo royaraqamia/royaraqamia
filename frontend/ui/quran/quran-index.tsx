@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { ReadingPanel } from './reading-panel';
-import { KeepRange } from './keep-range';
 import { revelationLabel } from './format';
 import type { QuranIndex } from '@/shared/contracts/quran';
 
@@ -25,8 +24,6 @@ export function QuranIndexPage({ index }: { index: QuranIndex }) {
       </header>
 
       <ReadingPanel names={index.surahs.map((surah) => surah.name)} />
-
-      <KeepRange surahs={index.surahs.map((surah) => ({ n: surah.n, name: surah.name }))} />
 
       <nav aria-label="فهرس السُّوَر" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {index.surahs.map((surah) => (

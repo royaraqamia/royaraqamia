@@ -14,7 +14,7 @@ interface SurahReaderProps {
    */
   summary: SurahSummary;
   /** Null when this sura has no vendored Recitation (ADR-0062). */
-  audio: { ayahCount: number; bytes: number } | null;
+  audio: { ayahCount: number } | null;
 }
 
 /**

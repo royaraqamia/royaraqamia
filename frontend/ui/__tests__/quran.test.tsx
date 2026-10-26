@@ -102,9 +102,7 @@ describe('the sura reader', () => {
     expect(screen.queryByRole('button', { name: 'استمع للسُّورة' })).not.toBeInTheDocument();
     unmount();
 
-    render(
-      <SurahReader surah={surah()} summary={summary()} audio={{ ayahCount: 2, bytes: 2048 }} />
-    );
+    render(<SurahReader surah={surah()} summary={summary()} audio={{ ayahCount: 2 }} />);
     // One float, and nothing else: play is the whole recitation control.
     const player = screen.getByRole('region', { name: 'تلاوة السُّورة' });
     expect(within(player).getByRole('button', { name: 'استمع للسُّورة' })).toBeInTheDocument();
