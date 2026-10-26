@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.145.0] - 2026-10-26
+
+### Changed
+- publish shell 1.0.16 (20016)
+
+### Added
+- float the recitation and close the ayah with its number (#595)
+
 ## [1.144.1] - 2026-10-26
 
 ### Fixed
