@@ -91,11 +91,38 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          The recitation's player (ADR-0086). A media3 MediaSessionService: the
+          system notification, the lock screen and the media keys are drawn from
+          the session it owns, and `stopWithTask=false` is what keeps the stream
+          alive when the app is swiped away. The intent filter is the action the
+          platform and external controllers look for.
+        -->
+        <service
+            android:name=".QuranPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+      The native recitation (ADR-0086): a foreground media service keeps the
+      player alive with the screen off, the wake lock keeps the CPU and network
+      awake while it plays, and the network state is what decides whether a keep
+      is allowed to spend data.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!--
       The Scanner (ADR-0035) calls `getUserMedia`, and the WebView asks the app
       for the camera — Capacitor turns `VIDEO_CAPTURE` into this permission and

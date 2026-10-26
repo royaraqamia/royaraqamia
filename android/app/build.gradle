@@ -106,6 +106,9 @@ dependencies {
     // The background drain: a WorkManager job that wakes with the app closed and
     // replays the Outbox in a headless WebView (ADR-0059).
     implementation "androidx.work:work-runtime:$androidxWorkVersion"
+    // The recitation's player and its system controls (ADR-0086).
+    implementation "androidx.media3:media3-exoplayer:$media3Version"
+    implementation "androidx.media3:media3-session:$media3Version"
     // The FCM receiver (ADR-0059, ADR-0060). `SyncMessagingService` extends
     // `FirebaseMessagingService`, so this module needs the messaging artifact on
     // its own classpath: `@capacitor/push-notifications` uses `implementation`,
