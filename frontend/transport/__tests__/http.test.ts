@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiError, request } from '@/frontend/transport/http';
+import { ApiError, isResponseKeepable, request, requestWithMeta } from '@/frontend/transport/http';
 
 const NETWORK_MESSAGE = 'تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.';
 const FALLBACK_MESSAGE = 'تعذّر إتمام الطلب. أعد المحاولة.';
@@ -111,5 +111,88 @@ describe('request', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, body)));
 
     await expect(request('/api/community/posts')).resolves.toEqual(body);
+  });
+});
+/**
+ * The snapshot writer's half of the redaction rule (#555).
+ *
+ * A public surface keeps the answer it rendered, but only when the server did
+ * not forbid a copy: `no-store` and `private` are exactly that prohibition, and
+ * an absent header is not one. This is where the prohibition is read, beside the
+ * response that carries it.
+ */
+describe('requestWithMeta', () => {
+  it('reports a public answer as keepable and returns its body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'Cache-Control': 'public, max-age=0, must-revalidate' }),
+        json: vi.fn().mockResolvedValue({ value: 1 }),
+      })
+    );
+
+    await expect(requestWithMeta<{ value: number }>('/api/news/board')).resolves.toEqual({
+      data: { value: 1 },
+      keepable: true,
+    });
+  });
+
+  it.each(['no-store', 'private, max-age=0', 'max-age=0, private'])(
+    'reports %s as not keepable',
+    async (cacheControl: string) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'Cache-Control': cacheControl }),
+          json: vi.fn().mockResolvedValue({ value: 1 }),
+        })
+      );
+
+      const result = await requestWithMeta('/api/news/board');
+
+      expect(result.keepable).toBe(false);
+    }
+  );
+
+  it('treats an absent header as no prohibition', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue({}),
+      })
+    );
+
+    await expect(requestWithMeta('/api/news/board')).resolves.toMatchObject({ keepable: true });
+  });
+
+  it('keeps the error contract of the plain request', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue({ error: 'حدث خطأ' }),
+      })
+    );
+
+    const error = await captureError(requestWithMeta('/api/news/board'));
+
+    expect(error.status).toBe(500);
+    expect(error.message).toBe('حدث خطأ');
+  });
+
+  it('is the same decision isResponseKeepable makes', () => {
+    expect(isResponseKeepable({ headers: new Headers() } as Response)).toBe(true);
+    expect(
+      isResponseKeepable({ headers: new Headers({ 'cache-control': 'no-store' }) } as Response)
+    ).toBe(false);
   });
 });

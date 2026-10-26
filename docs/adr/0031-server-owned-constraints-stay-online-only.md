@@ -150,3 +150,28 @@ cannot answer it; and the grant is a server POST that re-validates all of it bef
 A cached shell would either show the wrong client's consent chrome or answer nothing, and neither is
 better than the in-page `NeedsConnection` state #368 already put there. `/offline`'s remaining doors
 are therefore a brand-new install's first hit with no network, `/admin`, and this consent document.
+
+## Amendment (2026-10-26, #555): the non-goal narrows from "no offline" to "no offline writes"
+
+The Consequences section already said that reading a cached last-known value is allowed, and that
+writing and refreshing are what stay online-only.
+[#555](https://github.com/royaraqamia/royaraqamia/issues/555) widened that reading half to the
+**rows a public surface rendered**, and this amendment records the line it stops at.
+
+A public digest, a Community feed page, a rates board, a certificate and a profile are the same rows
+for every reader and are already visible to a signed-out visitor, so a device that saw them may show
+them again with the radio off. They live in the public scope of the snapshot store
+(`public:<route>`: identity-free, bounded, versioned, kept across a sign-out). The surface names the
+staleness rather than hiding it, and every affordance _inside_ a snapshot is disabled: a filter, a
+compose box, a react button, a propose-a-source form and the verify check are reads or writes that
+need the server, and a snapshot that did not say so would be the silent failure this ADR exists to
+remove. A snapshot never queues anything; the Outbox is not involved.
+
+What does not move: **account-scoped content**, **any response marked `no-store` or `private`** (the
+snapshot writer reads the response's own header), and anything under the worker's never-cache
+prefixes. A reader's own digest (ADR-0079) is `no-store` by construction and is therefore never
+recorded — offline it answers with the connection state like every other server-owned read.
+
+So the non-goal reads: server-bound **writes** stay online-only, and a server-bound **read** may show
+its last-seen public rows, marked stale and read-only. Consultation Booking, auth, admin, MCP, rate
+refresh and Web Push are unaffected: none of them was a read.

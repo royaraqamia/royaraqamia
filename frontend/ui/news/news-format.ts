@@ -52,3 +52,20 @@ export function formatRelativeTime(iso: string | null, now: number = Date.now())
   const days = Math.round(hours / 24);
   return formatter.format(-days, 'day');
 }
+
+/**
+ * When a snapshot was taken, in the reader's own clock (#555).
+ *
+ * The digest's date says which morning it reports; this says when the reader
+ * last saw it, which is the difference between "yesterday's news" and "the news
+ * as it stood when I last had a connection". A timestamp the clock cannot parse
+ * renders nothing rather than an epoch fallback.
+ */
+export function formatCapturedAt(iso: string, locale = 'ar-SY-u-nu-latn'): string | null {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
+    parsed
+  );
+}

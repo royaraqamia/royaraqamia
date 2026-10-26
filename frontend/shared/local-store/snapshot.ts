@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import { isDetailRoute } from '@/frontend/shared/local-store/snapshot-route';
 
 /**
  * The last screen a surface painted, kept where the first frame can reach it
@@ -21,6 +22,18 @@ import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
  * One scope, one store: a snapshot belongs to the same partition the Local
  * Store uses (`LocalIdentity`), so it can only ever be read by the identity that
  * wrote it, and a sign-out removes them (`clearSnapshots`).
+ *
+ * #555 added the second scope the #495 note anticipated: `public`, keyed by route
+ * rather than by identity. A public surface's rows are the same rows for every
+ * reader on the device and are already visible to a signed-out one — a published
+ * digest, the Community index, the rates board, a certificate — so nothing in
+ * them is personal, a sign-out does not purge them, and the guest who reads next
+ * still finds the digest. The two scopes share this module, the envelope and the
+ * budget; they differ in what a key means (an identity's route, or just a route)
+ * and in how many entries may exist. A list surface has one entry per filter
+ * choice, bounded by the reader's own browsing; a detail route is keyed by a
+ * value the *address* chooses, so those entries are LRU-capped and a deep-link
+ * crawl cannot fill storage.
  *
  * Bounds: one entry per route (last visit wins), the first screenful a surface
  * writes (through {@link screenful}), and {@link SNAPSHOT_MAX_BYTES} of JSON per
@@ -47,7 +60,32 @@ export const SNAPSHOT_MAX_BYTES = 32 * 1024;
 /** How many rows make a screenful — the default bound a surface trims to. */
 export const SNAPSHOT_SCREENFUL = 16;
 
+/**
+ * The identity-free scope (#555): a route, no reader.
+ *
+ * It is a scope in the same namespace as `guest` and `user:<id>` so one module
+ * serves both, but it is deliberately not a `LocalIdentity`: nothing about a
+ * public row is partitioned by who is looking, and a sign-out must not take it.
+ */
+export const PUBLIC_SCOPE = 'public';
+
+/** Both halves of the store: the Local Store's partitions, and the public one. */
+export type SnapshotScope = LocalIdentity | typeof PUBLIC_SCOPE;
+
+/**
+ * How many detail routes the public scope keeps. A detail route's key comes from
+ * the address bar, so the set of possible keys is unbounded; twenty is more than
+ * a reader follows in a session and small enough that a crawl evicts itself.
+ */
+export const PUBLIC_DETAIL_LIMIT = 20;
+
 const KEY_PREFIX = 'royaraqamia:snapshot:';
+
+/**
+ * The detail-route recency list, kept beside the entries rather than inside them:
+ * it is bookkeeping, not a snapshot, and it must not be counted as one.
+ */
+const DETAIL_INDEX_KEY = 'royaraqamia:snapshot-index:public-detail';
 
 interface SnapshotEnvelope<T> {
   v: number;
@@ -83,7 +121,7 @@ function browserStorage(): Storage | null {
 }
 
 /** `<prefix><scope>:<route>` — the scope segment is before the first route colon. */
-export function snapshotKey(scope: LocalIdentity, route: string): string {
+export function snapshotKey(scope: SnapshotScope, route: string): string {
   return `${KEY_PREFIX}${scope}:${route}`;
 }
 
@@ -115,7 +153,7 @@ function parseEnvelope<T>(raw: string | null, version: number): T | null {
  * are none. Synchronous by design: this is called from a render.
  */
 export function readSnapshot<T>(
-  scope: LocalIdentity,
+  scope: SnapshotScope,
   route: string,
   version: number = SNAPSHOT_SCHEMA_VERSION,
   storage: Storage | null = browserStorage()
@@ -150,7 +188,7 @@ export function readSnapshot<T>(
  * `false` means the value did not fit and the entry was removed instead.
  */
 export function writeSnapshot<T>(
-  scope: LocalIdentity,
+  scope: SnapshotScope,
   route: string,
   data: T,
   options: SnapshotWriteOptions<T> = {},
@@ -198,7 +236,7 @@ export function writeSnapshot<T>(
 
 /** Forgets one route's snapshot. */
 export function removeSnapshot(
-  scope: LocalIdentity,
+  scope: SnapshotScope,
   route: string,
   storage: Storage | null = browserStorage()
 ): void {
@@ -213,17 +251,202 @@ export function removeSnapshot(
 }
 
 /**
- * Forgets every snapshot: the sign-out purge (#495), guest and account alike,
- * so the next boot cannot paint the account that just left. Also the hard reset
- * a test needs.
+ * Forgets every identity-scoped snapshot: the sign-out purge (#495), guest and
+ * account alike, so the next boot cannot paint the account that just left.
+ *
+ * The public scope survives it on purpose (#555): there is nothing personal in
+ * `public:*`, a signed-out device may still read the digest, and purging it
+ * would throw away the only offline copy of a page that was never this account's.
+ * {@link clearPublicSnapshots} is that half, and {@link clearAllSnapshots} is
+ * the hard reset a cache-schema bump and a test both need.
  */
 export function clearSnapshots(storage: Storage | null = browserStorage()): void {
   if (!storage) return;
-  removeWhere(storage, () => true);
+  removeWhere(storage, (key) => !isPublicKey(key));
 }
 
-/** The snapshot keys present in a store, in storage order. For tests. */
-export function listSnapshotKeys(storage: Storage | null = browserStorage()): string[] {
+/** Forgets the public scope only: a schema bump, or a test's own reset. */
+export function clearPublicSnapshots(storage: Storage | null = browserStorage()): void {
+  if (!storage) return;
+  removeWhere(storage, isPublicKey);
+  forgetDetailIndex(storage);
+}
+
+/** Forgets both scopes: the whole store, as one operation. */
+export function clearAllSnapshots(storage: Storage | null = browserStorage()): void {
+  if (!storage) return;
+  removeWhere(storage, () => true);
+  forgetDetailIndex(storage);
+}
+
+/**
+ * Drops every entry whose envelope is not `version`, both scopes (#555's schema
+ * bump, beside the worker's own cache-schema clear, #488).
+ *
+ * A stale entry is already ignored by the readers, so this is housekeeping
+ * rather than correctness: it is what stops a schema change from leaving the
+ * previous version's bytes on a device for the life of the origin. Cheap enough
+ * to run once per document —?" it touches only this store's keys.
+ */
+export function pruneSnapshots(
+  version: number = SNAPSHOT_SCHEMA_VERSION,
+  storage: Storage | null = browserStorage()
+): number {
+  if (!storage) return 0;
+
+  let dropped = 0;
+  for (const key of listSnapshotKeys(storage)) {
+    let raw: string | null;
+    try {
+      raw = storage.getItem(key);
+    } catch {
+      continue;
+    }
+    if (parseEnvelope<unknown>(raw, version) !== null) continue;
+
+    try {
+      storage.removeItem(key);
+    } catch {
+      continue;
+    }
+    parsedValues.delete(key);
+    dropped += 1;
+  }
+
+  // The index names routes whose entries this pass may just have removed.
+  const kept = readDetailIndex(storage).filter((route) => !isDetailIndexStale(storage, route));
+  writeDetailIndex(kept, storage);
+
+  if (dropped > 0) notifySnapshots();
+  return dropped;
+}
+
+function isDetailIndexStale(storage: Storage, route: string): boolean {
+  try {
+    return storage.getItem(snapshotKey(PUBLIC_SCOPE, route)) === null;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * The public scope (#555): a surface's last-seen rows, keyed by route alone.
+ *
+ * The rows are the ones the surface rendered, so a field the UI does not show
+ * cannot leak into storage, and nothing here is written from a response body. A
+ * public route's content is already the same for every reader of the device, so
+ * the scope carries no identity, survives a sign-out, and is never a token.
+ */
+export interface PublicSnapshotOptions<T> extends SnapshotWriteOptions<T> {
+  /**
+   * Force the detail-route treatment, or opt a two-segment list route out of it.
+   * Defaults to {@link isDetailRoute}, which is right for every surface here.
+   */
+  detail?: boolean;
+}
+
+/** The rows a surface last painted for this public route, or `null`. Synchronous. */
+export function readPublicSnapshot<T>(
+  route: string,
+  version: number = SNAPSHOT_SCHEMA_VERSION,
+  storage: Storage | null = browserStorage()
+): T | null {
+  return readSnapshot<T>(PUBLIC_SCOPE, route, version, storage);
+}
+
+/**
+ * Records the rows a public surface just painted, and keeps the detail-route
+ * LRU in step.
+ *
+ * A detail route's key is a path the address bar chose, so the entries are
+ * capped rather than trusted to the reader's own browsing: writing the 21st
+ * evicts the least recently written, which is what stops a deep-link crawl from
+ * filling the store.
+ */
+export function writePublicSnapshot<T>(
+  route: string,
+  data: T,
+  options: PublicSnapshotOptions<T> = {},
+  storage: Storage | null = browserStorage()
+): boolean {
+  if (!storage) return false;
+
+  const written = writeSnapshot(PUBLIC_SCOPE, route, data, options, storage);
+  if (!written) {
+    forgetDetailRoute(route, storage);
+    return false;
+  }
+
+  if (options.detail ?? isDetailRoute(route)) rememberDetailRoute(route, storage);
+  return true;
+}
+
+/** Forgets one public route's snapshot, including its place in the LRU. */
+export function removePublicSnapshot(
+  route: string,
+  storage: Storage | null = browserStorage()
+): void {
+  removeSnapshot(PUBLIC_SCOPE, route, storage);
+  if (storage) forgetDetailRoute(route, storage);
+}
+
+/** The detail routes the public scope holds, most recently written first. For tests. */
+export function listPublicDetailRoutes(storage: Storage | null = browserStorage()): string[] {
+  return readDetailIndex(storage);
+}
+
+function isPublicKey(key: string): boolean {
+  return key.startsWith(`${KEY_PREFIX}${PUBLIC_SCOPE}:`);
+}
+
+function readDetailIndex(storage: Storage | null): string[] {
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(DETAIL_INDEX_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((route) => typeof route === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDetailIndex(routes: readonly string[], storage: Storage): void {
+  try {
+    if (routes.length === 0) storage.removeItem(DETAIL_INDEX_KEY);
+    else storage.setItem(DETAIL_INDEX_KEY, JSON.stringify(routes));
+  } catch {
+    // The index is bookkeeping: a store that cannot hold it still holds the
+    // entries, and the next write rebuilds it from the route it is writing.
+  }
+}
+
+function rememberDetailRoute(route: string, storage: Storage): void {
+  const routes = readDetailIndex(storage).filter((entry) => entry !== route);
+  routes.unshift(route);
+
+  const evicted = routes.splice(PUBLIC_DETAIL_LIMIT);
+  for (const stale of evicted) removeSnapshot(PUBLIC_SCOPE, stale, storage);
+  writeDetailIndex(routes, storage);
+}
+
+function forgetDetailRoute(route: string, storage: Storage): void {
+  const routes = readDetailIndex(storage);
+  const remaining = routes.filter((entry) => entry !== route);
+  if (remaining.length !== routes.length) writeDetailIndex(remaining, storage);
+}
+
+function forgetDetailIndex(storage: Storage): void {
+  try {
+    storage.removeItem(DETAIL_INDEX_KEY);
+  } catch {
+    // Same as the write: bookkeeping a store refuses to drop is not a failure.
+  }
+}
+
+/** The snapshot keys present in a store, in storage order. For tests. */ export function listSnapshotKeys(
+  storage: Storage | null = browserStorage()
+): string[] {
   if (!storage) return [];
 
   const keys: string[] = [];
@@ -301,7 +524,7 @@ export function subscribeToSnapshots(listener: () => void): () => void {
  * exactly the empty frame #495 exists to remove.
  */
 export function useSnapshot<T>(
-  scope: LocalIdentity,
+  scope: SnapshotScope,
   route: string,
   version: number = SNAPSHOT_SCHEMA_VERSION
 ): T | null {
@@ -324,7 +547,7 @@ export function useSnapshot<T>(
  * frame's critical path.
  */
 export function useSnapshotRecorder<T>(
-  scope: LocalIdentity,
+  scope: SnapshotScope,
   route: string,
   data: T | null,
   options: SnapshotWriteOptions<T> = {}
@@ -337,6 +560,37 @@ export function useSnapshotRecorder<T>(
     if (data === null) return;
     writeSnapshot(scope, route, data, { version, maxBytes, trim });
   }, [scope, route, version, maxBytes, trim, data]);
+}
+
+/**
+ * The public-scope reader (#555), for a surface that owns its rows on the client.
+ *
+ * The route is the caller's already-normalised key (see
+ * {@link normaliseSnapshotRoute}): `_rsc` and the router's own parameters are
+ * gone, so the snapshot an online visit wrote is the one an offline reload finds.
+ */
+export function usePublicSnapshot<T>(
+  route: string,
+  version: number = SNAPSHOT_SCHEMA_VERSION
+): T | null {
+  return useSnapshot<T>(PUBLIC_SCOPE, route, version);
+}
+
+/** The public-scope recorder: the rendered rows, never a response body. */
+export function usePublicSnapshotRecorder<T>(
+  route: string,
+  data: T | null,
+  options: PublicSnapshotOptions<T> = {}
+): void {
+  const version = options.version ?? SNAPSHOT_SCHEMA_VERSION;
+  const maxBytes = options.maxBytes ?? SNAPSHOT_MAX_BYTES;
+  const trim = options.trim;
+  const detail = options.detail;
+
+  useEffect(() => {
+    if (data === null) return;
+    writePublicSnapshot(route, data, { version, maxBytes, trim, detail });
+  }, [route, version, maxBytes, trim, detail, data]);
 }
 
 /**
