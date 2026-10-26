@@ -6,17 +6,18 @@
  *
  * Uses PostgREST with the service role, not an app route: the workflow has no
  * serverless time limit to respect, and the web app must stay read-only for this
- * table. Writes are ordered so a failure cannot leave a digest that claims
- * stories it does not have:
+ * table.
  *
- *   1. upsert the digest row with `story_count = 0` (a re-run keeps the same day's
- *      row, and its id, instead of failing on the unique date)
- *   2. delete that digest's stories, then insert the resolved ones
- *   3. set `story_count` — the last write also gives Realtime subscribers a
- *      second change, after the stories exist, so a client that refreshed on the
- *      first event still converges
+ * The whole write is one request to `publish_news_digest`
+ * (20261026130000_publish_news_digest_atomically.sql), because it is one
+ * transaction there: upsert the day's digest keeping its id, replace its stories,
+ * set `story_count` to what was inserted. Four separate requests — the shape this
+ * script used to have — cannot be atomic, so a failure after the delete left the
+ * day's digest with no stories, or emptied the digest a re-run was replacing.
  *
  * A digest already exists for the day? It is replaced. Nothing else is touched.
+ * The read-back afterwards is the check that the write it reports is the write a
+ * reader will see.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -91,45 +92,32 @@ export async function publishDigest({ config, digest, dryRun = false, log = cons
     source_published_at: story.source_published_at,
   }));
 
-  const [saved] = await request(`${base}/news_digests?on_conflict=digest_date`, config.key, {
+  const [published] = await request(`${base}/rpc/publish_news_digest`, config.key, {
     method: 'POST',
-    prefer: 'resolution=merge-duplicates,return=representation',
-    body: [
-      {
+    body: {
+      p_digest: {
         digest_date: digest.digest_date,
         title: digest.title,
         lede: digest.lede,
-        story_count: 0,
         model: digest.model,
         run_url: digest.run_url,
         published_at: new Date().toISOString(),
       },
-    ],
+      p_stories: storyRows,
+    },
   });
 
-  if (!saved?.id) throw new Error('the digest upsert returned no row');
-  log(`Digest row ${saved.id} for ${digest.digest_date}`);
+  if (!published?.digest_id) throw new Error('publish_news_digest returned no digest');
+  log(`Digest row ${published.digest_id} for ${digest.digest_date}`);
 
-  await request(`${base}/news_stories?digest_id=eq.${saved.id}`, config.key, {
-    method: 'DELETE',
-    prefer: 'return=minimal',
-  });
-
-  await request(`${base}/news_stories`, config.key, {
-    method: 'POST',
-    prefer: 'return=minimal',
-    body: storyRows.map((story) => ({ ...story, digest_id: saved.id })),
-  });
-  log(`Inserted ${storyRows.length} stories`);
-
-  await request(`${base}/news_digests?id=eq.${saved.id}`, config.key, {
-    method: 'PATCH',
-    prefer: 'return=minimal',
-    body: { story_count: storyRows.length },
-  });
+  if (published.story_count !== storyRows.length) {
+    throw new Error(
+      `publish_news_digest reported ${published.story_count} stories, expected ${storyRows.length}`
+    );
+  }
 
   const stored = await request(
-    `${base}/news_stories?select=id&digest_id=eq.${saved.id}`,
+    `${base}/news_stories?select=id&digest_id=eq.${published.digest_id}`,
     config.key
   );
   if (!Array.isArray(stored) || stored.length !== storyRows.length) {
@@ -141,7 +129,7 @@ export async function publishDigest({ config, digest, dryRun = false, log = cons
   }
 
   log(`Published ${stored.length} stories for ${digest.digest_date}`);
-  return { id: saved.id, dryRun: false };
+  return { id: published.digest_id, dryRun: false };
 }
 
 async function main() {

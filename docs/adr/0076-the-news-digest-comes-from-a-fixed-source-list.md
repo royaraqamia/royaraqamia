@@ -25,9 +25,10 @@ model does is Arabic prose about items that provably exist.
 4. `validate-digest.mjs` re-checks every field: 8-12 stories, each `candidate_id` resolving to a
    fetched story, ASCII digits, NFC Arabic, the repo's «جاري» spelling, at least 60% Arabic copy, no
    story used twice. Priority misses are annotations, not failures.
-5. `publish-digest.mjs` writes through PostgREST with the service role — digest first with
-   `story_count = 0`, then stories, then the count — so a failure never leaves a digest claiming
-   stories it does not have.
+5. `publish-digest.mjs` calls `publish_news_digest` with the service role: one transaction that
+   upserts the day's digest, replaces its stories and sets `story_count`, so a failure never leaves a
+   digest that claims stories it does not have — or, as four separate requests could, one that has lost
+   the stories it did have (`20261026130000`, #602).
 
 A run that fails at any step publishes nothing. A missed digest is recoverable (re-run with
 `date`); a fabricated one is not.
