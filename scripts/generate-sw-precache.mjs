@@ -39,11 +39,6 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // (#489), four routes per window over eight windows, so one pass covers this cap.
 export const MAX_PRECACHE_ROUTES = 32;
 
-// Cacheable, data-free, but not public content: `/device` is the per-device
-// diagnostics tool (ADR-0070), reached from `/account` and warmed there. A
-// public route list must not grow into "every route the worker may cache".
-const NON_PUBLIC_ROUTES = ['/device'];
-
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
 // only thing fetched here (no RSC variants). The 29 shells the #450 build
 // produces — auth, account, the public pages, the four product dashboards,
@@ -123,7 +118,6 @@ function shellCandidates({ appPaths, neverCachePrefixes }) {
       .filter((route) => !route.includes('.'))
       // `/` and `/offline` are already in the worker's fixed precache list.
       .filter((route) => route !== '/' && route !== '/offline')
-      .filter((route) => !NON_PUBLIC_ROUTES.some((excluded) => isUnderPrefix(route, excluded)))
       .filter((route) => !neverCachePrefixes.some((prefix) => isUnderPrefix(route, prefix)))
       .sort()
   );

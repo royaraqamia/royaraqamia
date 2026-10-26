@@ -17,11 +17,9 @@ import {
   readAudioCopy,
   readSurahAudioState,
   readSurahManifest,
-  removeAllAudio,
   removeSurahAudio,
   saveSurahAudio,
   saveSurahManifest,
-  listDownloadedSuras,
   type AudioBytesStore,
   type StoredAudioFile,
 } from '@/frontend/shared/local-store/audio';
@@ -313,16 +311,6 @@ describe('removing copies', () => {
     expect(await listSurahAudioCopies('ar.alafasy', 1, factory)).toEqual([]);
     expect(await listSurahAudioCopies('ar.alafasy', 2, factory)).toHaveLength(2);
   });
-
-  it('removes every copy on the device', async () => {
-    const store = new MemoryStore();
-    await save(store, 1);
-    await save(store, 2);
-
-    expect(await removeAllAudio({ store, factory })).toBe(4);
-    expect(store.blobs.size).toBe(0);
-    expect(await audioUsageBytes(factory)).toBe(0);
-  });
 });
 
 describe('the device state', () => {
@@ -341,50 +329,12 @@ describe('the device state', () => {
     expect(await readSurahAudioState('ar.alafasy', 2, 7, factory)).toBe('none');
   });
 
-  it('keeps its index in a database the /device listing will not mistake for a Local Store', async () => {
+  it('keeps its index in a database a Local Store listing will not mistake for a copy', async () => {
     expect(AUDIO_INDEX_DB).not.toContain('__');
   });
 
   it('has no bytes store in an environment without OPFS or Cache Storage', async () => {
     expect(await openAudioBytesStore()).toBeNull();
-  });
-});
-
-describe('the device listing', () => {
-  const save = (store: MemoryStore, surah: number, name: string, now: number) =>
-    saveSurahAudio({
-      edition: 'ar.alafasy',
-      surah,
-      name,
-      files: filesFor(2, 3, surah),
-      store,
-      urlFor,
-      fetcher: servingFetcher(),
-      factory,
-      now: () => now,
-    });
-
-  it('groups a Surah into one row with its name, its Ayat and what they cost', async () => {
-    await save(new MemoryStore(), 1, 'الفاتحة', 10);
-
-    expect(await listDownloadedSuras(factory)).toEqual([
-      {
-        edition: 'ar.alafasy',
-        surah: 1,
-        name: 'الفاتحة',
-        ayat: 2,
-        bytes: 6,
-        lastUsedAt: 10,
-      },
-    ]);
-  });
-
-  it('lists the most recently used Surah first', async () => {
-    const store = new MemoryStore();
-    await save(store, 1, 'الفاتحة', 10);
-    await save(store, 112, 'الإخلاص', 20);
-
-    expect((await listDownloadedSuras(factory)).map((row) => row.surah)).toEqual([112, 1]);
   });
 });
 

@@ -94,11 +94,6 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.5,
   },
   {
-    path: '/device',
-    changeFrequency: 'yearly',
-    priority: 0.3,
-  },
-  {
     // The index and, below, the 114 sura pages themselves.
     path: '/quran',
     changeFrequency: 'monthly',

@@ -123,8 +123,7 @@ export function persistIdentity(
  * the previous account's rows must not stay on screen behind a guest session.
  *
  * The rows themselves stay on disk (ADR-0028's "sign-out keeps the account
- * namespace", and `/device` is how they are removed); only the pointer to them
- * goes.
+ * namespace"); only the pointer to them goes.
  */
 export function clearPersistedIdentity(storage: Storage | null = browserStorage()): void {
   try {

@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import {
-  PUBLIC_SNAPSHOT_SCOPE,
   SNAPSHOT_MAX_BYTES,
   SNAPSHOT_SCHEMA_VERSION,
-  clearIdentitySnapshots,
   clearSnapshots,
   halveList,
   listSnapshotKeys,
@@ -49,13 +47,6 @@ describe('the snapshot store', () => {
     expect(readSnapshot(userIdentity('abc'), 'habitflow')).toEqual({ habits: ['a'] });
     expect(readSnapshot(GUEST_IDENTITY, 'habitflow')).toEqual({ habits: ['g'] });
     expect(readSnapshot(userIdentity('someone-else'), 'habitflow')).toBeNull();
-  });
-
-  it('keeps the public scope apart from every identity', () => {
-    writeSnapshot(PUBLIC_SNAPSHOT_SCOPE, '/community', { rows: [1] });
-
-    expect(readSnapshot(PUBLIC_SNAPSHOT_SCOPE, '/community')).toEqual({ rows: [1] });
-    expect(readSnapshot(GUEST_IDENTITY, '/community')).toBeNull();
   });
 
   it('holds one entry per route, so the last visit wins', () => {
@@ -150,16 +141,14 @@ describe('the snapshot store', () => {
     expect(readSnapshot(GUEST_IDENTITY, 'habitflow')).toBeNull();
   });
 
-  it('drops every identity snapshot on sign-out and keeps the public ones', () => {
+  it('drops every snapshot on sign-out', () => {
     writeSnapshot(userIdentity('abc'), 'habitflow', { habits: ['a'] });
     writeSnapshot(GUEST_IDENTITY, 'linksnap', { links: ['g'] });
-    writeSnapshot(PUBLIC_SNAPSHOT_SCOPE, '/device', { copies: [] });
 
-    clearIdentitySnapshots();
+    clearSnapshots();
 
     expect(readSnapshot(userIdentity('abc'), 'habitflow')).toBeNull();
     expect(readSnapshot(GUEST_IDENTITY, 'linksnap')).toBeNull();
-    expect(readSnapshot(PUBLIC_SNAPSHOT_SCOPE, '/device')).toEqual({ copies: [] });
   });
 
   it('returns one stable value per render until the stored string changes', () => {

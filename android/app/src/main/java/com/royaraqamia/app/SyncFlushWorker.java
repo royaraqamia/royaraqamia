@@ -68,17 +68,6 @@ public class SyncFlushWorker extends Worker {
         Page page = load(origin, ShellServer.pageUrl(origin, ShellServer.FLUSH_PATH));
         SyncFlushResult result = SyncFlushResult.parse(page.report);
 
-        // Anything the page actually reported is kept where `/device` can name it
-        // (#455): the work the shell did while nobody was looking would otherwise
-        // end as a dropped log line. A silent wake records nothing — a wake that
-        // never heard from the page has no counts to state, and invented zeroes
-        // would claim more than the shell knows.
-        if (page.report != null) {
-            SyncFlushRecord record = SyncFlushRecord.fromReport(
-                System.currentTimeMillis(), page.report);
-            if (record != null) SyncFlushRecord.save(context, record);
-        }
-
         if (!result.retry) {
             Log.i(LOG_TAG, result.summary);
             return Result.success();
