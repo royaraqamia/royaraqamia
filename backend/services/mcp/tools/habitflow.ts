@@ -219,7 +219,7 @@ const CreateHabitInputSchema = z
       .string()
       .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
       .optional()
-      .describe('Reminder time HH:mm'),
+      .describe('Reminder time HH:mm on the app clock (Asia/Damascus)'),
     format: ResponseFormatSchema,
   })
   .strict();
@@ -235,7 +235,8 @@ const UpdateHabitInputSchema = z
       .string()
       .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
       .nullable()
-      .optional(),
+      .optional()
+      .describe('Reminder time HH:mm on the app clock (Asia/Damascus); null clears it'),
     archived: z.boolean().optional(),
     format: ResponseFormatSchema,
   })
@@ -396,7 +397,7 @@ Args:
   - frequency ('daily' | 'weekly', optional)
   - target (number, optional): target count for the target period
   - target_period ('week' | 'month', optional)
-  - reminder_time (string, optional): HH:mm
+  - reminder_time (string, optional): HH:mm on the app clock (Asia/Damascus)
   - format ('markdown' | 'json', default 'markdown'): output format
 
 Returns (JSON): { "id": string, "name": string, "frequency": string, "target": number|null, "targetPeriod": string|null }
@@ -427,7 +428,7 @@ Args:
   - frequency ('daily' | 'weekly', optional)
   - target (number|null, optional)
   - target_period ('week' | 'month'|null, optional)
-  - reminder_time (string|null, optional, HH:mm)
+  - reminder_time (string|null, optional, HH:mm on the app clock, Asia/Damascus)
   - archived (boolean, optional)
   - format ('markdown' | 'json', default 'markdown'): output format
 
