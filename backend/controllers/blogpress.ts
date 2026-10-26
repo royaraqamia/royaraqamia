@@ -214,6 +214,16 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { repository } = createBlogpressPostsModule(supabase);
+      const plan = createPlanGate();
+
+      // Coming back from published takes a drafts slot, the same move
+      // `schedule_post` charges the other way round (#603). A draft or scheduled
+      // post already holds one, so only a published row is measured. The RPC
+      // re-checks under its own lock: this is the 402 nudge, not the
+      // enforcement point.
+      const published = await repository.countPostsInStatus([id], userId, 'published');
+      if (published > 0) await plan.cap(userId, OWNED_ITEMS.communityDrafts, published);
+
       const { slug } = await repository.unpublishPost(id, userId);
 
       return jsonResult(
@@ -222,7 +232,7 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
         { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل إلغاء النَّشر') }
+    { mapError: errorResultAt(500, 'فشل إلغاء النَّشر') }
   );
 }
 
@@ -296,6 +306,15 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         await plan.cap(userId, OWNED_ITEMS.communityPublished, targets.length);
       }
 
+      if (action === 'unpublish') {
+        // Only the rows that actually leave `published` take a drafts slot: a
+        // draft is a no-op and a scheduled post already holds one (#603). The
+        // RPC enforces the same count; this pre-check is what turns a refusal
+        // into a 402 instead of a 500.
+        const published = await repository.countPostsInStatus(postIds, userId, 'published');
+        if (published > 0) await plan.cap(userId, OWNED_ITEMS.communityDrafts, published);
+      }
+
       const { affected, slugs } = await plan.meterMany(
         userId,
         USAGE_ACTIONS.communityPostPublish,
@@ -323,7 +342,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         }
       );
     },
-    { mapError: messageError(500, 'فشل تنفيذ الإجراء على المنشورات') }
+    { mapError: errorResultAt(500, 'فشل تنفيذ الإجراء على المنشورات') }
   );
 }
 

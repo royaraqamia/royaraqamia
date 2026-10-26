@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(28);
+select plan(39);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -37,7 +37,10 @@ insert into public.users (id, email, username, is_admin)
 values
   ('00000000-0000-0000-0000-00000000ca02', 'cap-admin@example.invalid', 'cap-admin', true),
   ('00000000-0000-0000-0000-00000000ca03', 'cap-author@example.invalid', 'cap-author', false),
-  ('00000000-0000-0000-0000-00000000ca04', 'cap-other@example.invalid', 'cap-other', false);
+  ('00000000-0000-0000-0000-00000000ca04', 'cap-other@example.invalid', 'cap-other', false),
+  ('00000000-0000-0000-0000-00000000ca05', 'cap-full@example.invalid', 'cap-full', false),
+  ('00000000-0000-0000-0000-00000000ca06', 'cap-room@example.invalid', 'cap-room', false),
+  ('00000000-0000-0000-0000-00000000ca07', 'cap-bulk@example.invalid', 'cap-bulk', false);
 
 -- Five live habits (the free cap) plus one tombstone, for both capped owners.
 insert into public.habits (id, user_id, name)
@@ -105,6 +108,80 @@ values
     'body',
     'draft'
   );
+
+-- Three more owners for the unpublish direction of the two buckets (#603):
+-- 'full' sits on the drafts cap, 'room' has exactly one slot free, and 'bulk'
+-- holds a scheduled post — which already counts in `community_drafts` — so a
+-- bulk unpublish has to charge only the row that leaves `published`.
+insert into public.posts (id, author_id, slug, content, status, published_at, community_visible)
+values (
+  '00000000-0000-0000-0000-0000000cb111',
+  '00000000-0000-0000-0000-00000000ca05',
+  'full-published',
+  'body',
+  'published',
+  now(),
+  true
+);
+
+insert into public.posts (id, author_id, slug, content, status)
+select
+  ('00000000-0000-0000-0000-0000000cb1' || lpad(n::text, 2, '0'))::uuid,
+  '00000000-0000-0000-0000-00000000ca05'::uuid,
+  'full-draft-' || n,
+  'body',
+  'draft'
+from generate_series(1, 5) as n;
+
+insert into public.posts (id, author_id, slug, content, status, published_at, community_visible)
+values (
+  '00000000-0000-0000-0000-0000000cb211',
+  '00000000-0000-0000-0000-00000000ca06',
+  'room-published',
+  'body',
+  'published',
+  now(),
+  true
+);
+
+insert into public.posts (id, author_id, slug, content, status)
+select
+  ('00000000-0000-0000-0000-0000000cb2' || lpad(n::text, 2, '0'))::uuid,
+  '00000000-0000-0000-0000-00000000ca06'::uuid,
+  'room-draft-' || n,
+  'body',
+  'draft'
+from generate_series(1, 4) as n;
+
+insert into public.posts (id, author_id, slug, content, status, published_at, community_visible)
+values (
+  '00000000-0000-0000-0000-0000000cb321',
+  '00000000-0000-0000-0000-00000000ca07',
+  'bulk-published',
+  'body',
+  'published',
+  now(),
+  true
+);
+
+insert into public.posts (id, author_id, slug, content, status, publish_at)
+values (
+  '00000000-0000-0000-0000-0000000cb311',
+  '00000000-0000-0000-0000-00000000ca07',
+  'bulk-scheduled',
+  'body',
+  'scheduled',
+  now() + interval '1 day'
+);
+
+insert into public.posts (id, author_id, slug, content, status)
+select
+  ('00000000-0000-0000-0000-0000000cb3' || lpad(n::text, 2, '0'))::uuid,
+  '00000000-0000-0000-0000-00000000ca07'::uuid,
+  'bulk-draft-' || n,
+  'body',
+  'draft'
+from generate_series(1, 3) as n;
 
 set local session_replication_role = origin;
 
@@ -406,6 +483,140 @@ select ok(
   (select published_at is not null from public.posts
     where id = '00000000-0000-0000-0000-000000000a04'),
   'a bulk publish stamps the draft in the same batch'
+);
+
+-- ---------------------------------------------------------------------------
+-- Posts: unpublishing takes a drafts slot (#603)
+--
+-- The buckets are separate, and the cap trigger deliberately skips an update of
+-- a live row, so the RPC that performs the transition has to ask. Only a
+-- `published` row moves: a draft is a no-op and a scheduled row already counts
+-- in `community_drafts`, so charging either would count a row against itself.
+-- ---------------------------------------------------------------------------
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-00000000ca05","email":"cap-full@example.invalid"}',
+  true
+);
+
+set local role authenticated;
+
+select throws_ok(
+  $$select public.unpublish_post('00000000-0000-0000-0000-0000000cb111')$$,
+  'PL001',
+  null,
+  'unpublishing into a full drafts bucket is refused'
+);
+
+reset role;
+
+select is(
+  (select status::text from public.posts where id = '00000000-0000-0000-0000-0000000cb111'),
+  'published',
+  'a refused unpublish leaves the row published'
+);
+
+set local role authenticated;
+
+select is(
+  public.unpublish_post('00000000-0000-0000-0000-0000000cb101'),
+  'full-draft-1',
+  'unpublishing a post that is already a draft still succeeds'
+);
+
+reset role;
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca05', 'community_drafts'),
+  5,
+  'an already-draft row takes no slot'
+);
+
+-- The same account shape, one slot lower: the transition fits.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-00000000ca06","email":"cap-room@example.invalid"}',
+  true
+);
+
+set local role authenticated;
+
+select is(
+  public.unpublish_post('00000000-0000-0000-0000-0000000cb211'),
+  'room-published',
+  'unpublishing with one drafts slot free succeeds'
+);
+
+reset role;
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca06', 'community_drafts'),
+  5,
+  'the returned post fills the last drafts slot'
+);
+
+-- Two ids, one slot: the selection is longer than the room, but only the
+-- published row is a transition into the bucket, so the batch fits.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-00000000ca07","email":"cap-bulk@example.invalid"}',
+  true
+);
+
+set local role authenticated;
+
+select is(
+  (select count(*)::integer
+     from public.bulk_publish_posts(
+       array[
+         '00000000-0000-0000-0000-0000000cb321'::uuid,
+         '00000000-0000-0000-0000-0000000cb311'::uuid
+       ],
+       false
+     )),
+  2,
+  'a bulk unpublish moves the published row and the scheduled one'
+);
+
+reset role;
+
+select is(
+  (select status::text from public.posts where id = '00000000-0000-0000-0000-0000000cb311'),
+  'draft',
+  'a scheduled row returns to draft without needing a slot'
+);
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca07', 'community_drafts'),
+  5,
+  'a bulk unpublish charges only the row that left published'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-00000000ca05","email":"cap-full@example.invalid"}',
+  true
+);
+
+set local role authenticated;
+
+select throws_ok(
+  $$select public.bulk_publish_posts(
+      array['00000000-0000-0000-0000-0000000cb111'::uuid],
+      false
+    )$$,
+  'PL001',
+  null,
+  'a bulk unpublish into a full drafts bucket is refused'
+);
+
+reset role;
+
+select is(
+  (select status::text from public.posts where id = '00000000-0000-0000-0000-0000000cb111'),
+  'published',
+  'a refused bulk unpublish writes nothing'
 );
 
 -- ---------------------------------------------------------------------------
