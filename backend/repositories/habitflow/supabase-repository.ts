@@ -304,53 +304,17 @@ export class SupabaseHabitRepository implements HabitRepository {
       throw new AppError('Unauthorized for Supabase restore', 401);
     }
 
-    const { error: clearLogsError } = await this.client
-      .from('habit_logs')
-      .delete()
-      .eq('user_id', userId);
-    const { error: clearHabitsError } = await this.client
-      .from('habits')
-      .delete()
-      .eq('user_id', userId);
+    // The clear, the habit inserts and the log inserts are one server-side
+    // transaction. The RPC resolves the owner from `auth.uid()` and maps each
+    // backup habit id to the id it inserted, so a local-mode `h-*` backup keeps
+    // every log attached (#550). A failure — the owned-item cap included —
+    // rolls the clear back rather than leaving the account half restored.
+    const { error } = await this.client.rpc('restore_habits', { p_backup: input });
 
-    if (clearLogsError || clearHabitsError) {
-      logger.error('Failed to clear Supabase data for restore', {
-        clearHabitsError,
-        clearLogsError,
-      });
-    }
-
-    const dbHabits = input.habits.map((h) => ({
-      id: h.id.startsWith('h-') ? undefined : h.id,
-      name: h.name,
-      frequency: h.frequency,
-      archived: h.archived || false,
-      created_at: h.createdAt || nowIso(),
-      user_id: userId,
-      target: h.target ?? null,
-      target_period: isTargetPeriod(h.targetPeriod) ? h.targetPeriod : null,
-      reminder_time: h.reminderTime ?? null,
-    }));
-
-    const { error: insertHabitsError } = await this.client.from('habits').insert(dbHabits).select();
-
-    if (insertHabitsError) {
-      throw new AppError(`Failed to restore habits: ${insertHabitsError.message}`, 500);
-    }
-
-    const dbLogs = input.logs.map((l) => ({
-      habit_id: l.habitId,
-      date: l.date,
-      completed: l.completed,
-      completed_at: l.completedAt || nowIso(),
-      log_kind: l.kind || (l.completed ? 'complete' : 'none'),
-      user_id: userId,
-    }));
-
-    const { error: insertLogsError } = await this.client.from('habit_logs').insert(dbLogs);
-
-    if (insertLogsError) {
-      throw new AppError(`Failed to restore logs: ${insertLogsError.message}`, 500);
+    if (error) {
+      // Left raw so the service can map the cap trigger's `PL001` to the Plan
+      // refusal response; wrapping it in an AppError would drop the SQLSTATE.
+      throw error;
     }
   }
 
