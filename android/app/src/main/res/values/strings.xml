@@ -77,4 +77,12 @@
     <string name="battery_channel_description">حالة ما رصَّدته وهو مغلق: متى وصل، وما ينتظر.</string>
     <string name="battery_prompt_title">تأخُّر وصول ما رصَّدته</string>
     <string name="battery_prompt_message">تؤجِّل تحسينات البَّطارية وصول ما رصَّدتَه وهو مغلق. اضغط لطلب استثناء لهذا التَّطبيق، فيصل في وقته.</string>
+
+    <!--
+      The recitation's own notification channel (ADR-0086). It is a media
+      session, so the platform's Play/Pause, Stop, previous/next and seek bar
+      are drawn on it; the copy only names what is playing.
+    -->
+    <string name="quran_channel_name">تلاوة القرآن</string>
+    <string name="quran_channel_description">مُشغِّل التِّلاوة وأدواته، يعمل والتِّطبيق في الخلفية.</string>
 </resources>
