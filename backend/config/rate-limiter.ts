@@ -102,6 +102,20 @@ export function newsSearchRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/**
+ * The `/news` board read (#555): one request per filter change, so it gets its
+ * own bucket rather than sharing the search's — a reader typing a query while a
+ * day loads must not spend the board's allowance.
+ */
+export function newsBoardRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `news-board:${ip}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: فتح الملخّص محدود بـ 60 طلبًا في الدقيقة.',
+  };
+}
+
 export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `username-availability:${userId}`,

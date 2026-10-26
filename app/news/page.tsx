@@ -1,18 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Suspense } from 'react';
 
-import {
-  loadNewsBoard,
-  parseNewsQuery,
-  parseNewsView,
-  type NewsSearchParams,
-} from '@/backend/loaders/news';
-import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
-import { NewsLiveRefresh } from '@/frontend/ui/news/NewsLiveRefresh';
-import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
-import { StoryCard } from '@/frontend/ui/news/StoryCard';
+import { NewsBoard } from '@/frontend/ui/news/NewsBoard';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { NEWS_CATEGORIES, NEWS_RETENTION_DAYS, type NewsCategory } from '@/shared/contracts/news';
 
 export const metadata: Metadata = {
   title: 'أخبار اليوم',
@@ -37,44 +27,22 @@ export const metadata: Metadata = {
   },
 };
 
-function uniqueCategories(values: readonly NewsCategory[]): NewsCategory[] {
-  const seen = new Set<NewsCategory>();
-  for (const value of values) seen.add(value);
-  // Keep the page's own order (tech, politics, religion, …) rather than first
-  // appearance, so the chip row does not reshuffle between days.
-  return NEWS_CATEGORIES.filter((category) => seen.has(category));
-}
-
-interface NewsPageProps {
-  searchParams: Promise<NewsSearchParams>;
-}
-
-export default async function NewsPage({ searchParams }: NewsPageProps) {
-  const params = await searchParams;
-  const query = parseNewsQuery(params);
-  const view = parseNewsView(params);
-  // The reader's own digest replaces the shared one (or their selection narrows
-  // it); a visitor reads the shared digest whole.
-  const board = await loadNewsBoard(params, view);
-
-  const stories = board.day?.stories ?? [];
-  const categories = uniqueCategories(
-    board.search
-      ? board.search.hits.map((hit) => hit.category)
-      : stories.map((story) => story.category)
-  );
-
-  /** The same page, asked for the other digest. */
-  const otherViewHref = (() => {
-    const next = new URLSearchParams();
-    if (query.q) next.set('q', query.q);
-    if (query.date) next.set('date', query.date);
-    if (query.category) next.set('category', query.category);
-    if (board.personal?.active) next.set('view', 'public');
-    const search = next.toString();
-    return search ? `/news?${search}` : '/news';
-  })();
-
+/**
+ * `/news` is a data-free shell (#555).
+ *
+ * The board used to be read here, from `searchParams` — exactly the shape the
+ * build cannot prerender, which is why the precache generator kept skipping this
+ * route and an offline open of `/news` fell through to `/` via the ancestor
+ * fallback (#490, ADR-0071). The filters and the digest moved into `NewsBoard`,
+ * so the document is the same for every reader and every filter: the build
+ * prerenders it, the worker precaches it, and the rows arrive as a client read
+ * that the public snapshot store keeps for the tunnel.
+ *
+ * Nothing account-bearing is rendered into this document. A reader with their
+ * own sources still reads their digest from the client, and the route answers
+ * that read `no-store`.
+ */
+export default function NewsPage() {
   return (
     <div className="relative flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
       <main id="main-content" dir="rtl" className="flex-1 pt-10 pb-20 md:pb-28">
@@ -83,115 +51,33 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
             <SectionTitle as="h1">
               <SectionTitleHighlight>أخبار اليوم</SectionTitleHighlight>
             </SectionTitle>
-            <NewsLiveRefresh />
           </header>
 
-          {board.personal &&
-          !board.search &&
-          (board.personal.active || board.personal.available) ? (
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
-              {board.personal.active ? (
-                <>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-bold text-primary">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-                    مُلخَّصك الخاص
-                  </span>
-                  <Link
-                    href={otherViewHref}
-                    className="font-bold text-primary underline-offset-4 hover:underline"
-                  >
-                    عرض المُلخَّص العام
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href={otherViewHref}
-                  className="font-bold text-primary underline-offset-4 hover:underline"
-                >
-                  لديك مُلخَّص خاص لهذا اليوم — اعرضه
-                </Link>
-              )}
-            </div>
-          ) : null}
-
-          <div className="space-y-4">
-            <NewsSearch query={query.q ?? ''} category={query.category ?? null} />
-
-            <NewsFilters
-              date={query.date ?? null}
-              category={query.category ?? null}
-              query={query.q ?? ''}
-              dates={board.dates}
-              categories={categories}
-              isSearching={board.search !== null}
-            />
-          </div>
-
-          <div className="mt-8">
-            {board.search ? (
-              <section aria-labelledby="news-search-heading">
-                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 id="news-search-heading" className="text-lg font-extrabold">
-                    نتائج البحث عن «{board.search.query}»
-                  </h2>
-                  <span className="text-xs text-muted-foreground">
-                    {board.search.hits.length} نتيجة
-                  </span>
-                </div>
-
-                {board.search.hits.length > 0 ? (
-                  <div className="space-y-4">
-                    {board.search.hits.map((hit) => (
-                      <StoryCard key={hit.id} story={hit} digestDate={hit.digestDate} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-                    لا نتائج مطابقة في أخبار آخر {NEWS_RETENTION_DAYS} يومًا.
-                  </p>
-                )}
-
-                {board.search.truncated ? (
-                  <p className="mt-4 text-center text-xs text-muted-foreground">
-                    هناك نتائج أكثر مما تعرضه الصفحة؛ جرّب كلمة أدق.
-                  </p>
-                ) : null}
-              </section>
-            ) : board.day ? (
-              <section aria-label="مُلخَّص اليوم">
-                {stories.length > 0 ? (
-                  <div className="space-y-4">
-                    {stories.map((story) => (
-                      <StoryCard key={story.id} story={story} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-                    لا أخبار في هذا القسم لهذا اليوم.
-                  </p>
-                )}
-              </section>
-            ) : (
-              <section className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center">
-                <h2 className="text-xl font-extrabold">لا يوجد مُلخَّص لهذا اليوم</h2>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  {board.hasAnyDigest
-                    ? 'قد يكون هذا اليوم خارج مدة الاحتفاظ (30 يومًا) أو لم يُنشَر فيه مُلخَّص بعد.'
-                    : 'لم يُنشَر أي مُلخَّص بعد. يُنشَر المُلخَّص كل صباح بعد السَّاعة السَّادسة بتوقيت دمشق.'}
-                </p>
-                {board.hasAnyDigest ? (
-                  <Link
-                    href="/news"
-                    className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-                  >
-                    أحدث مُلخَّص
-                  </Link>
-                ) : null}
-              </section>
-            )}
-          </div>
+          <Suspense fallback={<NewsShellFallback />}>
+            <NewsBoard />
+          </Suspense>
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * The prerendered document's own frame — the same one the board draws before its
+ * first answer, and the only one an offline first visit can have: nothing was
+ * ever seen, so there is no snapshot to paint (the limit the spec states).
+ */
+function NewsShellFallback() {
+  return (
+    <div className="flex flex-col gap-4" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="rounded-2xl border border-border/60 bg-muted/20 p-5">
+          <div className="h-4 w-24 rounded-full bg-muted/60" />
+          <div className="mt-4 h-5 w-3/4 rounded-full bg-muted/70" />
+          <div className="mt-3 h-3.5 w-full rounded-full bg-muted/50" />
+          <div className="mt-2 h-3.5 w-2/3 rounded-full bg-muted/50" />
+        </div>
+      ))}
     </div>
   );
 }

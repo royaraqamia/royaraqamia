@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { usePWA, type PWAState } from '../shared/use-pwa';
 import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
+import { pruneSnapshots } from '@/frontend/shared/local-store/snapshot';
 
 const SW_PATH = '/sw.js';
 
@@ -30,6 +31,15 @@ export function PWAProvider({ children }: PWAProviderProps) {
   const registered = useRef(false);
 
   const pwa = usePWA();
+
+  // The snapshot store is this device's other copy of the pages the worker
+  // caches, so a schema change is dropped from both in the same boot: the
+  // worker clears its caches in `activate` when `CACHE_SCHEMA` moves (#488), and
+  // this drops every snapshot an older shape wrote (#555). Readers ignore a
+  // stale version anyway; this is what stops the old bytes outliving it.
+  useEffect(() => {
+    pruneSnapshots();
+  }, []);
 
   useEffect(() => {
     if (registered.current) return;

@@ -176,9 +176,9 @@
       "owner": "server",
       "read": "snapshot",
       "write": "none",
-      "shell": "swr",
+      "shell": "precached",
       "bundle": "remote",
-      "specs": [],
+      "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
     {

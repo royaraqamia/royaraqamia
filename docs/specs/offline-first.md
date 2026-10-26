@@ -32,15 +32,16 @@ messenger is_.
 
 ## Scope
 
-| Surface                                                               | Offline read                                                    | Offline write |
-| --------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- |
-| Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache                                                 | No            |
-| Auth shells (login, signup, OTP, reset, password update)              | Yes — SWR cache since #447; every submit still needs the server | No            |
-| Scanner (decodes on the device; owns no server surface)               | Yes — once the engine is cached                                 | No            |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store                                          | Yes — Outbox  |
-| Non-inventory leads — Training Application, Project Request, Retainer | n/a                                                             | Yes — Outbox  |
-| Consultation Booking (reserves Availability Slots)                    | No — a live read, refused offline with a needs-connection state | No            |
-| Auth, Push, Media Downloader, Rates refresh, MCP, Admin               | No                                                              | No            |
+| Surface                                                                  | Offline read                                                    | Offline write |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------- |
+| Public content (Community, Rates, Certificates/Verify, Showcase)         | Yes — SWR cache                                                 | No            |
+| Public content read on the client (news digest, filtered Community feed) | Yes — last-seen snapshot, marked stale and read-only (#555)     | No            |
+| Auth shells (login, signup, OTP, reset, password update)                 | Yes — SWR cache since #447; every submit still needs the server | No            |
+| Scanner (decodes on the device; owns no server surface)                  | Yes — once the engine is cached                                 | No            |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress               | Yes — from Local Store                                          | Yes — Outbox  |
+| Non-inventory leads — Training Application, Project Request, Retainer    | n/a                                                             | Yes — Outbox  |
+| Consultation Booking (reserves Availability Slots)                       | No — a live read, refused offline with a needs-connection state | No            |
+| Auth, Push, Media Downloader, Rates refresh, MCP, Admin                  | No                                                              | No            |
 
 Everything in the first and third rows must reach properties 1–3. The fourth row is the one addition
 worth revisiting per surface: drafting a lead offline is already supported, and any other write that
@@ -76,6 +77,15 @@ stated limit.
   close. Since #447–#450 that state lives inside a cached document for every one of them except
   `/admin` and the MCP consent screen, which still ask the network for their document — the boundary
   the next bullet states.
+- **A public surface shows its last-seen rows, read-only.** A digest, a feed page, the rates board,
+  a certificate and a profile are the same rows for everyone, so a device that saw them keeps them
+  (`public:<route>`, #555) and paints them with the radio off, under the surface's own stale line.
+  Where the document itself is cached the rows were already there with it — that is how `/rates`,
+  `/verify/<code>` and `/u/<handle>` reload offline — and the snapshot is what answers the reads that
+  have no document to come with: `/news`, now a data-free shell whose digest is a client read, and a
+  filtered or paginated Community page, whose reads are never-cache APIs. Nothing inside a snapshot is
+  actionable: filters, compose and verify name the connection instead, and no snapshot ever queues a
+  write. A reader's own digest is `no-store` and is deliberately never recorded.
 - **A recitation is offline only where the reader kept it.** The text and the reading position paint
   from the Local Store, but an Ayah's audio is served by `audio.royaraqamia.com` (ADR-0062). Since
   #559 a reader can keep one sura on the device: the files are verified against the manifest's
@@ -244,6 +254,17 @@ Honest list of what stands between us and the bar, each with the file that shows
    they have nothing to pull and are not published. A tab that was hidden catches up through
    its own focus pull — the subscription is gone by then, which is why a hint never has to be replayed.
 
+7. **Snapshot store** — the last screen a surface painted, in `localStorage` so the first frame
+   can read it synchronously (#495). Two scopes share it: `<identity>:<route>` for owned data, and
+   `public:<route>` for public rows (#555). A public key is the normalised path plus the query the
+   reader chose (`_rsc` and the router's own parameters are not part of it), the value is the rows
+   the surface rendered — never a response body, so a field the UI does not show cannot be stored —
+   and it is bounded to a screenful and 32 KB. A detail route's keys come from the address bar, so
+   those entries are LRU-capped at 20; a list surface has one per filter choice. The public scope is
+   identity-free and survives a sign-out, because a signed-out device may still read the digest.
+   Nothing a response marked `no-store` or `private` is ever written (the writer reads the
+   response's own header), and an entry whose schema version differs is ignored and pruned.
+
 ### Cache tiers
 
 | Request                                                                                     | Strategy                                                                                                           |
@@ -280,9 +301,11 @@ this device never opened still paints its own shell offline once the refresh has
 ([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). The install itself fetches
 only `/`, `/offline`, the manifest and the icons. Dynamic detail routes,
 account tools' API prefixes and every never-cache prefix stay out; the product dashboard roots joined
-the list in #449 (ADR-0073) once they became data-free shells, and `/consultation/book`,
-`/downloader` and `/mcp/guide` in #450. On the #450 build the list is 29 documents and 1,705,315 bytes
-(1.63 MB) measured from the build's own HTML, against the 32-route cap and the 6 MB ceiling.
+the list in #449 (ADR-0073) once they became data-free shells, `/consultation/book`, `/downloader` and
+`/mcp/guide` in #450, and `/news` in #555 once its filters and digest moved to the client
+(ADR-0071's #555 amendment). On the #555 build the list is 33 documents and 1,931,124 bytes (1.84 MB)
+measured from the build's own HTML, against the 33-route cap and the 6 MB ceiling; `/news` is the
+route the #557 rule was written for.
 
 An RSC payload is stored **one per page, not one per router variant** (#492). The App Router appends
 `_rsc` to a flight request — a hash of the request's own headers — so two navigations to the same page
@@ -476,6 +499,12 @@ the server is unreachable, and the [Verification](#verification) section for wha
   renders the item itself once it has been opened online — the limit stays one visit deep rather than
   one segment deep. `product-offline-render.spec.ts` proves the product half of it with
   `/linksnap/unlock/<code>`.
+
+  #555 added the read half to the same spec. `/news` is opened online, its public snapshot is
+  asserted to hold the digest, the route is asserted to be in the precache (the document no longer
+  reads `searchParams`), and the reload with the radio off paints rows with no skeleton and no
+  `/offline`. `/community` gets the same treatment for the snapshot it records. A filtered feed page
+  is not asserted, because whether a query has hits is live data the suite cannot pin.
 
   What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
   Request but is left out of the workflow because it writes a row the suite cannot remove against the

@@ -35,9 +35,12 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // thousands of fetches on a device. Raised from 24 to 32 in #449: the cached
 // auth/account/product shells alone were 27 routes on that build, and a cap
 // below that drops public content (`/terms`, `/verify`) from the tail. The #450
-// build lists 29. The worker fetches the list in idle windows after activation
-// (#489), four routes per window over eight windows, so one pass covers this cap.
-export const MAX_PRECACHE_ROUTES = 32;
+// build lists 29. Raised again to 33 in #555, when `/news` became a data-free
+// shell: on that build the 33 shells measure 1,931,124 bytes (1.84 MB) from the
+// build's own HTML, against the 6 MB ceiling below. The worker fetches the list
+// in idle windows after activation (#489), four routes per window over eight
+// windows, so one pass covers this cap.
+export const MAX_PRECACHE_ROUTES = 33;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
 // only thing fetched here (no RSC variants). The 29 shells the #450 build
@@ -68,13 +71,13 @@ function isUnderPrefix(route, prefix) {
  * have one (#557). A page in this list is not an error; a page that is dynamic
  * and is *not* in this list is, because nothing declared that its shell was
  * meant to disappear — which is exactly how `/news` lost one.
+ *
+ * `/news` was the case that named the rule, and #555 is the change that closed
+ * it: the filters moved to the client and the digest to a client read, so the
+ * page prerenders and its shell is in the list below. Nothing may be added here
+ * without saying why the page cannot be a shell.
  */
 export const DYNAMIC_BY_DESIGN = [
-  {
-    route: '/news',
-    reason:
-      'reads `searchParams` on the server; #555 moves the filters client-side so it can be a shell',
-  },
   // The three lead forms call `getOptionalUser()` (and the price loaders) on the
   // server, so they render per request. Their writes are outbox rows, so a
   // visitor who opens one offline gets the ancestor shell and the form's own

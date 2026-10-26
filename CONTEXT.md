@@ -328,6 +328,13 @@ The durable, per-identity IndexedDB database on a device that holds a user's Own
 Outbox. It survives service-worker updates and sign-out.
 _Avoid_: cache, local cache, offline DB
 
+**Snapshot**:
+The rows a surface last painted, kept on the device in the first frame's reach so a cold mount
+renders them before anything asynchronous answers. Two scopes: an identity's route (with the Local
+Store's rules), and a public one keyed by route alone, which holds nothing personal, survives a
+sign-out, and is what a public page shows when the radio is off.
+_Avoid_: cache, prefetch, server payload
+
 **Outbox**:
 The ordered queue of a user's not-yet-synced writes, held inside the Local Store, replayed to the
 server until each is acknowledged.

@@ -1,30 +1,41 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import {
+  PUBLIC_DETAIL_LIMIT,
+  PUBLIC_SCOPE,
   SNAPSHOT_MAX_BYTES,
   SNAPSHOT_SCHEMA_VERSION,
+  clearAllSnapshots,
+  clearPublicSnapshots,
   clearSnapshots,
   halveList,
+  listPublicDetailRoutes,
   listSnapshotKeys,
+  pruneSnapshots,
+  readPublicSnapshot,
   readSnapshot,
   snapshotKey,
+  usePublicSnapshot,
   useSnapshot,
+  writePublicSnapshot,
   writeSnapshot,
 } from '@/frontend/shared/local-store/snapshot';
 import { GUEST_IDENTITY, userIdentity } from '@/frontend/shared/local-store/identity';
 
 /**
- * The snapshot store (#495).
+ * The snapshot store (#495, and the public scope #555).
  *
  * It is what makes a cold navigation paint rows in the first frame, so the
  * contract that matters is small and load-bearing: a snapshot is only ever read
  * by the identity that wrote it, one entry per route (last visit wins), bounded,
- * ignored across a schema change, and gone on sign-out.
+ * ignored across a schema change, and gone on sign-out. The public half is the
+ * mirror image: no identity, survives a sign-out, and a detail route's entries
+ * are capped because their keys come from the address bar.
  */
 describe('the snapshot store', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    clearSnapshots();
+    clearAllSnapshots();
   });
 
   it('round-trips the rows a surface painted', () => {
@@ -151,6 +162,16 @@ describe('the snapshot store', () => {
     expect(readSnapshot(GUEST_IDENTITY, 'linksnap')).toBeNull();
   });
 
+  it('keeps the public scope across a sign-out', () => {
+    writePublicSnapshot('/news', { stories: ['digest'] });
+    writeSnapshot(userIdentity('abc'), 'habitflow', { habits: ['a'] });
+
+    clearSnapshots();
+
+    expect(readPublicSnapshot('/news')).toEqual({ stories: ['digest'] });
+    expect(readSnapshot(userIdentity('abc'), 'habitflow')).toBeNull();
+  });
+
   it('returns one stable value per render until the stored string changes', () => {
     writeSnapshot(GUEST_IDENTITY, 'habitflow', { habits: ['a'] });
 
@@ -164,13 +185,130 @@ describe('the snapshot store', () => {
 });
 
 /**
+ * The public scope (#555).
+ *
+ * Two things separate it from the identity scope and both are load-bearing: the
+ * key is a route with no reader in it, so it survives a sign-out; and a detail
+ * route's key comes from the address bar, so those entries are capped rather
+ * than left to grow with a crawl.
+ */
+describe('the public snapshot scope', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    clearAllSnapshots();
+  });
+
+  it('round-trips the rows a public surface painted', () => {
+    writePublicSnapshot('/rates', { pairs: [{ code: 'USD', buy: 13000 }] });
+
+    expect(readPublicSnapshot('/rates')).toEqual({ pairs: [{ code: 'USD', buy: 13000 }] });
+  });
+
+  it('keys one entry per route and keeps the filter query distinct', () => {
+    writePublicSnapshot('/news', { digest: 'latest' });
+    writePublicSnapshot('/news?category=tech', { digest: 'tech' });
+    writePublicSnapshot('/news', { digest: 'next' });
+
+    expect(readPublicSnapshot('/news')).toEqual({ digest: 'next' });
+    expect(readPublicSnapshot('/news?category=tech')).toEqual({ digest: 'tech' });
+    expect(listSnapshotKeys().filter((key) => key.includes('public:/news'))).toHaveLength(2);
+  });
+
+  it('is readable by a device that just signed out', () => {
+    writePublicSnapshot('/community', { posts: ['a'] });
+
+    clearSnapshots();
+
+    expect(readPublicSnapshot('/community')).toEqual({ posts: ['a'] });
+  });
+
+  it('ignores a snapshot written by another schema version, and prunes it', () => {
+    writePublicSnapshot('/news', { digest: 'old' }, { version: 2 });
+
+    expect(readPublicSnapshot('/news')).toBeNull();
+
+    // The stale bytes are dropped rather than left for the life of the origin.
+    expect(pruneSnapshots()).toBe(1);
+    expect(listSnapshotKeys()).toHaveLength(0);
+  });
+
+  it(`caps detail routes at ${PUBLIC_DETAIL_LIMIT} entries, evicting the oldest`, () => {
+    for (let index = 0; index < PUBLIC_DETAIL_LIMIT + 5; index += 1) {
+      writePublicSnapshot(`/community/post-${index}`, { title: `post ${index}` });
+    }
+
+    expect(listPublicDetailRoutes()).toHaveLength(PUBLIC_DETAIL_LIMIT);
+    expect(readPublicSnapshot('/community/post-0')).toBeNull();
+    expect(readPublicSnapshot(`/community/post-${PUBLIC_DETAIL_LIMIT + 4}`)).toEqual({
+      title: `post ${PUBLIC_DETAIL_LIMIT + 4}`,
+    });
+  });
+
+  it('treats a re-visited detail route as the newest, not as a second entry', () => {
+    writePublicSnapshot('/community/first', { title: 'first' });
+    writePublicSnapshot('/community/second', { title: 'second' });
+    writePublicSnapshot('/community/first', { title: 'first again' });
+
+    expect(listPublicDetailRoutes()).toEqual(['/community/first', '/community/second']);
+    expect(listPublicDetailRoutes()).toHaveLength(2);
+
+    // Refilling the cap after a touch evicts the route that was not touched.
+    for (let index = 0; index < PUBLIC_DETAIL_LIMIT; index += 1) {
+      writePublicSnapshot(`/verify/code-${index}`, { ok: true });
+    }
+    expect(readPublicSnapshot('/community/second')).toBeNull();
+  });
+
+  it('does not cap a list surface, whose keys the reader chose', () => {
+    for (let index = 0; index < PUBLIC_DETAIL_LIMIT + 5; index += 1) {
+      writePublicSnapshot('/news?date=2026-10-01', { digest: index });
+    }
+
+    expect(readPublicSnapshot('/news?date=2026-10-01')).toEqual({
+      digest: PUBLIC_DETAIL_LIMIT + 4,
+    });
+    expect(listPublicDetailRoutes()).toHaveLength(0);
+  });
+
+  it('holds the byte budget like the identity scope', () => {
+    writePublicSnapshot(
+      '/news',
+      { stories: ['x'.repeat(SNAPSHOT_MAX_BYTES)] },
+      { trim: () => null }
+    );
+
+    expect(readPublicSnapshot('/news')).toBeNull();
+    expect(listSnapshotKeys()).toHaveLength(0);
+  });
+
+  it('forgets the public scope on demand without touching an account', () => {
+    writePublicSnapshot('/news', { digest: 'a' });
+    writeSnapshot(userIdentity('abc'), 'habitflow', { habits: ['a'] });
+
+    clearPublicSnapshots();
+
+    expect(readPublicSnapshot('/news')).toBeNull();
+    expect(readSnapshot(userIdentity('abc'), 'habitflow')).toEqual({ habits: ['a'] });
+  });
+
+  it('stamps the public entry with the public scope, never an identity', () => {
+    writePublicSnapshot('/news', { digest: 'a' });
+
+    const raw = window.localStorage.getItem(snapshotKey(PUBLIC_SCOPE, '/news'));
+    expect(raw).not.toBeNull();
+    expect(raw).not.toContain('user:');
+    expect(JSON.parse(raw as string)).toMatchObject({ v: SNAPSHOT_SCHEMA_VERSION, route: '/news' });
+  });
+});
+
+/**
  * The hook's job is the first frame: it must answer during render, on the client,
  * without waiting for an effect.
  */
 describe('useSnapshot', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    clearSnapshots();
+    clearAllSnapshots();
   });
 
   it('renders the snapshot on the first client commit', () => {
@@ -198,5 +336,41 @@ describe('useSnapshot', () => {
     const { result } = renderHook(() => useSnapshot(GUEST_IDENTITY, 'quran'));
 
     expect(result.current).toBeNull();
+  });
+});
+
+/**
+ * The public hook answers the same way, and from a scope no sign-out can touch:
+ * a signed-out device is exactly one of the readers it exists for.
+ */
+describe('usePublicSnapshot', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    clearAllSnapshots();
+  });
+
+  it('renders the public snapshot on the first client commit', () => {
+    writePublicSnapshot('/news?category=tech', { digest: 'tech' });
+
+    const { result } = renderHook(() => usePublicSnapshot('/news?category=tech'));
+
+    expect(result.current).toEqual({ digest: 'tech' });
+  });
+
+  it('answers null for a route this device never painted', () => {
+    const { result } = renderHook(() => usePublicSnapshot('/community'));
+
+    expect(result.current).toBeNull();
+  });
+
+  it('is unaffected by a sign-out', () => {
+    writePublicSnapshot('/rates', { pairs: [] });
+
+    const { result } = renderHook(() => usePublicSnapshot('/rates'));
+    act(() => {
+      clearSnapshots();
+    });
+
+    expect(result.current).toEqual({ pairs: [] });
   });
 });

@@ -35,7 +35,48 @@ function serverMessage(data: unknown): string | undefined {
   return undefined;
 }
 
-export async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+/**
+ * Whether a response forbids keeping a copy of what it carried (#555).
+ *
+ * This is the hard redaction rule of the public snapshot store, read where the
+ * response exists rather than where the snapshot is written: `no-store` is the
+ * server saying "this answer is for this request only", and `private` says the
+ * same about an intermediary —?" either is enough to keep the rows out of
+ * `localStorage`. An absent header is not permission for a *cache*, but it is not
+ * a prohibition either, and every public read API this store serves is a
+ * `public`/`no-store` GET by contract (`scripts/__tests__/api-cache-contract.test.ts`).
+ */
+export function isResponseKeepable(response: Response): boolean {
+  const headers = response.headers;
+  // A response with no header bag states no prohibition; the guard is there for
+  // the seam itself (a stubbed response in a test), not for a browser.
+  if (!headers || typeof headers.get !== 'function') return true;
+
+  const cacheControl = (headers.get('cache-control') ?? '').toLowerCase();
+  const pragma = (headers.get('pragma') ?? '').toLowerCase();
+  if (cacheControl.includes('no-store') || cacheControl.includes('private')) return false;
+  return !pragma.includes('no-cache');
+}
+
+/** A response's body and what may be done with a copy of it. */
+export interface RequestResult<T> {
+  data: T;
+  /** False when the response forbade keeping it, so nothing may be recorded. */
+  keepable: boolean;
+}
+
+/**
+ * `request`, plus the one fact a snapshot writer needs: whether the response is
+ * allowed to leave a copy behind.
+ *
+ * The rows a public surface records are the ones it rendered (see the snapshot
+ * store); this is the other half of the redaction rule, so a surface that reads
+ * through this seam cannot write an answer the server marked `no-store`.
+ */
+export async function requestWithMeta<T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<RequestResult<T>> {
   const headers = new Headers(options.headers);
   if (options.body !== undefined && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
@@ -55,5 +96,9 @@ export async function request<T>(url: string, options: RequestInit = {}): Promis
     throw new ApiError(message, res.status);
   }
 
-  return data as T;
+  return { data: data as T, keepable: isResponseKeepable(res) };
+}
+
+export async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+  return (await requestWithMeta<T>(url, options)).data;
 }
