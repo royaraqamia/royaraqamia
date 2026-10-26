@@ -42,9 +42,6 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-        // The recitation's bridge (ADR-0086) is this module's own plugin, not an
-        // npm package, so it is registered before the bridge is built.
-        registerPlugin(QuranPlayerPlugin.class);
         // The launch theme (`AppTheme.NoActionBarLaunch`) declares the platform
         // splash's `windowSplashScreen*` items, and this is what reads them below
         // API 31: `androidx.core:core-splashscreen` draws the same splash there and
@@ -156,9 +153,6 @@ public class MainActivity extends BridgeActivity {
                         kept.add(plugin);
                     }
                 }
-                // `setPlugins` replaces the list the bridge builder already has,
-                // so a plugin registered in `onCreate` has to be carried over.
-                kept.add(QuranPlayerPlugin.class);
                 bridgeBuilder.setPlugins(kept);
                 Logger.info("No Firebase config in this build: the push plugin is withheld");
             } catch (PluginLoadException ex) {

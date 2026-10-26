@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  Debug only: a shell pointed at a local dev server (`CAPACITOR_SERVER_URL`) reads
-  that server's manifests and cover over http, which the release network policy
-  refuses. The release manifest keeps cleartext off.
--->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:usesCleartextTraffic="true" />
-</manifest>

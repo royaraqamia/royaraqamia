@@ -934,36 +934,6 @@ names an APK newer than the counter in the tree.
 (`1.91.0` → 19100), and a device with that build installed refuses anything lower — the first drill
 ended in `INSTALL_FAILED_VERSION_DOWNGRADE` against `1.88.4` with a counter of 1.
 
-## The recitation in the shell
-
-The site's player works in a browser because a page that is playing audio is not suspended. The shell is
-different: `BridgeActivity.onPause` pauses the WebView, so the JavaScript queue stops at the end of the
-Ayah that is playing. The shell therefore plays the recitation itself (ADR-0086).
-
-- `QuranPlaybackService` is a media3 `MediaSessionService` with an ExoPlayer. It owns the queue, the
-  system notification, the lock screen, the media keys and the seek bar. `android:stopWithTask="false"`
-  is what makes a swiped-away app keep playing; Stop (the notification's action or the page's) clears the
-  resume record and ends the service.
-- `QuranPlayerPlugin` is the page's controller. It connects a media3 `MediaController`; the standard
-  commands are play/pause/seek/skip, and `loadSurah`, `keep`, `keepState`, `stop` are custom commands
-  advertised in `onConnect`. State arrives as a `state` event shaped like the web engine's; `state()` is
-  the resync after a frozen WebView returns.
-- The service reads the site's committed manifests (`/quran/audio/ar.alafasy/NNN.json`) from the origin
-  the WebView is on, caches them under `filesDir/quran-manifests`, and prepares the next sura itself.
-- Kept copies live under `filesDir/quran-audio` with the web store's key, sha256 gate and 128 MiB LRU. A
-  metered connection skips the keep; a keep asked for while another is running waits.
-- Permissions: `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK`,
-  `ACCESS_NETWORK_STATE`, and the existing `POST_NOTIFICATIONS` (a device that refused it plays, but the
-  shade has no controls). The channel is `quran_playback`.
-- The page's controller ships with the web build, so a shell that already carries the service picks up
-  controller changes from the site; after that only a native change needs a counter bump.
-- `src/debug/AndroidManifest.xml` allows cleartext so a build pointed at a local dev server
-  (`CAPACITOR_SERVER_URL`) can read that server's manifests; release does not.
-
-`npm run android:test` covers the manifest reader and the store on the JVM. The service, the notification
-and the controller need a device: install the debug APK, play, turn the screen off, swipe the app away,
-and use the notification's controls.
-
 ## Where the plan this came from was wrong
 
 The original conversion plan has five defects worth not repeating:
