@@ -31,7 +31,6 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
-import { DeviceRow } from '@/frontend/ui/account/device-row';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
 
 /** The legal pages, public like the FAQ row — a plain link for guests and members. */
@@ -162,10 +161,6 @@ export function AccountView() {
         )}
 
         <InstallSection />
-
-        {/* Public like the FAQ row: the device's own data is local-only, and
-            sign-out is exactly when a shared device needs it. */}
-        <DeviceRow />
 
         {/* Public, so it is a plain link for guests and members alike — unlike
             the rows above, it has nothing to gate. */}

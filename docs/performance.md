@@ -288,7 +288,7 @@ skipped — not failed — when the secrets are absent, so a fork's run gates Qu
 and nothing else; and the workflow already runs `--workers=1` for its own
 reasons, which is the serialisation this gate needs too.
 
-**Still ungated.** `/device`, the `/account` views, `/scan`, and the public
+**Still ungated.** The `/account` views, `/scan`, and the public
 snapshots (`/community`, `/rates`, `/verify`, `/u/`, `/news`) have no `content`
 mark yet, so nothing measures their paint path; `docs/specs/surfaces.md` shows an
 empty Paint cell for each, and `perf/surfaces.json` carries an `ungated` reason.

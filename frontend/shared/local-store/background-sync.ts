@@ -99,64 +99,6 @@ export function requestShellFlush(): boolean {
 }
 
 /**
- * Reads the shell's record of its last background drain back (#455).
- *
- * `SyncFlushWorker` persists a small record every time the drain page actually
- * reports — when it was, what it delivered and pulled, what it left, the error —
- * and `MainActivity`'s bridge answers `lastFlush()` with it, so `/device` can
- * name work the shell did while nobody was looking. Returns null without a shell,
- * without a record, or with an unreadable one: no answer is no section, never a
- * guess. Absent in every browser by definition, which is the page's own signal
- * to stay quiet about this tier.
- */
-export interface ShellLastFlush {
-  /** Epoch milliseconds of the moment the report landed. */
-  at: number;
-  /** Intents the server accepted during the drain. */
-  delivered: number;
-  /** Intents still queued when the drain ended. */
-  left: number;
-  /** Rows the pull read back from the server (ADR-0060). */
-  pulled: number;
-  /** Why the drain could not run, when it could not. */
-  error: string | null;
-}
-
-function readCount(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
-}
-
-export function readShellLastFlush(
-  shell: { RoyShellSync?: { lastFlush?: () => string | null } } = globalThis as never
-): ShellLastFlush | null {
-  const bridge = shell.RoyShellSync;
-  if (typeof bridge?.lastFlush !== 'function') return null;
-
-  try {
-    const raw = bridge.lastFlush();
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null) return null;
-
-    const record = parsed as Record<string, unknown>;
-    const at = readCount(record.at);
-    const delivered = readCount(record.delivered);
-    const left = readCount(record.left);
-    if (at === null || delivered === null || left === null) return null;
-
-    return {
-      at,
-      delivered,
-      left,
-      pulled: readCount(record.pulled) ?? 0,
-      error: typeof record.error === 'string' ? record.error : null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Flushes the Outbox and, if the queue is still not empty, asks the browser to
  * wake the worker later — and the shell, where there is a shell.
  *

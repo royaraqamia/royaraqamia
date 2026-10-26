@@ -26,15 +26,6 @@ const wake = readFileSync(
   'android/app/src/main/java/com/royaraqamia/app/ShellSyncWake.java',
   'utf8'
 );
-const record = readFileSync(
-  'android/app/src/main/java/com/royaraqamia/app/SyncFlushRecord.java',
-  'utf8'
-);
-const worker = readFileSync(
-  'android/app/src/main/java/com/royaraqamia/app/SyncFlushWorker.java',
-  'utf8'
-);
-const history = readFileSync('frontend/shared/local-store/background-sync.ts', 'utf8');
 const messagingService = readFileSync(
   'android/app/src/main/java/com/royaraqamia/app/SyncMessagingService.java',
   'utf8'
@@ -83,21 +74,6 @@ describe('the shell drain page', () => {
     const javaType = wake.match(/TYPE = "([^"]+)"/)?.[1];
     expect(javaType).toBeTruthy();
     expect(fcmClient).toContain(`FCM_SYNC_WAKE = '${javaType}'`);
-  });
-
-  it('saves the last drain where /device reads it, through the bridge method on both sides (#455)', () => {
-    // The worker persists, the bridge serves, and the page parses — three files
-    // and no runtime link, so the method name and the record keys are pinned
-    // here (`SyncFlushRecordTest` pins the sums, the page's suite the section).
-    expect(worker).toContain('SyncFlushRecord.save');
-    expect(record).toContain('static String load');
-    const javaMethod = bridge.match(/public String (\w+)\(\)/)?.[1];
-    expect(javaMethod).toBeTruthy();
-    expect(history).toContain(`${javaMethod}`);
-    for (const field of ['at', 'delivered', 'left', 'pulled']) {
-      expect(record).toContain(`"${field}"`);
-      expect(history).toContain(`${field}:`);
-    }
   });
 
   it('receives a wake in the shell rather than in the plugin service', () => {

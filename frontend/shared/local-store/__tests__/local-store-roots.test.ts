@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { LOCAL_STORE_PRODUCTS, LOCAL_STORE_ROOTS } from '@/frontend/shared/local-store/device-copy';
+import { LOCAL_STORE_PRODUCTS, LOCAL_STORE_ROOTS } from '@/frontend/shared/local-store/products';
 
 /**
  * The guard for #493 and #495.

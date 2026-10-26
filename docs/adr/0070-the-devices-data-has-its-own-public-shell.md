@@ -1,5 +1,11 @@
 # The device's data has its own public shell
 
+> **Superseded by [ADR 0084](0084-the-device-diagnostics-page-is-withdrawn.md)
+> (2026-10-26):** `/device` is withdrawn, along with the `/account` row, the `/offline` link,
+> the worker's sign-out keep-list entry and the native `lastFlush()` record it read. The
+> data-free cached-shell shape it pioneered survives in ADR-0073's product dashboards; the
+> diagnostics page itself no longer exists.
+
 The spec promises an outbox/diagnostics view and "Remove this device's copy" on
 `/account`, and the code had neither (#370). The queue was visible only as a
 count in `SyncStatusPill`: a user could not see _what_ was waiting, retry one
