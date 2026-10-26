@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
+import {
+  HabitBackupService,
+  HabitRestorePlanLimitError,
+} from '@/backend/services/habitflow/backup-service';
 import { AppError } from '@/backend/shared/errors';
 import {
   HABIT_BACKUP_HABITS_MAX,
@@ -166,5 +169,43 @@ describe('HabitBackupService.restoreBackup', () => {
       statusCode: 400,
     });
     expect(repository.restoreFromBackup).not.toHaveBeenCalled();
+  });
+
+  it('maps the owned-item cap refusal to the Plan refusal response', async () => {
+    const repository = makeRepository();
+    const capError = {
+      code: 'PL001',
+      message: 'the plan cap for habits is reached',
+      detail: 'habits',
+      hint: '5',
+    };
+    (repository.restoreFromBackup as ReturnType<typeof vi.fn>).mockRejectedValue(capError);
+    const service = new HabitBackupService(repository);
+    const habits = Array.from({ length: 6 }, () => habitFixture);
+
+    let error: HabitRestorePlanLimitError | undefined;
+    try {
+      await service.restoreBackup({ habits, logs: [] });
+    } catch (caught) {
+      error = caught as HabitRestorePlanLimitError;
+    }
+
+    expect(error).toBeInstanceOf(HabitRestorePlanLimitError);
+    expect(error).toMatchObject({
+      statusCode: 402,
+      code: 'owned_item_cap',
+      backupHabits: 6,
+    });
+    expect(error?.message).toContain('النسخة الاحتياطية');
+    expect(error?.message).toContain('خطتك');
+  });
+
+  it('does not hide an unrelated repository failure', async () => {
+    const repository = makeRepository();
+    const failure = new Error('the database went away');
+    (repository.restoreFromBackup as ReturnType<typeof vi.fn>).mockRejectedValue(failure);
+    const service = new HabitBackupService(repository);
+
+    await expect(service.restoreBackup({ habits: [habitFixture], logs: [] })).rejects.toBe(failure);
   });
 });

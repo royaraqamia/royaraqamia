@@ -356,6 +356,62 @@ describe('SupabaseHabitRepository — offline write contract', () => {
     });
   });
 
+  describe('restoreFromBackup', () => {
+    const backup = {
+      habits: [
+        {
+          id: 'h-ab12cd34',
+          name: 'قراءة',
+          frequency: 'daily',
+          createdAt: '2026-08-01T00:00:00.000Z',
+          archived: false,
+        },
+      ],
+      logs: [
+        {
+          id: 'l-local',
+          habitId: 'h-ab12cd34',
+          date: '2026-08-02',
+          completed: true,
+          completedAt: '2026-08-02T00:00:00.000Z',
+        },
+      ],
+    };
+
+    it('restores through the atomic RPC without clearing or inserting per table', async () => {
+      const { client, rpcCalls, from } = makeClient({}, { data: null, error: null });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      await repo.restoreFromBackup(backup);
+
+      // One server-side transaction: the clear, the habit inserts and the
+      // mapped log inserts are no longer separate PostgREST statements (#550).
+      expect(rpcCalls).toEqual([{ name: 'restore_habits', args: { p_backup: backup } }]);
+      expect(from).not.toHaveBeenCalled();
+    });
+
+    it('surfaces the cap trigger refusal instead of swallowing it', async () => {
+      const { client } = makeClient(
+        {},
+        {
+          data: null,
+          error: { code: 'PL001', message: 'the plan cap for habits is reached', hint: '5' },
+        }
+      );
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      await expect(repo.restoreFromBackup(backup)).rejects.toMatchObject({ code: 'PL001' });
+    });
+
+    it('refuses a restore without an owner and never reaches the RPC', async () => {
+      const { client, rpcCalls } = makeClient({}, { data: null, error: null });
+      const repo = new SupabaseHabitRepository(client);
+
+      await expect(repo.restoreFromBackup(backup)).rejects.toMatchObject({ statusCode: 401 });
+      expect(rpcCalls).toHaveLength(0);
+    });
+  });
+
   describe('log last-write-wins', () => {
     const newerAt = '2026-08-05T00:00:00.000Z';
     const olderAt = '2026-08-01T00:00:00.000Z';

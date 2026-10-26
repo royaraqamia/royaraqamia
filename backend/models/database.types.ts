@@ -2376,6 +2376,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      restore_habits: {
+        Args: { p_backup: Json };
+        Returns: undefined;
+      };
       restore_post: {
         Args: { p_snapshot: Json };
         Returns: string;
