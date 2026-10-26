@@ -12,34 +12,33 @@ import {
   type ReactNode,
 } from 'react';
 
-import {
-  downloadSurahAudio,
-  readDownloadedSurah,
-  SurahAudioDownloadError,
-} from '@/frontend/api/quran/audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
+import { logRecitationFailure } from '@/frontend/shared/recitation/log';
 import {
   INITIAL_RECITATION_STATE,
-  logRecitationFailure,
-  recitationEngine,
+  type KeepPhase,
   type PlayOptions,
-  type RecitationEngine,
+  type RecitationPlayer,
   type RecitationState,
-} from '@/frontend/shared/recitation/engine';
+} from '@/frontend/shared/recitation/state';
 
 /**
- * The recitation as the app sees it: one engine, one state, every surface.
+ * The recitation as the app sees it: one player, one state, every surface.
  *
  * Mounted once by the root layout, so a client-side navigation swaps the page
  * under the player and nothing about the sound changes. The reader's float and
  * the mini player are two views of this one value (ADR-0085).
  *
+ * The engine is fetched after hydration rather than imported here. The player,
+ * its audio stack and the keep are not what a visitor landing on the community
+ * page needs in their first bundle; the mini player appears a beat later when
+ * the engine arrives. Every action waits for it, so a press on the reader's
+ * float before it lands still starts the sura.
+ *
  * The keep (ADR-0083, ADR-0081) lives here rather than in the float for the same
  * reason: leaving the sura's page used to cancel a download the reader had
  * already paid to start.
  */
-
-export type KeepPhase = 'working' | 'done' | 'metered' | 'unsupported' | 'failed';
 
 export interface KeepState {
   readonly phase: KeepPhase;
@@ -96,91 +95,122 @@ export function useQuranPlayer(): QuranPlayerValue {
 
 interface QuranPlayerProviderProps {
   children: ReactNode;
-  /** Tests and the native shell can hand in their own engine. */
-  engine?: RecitationEngine;
+  /** Tests can hand in their own player. */
+  engine?: RecitationPlayer;
 }
 
 export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderProps) {
-  const engineRef = useRef<RecitationEngine | null>(null);
-  if (typeof window !== 'undefined' && engineRef.current === null) {
-    engineRef.current = engine ?? recitationEngine();
-  }
+  const [player, setPlayer] = useState<RecitationPlayer | null>(engine ?? null);
+  const playerRef = useRef<RecitationPlayer | null>(engine ?? null);
+  const loadingRef = useRef<Promise<RecitationPlayer | null> | null>(null);
 
-  const subscribe = useCallback((listener: () => void) => {
-    return engineRef.current?.subscribe(listener) ?? (() => {});
+  useEffect(() => {
+    if (engine) {
+      playerRef.current = engine;
+      setPlayer(engine);
+      return;
+    }
+    if (playerRef.current) return;
+
+    let cancelled = false;
+    const loading = import('@/frontend/shared/recitation/player')
+      .then(({ recitationPlayer }) => recitationPlayer())
+      .catch((error: unknown) => {
+        logRecitationFailure('the recitation player could not start', error);
+        return null;
+      });
+    loadingRef.current = loading;
+
+    void loading.then((loaded) => {
+      if (cancelled || !loaded) return;
+      playerRef.current = loaded;
+      setPlayer(loaded);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [engine]);
+
+  /** The player once its chunk is here; actions wait on this instead of a null. */
+  const ready = useCallback(async (): Promise<RecitationPlayer | null> => {
+    if (playerRef.current) return playerRef.current;
+    const loading = loadingRef.current;
+    if (!loading) return null;
+    const loaded = await loading;
+    if (loaded) playerRef.current = loaded;
+    return loaded;
   }, []);
-  const getSnapshot = useCallback(
-    () => engineRef.current?.getState() ?? INITIAL_RECITATION_STATE,
-    []
+
+  const subscribe = useCallback(
+    (listener: () => void) => player?.subscribe(listener) ?? (() => {}),
+    [player]
   );
+  const getSnapshot = useCallback(() => player?.getState() ?? INITIAL_RECITATION_STATE, [player]);
   const state = useSyncExternalStore(subscribe, getSnapshot, () => INITIAL_RECITATION_STATE);
 
   const [saved, setSaved] = useState<Record<number, SurahAudioState | null>>({});
   const [keep, setKeep] = useState<Record<number, KeepState>>({});
 
-  const refreshSaved = useCallback((surah: number, ayahCount: number) => {
-    void readDownloadedSurah(surah, ayahCount)
-      .then((value) => {
-        setSaved((previous) =>
-          previous[surah] === value ? previous : { ...previous, [surah]: value }
-        );
-      })
-      .catch(() => {
-        // A device with no store is a device that holds no copy: not an error to
-        // show, and not a reason to hide the player.
-        setSaved((previous) =>
-          previous[surah] === null ? previous : { ...previous, [surah]: null }
+  const refreshSaved = useCallback(
+    (surah: number, ayahCount: number) => {
+      void ready().then((current) => {
+        if (!current) return;
+        void current.readSaved(surah, ayahCount).then(
+          (value) => {
+            setSaved((previous) =>
+              previous[surah] === value ? previous : { ...previous, [surah]: value }
+            );
+          },
+          () => {
+            // A device with no store is a device that holds no copy: not an
+            // error to show, and not a reason to hide the player.
+            setSaved((previous) =>
+              previous[surah] === null ? previous : { ...previous, [surah]: null }
+            );
+          }
         );
       });
-  }, []);
+    },
+    [ready]
+  );
 
-  const keepSurah = useCallback(async (surah: number, ayahCount: number) => {
-    setKeep((previous) => ({ ...previous, [surah]: { phase: 'working', done: 0, total: 0 } }));
+  const keepSurah = useCallback(
+    async (surah: number, ayahCount: number) => {
+      const current = await ready();
+      if (!current) return;
 
-    try {
-      const result = await downloadSurahAudio(surah, {
-        allowMetered: false,
-        onProgress: (progress) => {
+      setKeep((previous) => ({ ...previous, [surah]: { phase: 'working', done: 0, total: 0 } }));
+
+      try {
+        const outcome = await current.keep(surah, ayahCount, (progress) => {
           setKeep((previous) => ({
             ...previous,
             [surah]: { phase: 'working', done: progress.done, total: progress.total },
           }));
-        },
-      });
+        });
 
-      const next =
-        result.stored > 0 || result.reused > 0
-          ? 'complete'
-          : await readDownloadedSurah(surah, ayahCount);
-      setSaved((previous) => ({ ...previous, [surah]: next }));
-      setKeep((previous) => ({ ...previous, [surah]: { phase: 'done', done: 0, total: 0 } }));
-    } catch (error) {
-      if (error instanceof SurahAudioDownloadError) {
-        // A meter is silent by design (ADR-0083's amendment); a device that
-        // cannot keep a copy is equally not the reader's question.
+        setSaved((previous) => ({ ...previous, [surah]: outcome.saved }));
         setKeep((previous) => ({
           ...previous,
-          [surah]: {
-            phase: error.refusal === 'metered' ? 'metered' : 'unsupported',
-            done: 0,
-            total: 0,
-          },
+          [surah]: { phase: outcome.phase, done: 0, total: 0 },
         }));
-        return;
+      } catch (error) {
+        logRecitationFailure('surah audio download failed', error);
+        setKeep((previous) => ({ ...previous, [surah]: { phase: 'failed', done: 0, total: 0 } }));
       }
-      logRecitationFailure('surah audio download failed', error);
-      setKeep((previous) => ({ ...previous, [surah]: { phase: 'failed', done: 0, total: 0 } }));
-    }
-  }, []);
+    },
+    [ready]
+  );
 
   const activeSurah = state.surah;
   const activeAyahCount = state.ayahCount;
 
-  // The element is mounted after hydration, outside React's tree, so it can
-  // outlive the page that started the sound.
+  // The element is mounted after the engine arrives, outside React's tree, so it
+  // can outlive the page that started the sound.
   useEffect(() => {
-    engineRef.current?.mount();
-  }, []);
+    player?.mount();
+  }, [player]);
 
   // What this device holds, whenever the player moves to another sura.
   useEffect(() => {
@@ -217,16 +247,32 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
 
   const actions = useMemo<QuranPlayerActions>(
     () => ({
-      play: (surah, options) => engineRef.current?.play(surah, options) ?? Promise.resolve(false),
-      toggle: () => engineRef.current?.toggle() ?? Promise.resolve(),
-      stop: () => engineRef.current?.stop(),
-      next: () => engineRef.current?.next(),
-      previous: () => engineRef.current?.previous(),
-      seek: (seconds) => engineRef.current?.seek(seconds),
-      seekBy: (seconds) => engineRef.current?.seekBy(seconds),
+      play: async (surah, options) => {
+        const current = await ready();
+        return current ? current.play(surah, options) : false;
+      },
+      toggle: async () => {
+        const current = await ready();
+        await current?.toggle();
+      },
+      stop: () => {
+        playerRef.current?.stop();
+      },
+      next: () => {
+        playerRef.current?.next();
+      },
+      previous: () => {
+        playerRef.current?.previous();
+      },
+      seek: (seconds) => {
+        playerRef.current?.seek(seconds);
+      },
+      seekBy: (seconds) => {
+        playerRef.current?.seekBy(seconds);
+      },
       refreshSaved,
     }),
-    [refreshSaved]
+    [ready, refreshSaved]
   );
 
   const value = useMemo<QuranPlayerValue>(
