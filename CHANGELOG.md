@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.144.1] - 2026-10-26
+
+### Fixed
+- close the app on Back at the root of the history (#594)
+
 ## [1.144.0] - 2026-10-26
 
 ### Added
