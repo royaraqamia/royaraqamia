@@ -116,7 +116,7 @@ export function NewsFilters({
       </div>
 
       {!isSearching && dates.length > 0 ? (
-        <nav aria-label="أرشيف الأيام" className="flex gap-2 overflow-x-auto pb-1">
+        <nav aria-label="أرشيف الأيام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             aria-pressed={date === null}
