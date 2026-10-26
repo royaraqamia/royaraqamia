@@ -162,3 +162,41 @@ test('a surah this device does not hold says it needs a connection', async ({ co
     timeout: 30_000,
   });
 });
+
+test('keeps and plays from Cache Storage where the browser has no OPFS', async ({
+  context,
+  page,
+}) => {
+  // Safari's shape: no `navigator.storage.getDirectory`, so the store falls back
+  // to Cache Storage. That path was covered only by unit tests, and it is the one
+  // a release could have wiped before `sw.js` learned to keep the cache.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        persist: async () => true,
+        persisted: async () => true,
+        estimate: async () => ({}),
+      },
+    });
+  });
+
+  const recitation = await stubRecitation(page);
+  await page.goto('/quran/1');
+
+  const player = page.getByRole('region', { name: 'تلاوة السُّورة' });
+  await expect(player).toHaveAttribute('data-audio-state', 'none');
+
+  await page.getByRole('button', { name: /حفظ التِّلاوة/ }).click();
+  await expect(page.getByText(/محفوظة على هذا الجُهاز/)).toBeVisible({ timeout: 30_000 });
+
+  expect(await page.evaluate(async () => (await caches.keys()).includes('quran-audio-v1'))).toBe(
+    true
+  );
+
+  recitation.goOffline();
+  await context.setOffline(true);
+
+  await page.getByRole('button', { name: 'استمع للسُّورة' }).click();
+  await expect(page.locator('audio')).toHaveAttribute('src', /^blob:/, { timeout: 30_000 });
+});
