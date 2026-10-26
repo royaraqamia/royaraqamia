@@ -1,10 +1,10 @@
 {
-  "versionCode": 20016,
-  "versionName": "1.0.16",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.16.apk",
-  "sha256": "41369a127af925a5326dcdbb3f0cb22e8f913940d414b2e92b3062d3b045996c",
+  "versionCode": 20017,
+  "versionName": "1.0.17",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.17.apk",
+  "sha256": "f220f29f1e28cf099c7c54b48074ce21a4595036c8e00e09b3d7c85077f55655",
   "sizeBytes": 8054944,
   "minSupportedVersionCode": 20000,
-  "notes": "fix(android): close the app on Back at the root of the history (#594)",
+  "notes": "refactor(device): remove the device diagnostics page (#608)",
   "releasedAt": "2026-10-26"
 }
