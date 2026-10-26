@@ -58,6 +58,21 @@ In `rls_authorization_test.sql` every write attempt is expected to be _refused_,
 rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
 cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
 
+`habit_reminders_damascus_test.sql` (#604):
+
+- The reminder window on the Damascus clock: 08:00 is due at 08:00:00 and 08:14:59, not at
+  07:59:59 and not again at 08:15:00, and an unset reminder keeps the 07:00 default.
+- The Damascus day starts at 21:00 UTC the day before, so a 01:00 reminder on the 27th is
+  judged against a UTC date of the 26th.
+- A completed log dated today in Damascus suppresses the reminder; one dated the previous
+  Damascus day does not.
+- The once-per-day dedupe reads the Damascus day: a second run in the same day sends nothing,
+  and a reminder from the previous Damascus day does not suppress today's.
+- `anon` cannot call the selection and `authenticated` cannot trigger the run.
+
+It asserts through `habit_reminder_is_due` / `habit_reminders_due` with a pinned `p_now`, because
+`send_daily_habit_reminders()` itself inserts notifications and posts to the push webhook.
+
 ## Status
 
 Scaffolded 2026-09-17 and **not yet executed** — the CLI and a local stack were not
@@ -68,6 +83,11 @@ certificate and `users` write assertions do not.
 `plan_cap_enforcement_test.sql` was written the same way (2026-10-23, no Docker on the
 writing machine), so treat its first run the same: the SQL it exercises is deployed by the
 drift workflow on merge, but the assertions themselves are unrehearsed.
+
+`habit_reminders_damascus_test.sql` (#604) is in the same position, with one difference: its
+helper boundaries, its selection body and every fixture's statement shape were run against the
+linked project as read-only queries (`db query`, `explain`), so the arithmetic and the columns are
+verified. The pgTAP harness around them still needs `supabase test db`.
 
 ## Worth adding next
 
