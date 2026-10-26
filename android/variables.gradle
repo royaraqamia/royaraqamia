@@ -17,6 +17,9 @@ ext {
     // version `@capacitor/push-notifications` defaults to, so declaring it here
     // keeps the plugin and the shell on one version instead of two.
     firebaseMessagingVersion = '25.0.1'
+    // The native recitation (ADR-0086): ExoPlayer for the queue and the media3
+    // session for the notification, the lock screen and the media keys.
+    media3Version = '1.8.0'
     coreSplashScreenVersion = '1.2.0'
     androidxWebkitVersion = '1.14.0'
     junitVersion = '4.13.2'
