@@ -1,11 +1,15 @@
 import {
   audioPlaybackSource,
+  downloadSurahAudio,
   loadAudioEdition,
   loadPlayableSurah,
+  readDownloadedSurah,
+  SurahAudioDownloadError,
   type AudioPlaybackSource,
   type PlayableSurah,
 } from '@/frontend/api/quran/audio';
 import { logger } from '@/frontend/shared/logger';
+import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
 import type { QuranAudioEdition, QuranAudioFile } from '@/shared/contracts/quran-audio';
 import {
   createRecitationMediaSession,
@@ -19,6 +23,14 @@ import {
   writeStoredRecitation,
   type StorageLike,
 } from './storage';
+import {
+  INITIAL_RECITATION_STATE,
+  type KeepOutcome,
+  type KeepProgress,
+  type PlayOptions,
+  type RecitationPlayer,
+  type RecitationState,
+} from './state';
 import { buildTimeline, positionAt, startOf, withAyahSeconds, type Timeline } from './timeline';
 
 /**
@@ -34,44 +46,6 @@ import { buildTimeline, positionAt, startOf, withAyahSeconds, type Timeline } fr
  * same interface (PR 2), because a WebView cannot keep a JS queue alive with the
  * screen off.
  */
-
-export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error' | 'offline';
-
-export interface RecitationState {
-  readonly status: PlayerStatus;
-  readonly surah: number | null;
-  readonly name: string | null;
-  readonly ayahCount: number;
-  /** The Ayah the queue is on, 1-based. */
-  readonly ayah: number;
-  /** Seconds into the current Ayah. */
-  readonly position: number;
-  /** The current Ayah's length, in seconds. */
-  readonly duration: number;
-  /** Seconds from the start of the sura. */
-  readonly surahPosition: number;
-  readonly surahDuration: number;
-  /** Where the current Ayah came from; null before one has been chosen. */
-  readonly source: 'device' | 'host' | null;
-}
-
-export const INITIAL_RECITATION_STATE: RecitationState = {
-  status: 'idle',
-  surah: null,
-  name: null,
-  ayahCount: 0,
-  ayah: 1,
-  position: 0,
-  duration: 0,
-  surahPosition: 0,
-  surahDuration: 0,
-  source: null,
-};
-
-export interface PlayOptions {
-  readonly ayah?: number;
-  readonly offset?: number;
-}
 
 interface Playlist {
   readonly surah: number;
@@ -122,7 +96,7 @@ function sameState(a: RecitationState, b: RecitationState): boolean {
   );
 }
 
-export class RecitationEngine {
+export class RecitationEngine implements RecitationPlayer {
   private readonly audio: HTMLAudioElement;
   private readonly session: RecitationMediaSession | null;
   private readonly loadPlayable: (surah: number) => Promise<PlayableSurah | null>;
@@ -400,6 +374,45 @@ export class RecitationEngine {
   /** Seeks inside the current Ayah, for the system's ten-second buttons. */
   seekBy(delta: number): void {
     this.seekWithin(this.audioSafeTime() + delta);
+  }
+
+  /** What this device holds for a sura, or null when it cannot be read. */
+  async readSaved(surah: number, ayahCount: number): Promise<SurahAudioState | null> {
+    try {
+      return await readDownloadedSurah(surah, ayahCount);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Keeps the sura on the device. Play is also the keep (ADR-0083), so this is
+   * called after the first Ayah is sounding; a metered connection is refused
+   * silently and the caller paints nothing.
+   */
+  async keep(
+    surah: number,
+    ayahCount: number,
+    onProgress: (progress: KeepProgress) => void
+  ): Promise<KeepOutcome> {
+    try {
+      const result = await downloadSurahAudio(surah, {
+        allowMetered: false,
+        onProgress: (progress) => onProgress({ done: progress.done, total: progress.total }),
+      });
+      const saved =
+        result.stored > 0 || result.reused > 0
+          ? 'complete'
+          : await this.readSaved(surah, ayahCount);
+      return { saved, phase: 'done' };
+    } catch (error) {
+      const saved = await this.readSaved(surah, ayahCount);
+      if (error instanceof SurahAudioDownloadError) {
+        return { saved, phase: error.refusal === 'metered' ? 'metered' : 'unsupported' };
+      }
+      logRecitationFailure('surah audio download failed', error);
+      return { saved, phase: 'failed' };
+    }
   }
 
   dispose(): void {

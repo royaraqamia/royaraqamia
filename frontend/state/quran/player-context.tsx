@@ -12,20 +12,16 @@ import {
   type ReactNode,
 } from 'react';
 
-import {
-  downloadSurahAudio,
-  readDownloadedSurah,
-  SurahAudioDownloadError,
-} from '@/frontend/api/quran/audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
+import { logRecitationFailure } from '@/frontend/shared/recitation/engine';
+import { recitationPlayer } from '@/frontend/shared/recitation/player';
 import {
   INITIAL_RECITATION_STATE,
-  logRecitationFailure,
-  recitationEngine,
+  type KeepPhase,
   type PlayOptions,
-  type RecitationEngine,
+  type RecitationPlayer,
   type RecitationState,
-} from '@/frontend/shared/recitation/engine';
+} from '@/frontend/shared/recitation/state';
 
 /**
  * The recitation as the app sees it: one engine, one state, every surface.
@@ -38,8 +34,6 @@ import {
  * reason: leaving the sura's page used to cancel a download the reader had
  * already paid to start.
  */
-
-export type KeepPhase = 'working' | 'done' | 'metered' | 'unsupported' | 'failed';
 
 export interface KeepState {
   readonly phase: KeepPhase;
@@ -96,14 +90,14 @@ export function useQuranPlayer(): QuranPlayerValue {
 
 interface QuranPlayerProviderProps {
   children: ReactNode;
-  /** Tests and the native shell can hand in their own engine. */
-  engine?: RecitationEngine;
+  /** Tests can hand in their own player. */
+  engine?: RecitationPlayer;
 }
 
 export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderProps) {
-  const engineRef = useRef<RecitationEngine | null>(null);
+  const engineRef = useRef<RecitationPlayer | null>(null);
   if (typeof window !== 'undefined' && engineRef.current === null) {
-    engineRef.current = engine ?? recitationEngine();
+    engineRef.current = engine ?? recitationPlayer();
   }
 
   const subscribe = useCallback((listener: () => void) => {
@@ -119,7 +113,10 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
   const [keep, setKeep] = useState<Record<number, KeepState>>({});
 
   const refreshSaved = useCallback((surah: number, ayahCount: number) => {
-    void readDownloadedSurah(surah, ayahCount)
+    const player = engineRef.current;
+    if (!player) return;
+    void player
+      .readSaved(surah, ayahCount)
       .then((value) => {
         setSaved((previous) =>
           previous[surah] === value ? previous : { ...previous, [surah]: value }
@@ -135,39 +132,25 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
   }, []);
 
   const keepSurah = useCallback(async (surah: number, ayahCount: number) => {
+    const player = engineRef.current;
+    if (!player) return;
+
     setKeep((previous) => ({ ...previous, [surah]: { phase: 'working', done: 0, total: 0 } }));
 
     try {
-      const result = await downloadSurahAudio(surah, {
-        allowMetered: false,
-        onProgress: (progress) => {
-          setKeep((previous) => ({
-            ...previous,
-            [surah]: { phase: 'working', done: progress.done, total: progress.total },
-          }));
-        },
-      });
-
-      const next =
-        result.stored > 0 || result.reused > 0
-          ? 'complete'
-          : await readDownloadedSurah(surah, ayahCount);
-      setSaved((previous) => ({ ...previous, [surah]: next }));
-      setKeep((previous) => ({ ...previous, [surah]: { phase: 'done', done: 0, total: 0 } }));
-    } catch (error) {
-      if (error instanceof SurahAudioDownloadError) {
-        // A meter is silent by design (ADR-0083's amendment); a device that
-        // cannot keep a copy is equally not the reader's question.
+      const outcome = await player.keep(surah, ayahCount, (progress) => {
         setKeep((previous) => ({
           ...previous,
-          [surah]: {
-            phase: error.refusal === 'metered' ? 'metered' : 'unsupported',
-            done: 0,
-            total: 0,
-          },
+          [surah]: { phase: 'working', done: progress.done, total: progress.total },
         }));
-        return;
-      }
+      });
+
+      setSaved((previous) => ({ ...previous, [surah]: outcome.saved }));
+      setKeep((previous) => ({
+        ...previous,
+        [surah]: { phase: outcome.phase, done: 0, total: 0 },
+      }));
+    } catch (error) {
       logRecitationFailure('surah audio download failed', error);
       setKeep((previous) => ({ ...previous, [surah]: { phase: 'failed', done: 0, total: 0 } }));
     }
