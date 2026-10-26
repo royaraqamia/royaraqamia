@@ -45,6 +45,7 @@ export const HabitWriteSchema = z.object({
   frequency: z.enum(['daily', 'weekly']).optional(),
   target: z.number().int().positive().nullable().optional(),
   targetPeriod: z.enum(['week', 'month']).nullable().optional(),
+  /** HH:mm on the Damascus wall clock (Asia/Damascus) — the frame the reminder fires on (#604). */
   reminderTime: z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)

@@ -142,7 +142,7 @@ export const EditHabitModal = memo(function EditHabitModal({
               <Bell className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
               <span>وقت التذكير اليومي</span>
               <span className="text-[11px] text-muted-foreground/50 font-normal ms-1">
-                (اختياري)
+                (بتوقيت دمشق، اختياري)
               </span>
             </legend>
             <div className="relative">
