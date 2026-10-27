@@ -54,6 +54,7 @@
     "android:verify-bridge": "node scripts/verify-bridge.mjs",
     "spike:build": "vite build",
     "spike:apk": "npm run spike:build && node scripts/android-spike.mjs",
+    "spike:verify": "node scripts/verify-two-origin.mjs",
     "android:drill": "node --env-file-if-exists=.env scripts/shell-drill.mjs",
     "android:shell-version": "node scripts/android-shell-version.mjs",
     "android:publish": "cross-env NODE_ENV=production node scripts/android-publish.mjs",
