@@ -132,11 +132,22 @@ export async function loadNewsBoard(
     // A search is the retained month as published, so it never answers with a
     // personal digest; the personal read is skipped rather than filtered.
     const personalDay = shared.search ? null : await personalService.get(reader.userId, query);
-    const active = personalDay !== null && view !== 'public';
+    // Without an explicit day, `getLatest` may return a digest older than the
+    // shared one (the nightly run skipped this reader, or generation failed).
+    // Showing that as today's briefing would present stale news, so the latest
+    // personal digest only counts when it is for the day the board shows. An
+    // explicit `?date=` is already pinned by `getByDate`; with no shared digest
+    // at all there is nothing to compare against and the latest may be shown.
+    const personalMatchesDay =
+      personalDay !== null &&
+      (query.date !== undefined ||
+        shared.day === null ||
+        personalDay.digest.date === shared.day.digest.date);
+    const active = personalMatchesDay && view !== 'public';
 
     const personal: NewsPersonalView = {
       enabled: true,
-      available: personalDay !== null,
+      available: personalMatchesDay,
       active,
     };
 
