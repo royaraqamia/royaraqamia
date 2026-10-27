@@ -175,3 +175,22 @@ recorded — offline it answers with the connection state like every other serve
 So the non-goal reads: server-bound **writes** stay online-only, and a server-bound **read** may show
 its last-seen public rows, marked stale and read-only. Consultation Booking, auth, admin, MCP, rate
 refresh and Web Push are unaffected: none of them was a read.
+
+## Amendment (2026-10-27): the site-wide offline pill is retired
+
+The [2026-10-18 amendment](#amendment-2026-10-18-the-board-has-no-refresh-control) left Rates' offline
+state with the site-wide `ConnectivityIndicator`, and the
+[2026-10-26 amendment](#amendment-2026-10-26-555-the-non-goal-narrows-from-no-offline-to-no-offline-writes)
+gave every public surface its own staleness line. The chrome-level pill is now gone, and this records
+where the statement it carried lives instead.
+
+It spoke for the whole document tree from a fixed line above the tab bar, repeating what the surface
+beneath it already said: the rates board's staleness badge, News' saved-copy line, Community's
+snapshot marker, each product's `SyncStatusPill`. Its one unique half — how old the cached copy was —
+went with it, and the route-freshness store that fed it (`frontend/shared/content-freshness.ts`) is
+deleted rather than left as dead code.
+
+What does not move: a server-bound action still names the connection where it is attempted
+(`NeedsConnection`, per the [2026-10-20 amendment](#amendment-2026-10-20-the-state-lives-where-the-action-is-attempted)),
+and a cached public read still says it is a saved copy. `e2e/public-offline.spec.ts` now pins that
+surface-level copy instead of the pill.

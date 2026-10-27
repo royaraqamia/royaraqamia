@@ -19,8 +19,9 @@ Each route's client path was read rather than its intent:
 2. **What the service worker can serve** — the never-cache list and the navigation fallback
    (`public/sw-routing.js`, `public/sw.js`), so "offline" for a route is either a cached document or the
    `/offline` document.
-3. **What the user is told** — the site-wide `ConnectivityIndicator` (`frontend/ui/shared/connectivity-indicator.tsx`,
-   offline only), the per-product `SyncStatusPill` (`sync-status-pill.tsx`), and every per-surface
+3. **What the user is told** — at audit time the site-wide `ConnectivityIndicator`
+   (`frontend/ui/shared/connectivity-indicator.tsx`, offline only; retired 2026-10-27, ADR-0031's
+   amendment), the per-product `SyncStatusPill` (`sync-status-pill.tsx`), and every per-surface
    offline string in the tree.
 4. **Route handlers were not audited** (128 `route.ts` files). This is about what a page does when the
    server is unreachable, not about the API's own behaviour.

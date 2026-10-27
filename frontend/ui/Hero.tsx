@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronDown, Star } from 'lucide-react';
 import { ServicesMenu } from './navbar/ServicesMenu';
+import { HijriToday } from './shared/hijri-today';
 
 export function Hero() {
   return (
@@ -21,6 +22,10 @@ export function Hero() {
               two-column grid (`50%` minus half of the retired `lg:gap-16`). */}
           <div className="flex justify-center">
             <div className="text-center space-y-3 w-full lg:w-[calc(50%-2rem)] min-w-0">
+              {/* Today's Hijri date, above the headline. The line's height is
+                  reserved so the browser-filled text is not a layout shift. */}
+              <HijriToday className="min-h-5 text-xs sm:text-sm font-semibold tracking-wide text-purple-200/90" />
+
               {/* Main Headline */}
               <div className="space-y-2 -mt-2">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
