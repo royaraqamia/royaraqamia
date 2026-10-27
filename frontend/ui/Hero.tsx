@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ChevronDown, Star } from 'lucide-react';
-import { LazySection } from './shared/LazySection';
 import { ServicesMenu } from './navbar/ServicesMenu';
 
 export function Hero() {
@@ -17,9 +16,11 @@ export function Hero() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center">
-            {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
-            <div className="text-center lg:text-right space-y-3 order-1 min-w-0">
+          {/* The copy is the hero on its own now: centred on the page and as a
+              block, at the measure it had as the copy column of the old
+              two-column grid (`50%` minus half of the retired `lg:gap-16`). */}
+          <div className="flex justify-center">
+            <div className="text-center space-y-3 w-full lg:w-[calc(50%-2rem)] min-w-0">
               {/* Main Headline */}
               <div className="space-y-2 -mt-2">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
@@ -33,7 +34,7 @@ export function Hero() {
               </div>
 
               {/* Description */}
-              <p className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal pt-1">
+              <p className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto leading-relaxed font-normal pt-1">
                 نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء
@@ -43,7 +44,7 @@ export function Hero() {
               {/* Social Proof Strip - Trust Signals */}
               <a
                 href="#testimonials"
-                className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-5 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition duration-300 hover:opacity-90 active:scale-[0.99]"
+                className="inline-flex flex-wrap items-center justify-center gap-5 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition duration-300 hover:opacity-90 active:scale-[0.99]"
               >
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex" aria-hidden="true">
@@ -77,7 +78,7 @@ export function Hero() {
               </a>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3.5 justify-center pt-3 items-center w-full sm:w-auto">
                 <ServicesMenu
                   trigger={
                     <button
@@ -100,18 +101,6 @@ export function Hero() {
                 >
                   <span className="relative z-10">انضم للمجتمع</span>
                 </Link>
-              </div>
-            </div>
-
-            {/* Right side - Visual Element */}
-            <div className="relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0 min-w-0">
-              {/* Reserve the dashboard's footprint so the lazy HeroVisual mount
-                  doesn't grow the hero and trigger CLS. On mobile the stacked
-                  cards make the visual tall (h ≈ 1.5w + 275) — the min-height
-                  floor covers narrow phones and the aspect-ratio the rest; from
-                  sm up the cards sit side-by-side (near square). */}
-              <div className="relative w-full aspect-[2/4.6] min-h-205 flex items-center sm:aspect-square sm:min-h-0">
-                <LazySection id="hero-visual" className="w-full h-full" />
               </div>
             </div>
           </div>

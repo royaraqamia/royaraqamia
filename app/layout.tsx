@@ -17,7 +17,6 @@ import { GlobalPlayer } from '@/frontend/ui/quran/global-player';
 import { ConnectivityIndicator } from '@/frontend/ui/shared/connectivity-indicator';
 import { OfflineRouteCard } from '@/frontend/ui/shared/offline-route-card';
 import { UpdatePrompt } from '@/frontend/ui/shared/update-prompt';
-import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
 import { SecondaryHeader } from '../frontend/ui/navbar/SecondaryHeader';
 import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
@@ -181,7 +180,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <SecondaryHeader />
                       <OfflineRouteCard />
                       {children}
-                      <FloatingActions />
                       <BottomTabBar />
                       <GlobalPlayer />
                       <ConnectivityIndicator />
