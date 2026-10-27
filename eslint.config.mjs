@@ -39,6 +39,9 @@ export default [
       // Same shape, from `scripts/build-sync-flush.mjs`: the Android shell's
       // headless drain page bundle. Its source is `frontend/api/sync-flush-entry.ts`.
       'public/sync-flush.js',
+      // The bundled-surface build (issue #500): a Vite artifact, git-ignored, and
+      // its source is `app-native/`. Linting minified output reports on rolldown.
+      'capacitor-web/spike/',
     ],
   },
   js.configs.recommended,
