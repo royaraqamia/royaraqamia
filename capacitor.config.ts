@@ -41,7 +41,11 @@ const config: CapacitorConfig = {
     // The site is HTTPS with a strict CSP; allowing mixed content or cleartext
     // would only widen the attack surface of the WebView.
     allowMixedContent: false,
-    captureInput: true,
+    // Deliberately absent: `captureInput` (Capacitor's default is off) swaps the
+    // WebView's own IME connection for a plain `BaseInputConnection`, and then an
+    // Arabic edit made mid-text is committed at the end of the field instead of
+    // at the caret. It is a shell-only breakage, so no page code can see it —
+    // `docs/mobile/android-shell.md` records the symptom and the cause.
     backgroundColor: '#0f172a',
     // A developer's `android:apk` wants `chrome://inspect`; a release must never
     // offer it. The release paths force `NODE_ENV=production` before `cap sync`

@@ -247,6 +247,23 @@ changes rather than only on the machine that wrote them.
 | Background wake (FCM)                                            | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`                               | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor                                                                  |
 | Battery-exemption prompt                                         | `ShellBatteryPrompt`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`                                 | Working — a drain that ends with work still owed, or a wake received in the background, asks once with the reason stated; the tap opens the platform's one-tap dialog (ADR-0059's amendment, #381) |
 
+### Text input stays on the WebView's own IME connection
+
+`capacitor.config.ts` leaves Capacitor's `android.captureInput` at its default, `false`, and has to
+keep doing so. Turning it on replaces the WebView's own `InputConnection` with a plain
+`BaseInputConnection` (`CapacitorWebView.onCreateInputConnection` in `@capacitor/android`), a
+connection with no composing or bidi model. The symptom was Arabic-only: an edit made in the middle
+of a textarea was committed at the **end** of the field, so the caret jumped to the last letter on
+every keystroke, in every text field of the site, and only in the shell — a browser never takes that
+path, which is why `npm run dev` and the same page in Chrome or Edge behaved correctly. Latin input
+survived it, because a plain commit needs no bidi model.
+
+The same class also answers `ACTION_MULTIPLE` key events by writing
+`document.activeElement.value = document.activeElement.value + characters` — an append to the end of
+the field by construction, and an unescaped string built into `evaluateJavascript`. Nothing in the app
+needs captured input, so the option is gone rather than set to `false`: a default that is off cannot
+be turned back on by accident. A shell built before the change keeps the bug until it is updated.
+
 ### The local fallback, and the WebView floor
 
 Two values in `capacitor.config.ts` decide what a launch shows when the site cannot be the answer:
