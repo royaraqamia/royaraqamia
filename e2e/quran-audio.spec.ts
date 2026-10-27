@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * The Recitation, in a real browser (ADR-0062).
@@ -189,4 +189,69 @@ test('comes back paused on the same sura after a reload', async ({ page }) => {
 
   await resume.click();
   await expect(page.getByRole('button', { name: 'إيقاف مؤقّت' })).toBeVisible();
+});
+
+/**
+ * The mini player spans the bottom of every page that is not the carried sura's
+ * own reader, and the corner floats are painted above it (`z-index: 9998`), so
+ * without the clearance the compose FAB lands on the bar's end and covers what it
+ * holds (ADR-0087). The lift is the player's own measurement rather than a number
+ * in the stylesheet, so this checks the boxes the browser actually laid out.
+ */
+test('the corner FAB clears the mini player, and only while there is one', async ({ page }) => {
+  // A phone, where the compose FAB and the mini bar share the bottom band: the
+  // desktop pill is centred and never reaches the corner.
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  const fab = page.getByRole('button', { name: 'إضافة منشور جديد' });
+  const bar = page.getByRole('region', { name: 'مُشغِّل التِّلاوة' });
+  const tabBar = page.locator('[data-bottom-tabbar]');
+
+  /** How much clear air is between the bottom of the FAB and the top of `above`. */
+  const gapAbove = async (above: Locator) => {
+    const [button, box] = [await fab.boundingBox(), await above.boundingBox()];
+    return button && box ? box.y - (button.y + button.height) : 0;
+  };
+
+  /** The FAB settled on its 12px clearance above `above`, transition and all. */
+  const settledAbove = (above: Locator) =>
+    expect.poll(async () => Math.abs((await gapAbove(above)) - 12)).toBeLessThan(1.5);
+
+  // Nothing playing: the tab bar is the only thing under the FAB, and it keeps
+  // the 0.75rem gap it has always kept.
+  await page.goto('/community');
+  await expect(fab).toBeVisible();
+  await expect(bar).toHaveCount(0);
+  await settledAbove(tabBar);
+  const resting = await fab.boundingBox();
+
+  await stubRecitation(page);
+  await page.goto('/quran/1');
+  await page.getByRole('button', { name: 'استمع للسُّورة' }).click();
+  await expect(page.getByRole('button', { name: 'إيقاف مؤقّت' })).toBeVisible();
+
+  await page.goto('/community');
+  await expect(bar).toBeVisible();
+  await expect(fab).toBeVisible();
+
+  // Away from the corner: the FAB's hover scale is not what this measures.
+  await page.mouse.move(0, 0);
+
+  // The same clearance, now measured against the bar the FAB used to sit on.
+  await settledAbove(bar);
+
+  // It did not merely stay put: it rose by the bar's own height and gap.
+  const lifted = await fab.boundingBox();
+  expect(lifted?.y ?? 0).toBeLessThan((resting?.y ?? 0) - 40);
+
+  await bar.getByRole('button', { name: 'إيقاف التِّلاوة' }).click();
+  await expect(bar).toHaveCount(0);
+
+  // Stopped: the clearance goes with the player, and the FAB is back on the tab
+  // bar's line. The pointer is parked away from the corner first: its hover scale
+  // is not what this measures.
+  await page.mouse.move(0, 0);
+  await settledAbove(tabBar);
+  const settled = await fab.boundingBox();
+  expect(Math.abs((settled?.y ?? 0) - (resting?.y ?? 0))).toBeLessThanOrEqual(1);
 });

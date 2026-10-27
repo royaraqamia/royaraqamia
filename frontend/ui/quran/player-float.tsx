@@ -5,6 +5,7 @@ import { AlertTriangle, Check, Loader2, Pause, Play, Square } from 'lucide-react
 
 import { cn } from '@/frontend/shared/cn';
 import { useQuranPlayer } from '@/frontend/state/quran/player-context';
+import { usePlayerLift } from './player-lift';
 
 interface PlayerFloatProps {
   surah: number;
@@ -21,6 +22,7 @@ interface PlayerFloatProps {
  */
 export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
   const { state, saved, keep, actions } = useQuranPlayer();
+  const liftRef = usePlayerLift<HTMLElement>('float');
   const isActive = state.surah === surah;
   const isPlaying = isActive && state.status === 'playing';
   const isPaused = isActive && state.status === 'paused';
@@ -62,6 +64,7 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
 
   return (
     <section
+      ref={liftRef}
       aria-label="تلاوة السُّورة"
       // What this device holds for the sura, once that has been read. A browser
       // test waits on it rather than guessing when hydration finished.

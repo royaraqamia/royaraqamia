@@ -42,7 +42,7 @@ export function UpdatePrompt() {
       role="region"
       aria-label="تحديث التطبيق"
       data-testid="update-prompt"
-      className="fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-card-foreground shadow-sm"
+      className="update-prompt fixed inset-x-0 z-40 mx-auto flex w-fit items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-card-foreground shadow-sm"
     >
       <span>يتوفَّر إصدار جديد</span>
       {/* The one gesture that costs the user a reload, so it wears the site's
