@@ -1,0 +1,15 @@
+/* Lead stylesheet (issue #497).
+
+   Loaded by the training, request-project and hire layouts, so it only reaches a visitor on that surface. It carries
+   the utilities Lead renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import './surface.css';
+
+@source './training';
+@source './request-project';
+@source './hire';
+@source '../frontend/ui/training';
+@source '../frontend/ui/project-requests';
+@source '../frontend/ui/retainers';
+@source '../frontend/ui/plans';

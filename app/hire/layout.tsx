@@ -1,3 +1,4 @@
+import '../leads.css';
 import type { Metadata } from 'next';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
 

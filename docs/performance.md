@@ -63,12 +63,17 @@ values; `legacy` is not part of the total.
 
 | Category  | Raw       | Gzip         |
 | --------- | --------- | ------------ |
-| `html`    | 432.6 KB  | 59.6 KB      |
-| `js`      | 788.2 KB  | 244.3 KB     |
-| `css`     | 610.2 KB  | 67.6 KB      |
+| `html`    | 203.9 KB  | 29.2 KB      |
+| `js`      | 641.5 KB  | 200.6 KB     |
+| `css`     | 317.7 KB  | 46.9 KB      |
 | `fonts`   | 160.5 KB  | 160.5 KB     |
-| **TOTAL** | 1991.5 KB | **532.1 KB** |
+| **TOTAL** | 1323.6 KB | **437.2 KB** |
 | `legacy`  | 110.0 KB  | 38.7 KB      |
+
+The baseline now records five routes — `/`, `/community`, `/scan`, `/terms` and
+`/habitflow` — so a per-surface stylesheet that regresses is visible on the route
+that pays for it, not only on the landing page. The table above is `/`, the route
+with the largest stylesheet.
 
 `fonts` raw and gzip match because `woff2` is already compressed: `gzip` here means
 "gzip when that helps, otherwise raw", so the fonts ceiling is in effect a raw-size
@@ -85,9 +90,11 @@ tickets measure their wins against.
 - `measure` lists the routes the report covers by default (`--routes` overrides).
 - `default` applies to every route; `routes.<path>` overrides it per route.
   Route keys are normalized, so `community`, `/community` and `/community/` all match the same route.
-- Available metrics: `totalGzipKb`, `jsGzipKb`, `cssGzipKb`, `htmlGzipKb`,
-  `fontsGzipKb`. A metric absent from both `default` and the route's override is
-  simply not constrained.
+- Available metrics: `totalGzipKb`, `jsGzipKb`, `cssGzipKb`, `cssRawKb`, `htmlGzipKb`,
+  `fontsGzipKb`. All but `cssRawKb` are gzip; `cssRawKb` reads the stylesheets'
+  **raw** bytes, the size the parser walks through, which is the number the
+  per-surface split in #497 is held to. A metric absent from both `default` and
+  the route's override is simply not constrained.
 - Ceilings sit a few percent above the current baseline: they catch
   **regressions**, not intentional reductions.
 
@@ -97,6 +104,54 @@ so the docs cannot drift from the guard.
 **Ratchet policy.** As program tickets land, lower the ceilings to the new
 measured values so the win cannot silently leak back. Reductions never trip the
 budget; only growth does, which is the point.
+
+## Stylesheets by surface
+
+Every route used to ship one stylesheet: the union of every product's utilities
+(HabitFlow, SpendTrack, LinkSnap, BlogPress, Community, the Quran reader, the
+admin dialogs, the editor), so a visitor reading `/terms` parsed all of it
+(issue #497). Tailwind compiles utilities from the files it can see, and the old
+`@import 'tailwindcss'` could see the whole repository.
+
+The fix is one stylesheet per surface, cut by route rather than by component:
+
+| File                    | Loaded by                                         | Holds                                                |
+| ----------------------- | ------------------------------------------------- | ---------------------------------------------------- |
+| `app/global.css`        | the root layout, on every route                   | tokens, resets, chrome, shared primitives, hand CSS  |
+| `app/surface.css`       | imported by every entry above                     | the Tailwind preamble both sides must agree on       |
+| `app/<surface>/app.css` | that surface's layout (or its pages)              | the sources that surface's components are written in |
+| `app/landing.css`       | `app/page.tsx`                                    | the landing sections                                 |
+| `app/marketing.css`     | the pricing/privacy/security/terms/app-info pages | those five pages                                     |
+| `app/leads.css`         | the training, request-project and hire layouts    | the three lead forms and their shared sections       |
+
+`surface.css` is what keeps the two compilations honest: it declares
+`source(none)` (nothing is scanned unless an entry lists it), imports
+`theme.css` (so a token resolves identically on both sides) and declares the
+`dark` variant once (so a surface cannot silently fall back to
+`prefers-color-scheme`). `global.css` then lists the root layout's sources and
+nothing else, and a surface entry lists its own.
+
+Adding a surface is three lines: create `app/<surface>/app.css`, `@source` the
+surface's route directory and the `frontend/ui/**` directories its components
+import, and `import './app.css'` from the layout that owns the segment. A
+component that a surface imports from another surface's directory must be listed
+in both entries — the shell is the only place that is shared by definition.
+
+What the split does not remove: two chunks that are both loaded still carry the
+utilities they have in common, because each is an independent Tailwind
+compilation. That overlap is the price of deferring, and it is why the shell is
+kept to chrome rather than chrome plus the landing page.
+
+Measured on the build that landed it:
+
+| Route    | CSS raw before | CSS raw after |
+| -------- | -------------- | ------------- |
+| `/`      | 534.2 KB       | 317.7 KB      |
+| `/terms` | 534.2 KB       | 276.8 KB      |
+| `/scan`  | 534.2 KB       | 276.9 KB      |
+
+`default.cssRawKb` in `perf/budget.json` is the ceiling that holds this: no route
+may exceed 350 KB of stylesheet.
 
 ## Runtime budget
 

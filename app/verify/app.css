@@ -1,0 +1,15 @@
+/* Certificate verification stylesheet (issue #497).
+
+   Loaded by `app/verify/layout.tsx`, so it only reaches a visitor on that surface. It carries
+   the utilities Certificate verification renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import '../surface.css';
+
+@source './';
+@source '../../frontend/ui/verify';
+@source '../../frontend/ui/Certificate.tsx';
+@source '../../frontend/ui/LazyImage.tsx';
+@source '../../frontend/ui/MotionReveal.tsx';
+@source '../../frontend/ui/MotionRoot.tsx';
+@source '../../frontend/ui/certificate-qr-code-client.tsx';

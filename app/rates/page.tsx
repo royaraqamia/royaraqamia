@@ -1,3 +1,4 @@
+import './app.css';
 import type { Metadata } from 'next';
 import { loadRatesBoard } from '@/backend/loaders/rates';
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';

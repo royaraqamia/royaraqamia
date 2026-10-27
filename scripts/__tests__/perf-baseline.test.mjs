@@ -264,6 +264,19 @@ describe('checkBudget', () => {
     ]);
     expect(checkBudget(summary, budget, '/').ok).toBe(true);
   });
+
+  it('prices cssRawKb against the raw bytes, not the gzip ones', () => {
+    const cssSummary = summarizeAssets([
+      { kind: 'html', raw: 60 * 1024, gzip: 60 * 1024 },
+      { kind: 'css', raw: 360 * 1024, gzip: 50 * 1024 },
+    ]);
+
+    const ok = checkBudget(cssSummary, { default: { cssRawKb: 400 } }, '/');
+    expect(ok.checked).toEqual([{ metric: 'cssRawKb', budgetKb: 400, actualKb: 360 }]);
+
+    const over = checkBudget(cssSummary, { default: { cssRawKb: 350 } }, '/');
+    expect(over.violations.map((v) => v.metric)).toEqual(['cssRawKb']);
+  });
 });
 
 describe('checkLegacyGating', () => {

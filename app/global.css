@@ -1,18 +1,26 @@
-@import 'tailwindcss';
-@import './theme.css';
-@plugin "@tailwindcss/typography";
-@import 'tw-animate-css';
+/* The shell's stylesheet: tokens, resets, chrome and shared primitives.
 
-/* Scan only application source. The tracked `.agents/` skills ship Tailwind
-   example markup (e.g. `bg-[#bada55]`) that would otherwise be compiled into
-   the shipped stylesheet as dead CSS; `docs/` is excluded as documentation. */
-@source not '../.agents';
-@source not '../docs';
+   Every other route-level stylesheet in the app starts with this file's
+   preamble (`surface.css`) and adds only the sources its own surface uses, so
+   a visitor reading `/terms` no longer parses the utilities of HabitFlow,
+   SpendTrack, LinkSnap, BlogPress, Community, the admin dialogs and the editor
+   (issue #497).
 
-/* Class-based dark mode: the site renders its dark theme unconditionally
-   (see the :root tokens in `@layer base`), so `dark:` variants must key
-   off an always-present class rather than the OS color scheme. */
-@custom-variant dark (&:where(.dark, .dark *));
+   The list below is the shell's whole contribution: the root layout and the
+   components it renders on every route. Nothing here guesses at a directory —
+   `source(none)` in `surface.css` means an unlisted file contributes no CSS,
+   which is what keeps a surface's classes out of the shell. Adding an import
+   to `app/layout.tsx` means adding its source here too. */
+@import './surface.css';
+
+@source './layout.tsx';
+@source '../frontend/ui/primitives';
+@source '../frontend/ui/shared';
+@source '../frontend/ui/navbar';
+@source '../frontend/ui/quran';
+@source '../frontend/ui/{AppPerfObserver,FloatingActions,GoUpButton,PWAProvider,RouteChangeFocus}.tsx';
+@source '../frontend/{api,shared,state,transport}';
+@source '../shared';
 
 /* Decorative ambient keyframes (float, hero particles, icon float, fadeInUp)
    were removed by ADR 0004. */

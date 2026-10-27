@@ -1,0 +1,16 @@
+/* HabitFlow's stylesheet (issue #497).
+
+   Loaded by `app/habitflow/layout.tsx`, so it only ever reaches a visitor who
+   opens HabitFlow. Sources are what that surface renders: its own routes and
+   the UI directories its components import — nothing else.
+
+   The shell's utilities are already on the page (`app/global.css`); this chunk
+   adds only the ones HabitFlow needs, in the same layer order, so nothing here
+   redefines or outranks the base. */
+@import '../surface.css';
+
+@source './';
+@source '../../frontend/ui/habitflow';
+@source '../../frontend/ui/app-shell';
+@source '../../frontend/ui/plans';
+@source '../../frontend/ui/MotionRoot.tsx';

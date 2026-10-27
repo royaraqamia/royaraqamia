@@ -1,0 +1,11 @@
+/* Scanner stylesheet (issue #497).
+
+   Loaded by `app/scan/layout.tsx`, so it only reaches a visitor on that surface. It carries
+   the utilities Scanner renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import '../surface.css';
+
+@source '.';
+@source '../../frontend/ui/scan';
+@source '../../frontend/ui/verify';

@@ -1,0 +1,12 @@
+/* Community stylesheet (issue #497).
+
+   Loaded by `app/community/layout.tsx`, so it only reaches a visitor on that surface. It carries
+   the utilities Community renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import '../surface.css';
+
+@source './';
+@source '../../frontend/ui/Navbar.tsx';
+@source '../../frontend/ui/app-shell';
+@source '../../frontend/ui/plans';

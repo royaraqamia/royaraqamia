@@ -1,0 +1,11 @@
+/* Profile stylesheet (issue #497).
+
+   Loaded by `app/u/layout.tsx`, so it only reaches a visitor on that surface. It carries
+   the utilities Profile renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import '../surface.css';
+
+@source '../u';
+@source '../community';
+@source '../../frontend/ui/plans';
