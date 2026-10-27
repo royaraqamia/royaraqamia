@@ -1,10 +1,10 @@
 {
-  "versionCode": 20019,
-  "versionName": "1.0.19",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.19.apk",
-  "sha256": "34dfd8bb11896d01fe356b7ea0c31ed81e2d069b6c81c07de8ba1f2ca8af5f1e",
+  "versionCode": 20021,
+  "versionName": "1.0.21",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.21.apk",
+  "sha256": "f654ea26c65dde3c82aab6c788cd51ae5bd6a30da9cfbbe53aac74edb73d0623",
   "sizeBytes": 10696865,
   "minSupportedVersionCode": 20000,
-  "notes": "feat(android): the launch skeleton covers the gap to the document (#623)",
+  "notes": "fix(android): regenerate the plugin lists and stop a dirty tree blocking the manifest (#631)",
   "releasedAt": "2026-10-27"
 }
