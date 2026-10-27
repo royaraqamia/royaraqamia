@@ -104,3 +104,7 @@ public/zxing_reader.wasm
 # committed. `npm run spike:build` writes it; `npm run spike:apk` copies it into
 # android/app/src/main/assets/public (already ignored above).
 /capacitor-web/spike/
+
+# Device evidence from `npm run spike:verify` (issue #500): screenshots and the
+# veto-table JSON, never committed.
+/spike-evidence/

@@ -42,6 +42,48 @@ npm run android:sync
 The spike's own panel sits under the dashboard: sign in (Bearer), run the probes, switch the
 crossing mechanism, open `/community`, and read the return trips it has seen.
 
+### One command for the evidence
+
+```powershell
+npm run spike:verify     # node scripts/verify-two-origin.mjs
+```
+
+It cold-launches the app, presses the panel's own buttons over the WebView's DevTools socket
+(`uiautomator` cannot see inside a WebView), and records the document URL after each step with a
+screenshot, into `spike-evidence/` (git-ignored). It does **not** judge the rows: scroll position,
+whether a tab dismissed where it should, and the feel of the back gesture are still a human's, which
+is why the table says "paste the result".
+
+## Emulator dry run (not the result)
+
+Run once on API 35 (`sdk_gphone64_x86_64`, WebView 35) so the device session starts with the
+mechanics already checked. An emulator does not answer the table — it is here to separate "the
+design cannot work" from "the phone will settle it".
+
+| Step                                          | Observed                                                                                                                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cold launch                                   | `https://localhost/` — the bundled document, no network round trip                                                                                                                  |
+| Panel → `فتح /community` (same WebView)       | the WebView lands on `https://royaraqamia.com/community`                                                                                                                            |
+| Back from that remote document                | **the activity finishes**: the remote document reports `history.length === 1`, so `canGoBack()` is false and `MainActivity`'s back handler exits. The row fails as the spike stands |
+| Panel → `Custom Tab` → `فتح /community`       | a Custom Tab activity starts (dumped), so the mechanism itself works                                                                                                                |
+| Deep link `https://royaraqamia.com/habitflow` | lands on the **remote** document — `webUrlFor` has no owned/remote split, so an owned route resolves like any other URL                                                             |
+| Deep link `https://royaraqamia.com/community` | lands on the remote document, as it should                                                                                                                                          |
+| `royar://auth/callback?code=spike`            | reaches the app and is mapped onto `https://royaraqamia.com/auth/callback?code=spike`                                                                                               |
+
+Two consequences worth carrying into the design rather than the device session:
+
+- **The same-WebView crossing does not leave a back entry.** Whatever the mechanism inside Chromium,
+  the remote document sees `history.length === 1` after `location.assign` from the bundled one, so
+  Back exits instead of returning. A promoted design needs either a Custom-Tab-only crossing or an
+  origin-aware history handler in `MainActivity` — the spike does not have one, and that is exactly
+  the sort of thing this row exists to catch.
+- **A deep link into an owned route is a remote URL today.** `webUrlFor` maps every
+  `royaraqamia.com` link to itself; the owned/remote split (#502/#503) has to map them to bundled
+  routes. The table's third row cannot pass before that exists.
+
+Both numbers the emulator cannot give (cold/warm timings, scroll position, tab dismissal feel) and
+every row still need a real device.
+
 ## The veto table
 
 Every row must be answered **on a cheap real device**, not the emulator, and the answer pasted
@@ -116,6 +158,12 @@ of them blocks the device rows above.
 | JavaScript      | 1.56 MB |
 | CSS             | 277 KB  |
 | Fonts (`woff2`) | 291 KB  |
+| Debug APK       | 18.8 MB |
+
+The shipped shell's debug APK, built from the same tree on the same machine, is 19.2 MB — so the
+bundled document costs essentially nothing in install size: its assets are text, `woff2` and `webp`,
+which the APK's compression already handles. That is a debug-to-debug reading, not the release delta
+#502/#503 have to own.
 
 These are build numbers, not device numbers — the veto table's baseline is still the `#487`
 instrumentation on a real phone.
