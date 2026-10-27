@@ -3,6 +3,8 @@ package com.royaraqamia.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.WebView;
 
 import androidx.activity.OnBackPressedCallback;
@@ -15,6 +17,7 @@ import com.getcapacitor.Logger;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginLoadException;
 import com.getcapacitor.PluginManager;
+import com.getcapacitor.WebViewListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +41,31 @@ public class MainActivity extends BridgeActivity {
     private static final String WEB_ORIGIN = "https://" + WEB_HOST;
     private static final String REDIRECT_SCHEME = "royar";
 
+    /**
+     * How long the launch skeleton may hold the screen before the document has
+     * painted (#498). A dead network must not leave the user looking at
+     * placeholders that never resolve, so the skeleton gives up on its own and
+     * the WebView's own surface — the error page, or the site's offline shell —
+     * takes over.
+     */
+    private static final long SKELETON_CEILING_MS = 2500;
+
+    /**
+     * The skeleton leaves on a fade rather than a cut: a placeholder that
+     * disappears in one frame reads as a flash, and the site's own transitions
+     * are 150-200ms.
+     */
+    private static final long SKELETON_FADE_MS = 150;
+
     private ShellUpdatePrompt shellUpdate;
+
+    /** The launch skeleton, or null once it has been released. */
+    private View skeleton;
+    /** Whether the skeleton has started leaving; both release paths share it. */
+    private boolean skeletonReleased;
+
+    /** The ceiling, kept as one instance so `onDestroy` can unschedule it. */
+    private final Runnable skeletonCeiling = this::releaseSkeleton;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -52,6 +79,7 @@ public class MainActivity extends BridgeActivity {
         // `super.onCreate`, which is where the starting window is replaced.
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        installLaunchSkeleton();
         openFromIntent(getIntent(), false);
         // Both of these need the bridge, so they run after Capacitor has created
         // it: the shell's version for the page to read, and the update check that
@@ -65,6 +93,102 @@ public class MainActivity extends BridgeActivity {
         installSyncBridge(getBridge());
         SyncScheduler.ensurePeriodic(this);
         installBackExit();
+    }
+
+    /**
+     * Covers the gap between the splash and the document with the app's own
+     * chrome (ADR-0061, #498).
+     *
+     * The skeleton is a view of this activity rather than part of the launch
+     * theme, because the launch theme cannot hold one: `windowSplashScreenBackground`
+     * is a colour attribute, and the one drawable the splash accepts
+     * (`windowSplashScreenAnimatedIcon`) is masked down to a circle two thirds of
+     * the area it is drawn in, at a fixed 288dp/240dp. So the cold start is
+     * sequenced rather than merged — the theme's wordmark for the first frame, this
+     * skeleton for as long as the WebView takes, then the document — and the splash
+     * is left to dismiss on the app's first drawn frame, which is the frame this
+     * skeleton is in.
+     *
+     * That last part is measured, not assumed. #498 asked for a
+     * `setKeepOnScreenCondition { !pageCommitted }`, and on the API 35 emulator that
+     * condition is never read a second time: the splash stays up until the page
+     * commits (a cold launch measured 7.5 seconds of splash) and on a dead network
+     * it would never lift at all. `SplashScreen` polls the condition from a pre-draw
+     * listener on the activity's decor view, and the platform neither traverses nor
+     * draws a window that sits behind its starting surface, so a condition that is
+     * true in the first frame is never asked again. The platform's own dismissal is
+     * already the right edge: it is the first frame the app draws, and this view is
+     * in it.
+     */
+    private void installLaunchSkeleton() {
+        ViewGroup content = findViewById(android.R.id.content);
+        if (content == null) return;
+
+        skeleton = getLayoutInflater().inflate(R.layout.shell_skeleton, content, false);
+        // Placeholders are not content: nothing here may be announced or focused,
+        // and a screen reader that read the card shapes would be reading the app's
+        // own loading state as its interface.
+        skeleton.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        content.addView(
+            skeleton,
+            new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        );
+
+        // A launch that never reaches a committed page (radio off, or a document
+        // that fails before its first paint) would otherwise leave the skeleton up
+        // for as long as the user waited; #498 bounds that at 2.5 seconds.
+        skeleton.postDelayed(skeletonCeiling, SKELETON_CEILING_MS);
+
+        Bridge bridge = getBridge();
+        if (bridge == null) return;
+        bridge.addWebViewListener(
+            new WebViewListener() {
+                @Override
+                public void onPageCommitVisible(WebView view, String url) {
+                    // A blank or internal document commits before the site's own
+                    // frame does; releasing on that would put the empty surface back
+                    // for the rest of the load.
+                    if (url == null || url.startsWith("about:")) return;
+                    releaseSkeleton();
+                    // Deferred, because this callback runs inside the bridge's own
+                    // iteration over its listener list — removing the listener here
+                    // throws `ConcurrentModificationException`, which is what the API
+                    // 35 emulator did on the first commit.
+                    view.post(() -> bridge.removeWebViewListener(this));
+                }
+            }
+        );
+    }
+
+    /**
+     * Takes the skeleton off the screen — on the document's first committed frame,
+     * or at {@link #SKELETON_CEILING_MS}, whichever comes first. Both paths meet
+     * here so the second is a no-op.
+     */
+    private void releaseSkeleton() {
+        if (skeletonReleased) return;
+        skeletonReleased = true;
+
+        View leaving = skeleton;
+        skeleton = null;
+        if (leaving == null) return;
+
+        leaving
+            .animate()
+            .alpha(0f)
+            .setDuration(SKELETON_FADE_MS)
+            .withEndAction(
+                () -> {
+                    ViewGroup parent = leaving.getParent() instanceof ViewGroup
+                        ? (ViewGroup) leaving.getParent()
+                        : null;
+                    if (parent != null) parent.removeView(leaving);
+                }
+            )
+            .start();
     }
 
     /**
@@ -187,6 +311,13 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onDestroy() {
         if (shellUpdate != null) shellUpdate.shutdown();
+        // The ceiling is posted on the skeleton itself; an activity that finishes
+        // inside those 2.5 seconds would otherwise keep it, and the callback with
+        // it, alive until the delay expired.
+        if (skeleton != null) {
+            skeleton.removeCallbacks(skeletonCeiling);
+            skeleton.animate().cancel();
+        }
         super.onDestroy();
     }
 

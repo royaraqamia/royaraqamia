@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A control of the launch skeleton (#498): the wordmark, the bell and each tab's
+  icon. Round, because every one of those three is round on the site - the logo
+  and the bell are circles and the tab icons sit in a circular touch target.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/roy_skeleton_shape" />
+</shape>

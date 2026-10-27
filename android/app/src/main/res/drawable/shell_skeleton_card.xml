@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One card of the launch skeleton (#498): the site's `rounded-xl border
+  border-border/60 bg-card` block, in the window's own palette. The radius is
+  the card's 12dp; the site's hairline border is left out because a skeleton is
+  a silhouette of the layout, and a border at this size reads as a drawn card
+  rather than as a placeholder.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/roy_skeleton_card" />
+    <corners android:radius="12dp" />
+</shape>

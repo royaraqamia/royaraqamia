@@ -95,8 +95,10 @@
       The background is the shell's own `#0f172a`, which is what the WebView paints,
       so the splash hands over to the loading page without a colour change.
       `postSplashScreenTheme` is the theme the activity switches to once the splash
-      is dismissed; the platform dismisses it when the app draws its first frame,
-      so no duration is declared here.
+      is dismissed. Nothing is held here: the platform dismisses the splash on the
+      app's first drawn frame, and that frame is the launch skeleton
+      (`res/layout/shell_skeleton.xml`, #498) — no duration is declared, so there is
+      no clock to keep in step with the WebView.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#0f172a</item>

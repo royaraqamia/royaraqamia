@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The `خدماتنا` pill in the launch skeleton's top bar (#498), and the tab bar's
+  own floating pill on `lg` - a rounded rectangle the width of a short label.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/roy_skeleton_shape" />
+    <corners android:radius="16dp" />
+</shape>
