@@ -97,3 +97,19 @@ screen, no media keys. The page could not fix either problem from inside the Web
 - The JVM tests cover the manifest reader and the store (hash refusal, reuse, LRU eviction, offline
   cache); the service, the notification and the controller are media3's and are covered by the
   on-device pass.
+
+## Amendment (2026-10-27, #626): the controller is built on the main looper
+
+`MediaController` asserts on every call that it is on the looper it was built on. Capacitor invokes
+a plugin method on its bridge looper, and `QuranPlayerPlugin` built the controller there. The
+connection succeeded; `addListener` threw, so the load never reached `QuranPlaybackService` and the
+page reported a sura the CDN serves as «غير محفوظة على هذا الجُهاز». `controller` stayed non-null and
+`isConnected()` vouched for it, so the next press took the main-thread path and
+`sendCustomCommand` threw `IllegalStateException` on the main looper, which takes the process with
+it — the "tap play twice and the app closes" crash reported against 1.0.18.
+
+Building, connecting, releasing and answering `state()` now all happen on the main looper, through a
+single `withController` post; a half-connected controller is released instead of left for
+`isConnected()` to vouch for. The rule is pinned as source text in
+`scripts/__tests__/quran-player-thread.test.mjs`, because a media3 controller has no host-side
+double. This is a shell change: shells from counter 20018 are affected and the fix ships in 20020.
