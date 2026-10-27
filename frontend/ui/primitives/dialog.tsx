@@ -58,7 +58,11 @@ const DialogContent = React.forwardRef<
         'rounded-3xl sm:rounded-2xl',
         'max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
         // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
-        'bottom-4 left-1/2 -translate-x-1/2 translate-y-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg',
+        // Centred with insets + auto margins, not `translate`: a surface stylesheet
+        // that ships a base `translate-y-*` (the landing chunk does, via Navbar)
+        // loads after this one and would win the `--tw-translate-y` cascade,
+        // pinning the dialog's top edge to the middle of the screen.
+        'inset-x-0 bottom-4 mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
         // Entrance & Exit Motion Animations
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
