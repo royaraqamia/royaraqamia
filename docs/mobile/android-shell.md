@@ -200,6 +200,72 @@ never lifted (above), and a `ConcurrentModificationException` on the first commi
 the splash, the proportions above, the absence of a keep-on-screen condition, the commit release with
 its `about:` guard and deferred listener removal, and the ceiling.
 
+### What the document costs, under the skeleton
+
+`MainActivity.installWebViewSettings` sets one thing on the WebView (#499):
+`setOffscreenPreRaster(true)`. The skeleton is a view **over** the WebView, so every frame the document
+produces until the handover is produced offscreen, and without the flag the renderer waits for attach
+before it rasterizes — the first frame after the skeleton would be an unpainted one. It changes no
+commit time (the document is the wait, not the paint), which is why the numbers below are about the
+document rather than about painting.
+
+`cacheMode` is deliberately **not** set; it stays at the platform's `LOAD_DEFAULT`. The issue's premise
+was that the WebView's own HTTP cache could become a second, unsupervised document cache, and on this
+site it cannot: a document response carries
+
+```
+Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400
+```
+
+with no `ETag` and no `Last-Modified`. `s-maxage` is a **shared** cache's directive, so a private cache
+has no freshness lifetime for the document and has to revalidate; there is nothing it can serve the
+document from without a round trip. The authenticated APIs are `no-store` at the transport
+(`backend/transport/cache-policy.ts`), which `scripts/__tests__/api-cache-contract.test.ts` already
+holds. `scripts/__tests__/webview-settings.test.mjs` fails if any shell source sets a cache mode.
+
+**A launch is the network's, not a cache's.** Measured on the API 35 emulator (WebView 124.0.6367.219,
+`-memory 2048`, the production origin, the `RoyLaunch` logcat lines `MainActivity` writes — timed from
+`Process.getStartUptimeMillis()`, so the fork is included):
+
+| Launch                                   | What it costs                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Cold (process dead)                      | commit 3.6–8.1 s after the fork, median ~4.5 s over 12 launches; the document itself was 28 KB over 2.8–8.9 s of network |
+| Warm (process alive, activity recreated) | commit 1.0–3.0 s after `onCreate`, same document, same network                                                           |
+| In-page navigation in the same WebView   | **740 ms**, 300 B transfer, answered by the worker                                                                       |
+
+The last row is the one to keep: the worker answers an in-page navigation in three quarters of a second
+with a 300-byte transfer, and it answers a launch not at all. On every launch measured — cold and warm,
+twelve of them — the document reported `navigator.serviceWorker.controller === null`, a navigation entry
+with `workerStart === 0`, and a 28 KB transfer. The registration is not missing: it is `activated`, and
+the Cache Storage keys and the registration both survive `am force-stop`, while a
+`location.assign('/quran')` in the same WebView is controlled immediately afterwards. So the WebView's
+first navigation after the app starts is not worker-controlled, and **a launch is always that first
+navigation**: warm as well as cold, because Capacitor destroys the WebView when the activity detaches
+(`Bridge.onDetachedFromWindow`) and the next activity starts with a new one.
+
+That is what #499's **< 300 ms warm start** needs and cannot get from this shell: a document the shell
+holds locally. The WebView's own HTTP cache is not it — that is the cache the issue exists to keep out
+of the document's path — and a worker cannot answer a navigation that Chrome does not route to it. The
+bundled surfaces (#500, #502–#504) are that document; until they exist, the launch is a network round
+trip and the skeleton is what covers it (ADR-0061).
+
+**The pre-warm was built, measured and dropped.** #499 proposed holding one `WebView` in a
+`MutableContextWrapper` from `Application.onCreate` and handing it to the bridge, and it was implemented
+two ways here: adopted after the layout inflated (Capacitor's placeholder destroyed, its id and layout
+params carried over), and with `setContentView` answering `capacitor_bridge_layout_main` itself so the
+process builds one WebView rather than two. Both measured inside the noise on the emulator — seven
+interleaved cold rounds each, baseline against warm: process → commit **5.10 s vs 5.02 s** median,
+`onCreate` → commit **3.95 s vs 3.54 s**, individual launches scattering 3.6–11.5 s because the document
+is the wait. What it does change is where the WebView's construction lands: in front of the activity's
+inflation, which delays the skeleton `#498` had just added. It is not in this shell; a machine with a
+cold Chromium start worth moving, or a bundled launch document, would have to show it winning first.
+
+Two things stay from that experiment, because the measurements above are read through them: the
+`RoyLaunch` lines (`onCreate`, the bridge's first commit, the skeleton's release), and
+`scripts/__tests__/webview-settings.test.mjs`, which holds the rasterization flag, the absence of a cache
+mode, and the fact that the commit line is logged inside the listener that releases the skeleton, after
+the `about:` guard.
+
 Install on a device or emulator:
 
 ```powershell
@@ -238,6 +304,7 @@ changes rather than only on the machine that wrote them.
 | Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                            | Working                                                                                                                                                                                            |
 | Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                    | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
 | Splash (platform), launch skeleton, status bar, RTL, back button | launch theme, `res/layout/shell_skeleton.xml`, `capacitor.config.ts` plugins, `MainActivity` | Working — the splash lifts into the skeleton (ADR-0061, #498); Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                   |
+| WebView settings                                                 | `MainActivity.installWebViewSettings`                                                        | offscreen pre-raster on, so the skeleton lifts onto a painted document; `cacheMode` left at `LOAD_DEFAULT` (#499, "What the document costs", above)                                                |
 | Native file save / share                                         | `@capacitor/filesystem`, `@capacitor/share` installed                                        | Installed, unused by app code yet                                                                                                                                                                  |
 | Biometric lock                                                   | `@capgo/capacitor-native-biometric` installed                                                | Installed, unused by app code yet                                                                                                                                                                  |
 | Bluetooth LE + Contacts                                          | plugins installed, **no manifest permissions**                                               | Scaffolding only, by decision                                                                                                                                                                      |

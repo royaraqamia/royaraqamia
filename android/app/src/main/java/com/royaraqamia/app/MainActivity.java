@@ -3,6 +3,8 @@ package com.royaraqamia.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Process;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -57,6 +59,12 @@ public class MainActivity extends BridgeActivity {
      */
     private static final long SKELETON_FADE_MS = 150;
 
+    /**
+     * The launch line the shell's numbers are read from (#499). Debug builds only:
+     * Capacitor's logger is silent in a release.
+     */
+    private static final String LAUNCH_TAG = "RoyLaunch";
+
     private ShellUpdatePrompt shellUpdate;
 
     /** The launch skeleton, or null once it has been released. */
@@ -69,6 +77,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        logLaunch("onCreate");
         // The recitation's bridge (ADR-0086) is this module's own plugin, not an
         // npm package, so it is registered before the bridge is built.
         registerPlugin(QuranPlayerPlugin.class);
@@ -79,6 +88,7 @@ public class MainActivity extends BridgeActivity {
         // `super.onCreate`, which is where the starting window is replaced.
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        installWebViewSettings(getBridge());
         installLaunchSkeleton();
         openFromIntent(getIntent(), false);
         // Both of these need the bridge, so they run after Capacitor has created
@@ -93,6 +103,36 @@ public class MainActivity extends BridgeActivity {
         installSyncBridge(getBridge());
         SyncScheduler.ensurePeriodic(this);
         installBackExit();
+    }
+
+    /**
+     * The one WebView setting the shell owns (#499).
+     *
+     * `setOffscreenPreRaster` is what makes the handover from the launch skeleton
+     * (#498) a frame of the document rather than a frame of nothing. The skeleton is
+     * a view *over* the WebView, so every frame the document produces until the
+     * skeleton leaves is produced offscreen — and without this flag the renderer
+     * waits for the view to be on screen before it rasterizes anything. Measured on
+     * the API 35 emulator the flag changes no commit time (the document is the wait,
+     * not the paint); what it changes is that the first frame the user sees after the
+     * skeleton is already painted.
+     *
+     * `cacheMode` is deliberately **not** set. It stays at the platform's
+     * `LOAD_DEFAULT`, which is the only mode in which the WebView's HTTP cache
+     * revalidates like any other browser cache: a document response carries no
+     * private-cache freshness of its own (`public, s-maxage=…` is a shared cache's
+     * directive, and the documents ship no `ETag`/`Last-Modified`), so nothing pins a
+     * build there, and a `LOAD_CACHE_*` mode would hand the WebView's own copy out
+     * before the worker — or the network — is consulted, which is the second cache
+     * #499 exists to keep out of the document's path. The authenticated APIs are
+     * `no-store` at the transport (`backend/transport/cache-policy.ts`), which is the
+     * seam the issue's third acceptance keeps.
+     * `scripts/__tests__/webview-settings.test.mjs` fails if either changes.
+     */
+    private void installWebViewSettings(@Nullable Bridge bridge) {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) return;
+        webView.getSettings().setOffscreenPreRaster(true);
     }
 
     /**
@@ -152,6 +192,9 @@ public class MainActivity extends BridgeActivity {
                     // frame does; releasing on that would put the empty surface back
                     // for the rest of the load.
                     if (url == null || url.startsWith("about:")) return;
+                    // #499's number: the document's first committed frame, end to
+                    // end from the process fork.
+                    logLaunch("page committed");
                     releaseSkeleton();
                     // Deferred, because this callback runs inside the bridge's own
                     // iteration over its listener list — removing the listener here
@@ -171,6 +214,7 @@ public class MainActivity extends BridgeActivity {
     private void releaseSkeleton() {
         if (skeletonReleased) return;
         skeletonReleased = true;
+        logLaunch("skeleton released");
 
         View leaving = skeleton;
         skeleton = null;
@@ -189,6 +233,20 @@ public class MainActivity extends BridgeActivity {
                 }
             )
             .start();
+    }
+
+    /**
+     * Writes one launch milestone to logcat, timed from the process fork rather
+     * than from any one callback, so the numbers are the launch the user waited
+     * through and not a stretch of it.
+     *
+     * `Process.getStartUptimeMillis()` and `SystemClock.uptimeMillis()` share a
+     * base, and an Arabic-locale device is not a factor here: a `long` concatenated
+     * onto a string is ASCII digits whatever the device locale is.
+     */
+    private static void logLaunch(String moment) {
+        long elapsed = SystemClock.uptimeMillis() - Process.getStartUptimeMillis();
+        Logger.debug(LAUNCH_TAG, moment + " at " + elapsed + "ms");
     }
 
     /**
