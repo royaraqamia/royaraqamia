@@ -46,10 +46,10 @@ async function expectNoStoreSkeleton(page: Page) {
   await expect(page.locator('[data-local-store-skeleton]')).toHaveCount(0);
 }
 
-/** The shared pill's offline state: the connection is named, not implied. */
+/** The product pill's offline state: the connection is named, not implied. */
 async function expectOfflinePill(page: Page) {
-  // The global connectivity indicator says the same thing, so take the first
-  // `status` that carries the copy rather than demanding a single one.
+  // HabitFlow's own sync pill is the surface that names the connection, so take
+  // the first `status` that carries the copy rather than demanding a single one.
   await expect(page.getByRole('status').filter({ hasText: 'غير متَّصل' }).first()).toBeVisible();
 }
 

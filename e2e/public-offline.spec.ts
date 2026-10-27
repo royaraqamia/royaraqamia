@@ -109,16 +109,11 @@ test('a visited public page paints from cache offline and shows its age', async 
 
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
 
-  const offlineIndicator = page.getByRole('status').filter({ hasText: 'غير متَّصل' });
-  await expect(offlineIndicator).toBeVisible();
-  await expect(offlineIndicator).toContainText('نسخة محفوظة');
-
   // Rates are a live-fed snapshot (ADR-0031): the board is read-only offline, and
   // nothing offers to refresh it. The page renders no refresh control at all — by
   // design, not by omission: refreshing is server-owned (the cron route plus
   // refresh-on-read), so what is held here is the absence of the affordance, not a
-  // disabled button. The offline state itself is the shared ConnectivityIndicator
-  // asserted above.
+  // disabled button.
   await expect(page.locator('#main-content').getByRole('button', { name: /تحديث/ })).toHaveCount(0);
 
   // The visited auth shell answers offline too (#447): the reload paints the
@@ -542,9 +537,9 @@ test('the news digest paints from its snapshot with the radio off', async ({
   await expect(page.locator('#main-content .animate-pulse')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /العودة للرئيسية/ })).toHaveCount(0);
 
-  // Stale is named, not hidden: the shared offline indicator reports the cached
-  // copy's age, and the snapshot's own line says when it was taken.
-  await expect(page.getByRole('status').filter({ hasText: 'غير متَّصل' }).first()).toBeVisible();
+  // Stale is named, not hidden: the snapshot's own line says the digest is a
+  // saved copy and when it was taken.
+  await expect(page.getByText(/هذه نسخة محفوظة من المُلخَّص/)).toBeVisible();
 
   await context.close();
 });

@@ -122,6 +122,28 @@ test.describe('primary pages', () => {
     expect(radius).toBeGreaterThan(height / 2);
   });
 
+  test('the desktop bar floats clear of the bottom edge', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+
+    const bar = await page.locator(BOTTOM_BAR).boundingBox();
+    expect(bar).not.toBeNull();
+
+    // `lg:bottom-10`: the pill sits 40px above the viewport edge, not on it.
+    expect(Math.round(720 - ((bar?.y ?? 0) + (bar?.height ?? 0)))).toBe(40);
+  });
+
+  test('the landing page names today above the headline', async ({ page }) => {
+    await page.goto('/');
+
+    const date = page.locator('[data-hijri-today]');
+    await expect(date).toHaveText(/هـ$/);
+
+    const dateBox = await date.boundingBox();
+    const titleBox = await page.locator('h1').boundingBox();
+    expect((dateBox?.y ?? 0) + (dateBox?.height ?? 0)).toBeLessThanOrEqual(titleBox?.y ?? 0);
+  });
+
   test('a primary shell keeps its content clear of the fixed bar', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/community');

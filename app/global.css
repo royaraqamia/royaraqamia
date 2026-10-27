@@ -1539,20 +1539,11 @@ body {
   --roy-float-rise: max(0px, var(--roy-player-lift) - var(--roy-corner-rest));
 }
 
-/* The two bottom-centre pills stagger above the corner floats so the two never
-   share a line. The player raises them by the distance it raises those, which is
-   what keeps the stagger. */
-.connectivity-indicator,
-.update-prompt {
-  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.connectivity-indicator {
-  bottom: calc(5rem + var(--roy-float-rise));
-}
-
+/* The update prompt keeps a stagger above the corner floats, and the player
+   raises it by the distance it raises those. */
 .update-prompt {
   bottom: calc(8rem + var(--roy-float-rise));
+  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ========================================
@@ -1571,12 +1562,22 @@ body:has([data-bottom-tabbar]) {
   }
 }
 
-/* Floating pill (`lg` + up): the bar sits one gap above the viewport edge, so
-   the reserved space grows by that gap. The corner utilities stay put — the
-   pill is centred and never reaches them. */
+/* Floating pill (`lg` + up): the bar floats clear of the viewport edge, so
+   the reserved space grows by that lift. The corner utilities stay put — the
+   pill is centred and never reaches them.
+
+   The pill's own offset is declared here rather than as a `lg:bottom-*`
+   utility: every surface's stylesheet re-emits Tailwind's utilities, and a
+   `.bottom-0` emitted in a later sheet outranks the `lg:` variant emitted in an
+   earlier one — which is how the bar ended up flush with the edge on the
+   landing page. Unlayered, this rule wins across sheets. */
 @media (min-width: 1024px) {
+  [data-bottom-tabbar] {
+    bottom: calc(2.5rem + var(--roy-safe-bottom));
+  }
+
   body:has([data-bottom-tabbar]) {
-    padding-bottom: calc(3.5rem + 1.5rem + var(--roy-safe-bottom));
+    padding-bottom: calc(3.5rem + 2.5rem + var(--roy-safe-bottom));
   }
 }
 
