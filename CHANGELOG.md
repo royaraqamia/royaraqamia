@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.149.0] - 2026-10-27
+
+### Changed
+- split the 534 KB stylesheet by surface (#622)
+- News loader fixed; stale personal digests no longer shown. (#621)
+
+### Added
+- the bundled surface and the two-origin spike (#630)
+- leave the launch document to the network, not a second cache (#625)
+- the launch skeleton covers the gap to the document (#623)
+
+### Fixed
+- materialize each recurring expense by its own identity (#629)
+- refuse a busy Download Job before it spends a Credit (#628)
+- build the recitation's MediaController on the main looper (#627)
+- keep the WebView's own IME connection (#624)
+
 ## [1.148.1] - 2026-10-26
 
 ### Changed
