@@ -19,7 +19,7 @@ export function ConnectivityIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-20 z-40 mx-auto w-fit rounded-full border border-amber-500/40 bg-amber-50 px-4 py-1.5 text-xs font-medium text-amber-800 shadow-sm dark:border-amber-500/30 dark:bg-amber-950 dark:text-amber-200"
+      className="connectivity-indicator pointer-events-none fixed inset-x-0 z-40 mx-auto w-fit rounded-full border border-amber-500/40 bg-amber-50 px-4 py-1.5 text-xs font-medium text-amber-800 shadow-sm dark:border-amber-500/30 dark:bg-amber-950 dark:text-amber-200"
     >
       غير متَّصل — تُحفَظ تغييراتك محليًّا
       {label ? <span className="ms-1.5 opacity-90">· نسخة محفوظة {label}</span> : null}

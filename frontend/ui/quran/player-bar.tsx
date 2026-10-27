@@ -7,6 +7,7 @@ import { AlertTriangle, Loader2, Pause, Play, SkipBack, SkipForward, Square } fr
 import { cn } from '@/frontend/shared/cn';
 import { useQuranPlayer } from '@/frontend/state/quran/player-context';
 import { isPrimaryRoute } from '@/frontend/ui/navbar/route-kind';
+import { usePlayerLift } from './player-lift';
 
 /**
  * The recitation, on every page that is not its own reader.
@@ -19,6 +20,7 @@ import { isPrimaryRoute } from '@/frontend/ui/navbar/route-kind';
 export function PlayerBar() {
   const pathname = usePathname();
   const { state, actions } = useQuranPlayer();
+  const liftRef = usePlayerLift<HTMLElement>('bar');
 
   if (state.surah === null || state.name === null) return null;
 
@@ -44,6 +46,7 @@ export function PlayerBar() {
 
   return (
     <section
+      ref={liftRef}
       data-quran-player-bar
       aria-label="مُشغِّل التِّلاوة"
       className={cn(

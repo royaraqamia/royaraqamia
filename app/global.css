@@ -1172,7 +1172,7 @@ select,
   /* Clear of the gesture/home-indicator area: the button sits in the corner a
      thumb reaches, which is also where the system bar reserves its band. */
   right: calc(var(--wa-gap) + var(--roy-safe-right));
-  bottom: calc(var(--wa-gap) + var(--roy-safe-bottom));
+  bottom: calc(var(--wa-gap) + var(--roy-safe-bottom) + var(--roy-float-rise));
   width: var(--wa-size);
   height: var(--wa-size);
   display: inline-grid;
@@ -1206,7 +1206,7 @@ select,
   .whatsapp-float {
     left: calc(var(--wa-gap) + var(--roy-safe-left));
     right: auto;
-    bottom: calc(var(--wa-gap) - 4px + var(--roy-safe-bottom));
+    bottom: calc(var(--wa-gap) - 4px + var(--roy-safe-bottom) + var(--roy-float-rise));
   }
 }
 
@@ -1235,7 +1235,7 @@ select,
 .compose-fab-btn {
   position: fixed;
   left: calc(20px + var(--roy-safe-left));
-  bottom: calc(20px + var(--roy-safe-bottom));
+  bottom: calc(var(--roy-corner-rest) + var(--roy-float-rise));
   width: 56px;
   height: 56px;
   background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #4f46e5 100%);
@@ -1250,6 +1250,7 @@ select,
   box-shadow: 0 10px 30px -10px rgba(147, 51, 234, 0.5);
   transition:
     background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1284,7 +1285,6 @@ select,
     width: 52px;
     height: 52px;
     left: 16px;
-    bottom: 16px;
   }
 
   .compose-fab-btn svg {
@@ -1467,6 +1467,17 @@ select,
   --roy-safe-right: var(--roy-safe-right-raw, 0px);
   --roy-safe-bottom: var(--roy-safe-bottom-raw, 0px);
   --roy-safe-left: var(--roy-safe-left-raw, 0px);
+
+  /* How far a player reaches up from the viewport's bottom edge, clearance
+     included. Each player publishes its own for as long as it is mounted
+     (`frontend/ui/quran/player-lift.ts`); a page with no Recitation leaves both
+     at 0, which is what keeps every float at rest (ADR-0087). */
+  --roy-player-bar-lift: 0px;
+  --roy-player-float-lift: 0px;
+  --roy-player-lift: max(var(--roy-player-bar-lift), var(--roy-player-float-lift));
+  /* Where a corner float rests, and how far the player raises it. Declared here
+     so the tab bar below can move the rest without touching the floats. */
+  --roy-corner-rest: calc(20px + var(--roy-safe-bottom));
 }
 
 .safe-area-inset {
@@ -1506,6 +1517,45 @@ select,
 }
 
 /* ========================================
+   THE PLAYER'S CLEARANCE
+   ======================================== */
+/* The Recitation's players are the bottom-most floating surface on any page they
+   appear on, and the corner floats are painted above them (`z-index: 9998`), so
+   without this the compose FAB sits on the mini bar's left end and covers the
+   controls it holds (ADR-0087). */
+@media (max-width: 768px) {
+  :root {
+    /* The phone rules have always sat the corner floats lower than the desktop
+       ones; the player still lifts them from wherever they are. */
+    --roy-corner-rest: 16px;
+  }
+}
+
+body {
+  /* Everything above a corner float rises by this much: the float itself sits
+     its clearance above the player, and whatever keeps a line of its own above
+     the float keeps that line. A page with nothing playing computes 0 and
+     nothing moves. */
+  --roy-float-rise: max(0px, var(--roy-player-lift) - var(--roy-corner-rest));
+}
+
+/* The two bottom-centre pills stagger above the corner floats so the two never
+   share a line. The player raises them by the distance it raises those, which is
+   what keeps the stagger. */
+.connectivity-indicator,
+.update-prompt {
+  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.connectivity-indicator {
+  bottom: calc(5rem + var(--roy-float-rise));
+}
+
+.update-prompt {
+  bottom: calc(8rem + var(--roy-float-rise));
+}
+
+/* ========================================
    BOTTOM TAB BAR
    ======================================== */
 /* Reserve space so the fixed tab bar never occludes page content. */
@@ -1513,11 +1563,11 @@ body:has([data-bottom-tabbar]) {
   padding-bottom: calc(3.5rem + var(--roy-safe-bottom));
 }
 
-/* Flush bar (< lg): lift the floating utilities clear of it. Only where the bar
-   is actually rendered — secondary pages have no bar and no reason to sit high. */
+/* Flush bar (< lg): the corner floats rest clear of it. Only where the bar is
+   actually rendered — secondary pages have no bar and no reason to sit high. */
 @media (max-width: 1023px) {
-  body:has([data-bottom-tabbar]) .compose-fab-btn {
-    bottom: calc(3.5rem + var(--roy-safe-bottom) + 0.75rem);
+  body:has([data-bottom-tabbar]) {
+    --roy-corner-rest: calc(3.5rem + var(--roy-safe-bottom) + 0.75rem);
   }
 }
 
