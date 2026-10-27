@@ -516,7 +516,27 @@ jobs:
           if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
             git fetch origin main --unshallow --quiet
           fi
-          git rebase origin/main
+
+          # A step earlier in this job can leave *generated* files dirty: `cap
+          # sync` rewrites the plugin lists in android/capacitor.settings.gradle
+          # and android/app/capacitor.build.gradle whenever package.json and those
+          # two files disagree, which is exactly what a pull request that adds a
+          # Capacitor plugin does without regenerating them. A rebase refuses to
+          # start on a dirty tree, and the refusal arrives after the upload, so
+          # the release exists and the manifest is lost - measured on shell
+          # 1.0.20, where `git rebase origin/main` answered "cannot rebase: You
+          # have unstaged changes" and the version was never announced.
+          #
+          # Autostash sets that drift aside for the rebase and puts it back
+          # after, and only HEAD:main is pushed, so the generated files never
+          # reach the commit. The status is printed first: the drift is a
+          # duplicate of what the next `cap sync` would write, not work to keep,
+          # but it should not be invisible either.
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "the tree is dirty before the rebase; autostashing:"
+            git status --porcelain
+          fi
+          git -c rebase.autoStash=true rebase origin/main
           git push origin HEAD:main
 
       - name: Summary
