@@ -1,0 +1,23 @@
+{
+  "appId": "com.royaraqamia.app",
+  "appName": "رؤية رقمية",
+  "webDir": "capacitor-web/spike",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["royaraqamia.com", "*.royaraqamia.com"],
+    "errorPath": "unavailable.html"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0f172a",
+    "webContentsDebuggingEnabled": true,
+    "minWebViewVersion": 111
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#0f172a"
+    }
+  }
+}

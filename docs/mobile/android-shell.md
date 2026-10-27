@@ -247,7 +247,9 @@ That is what #499's **< 300 ms warm start** needs and cannot get from this shell
 holds locally. The WebView's own HTTP cache is not it — that is the cache the issue exists to keep out
 of the document's path — and a worker cannot answer a navigation that Chrome does not route to it. The
 bundled surfaces (#500, #502–#504) are that document; until they exist, the launch is a network round
-trip and the skeleton is what covers it (ADR-0061).
+trip and the skeleton is what covers it (ADR-0061). What #500 has built so far — the bundled
+HabitFlow entry, the `next/*` stubs, the two crossing mechanisms, and the findings that block
+promoting it — is [two-origin-spike.md](two-origin-spike.md).
 
 **The pre-warm was built, measured and dropped.** #499 proposed holding one `WebView` in a
 `MutableContextWrapper` from `Application.onCreate` and handing it to the bridge, and it was implemented

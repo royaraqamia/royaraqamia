@@ -14,3 +14,4 @@ CHANGELOG.md
 package.json
 backend/config/generated/app-version.ts
 docs/specs/surfaces.md
+/capacitor-web/spike/

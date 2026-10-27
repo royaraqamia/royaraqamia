@@ -99,3 +99,8 @@ public/zxing_reader.wasm
 # shell whose push plugin crashed the app on tap (ADR-0050). Do not re-ignore it.
 *.jks
 *.keystore
+
+# The bundled-surface build (issue #500): Vite output packed into the APK, never
+# committed. `npm run spike:build` writes it; `npm run spike:apk` copies it into
+# android/app/src/main/assets/public (already ignored above).
+/capacitor-web/spike/

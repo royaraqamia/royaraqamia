@@ -34,4 +34,11 @@ export default defineConfig({
       'server-only': path.resolve(import.meta.dirname, 'vitest.server-only.ts'),
     },
   },
+  define: {
+    // The bundled-surface build's build-time constants (`vite.config.ts`). Tests
+    // load `app-native/**` through the same code, so the values are defined here
+    // without being secrets: the Supabase URL and anon key are public.
+    __SPIKE_SUPABASE_URL__: JSON.stringify('https://supabase.test'),
+    __SPIKE_SUPABASE_ANON_KEY__: JSON.stringify('test-anon-key'),
+  },
 });

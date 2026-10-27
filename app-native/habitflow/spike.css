@@ -1,0 +1,20 @@
+/* The bundled surface's stylesheet (issue #500).
+   --------------------------------------------------------------------------
+
+   The site compiles its CSS per surface (`app/global.css` for the shell,
+   `app/<surface>/app.css` for each route — issue #497). A bundled document is
+   the only document in the APK, so it needs both compilations on the one page;
+   this file is that composition and nothing else.
+
+   That is the one place the spike does not reuse the site's shape, and it is
+   deliberate: re-deriving the source list here would drift from
+   `app/habitflow/app.css` on the next rename. If plan B is promoted, the
+   surface split needs a bundled variant (or the app ships one stylesheet) —
+   recorded in `docs/mobile/two-origin-spike.md`. */
+
+@import '../../app/global.css';
+@import '../../app/habitflow/app.css';
+
+/* The spike's own chrome (`spike-panel.tsx`) has no home in either
+   compilation; its utilities are collected from the entry directory. */
+@source './';
