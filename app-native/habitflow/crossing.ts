@@ -57,10 +57,26 @@ export async function setRemoteMechanism(next: RemoteMechanism): Promise<void> {
 
 /** Whether an href (or the path it names) belongs to the remote origin. */
 export function isRemoteSurface(href: string, pathname: string): boolean {
-  if (href.startsWith(REMOTE_ORIGIN)) return true;
+  if (namesRemoteOrigin(href)) return true;
   return REMOTE_SURFACES.some(
     (surface) => pathname === surface || pathname.startsWith(`${surface}/`)
   );
+}
+
+/**
+ * Whether an absolute href's host is the remote origin.
+ *
+ * A prefix test on the raw string also accepts `https://royaraqamia.com.evil.example`
+ * and `https://evil.example/?next=https://royaraqamia.com`, so the href is parsed
+ * and its origin compared whole. A relative href names the bundled shell, and an
+ * href that does not parse is not the remote origin either.
+ */
+function namesRemoteOrigin(href: string): boolean {
+  try {
+    return new URL(href).origin === REMOTE_ORIGIN;
+  } catch {
+    return false;
+  }
 }
 
 /** Leave the bundled origin for `pathname` through `mechanism`. */
