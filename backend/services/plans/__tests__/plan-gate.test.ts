@@ -91,6 +91,35 @@ describe('PlanGate', () => {
     ).rejects.toThrow('A metered action needs a signed-in user or a client address.');
   });
 
+  it('refunds a signed-in reservation when the metered action throws', async () => {
+    const { repository, gate } = makeGate();
+    const refusal = new Error('busy');
+
+    await expect(
+      gate.meter({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => {
+        throw refusal;
+      })
+    ).rejects.toBe(refusal);
+
+    expect(repository.refund).toHaveBeenCalledWith('user-1', 'event-1');
+  });
+
+  it('refunds a visitor reservation when the metered action throws', async () => {
+    const { repository, gate } = makeGate();
+    const refusal = new Error('busy');
+
+    await expect(
+      gate.meter({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', async () => {
+        throw refusal;
+      })
+    ).rejects.toBe(refusal);
+
+    expect(repository.refundAnonymous).toHaveBeenCalledWith(
+      hashAnonymousSubject('203.0.113.7'),
+      'event-3'
+    );
+  });
+
   it('refunds every unit of a bulk spend when the action fails', async () => {
     const { repository, gate } = makeGate();
     const failure = new Error('bulk failed');
