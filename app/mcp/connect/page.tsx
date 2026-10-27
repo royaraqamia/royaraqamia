@@ -1,3 +1,4 @@
+import '../app.css';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/backend/config/supabase';

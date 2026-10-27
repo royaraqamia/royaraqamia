@@ -1,3 +1,4 @@
+import './app.css';
 import type { Metadata } from 'next';
 import './quran.css';
 import { amiriQuranMarks, kfgqpcHafs } from '@/frontend/ui/quran/font';

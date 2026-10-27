@@ -1,4 +1,5 @@
-﻿import type { Metadata } from 'next';
+import '../marketing.css';
+import type { Metadata } from 'next';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {

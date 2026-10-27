@@ -1,9 +1,10 @@
 {
-  "measure": ["/", "/community", "/scan"],
+  "measure": ["/", "/community", "/scan", "/terms", "/habitflow"],
   "default": {
     "totalGzipKb": 560,
     "jsGzipKb": 260,
     "cssGzipKb": 70,
+    "cssRawKb": 350,
     "htmlGzipKb": 63,
     "fontsGzipKb": 170
   },
@@ -12,6 +13,11 @@
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
       "totalGzipKb": 500,
       "jsGzipKb": 250
+    },
+    "/habitflow": {
+      "comment": "Measured so the per-surface split (#497) is visible on a product route, not only on public ones. Its client bundle is the product's own and belongs to #493; these two ceilings sit a few percent above today's measurement so the route is guarded against growth without claiming a target it was never given.",
+      "totalGzipKb": 590,
+      "jsGzipKb": 365
     }
   }
 }
