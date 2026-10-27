@@ -71,6 +71,21 @@ describe('remote surfaces', () => {
     expect(isRemoteSurface('/habitflow', '/habitflow/')).toBe(false);
   });
 
+  it('parses the href instead of trusting a prefix of it', async () => {
+    const { isRemoteSurface } = await crossingModule();
+
+    expect(isRemoteSurface('https://royaraqamia.com/reading', '/reading')).toBe(true);
+    expect(isRemoteSurface('https://royaraqamia.com', '/')).toBe(true);
+
+    // The shapes a `startsWith(REMOTE_ORIGIN)` test used to accept.
+    expect(isRemoteSurface('https://royaraqamia.com.evil.example/reading', '/reading')).toBe(false);
+    expect(isRemoteSurface('https://evil.example/?next=https://royaraqamia.com', '/')).toBe(false);
+    expect(
+      isRemoteSurface('https://evil.example/https://royaraqamia.com', '/https://royaraqamia.com')
+    ).toBe(false);
+    expect(isRemoteSurface('not a url', '/not a url')).toBe(false);
+  });
+
   it('crosses through the chosen mechanism', async () => {
     const { openRemote, setRemoteMechanism, remoteMechanism } = await crossingModule();
 
