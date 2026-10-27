@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.149.2] - 2026-10-27
+
+### Changed
+- publish shell 1.0.21 (20021)
+
+### Fixed
+- compare the crossing href's origin, not its prefix (#632)
+
 ## [1.149.1] - 2026-10-27
 
 ### Changed
