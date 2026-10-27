@@ -1,0 +1,15 @@
+/* Marketing stylesheet (issue #497).
+
+   Loaded by the pricing, privacy, security, terms and app-info pages, so it only reaches a visitor on that surface. It carries
+   the utilities Marketing renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import './surface.css';
+
+@source './pricing';
+@source './privacy';
+@source './security';
+@source './terms';
+@source './app-info';
+@source '../frontend/ui/LazyImage.tsx';
+@source '../frontend/ui/plans';

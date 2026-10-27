@@ -1,3 +1,4 @@
+import '../marketing.css';
 import type { Metadata } from 'next';
 
 import { loadPlanCatalog } from '@/backend/loaders/plans';

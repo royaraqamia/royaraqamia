@@ -1,3 +1,4 @@
+import './app.css';
 import type { Metadata } from 'next';
 
 import { AccountFooter } from '@/frontend/ui/account/account-footer';

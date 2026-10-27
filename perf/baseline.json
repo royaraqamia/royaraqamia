@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-10-25T14:13:10.902Z",
+  "generatedAt": "2026-10-27T07:03:47.588Z",
   "note": "Program performance baseline. Regenerate with `npm run perf:baseline:update` after `npm run build`.",
   "routes": {
     "/": {
       "html": {
-        "raw": 207775,
-        "gzip": 29745,
+        "raw": 208814,
+        "gzip": 29900,
         "count": 1
       },
       "js": {
-        "raw": 645643,
-        "gzip": 200979,
-        "count": 14
+        "raw": 656918,
+        "gzip": 205400,
+        "count": 15
       },
       "css": {
-        "raw": 534173,
-        "gzip": 62382,
-        "count": 2
+        "raw": 325285,
+        "gzip": 48063,
+        "count": 3
       },
       "fonts": {
         "raw": 164352,
@@ -29,26 +29,26 @@
         "count": 1
       },
       "total": {
-        "raw": 1551943,
-        "gzip": 457458,
-        "count": 20
+        "raw": 1355369,
+        "gzip": 447715,
+        "count": 22
       }
     },
     "/community": {
       "html": {
-        "raw": 226065,
-        "gzip": 26326,
+        "raw": 238485,
+        "gzip": 27033,
         "count": 1
       },
       "js": {
-        "raw": 784794,
-        "gzip": 245899,
+        "raw": 796287,
+        "gzip": 249228,
         "count": 19
       },
       "css": {
-        "raw": 534173,
-        "gzip": 62382,
-        "count": 2
+        "raw": 330266,
+        "gzip": 48091,
+        "count": 3
       },
       "fonts": {
         "raw": 164352,
@@ -61,26 +61,26 @@
         "count": 1
       },
       "total": {
-        "raw": 1709384,
-        "gzip": 498959,
-        "count": 25
+        "raw": 1529390,
+        "gzip": 488704,
+        "count": 26
       }
     },
     "/scan": {
       "html": {
-        "raw": 38995,
-        "gzip": 9710,
+        "raw": 39728,
+        "gzip": 9953,
         "count": 1
       },
       "js": {
-        "raw": 594343,
-        "gzip": 184310,
+        "raw": 605086,
+        "gzip": 188450,
         "count": 13
       },
       "css": {
-        "raw": 534173,
-        "gzip": 62382,
-        "count": 2
+        "raw": 283559,
+        "gzip": 42517,
+        "count": 3
       },
       "fonts": {
         "raw": 164352,
@@ -93,9 +93,73 @@
         "count": 1
       },
       "total": {
-        "raw": 1331863,
-        "gzip": 420754,
+        "raw": 1092725,
+        "gzip": 405272,
+        "count": 20
+      }
+    },
+    "/terms": {
+      "html": {
+        "raw": 87915,
+        "gzip": 16658,
+        "count": 1
+      },
+      "js": {
+        "raw": 580182,
+        "gzip": 178659,
+        "count": 12
+      },
+      "css": {
+        "raw": 283449,
+        "gzip": 41922,
+        "count": 3
+      },
+      "fonts": {
+        "raw": 164352,
+        "gzip": 164352,
+        "count": 3
+      },
+      "legacy": {
+        "raw": 112594,
+        "gzip": 39627,
+        "count": 1
+      },
+      "total": {
+        "raw": 1115898,
+        "gzip": 401591,
         "count": 19
+      }
+    },
+    "/habitflow": {
+      "html": {
+        "raw": 41141,
+        "gzip": 9694,
+        "count": 1
+      },
+      "js": {
+        "raw": 1130407,
+        "gzip": 353933,
+        "count": 25
+      },
+      "css": {
+        "raw": 344462,
+        "gzip": 49484,
+        "count": 3
+      },
+      "fonts": {
+        "raw": 164352,
+        "gzip": 164352,
+        "count": 3
+      },
+      "legacy": {
+        "raw": 112594,
+        "gzip": 39627,
+        "count": 1
+      },
+      "total": {
+        "raw": 1680362,
+        "gzip": 577463,
+        "count": 32
       }
     }
   }

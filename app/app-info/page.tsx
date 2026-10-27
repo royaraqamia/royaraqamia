@@ -1,3 +1,4 @@
+import '../marketing.css';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LazyImage } from '../../frontend/ui/LazyImage';

@@ -1,3 +1,4 @@
+import './landing.css';
 import type { Metadata } from 'next';
 import { SITE_DESCRIPTION } from '@/frontend/shared/metadata';
 import { ServiceDiscountProvider } from '@/frontend/ui/plans/pro-price';

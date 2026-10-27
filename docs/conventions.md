@@ -57,6 +57,9 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
 - Design tokens / CSS custom properties
 - Radix + shadcn primitives
 - No inline styles
+- Stylesheets are cut by surface, not by component: `app/global.css` is the
+  shell every route loads, and each surface brings its own `app/<surface>/app.css`
+  ([performance.md](performance.md#stylesheets-by-surface))
 
 ## Naming
 

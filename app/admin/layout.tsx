@@ -1,3 +1,4 @@
+import './app.css';
 import { redirect } from 'next/navigation';
 import { identity } from '@/backend/config/identity';
 

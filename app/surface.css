@@ -1,0 +1,28 @@
+/* Shared preamble for every stylesheet this app compiles with Tailwind
+   (issue #497).
+
+   `global.css` is the shell every route loads; each surface
+   (`app/<surface>/app.css`) imports this file first so both compilations agree
+   on three things that are easy to let drift:
+
+   - the layer order `theme, base, components, utilities`, declared by
+     `tailwindcss` itself. Same names, same order on both sides means a surface
+     chunk can use a base utility without redefining it, and a surface rule can
+     never jump ahead of one the shell already shipped;
+   - `source(none)`: no stylesheet guesses at sources any more. Every file that
+     contributes class names is listed by the entry that ships it, so a
+     surface's utilities stop leaking into the shell's stylesheet;
+   - the `dark` variant. The site renders its dark theme unconditionally (the
+     `:root` tokens in `global.css`), so `dark:` must key off an always-present
+     class instead of `prefers-color-scheme`. Declared once here, used by every
+     entry, so no surface can silently fork the variant.
+
+   Tokens live in `theme.css` and are imported by both sides for the same
+   reason: a token defined in one compilation only is a token that renders
+   differently depending on the route. */
+@import 'tailwindcss' source(none);
+@import './theme.css';
+@plugin "@tailwindcss/typography";
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));

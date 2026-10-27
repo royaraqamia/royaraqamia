@@ -1,0 +1,24 @@
+/* Account stylesheet (issue #497).
+
+   Loaded by `app/account/layout.tsx`, so it only reaches a visitor on that surface. It carries
+   the utilities Account renders and nothing the shell already ships in
+   `app/global.css`: same layer order, same tokens, nothing redefined. */
+
+@import '../surface.css';
+
+@source './';
+@source '../community';
+@source '../../frontend/ui/account';
+@source '../../frontend/ui/consultation';
+@source '../../frontend/ui/linksnap';
+@source '../../frontend/ui/project-requests';
+@source '../../frontend/ui/retainers';
+@source '../../frontend/ui/training';
+@source '../../frontend/ui/FAQAccordion.tsx';
+@source '../../frontend/ui/Footer.tsx';
+@source '../../frontend/ui/MotionRoot.tsx';
+@source '../../frontend/ui/Navbar.tsx';
+@source '../../frontend/ui/ScrollAnimations.tsx';
+@source '../../frontend/ui/app-shell';
+@source '../../frontend/ui/faq-data.ts';
+@source '../../frontend/ui/plans';

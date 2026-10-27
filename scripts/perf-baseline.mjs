@@ -203,12 +203,17 @@ export function compareToBaseline(summary, baseline) {
   return deltas;
 }
 
+/* Every metric names the category it prices and the number it reads. `cssRawKb`
+   is the one raw ceiling: stylesheets are the category whose *uncompressed*
+   size the parser actually pays for, which is what the per-surface split in
+   #497 is measured in (gzip hides a 500 KB sheet at 60 KB). */
 const BUDGET_METRICS = {
-  totalGzipKb: 'total',
-  jsGzipKb: 'js',
-  cssGzipKb: 'css',
-  htmlGzipKb: 'html',
-  fontsGzipKb: 'fonts',
+  totalGzipKb: { category: 'total', field: 'gzip' },
+  jsGzipKb: { category: 'js', field: 'gzip' },
+  cssGzipKb: { category: 'css', field: 'gzip' },
+  cssRawKb: { category: 'css', field: 'raw' },
+  htmlGzipKb: { category: 'html', field: 'gzip' },
+  fontsGzipKb: { category: 'fonts', field: 'gzip' },
 };
 
 function routeOverrides(routes, route) {
@@ -227,10 +232,10 @@ export function checkBudget(summary, budget, route) {
   const violations = [];
   const checked = [];
 
-  for (const [metric, category] of Object.entries(BUDGET_METRICS)) {
+  for (const [metric, { category, field }] of Object.entries(BUDGET_METRICS)) {
     const budgetKb = limits[metric];
     if (typeof budgetKb !== 'number') continue;
-    const actualKb = summary[category].gzip / KB;
+    const actualKb = summary[category][field] / KB;
     checked.push({ metric, budgetKb, actualKb });
     if (actualKb > budgetKb) violations.push({ metric, budgetKb, actualKb });
   }
