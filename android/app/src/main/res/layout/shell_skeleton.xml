@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The launch skeleton (#498, ADR-0061).
+
+  A stateless silhouette of the site's own chrome - the top bar, three cards and
+  the bottom tab bar - drawn over the WebView from the moment the splash lifts
+  until the document commits, so a cold start reads as content arriving rather
+  than as a splash followed by a blank surface.
+
+  Nothing here is data. It makes no request, reads no storage and says nothing
+  about the account, which is why it needs no over-the-air channel and cannot be
+  stale (ADR-0061). It is also hidden from accessibility services: a screen
+  reader that announced these shapes would be reading placeholders as the app.
+
+  The proportions are the site's, from `frontend/ui/Navbar.tsx`
+  (`h-16`, and the 32dp wordmark) and `frontend/ui/navbar/BottomTabBar.tsx`
+  (`min-h-14`, `h-5 w-5` icons above an 11px label). The tab bar has **three**
+  slots, not the five the issue guessed: `BottomTabBar` renders the three
+  primary routes (home, community, account), and the secondary entries moved
+  into `خدماتنا` in the top bar.
+
+  Measured chrome heights, so a later change has one place to compare against:
+  top bar 64dp, bottom bar 56dp, card gutter 16dp, card radius 12dp.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/shell_skeleton"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/roy_launch_background"
+    android:fitsSystemWindows="true"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- The fixed top bar: logo at the inline-start, خدماتنا centred, the
+             bell at the inline-end. -->
+        <FrameLayout
+            android:id="@+id/shell_skeleton_top_bar"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <View
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="start|center_vertical"
+                android:background="@drawable/shell_skeleton_dot" />
+
+            <View
+                android:layout_width="88dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:background="@drawable/shell_skeleton_pill" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end|center_vertical"
+                android:background="@drawable/shell_skeleton_dot" />
+        </FrameLayout>
+
+        <!-- The first screen's three cards, which is what the homepage opens
+             with. The whole block takes the middle of the screen so the chrome
+             sits on the same edges it will sit on once the document paints. -->
+        <LinearLayout
+            android:id="@+id/shell_skeleton_cards"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/shell_skeleton_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="96dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="140dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/shell_skeleton_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="72dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="180dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/shell_skeleton_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="84dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+
+                <View
+                    android:layout_width="120dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- The tab bar's hairline, then its three slots. -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/roy_skeleton_hairline" />
+
+        <LinearLayout
+            android:id="@+id/shell_skeleton_tab_bar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/shell_skeleton_tab_1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/shell_skeleton_dot" />
+
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/shell_skeleton_tab_2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/shell_skeleton_dot" />
+
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/shell_skeleton_tab_3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/shell_skeleton_dot" />
+
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/shell_skeleton_bar" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

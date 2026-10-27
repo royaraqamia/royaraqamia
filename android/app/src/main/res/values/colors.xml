@@ -66,4 +66,24 @@
     <!-- The scrim the site's dialogs use: `bg-black/70`. -->
     <color name="roy_scrim">#B3000000</color>
 
+    <!--
+      The launch skeleton (#498, ADR-0061).
+
+      `roy_launch_background` is the surface the splash, the WebView and the
+      skeleton all paint, so the cold start has one colour from the launcher to
+      the document. It is deliberately not `roy_background`: the site's own page
+      colour is #121216, while the window behind it — `capacitor.config.ts`'s
+      `backgroundColor` and the status bar — is #0f172a, and the skeleton has to
+      follow the *window*, which is what the splash hands over to. The value is
+      restated as a literal in `styles.xml` because the launch theme's item is
+      checked there by `scripts/__tests__/icon-shape.test.mjs`.
+
+      The other two are the card and the shape the chrome is drawn with: one
+      step lighter than the window for the cards, one more for the bars, dots and
+      pills, both inside the same slate family.
+    -->
+    <color name="roy_launch_background">#FF0F172A</color>
+    <color name="roy_skeleton_card">#FF1B2334</color>
+    <color name="roy_skeleton_shape">#FF2C3A55</color>
+    <color name="roy_skeleton_hairline">#FF22304A</color>
 </resources>

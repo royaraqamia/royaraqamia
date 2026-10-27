@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A line of unscaffolded text in the launch skeleton (#498): a title or a
+  paragraph line. Fully rounded rather than a square bar, which is the shape
+  `animate-pulse` placeholders take on the site.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/roy_skeleton_shape" />
+    <corners android:radius="999dp" />
+</shape>

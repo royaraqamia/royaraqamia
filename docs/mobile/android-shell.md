@@ -86,9 +86,10 @@ The splash is the launch theme — one `AppTheme.NoActionBarLaunch` in
 `windowSplashScreenAnimatedIcon` (`@drawable/splash_icon`) and `postSplashScreenTheme`. Android 12+
 draws that natively; `androidx.core:core-splashscreen` draws the same theme below it, which is why
 `MainActivity` calls `installSplashScreen()` before `super.onCreate`. Neither family leaves a
-duration of ours to keep in step: the platform dismisses the splash when the app draws its first
-frame — this shell loads a remote URL, so a fixed duration had no relationship to when the WebView
-was ready.
+duration of ours to keep in step with the WebView — this shell loads a remote URL, so a fixed
+duration had no relationship to when the page was ready. What the dismissal reveals, though, is no
+longer the WebView's empty frame: the app's first frame carries the launch skeleton (below), and that
+is the frame the platform dismisses on.
 
 `@drawable/splash_icon` is **generated from the launcher artwork** at `SPLASH_ICON_DP` (288dp)
 rather than being the launcher icon itself, and that difference is the one number worth knowing.
@@ -113,6 +114,91 @@ on 31+, which ignores all of it. The plugin's drawable was handed to `setBackgro
 1:2 frames came out 190x180px on the API 30 emulator — and the two families showed different
 sizes, 96dp against 160dp. The plugin, its config, its layer-list and its colour file are gone;
 `scripts/__tests__/icon-shape.test.mjs` fails if any of them returns.
+
+### The launch skeleton
+
+Between the splash and the document sits `res/layout/shell_skeleton.xml` (#498, ADR-0061): the site's
+own chrome — the top bar with the wordmark, three card placeholders and the bottom tab bar — drawn in
+the window's `#0f172a` and two slate steps, so a cold start reads as content arriving rather than as a
+splash followed by an empty surface. It is a view of `MainActivity`, not part of the launch theme, and
+that is the one structural thing about it worth knowing: the theme cannot hold it.
+`windowSplashScreenBackground` is a colour attribute, and the one drawable the splash accepts,
+`windowSplashScreenAnimatedIcon`, is masked to a circle two thirds of the area it is drawn in and sized
+by the platform (288dp on `core-splashscreen`, 240dp on Android 12+). So the surfaces are _sequenced_
+instead: the theme's wordmark for the first frame, the skeleton for as long as the WebView takes, then
+the document.
+
+`MainActivity` does **not** hold the splash on a condition, and that is the one thing in this section
+that was measured rather than designed. #498 asked for `setKeepOnScreenCondition { !pageCommitted }`;
+on the API 35 emulator the condition is read once and never again, so a cold launch showed **7.5
+seconds of splash** before the page committed — and with the radio off it would never lift at all.
+`SplashScreen` polls the condition from a pre-draw listener on the activity's decor view, and the
+platform neither traverses nor draws a window sitting behind its starting surface, so a condition that
+is true in the first frame is never asked again. The platform's own dismissal is already the right
+edge — it is the first frame the app draws, and the skeleton is in it — so the view is added in
+`onCreate` and the splash lifts into it.
+
+The skeleton is then released by the WebView's `onPageCommitVisible` — Capacitor's
+`BridgeWebViewClient` forwards it to the `WebViewListener` registered in `onCreate`, with `about:`
+documents ignored because they commit before the site's own frame — and by a **2.5 s ceiling**, so a
+launch with the radio off lands on the WebView's own surface (the site's cached shell, or
+`unavailable.html`) rather than on a forever skeleton. Both paths run through one method, so they
+cannot both act. The listener removes itself through `view.post`, not inline: the callback runs inside
+the bridge's own iteration over its listener list, and removing it there throws
+`ConcurrentModificationException` — the first commit crashed the app on the emulator with exactly that
+stack, which is why the removal is deferred.
+
+Two things it deliberately does not do. It is stateless: no request, no storage, no bridge call, so
+there is nothing to keep in sync with a deploy and nothing to ship out of band (ADR-0061). And it is
+out of the accessibility tree (`IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS`): the shapes say
+nothing, and a screen reader that read them would read placeholders as the app.
+
+Its proportions are the site's, from `frontend/ui/Navbar.tsx` and
+`frontend/ui/navbar/BottomTabBar.tsx`, and they are restated here so a chrome change has one place to
+be compared against:
+
+| Part            | On the site                           | Skeleton             |
+| --------------- | ------------------------------------- | -------------------- |
+| Top bar         | `h-16` (64dp), `lg:h-20` on `lg`      | 64dp                 |
+| Wordmark        | `TopNav.tsx`, `h-8 w-8`               | 32dp disc            |
+| خدماتنا pill    | `NavDropdown` link, centred           | 88 x 32dp pill       |
+| Notice bell     | `TopNav.tsx`, inline-end              | 24dp disc            |
+| Bottom tab bar  | `BottomTabBar.tsx`, `min-h-14` (56dp) | 56dp, hairline above |
+| Tab slots       | `TABS` — home, community, account     | 3, equal             |
+| Tab icon, label | `h-5 w-5`, then an 11px label         | 20dp disc, 36 x 8dp  |
+| Card            | `rounded-xl` card, `px-4` gutter      | 12dp radius, 16dp    |
+
+The tab bar has **three** slots, not the five #498's body guessed: `BottomTabBar` renders the three
+primary routes, and the secondary entries moved into the top bar's `خدماتنا` menu (#277).
+
+Measured on the API 35 emulator, one cold launch per width, `wm density 160` (so 1dp is 1px) and the
+skeleton read out of `adb shell screencap`:
+
+| Width | Card row              | Card (gutter each side) | Top bar band | Tab bar         |
+| ----- | --------------------- | ----------------------- | ------------ | --------------- |
+| 320px | 80dp tall, 12dp apart | 288px (16px)            | 32dp         | 56dp + 1dp line |
+| 375px | 80dp tall, 12dp apart | 343px (16px)            | 32dp         | 56dp + 1dp line |
+| 428px | 80dp tall, 12dp apart | 396px (16px)            | 32dp         | 56dp + 1dp line |
+
+The same three frames put the 32dp wordmark at the **right** (inline-start in the RTL the root forces),
+the 88dp `خدماتنا` pill at 116–203px on the 320px frame — centred to the half pixel — and the 24dp
+bell at the left, at every width. The AVD's 33px display cutout sits above the bar, so the first card's
+top edge lands at 113px rather than 104px on the narrowest frame; nothing in the layout depends on it.
+
+What the four launches showed:
+
+| Launch                                                     | Screen                                                                                                                                         |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cold, site reachable                                       | launch-theme icon, then the skeleton, then the document — no frame between two of them that is not `#0f172a`                                   |
+| Cold, server that accepts the connection and never answers | launch-theme icon, then the skeleton, then the shell's own `#0f172a` at 2.5 s after `onCreate` — the ceiling — with no splash or skeleton left |
+
+Two defects came out of these runs and are fixed in `MainActivity`: the keep-on-screen condition that
+never lifted (above), and a `ConcurrentModificationException` on the first commit, from removing the
+`WebViewListener` inside the bridge's own iteration over its listener list.
+
+`scripts/__tests__/launch-skeleton.test.mjs` holds the load-bearing pieces: the colour equality with
+the splash, the proportions above, the absence of a keep-on-screen condition, the commit release with
+its `about:` guard and deferred listener removal, and the ceiling.
 
 Install on a device or emulator:
 
@@ -141,25 +227,25 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                      | Where                                                                 | State                                                                                                                                                                                              |
-| ----------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| capability                                      | where                                                                 | state                                                                                                                                                                                              |
-| ------------------------------------            | -----------------------------------------------------                 | --------------------------------------------------------------------------------------                                                                                                             |
-| Load the live site                              | `capacitor.config.ts` `server.url`                                    | Working                                                                                                                                                                                            |
-| Offline / unsupported fallback                  | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion` | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
-| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                                | Working — in-page, so it shows in the shell too                                                                                                                                                    |
-| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`                     | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
-| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`                     | Working                                                                                                                                                                                            |
-| Custom-scheme OAuth return                      | manifest + `MainActivity`                                             | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
-| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity`           | Working — Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                                                                        |
-| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed                 | Installed, unused by app code yet                                                                                                                                                                  |
-| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed                         | Installed, unused by app code yet                                                                                                                                                                  |
-| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**                        | Scaffolding only, by decision                                                                                                                                                                      |
-| Push (FCM)                                      | `@capacitor/push-notifications` + manifest + `google-services.json`   | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below                                                                  |
-| Camera (the Scanner)                            | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                  | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                                                                             |
-| Background drain                                | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`          | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                                                                                         |
-| Background wake (FCM)                           | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`        | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor                                                                  |
-| Battery-exemption prompt                        | `ShellBatteryPrompt`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`          | Working — a drain that ends with work still owed, or a wake received in the background, asks once with the reason stated; the tap opens the platform's one-tap dialog (ADR-0059's amendment, #381) |
+| Capability                                                       | Where                                                                                        | State                                                                                                                                                                                              |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                                       | where                                                                                        | state                                                                                                                                                                                              |
+| ------------------------------------                             | -----------------------------------------------------                                        | --------------------------------------------------------------------------------------                                                                                                             |
+| Load the live site                                               | `capacitor.config.ts` `server.url`                                                           | Working                                                                                                                                                                                            |
+| Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                        | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
+| Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                       | Working — in-page, so it shows in the shell too                                                                                                                                                    |
+| Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                            | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
+| Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                            | Working                                                                                                                                                                                            |
+| Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                    | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
+| Splash (platform), launch skeleton, status bar, RTL, back button | launch theme, `res/layout/shell_skeleton.xml`, `capacitor.config.ts` plugins, `MainActivity` | Working — the splash lifts into the skeleton (ADR-0061, #498); Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                   |
+| Native file save / share                                         | `@capacitor/filesystem`, `@capacitor/share` installed                                        | Installed, unused by app code yet                                                                                                                                                                  |
+| Biometric lock                                                   | `@capgo/capacitor-native-biometric` installed                                                | Installed, unused by app code yet                                                                                                                                                                  |
+| Bluetooth LE + Contacts                                          | plugins installed, **no manifest permissions**                                               | Scaffolding only, by decision                                                                                                                                                                      |
+| Push (FCM)                                                       | `@capacitor/push-notifications` + manifest + `google-services.json`                          | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below                                                                  |
+| Camera (the Scanner)                                             | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                                         | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                                                                             |
+| Background drain                                                 | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`                                 | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                                                                                         |
+| Background wake (FCM)                                            | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`                               | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor                                                                  |
+| Battery-exemption prompt                                         | `ShellBatteryPrompt`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`                                 | Working — a drain that ends with work still owed, or a wake received in the background, asks once with the reason stated; the tap opens the platform's one-tap dialog (ADR-0059's amendment, #381) |
 
 ### The local fallback, and the WebView floor
 
