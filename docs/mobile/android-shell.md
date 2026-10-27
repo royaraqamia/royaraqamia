@@ -1118,6 +1118,13 @@ Ayah that is playing. The shell therefore plays the recitation itself (ADR-0086)
   commands are play/pause/seek/skip, and `loadSurah`, `keep`, `keepState`, `stop` are custom commands
   advertised in `onConnect`. State arrives as a `state` event shaped like the web engine's; `state()` is
   the resync after a frozen WebView returns.
+- That controller is built and driven **only on the main looper**. media3 asserts that every
+  `MediaController` call arrives on the looper the controller was built on, and Capacitor invokes a
+  plugin method on its own bridge looper: a controller built there half-connects (`addListener`
+  throws), so the load never reaches the service and the page reports a streamable sura as «غير
+  محفوظة على هذا الجُهاز», and the next press throws `IllegalStateException` from
+  `sendCustomCommand` on the main thread, which kills the process. Every method posts through one
+  helper, and `scripts/__tests__/quran-player-thread.test.mjs` holds it there (#626).
 - The service reads the site's committed manifests (`/quran/audio/ar.alafasy/NNN.json`) from the origin
   the WebView is on, caches them under `filesDir/quran-manifests`, and prepares the next sura itself.
 - Kept copies live under `filesDir/quran-audio` with the web store's key, sha256 gate and 128 MiB LRU. A

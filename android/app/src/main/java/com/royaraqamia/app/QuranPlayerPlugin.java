@@ -188,17 +188,22 @@ public class QuranPlayerPlugin extends Plugin {
 
     @PluginMethod
     public void state(PluginCall call) {
-        if (controller == null || !controller.isConnected()) {
-            if (controller != null) releaseController();
-            call.resolve(stateFromPreferences());
-            // A service that is still playing after the activity was recreated
-            // has no controller yet. Connecting to it turns the saved record
-            // into the live state on the next event; without this the page
-            // would show a paused sura and a play press would restart it.
-            if (QuranPrefs.last(getContext()).has("surah")) ensureController();
-            return;
-        }
-        main.post(() -> call.resolve(buildState(controller)));
+        // The resync answers on the controller's own thread: Capacitor invokes a
+        // plugin method on its bridge looper, and reaching the controller from
+        // there is a `MediaController` contract violation.
+        main.post(() -> {
+            if (controller == null || !controller.isConnected()) {
+                if (controller != null) releaseController();
+                call.resolve(stateFromPreferences());
+                // A service that is still playing after the activity was recreated
+                // has no controller yet. Connecting to it turns the saved record
+                // into the live state on the next event; without this the page
+                // would show a paused sura and a play press would restart it.
+                if (QuranPrefs.last(getContext()).has("surah")) ensureController();
+                return;
+            }
+            call.resolve(buildState(controller));
+        });
     }
 
     @PluginMethod
@@ -265,6 +270,7 @@ public class QuranPlayerPlugin extends Plugin {
         super.handleOnDestroy();
     }
 
+    /** Releases the controller; the controller's own thread only. */
     private void releaseController() {
         if (controller != null) {
             controller.removeListener(playerListener);
@@ -274,19 +280,33 @@ public class QuranPlayerPlugin extends Plugin {
         controllerFuture = null;
     }
 
+    /**
+     * Runs one controller action on the controller's thread.
+     *
+     * Every `MediaController` call — building one included — has to happen on the
+     * looper it was built on, and Capacitor invokes a plugin method on its own
+     * bridge looper. A controller built there remembers that looper as its
+     * application thread: `addListener` throws, so the load never reaches the
+     * service and the page shows «غير محفوظة على هذا الجُهاز» for a sura it could
+     * stream, and the next press reaches `sendCustomCommand` from the main thread
+     * and throws `IllegalStateException` there, which takes the process with it.
+     */
     private void withController(PluginCall call, WithController action) {
+        main.post(() -> runWithController(call, action));
+    }
+
+    private void runWithController(PluginCall call, WithController action) {
         if (controller != null && controller.isConnected()) {
-            MediaController current = controller;
-            main.post(() -> action.run(current, call));
+            action.run(controller, call);
             return;
         }
         if (controller != null) releaseController();
 
-        ensureController();
-        controllerFuture.addListener(
+        ListenableFuture<MediaController> future = ensureController();
+        future.addListener(
             () -> {
                 try {
-                    MediaController player = controllerFuture.get();
+                    MediaController player = future.get();
                     action.run(player, call);
                 } catch (Exception failure) {
                     call.reject("the recitation player is not available");
@@ -296,28 +316,42 @@ public class QuranPlayerPlugin extends Plugin {
         );
     }
 
-    private void ensureController() {
-        if (controllerFuture != null) return;
+    /** Builds the controller on the main looper; call only from there. */
+    private ListenableFuture<MediaController> ensureController() {
+        if (controllerFuture != null) return controllerFuture;
 
         SessionToken token = new SessionToken(
             getContext(),
             new ComponentName(getContext(), QuranPlaybackService.class)
         );
-        controllerFuture = new MediaController.Builder(getContext(), token).buildAsync();
-        controllerFuture.addListener(
+        ListenableFuture<MediaController> future = new MediaController.Builder(
+            getContext(),
+            token
+        ).buildAsync();
+        controllerFuture = future;
+        future.addListener(
             () -> {
                 try {
-                    controller = controllerFuture.get();
-                    controller.addListener(playerListener);
+                    MediaController connected = future.get();
+                    if (controllerFuture != future) {
+                        // A stop released this one while it was still connecting.
+                        connected.release();
+                        return;
+                    }
+                    connected.addListener(playerListener);
+                    controller = connected;
                     startTicker();
                     emitState();
                 } catch (Exception ignored) {
-                    // Every method rejects on its own; the next call retries.
-                    controllerFuture = null;
+                    // Every method rejects on its own; the next call retries. A
+                    // controller that half-connected is dropped rather than left
+                    // for `isConnected()` to vouch for.
+                    if (controllerFuture == future) releaseController();
                 }
             },
             ContextCompat.getMainExecutor(getContext())
         );
+        return future;
     }
 
     private void startTicker() {
