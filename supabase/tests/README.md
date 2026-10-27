@@ -86,6 +86,23 @@ It asserts through `habit_reminder_is_due` / `habit_reminders_due` with a pinned
 Its body was checked against the linked project inside a rolled-back transaction (the function, the
 rollback path and the privileges), so only the pgTAP harness around it is unrehearsed.
 
+`recurring_materialization_test.sql` (#618):
+
+- Two recurring expenses with the same category, amount and day are two materialized rows, each
+  carrying its own `client_id`.
+- A hand-typed expense with the same user, category, amount and date does not suppress the
+  recurring one.
+- A second run in the same month adds nothing, and moving the recurring expense to another day of
+  the same month does not either — the rows keep the date the first run gave them.
+- An account on the free expense cap raises `PL001` and is skipped; the run returns normally and
+  the next account in the loop is still materialized.
+- A 31st-day recurring expense lands on the last day the month has.
+- `anon` and `authenticated` cannot execute the materializer.
+
+The `current_date` the function reads cannot be pinned, so the fixtures are anchored to whatever
+month the suite runs in; the clamp assertion is a no-op arithmetic check in a 31-day month and a
+real one in a shorter month.
+
 ## Status
 
 Scaffolded 2026-09-17 and **not yet executed** — the CLI and a local stack were not
@@ -101,6 +118,11 @@ drift workflow on merge, but the assertions themselves are unrehearsed.
 helper boundaries, its selection body and every fixture's statement shape were run against the
 linked project as read-only queries (`db query`, `explain`), so the arithmetic and the columns are
 verified. The pgTAP harness around them still needs `supabase test db`.
+
+`recurring_materialization_test.sql` (#618) is the same: the migration's function body was created
+and its `insert … on conflict (user_id, client_id)` planned against the linked project inside a
+rolled-back transaction, and the deterministic `client_id` expression was evaluated there. The
+fixtures (an `auth.users` row per owner, an expense list at the cap) still need a local stack.
 
 ## Worth adding next
 
