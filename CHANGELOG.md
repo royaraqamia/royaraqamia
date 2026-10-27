@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.149.4] - 2026-10-27
+
+### Changed
+- one command for the two-origin veto table (#635)
+
+### Fixed
+- lift the tab bar, retire the offline pill, date the hero (#636)
+- lift the corner floats clear of the player (#634)
+
 ## [1.149.3] - 2026-10-27
 
 ### Changed
