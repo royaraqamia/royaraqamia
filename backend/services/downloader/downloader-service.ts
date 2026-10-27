@@ -20,6 +20,7 @@ import {
 } from '@/backend/services/downloader/media-provider';
 import { isUrlBlocked } from '@/backend/services/downloader/blocklist';
 import { platformForUrl } from '@/backend/services/downloader/platform-catalog';
+import { AppError } from '@/backend/shared/errors';
 
 const BUSY_MESSAGE = 'الخدمة مزدحمة حاليًّا. حاول مجددًا بعد قليل.';
 const SIZE_MESSAGE = 'حجم الملف يتجاوز الحدّ المسموح.';
@@ -54,6 +55,18 @@ export class BlockedLinkError extends Error {
   constructor() {
     super('Source link is blocked.');
     this.name = 'BlockedLinkError';
+  }
+}
+
+/**
+ * The global concurrency cap refuses a new job before it is written and before
+ * its Credit is spent. An `AppError` so the controller answers the 503 and the
+ * message reaches the visitor; the gate behind the call refunds on a throw.
+ */
+export class DownloadBusyError extends AppError {
+  constructor() {
+    super(BUSY_MESSAGE, 503);
+    this.name = 'DownloadBusyError';
   }
 }
 
@@ -95,7 +108,9 @@ export interface DownloaderServiceDeps {
  * provider that ignores the limits it was handed still cannot record a file past
  * them. Every limit is read from the tunable settings row, so an Admin change
  * takes effect without a deploy. The concurrency cap counts jobs already in
- * flight at the provider. A known Platform is refused at `create` when the
+ * flight at the provider and refuses a new one at `create`, before the row and
+ * the Credit behind it exist; `dispatch` re-checks it only as the backstop for
+ * two creates that race. A known Platform is refused at `create` when the
  * allowlist disables it or its circuit breaker is open, a blocked link is refused
  * before any work, and provider failures are counted per Platform so a repeatedly
  * failing extractor opens that breaker (ADR-0020) — but a visitor's own bad link
@@ -127,6 +142,7 @@ export class DownloaderService {
   async create(request: DownloadRequest): Promise<DownloadJob> {
     await this.assertNotBlocked(request.url);
     await this.assertPlatformAvailable(request.url);
+    await this.assertCapacity();
     return this.repository.create({ url: request.url, format: request.format });
   }
 
@@ -169,6 +185,9 @@ export class DownloaderService {
     // Every failure ends the job `failed` instead.
     try {
       const settings = await this.effectiveSettings();
+      // The backstop for two creates that both cleared `assertCapacity` before
+      // either row counted: the race is rare, so the row it catches is already
+      // charged and ends `failed` (a reservation handle is a separate change).
       if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
         await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
         return;
@@ -238,6 +257,20 @@ export class DownloaderService {
     if (!this.blocklist) return;
     const entries = await this.blocklist.list();
     if (isUrlBlocked(url, entries)) throw new BlockedLinkError();
+  }
+
+  /**
+   * Refuse a new job while every provider slot is taken, before the row exists
+   * and before the Credit behind it is spent. A metered action is charged only
+   * when it succeeds (ADR-0075), so `PlanGate.meter` refunds the throw rather
+   * than leaving a visitor 5 Credits down for a job that never ran. `dispatch`
+   * re-checks as the backstop for two creates that both clear this one.
+   */
+  private async assertCapacity(): Promise<void> {
+    const settings = await this.effectiveSettings();
+    if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
+      throw new DownloadBusyError();
+    }
   }
 
   /**
