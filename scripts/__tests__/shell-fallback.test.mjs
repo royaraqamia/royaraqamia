@@ -51,6 +51,15 @@ describe('the shell fallback page', () => {
     expect(html).toContain(`<span id="required">${configuredFloor}</span>`);
   });
 
+  it('leaves Capacitor input capture off, so the WebView keeps its own IME connection', () => {
+    // `captureInput` swaps the WebView's `InputConnection` for a plain
+    // `BaseInputConnection`, which has no bidi model: an Arabic edit made
+    // mid-text is committed at the end of the field instead
+    // (`docs/mobile/android-shell.md`). A browser never takes that path, so no
+    // page-level test can see it — this is the cheap guard that can.
+    expect(config).not.toMatch(/captureInput:\s*true/);
+  });
+
   it('parses as ES5, because the page is shown when the WebView is old', () => {
     expect(pageScript.trim().length).toBeGreaterThan(0);
     expect(() => acorn.parse(pageScript, { ecmaVersion: 5, sourceType: 'script' })).not.toThrow();
