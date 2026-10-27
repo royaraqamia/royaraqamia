@@ -226,6 +226,21 @@ describe('DownloaderService.create', () => {
     expect(provider.calls).toHaveLength(0);
     expect(repository.events.map((event) => event.status)).toEqual(['queued']);
   });
+
+  it('refuses with a busy 503 before a row exists or a Credit is spent', async () => {
+    const settings = new InMemoryDownloadSettingsRepository({
+      ...DEFAULT_DOWNLOAD_SETTINGS,
+      maxConcurrentJobs: 1,
+    });
+    const { repository, service } = makeService({ settings });
+    const first = await service.create(INPUT);
+    await service.dispatch(first.id, INPUT);
+
+    await expect(service.create(INPUT)).rejects.toMatchObject({ statusCode: 503 });
+
+    expect(repository.jobs.size).toBe(1);
+    expect(repository.events.map((event) => event.status)).toEqual(['queued', 'running']);
+  });
 });
 
 describe('DownloaderService.inspect', () => {
@@ -306,16 +321,19 @@ describe('DownloaderService.dispatch', () => {
     expect(job.error).not.toContain('boom');
   });
 
-  it('refuses a new job with a busy reason once the concurrency cap is reached', async () => {
+  it('still fails a raced job at dispatch when the cap fills after create', async () => {
+    // Two creates can both clear the pre-check; the second is the race the
+    // dispatch backstop still has to catch.
     const settings = new InMemoryDownloadSettingsRepository({
       ...DEFAULT_DOWNLOAD_SETTINGS,
-      maxConcurrentJobs: 1,
+      maxConcurrentJobs: 2,
     });
     const { service, provider } = makeService({ settings });
     const first = await service.create(INPUT);
     await service.dispatch(first.id, INPUT);
-
     const second = await service.create(INPUT);
+
+    await settings.save({ ...DEFAULT_DOWNLOAD_SETTINGS, maxConcurrentJobs: 1 });
     await service.dispatch(second.id, INPUT);
 
     expect(provider.calls).toHaveLength(1);
@@ -332,8 +350,16 @@ describe('DownloaderService.dispatch setup failures', () => {
    * delete; these pin that every setup failure still ends the job `failed`.
    */
   it('fails the job when the settings read throws instead of leaving it queued', async () => {
+    // The read behind `create`'s pre-check succeeds; the one `dispatch` makes is
+    // what breaks.
+    let reads = 0;
     const settings: DownloadSettingsRepository = {
-      get: () => Promise.reject(new Error('settings unavailable')),
+      get: () => {
+        reads += 1;
+        return reads > 1
+          ? Promise.reject(new Error('settings unavailable'))
+          : Promise.resolve(DEFAULT_DOWNLOAD_SETTINGS);
+      },
       save: () => Promise.resolve(),
     };
     const { repository, service, provider } = makeService({ settings });
@@ -348,9 +374,14 @@ describe('DownloaderService.dispatch setup failures', () => {
   });
 
   it('fails the job when the concurrency check throws', async () => {
+    // `create`'s pre-check passes; the count behind the dispatch backstop is
+    // what breaks, and it must still end the job rather than strand it queued.
     class FailingCountRepository extends InMemoryDownloadJobRepository {
+      private checks = 0;
       override async countActive(): Promise<number> {
-        throw new Error('count failed');
+        this.checks += 1;
+        if (this.checks > 1) throw new Error('count failed');
+        return 0;
       }
     }
     const repository = new FailingCountRepository();

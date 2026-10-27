@@ -48,6 +48,7 @@ vi.mock('@/backend/config/plans', () => ({
 
 import { createDownloadJob, recordDownloadCallback } from '@/backend/controllers/downloader';
 import { downloaderRateLimitPolicy } from '@/backend/config/rate-limiter';
+import { DownloadBusyError } from '@/backend/services/downloader/downloader-service';
 import { InsufficientCreditsError } from '@/backend/services/plans/usage-service';
 import type { UsageState } from '@/shared/contracts/plans';
 
@@ -147,6 +148,18 @@ describe('downloader controller createDownloadJob', () => {
       body: { success: false, code: 'insufficient_credits' },
     });
     expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockRunAfter).not.toHaveBeenCalled();
+  });
+
+  it('answers 503 with the busy message when the concurrency cap refuses the job', async () => {
+    mockCreate.mockRejectedValue(new DownloadBusyError());
+
+    const result = await createDownloadJob(VALID_BODY, IP);
+
+    expect(result).toMatchObject({
+      status: 503,
+      body: { success: false, error: expect.stringContaining('مزدحمة') },
+    });
     expect(mockRunAfter).not.toHaveBeenCalled();
   });
 });
