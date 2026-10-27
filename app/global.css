@@ -18,7 +18,7 @@
 @source '../frontend/ui/shared';
 @source '../frontend/ui/navbar';
 @source '../frontend/ui/quran';
-@source '../frontend/ui/{AppPerfObserver,FloatingActions,GoUpButton,PWAProvider,RouteChangeFocus}.tsx';
+@source '../frontend/ui/{AppPerfObserver,PWAProvider,RouteChangeFocus}.tsx';
 @source '../frontend/{api,shared,state,transport}';
 @source '../shared';
 
@@ -1231,78 +1231,6 @@ select,
   color: hsl(var(--destructive));
 }
 
-/* Go Up Button - Optimized for Performance & Accessibility */
-.go-up-btn {
-  position: fixed;
-  right: calc(20px + var(--roy-safe-right));
-  bottom: calc(20px + var(--roy-safe-bottom));
-  width: 48px;
-  height: 48px;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: hsl(var(--foreground));
-  z-index: 9998;
-  cursor: pointer;
-  transition:
-    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-  pointer-events: none;
-  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
-}
-
-.go-up-btn.visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-}
-
-.go-up-btn:hover {
-  background: hsl(var(--primary) / 0.1);
-  border-color: hsl(var(--primary) / 0.5);
-  color: hsl(var(--primary));
-  transform: scale(1.1) translateY(-4px);
-  box-shadow: 0 8px 20px hsl(var(--primary) / 0.2);
-}
-
-.go-up-btn:active {
-  transform: scale(0.95);
-}
-
-.go-up-btn:focus-visible {
-  outline: 3px solid hsl(var(--ring));
-  outline-offset: 4px;
-}
-
-@media (max-width: 768px) {
-  .go-up-btn {
-    width: 44px;
-    height: 44px;
-    right: 16px;
-    bottom: 16px;
-  }
-
-  .go-up-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .go-up-btn {
-    transition: opacity 0.2s ease;
-  }
-}
-
 /* Compose FAB — social-style "new post" button on the public community */
 .compose-fab-btn {
   position: fixed;
@@ -1588,7 +1516,6 @@ body:has([data-bottom-tabbar]) {
 /* Flush bar (< lg): lift the floating utilities clear of it. Only where the bar
    is actually rendered — secondary pages have no bar and no reason to sit high. */
 @media (max-width: 1023px) {
-  body:has([data-bottom-tabbar]) .go-up-btn,
   body:has([data-bottom-tabbar]) .compose-fab-btn {
     bottom: calc(3.5rem + var(--roy-safe-bottom) + 0.75rem);
   }
