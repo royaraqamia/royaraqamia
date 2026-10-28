@@ -60,7 +60,8 @@
     "android:publish": "cross-env NODE_ENV=production node scripts/android-publish.mjs",
     "android:assets": "node scripts/generate-android-assets.mjs",
     "android:test": "npm run android:sync && node scripts/android.mjs test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "android:note": "node scripts/android-note.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",
