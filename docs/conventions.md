@@ -25,8 +25,8 @@ accessible name, a copy assertion) silently misses one of them.
 - `npm run check:arabic` covers the rest (docs, JSON, scripts) and runs in CI; `npm run fix:arabic`
   rewrites.
 - Write **جاري** (final ya), never **جارٍ** (tanween) — the copy decision in ADR 0054. Both forms are
-  readable, but an exact-text match only hits one. The changelog and that ADR quote the old spelling on
-  purpose, so `check:arabic` allowlists them.
+  readable, but an exact-text match only hits one. The files that must name both spellings are
+  allowlisted at the top of `scripts/check-arabic-order.mjs`.
 - `public/quran/**` is vendored as published and is never normalised.
 
 ## Digits

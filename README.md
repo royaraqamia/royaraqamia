@@ -102,15 +102,16 @@ royaraqamia/
 │
 ├── scripts/
 │   ├── generate-icons.mjs    #   Icon/PWA asset generation
-│   ├── compute-version.mjs   #   Bakes release version into the server bundle
-│   └── release-tools.mjs     #   Release bump/tag/changelog logic
+│   ├── compute-version.mjs   #   Bakes the deploy identity into the server bundle
+│   ├── android-release.mjs   #   The Android train: grade a batch, write its notes
+│   └── android-publish.mjs   #   Sign the APK, stamp and serve the manifest
 │
 ├── data/                         # Static content (e.g. testimonials)
 ├── public/                       # Static assets, PWA files
 ├── .github/
 │   ├── actions/setup-environment #   Composite Node/CI setup action
-│   └── workflows/code-quality.yml#   Lint, format, type-check, test, build pipeline
-│   └── workflows/release.yml     #   Auto bump/tag/changelog on main
+│   ├── workflows/code-quality.yml#   Lint, format, type-check, test, build pipeline
+│   └── workflows/android-release.yml #   The weekly APK train
 │
 ├── package.json                  # Scripts, dependencies, engines
 ├── next.config.js                # Security headers, CSP, Sentry & bundle-analyzer wiring
@@ -360,53 +361,53 @@ This produces the optimized production bundle in `.next/` ready for `next start`
 
 ## Versioning
 
-Every merge/commit to `main` produces a unique, monotonic release version in the format `<X.Y.Z>+build.<N>.<7-char-sha>` (SemVer 2.0 core + build metadata). The build metadata is ignored for SemVer precedence but gives every commit a reproducible identifier.
+Every deploy has a unique, monotonic identity: `<X.Y.Z>+build.<N>.<7-char-sha>` (SemVer 2.0 core + build metadata). The build metadata is ignored for SemVer precedence but names the exact deploy.
 
-- **`X.Y.Z`** — the **displayed** release number. Source of truth is the committed `package.json#version`, kept equal to the current tag by the release workflow (an `APP_VERSION` env override pins a manual deploy).
-- **`N`** — commits since the last `web-X.Y.Z` tag.
-- **`<sha>`** — 7-char commit hash (from `VERCEL_GIT_COMMIT_SHA` on Vercel, `git rev-parse --short HEAD` locally, `unknown` as last resort).
+- **`X.Y.Z`** � the product version, from the committed `package.json#version`. It is bumped by hand at a milestone, not by a merge (an `APP_VERSION` env override pins a manual deploy).
+- **`N`** � every commit on the deployed branch (`git rev-list --count HEAD`).
+- **`<sha>`** � 7-char commit hash (from `VERCEL_GIT_COMMIT_SHA` on Vercel, `git rev-parse --short HEAD` locally, `unknown` as last resort).
 
-### Release pipeline
+### The web has no releases
 
-Pushing to `main` runs the Code Quality gate; on success the `Release` workflow (`workflow_run`-gated to `event == push && head_branch == main`):
+There is no `Release` workflow, no `web-X.Y.Z` tag, no GitHub Release and no `CHANGELOG.md` for the site (ADR-0089). Continuous deployment means nobody installs a version: the deploy identity above � the commit, not a number � is what `/api/version`, Sentry and a support conversation need. Vercel deploys every push to `main`, and the build metadata it bakes is what tells two deploys apart.
 
-1. Verifies `npm run build` passes **before** minting a release (a broken tree never releases).
-2. Reads the latest `web-X.Y.Z` tag and bumps from the merged conventional commit (`scripts/git-utils.mjs` also reads the legacy `vX.Y.Z` and bare spellings, and deliberately never an `android-…` tag — the two release lines have separate clocks):
-   - breaking / `!` → **major** (`X+1.0.0`)
-   - `feat` → **minor** (`X.Y+1.0`)
-   - anything else → **patch** (`X.Y.Z+1`)
-3. Bumps `package.json#version`, writes `CHANGELOG.md` (Keep-a-Changelog), commits `chore(release): web-X.Y.Z [skip ci]`, tags `web-X.Y.Z`, and creates a GitHub Release with notes from the changelog section. Web releases do **not** claim "Latest": the Android shell's release does, so the APK stays at the top of the releases page (ADR-0046).
+The `android-*` tag line, its releases and its changelog belong to the Android shell, which is a thing people install; it has its own clock and its own version (below).
 
-Entries already written under `[Unreleased]` are folded into the released section — one header per change type — and `[Unreleased]` is emptied. A commit that authored its own `[Unreleased]` entry is not restated as a generated subject line, so each change appears exactly once.
+### The Android shell ships on a weekly train
 
-Vercel's Git integration auto-deploys the `[skip ci]` release commit (GitHub Actions skip it; Vercel does not). The double deploy this creates is intentional — the release commit is the canonical deployed artifact.
+`.github/workflows/android-release.yml` runs every Monday and publishes **one** update for the batch of native changes that accumulated (ADR-0089):
+
+1. **Grades the batch.** Everything under `android/**`, `capacitor.config.ts` or a Capacitor plugin dependency since the last `android-*` release is graded together: breaking / `!` ? **major**, `feat` ? **minor**, anything else ? **patch**. A week with no native change publishes nothing.
+2. **Collects the notes.** Each pull request that changes the shell adds a file under `android/release-notes/unreleased/` with the Arabic sentence a user reads; the cut folds them into the release and refuses to ship without one.
+3. **Builds, signs and verifies** the APK, uploads it to the storage bucket the site serves from, and downloads it back to hash it against the manifest (ADR-0044, ADR-0047).
+4. **Releases it** as `android-<version>` � the notes users read � and commits the version, notes, `public/android/changelog.json` and `public/android/latest.json` together, so the site announces exactly the verified bytes.
+
+A manual dispatch cuts the batch immediately, for a crash or security fix that cannot wait for Monday.
 
 ### Downloading the Android shell
 
-The newest APK is always at <https://github.com/royaraqamia/royaraqamia/releases/latest>. That link carries no version and nothing has to keep it in step: the shell release is the one that claims "Latest" (see above), so it resolves to the current `android-X.Y.Z` tag with `royaraqamia-<version>.apk` attached.
+The newest APK is always at <https://github.com/royaraqamia/royaraqamia/releases/latest>: the Android release is the one that claims "Latest", so it resolves to the current `android-X.Y.Z` tag with `royaraqamia-<version>.apk` attached.
 
-A device does not use that URL. It downloads the same bytes from our own origin, at `https://royaraqamia.com/android/royaraqamia-<version>.apk`, because `release-assets.githubusercontent.com` is not reachable from everywhere the app has users ([ADR-0047](docs/adr/0047-the-apk-is-served-from-our-own-origin.md)).
+A device does not use that URL. It downloads the same bytes from our own origin, at `https://royaraqamia.com/android/royaraqamia-<version>.apk`, because `release-assets.githubusercontent.com` is not reachable from everywhere the app has users ([ADR-0047](docs/adr/0047-the-apk-is-served-from-our-own-origin.md)). The changelog those users read is `public/android/changelog.json`, served from the same origin and shown at `/account/changelog` inside the app.
 
 ### Where the version is shown
 
 - `GET /api/version` returns `version` (the unchanged deployment fingerprint), plus `releaseVersion`, `commit`, `ref`, `env`, and `releasedAt`.
 - `frontend/shared/sw-update.ts` re-checks for a new worker while the document is visible and announces
-  it: `frontend/ui/shared/update-prompt.tsx` offers «تحديث الآن» / «لاحقًا» while a build is downloaded
-  and waiting (ADR-0042). The offer belongs to the worker it names, and the gesture is bounded — a
+  it: `frontend/ui/shared/update-prompt.tsx` offers �????? ????� / �??????� while a build is downloaded
+  and waiting (ADR-0042). The offer belongs to the worker it names, and the gesture is bounded � a
   `SKIP_WAITING` that activates nothing falls back to a reload rather than leaving the button on
-  «جاري التحديث...» (ADR-0055). A swapped worker still replaces the document once (ADR-0039), and a swap
-  waits for the previous worker's clients to go away — so a client that never accepts the offer moves to
+  �???? ???????...� (ADR-0055). A swapped worker still replaces the document once (ADR-0039), and a swap
+  waits for the previous worker's clients to go away � so a client that never accepts the offer moves to
   a new deploy on its next launch (inside the Android shell, its next cold start), not on a refresh.
-- Sentry releases are tagged with `releaseVersion` (server, edge, and client).
+- Sentry releases are tagged with `releaseVersion` (server, edge, and client), and the sourcemaps Vercel
+  uploads are named the same generated string (`next.config.js`), so an event and its map always agree.
 
 ### Commands
 
 ```bash
-# Rehearse the next release locally without committing/tagging/pushing
-npm run version:next
-
-# Manually run a release dry-run in CI
-node scripts/release-tools.mjs --next --dry-run
+# What the weekly Android train would release, without touching anything
+node scripts/android-release.mjs --plan
 
 # Inspect the baked version module (regenerated by prebuild/predev)
 cat backend/config/generated/app-version.ts

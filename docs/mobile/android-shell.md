@@ -285,13 +285,12 @@ Point the shell at a local dev server (an emulator reaches the host on `10.0.2.2
 $env:CAPACITOR_SERVER_URL = 'http://10.0.2.2:3000'; npm run android:apk
 ```
 
-`versionsName`/`versionCode`: `versionName` is `package.json#version` plus the shell counter
-(`1.91.0+shell.1`), which is what a support conversation wants — the site build and the native build in
-one string. `versionCode` is **only** the counter, from `android/shell-version.properties`, and moves
-only when the shell itself changes (ADR-0043): deriving it from `package.json` would make every web
-deploy look like a new APK to the update check that compares it against `public/android/latest.json`.
-`npm run android:shell-version` reads it, `-- --bump` moves it, and
-`.github/workflows/shell-version.yml` fails a pull request that changed the shell without moving it.
+`versionName`/`versionCode`: both come from `android/shell-version.properties`.
+`shellVersionName` is the semantic name a user reads (`1.1.0`), graded from the release batch;
+`versionCode` is derived from it (`20000 + (major-1)*10000 + minor*100 + patch`) and is what the
+update check compares against `public/android/latest.json`. It moves at the weekly release, not in a
+pull request (ADR-0089): `node scripts/android-shell-version.mjs` reads it, `-- --bump` writes one by
+hand, and `.github/workflows/shell-version.yml` fails a pull request that edits it.
 
 `npm run android:test` runs the shell's JVM tests — the update decision and the download that verifies
 what may be installed. `.github/workflows/shell-tests.yml` runs them on any pull request that touches
@@ -1002,52 +1001,61 @@ Two defects were found by that drill rather than by a test, and both would other
 layout took its direction from the phone, so on this en-US image the percentage and the size swapped
 ends, and the percentage shared the headline's line, which wrapped the headline on a screen this narrow.
 
-**Publishing releases itself.** `.github/workflows/shell-release.yml` runs on any push to `main` that
-touches `android/**`, `capacitor.config.ts`, `package.json` or `package-lock.json`, and on a manual
-dispatch. A Capacitor plugin dependency is a shell change (ADR-0043), so without those last two a plugin
-bump could be required to move the counter and then never publish it. In order:
+**Publishing releases itself.** `.github/workflows/android-release.yml` runs every Monday at 06:00 UTC,
+and on a manual dispatch. It is a weekly train, not a per-merge pipeline (ADR-0089): a batch of native
+changes earns one version, one APK and one update prompt, because twenty-one releases in the shell's
+first weeks — one per commit — is not how an app ships.
 
-1. **A verdict** — the counter in `android/shell-version.properties` against the manifest that is
-   published. A push that changed nothing native, or a re-run, stops here in about ten seconds with
-   `publish=false` and the reason why.
-2. **The shell's JVM tests**, so nothing lands on main without them.
-3. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
+1. **Grade the batch.** `scripts/android-release.mjs --plan` asks whether anything native changed since
+   the last `android-*` release (`android/**`, `capacitor.config.ts`, or a Capacitor plugin dependency)
+   and grades every commit since: `!`/BREAKING → major, `feat` → minor, anything else → patch. A week
+   with no native change stops here in ten seconds with `release=false`. A scheduled run also waits out
+   its own cadence; a dispatch cuts the batch immediately.
+2. **Cut the version and collect the notes.** `--apply` writes `android/shell-version.properties` as
+   `1.<minor>.<patch>` plus its derived code, folds the Arabic fragments in
+   `android/release-notes/unreleased/` into this release's notes, freezes them in
+   `android/release-notes/<version>.md`, and prepends the release to `public/android/changelog.json`.
+   It refuses to cut without a note: the pull-request check (`--check-notes`) demands one from the
+   change itself, so this is the second line of the same rule.
+3. **The shell's JVM tests**, so nothing lands on main without them.
+4. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
    `public/android/latest.json`. Before it builds, the run asks the bucket whether this version's file
    is already there: if it is, those bytes are adopted and stamped instead, because a rebuild is not
    byte-identical (ADR-0069).
-4. **The uploads** — the APK goes to the Supabase Storage bucket first, because that is what the site
-   serves, and then to its own release, `android-1.0.3`, one release per version, holding
-   `royaraqamia-1.0.3.apk`, titled with its own tag so the releases list and the tags list cannot
-   disagree. The tag in a published URL belongs to one version and is never repointed at other bytes.
-   A bucket object or a release that already exists is a re-run: the run adopts the bytes storage
-   already holds — after checking them against the release — and refuses anything that disagrees with
-   them. The release asset is replaced only when no committed manifest has ever named it.
-5. **The re-download** — the URL the manifest names, `https://royaraqamia.com/android/royaraqamia-1.0.3.apk`,
-   is fetched from outside and hashed before anything is announced (ADR-0047). That is the path a device
-   takes — the site's rewrite to the bucket — so the check is also what proves the rewrite serves the file.
-   Until this step existed, the only thing that had ever seen the uploaded file was the machine that
-   uploaded it.
-6. **The manifest commit** — `chore(android): publish shell 1.0.3 (20003)`, pushed by CI after a
-   release commit has appeared on `main` (both write there, and the manifest is the one that can wait),
-   so the deploy serves it.
+5. **The uploads** — the APK goes to the Supabase Storage bucket first, because that is what the site
+   serves (ADR-0047), and the release `android-1.1.0` carries the same file, titled with its own tag so
+   the releases list and the tags list cannot disagree. The tag names the batch's tip, and it is
+   created before the commit on purpose: a cut whose commit failed is resumed by the next run from that
+   tag, instead of being graded again.
+6. **The re-download** — the URL the manifest names,
+   `https://royaraqamia.com/android/royaraqamia-1.1.0.apk`, is fetched from outside and hashed before
+   anything is announced. That is the path a device takes — the site's rewrite to the bucket — so the
+   check is also what proves the rewrite serves the file.
+7. **The commit** — `chore(android): release 1.1.0 (20100)`, carrying the version, the notes archive,
+   the site's changelog and the manifest in one commit, pushed by CI so the deploy serves it.
 
-Failing at 3–5 leaves the published channel exactly as it was. Failing at 6 leaves the asset uploaded and
-the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
+Failing at 2–5 leaves the published channel exactly as it was. Failing at 7 leaves the asset published
+and the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
 verified, and re-running finishes it by adopting the bytes already in storage instead of rebuilding
-them (ADR-0069). Only `main` publishes; a dispatch on a branch can rehearse with `dry_run` (build and
-sign, upload nothing).
+them (ADR-0069). Only `main` publishes; a dispatch on a branch can rehearse with `dry_run` (grade, build
+and sign, publish nothing). A failed week raises one `release:alert` issue from
+`.github/workflows/release-health.yml`.
 
-**The version, and where a user sees it.** `shellVersionName` sits beside the counter and is _derived_ from
-it — `1.<minor>.<patch>` from `(counter − 20000)`, so counter 20003 is version `1.0.3` — which means
-`npm run android:shell-version -- --bump` writes it and nobody types it. `--check` fails a tree where the
-two disagree, and publishing refuses an APK whose own `versionName` is not the derived name, so Gradle and
-the script cannot drift. It reaches a user in two places, both only inside the app (ADR-0046):
+**The version, and where a user sees it.** `shellVersionName` is semantic and the counter is _derived_
+from it — `versionCode = 20000 + (major-1)*10000 + minor*100 + patch`, so `1.0.21` is 20021 and
+`1.1.0` is 20100 — which means the train writes one name and both numbers agree by construction.
+The name is graded from what the batch contains (`!` → major, `feat` → minor, else patch), so `1.1.0`
+means the release added something and `1.0.22` means it fixed something; the code only ever goes up.
+`--check` fails a tree where the two disagree and a pull request that hand-edits them; the cut writes
+both. Publishing refuses an APK whose own `versionName` is not the one the code means, so Gradle and the
+script cannot drift. It reaches a user in three places, all only inside the app (ADR-0046, ADR-0089):
 
 | Where                     | How                                                                                                                                                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Android's app info screen | the APK's `versionName`, so the platform shows it for free                                                                                                                                                            |
 | `/account`'s footer       | the shell's user agent, `RoyaraqamiaShell/1.0.3+20003` — the name alone, on the account area's front page only; a browser sends no token, and a shell built before it carried a name has none, so both render nothing |
+| `/account/changelog`      | «ما الجديد», the Arabic notes of every Android release, read from `public/android/changelog.json`; the row is rendered only inside the shell                                                                          |
 
 The user agent carries both facts on purpose: the counter is what the update check compares, and every shell
 already installed sends the older spelling (`RoyaraqamiaShell/20003`) and always will, because a phone can
@@ -1075,20 +1083,23 @@ a backup decision as much as a convenience one. Rotating it means updating `ANDR
 `public/.well-known/assetlinks.json` together — a signature change that a device with the app installed
 cannot be talked out of: it would have to be reinstalled by hand.
 
-The local path still exists, and is the right one for a dry run or an emergency:
+The local path still exists, and is the right one for a dry run or an emergency. It follows the same
+steps the train takes, so a hand-published version is not a different shape:
 
 ```powershell
-npm run android:shell-version -- --bump        # in the pull request that changes the shell
-npm run android:publish                        # add --dry-run to see everything and touch nothing
+node scripts/android-release.mjs --plan             # what would ship, and why
+node scripts/android-release.mjs --apply           # write the version, the notes and the changelog
+npm run android:publish                             # add --dry-run to see everything and touch nothing
 # the bytes first: the bucket is what the site serves (ADR-0047)
-curl -X POST "$env:SUPABASE_URL/storage/v1/object/android/royaraqamia-1.0.4.apk" `
+curl -X POST "$env:SUPABASE_URL/storage/v1/object/android/royaraqamia-1.1.0.apk" `
   -H "Authorization: Bearer $env:SUPABASE_SERVICE_ROLE_KEY" `
   -H "Content-Type: application/vnd.android.package-archive" `
-  -H "x-upsert: false" --data-binary "@<staged>\royaraqamia-1.0.4.apk"
+  -H "x-upsert: false" --data-binary "@<staged>\royaraqamia-1.1.0.apk"
 # and the release, which is the archive
-gh release create android-1.0.4 <staged>\royaraqamia-1.0.4.apk `
-  --title "android-1.0.4" --latest --target main
-git add public/android/latest.json; git commit -m "chore(android): publish shell 1.0.4 (20004)"
+gh release create android-1.1.0 <staged>\royaraqamia-1.1.0.apk `
+  --title "android-1.1.0" --latest --target main
+git add -A android/shell-version.properties android/release-notes public/android
+git commit -m "chore(android): release 1.1.0 (20100)"
 ```
 
 `android:publish` prints those commands with the values already in them, so the numbers above are what
@@ -1096,8 +1107,8 @@ it would say for that version rather than something to retype.
 
 The asset name is load-bearing: the manifest's URL ends in it, the bucket object and the release asset
 carry it, and `android:publish` stages a copy under exactly it. Both uploads refuse to replace an existing
-name — the bucket with `x-upsert: false`, the release with the rule in `shell-release.yml` — which is the
-immutability guarantee, in the two commands where a person could otherwise undo it.
+name — the bucket with `x-upsert: false`, the release with the rule in `android-release.yml` — which is
+the immutability guarantee, in the two commands where a person could otherwise undo it.
 
 **What remains is not code.** The APK on any device today predates this, so the first update still has to
 be installed by hand (or by a store) — after that the loop closes itself. And declaring
