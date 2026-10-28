@@ -1,4 +1,4 @@
-# The dead-man's switch for the Android release train (ADR-0089).
+# The dead-man's switch for the Android release train (ADR-0090).
 #
 # The weekly train is only as reliable as its trigger. A release run that never
 # starts — GitHub's `schedule` is best-effort and can be disabled after repository
@@ -107,7 +107,7 @@ jobs:
               '- [Commits on main](' + commitsUrl + ')',
               '- [Android release runs](' + runsUrl + ')',
               '',
-              '_Maintained by `.github/workflows/release-health.yml` (ADR-0089)._',
+              '_Maintained by `.github/workflows/release-health.yml` (ADR-0090)._',
             ].join('\n');
 
             if (existing) {

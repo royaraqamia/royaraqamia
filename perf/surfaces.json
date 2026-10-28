@@ -139,13 +139,7 @@
     },
     {
       "id": "account-server",
-      "routes": [
-        "/account/plan",
-        "/account/connected-apps",
-        "/account/faq",
-        "/account/news",
-        "/account/changelog"
-      ],
+      "routes": ["/account/plan", "/account/connected-apps", "/account/faq", "/account/news"],
       "owner": "server",
       "read": "needs-connection",
       "write": "none",
@@ -153,6 +147,17 @@
       "bundle": "bundled",
       "specs": [],
       "issue": "#493"
+    },
+    {
+      "id": "account-changelog",
+      "routes": ["/account/changelog"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": [],
+      "issue": "#663"
     },
     {
       "id": "community",

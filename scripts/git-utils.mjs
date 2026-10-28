@@ -9,7 +9,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * command that cannot run) answers with, so a script run outside a checkout —
  * a tarball, a bare CI step — degrades instead of throwing.
  *
- * There is no tag parsing here any more: the web has no releases (ADR-0089), so
+ * There is no tag parsing here any more: the web has no releases (ADR-0090), so
  * the only version a git tag carries is the Android shell's, and that lives in
  * scripts/android-shell-version.mjs beside the counter it belongs to.
  */

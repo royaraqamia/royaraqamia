@@ -4,7 +4,7 @@ import { logger } from './logger';
  * The Android shell's changelog, as the site serves it.
  *
  * `public/android/changelog.json` is written by the release cut
- * (`scripts/android-release.mjs`, ADR-0089): one entry per Android release, with
+ * (`scripts/android-release.mjs`, ADR-0090): one entry per Android release, with
  * the Arabic notes the pull requests wrote. It lives beside the site rather than
  * behind the GitHub API on purpose — release assets are unreachable from at least
  * one country this app has users in (ADR-0047), and a changelog those users cannot

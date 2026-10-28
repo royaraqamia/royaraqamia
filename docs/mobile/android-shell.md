@@ -289,7 +289,7 @@ $env:CAPACITOR_SERVER_URL = 'http://10.0.2.2:3000'; npm run android:apk
 `shellVersionName` is the semantic name a user reads (`1.1.0`), graded from the release batch;
 `versionCode` is derived from it (`20000 + (major-1)*10000 + minor*100 + patch`) and is what the
 update check compares against `public/android/latest.json`. It moves at the weekly release, not in a
-pull request (ADR-0089): `node scripts/android-shell-version.mjs` reads it, `-- --bump` writes one by
+pull request (ADR-0090): `node scripts/android-shell-version.mjs` reads it, `-- --bump` writes one by
 hand, and `.github/workflows/shell-version.yml` fails a pull request that edits it.
 
 `npm run android:test` runs the shell's JVM tests — the update decision and the download that verifies
@@ -1002,7 +1002,7 @@ layout took its direction from the phone, so on this en-US image the percentage 
 ends, and the percentage shared the headline's line, which wrapped the headline on a screen this narrow.
 
 **Publishing releases itself.** `.github/workflows/android-release.yml` runs every Monday at 06:00 UTC,
-and on a manual dispatch. It is a weekly train, not a per-merge pipeline (ADR-0089): a batch of native
+and on a manual dispatch. It is a weekly train, not a per-merge pipeline (ADR-0090): a batch of native
 changes earns one version, one APK and one update prompt, because twenty-one releases in the shell's
 first weeks — one per commit — is not how an app ships.
 
@@ -1049,7 +1049,7 @@ The name is graded from what the batch contains (`!` → major, `feat` → minor
 means the release added something and `1.0.22` means it fixed something; the code only ever goes up.
 `--check` fails a tree where the two disagree and a pull request that hand-edits them; the cut writes
 both. Publishing refuses an APK whose own `versionName` is not the one the code means, so Gradle and the
-script cannot drift. It reaches a user in three places, all only inside the app (ADR-0046, ADR-0089):
+script cannot drift. It reaches a user in three places, all only inside the app (ADR-0046, ADR-0090):
 
 | Where                     | How                                                                                                                                                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -369,13 +369,13 @@ Every deploy has a unique, monotonic identity: `<X.Y.Z>+build.<N>.<7-char-sha>` 
 
 ### The web has no releases
 
-There is no `Release` workflow, no `web-X.Y.Z` tag, no GitHub Release and no `CHANGELOG.md` for the site (ADR-0089). Continuous deployment means nobody installs a version: the deploy identity above � the commit, not a number � is what `/api/version`, Sentry and a support conversation need. Vercel deploys every push to `main`, and the build metadata it bakes is what tells two deploys apart.
+There is no `Release` workflow, no `web-X.Y.Z` tag, no GitHub Release and no `CHANGELOG.md` for the site (ADR-0090). Continuous deployment means nobody installs a version: the deploy identity above � the commit, not a number � is what `/api/version`, Sentry and a support conversation need. Vercel deploys every push to `main`, and the build metadata it bakes is what tells two deploys apart.
 
 The `android-*` tag line, its releases and its changelog belong to the Android shell, which is a thing people install; it has its own clock and its own version (below).
 
 ### The Android shell ships on a weekly train
 
-`.github/workflows/android-release.yml` runs every Monday and publishes **one** update for the batch of native changes that accumulated (ADR-0089):
+`.github/workflows/android-release.yml` runs every Monday and publishes **one** update for the batch of native changes that accumulated (ADR-0090):
 
 1. **Grades the batch.** Everything under `android/**`, `capacitor.config.ts` or a Capacitor plugin dependency since the last `android-*` release is graded together: breaking / `!` ? **major**, `feat` ? **minor**, anything else ? **patch**. A week with no native change publishes nothing.
 2. **Collects the notes.** Each pull request that changes the shell adds a file under `android/release-notes/unreleased/` with the Arabic sentence a user reads; the cut folds them into the release and refuses to ship without one.

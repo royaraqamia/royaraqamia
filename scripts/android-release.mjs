@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The Android release train (ADR-0089): grade a batch, write one version, and
+ * The Android release train (ADR-0090): grade a batch, write one version, and
  * collect the user-facing notes that batch is allowed to ship with.
  *
  * A shell release used to be "one commit, one APK": push a native change, the
@@ -446,15 +446,18 @@ export function main(argv = process.argv.slice(2), log = console.log) {
     ])
       .split('\n')
       .map((line) => line.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      // `_README.md` documents the convention; a leading underscore is the
+      // promise that it is not a note.
+      .filter((file) => !file.split('/').pop().startsWith('_'));
     const notes = notesFromFragments(fragmentFiles());
-    if (added.length === 0 || notes.length === 0) {
+    if (notes.length === 0) {
       log('This change touches the shell, so it ships to users — and it has no release note.');
       log('');
       log(`Add a file under ${UNRELEASED_DIR}/ with the sentence a user reads, in Arabic:`);
       log('  echo "- إصلاح: ..." > android/release-notes/unreleased/<slug>.md');
       log('');
-      log("The weekly release folds every fragment into the APK's changelog (ADR-0089).");
+      log("The weekly release folds every fragment into the APK's changelog (ADR-0090).");
       return 1;
     }
     log(

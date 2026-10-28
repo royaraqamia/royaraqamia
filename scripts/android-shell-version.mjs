@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The Android shell's version, and the checks that keep it honest (ADR-0043,
- * ADR-0089).
+ * ADR-0090).
  *
  * The shell loads the live site, so a web deploy changes nothing about the
  * installed app. `android/shell-version.properties` is therefore the shell's own
@@ -11,7 +11,7 @@
  *
  * **It moves at the release cut, never in a pull request.** A pull request used
  * to bump it, one APK per merge, and users were offered an update for every
- * commit, many of them invisible to them (ADR-0089). The weekly train now grades
+ * commit, many of them invisible to them (ADR-0090). The weekly train now grades
  * everything that accumulated, computes one version, and writes this file as
  * part of the cut. `--check` is what CI runs on a pull request, and it fails two
  * things: a hand-edited counter, and a name that no longer matches the code.

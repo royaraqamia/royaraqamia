@@ -59,7 +59,7 @@ export function main() {
   const appVersionOverride = process.env.APP_VERSION || undefined;
   const packageVersion = readPackageVersion();
   // The build number counts every commit on the deployed branch, not the commits
-  // since a release tag: the web has no releases (ADR-0089), and a number that
+  // since a release tag: the web has no releases (ADR-0090), and a number that
   // only moved at a release would be identical for every deploy in between.
   const count = git(['rev-list', '--count', 'HEAD'], '0');
   const commitSha = process.env.VERCEL_GIT_COMMIT_SHA || git(['rev-parse', 'HEAD'], '');

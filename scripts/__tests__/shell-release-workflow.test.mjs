@@ -25,11 +25,12 @@ describe('the Android release train', () => {
   });
 
   it('asks whether a release is due before it touches a toolchain', () => {
-    const planAt = workflow.indexOf('node scripts/android-release.mjs --plan --json');
+    const planAt = workflow.indexOf('node scripts/android-release.mjs "${args[@]}"');
     expect(planAt).toBeGreaterThan(-1);
     expect(planAt).toBeLessThan(workflow.indexOf('Setup Build Environment'));
     // A dispatch ships now; a scheduled run keeps the cadence.
-    expect(workflow).toContain("github.event_name == 'workflow_dispatch' && '--force'");
+    expect(workflow).toContain('if [ "${{ github.event_name }}" = \'workflow_dispatch\' ]');
+    expect(workflow).toContain('args+=(--force)');
   });
 
   it('cuts the version and the notes before it builds', () => {

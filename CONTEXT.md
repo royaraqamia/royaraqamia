@@ -399,7 +399,7 @@ The Android shell's own version (`android/shell-version.properties`), independen
 and the number Android itself compares when deciding whether an APK may replace the installed one. It
 moves at the weekly release cut, never in a pull request, and only when the shell itself changed,
 because the shell loads the live site: a web deploy changes nothing about the installed app (ADR-0043,
-ADR-0089). Its name is semantic — `1.1.0` means the release added something — and its code is derived
+ADR-0090). Its name is semantic — `1.1.0` means the release added something — and its code is derived
 from that name.
 _Avoid_: app version, build number, versionCode
 
@@ -411,7 +411,7 @@ pending, the site holds its web offer back. Distinct from a worker swap, which i
 updating itself within the same install (ADR-0042).
 
 The manifest is stamped from the built APK by `android:publish` and published by the `Android Release`
-workflow — one weekly batch of native changes, not one per merge (ADR-0089). It names our own origin —
+workflow — one weekly batch of native changes, not one per merge (ADR-0090). It names our own origin —
 `https://royaraqamia.com/android/royaraqamia-1.1.0.apk`, which the site rewrites to a Supabase Storage
 bucket, because GitHub's release assets are not reachable everywhere this app has users (ADR-0047). Each
 version is also its own release — `android-1.1.0`, holding `royaraqamia-1.1.0.apk` as the permanent

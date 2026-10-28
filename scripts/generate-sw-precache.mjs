@@ -96,6 +96,13 @@ export const DYNAMIC_BY_DESIGN = [
     route: '/training/apply',
     reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
   },
+  // The shell's changelog. It is inherently about the newest release, so a frozen
+  // document would show a stale list; it is also shell-only, and adding its route
+  // to the precache list would exceed the 33-shell budget and drop `/verify`.
+  {
+    route: '/account/changelog',
+    reason: 'shows the newest release notes — a precached shell would pin an old list',
+  },
 ];
 
 /**

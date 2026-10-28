@@ -1,6 +1,6 @@
 name: 'Android Release'
 
-# One update a week, not one per commit (ADR-0089).
+# One update a week, not one per commit (ADR-0090).
 #
 # What used to happen: every push to `main` that touched the shell published its
 # own APK and prompted every installed app — twenty-one releases in the shell's
@@ -74,11 +74,16 @@ jobs:
       # second update the same week.
       - name: Is a release due?
         id: plan
-        env:
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
         run: |
           set -euo pipefail
-          plan=$(node scripts/android-release.mjs --plan --json $FORCE)
+          # A dispatch is a person saying "cut it now", so it bypasses the cadence;
+          # the scheduled run keeps it, which is what stops a re-run from shipping a
+          # second update the same week.
+          args=(--plan --json)
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            args+=(--force)
+          fi
+          plan=$(node scripts/android-release.mjs "${args[@]}")
           echo "$plan"
           {
             echo "release=$(echo "$plan" | jq -r .release)"

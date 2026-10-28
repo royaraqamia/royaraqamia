@@ -1,6 +1,6 @@
 name: 'Shell Version'
 
-# Two rules, both about the same file (ADR-0089).
+# Two rules, both about the same file (ADR-0090).
 #
 # 1. `android/shell-version.properties` moves at the release cut, never in a pull
 #    request. A branch that bumps it publishes a version the weekly train never
