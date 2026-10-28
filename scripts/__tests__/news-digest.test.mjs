@@ -22,6 +22,7 @@ import {
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
 import { narrowCandidates, preparePersonalDigests } from '../news/personal-digests.mjs';
 import { publishDigest } from '../news/publish-digest.mjs';
+import { publishPersonalDigest } from '../news/publish-personal-digest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -648,5 +649,154 @@ describe('publishing a digest', () => {
     await expect(publishDigest({ config, digest, log: () => {} })).rejects.toThrow(
       'verification failed: expected 8 stories, found 1'
     );
+  });
+});
+
+describe('publishing a personal digest', () => {
+  const digest = {
+    digest_date: '2026-10-23',
+    title: 'ملخص أخبار اليوم',
+    lede: 'أهم ما حدث اليوم.',
+    model: 'opencode-go/deepseek-v4.1-flash',
+    run_url: 'https://github.com/royaraqamia/royaraqamia/actions/runs/123',
+    stories: stories(3).map((story, index) => ({
+      position: index + 1,
+      category: story.category,
+      region: story.region,
+      headline_ar: story.headline,
+      summary_ar: story.summary,
+      why_it_matters_ar: story.why_it_matters,
+      source_id: `source-${index + 1}`,
+      source_name: `Source ${index + 1}`,
+      source_url: story.url,
+      source_published_at: '2026-10-23T04:00:00.000Z',
+    })),
+  };
+
+  const config = { url: 'https://project.supabase.co', key: 'service-role' };
+  const userId = '11111111-1111-4111-8111-111111111111';
+
+  function json(body, status = 200) {
+    return {
+      ok: status < 400,
+      status,
+      text: async () => JSON.stringify(body),
+    };
+  }
+
+  function stubFetch(handler) {
+    const calls = [];
+    vi.stubGlobal('fetch', async (url, init) => {
+      calls.push({ url, init, body: init.body ? JSON.parse(init.body) : null });
+      return handler(url, init, calls.length);
+    });
+    return calls;
+  }
+
+  function publish(userIdArg = userId, log = () => {}) {
+    return publishPersonalDigest({ config, digest, userId: userIdArg, log });
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('charges once, with a deterministic client event id, and writes the digest', async () => {
+    const calls = stubFetch((url) => {
+      if (url.includes('/rpc/spend_credits_once')) {
+        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
+      }
+      if (url.includes('/news_user_digests?on_conflict')) return json([{ id: 'digest-1' }]);
+      return json(null);
+    });
+
+    const result = await publish();
+
+    expect(result).toEqual({ id: 'digest-1', published: true, dryRun: false });
+
+    const spends = calls.filter((call) => call.url.endsWith('/rpc/spend_credits_once'));
+    expect(spends).toHaveLength(1);
+    expect(spends[0].body).toMatchObject({
+      p_user_id: userId,
+      p_action_key: 'news.digest.generate',
+    });
+    expect(spends[0].body.p_client_event_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(calls.some((call) => call.url.includes('/rpc/refund_credits'))).toBe(false);
+  });
+
+  it('makes no second charge for the same reader and day', async () => {
+    const spent = new Set();
+    let charges = 0;
+    const calls = stubFetch((url, init) => {
+      if (url.includes('/rpc/spend_credits_once')) {
+        const eventId = JSON.parse(init.body).p_client_event_id;
+        if (spent.has(eventId)) {
+          return json({ allowed: true, eventId: null, remaining: 10 });
+        }
+        spent.add(eventId);
+        charges += 1;
+        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
+      }
+      if (url.includes('/news_user_digests?on_conflict')) return json([{ id: 'digest-1' }]);
+      return json(null);
+    });
+
+    await publish();
+    await publish();
+
+    const eventIds = calls
+      .filter((call) => call.url.endsWith('/rpc/spend_credits_once'))
+      .map((call) => call.body.p_client_event_id);
+
+    expect(eventIds).toHaveLength(2);
+    expect(new Set(eventIds).size).toBe(1);
+    expect(charges).toBe(1);
+  });
+
+  it('refunds exactly once when a write fails after a successful spend', async () => {
+    const calls = stubFetch((url) => {
+      if (url.includes('/rpc/spend_credits_once')) {
+        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
+      }
+      if (url.includes('/rpc/refund_credits')) return json(true);
+      if (url.includes('/news_user_digests?on_conflict')) return json({ message: 'boom' }, 500);
+      return json(null);
+    });
+
+    await expect(publish()).rejects.toThrow('HTTP 500');
+
+    const refunds = calls.filter((call) => call.url.endsWith('/rpc/refund_credits'));
+    expect(refunds).toHaveLength(1);
+    expect(refunds[0].body).toEqual({ p_user_id: userId, p_event_id: 'event-1' });
+  });
+
+  it('logs a refund failure without masking the publish error', async () => {
+    const messages = [];
+    stubFetch((url) => {
+      if (url.includes('/rpc/spend_credits_once')) {
+        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
+      }
+      if (url.includes('/rpc/refund_credits')) return json({ message: 'down' }, 503);
+      if (url.includes('/news_user_digests?on_conflict')) return json({ message: 'boom' }, 500);
+      return json(null);
+    });
+
+    await expect(publish(userId, (message) => messages.push(message))).rejects.toThrow('HTTP 500');
+
+    expect(messages.join('\n')).toContain('Refund failed');
+    expect(messages.join('\n')).toContain('event-1');
+  });
+
+  it('writes nothing and refunds nothing when the allowance is exhausted', async () => {
+    const messages = [];
+    const calls = stubFetch(() => json({ allowed: false, remaining: 0 }));
+
+    const result = await publish(userId, (message) => messages.push(message));
+
+    expect(result).toEqual({ id: null, published: false, dryRun: false });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toContain('/rpc/spend_credits_once');
+    expect(calls.some((call) => call.url.includes('/rpc/refund_credits'))).toBe(false);
+    expect(messages.join('\n')).toContain('Skipped');
   });
 });
