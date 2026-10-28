@@ -109,7 +109,6 @@ describe('scan', () => {
 describe('isSpellingAllowed', () => {
   it('allowlists only the files that must name both spellings', () => {
     expect(isSpellingAllowed('AGENTS.md')).toBe(true);
-    expect(isSpellingAllowed('CHANGELOG.md')).toBe(true);
     expect(isSpellingAllowed('docs/conventions.md')).toBe(true);
     expect(isSpellingAllowed('docs/adr/0054-the-shells-dialogs-look-like-the-product.md')).toBe(
       true
@@ -134,13 +133,13 @@ describe('scanBanned', () => {
 
   it('leaves the allowlisted files and the vendored Quran text alone', () => {
     const dir = tree({
-      'CHANGELOG.md': `${BANNED_SPELLING}\n`,
+      'AGENTS.md': `${BANNED_SPELLING}\n`,
       'docs/conventions.md': `${BANNED_SPELLING}\n`,
       'public/quran/surah/002.json': `${BANNED_SPELLING}\n`,
     });
 
     expect(
-      scanBanned(['CHANGELOG.md', 'docs/conventions.md', 'public/quran/surah/002.json'], dir)
+      scanBanned(['AGENTS.md', 'docs/conventions.md', 'public/quran/surah/002.json'], dir)
     ).toEqual([]);
   });
 });
@@ -157,10 +156,10 @@ describe('fixBanned', () => {
   });
 
   it('never touches an allowlisted file', () => {
-    const dir = tree({ 'CHANGELOG.md': `${BANNED_SPELLING}\n` });
+    const dir = tree({ 'AGENTS.md': `${BANNED_SPELLING}\n` });
 
-    expect(fixBanned(['CHANGELOG.md'], dir)).toEqual([]);
-    expect(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')).toBe(`${BANNED_SPELLING}\n`);
+    expect(fixBanned(['AGENTS.md'], dir)).toEqual([]);
+    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toBe(`${BANNED_SPELLING}\n`);
   });
 });
 

@@ -1,26 +1,23 @@
-# The dead-man's switch for the web release train.
+# The dead-man's switch for the Android release train (ADR-0089).
 #
-# The train is only as reliable as its trigger. A Release run that never starts,
-# one that fails, or one the release guard skipped leaves `main` with commits
-# whose version nobody cuts: the number is owed, and no later run recomputes it
-# (ADR-0052). Nothing else in the repository notices a train that is behind.
+# The weekly train is only as reliable as its trigger. A release run that never
+# starts — GitHub's `schedule` is best-effort and can be disabled after repository
+# inactivity — or one that fails, leaves native changes on `main` that no APK
+# carries. Nothing else notices: the site keeps serving the last manifest, and
+# every installed shell is simply told nothing forever.
 #
-# This workflow only alerts. It deliberately does not re-dispatch the train: a
-# failed Release run is usually a build failure or a push that could not be
-# rebased, and a retry every fifteen minutes is a red run every fifteen minutes,
-# not a fix. One alert issue, opened once, updated while the backlog stands, and
-# closed by the run that finds the train level again.
-#
-# GitHub's `schedule` is best-effort and can land late, which a version owed by an
-# hour can afford; `workflow_dispatch` is there for the impatient.
+# This workflow only alerts. It deliberately does not dispatch the train: a failed
+# release is usually a build failure or a missing release note, and a retry every
+# hour is a red run every hour, not a fix. One alert issue, opened once, updated
+# while the backlog stands, and closed by the run that finds the train level again.
 
 name: 'Release Health'
 
 on:
   schedule:
-    # Every fifteen minutes: the threshold below is two release cycles, so a real
-    # stall is reported within three quarters of an hour of the commit that owes it.
-    - cron: '*/15 * * * *'
+    # Daily, after the Monday train has had its day. A release is due every seven
+    # days; one that is two days late is the point at which nobody is coming.
+    - cron: '0 7 * * *'
   workflow_dispatch:
 
 permissions:
@@ -41,30 +38,31 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          fetch-tags: true
 
-      # The threshold lives beside the rule it belongs to: scripts/release-health.mjs.
+      # The threshold lives beside the rule it belongs to:
+      # scripts/android-release.mjs (`STALE_DAYS`).
       - name: Read the train's backlog
         id: train
-        run: node scripts/release-health.mjs >> "$GITHUB_OUTPUT"
+        run: node scripts/android-release.mjs --health >> "$GITHUB_OUTPUT"
 
       - name: Open, update or close the alert
         env:
           STALLED: ${{ steps.train.outputs.stalled }}
-          COUNT: ${{ steps.train.outputs.count }}
-          SHA: ${{ steps.train.outputs.sha }}
-          SUBJECT: ${{ steps.train.outputs.subject }}
-          AGE_MINUTES: ${{ steps.train.outputs.age_minutes }}
+          RELEASE: ${{ steps.train.outputs.release }}
+          NEXT: ${{ steps.train.outputs.next }}
+          AGE_DAYS: ${{ steps.train.outputs.age_days }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ALERT_LABEL = 'release:alert';
-            const ALERT_TITLE = 'Release train is behind on main';
+            const ALERT_TITLE = 'Android release is overdue on main';
             const stalled = process.env.STALLED === 'true';
             const commitsUrl = context.serverUrl + '/' + owner + '/' + repo + '/commits/main';
             const runsUrl =
-              context.serverUrl + '/' + owner + '/' + repo + '/actions/workflows/release.yml';
+              context.serverUrl + '/' + owner + '/' + repo + '/actions/workflows/android-release.yml';
 
             const open = await github.paginate(github.rest.issues.listForRepo, {
               owner,
@@ -81,7 +79,7 @@ jobs:
                   owner,
                   repo,
                   issue_number: existing.number,
-                  body: 'Recovered: `main` is level with the train again — every commit is under a release commit.',
+                  body: 'Recovered: the weekly train is level with `main` again — native changes have an APK behind them.',
                 });
                 await github.rest.issues.update({
                   owner,
@@ -97,21 +95,19 @@ jobs:
             }
 
             const body = [
-              'The web release train is behind on `main`: these commits have no release commit above them, so the version they are owed was never cut.',
+              'The Android release train is overdue on `main`: these native changes have no APK behind them, so no user can receive them.',
               '',
-              '- unreleased commits: **' + process.env.COUNT + '**',
-              '- owed since: `' + process.env.SHA + '` — ' + process.env.SUBJECT +
-                ' (' + process.env.AGE_MINUTES + ' minutes ago)',
+              '- version the batch earns: **' + (process.env.NEXT || 'unknown') + '**',
+              '- oldest unreleased change: **' + process.env.AGE_DAYS + ' day(s)** old',
               '',
-              'A release cuts every commit since the last tag, so one run releases all of them.',
-              'Look at the `Release` runs for this commit below: a build failure or a push that',
-              'could not be rebased is re-run from the Actions tab, and a commit with no run at all is',
-              'released by dispatching the workflow.',
+              'A release grades everything since the last `android-*` tag, so one run ships all of it.',
+              'A failed run is usually a build failure or a shell change without a release note; dispatch',
+              'the workflow to cut it now, and it will not wait for the weekly schedule.',
               '',
               '- [Commits on main](' + commitsUrl + ')',
-              '- [Release runs](' + runsUrl + ')',
+              '- [Android release runs](' + runsUrl + ')',
               '',
-              '_Maintained by `.github/workflows/release-health.yml` (ADR 0052)._',
+              '_Maintained by `.github/workflows/release-health.yml` (ADR-0089)._',
             ].join('\n');
 
             if (existing) {
@@ -126,7 +122,7 @@ jobs:
                 repo,
                 name: ALERT_LABEL,
                 color: 'b60205',
-                description: 'The web release train is behind on main',
+                description: 'The Android release train is overdue on main',
               });
             } catch (err) {
               if (err.status !== 422) throw err;

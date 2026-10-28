@@ -57,7 +57,6 @@ describe('isExcluded', () => {
     expect(isExcluded('.agents/skills/x/data.csv')).toBe(true);
     expect(isExcluded('public/quran/surah/002.json')).toBe(true);
     expect(isExcluded('supabase/migrations/20260101000000_x.sql')).toBe(true);
-    expect(isExcluded('CHANGELOG.md')).toBe(true);
     expect(isExcluded('android/gradle.properties')).toBe(true);
     expect(isExcluded('docs/conventions.md')).toBe(true);
     expect(isExcluded('app/privacy/page.tsx')).toBe(false);

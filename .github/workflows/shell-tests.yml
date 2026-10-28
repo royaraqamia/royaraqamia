@@ -22,6 +22,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/android-publish.mjs'
+      - 'scripts/android-release.mjs'
       - 'scripts/android-shell-version.mjs'
       - 'scripts/android.mjs'
       - 'scripts/__tests__/android-*.test.mjs'

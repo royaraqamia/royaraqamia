@@ -44,7 +44,6 @@ export const PREFERRED = '\u062C\u0627\u0631\u064A';
  */
 export const SPELLING_ALLOWED = [
   'AGENTS.md',
-  'CHANGELOG.md',
   'docs/adr/0054-the-shells-dialogs-look-like-the-product.md',
   'docs/conventions.md',
 ];
