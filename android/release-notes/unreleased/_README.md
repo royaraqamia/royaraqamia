@@ -17,4 +17,4 @@ and `public/android/changelog.json`, which is what `/account/changelog` reads
 inside the app. `scripts/android-release.mjs --check-notes <base>` fails a pull
 request that changes the shell without one.
 
-This file is not a note: the leading underscore keeps it out (ADR-0089).
+This file is not a note: the leading underscore keeps it out (ADR-0090).

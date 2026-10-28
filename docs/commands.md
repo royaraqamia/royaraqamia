@@ -23,8 +23,8 @@
 | `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                                                                                                                                    |
 | `npm run android:test`                      | The shell's JVM unit tests: the update decision and the download — no device needed (ADR-0043, ADR-0044)                                                                                                                                                                                           |
 | `npm run android:drill`                     | The shell's background-drain drill on `Pixel_API_30` or a real device: a write queued with the radio off, the app killed, the worker's line — see `docs/mobile/android-shell.md`                                                                                                                   |
-| `npm run android:shell-version`             | Read the shell's version; `-- --bump [--major\|--minor\|--patch]` writes one by hand, `-- --check <ref>` is what CI runs (ADR-0043, ADR-0089)                                                                                                                                                      |
-| `npm run android:release-plan`              | What the weekly Android train would release now, and why — read-only (ADR-0089)                                                                                                                                                                                                                    |
+| `npm run android:shell-version`             | Read the shell's version; `-- --bump [--major\|--minor\|--patch]` writes one by hand, `-- --check <ref>` is what CI runs (ADR-0043, ADR-0090)                                                                                                                                                      |
+| `npm run android:release-plan`              | What the weekly Android train would release now, and why — read-only (ADR-0090)                                                                                                                                                                                                                    |
 | `npm run android:release`                   | Signed release APK                                                                                                                                                                                                                                                                                 |
 | `npm run android:publish`                   | The release APK + `public/android/latest.json` stamped from the file itself, uploaded to the storage bucket the site serves from and to its own release `android-<version>`; `--verdict` asks whether there is anything to publish, `--json` is how `Shell Release` runs it (ADR-0044 to ADR-0047) |
 | `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                                                                                                                                                                                                                |
@@ -77,9 +77,9 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 ## Deployment
 
-**Primary path:** Push to `main` → CI runs code-quality checks → Vercel's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0089); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
+**Primary path:** Push to `main` → CI runs code-quality checks → Vercel's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**The Android train is watched:** `.github/workflows/release-health.yml` asks `scripts/android-release.mjs --health` daily whether native changes have sat unreleased past the weekly cadence — and opens (or closes) one `release:alert` issue if they have. A release that never started, or failed on a build or a missing note, is what that catches (ADR-0089).
+**The Android train is watched:** `.github/workflows/release-health.yml` asks `scripts/android-release.mjs --health` daily whether native changes have sat unreleased past the weekly cadence — and opens (or closes) one `release:alert` issue if they have. A release that never started, or failed on a build or a missing note, is what that catches (ADR-0090).
 
 **Manual override:** `vercel deploy` (preview) or `vercel deploy --prod` (production). Or use the `deploy-to-vercel` skill.
 
@@ -92,7 +92,7 @@ weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
 
 ## Release versioning
 
-- **Web:** no releases (ADR-0089). The deploy identity is `<X.Y.Z>+build.<N>.<7-char-sha>`:
+- **Web:** no releases (ADR-0090). The deploy identity is `<X.Y.Z>+build.<N>.<7-char-sha>`:
   `X.Y.Z` from the committed `package.json#version` (bumped by hand at a milestone), `N` the commit
   count on the branch, the sha the commit. `backend/config/generated/app-version.ts` is regenerated
   by `prebuild`/`predev` on CI and Vercel only; do not hand-edit it, and Sentry names its release
