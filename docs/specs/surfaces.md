@@ -20,6 +20,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `blogpress-editor` | `/blogpress/editor/[id]` | local-store | store | outbox | swr | bundled | _ungated_ |  |  |
 | `quran` | `/quran` | local-store | store | outbox | precached | bundled | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | bundled | `quran-reader.spec.ts` |  | #559 |
+| `athkar` | `/athkar` | static | swr | none | precached | remote | `athkar.spec.ts` |  |  |
 | `account-owned` | `/account`<br>`/account/links`<br>`/account/posts`<br>`/account/submissions` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
 | `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-changelog` | `/account/changelog` | static | swr | none | swr | remote | _ungated_ |  | #663 |

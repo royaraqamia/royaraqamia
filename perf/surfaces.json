@@ -127,6 +127,17 @@
       "issue": "#559"
     },
     {
+      "id": "athkar",
+      "routes": ["/athkar"],
+      "owner": "static",
+      "read": "swr",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": ["e2e/athkar.spec.ts"],
+      "ungated": "No paint budget measures this row yet (#558). The document is a prerendered shell and the only state is the day's count, which is device-local: no server read, no outbox."
+    },
+    {
       "id": "account-owned",
       "routes": ["/account", "/account/links", "/account/posts", "/account/submissions"],
       "owner": "local-store",

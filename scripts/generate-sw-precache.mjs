@@ -37,10 +37,13 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // below that drops public content (`/terms`, `/verify`) from the tail. The #450
 // build lists 29. Raised again to 33 in #555, when `/news` became a data-free
 // shell: on that build the 33 shells measure 1,931,124 bytes (1.84 MB) from the
-// build's own HTML, against the 6 MB ceiling below. The worker fetches the list
-// in idle windows after activation (#489), four routes per window, and as many
-// windows as the list needs, so one pass covers this cap.
-export const MAX_PRECACHE_ROUTES = 33;
+// build's own HTML, against the 6 MB ceiling below. Raised to 34 when `/athkar`
+// joined the public reading surfaces: it is a prerendered document with no
+// server read, so it belongs in the list, and dropping the tail instead would
+// take `/verify`'s shell away. The worker fetches the list in idle windows after
+// activation (#489), four routes per window, and as many windows as the list
+// needs, so one pass covers this cap.
+export const MAX_PRECACHE_ROUTES = 34;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
 // only thing fetched here (no RSC variants). The 29 shells the #450 build

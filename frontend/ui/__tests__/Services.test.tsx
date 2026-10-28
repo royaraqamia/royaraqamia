@@ -19,6 +19,7 @@ const MENU_ENTRIES: [name: string, href: string][] = [
   ['مُنزِّل الوسائط', '/downloader'],
   ['ماسح QR و Barcode', '/scan'],
   ['القرآن الكريم', '/quran'],
+  ['أذكار الصَّباح والمساء', '/athkar'],
   ['اختصار الرَّوابط', '/linksnap'],
   ['تتبُّع العادات', '/habitflow'],
   ['تتبُّع المصاريف', '/spendtrack'],

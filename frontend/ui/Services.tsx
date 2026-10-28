@@ -57,6 +57,10 @@ const SERVICE_COPY: Record<string, { description: string; colorKey: ColorKey }> 
     description: 'اقرأ القرآن الكريم كاملًا برواية حفصٍ عن عاصم.',
     colorKey: 'lime',
   },
+  '/athkar': {
+    description: 'أذكار الصَّباح والمساء مع المصادر والفضل وعدَّاد يوميّ.',
+    colorKey: 'sky',
+  },
   '/linksnap': {
     description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة.',
     colorKey: 'rose',

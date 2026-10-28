@@ -90,6 +90,13 @@ export const colorConfigs = {
     glowColor: 'rgba(232, 121, 249, 0.3)',
     textGradient: 'from-fuchsia-300 via-pink-400 to-fuchsia-400',
   },
+  sky: {
+    gradient: 'linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%)',
+    accentBorder: '#0EA5E9',
+    hoverGradient: 'linear-gradient(90deg, #0EA5E9, #6366F1, #0EA5E9)',
+    glowColor: 'rgba(14, 165, 233, 0.3)',
+    textGradient: 'from-sky-300 via-indigo-400 to-violet-400',
+  },
 } as const;
 
 export type ColorKey = keyof typeof colorConfigs;
