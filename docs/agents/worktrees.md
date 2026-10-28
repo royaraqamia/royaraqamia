@@ -76,15 +76,6 @@ GitHub, `ahead, behind`, which the next task's step-1 reconcile resolves. The ru
 concurrent `git` in the canonical checkout is not safe, so the squash commits in the task's own
 worktree and the checkout only receives a pointer move (landing.md step 6).
 
-## Delegated agents
-
-`opencode-delegate`'s `relay.mjs` defaults `--cd` to the caller's working directory, so a dispatch
-without `--cd` runs the implementer **in the parent's tree**. Point every dispatch at a worktree:
-
-```powershell
-node "<skill-dir>/scripts/relay.mjs" --brief brief.txt --model <provider/model> --cd <worktree dir>
-```
-
 ## Enforcement (machine-local)
 
 The rule above is a convention, so this machine enforces it. An OpenCode plugin denies `git commit`

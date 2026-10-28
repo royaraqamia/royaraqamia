@@ -6,7 +6,6 @@ Use proactively when task matches. Load with the `skill` tool.
 
 - `implement` — Execute approved blueprint
 - `implement-spec` — Implement a specification in code
-- `opencode-delegate` — Delegate coding tasks to OpenCode CLI for background implementation
 - `code-review` — Review branch/PR against standards + spec
 - `codebase-design` — Deep module design, seams, testability
 - `improve-codebase-architecture` — Scan for deepening opportunities
