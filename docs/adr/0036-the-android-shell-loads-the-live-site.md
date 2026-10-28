@@ -90,3 +90,13 @@ What does not change: a brand-new install with no network still has no document,
 floor remains the WebView start plus a first frame, recorded in the limits of
 [`docs/specs/offline-first.md`](../specs/offline-first.md). This ADR's decision (load the live site)
 is untouched; its consequence paragraph was one state too absolute.
+
+## Amendment (2026-10-28): the shell has two shapes now
+
+The decision here is one of two shapes, not the only one. [ADR-0088](0088-the-app-bundles-the-surfaces-whose-rows-are-local.md)
+bundles the owned surfaces into the APK (`https://localhost/`), keeps the live site as the remote
+surface, and reaches it through a Custom Tab. Everything this ADR says about _a_ remote-URL shell
+still holds for the remote half — one implementation of Community, News, rates, verify, the marketing
+pages, `/admin` and MCP — and its "why not bundle the web assets" reasoning now answers a narrower
+question: a static export cannot represent the server-rendered surfaces, which is why only the owned
+ones are bundled and the rest stay here.
