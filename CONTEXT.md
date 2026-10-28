@@ -547,6 +547,19 @@ The area under `/admin` that an Admin signs into to operate across the product f
 It is the single door to every operator-facing surface.
 _Avoid_: Dashboard, backoffice, admin panel, CMS
 
+**Bundled surface**:
+A product surface whose document ships inside the Android APK and is served by the shell from
+`https://localhost/`. Its staleness is the APK's `versionCode`, never a cache header. The surfaces
+whose rows live in the Local Store are bundled (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran
+text), by the split in ADR-0088.
+_Avoid_: Local app, offline app, native screen
+
+**Remote surface**:
+A product surface the bundle does not contain, reached from the app deliberately through a Custom Tab
+and rendered by the live site — Community, News, rates, verify, the marketing pages, `/admin` and
+MCP. It is the only half a web deploy updates.
+_Avoid_: Web app, external page
+
 ### Rendering
 
 **Heavy effect**:

@@ -31,3 +31,11 @@ theme must be kept in step with the app's chrome — which is the same tokens AD
 in `res/values/colors.xml`. True native-first render stays out of scope, and this ADR records the
 trigger for revisiting it rather than leaving it to be rediscovered. Nothing here changes the offline
 core, the auth model or the origin, so it is separable from every other decision in this spec.
+
+## Amendment (2026-10-28): the skeleton hands over into a bundled document
+
+The skeleton covered the gap to a document that had to arrive over the network. In the bundled shape
+of [ADR-0088](0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) that document is in the APK:
+the handover is the WebView's local load, not a navigation, and the skeleton's ceiling (`SKELETON_CEILING_MS`)
+still bounds it. Nothing about the theme, the tokens or the lift changes; what changes is what the
+lift reveals.

@@ -1,14 +1,19 @@
 # Android shell (APK / AAB)
 
-The site ships as an Android app through Capacitor. It is a **remote-URL shell**: the
-WebView loads `https://royaraqamia.com` instead of bundling a static export of it.
+The site ships as an Android app through Capacitor, in one of two shapes. The shape that ships
+today is a **remote-URL shell**: the WebView loads `https://royaraqamia.com` instead of bundling a
+static export of it. The second shape, decided and proven by the #500 spike, is a **bundled**
+document on `https://localhost/` for the surfaces whose rows live in the Local Store, with the live
+site kept as the remote surface ([ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md),
+[two-origin-spike.md](two-origin-spike.md)); it lands as #502/#503.
 
-That is forced by the app, not chosen for convenience. Every product surface is
-server-rendered, uses Server Actions, and authenticates with Supabase cookies
-(`controller → service → repository`); `next export` produces nothing that runs. A
-bundled shell would also move pages onto a `https://localhost` origin, where our own
-CSP (`default-src 'self'`), Supabase cookie auth and the offline-first service worker
-(ADR-0027…0030) all stop matching. The reasoning, and what it costs, is ADR-0036.
+A static export of the _whole_ site is still impossible, which is why the split is by data owner
+rather than everything-or-nothing. Every remote surface is server-rendered, uses Server Actions, and
+authenticates with Supabase cookies (`controller → service → repository`); `next export` produces
+nothing that runs. Bundling them would also move pages onto a `https://localhost` origin, where our
+own CSP (`default-src 'self'`), Supabase cookie auth and the offline-first service worker
+(ADR-0027…0030) all stop matching. The reasoning, and what it costs, is ADR-0036, amended by
+ADR-0088.
 
 ## Prerequisites
 
@@ -299,7 +304,8 @@ changes rather than only on the machine that wrote them.
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | capability                                                       | where                                                                                        | state                                                                                                                                                                                              |
 | ------------------------------------                             | -----------------------------------------------------                                        | --------------------------------------------------------------------------------------                                                                                                             |
-| Load the live site                                               | `capacitor.config.ts` `server.url`                                                           | Working                                                                                                                                                                                            |
+| Load the live site (the shipped shape)                           | `capacitor.config.ts` `server.url`                                                           | Working — this is still the shell that ships; the bundled shape is [ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) and lands as #502/#503                             |
+| Load a bundled document (the bundled target)                     | `server.url` unset, Vite build in `webDir`, `MainActivity.bundledRootFor`                    | Spike-proven (#500, [two-origin-spike.md](two-origin-spike.md)): `https://localhost/`, Back returns to it, remote surfaces reached by Custom Tab; release APK 15.4 MiB against the shell's 16.1    |
 | Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                        | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
 | Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                       | Working — in-page, so it shows in the shell too                                                                                                                                                    |
 | Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                            | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
