@@ -10,6 +10,7 @@ import {
   NotebookPen,
   ScanBarcode,
   ScanLine,
+  SunMoon,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ export type AppProduct =
   | 'downloader'
   | 'scan'
   | 'quran'
+  | 'athkar'
   | 'news'
   | 'community';
 
@@ -94,6 +96,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/quran',
     landingPath: '/quran',
     icon: BookOpen,
+  },
+  {
+    id: 'athkar',
+    label: 'أذكار الصَّباح والمساء',
+    appPath: '/athkar',
+    landingPath: '/athkar',
+    icon: SunMoon,
   },
   {
     id: 'linksnap',

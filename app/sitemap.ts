@@ -100,6 +100,13 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    // A reading surface like `/quran`: the text changes with a release, not with
+    // a day, so `monthly` is the honest claim.
+    path: '/athkar',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
     path: '/verify',
     changeFrequency: 'monthly',
     priority: 0.6,

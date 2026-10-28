@@ -1,0 +1,10 @@
+/* Athkar stylesheet.
+   Loaded by `app/athkar/layout.tsx`, so it only reaches a visitor on that
+   surface. It carries the utilities the reader renders and nothing the shell
+   already ships in `app/global.css`: same layer order, same tokens, nothing
+   redefined. */
+
+@import '../surface.css';
+
+@source './';
+@source '../../frontend/ui/athkar';
