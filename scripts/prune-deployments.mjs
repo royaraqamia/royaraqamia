@@ -10,7 +10,8 @@
  * on 2026-10-20 the daily creation cap was hit with 91 deployments created by
  * mid-afternoon, and storage climbed to 9.18 GB.
  *
- * `vercel.json` sets `git.deploymentEnabled` to `main` only, so branches no
+ * `vercel.json` sets `git.deploymentEnabled` to `main` only (`"**": false`; a
+ * bare `"*"` stops at `/` and misses `type/name` branches), so branches no
  * longer deploy. Deleting old deployments is the only lever that shrinks the
  * storage meters.
  *
