@@ -1,14 +1,18 @@
 name: 'Shell Version'
 
-# The Android shell's version counter is what decides whether an installed APK is
-# told about a newer one (ADR-0043). Nothing about building a web page can tell
-# whether the APK changed, so this is the check that keeps the counter tracking
-# the native side: a pull request that touches android/**, the Capacitor config,
-# or a Capacitor plugin dependency has to move it.
+# Two rules, both about the same file (ADR-0090).
 #
-# It runs `node scripts/android-shell-version.mjs`, which reads two files and
-# shells out to `git` — no Android toolchain, no npm install — so it can afford
-# to run on every pull request instead of on a path filter.
+# 1. `android/shell-version.properties` moves at the release cut, never in a pull
+#    request. A branch that bumps it publishes a version the weekly train never
+#    graded, and the train then grades the same commits again.
+# 2. A change to the shell ships to users, so it carries a release note — the
+#    Arabic sentence a person reads in the app's changelog. `android/release-notes/
+#    unreleased/` is where it goes; the cut folds it into the release.
+#
+# It runs `node scripts/android-shell-version.mjs` and
+# `node scripts/android-release.mjs`, which read a few files and shell out to
+# `git` — no Android toolchain, no npm install — so it can afford to run on every
+# pull request instead of on a path filter.
 
 on:
   pull_request:
@@ -23,7 +27,7 @@ concurrency:
 
 jobs:
   shell-version:
-    name: A native change moves the shell version
+    name: A shell change is consistent and says what it does
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -35,7 +39,12 @@ jobs:
           # this branch has to be here.
           fetch-depth: 0
 
-      - name: Compare the shell version with this change
+      - name: The version file is consistent and untouched
         env:
           BASE: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
         run: node scripts/android-shell-version.mjs --check "$BASE"
+
+      - name: A shell change carries a release note
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: node scripts/android-release.mjs --check-notes "$BASE"

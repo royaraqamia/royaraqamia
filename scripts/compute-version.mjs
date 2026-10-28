@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { git, latestSemverTag } from './git-utils.mjs';
+import { git } from './git-utils.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUT = resolve(ROOT, 'backend', 'config', 'generated', 'app-version.ts');
@@ -58,8 +58,10 @@ export function shouldWriteAppVersion(env = process.env) {
 export function main() {
   const appVersionOverride = process.env.APP_VERSION || undefined;
   const packageVersion = readPackageVersion();
-  const lastTag = latestSemverTag();
-  const count = lastTag ? git(['rev-list', '--count', `${lastTag}..HEAD`], '0') : '0';
+  // The build number counts every commit on the deployed branch, not the commits
+  // since a release tag: the web has no releases (ADR-0090), and a number that
+  // only moved at a release would be identical for every deploy in between.
+  const count = git(['rev-list', '--count', 'HEAD'], '0');
   const commitSha = process.env.VERCEL_GIT_COMMIT_SHA || git(['rev-parse', 'HEAD'], '');
 
   const resolved = resolveReleaseVersion({

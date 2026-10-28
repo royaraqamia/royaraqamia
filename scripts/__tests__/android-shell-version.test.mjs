@@ -3,16 +3,20 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  bumpShellVersion,
   capacitorDependencies,
   changedCapacitorDependencies,
   isShellPath,
+  nextShellVersion,
+  parseShellTag,
   parseShellVersion,
   parseShellVersionName,
+  shellChangeVerdict,
+  shellTagFor,
+  shellVersionCodeFor,
   shellVersionNameFor,
-  shellVersionVerdict,
   versionNameVerdict,
   writeShellVersion,
+  writeShellVersionFor,
   writeShellVersionName,
 } from '../android-shell-version.mjs';
 
@@ -25,48 +29,68 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEF
 const properties = readFileSync(resolve(REPO, 'android/shell-version.properties'), 'utf8');
 const manifest = readJson(resolve(REPO, 'public/android/latest.json'));
 
-describe('the shell version counter', () => {
-  it('reads the counter out of the properties file', () => {
+describe('the shell version', () => {
+  it('reads the version out of the properties file', () => {
     expect(parseShellVersion('shellVersionCode=7\n')).toBe(7);
     expect(parseShellVersion('# note\nshellVersionCode = 12\n')).toBe(12);
     expect(() => parseShellVersion('# nothing here\n')).toThrow(/shellVersionCode/);
   });
 
-  it('bumps the counter, and writes the derived name beside it', () => {
+  it('writes a name and its derived code together', () => {
     const before = '# a comment\nshellVersionCode=20002\n# another\n';
-    const { text, from, to, versionName } = bumpShellVersion(before);
+    const text = writeShellVersionFor(before, '1.1.0');
 
-    expect(from).toBe(20002);
-    expect(to).toBe(20003);
-    expect(versionName).toBe('1.0.3');
-    expect(text).toBe('# a comment\nshellVersionName=1.0.3\nshellVersionCode=20003\n# another\n');
-    expect(parseShellVersion(text)).toBe(20003);
+    expect(text).toBe('# a comment\nshellVersionName=1.1.0\nshellVersionCode=20100\n# another\n');
+    expect(parseShellVersionName(text)).toBe('1.1.0');
+    expect(parseShellVersion(text)).toBe(20100);
   });
 
   it('repairs the name line instead of adding a second one', () => {
     const before = 'shellVersionName=9.9.9\nshellVersionCode=20003\n';
-    expect(bumpShellVersion(before).text).toBe('shellVersionName=1.0.4\nshellVersionCode=20004\n');
+    expect(writeShellVersionFor(before, '1.0.4')).toBe(
+      'shellVersionName=1.0.4\nshellVersionCode=20004\n'
+    );
   });
 
   it('writes a specific code when asked to', () => {
     expect(writeShellVersion('shellVersionCode=1\n', 9)).toBe('shellVersionCode=9\n');
+    expect(writeShellVersionName('shellVersionCode=20003\n', '1.0.3')).toBe(
+      'shellVersionName=1.0.3\nshellVersionCode=20003\n'
+    );
   });
-});
 
-describe('the shell version name', () => {
-  it('is derived from the counter, and never typed', () => {
-    // `1.<minor>.<patch>`, minor and patch from (counter - 20000): the number a
-    // user reads and the number Android compares are the same fact twice.
-    expect(shellVersionNameFor(20000)).toBe('1.0.0');
-    expect(shellVersionNameFor(20001)).toBe('1.0.1');
-    expect(shellVersionNameFor(20002)).toBe('1.0.2');
-    expect(shellVersionNameFor(20003)).toBe('1.0.3');
-    expect(shellVersionNameFor(20099)).toBe('1.0.99');
-    // The hundreds carry into the minor, so it stays readable at scale.
-    expect(shellVersionNameFor(20100)).toBe('1.1.0');
-    expect(shellVersionNameFor(20101)).toBe('1.1.1');
-    // The major never moves on its own: raising it means changing the base.
-    expect(shellVersionNameFor(30000)).toBe('1.100.0');
+  it('derives the code from the name, injectively', () => {
+    // The same arithmetic in both directions: 1.0.21 is 20021 (the code this
+    // project already publishes), 1.1.0 is 20100, 2.0.0 is 30000.
+    expect(shellVersionCodeFor('1.0.0')).toBe(20000);
+    expect(shellVersionCodeFor('1.0.21')).toBe(20021);
+    expect(shellVersionCodeFor('1.1.0')).toBe(20100);
+    expect(shellVersionCodeFor('1.10.0')).toBe(21000);
+    expect(shellVersionCodeFor('2.0.0')).toBe(30000);
+
+    for (const name of ['1.0.0', '1.0.21', '1.1.0', '1.10.0', '2.0.0', '3.4.5']) {
+      expect(shellVersionNameFor(shellVersionCodeFor(name))).toBe(name);
+    }
+  });
+
+  it('stays monotonic as the version moves up a component', () => {
+    expect(nextShellVersion('1.0.21', 'patch')).toEqual({
+      name: '1.0.22',
+      code: 20022,
+      bump: 'patch',
+    });
+    expect(nextShellVersion('1.0.21', 'minor')).toEqual({
+      name: '1.1.0',
+      code: 20100,
+      bump: 'minor',
+    });
+    expect(nextShellVersion('1.9.99', 'major')).toEqual({
+      name: '2.0.0',
+      code: 30000,
+      bump: 'major',
+    });
+    expect(shellVersionCodeFor('1.1.0')).toBeGreaterThan(shellVersionCodeFor('1.0.99'));
+    expect(shellVersionCodeFor('2.0.0')).toBeGreaterThan(shellVersionCodeFor('1.99.99'));
   });
 
   it('refuses a counter below where the numbering starts', () => {
@@ -74,15 +98,13 @@ describe('the shell version name', () => {
     expect(() => shellVersionNameFor('20003')).toThrow(/20000/);
   });
 
-  it('reads and writes the name line', () => {
-    expect(parseShellVersionName('shellVersionName=1.0.3\nshellVersionCode=20003\n')).toBe('1.0.3');
-    expect(() => parseShellVersionName('shellVersionCode=20003\n')).toThrow(/shellVersionName/);
-    expect(writeShellVersionName('shellVersionCode=20003\n', '1.0.3')).toBe(
-      'shellVersionName=1.0.3\nshellVersionCode=20003\n'
-    );
-    expect(writeShellVersionName('shellVersionName=1.0.2\nshellVersionCode=20003\n', '1.0.3')).toBe(
-      'shellVersionName=1.0.3\nshellVersionCode=20003\n'
-    );
+  it('refuses a name the code cannot carry', () => {
+    // Two digits per component is what makes the code injective; a hundred
+    // patches would be the next minor, not 1.0.100.
+    expect(() => shellVersionCodeFor('1.0.100')).toThrow(/patch/);
+    expect(() => shellVersionCodeFor('1.100.0')).toThrow(/minor/);
+    expect(() => shellVersionCodeFor('0.9.0')).toThrow(/1.0.0/);
+    expect(() => shellVersionCodeFor('one')).toThrow(/major.minor.patch/);
   });
 
   it('judges the file against the counter, so a hand edit is caught', () => {
@@ -101,6 +123,13 @@ describe('the shell version name', () => {
     const code = parseShellVersion(properties);
     const name = parseShellVersionName(properties);
     expect(versionNameVerdict({ code, name })).toEqual({ expected: name, matches: true });
+  });
+
+  it('names a release tag, and reads it back', () => {
+    expect(shellTagFor('1.1.0')).toBe('android-1.1.0');
+    expect(parseShellTag('android-1.1.0')).toBe('1.1.0');
+    expect(parseShellTag('web-1.1.0')).toBeNull();
+    expect(parseShellTag('android-1.1')).toBeNull();
   });
 });
 
@@ -140,62 +169,33 @@ describe('what counts as a shell change', () => {
     expect(changedCapacitorDependencies(base, head)).toHaveLength(2);
   });
 
-  it('refuses a shell change with no bump', () => {
-    const verdict = shellVersionVerdict({
+  it('says which files or dependencies made it a shell change', () => {
+    const verdict = shellChangeVerdict({
       files: ['android/app/src/main/AndroidManifest.xml', 'frontend/ui/shared/update-prompt.tsx'],
-      baseCode: 1,
-      headCode: 1,
     });
 
-    expect(verdict.needsBump).toBe(true);
+    expect(verdict.changesShell).toBe(true);
     expect(verdict.reasons).toEqual(['android/app/src/main/AndroidManifest.xml']);
   });
 
-  it('accepts a shell change that moved the counter', () => {
-    const verdict = shellVersionVerdict({
-      files: ['android/app/build.gradle', 'android/shell-version.properties'],
-      baseCode: 1,
-      headCode: 2,
-    });
-
-    expect(verdict.needsBump).toBe(false);
-    expect(verdict.changesShell).toBe(true);
-  });
-
   it('says nothing about a web-only change', () => {
-    const verdict = shellVersionVerdict({
+    const verdict = shellChangeVerdict({
       files: ['frontend/ui/shared/update-prompt.tsx', 'README.md'],
-      baseCode: 1,
-      headCode: 1,
     });
 
-    expect(verdict.needsBump).toBe(false);
     expect(verdict.changesShell).toBe(false);
+    expect(verdict.reasons).toEqual([]);
   });
 
-  it('refuses a new Capacitor plugin with no bump', () => {
-    const verdict = shellVersionVerdict({
+  it('names a new Capacitor plugin as the reason', () => {
+    const verdict = shellChangeVerdict({
       files: ['package.json'],
-      baseCode: 4,
-      headCode: 4,
       basePackageJson: JSON.stringify({ dependencies: {} }),
       headPackageJson: JSON.stringify({ dependencies: { '@capacitor/browser': '8.0.0' } }),
     });
 
-    expect(verdict.needsBump).toBe(true);
+    expect(verdict.changesShell).toBe(true);
     expect(verdict.reasons).toEqual(['dependency @capacitor/browser@8.0.0']);
-  });
-
-  it('treats a brand new counter as a bump', () => {
-    // The file did not exist at the base, so baseCode 0 is the only honest
-    // reading: any number is ahead of "there was no counter".
-    const verdict = shellVersionVerdict({
-      files: ['android/shell-version.properties'],
-      baseCode: 0,
-      headCode: 1,
-    });
-
-    expect(verdict.needsBump).toBe(false);
   });
 });
 
@@ -204,8 +204,8 @@ describe('generated Android files', () => {
     // `cap sync` rewrites this file, and in a worktree whose `node_modules` is a
     // junction it writes absolute paths — which a local build then leaves in the
     // tree for `git add -A` to pick up. That is what this guard is for: the `Shell
-    // Version` check caught it (it saw `android/**` change with no counter bump),
-    // and this says *why* the file may not look like that.
+    // Version` check caught it (it saw `android/**` change), and this says *why*
+    // the file may not look like that.
     const settings = readFileSync(resolve(REPO, 'android/capacitor.settings.gradle'), 'utf8');
 
     expect(settings).not.toMatch(/[A-Za-z]:[\\/]/);
@@ -230,12 +230,8 @@ describe('the published manifest', () => {
   });
 
   it('names itself the way the build names the APK', () => {
-    // `versionName` is the shell's own version, derived from the same counter the
-    // update check compares (ADR-0046), so the two can never disagree. This used
-    // to assert the old spelling (`1.94.2+shell.20003`), which the web version at
-    // build time put there — and which stopped being true the moment a release
-    // published a manifest under the new naming. It passed then only because the
-    // manifest had not been republished yet.
+    // `versionName` is the shell's own version, derived from the same code the
+    // update check compares, so the two can never disagree.
     expect(manifest.versionName).toBe(shellVersionNameFor(manifest.versionCode));
   });
 });

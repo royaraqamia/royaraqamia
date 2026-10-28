@@ -14,9 +14,9 @@
  *     `country-phone-input.test.tsx` feed Arabic-Indic digits in on purpose;
  *   - `shared/contracts/__tests__/text.test.ts` and this script's own test use
  *     them as fixtures;
- *   - `CHANGELOG.md`, `docs/conventions.md` (it shows the forbidden shape as an
- *     example) and `supabase/migrations/` are history and must not be
- *     rewritten (the digit-normalising migration carries the literals);
+ *   - `docs/conventions.md` (it shows the forbidden shape as an example) and
+ *     `supabase/migrations/` are history and must not be rewritten (the
+ *     digit-normalising migration carries the literals);
  *   - `android/gradle.properties` quotes an external Gradle error verbatim;
  *   - `.agents/` and `public/quran/` are vendored as published.
  *
@@ -36,7 +36,6 @@ export const EXCLUDED = [
   '.agents/',
   'public/quran/',
   'supabase/migrations/',
-  'CHANGELOG.md',
   'android/gradle.properties',
   'docs/conventions.md',
   'frontend/ui/shared/__tests__/phone-utils.test.ts',

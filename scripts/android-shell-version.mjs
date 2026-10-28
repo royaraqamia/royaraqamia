@@ -1,23 +1,35 @@
 #!/usr/bin/env node
 /**
- * The Android shell's version counter (ADR-0043), and the check that keeps it
- * honest.
+ * The Android shell's version, and the checks that keep it honest (ADR-0043,
+ * ADR-0090).
  *
- * The shell loads the live site, so a web release changes nothing about the
+ * The shell loads the live site, so a web deploy changes nothing about the
  * installed app. `android/shell-version.properties` is therefore the shell's own
- * counter: it moves only when `android/**`, `capacitor.config.ts`, or a
- * Capacitor plugin dependency changes, and `public/android/latest.json` is
- * compared against it by the app.
+ * version: it moves only when `android/**`, `capacitor.config.ts`, or a Capacitor
+ * plugin dependency changes, and `public/android/latest.json` is compared against
+ * it by the app.
  *
- * The reason this file exists rather than a line of Gradle: nothing about
- * building a web page can tell whether the APK changed, so the moment the
- * counter stops tracking the native side, the app starts announcing an APK that
- * does not exist (or worse, stays silent about one that does). `--check` is what
- * CI runs, and it fails a pull request that changed the shell without bumping.
+ * **It moves at the release cut, never in a pull request.** A pull request used
+ * to bump it, one APK per merge, and users were offered an update for every
+ * commit, many of them invisible to them (ADR-0090). The weekly train now grades
+ * everything that accumulated, computes one version, and writes this file as
+ * part of the cut. `--check` is what CI runs on a pull request, and it fails two
+ * things: a hand-edited counter, and a name that no longer matches the code.
  *
- *   node scripts/android-shell-version.mjs                # print it, and what it watches
- *   node scripts/android-shell-version.mjs --bump         # increment it
- *   node scripts/android-shell-version.mjs --check <ref>  # CI: compare against <ref>
+ * The name is semantic and the code is derived from it:
+ *
+ *   versionName  1.4.2                     major.minor.patch
+ *   versionCode  20000 + (major-1)*10000 + minor*100 + patch
+ *
+ * so `1.0.21` is 20021 (the code this project already publishes) and any later
+ * release is strictly higher — `1.1.0` is 20100, `2.0.0` is 30000. Android needs
+ * a monotonic integer; a user reads the name. Deriving one from the other is what
+ * stops them disagreeing, and grading the name from the batch is what makes
+ * `1.1.0` mean something (scripts/android-release.mjs).
+ *
+ *   node scripts/android-shell-version.mjs                     # print it
+ *   node scripts/android-shell-version.mjs --bump [--major|--minor|--patch]
+ *   node scripts/android-shell-version.mjs --check <ref>       # CI, on a pull request
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -41,22 +53,20 @@ const SHELL_VERSION_LINE = /^[ \t]*shellVersionCode[ \t]*=[ \t]*(\d+)[ \t]*$/m;
 const SHELL_VERSION_NAME_LINE = /^[ \t]*shellVersionName[ \t]*=[ \t]*(\d+\.\d+\.\d+)[ \t]*$/m;
 
 /**
- * Where the display numbering starts, mirroring the counter's own base.
+ * Where the numbering starts, mirroring the counter the project already ships.
  *
- * The name is *derived* from the counter rather than typed: `1.<minor>.<patch>`
- * where minor and patch come from the offset. Two reasons, and the second is the
- * one that matters. First, nobody can forget it. Second, two numbers that can
- * disagree eventually do — and the number users read in their app must describe
- * the APK they actually have, not a value someone edited in a file.
- *
- * The `1` never moves on its own. Raising it means deliberately changing this
- * base, which is a decision with a consequence: every installed shell keeps
- * working, but the name starts describing a different line of the same offset.
- *
- * It carries no semantic promise. A `1.0.3` may contain anything a `1.0.2` did
- * not; the counter is the only thing that decides whether an update exists.
+ * It starts at 20000 on purpose. Until this file existed, versionCode was derived
+ * from the site version (major * 10000 + minor * 100 + patch), so an installed
+ * shell is at 19100 for 1.91.x and anything below that is a downgrade Android
+ * refuses to install — which is how the first emulator drill with a counter of 1
+ * ended: INSTALL_FAILED_VERSION_DOWNGRADE against the 1.88.4 build that was
+ * already on the device. 20000 is above every code the old scheme could produce
+ * for a 1.x release, and the two schemes never need to agree again.
  */
 export const SHELL_VERSION_BASE = 20000;
+
+/** Name components stay two digits so the code arithmetic stays injective. */
+export const MAX_COMPONENT = 99;
 
 export function shellVersionNameFor(code) {
   if (!Number.isInteger(code) || code < SHELL_VERSION_BASE) {
@@ -65,7 +75,58 @@ export function shellVersionNameFor(code) {
     );
   }
   const offset = code - SHELL_VERSION_BASE;
-  return `1.${Math.floor(offset / 100)}.${offset % 100}`;
+  const major = 1 + Math.floor(offset / 10000);
+  const minor = Math.floor((offset % 10000) / 100);
+  const patch = offset % 100;
+  return `${major}.${minor}.${patch}`;
+}
+
+/**
+ * The code a name owns. Every later release has a higher code by construction:
+ * the components are positional, so `1.1.0` (20100) is above `1.0.99` (20099) and
+ * below `2.0.0` (30000).
+ */
+export function shellVersionCodeFor(versionName) {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(versionName));
+  if (!match) {
+    throw new Error(`a shell version is major.minor.patch, got ${JSON.stringify(versionName)}`);
+  }
+  const [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  if (major < 1) throw new Error(`a shell version starts at 1.0.0, got ${versionName}`);
+  for (const [label, value] of [
+    ['minor', minor],
+    ['patch', patch],
+  ]) {
+    if (value > MAX_COMPONENT) {
+      throw new Error(
+        `the ${label} component of ${versionName} is above ${MAX_COMPONENT}, which the version ` +
+          'code cannot carry. Move up a component instead.'
+      );
+    }
+  }
+  return SHELL_VERSION_BASE + (major - 1) * 10000 + minor * 100 + patch;
+}
+
+/** The next release of the same line, one component up, the ones below reset. */
+export function nextShellVersion(versionName, bump = 'patch') {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(versionName));
+  if (!match)
+    throw new Error(`a shell version is major.minor.patch, got ${JSON.stringify(versionName)}`);
+  let [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  if (bump === 'major') {
+    major += 1;
+    minor = 0;
+    patch = 0;
+  } else if (bump === 'minor') {
+    minor += 1;
+    patch = 0;
+  } else if (bump === 'patch') {
+    patch += 1;
+  } else {
+    throw new Error(`a bump is major, minor or patch, got ${JSON.stringify(bump)}`);
+  }
+  const name = `${major}.${minor}.${patch}`;
+  return { name, code: shellVersionCodeFor(name), bump };
 }
 
 export function parseShellVersion(text) {
@@ -98,26 +159,33 @@ export function writeShellVersionName(text, name) {
   return text.replace(SHELL_VERSION_LINE, (line) => `shellVersionName=${name}\n${line}`);
 }
 
+/** Writes both lines from the name — the code is derived, exactly like CI reads it. */
+export function writeShellVersionFor(text, versionName) {
+  return writeShellVersionName(
+    writeShellVersion(text, shellVersionCodeFor(versionName)),
+    versionName
+  );
+}
+
 /**
- * Whether the file's name line still agrees with its counter. It is derived, so
- * a mismatch is a hand edit — and a hand edit here is exactly how the number in
- * the app and the number of the APK come apart.
+ * Whether the file's name line still agrees with its counter. The name is derived
+ * from the code, so a mismatch is a hand edit — and a hand edit here is exactly
+ * how the number in the app and the number of the APK come apart.
  */
 export function versionNameVerdict({ code, name }) {
   const expected = shellVersionNameFor(code);
   return { expected, matches: name === expected };
 }
 
-export function bumpShellVersion(text) {
-  const from = parseShellVersion(text);
-  const to = from + 1;
-  const versionName = shellVersionNameFor(to);
-  return {
-    text: writeShellVersionName(writeShellVersion(text, to), versionName),
-    from,
-    to,
-    versionName,
-  };
+/** The release tag the shell already has for a version: `android-1.0.21`. */
+export function shellTagFor(versionName) {
+  return `android-${versionName}`;
+}
+
+/** A shell release tag as a version name, or null for anything else. */
+export function parseShellTag(tag) {
+  const match = /^android-(\d+\.\d+\.\d+)$/.exec(String(tag ?? ''));
+  return match ? match[1] : null;
 }
 
 export function isShellPath(file) {
@@ -149,16 +217,14 @@ export function changedCapacitorDependencies(baseText, headText) {
 }
 
 /**
- * Whether a pull request changed the shell without moving the counter. Reasons
- * are files and dependencies, so a failure can say what to look at.
+ * Whether a change touched the shell at all: the files and dependencies that
+ * decide it, so a failure or a release plan can say what to look at.
+ *
+ * This is the one definition of "a new APK exists". Both the pull-request check
+ * and the weekly train read it, so a release cannot be begged by a web change and
+ * a native change cannot be forgotten by one.
  */
-export function shellVersionVerdict({
-  files,
-  baseCode,
-  headCode,
-  basePackageJson,
-  headPackageJson,
-}) {
+export function shellChangeVerdict({ files, basePackageJson, headPackageJson }) {
   const reasons = files.filter(isShellPath);
   for (const dependency of changedCapacitorDependencies(
     basePackageJson ?? '',
@@ -166,14 +232,7 @@ export function shellVersionVerdict({
   )) {
     reasons.push(`dependency ${dependency}`);
   }
-
-  return {
-    reasons,
-    changesShell: reasons.length > 0,
-    // Equal is not enough: two native changes without a bump would otherwise
-    // look like none, and the counter must be strictly ahead of what shipped.
-    needsBump: reasons.length > 0 && headCode <= baseCode,
-  };
+  return { reasons, changesShell: reasons.length > 0 };
 }
 
 function git(args) {
@@ -195,12 +254,17 @@ export function main({
 } = {}) {
   const text = readFile(versionPath, 'utf8');
 
-  if (argv.includes('--bump')) {
-    const { text: next, from, to, versionName } = bumpShellVersion(text);
-    writeFile(versionPath, next);
-    log(`shellVersionCode ${from} -> ${to}, shellVersionName ${versionName}. (The name is`);
-    log('derived from the counter, so it is written for you and never typed.)');
-    log(`Build the APK, publish it, then point public/android/latest.json at versionCode ${to}.`);
+  const bumpAt = argv.indexOf('--bump');
+  if (bumpAt !== -1) {
+    const requested =
+      ['--major', '--minor', '--patch'].find((flag) => argv.includes(flag)) ?? 'patch';
+    const from = parseShellVersionName(text);
+    const next = nextShellVersion(from, requested.slice(2));
+    writeFile(versionPath, writeShellVersionFor(text, next.name));
+    log(`shellVersionName ${from} -> ${next.name}, shellVersionCode ${next.code}.`);
+    log('');
+    log('A release cuts this itself; the line above is for a manual or emergency publish. Build');
+    log('the APK, publish it, then land public/android/latest.json and the release notes.');
     return 0;
   }
 
@@ -212,50 +276,35 @@ export function main({
       return 1;
     }
 
-    const files = runGit(['diff', '--name-only', base, 'HEAD'])
-      .split('\n')
-      .map((file) => file.trim())
-      .filter(Boolean);
-    // A counter that does not exist at the base was introduced by this change,
-    // so there is nothing to be ahead of and any number counts as a bump.
-    const baseVersionText = runGit(['show', `${base}:android/shell-version.properties`]);
-    const verdict = shellVersionVerdict({
-      files,
-      baseCode: baseVersionText ? parseShellVersion(baseVersionText) : 0,
-      headCode: parseShellVersion(text),
-      basePackageJson: runGit(['show', `${base}:package.json`]),
-      headPackageJson: readFile(packagePath, 'utf8'),
-    });
-
-    if (!verdict.needsBump) {
-      // The name is derived from the counter, so a mismatch means one of the two
-      // was hand-edited — and the number a user reads in the app would then be
-      // describing a different APK than the one they have.
-      const code = parseShellVersion(text);
-      const name = parseShellVersionName(text);
-      const nameCheck = versionNameVerdict({ code, name });
-      if (!nameCheck.matches) {
-        log(`shellVersionName is ${name}, but counter ${code} means ${nameCheck.expected}.`);
-        log('It is derived, not typed. Write both lines with:');
-        log('  npm run android:shell-version -- --bump');
-        return 1;
-      }
-
-      log(
-        verdict.changesShell
-          ? `shellVersionCode ${code} is ahead of ${base}: the shell moved, and the app will announce it.`
-          : 'No shell change; the counter has nothing to move for.'
-      );
-      return 0;
+    const code = parseShellVersion(text);
+    const name = parseShellVersionName(text);
+    const nameCheck = versionNameVerdict({ code, name });
+    if (!nameCheck.matches) {
+      log(`shellVersionName is ${name}, but counter ${code} means ${nameCheck.expected}.`);
+      log('Both lines are written from one name. Repair them with:');
+      log('  node scripts/android-shell-version.mjs --bump');
+      return 1;
     }
 
-    log('The shell changed without a new version code:');
-    for (const reason of verdict.reasons) log(`  - ${reason}`);
-    log('');
-    log('An installed APK will not see this change, and the update check compares');
-    log('shellVersionCode against public/android/latest.json. Bump it in this pull request:');
-    log('  npm run android:shell-version -- --bump');
-    return 1;
+    // The counter is a release artifact, not a pull-request one. A branch that
+    // moves it would publish a version the train never graded, and the next cut
+    // would grade the same commits again. A comment edit is not a move: the
+    // values are what the app and the manifest compare.
+    const baseText = runGit(['show', `${base}:android/shell-version.properties`]);
+    const moved =
+      baseText.length > 0 &&
+      (parseShellVersion(baseText) !== code || parseShellVersionName(baseText) !== name);
+    if (moved) {
+      log('android/shell-version.properties is moved by the release cut, not by a pull request.');
+      log('Revert it here: the weekly train grades everything that accumulated and writes it.');
+      log('If this change needs to ship now, dispatch the release workflow after merging.');
+      return 1;
+    }
+
+    log(
+      `shellVersionName=${name}, shellVersionCode=${code}: consistent. It moves at the release cut.`
+    );
+    return 0;
   }
 
   log(`shellVersionName=${parseShellVersionName(text)}   # derived from the counter`);

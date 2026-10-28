@@ -21,7 +21,7 @@
 
 ## GitHub Actions secrets
 
-Repository secrets, not environment variables. `shell-release.yml` is the only workflow that uses the
+Repository secrets, not environment variables. `android-release.yml` is the only workflow that uses the
 keystore secrets below.
 
 - `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` —

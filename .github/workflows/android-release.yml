@@ -1,0 +1,485 @@
+name: 'Android Release'
+
+# One update a week, not one per commit (ADR-0090).
+#
+# What used to happen: every push to `main` that touched the shell published its
+# own APK and prompted every installed app — twenty-one releases in the shell's
+# first weeks, most of them a sentence apart. A native app does not ship that way.
+# This workflow is the train instead:
+#
+#   1. grade everything native since the last `android-*` release — one batch,
+#      one version, `!`→major, `feat`→minor, else patch
+#   2. fold the Arabic note fragments the batch's pull requests wrote into this
+#      release's notes, and refuse to cut without one
+#   3. build and sign the APK, stamping the real versionCode, size and SHA-256
+#      into `public/android/latest.json`
+#   4. upload it where the site serves it, download it back, and hash it
+#   5. tag it `android-<version>` and create the release — the notes users read
+#   6. commit the version, the notes, the changelog and the manifest together, so
+#      the site announces exactly the bytes that were verified
+#
+# A week with no native change publishes nothing: the first step says so in ten
+# seconds and the rest of the job never runs. A manual dispatch cuts the batch
+# now, ignoring the cadence, for a crash or security fix that cannot wait.
+#
+# Failing at 3–5 leaves the published channel exactly as it was. Failing at 6
+# leaves the asset published and the manifest stale — the safe direction, because
+# nobody is told about an APK whose bytes were not verified. Re-running finishes
+# the job: the version is derived from the tag the failed run created, the bytes
+# in storage are adopted rather than rebuilt (a rebuild is not byte-identical,
+# ADR-0069), and the manifest commit lands.
+
+on:
+  schedule:
+    # Mondays, 06:00 UTC. A fixed weekly train is what makes the version, the
+    # notes and the user's update prompt line up.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Grade, build and sign, but do not publish, release or commit'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # the release, and the cut's own commit
+
+# Never cancel a publish half way. An uploaded asset and no manifest commit is
+# recoverable; an upload interrupted for a newer run is not worth reasoning about.
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish the shell
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The grading walks every commit since the last release, and the tag
+          # that defines that release has to be here.
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      # First, and before any toolchain: a week with no native change has nothing
+      # to publish, and it should cost ten seconds rather than a Gradle build.
+      #
+      # A dispatch is a person saying "cut it now", so it bypasses the cadence;
+      # the scheduled run keeps it, which is what stops a re-run from shipping a
+      # second update the same week.
+      - name: Is a release due?
+        id: plan
+        run: |
+          set -euo pipefail
+          # A dispatch is a person saying "cut it now", so it bypasses the cadence;
+          # the scheduled run keeps it, which is what stops a re-run from shipping a
+          # second update the same week.
+          args=(--plan --json)
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            args+=(--force)
+          fi
+          plan=$(node scripts/android-release.mjs "${args[@]}")
+          echo "$plan"
+          {
+            echo "release=$(echo "$plan" | jq -r .release)"
+            echo "reason=$(echo "$plan" | jq -r .reason)"
+            echo "version=$(echo "$plan" | jq -r '.next // empty')"
+            echo "versionCode=$(echo "$plan" | jq -r '.versionCode // empty')"
+          } >> "$GITHUB_OUTPUT"
+
+      # The one write that turns a batch into a version: the properties file, the
+      # notes archive, the changelog the site serves, and the fragments that were
+      # folded into them. Nothing here is committed yet, so a failed build leaves
+      # `main` untouched.
+      - name: Cut the version and collect the notes
+        id: cut
+        if: steps.plan.outputs.release == 'true'
+        run: |
+          set -euo pipefail
+          cut=$(node scripts/android-release.mjs --apply --json)
+          echo "$cut"
+          {
+            echo "notes=$(echo "$cut" | jq -r .manifestNotes)"
+            echo "archive=$(echo "$cut" | jq -r .archive)"
+          } >> "$GITHUB_OUTPUT"
+
+      # A version's bytes are published once. The plan has just proved the manifest
+      # does not name this version, so bytes already in storage are this version's,
+      # from a run that died between the upload and the commit. Adopt them: a
+      # rebuild is not byte-identical (ADR-0069), and a published version is never
+      # republished with different bytes.
+      - name: Is this version already published?
+        id: existing
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ASSET: royaraqamia-${{ steps.plan.outputs.version }}.apk
+          TAG: android-${{ steps.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          url="https://ievboaylytxgtijconak.supabase.co/storage/v1/object/android/$ASSET"
+          if ! curl -sS -f -o "$RUNNER_TEMP/published.apk" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" "$url"; then
+            echo "no $ASSET in storage; this version will be built"
+            exit 0
+          fi
+
+          sha=$(sha256sum "$RUNNER_TEMP/published.apk" | cut -d' ' -f1)
+          size=$(stat -c%s "$RUNNER_TEMP/published.apk")
+          echo "$ASSET is already in storage: $size bytes, sha256 $sha"
+
+          # The release and the bucket have to agree, or one of the two was
+          # replaced and neither can be trusted. Fail before announcing anything.
+          released_at=""
+          if release=$(gh release view "$TAG" --json assets,createdAt 2>/dev/null); then
+            digest=$(printf '%s' "$release" | jq -r --arg name "$ASSET" \
+              '.assets[] | select(.name == $name) | .digest // empty')
+            if [ -n "$digest" ] && [ "${digest#sha256:}" != "$sha" ]; then
+              echo "::error title=Storage and the release disagree::$ASSET is sha256 $sha in storage but $digest on $TAG. One of the two was replaced; nothing was uploaded or committed."
+              exit 1
+            fi
+            # The day it was first published, not the day this rerun happened.
+            released_at=$(printf '%s' "$release" | jq -r '.createdAt[:10]')
+          fi
+
+          {
+            echo "path=$RUNNER_TEMP/published.apk"
+            echo "sha256=$sha"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$released_at" ]; then echo "releasedAt=$released_at" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Setup Build Environment
+        if: steps.plan.outputs.release == 'true'
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
+      # `scripts/android.mjs` looks for the JDK itself and refuses anything but 21,
+      # because AGP 8.13 does not run on newer ones.
+      - name: Setup JDK 21
+        if: steps.plan.outputs.release == 'true'
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        if: steps.plan.outputs.release == 'true'
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Accept the SDK licences
+        if: steps.plan.outputs.release == 'true'
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Cache Gradle
+        if: steps.plan.outputs.release == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+          key: gradle-release-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-release-${{ runner.os }}-
+
+      # Nothing lands on main that the tests do not pass. They ran on the pull
+      # request too, but a direct push to main can carry shell changes nobody
+      # tested.
+      - name: The shell's JVM tests
+        if: steps.plan.outputs.release == 'true'
+        run: npm run android:test
+
+      # The upload keystore lives in repository secrets, base64 in one of them, and
+      # is written to a path outside the checkout. `keystore.properties` is
+      # gitignored, so it never reaches a commit.
+      - name: Write the signing material
+        if: steps.plan.outputs.release == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing secret::${name} is not set. See docs/mobile/android-shell.md."
+              exit 1
+            fi
+          done
+
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$RUNNER_TEMP/release.jks" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+
+          # Proves the key and the password belong together without printing either.
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "signing material is readable"
+
+      - name: Build or adopt, sign and stamp
+        id: publish
+        if: steps.plan.outputs.release == 'true'
+        env:
+          # The manifest's one-line summary: the first note this release wrote.
+          # The full notes live in the release and in the site's changelog.
+          NOTES: ${{ steps.cut.outputs.notes }}
+          ADOPT: ${{ steps.existing.outputs.path }}
+          RELEASED_AT: ${{ steps.existing.outputs.releasedAt }}
+        run: |
+          set -euo pipefail
+          # `releasedAt` is stamped by the script from this run's clock (UTC), except
+          # for an adopted version, whose date is the day it was first published.
+          args=(--json)
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          if [ -n "${ADOPT:-}" ]; then
+            # The guard in android:publish reads the config `cap sync` writes, and
+            # the JVM tests above synced without NODE_ENV=production — which is the
+            # debug config. Generate the one a release ships before adopting.
+            NODE_ENV=production npm run android:sync
+            args+=(--apk "$ADOPT")
+          fi
+          if [ -n "${RELEASED_AT:-}" ]; then
+            args+=(--released-at "$RELEASED_AT")
+          fi
+
+          log="$RUNNER_TEMP/publish.log"
+          if ! npm run android:publish -- "${args[@]}" --notes "$NOTES" > "$log" 2>&1; then
+            tail -n 200 "$log"
+            echo "::error title=The publish failed::nothing was uploaded or committed"
+            exit 1
+          fi
+          tail -n 12 "$log"
+          result=$(tail -n 1 "$log")
+          echo "$result" | jq . # fails the step if that last line is not the JSON
+
+          for key in versionCode versionName apkUrl sha256 sizeBytes tag asset releaseTitle stagedPath storageBucket; do
+            echo "$key=$(echo "$result" | jq -r ".$key")" >> "$GITHUB_OUTPUT"
+          done
+
+      # The device's copy comes from our own origin: `/android/<version>.apk` is the
+      # site proxied to this bucket (ADR-0047), so this is the upload that matters,
+      # and it goes first. `x-upsert: false` carries the same rule the releases
+      # have — a version's bytes are immutable, and a re-run never overwrites them.
+      - name: Upload the APK to storage
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUCKET: ${{ steps.publish.outputs.storageBucket }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          STAGED: ${{ steps.publish.outputs.stagedPath }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          url="https://ievboaylytxgtijconak.supabase.co/storage/v1/object/${BUCKET}/${ASSET}"
+
+          status=$(curl -sS -o "$RUNNER_TEMP/upload.out" -w '%{http_code}' \
+            -X POST "$url" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            -H "cache-control: max-age=31536000" \
+            -H "x-upsert: false" \
+            --data-binary @"$STAGED" || echo "000")
+          if [ "$status" = "200" ]; then
+            echo "uploaded $ASSET to $BUCKET"
+            exit 0
+          fi
+
+          echo "upload answered $status"
+          head -c 400 "$RUNNER_TEMP/upload.out" || true
+
+          # Anything but "created" is only safe to walk away from when the object in
+          # the bucket is already exactly these bytes — the adopt step made them so
+          # when the version was published before, and this compares them again.
+          curl -sS -f -o "$RUNNER_TEMP/existing.apk" "$url" || {
+            echo "::error title=The APK is not in storage::the upload answered $status and downloading it back failed too"
+            exit 1
+          }
+          existing=$(sha256sum "$RUNNER_TEMP/existing.apk" | cut -d' ' -f1)
+          if [ "$existing" != "$SHA256" ]; then
+            echo "::error title=Same version, different bytes in storage::$ASSET holds sha256 $existing, but this run stamped $SHA256, so it did not adopt the published bytes. A version is never republished with different bytes — re-run so the bytes in storage are adopted."
+            exit 1
+          fi
+          echo "$ASSET in storage is already this build"
+
+      # The check the whole design is for: the bytes a device will fetch, hashed
+      # here, must be the bytes the manifest promises. Before this, the only thing
+      # that had ever seen the uploaded file was the machine that uploaded it.
+      - name: Verify what a device will download
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          APK_URL: ${{ steps.publish.outputs.apkUrl }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/verify"; mkdir -p "$RUNNER_TEMP/verify"
+
+          # The URL from the manifest, fetched from outside: the point of this step
+          # is that it is the path a device takes — the site's own path, proxied to
+          # the bucket — and not the path CI uploaded through. Retries cover the two
+          # reasons a first answer can be wrong: the bucket's CDN lagging the upload,
+          # and a deploy of the rewrite still landing.
+          status="000"
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl -sSL -o "$RUNNER_TEMP/verify/$ASSET" -w '%{http_code}' \
+              --max-time 300 "$APK_URL" || echo "000")
+            if [ "$status" = "200" ]; then break; fi
+            echo "download attempt $attempt answered $status"
+            if [ "$attempt" = 6 ]; then
+              echo "::error title=The published URL does not serve the APK::$APK_URL answered $status. The manifest was NOT committed, so no shell is told about this build."
+              exit 1
+            fi
+            sleep 20
+          done
+
+          actual=$(sha256sum "$RUNNER_TEMP/verify/$ASSET" | cut -d' ' -f1)
+          expected=$(jq -r .sha256 public/android/latest.json)
+          actual_bytes=$(stat -c%s "$RUNNER_TEMP/verify/$ASSET")
+          expected_bytes=$(jq -r .sizeBytes public/android/latest.json)
+
+          echo "downloaded: $actual_bytes bytes, sha256 $actual"
+          echo "manifest:   $expected_bytes bytes, sha256 $expected"
+
+          if [ "$actual" != "$expected" ] || [ "$actual_bytes" != "$expected_bytes" ]; then
+            echo "::error title=The bytes a device fetches are not the published manifest::the manifest was NOT committed, so no shell is told about this build"
+            exit 1
+          fi
+
+      # The tag is created here, at the batch's tip, so the release names the tree
+      # that produced the bytes. It goes before the commit on purpose: if the
+      # commit is what fails, the next run sees a tag ahead of the manifest and
+      # resumes this version instead of grading a new one (scripts/android-release.mjs).
+      #
+      # `--latest` on purpose: this is the newest shell, and it belongs at the top
+      # of the releases page.
+      - name: Release the version
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          VERSION: ${{ steps.publish.outputs.versionName }}
+          CODE: ${{ steps.publish.outputs.versionCode }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          STAGED: ${{ steps.publish.outputs.stagedPath }}
+          NOTES_FILE: ${{ steps.cut.outputs.archive }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+          SIZE: ${{ steps.publish.outputs.sizeBytes }}
+          APK_URL: ${{ steps.publish.outputs.apkUrl }}
+        run: |
+          set -euo pipefail
+          bullets=$(grep '^- ' "$NOTES_FILE" || true)
+          body=$(printf '%s\n\n%s\n\n%s\n\n%s\n' \
+            "$bullets" \
+            "---" \
+            "sha256 $SHA256, $SIZE bytes — [$ASSET]($APK_URL)" \
+            "The app follows https://royaraqamia.com/android/latest.json, which names these exact bytes.")
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # A re-run: the release exists, so only its body is refreshed. Its
+            # asset is the same version's bytes and is never replaced.
+            gh release edit "$TAG" --notes "$body"
+            echo "$TAG already existed; its notes were refreshed"
+            exit 0
+          fi
+
+          gh release create "$TAG" "$STAGED" \
+            --title "$TAG" \
+            --latest \
+            --target "$GITHUB_SHA" \
+            --notes "$body"
+          echo "created $TAG with $ASSET"
+
+      # The cut's own commit, and deliberately no `[skip ci]`: a push made with
+      # GITHUB_TOKEN starts no workflows anyway (except the dispatch-driven ones),
+      # and the manifest has to reach the site. The version, the notes, the
+      # changelog and the manifest land together so the site announces exactly the
+      # bytes that were verified.
+      - name: Land the cut
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          VERSION: ${{ steps.publish.outputs.versionName }}
+          CODE: ${{ steps.publish.outputs.versionCode }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A android/shell-version.properties android/release-notes public/android
+          if git diff --cached --quiet; then
+            echo "the cut is already on main"
+            exit 0
+          fi
+          git commit -m "chore(android): release $VERSION ($CODE)"
+
+          # Another writer may have landed while this ran. A rejected push would
+          # leave the release published and the manifest stale, so retry on top of
+          # whatever `main` holds — the cut's files are the ones this run wrote.
+          #
+          # `cap sync` can leave generated native files dirty, and a rebase refuses
+          # to start on a dirty tree: autostash sets them aside and puts them back,
+          # and only HEAD:main is pushed, so they never reach the commit.
+          for attempt in 1 2 3 4 5; do
+            if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+              git fetch origin main --unshallow --quiet
+            else
+              git fetch origin main --quiet
+            fi
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "the tree is dirty before the rebase; autostashing:"
+              git status --porcelain
+            fi
+            if git -c rebase.autoStash=true rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); retrying on top of origin/main"
+            sleep $((attempt * 5))
+          done
+          echo "::error title=Could not land the cut::origin/main kept moving under this run. The APK is published; re-run to finish the manifest."
+          exit 1
+
+      - name: Summary
+        if: always()
+        env:
+          VERDICT: ${{ steps.plan.outputs.release == 'true' && 'releasing' || 'nothing to publish' }}
+          REASON: ${{ steps.plan.outputs.reason }}
+          VERSION_CODE: ${{ steps.publish.outputs.versionCode }}
+          VERSION_NAME: ${{ steps.publish.outputs.versionName }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          ASSET: ${{ steps.publish.outputs.asset }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+          SIZE: ${{ steps.publish.outputs.sizeBytes }}
+          URL: ${{ steps.publish.outputs.apkUrl }}
+        run: |
+          {
+            echo "### Android release"
+            echo ""
+            echo "**$VERDICT** — $REASON"
+            echo ""
+            if [ -n "${VERSION_CODE:-}" ]; then
+              echo "| | |"
+              echo "| --- | --- |"
+              echo "| version | \`$VERSION_NAME\` (versionCode \`$VERSION_CODE\`) |"
+              echo "| release | tag \`$TAG\` |"
+              echo "| asset | \`$ASSET\` |"
+              echo "| sha256 | \`$SHA256\` |"
+              echo "| size | $SIZE bytes |"
+              echo "| published URL | $URL |"
+            fi
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo ""
+              echo "**Dry run**: nothing was uploaded, released or committed."
+            fi
+            if [ "${{ github.ref_name }}" != "main" ]; then
+              echo ""
+              echo "**Ref \`${{ github.ref_name }}\`, not main**: the upload, the release and the commit were skipped."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

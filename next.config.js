@@ -2,7 +2,40 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+
 const { withSentryConfig } = require('@sentry/nextjs/config');
+
+/**
+ * The Sentry release, read from the same generated module the app reports with
+ * (`backend/config/generated/app-version.ts`), so an uploaded sourcemap and the
+ * event it describes can never name different releases.
+ *
+ * It used to be `v<package.json version>`, with the release workflow naming the
+ * git tag the same thing. The web has no releases any more (ADR-0089), and the
+ * runtime release is now `<semver>+build.<count>.<sha>` — a deploy identity, not
+ * a version anybody installs. A prefix that differed would leave every event
+ * without sourcemaps, which is the failure this replaces.
+ *
+ * `prebuild` regenerates the module before `next build`, so this reads a file
+ * this build wrote. A missing file (a checkout mid-repair) degrades to the
+ * package version rather than breaking the build.
+ */
+const sentryRelease = () => {
+  if (process.env.SENTRY_RELEASE) return process.env.SENTRY_RELEASE;
+  try {
+    const generated = readFileSync(
+      join(__dirname, 'backend', 'config', 'generated', 'app-version.ts'),
+      'utf8'
+    );
+    const match = /releaseVersion:\s*'([^']+)'/.exec(generated);
+    if (match) return match[1];
+  } catch {
+    // Fall through: a build must not fail because the generated file is absent.
+  }
+  return `web-${require('./package.json').version}`;
+};
 
 /** @type {import('next').NextConfig} */
 const csp = `
@@ -257,10 +290,10 @@ const nextConfig = {
 const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Name releases after the git tag (vX.Y.Z) so Vercel-uploaded sourcemaps,
-  // CI commit association and Sentry issues all reference the same release.
-  // npm_package_version is injected by npm for the `build` lifecycle script.
-  release: process.env.SENTRY_RELEASE ?? `v${process.env.npm_package_version}`,
+  // Name releases after the deploy the app itself reports
+  // (`<semver>+build.<count>.<sha>`), so Vercel-uploaded sourcemaps and the
+  // events they describe reference one release. See `sentryRelease` above.
+  release: sentryRelease(),
   silent: true,
   dryRun: !process.env.SENTRY_AUTH_TOKEN,
   // Source maps are only useful if they are uploaded. With no auth token there

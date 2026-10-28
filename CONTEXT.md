@@ -395,10 +395,12 @@ instead of applying it silently (ADR-0042).
 _Avoid_: update, SW update, auto-update
 
 **Shell version**:
-The Android shell's own version counter (`android/shell-version.properties`), independent of the site
-version, and the number Android itself compares when deciding whether an APK may replace the installed
-one. It moves only when the shell itself changes, because the shell loads the live site: a web release
-changes nothing about the installed app (ADR-0043).
+The Android shell's own version (`android/shell-version.properties`), independent of the site version,
+and the number Android itself compares when deciding whether an APK may replace the installed one. It
+moves at the weekly release cut, never in a pull request, and only when the shell itself changed,
+because the shell loads the live site: a web deploy changes nothing about the installed app (ADR-0043,
+ADR-0090). Its name is semantic — `1.1.0` means the release added something — and its code is derived
+from that name.
 _Avoid_: app version, build number, versionCode
 
 **Shell update**:
@@ -408,14 +410,15 @@ SHA-256, then handed to the system installer, which is what asks the user (ADR-0
 pending, the site holds its web offer back. Distinct from a worker swap, which is the web build
 updating itself within the same install (ADR-0042).
 
-The manifest is stamped from the built APK by `android:publish` and published by the `Shell Release`
-workflow on a change to the shell (ADR-0045). It names our own origin —
-`https://royaraqamia.com/android/royaraqamia-1.0.3.apk`, which the site rewrites to a Supabase Storage
+The manifest is stamped from the built APK by `android:publish` and published by the `Android Release`
+workflow — one weekly batch of native changes, not one per merge (ADR-0090). It names our own origin —
+`https://royaraqamia.com/android/royaraqamia-1.1.0.apk`, which the site rewrites to a Supabase Storage
 bucket, because GitHub's release assets are not reachable everywhere this app has users (ADR-0047). Each
-version is also its own release — `android-1.0.3`, holding `royaraqamia-1.0.3.apk` as the permanent archive
-— because a tag that gets reused can be repointed at other bytes, and the version in the tag is the shell's
-own, derived from the counter and never typed (ADR-0046). `Shell version` is that counter; the `1.0.3` is
-what a user reads in the app's info screen and in the account footer.
+version is also its own release — `android-1.1.0`, holding `royaraqamia-1.1.0.apk` as the permanent
+archive and the Arabic notes its pull requests wrote — because a tag that gets reused can be repointed
+at other bytes. The same notes are served as `public/android/changelog.json` and shown at
+`/account/changelog` inside the app. `Shell version` is that name; the `1.1.0` is what a user reads in
+the app's info screen, in the account footer, and in the changelog.
 _Avoid_: app update, force update
 
 **Tombstone**:

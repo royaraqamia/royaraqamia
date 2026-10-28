@@ -20,18 +20,19 @@
 | `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                                                                                                                                                                                                                                   |
 | `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                                                                                                                                                                                                                            |
 | `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                                                                                                                                                                                                                      |
-| `npm run version:next`                      | Version next rehearsal                                                                                                                                                                                                                                                                             |
 | `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                                                                                                                                    |
 | `npm run android:test`                      | The shell's JVM unit tests: the update decision and the download — no device needed (ADR-0043, ADR-0044)                                                                                                                                                                                           |
 | `npm run android:drill`                     | The shell's background-drain drill on `Pixel_API_30` or a real device: a write queued with the radio off, the app killed, the worker's line — see `docs/mobile/android-shell.md`                                                                                                                   |
-| `npm run android:shell-version`             | Read the shell's version counter and its derived name; `-- --bump` moves both, `-- --check <ref>` is what CI runs (ADR-0043, ADR-0046)                                                                                                                                                             |
+| `npm run android:shell-version`             | Read the shell's version; `-- --bump [--major\|--minor\|--patch]` writes one by hand, `-- --check <ref>` is what CI runs (ADR-0043, ADR-0089)                                                                                                                                                      |
+| `npm run android:release-plan`              | What the weekly Android train would release now, and why — read-only (ADR-0089)                                                                                                                                                                                                                    |
 | `npm run android:release`                   | Signed release APK                                                                                                                                                                                                                                                                                 |
 | `npm run android:publish`                   | The release APK + `public/android/latest.json` stamped from the file itself, uploaded to the storage bucket the site serves from and to its own release `android-<version>`; `--verdict` asks whether there is anything to publish, `--json` is how `Shell Release` runs it (ADR-0044 to ADR-0047) |
 | `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                                                                                                                                                                                                                |
 
-`Shell Release` (`.github/workflows/shell-release.yml`) publishes on any push to `main` that touches the
-shell: verdict, JVM tests, signed build, asset, re-download check, manifest commit. Only `main` publishes;
-a manual dispatch with `dry_run` builds and signs without touching the release. See
+`Android Release` (`.github/workflows/android-release.yml`) publishes on a weekly schedule — one
+APK for the whole batch of native changes — or on a manual dispatch that cuts the batch now: grade,
+notes, JVM tests, signed build, asset, re-download check, release, and one commit carrying the version,
+the notes, the changelog and the manifest. A week with no native change publishes nothing. See
 `docs/mobile/android-shell.md`.
 
 ## Runtime metrics
@@ -76,9 +77,9 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 ## Deployment
 
-**Primary path:** Push to `main` → CI runs code-quality checks → `.github/workflows/release.yml` (gated: push on `main`) → bump/tag/`chore(release)` commit `[skip ci]` → Vercel auto-deploys.
+**Primary path:** Push to `main` → CI runs code-quality checks → Vercel's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0089); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**The train is watched:** `.github/workflows/release-health.yml` asks `scripts/release-health.mjs` every fifteen minutes whether `main` has commits owing a version — and that have been owed for more than thirty minutes — and opens (or closes) one `release:alert` issue if it does. A release run that lost the race to a newer commit skips green instead of failing, which is why something has to notice a version nobody cut (ADR-0052).
+**The Android train is watched:** `.github/workflows/release-health.yml` asks `scripts/android-release.mjs --health` daily whether native changes have sat unreleased past the weekly cadence — and opens (or closes) one `release:alert` issue if they have. A release that never started, or failed on a build or a missing note, is what that catches (ADR-0089).
 
 **Manual override:** `vercel deploy` (preview) or `vercel deploy --prod` (production). Or use the `deploy-to-vercel` skill.
 
@@ -91,10 +92,17 @@ weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
 
 ## Release versioning
 
-- **Scheme:** `<X.Y.Z>+build.<N>.<7-char-sha>`
-- Core `X.Y.Z` from committed `package.json#version`
-- `N` = commits since last tag
-- **Bump rules:** breaking/`!` → major, `feat` → minor, anything else → patch
-- **Base:** the higher of the last tag reachable from `HEAD` and the highest tag that exists — a number a tag already owns is never re-cut, reachable or not (ADR-0051).
-- **Generated module:** `backend/config/generated/app-version.ts` — regenerated by `prebuild`/`predev` on CI only. Do not hand-edit.
-- **Never edit** `scripts/compute-version.mjs` or `scripts/release-tools.mjs` without updating co-located tests in `scripts/__tests__/`.
+- **Web:** no releases (ADR-0089). The deploy identity is `<X.Y.Z>+build.<N>.<7-char-sha>`:
+  `X.Y.Z` from the committed `package.json#version` (bumped by hand at a milestone), `N` the commit
+  count on the branch, the sha the commit. `backend/config/generated/app-version.ts` is regenerated
+  by `prebuild`/`predev` on CI and Vercel only; do not hand-edit it, and Sentry names its release
+  after the same generated string.
+- **Android:** the shell's version is `1.<minor>.<patch>`, graded from the batch the weekly train
+  releases (`!` → major, `feat` → minor, else patch). Its `versionCode` is
+  `20000 + (major-1)*10000 + minor*100 + patch`, so it only ever goes up. Both lines live in
+  `android/shell-version.properties` and are written by the cut, never by a pull request;
+  `scripts/android-shell-version.mjs` owns the arithmetic and fails a hand-edited file.
+- **Notes:** a shell change carries an Arabic note under `android/release-notes/unreleased/`; the
+  cut freezes it into `android/release-notes/<version>.md` and `public/android/changelog.json`.
+- **Never edit** `scripts/compute-version.mjs`, `scripts/android-shell-version.mjs` or
+  `scripts/android-release.mjs` without updating co-located tests in `scripts/__tests__/`.
