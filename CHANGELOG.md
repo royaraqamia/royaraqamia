@@ -7,6 +7,1506 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-28
+
+### Changed
+- the ADR for a bundled app and the route split (#644)
+
+## [0.2.0] - 2026-10-28
+
+### Added
+- back returns home from a crossed remote page (#637)
+
+## [0.1.0] - 2026-10-28
+
+### Changed
+- Personal Digest credit now idempotent/refundable. (#643)
+- one command for the two-origin veto table (#635)
+- drop the hero visual and the go-up button, recentre dialogs (#633)
+- publish shell 1.0.21 (20021)
+- publish shell 1.0.19 (20019)
+- split the 534 KB stylesheet by surface (#622)
+- News loader fixed; stale personal digests no longer shown. (#621)
+- publish shell 1.0.18 (20018)
+- publish shell 1.0.17 (20017)
+- remove the device diagnostics page (#608)
+- drop the range keep control and the metered notice (#607)
+- bump the minor-and-patch group across 1 directory with 13 updates (#596)
+- bump @hookform/resolvers from 5.9.1 to 6.0.0 (#597)
+- bump actions/cache from 4.3.0 to 6.1.0 (#599)
+- bump the minor-and-patch group with 4 updates (#598)
+- Atomic HabitFlow backup restore with id remap. (#605)
+- publish shell 1.0.16 (20016)
+- load the services sheet and review dialog on intent (#591)
+- record the seam a downloaded surah rides on (#589)
+- mount motion per route instead of in the root layout (#587)
+- drop the unused ROUTING constant in check:precache (#585)
+- put Prettier in the local pre-flight (#576)
+- Scope plan usage storage per identity. (#568)
+- Bulk publish now charges only actual transitions. (#564)
+- the surface matrix becomes a checked file, and the precache list is checked (#562)
+- make the news controls read as the hero CTA (#560)
+- trim guest prompts, rebuild news search, drop price badge (#556)
+- Restore now revives the tombstone. (#554)
+- drop the unused dirname import (#553)
+- trim the header and fix page copy (#544)
+- One-request community post publish via new RPC. (#541)
+- give the analysis step 50 minutes and drop the high variant (#542)
+- gate new public objects on explicit grants (#540)
+- Push subscriptions now released on sign-out, handed over on subscribe. (#531)
+- publish shell 1.0.15 (20015)
+- advertise 27 hours across 18 sessions (#512) (#512)
+- MCP LinkSnap writes use service role now. (#511)
+- record the dynamic-detail third door (#473) (#480)
+- drop the stale product-reload bullets and amend ADR-0036 (#476)
+- drop the duplicate worktree instruction the merges left behind (#471)
+- publish shell 1.0.14 (20014)
+- the /land command follows ADR-0072 (#457)
+- cut worktrees from local main, not origin/main (#456)
+- land with a local squash, reconcile at the next start (#454)
+- decide the pull-failure read state in ADR-0027 (issue 369) (#452)
+- Remove the /device intro paragraph and center the refresh button (#442)
+- drop the verify section from the landing page (#444)
+- stop preview deployments and prune to 25 (#445)
+- Spec now asserts drain page pulls remote row into local store. (#438)
+- publish shell 1.0.13 (20013)
+- run the owned-data suite without tripping the login limiter (#431)
+- script the force-stop, doze and mid-flush cases (#430)
+- publish shell 1.0.12 (20012)
+- publish shell 1.0.11 (20011)
+- Quran P2a: playing Ayah marked in text. (#401)
+- Chaos tests for offline sync replay. (#415)
+- Quran reader joins background refresh pull. (#407)
+- stop at the open pull request and leave the merge manual (#408)
+- publish shell 1.0.10 (20010)
+- give the offline suite facts to wait on, not Arabic (#378)
+- publish shell 1.0.9 (20009)
+- commit the whole recitation's manifests (#375)
+- index recipient_user_ids for recipient reads and RLS (#357) (#364)
+- index rate_sync_runs by status and finished_at (#363)
+- Quran audio manifest: stop caching failures.
+- record the Dependabot copy of the service-role key (#352)
+- publish shell 1.0.8 (20008)
+- bump the minor-and-patch group across 1 directory with 58 updates (#349)
+- bump supabase/setup-cli from 1.7.3 to 3.0.1 (#348)
+- bump actions/setup-java from 4.9.1 to 6.1.0 (#347)
+- bump android-actions/setup-android from 3.2.2 to 4.0.4 (#346)
+- bump the minor-and-patch group with 3 updates (#345)
+- drop the unused RECEIPT_TTL_MS import (#350)
+- delete the unused RatesRefresh component (#344)
+- share the Outbox access and keep React out of the transports (#340)
+- repair and wire in the LinkSnap and BlogPress specs (#338)
+- run the offline e2e suite in CI (#331)
+- name the recitation source and vend it as published (#330)
+- plan WhatsApp-parity background delivery (#326)
+- unblock the Quran Tafsir on Tafsir Center's CC BY 4.0 corpus (#323)
+- vendor Quran content only under a readable licence (#322)
+- record the Quran Reader's reading state and vendored content (#321)
+- match the FAQ page title and flatten the footer (#305)
+- drop the homepage legal-links footer (#304)
+- LWW guard added to create replays. (#297)
+- publish shell 1.0.7 (20007)
+- publish shell 1.0.6 (20006)
+- exclude the Firebase client config from secret scanning (#282)
+- say which project the shell's Firebase key lives in (#280)
+- publish shell 1.0.4 (20004)
+- record that the merge applies a migration and the CLI verifies it (#274)
+- merge the pull request a /oc run opens (#265)
+- merge the pull request the implementer opens (#262)
+- keep local main in sync at both ends of the landing loop (#261)
+- make landing the work the default end of every task (#259)
+- point at the newest APK, and record the one shell the page cannot see
+- Outbox replay now stays in seq order.
+- record the drill that updated a shell from our own origin
+- delete the one-off, and let a version's APK be cached for a year
+- serve the published APK from our own origin
+- delete the one-off migration workflow, and record why the APK is pinned
+- name the published APK royaraqamia-1.0.3.apk
+- assert the manifest's versionName the way the tree derives it
+- publish shell 1.0.3 (20003)
+- Revoked anon SELECT on short_links (#207).
+- put the measured release timings in ADR-0045
+- publish shell 20002
+- have android:publish print the release flags that actually work
+- create the shell release before the manifest names it
+- publish the 20001 shell
+- bump the shell version counter for the splash change
+- call the account surface's resource a connected app
+- apply with the access token, not a new secret
+- apply merged migrations on main, and refuse the destructive ones
+- reconcile the drift alert on every run but a pull request
+- fail the build when the repo and the project disagree
+- a swap waits for the last client, and a refresh is not a launch
+- Certificate PII exposure fixed via RLS/grant split.
+- run the worker-swap guard on the paths that can break it
+- override uuid to ^11.1.1 for GHSA-w5hq-g745-h8pq (#211)
+- drop the unused changelogSectionFromGroups import
+- make the last device-token fixture low-entropy too
+- stop the device-token fixtures tripping gitleaks
+- ignore the Kotlin build session directory
+- record the shell OAuth decision and update the runbook
+- document the shell, its measured limits and the decision
+- import the admin-tools module once instead of per case
+- Reject control chars in safeRedirect.
+- say how to get out of a denial, and what the guard does not cover
+- say that landing from a worktree leaves the shared checkout behind
+- land work from your own worktree, not the shared checkout
+- say what the client actually does when a grant is retired
+- dress the consent page like the hero CTA
+- say why the decode worker has no origin check
+- drop the diagnostics panel now that the cause is known
+- highlight full page titles to match other pages
+- define the Scanner and record ADRs 0034-0035
+- BlogPress offline drafts implemented; all gates pass.
+- correct what a GET costs now that production measured it
+- record the Hobby usage budget and what it costs to exceed it
+- prune retained Vercel deployments daily
+- reject impossible codes before the database and defer click writes
+- cut Fluid Active CPU, function invocations and ISR churn
+- bump the minor-and-patch group across 1 directory with 2 updates
+- bump motion from 13.5.0 to 14.0.0
+- bump the minor-and-patch group with 44 updates
+- bump anomalyco/opencode/github
+- bump the minor-and-patch group with 5 updates
+- give each feature item a rounded surface
+- hide close icon on confirm, portfolio and testimonial dialogs
+- unify primary CTAs with hero button and highlight titles
+- fix URL/custom-code field alignment and Arabic diacritics
+- drop dialog headers and confirm avatar delete
+- unify dialog and bottom-sheet action footers
+- normalize add/edit habit dialog spacing
+- note leaked-password protection is Pro-plan-only
+- use solid backgrounds for dropdowns, popovers, and dialogs
+- remove duplicate dashboard heading
+- name conversion basis, unify title, and drop refresh control
+- unify page title size and highlight across products
+- rename المصروفات to المصاريف and polish dashboard UI
+- drop goal section and helper copy from habit dialogs
+- use hero CTA buttons and trim dashboard header
+- align habit and spend dialog actions with hero CTA
+- use hero CTA variant for sign-in prompts and linksnap action
+- key the daily guard to the UTC calendar day
+- drop the outbox sync panel and its dead hook
+- cover the guest dashboard aggregates
+- cover protected routes after opening guest products
+- cap the services popover height and make it scroll
+- drop the header bar from services, country and currency menus
+- remove the onboarding template picker
+- write المختصَرة with the fatha in link copy
+- reveal services dropdown scrollbar only on hover
+- document the issue automation triggers
+- schedule the issue planner dispatch from pg_cron
+- trigger the issue agent punctually and once a day
+- regenerate database types after offline write contract
+- hide members-list scrollbar until hover
+- add offline-first glossary, ADRs 0027-0031, and spec
+- serve apps at /<product> and drop landing pages
+- normalize Arabic diacritics in copy
+- match the username save button to the hero CTA and refine Arabic copy
+- center the public profile card on all breakpoints
+- drop the members icon chip and hide the mobile rail scrollbar
+- move post share button beside the actions menu
+- match sign-in prompts to the Hero CTA
+- note that proxy.ts replaces middleware.ts
+- align verify, rates, downloader, and MCP guide widths with form pages
+- write جاري instead of جارٍ
+- add shadda to التَّنزيل across the app
+- apply custom scrollbar globally
+- retire weekly agent, wire Vercel into interactive agent, document workflows
+- add autonomous issue planner and implementer workflows
+- add diacritics to الرَّابط and الصِّيغة across the app
+- remove card header from media link form
+- align title and CTA with shared site styles
+- inspect-before-download and media-kind formats
+- pin LF line endings with .gitattributes to match Prettier
+- assert auto-save instead of the removed save link
+- remove the after-connection section from the guide
+- drop the account link and make MCP the last services menu item
+- match guide title to the verify page, drop subtitle, rename to ربط الـ MCP
+- research note on media downloader provider options
+- dual-mode, open-registration, and refresh-token-bridge ADRs + glossary and key runbook
+- verify-style title and hero CTA, drop subtitle
+- remove acceptable use section
+- drop update popup, keep version detection
+- trim opencode project config
+- update supabase CLI to 2.120.0
+- mirror remote migration versions (#151)
+- rebuild the section as a session details card
+- gradient the feature text with each card's theme
+- match row icons to the user dropdown
+- bolden CTA labels and match button widths
+- replace 'استشارة' with 'أسئلة' in booking summary
+- include deploy-to-vercel archive
+- sync agent skills and update lockfile
+- ignore vendored agent skills in prettier and lint-staged
+- document non-blocking dev server lifecycle
+- color services menu icons with primary
+- drop icon backgrounds and match menu icon size
+- use official brand-colored social icons
+- remove Footer from all pages except homepage
+- use a single logo and brand text size
+- drop the active bottom tab indicator
+- remove the WhatsApp contact CTA
+- add project opencode config and verify command
+- hide the float on privacy, terms, and security pages
+- drop the page heading
+- show the user icon in the user menu trigger
+- center the serviços dropdown on tablet/mobile
+- add separators to the user menu
+- center page titles with the section title pattern
+- even out converter result weights
+- consolidate flat config and hand formatting to Prettier
+- remove the rabwah coming-soon link
+- record LYD, YER and SYP source decisions
+- drop the dual-rate panel section
+- record the dual-rate decision, sources, and terms
+- drop the redundant read-more CTA from post cards
+- drop SDG, SOS, DJF and KMF from the displayed currencies
+- emphasize the converted amount and group karat prices
+- Fixed consultation reschedule owner check.
+- bump the minor-and-patch group with 28 updates
+- drop the redundant metal code labels
+- drop the duplicated gold gram row and label the karat prices
+- RTL-align the converter and translate the metals cards
+- move the two request links above the products
+- center the header and remove the subtitle and footer
+- drop the historical chart and all-currencies table
+- document CRON_SECRET in the environment table
+- align migration filename with applied version
+- schedule the daily refresh and document CRON_SECRET
+- record exchange-rate vocabulary and decisions
+- unify composer slugs as post-xxxxxxxx
+- use hero gradient for submission edit save buttons
+- use Users icon for community
+- rename المقال to المنشور in user-facing copy
+- document PENDING_LOGIN_SECRET and PASSWORD_BREACH_CHECK_ENABLED in README
+- trim post page share row and author card
+- center title and drop subtitle
+- unify animation, sizing, and containment across dialogs
+- fix gh read commands and note auth scope
+- rename blog scopes and tools to community
+- rename blog to community end to end
+- center digits and detach smaller plus sign
+- render numbers in Aref Ruqaa font
+- inline the apply notice icon with its text
+- unify all section and page titles into SectionTitle
+- keep the wizard's primary button on one line on mobile
+- make the update popup buttons bold
+- keep the sign-in link inline with the apply notice
+- move the course spec line into the apply summary copy
+- rename the card feature badge to مكالمة صوتيَّة
+- match the update popup CTA to the hero gradient
+- flatten the apply summary and refine course copy
+- use max-w-3xl for all form pages
+- streamline form summaries and polish landing sections
+- remove decorative ambient and looping animations
+- remove the card lift on hover
+- drop the redundant session chip from package cards
+- drop the privacy notice from the apply form
+- rename the blog section to المجتمع
+- drop the no-payment badge from the consultation summary
+- drop the gradient divider from the metric cards
+- match the service card CTA size to the hero buttons
+- remove extra top padding above portfolio and testimonials bodies
+- switch OpenCode plan phase to DeepSeek V4.1 Flash
+- tighten section heading-to-body spacing
+- fix npm audit vulnerabilities
+- bump @sentry/nextjs from 10.75.0 to 11.0.0
+- bump the minor-and-patch group with 3 updates
+- bump the minor-and-patch group with 22 updates
+- drop the reference code from request and hire confirmations
+- remove pre-push hook
+- hand ResizeObserver the resize handler directly
+- Potential fix for code scanning alert no. 40: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 41: Superfluous trailing arguments
+- remove the focus ring from form inputs
+- Potential fix for code scanning alert no. 38: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 39: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 36: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 37: Superfluous trailing arguments
+- align the budget label assertion with the contract copy
+- polish the project request labels and copy
+- normalize two Arabic copy spellings
+- drop the intro copy from the request and hire pages
+- fold cache invalidation into the response seam
+- move the intake schema onto the contract
+- collapse the post delegation stack
+- give the admin list plumbing one shared seam
+- name the applied Client Work migrations after their remote versions
+- one Reference Code mint module
+- add Client Work terms and ADRs 0005-0006
+- center metric cards and drop counter animation
+- replace hero visual text with shape placeholders
+- polish primary CTAs, feature list, and legal page headers
+- remove the last decorative blur effects (ADR 0004)
+- simplify landing sections and unify brand CTAs
+- remove the reading progress bar from post pages
+- guard the legacy polyfill's nomodule gate instead of dropping the chunk
+- audit the landing page client-JS graph (issue #128)
+- re-record the shipped-weight baseline after the flattening
+- establish the runtime budget alongside the weight budget (ADR 0004)
+- remove decorative motion and glow filters (ADR 0004)
+- Potential fix for code scanning alert no. 34: Double escaping or unescaping
+- Potential fix for code scanning alert no. 35: Incomplete URL substring sanitization
+- render one flat path for every device; remove per-frame effects
+- stop Tailwind scanning agent-skill and docs sources
+- add shipped-weight baseline and budget guard
+- run weekly on Monday morning on DeepSeek 4.1 Flash
+- give the plan phase headroom and bound its output
+- lock the certificate-issued batched fan-out
+- lock the post-published batched fan-out
+- lock the Consultation Booking batched fan-out
+- diacritize the brand name across the codebase
+- one owner for the Admin notification fan-out
+- bump the minor-and-patch group with 15 updates
+- make the Admin adapter the only door for Admin surfaces
+- Fixed malformed-body 500s across 23 routes; all gates pass.
+- cover the Admin Console door auth outcomes
+- drop the icons from the metric cards
+- refresh the site description and positioning copy
+- MCP OAuth token sweep migration complete.
+- resolve the current user through one identity module (#109)
+- record the triage label vocabulary
+- Require session on habitflow API routes
+- add husky hooks with lint-staged and typecheck
+- strip card chrome and unify check icon on success screens
+- simplify booking confirmation screen
+- harden country phone picker and floating surfaces
+- refine console UI across screen sizes
+- Wired up rate-limited blog view counting; revoked client RPC.
+- drop the redundant outer glow on the consultation card
+- remove post badge, reading time, and engagement banner
+- use italic markers in the issue-tracker notes
+- make the allowlist sync a trigger so the value lives in one place
+- fix the migration instruction in the agent prompts
+- sync the admin allowlist on a schedule
+- flush gallery dialog image to dialog edges
+- scaffold RLS authorization tests
+- correct the mirror-discipline instruction
+- correct the Admin allowlist prescription
+- document filing issues when gh cannot be installed
+- define Admin Console and record the Admin allowlist decision
+- drop the redundant حجز جديد heading from the consultation booking page
+- remove email and experience level from the apply form
+- rename navbar label منتجاتنا to خدماتنا
+- Fixed MCP consent CSRF; all gates pass.
+- drop Turnstile and the page header from the apply form
+- update
+- remove decorative ambient glows
+- format the training schema test
+- make booking reads cache-friendly and write-free
+- route SpendTrack writes through the product module
+- give authenticated controllers one seam
+- raise Node engine floor and load vitest config as ESM
+- bump the minor-and-patch group across 1 directory with 22 updates
+- rewrite code-refactorer skill and add reference guides
+- use GLM 5.3 Flash for plan step in OpenCode workflows
+- bump vite from 6.4.3 to 8.3.0
+- update package-lock.json
+- bump vitest from 4.1.11 to 5.0.0
+- bump the minor-and-patch group across 1 directory with 27 updates
+- format @keyframes shake selectors for readability
+- maximize overlay performance across entire codebase
+- maximize auth pages performance
+- normalize attribute selector quotes in global.css
+- split OpenCode workflows into two-model pipeline (GLM 5.3 plan → DeepSeek V4 Flash implement)
+- unify homepage animations to CSS-based system, remove motion/react from sections
+- move interactive animations to compositor thread
+- add delegate-setup skill
+- add delegate fleet config with plan/implement lanes
+- Reduce spacing between hero social proof badges
+- Remove watermark icons from verify certificate pages
+- Remove plan and review skills, add opencode-delegate
+- scaffold agent skills config (issue tracker + domain docs)
+- remove LinkSnap, BlogPress, SpendTrack, HabitFlow mentions from docs
+- restructure AGENTS.md with progressive disclosure
+- add opencode-delegate skill from amElnagdy/delegate-skills
+- bump @vitest/coverage-v8 from 4.1.11 to 5.0.0
+- bump softprops/action-gh-release in the minor-and-patch group
+- reduce spacing between review badges in social proof strip
+- update FAQ items, remove categories, add new questions about consultation and training
+- update description text matcher to match current copy
+- remove Trust Footer Badges and unused CheckCircle import
+- remove border/bg from review badges, add underline to social proof link
+- hide CTA/WhyUs, remove header icons and badges from Certificate & VerifySection
+- ignore .agents folder in ESLint
+- remove obsolete agent file
+- bump the minor-and-patch group with 26 updates
+- remove unused font files and replace semibold with bold
+- drop pointless backdrop-filters in HeroVisual
+- lazy-load auth internals in SessionProvider
+- defer service-worker registration to load + idle
+- drop last backdrop-filters from footer pills
+- optimize lucide-react package imports
+- replace card backdrop-filters with near-opaque fills
+- add metric-compatible fallbacks to reduce swap CLS
+- convert Footer to server component, extract logo client island
+- serve prerendered homepage from CDN with s-maxage+SWR
+- correct lazy-chunk comments to reflect measured Turbopack emission
+- bake glow halos into gradients, cap mobile particles, scope hover transitions
+- add glow-orb utility, drop will-change from ambient loops
+- remove habitflow calendar visual spec
+- remove bulk shorten feature, keep single-link shortening
+- remove Footer from admin page layouts
+- align icon column drop migration version with remote history
+- : remove icon field from habit data model and API
+- remove habit icon picker, display, and template icons
+- drop habits.icon column
+- remove insights row and its orphaned insights module
+- render Navbar directly in app layouts, drop ShellHeader wrapper
+- replace Arabic ShamCash label with Latin brand name
+- match command palette navbar trigger to dropdown icons
+- drop product switcher, superseded by command palette
+- extract shared ShellHeader, make switcher current optional
+- drop blog and verify links from footer
+- relocate playwright output and hide generated artifacts in vscode
+- move sw.test.mjs to co-located scripts/__tests__
+- Fixed blogpress restore publish bypass (39 chars)
+- add habitflow calendar grid visual sweep
+- remove unused responsive-helpers module
+- mark redirect-error files as synced with main
+- remove e2e testing workflow
+- replace deprecated version input with release in sentry step
+- add production build gate to agent pipeline
+- add clean-architecture refactor phase to agent pipeline
+- normalize non-conventional agent PR titles
+- bump getsentry/action-release from 1.11.0 to 3.7.0
+- Fixed linksnap error UX; gates green
+- allowlist supabase publishable key format in gitleaks
+- add opencode agentic scan pipeline with supabase mcp access
+- ignore generated coverage output in eslint
+- associate Sentry releases with git tags and commits
+- report client bundle sizes with main-branch baseline diff
+- publish vitest coverage summary on CI runs
+- allow manual E2E workflow dispatch
+- bump motion from 12.42.2 to 13.1.1
+- bump jsdom from 29.1.1 to 30.0.1
+- bump the minor-and-patch group with 43 updates
+- bump actions/upload-artifact from 4.6.2 to 7.0.1
+- bump actions/cache from 4.3.0 to 6.1.0
+- remove unused specs
+- enable optional native push round-trip via PUSH_E2E secret
+- remove inaccurate dependabot comment
+- group dependabot minor and patch updates
+- enforce conventional PR titles and lint workflow files
+- add concurrency and sane timeout to CodeQL analysis
+- harden security scan with concurrency, timeouts and weekly full audit
+- abort release when tested commit is no longer HEAD
+- add Playwright E2E workflow against production build
+- split code quality pipeline into parallel jobs with concurrency control
+- cache Next.js build artifacts in shared setup action
+- add PUSH_E2E-gated native push round-trip spec
+- also revoke sweep execute from authenticated
+- weekly sweep of stale push subscriptions
+- remove completed features plan and scratch file list
+- remove rounded badge pills above hero, features, how-it-works and CTA sections
+- static glow orbs, drop wasted blurs, narrow transitions, RSC sections
+- eliminate overlay jank in dialogs, sheets, dropdowns and toasts
+- remove blog page subtitle and search suspension
+- optimize hero glow orbs and regenerate favicon (smaller .ico, subset fonts)
+- add cv-auto for long-form content and cleanup PWA manifest duplication
+- remove animate-pulse from static GlowOrb in landing heroes
+- code-split dashboard+admin panels and bulk url shortener in linksnap
+- convert motion to m in habitflow dashboard and stats-card
+- convert Motion components to m/runtime primitives across UI library
+- replace backdrop-blur with static fills in UI primitives and navbar
+- add blur budget tokens and CSS reveal for LCP optimization
+- add minimumCacheTTL for optimized image CDN caching
+- subset Arabic fonts and optimize favicon sizes
+- remove always-on ambient drift animations from landing
+- drop decorative backdrop-filters on flat landing surfaces
+- remove brand name from email subjects
+- drop utilities colliding with Tailwind core
+- route simple animations through LazyMotion m component
+- drop unused wa-bounce keyframes; cap whatsapp pulse ring
+- scope transitions to animated properties on legal pages
+- run functions in dub1 next to Supabase eu-west-1
+- skip version polling while tab is hidden
+- drop decorative backdrop-filter on flat backgrounds
+- consolidate ambient glow blurs into shared tiers
+- use 302 for OAuth error redirects, prefer getUser() for identity, and drop the scope list from the consent page
+- approve install scripts for @sentry/cli and esbuild
+- rename middleware.ts to proxy.ts for Next 16
+- remove decorative header/footer branding and unify font to IBM Plex Sans Arabic
+- subscribe to auth session once instead of on every navigation
+- limit syntax highlighting to a lean language set
+- throttle reading progress updates with requestAnimationFrame
+- promote animated glow orbs to compositor layers with mobile blur caps
+- memoize testimonial cards and precompute card metadata
+- restrict product dialog animations to transform
+- animate overlay primitives with transform and opacity only
+- add supabase CLI as devDependency
+- bump react-dom and @types/react-dom
+- apply prettier formatting to workflow, docs, and eslint config
+- restyle OTP, reset, and broadcast templates
+- refresh generated app version
+- apply prettier formatting
+- Potential fix for code scanning alert no. 31: DOM text reinterpreted as HTML
+- remove decorative section eyebrow badges
+- simplify testimonial card and dialog layout
+- remove role from testimonials
+- split dropdowns out of initial desktop chunk
+- preload Aref Ruqaa to shorten LCP
+- reserve hero-visual footprint to kill CLS
+- harden calendar grid for production
+- drop route-scoped CSS, restore single Tailwind compilation
+- align local migration timestamps with remote
+- update cross-cutting feature statuses (Phase 5/6 complete)
+- defer preload of decorative Aref Ruqaa logo font
+- add route-scoped CSS guardrail script
+- extract shared Tailwind @theme into app/theme.css
+- lazy-load below-the-fold sections to shrink initial JS
+- remove root loading boundary for direct HTML paint
+- serve /_next/image responses stale-while-revalidate
+- inline design-tokens.css to drop a render-blocking request
+- trim font preloads and lazy-load portfolio images
+- remove dead motion-only classes from global.css
+- make /blog statically prerendered with client-side search island
+- lazy-mount RoyaToaster and defer sonner to a separate chunk
+- replace framer-motion reveal islands with IO + CSS animations
+- convert product landing pages to RSC + client islands
+- add reveal/CTA islands and CSS-driven landing animations
+- lazy-load user and notification dropdowns
+- on-demand tag revalidation for public cache
+- trim feed payload with stored reading time
+- allow edge caching on public pages and add client staleTimes
+- add rounded-full to logo in navbar and footer
+- optimize public page images with next/image and AVIF
+- server-render static landing sections with client islands
+- lazy-mount root layout floats off critical path
+- refine issued-certificate notification copy
+- honor prefers-reduced-motion on landing glows
+- skip auth user fetch on public pages
+- pre-render verify pages at build with ISR
+- update push endpoint allowlist expectation for google.com hosts
+- align recipient_user_ids migration version with remote
+- remove superseded admin-user-targeting plan
+- stream dashboard sections and dedupe loaders
+- dedupe per-request supabase client construction
+- fold post tags into cached post payload
+- add blog feed and admin dashboard serving indexes
+- add plan for admin user targeting in certificates and notifications
+- align announcement body length with server cap
+- bump @radix-ui/react-radio-group from 1.4.4 to 1.4.7
+- bump @radix-ui/react-navigation-menu from 1.2.18 to 1.2.22
+- bump marked from 18.0.7 to 18.0.9
+- bump @types/node from 26.1.2 to 26.2.0
+- bump @tiptap/core from 3.29.0 to 3.30.1
+- bump @tiptap/extension-link from 3.29.0 to 3.30.1
+- bump react and @types/react
+- bump @tiptap/pm from 3.29.0 to 3.30.1
+- bump lucide from 1.30.0 to 1.31.0
+- bump softprops/action-gh-release from 2 to 3
+- ignore CHANGELOG, package.json, and generated app-version in prettier
+- add web-push for OS-level push notifications
+- bump @radix-ui/react-context-menu from 2.3.3 to 2.3.7
+- clean up certificate verification page
+- simplify certificate QR code display
+- cache certificate-by-code lookups
+- simplify version support policy to current production release
+- supply SUPABASE_SERVICE_ROLE_KEY to build job
+- bump typescript-eslint from 8.65.0 to 8.66.0
+- bump @radix-ui/react-menubar from 1.1.21 to 1.1.24
+- bump @radix-ui/react-checkbox from 1.3.7 to 1.3.11
+- bump @tiptap/react from 3.29.0 to 3.29.2
+- bump react-hook-form from 7.83.0 to 7.84.0
+- bump prettier from 3.6.2 to 3.9.6
+- bump @tiptap/extension-image from 3.29.0 to 3.29.2
+- bump @supabase/ssr from 0.12.3 to 0.12.4
+- bump @types/node from 26.1.1 to 26.1.2
+- drop 6.9MB of fallback PNGs and shrink favicon to 8KB
+- cache post slug, tags, and categories for 60s
+- bound analytics and admin events to 10k rows / 100 links
+- defer recharts dashboard charts behind Suspense
+- lazy-load qrcode and canvas-confetti on interaction
+- remove @phosphor-icons/react after Lucide migration
+- migrate remaining UI icons from Phosphor to Lucide
+- render product landing pages as server components
+- batch post tags into a single query to eliminate N+1
+- static-generation slugs and cache public blog queries for 60s
+- additive serving indexes for analytics, notifications, habit logs, and ILIKE search
+- mark spendtrack CSV and undo as done
+- migrate Hero/HeroVisual/WhyUs icons to Lucide
+- migrate auth pages icons from Phosphor to Lucide
+- mark done blogpress bulk/calendar and spendtrack insights
+- move ambient motion loops to compositor-only CSS animations
+- paint hero LCP text without waiting for hydration
+- render static marketing sections as Server Components
+- lazy-load supabase client off static pages
+- disable client session replay runtime
+- unify loading to single page loader across all routes
+- cache immutable assets and add noise overlay source
+- remove unused OG Image png source
+- serve woff2 instead of uncompressed ttf and drop unused weights
+- skip supabase round-trip for anonymous public requests
+- remove dead numbered png assets and unused png field
+- format analytics-repository
+- bump @radix-ui/react-tooltip from 1.2.13 to 1.2.16
+- bump @radix-ui/react-hover-card from 1.1.15 to 1.1.23
+- Potential fix for code scanning alert no. 26: Insecure temporary file
+- Potential fix for code scanning alert no. 22: Insecure temporary file
+- add per-project agent contract for automatic skill execution
+- mock admin-auth-guard in route tests after announcement controller import
+- apply prettier formatting to pending-login store and notification test
+- drop unused React import to satisfy typecheck
+- remove orphaned theme-provider (zero importers, not mounted in any layout)
+- surface corrupted data-file reads instead of failing silently
+- tighten category casts to single DB-domain assertion
+- satisfy prettier on refactored files
+- move loader-visible repository result/query types into shared/contracts
+- rename nested ui/ui primitives folder to ui/primitives
+- split logger into per-side leaf utilities (backend/shared + frontend/shared)
+- move admin-validator leaf utility from root shared/ to backend/shared/
+- move leaf UI hooks from state/ to shared/ (no API dependency)
+- satisfy prettier
+- update README to reflect architectural changes
+- replace all console.error/console.warn with structured logger
+- remove I-prefix from 12 repository interfaces
+- wrap AUTH_PATHS array for readability
+- convert CertificateVerifier arrow function properties to regular methods
+- rename color_hex to colorHex in Spendtrack application types
+- convert LinksnapApiClient class with all-static methods to module of exported functions
+- convert AdminValidator class with static methods to plain exported function
+- deduplicate formatDateArabic into formatHijriDate and extract CERT_CODE_REGEX
+- remove dead exports and unused validation schemas
+- route session provider through api layer
+- delegate all request validation to services, thin the controller
+- move generic AppError out of habitflow-named module into shared errors
+- make controller thin by moving validation and local-data into service
+- apply prettier formatting to auth, admin repository and email client
+- extract server-side data loaders so pages stay pure presentation
+- centralize NODE_ENV checks in frontend env module
+- move middleware DB writes and route maps into repositories/config
+- move public users upsert out of gateway into a repository
+- inject email validity TTLs from config instead of hardcoding copy
+- move turnstile bypass decision from client to config
+- move habitflow window defaulting and typed validation into service
+- delegate rate-limit policies and reserved-code rule to config/service
+- compose supabase clients in config root, inject into repositories
+- move PendingLoginStore contract to shared leaf so transport no longer imports services
+- compose admin posts service in config instead of transport in blog page
+- move errorResult error mapping out of transport into middleware
+- extract shared HeroSection shell
+- remove dead http response helpers and controller transport leak
+- extract shared HowItWorksSection shell
+- extract route-handler logic into backend/controllers
+- extract shared FeaturesSection shell
+- dedupe FeaturesBento card theme via shared helper
+- move admin-visibility decision from controllers into service
+- lift rate-limit policies from controllers into config
+- move redirect code-filter and error classification into service
+- route VersionChecker through api layer instead of transport
+- inject db path into JsonFileHabitRepository instead of importing config
+- centralize all env reads in backend/config/env and frontend/shared/constants
+- move session provider to state layer, fix reverse ui dependency
+- generalize subscribeToPostgresChanges; route through notifications api layer
+- compose AuthGateway in config via createServerAuthService helper
+- move pending_login cookie handling into AuthService via PendingLoginStore
+- prettier formatting for spendtrack page and notifications repository
+- kebab-case hook file names (useFocusTrap, useHorizontalScroll)
+- move backup/restore orchestration out of route handlers into service
+- dedupe createClient(cookieStore) via loadSpendtrackService helper
+- map DB rows to contract types instead of double casts
+- route Google OAuth users upsert through AuthGateway client
+- centralize Turnstile site key config in constants
+- move analytics ownership check from repository to service
+- move verification workflow out of repository into AuthService
+- move data-path out of shared into config and resolve lazily
+- split editor-content god component into autosave/upload hooks and toolbar/settings components
+- split repository interface into reader/writer (ISP)
+- extract realtime channel wiring into transport layer
+- derive wire DTOs from shared contract types instead of duplicating fields
+- inject siteUrl into AuthService instead of reading env in the service
+- move supabase client construction from repository to composition root
+- reformat import lines to satisfy prettier
+- flatten habitflow feature island into shared layer folders
+- move reading-time utility out of root shared into frontend shared
+- move use-animated-counter hook out of shared into state
+- move certificate-verification into services/certificates capability
+- Bump github/codeql-action from 3 to 4
+- Bump gitleaks/gitleaks-action from 2 to 3
+- Potential fix for code scanning alert no. 19: Missing origin verification in `postMessage` handler
+- Potential fix for code scanning alert no. 13: Insecure temporary file
+- Potential fix for code scanning alert no. 18: Useless conditional
+- Potential fix for code scanning alert no. 16: Missing origin verification in `postMessage` handler
+- Potential fix for code scanning alert no. 12: Incomplete multi-character sanitization
+- Potential fix for code scanning alert no. 11: Incomplete multi-character sanitization
+- Bump eslint from 10.7.0 to 10.8.0
+- Bump @radix-ui/react-select from 2.2.6 to 2.3.7
+- Bump @radix-ui/react-dropdown-menu from 2.1.20 to 2.1.24
+- Bump react-hook-form from 7.81.0 to 7.83.0
+- Bump @radix-ui/react-alert-dialog from 1.1.15 to 1.1.23
+- Bump @radix-ui/react-toggle-group from 1.1.15 to 1.1.19
+- Bump @testing-library/jest-dom from 6.9.1 to 7.0.0
+- Bump lucide-react from 1.24.0 to 1.27.0
+- Bump @radix-ui/react-scroll-area from 1.2.14 to 1.2.18
+- Bump @supabase/supabase-js from 2.110.7 to 2.110.8
+- Bump @types/node from 20.19.43 to 26.1.1
+- Bump @radix-ui/react-popover from 1.1.15 to 1.1.20
+- Bump typescript-eslint from 8.64.0 to 8.65.0
+- Bump @radix-ui/react-radio-group from 1.3.8 to 1.4.4
+- Bump @radix-ui/react-accordion from 1.2.12 to 1.2.17
+- Bump @radix-ui/react-switch from 1.3.3 to 1.3.4
+- Bump @radix-ui/react-menubar from 1.1.20 to 1.1.21
+- Bump @radix-ui/react-aspect-ratio from 1.1.8 to 1.1.12
+- Potential fix for code scanning alert no. 5: Creating biased random numbers from a cryptographically secure source
+- Potential fix for code scanning alert no. 6: Creating biased random numbers from a cryptographically secure source
+- Potential fix for code scanning alert no. 8: Insecure randomness
+- Bump @radix-ui/react-collapsible from 1.1.15 to 1.1.17
+- Bump @radix-ui/react-tooltip from 1.2.8 to 1.2.13
+- Bump eslint from 9.39.5 to 10.7.0
+- Bump @radix-ui/react-checkbox from 1.3.3 to 1.3.7
+- Bump @sentry/nextjs from 10.65.0 to 10.66.0
+- Bump @radix-ui/react-switch from 1.2.6 to 1.3.3
+- Bump @radix-ui/react-scroll-area from 1.2.10 to 1.2.14
+- Bump @radix-ui/react-label from 2.1.8 to 2.1.11
+- Bump sharp from 0.34.5 to 0.35.3
+- Bump @radix-ui/react-slider from 1.3.6 to 1.4.3
+- Remove git clone instructions from README (private repo)
+- Fix 6 react-hooks lint errors (set-state-in-effect, purity)
+- Fix lint:fix script with cross-env too
+- Add cross-env for cross-platform env var in lint script
+- Set ESLINT_USE_FLAT_CONFIG=false for eslintrc compat in lint script
+- Fix types for recharts 3.x (TooltipContentProps, DefaultLegendContentProps, DataKey as key)
+- Downgrade eslint from 10.x to ^9.39.5 (compatible with eslint-plugin-react 7.x)
+- Revert typescript from 7.x to ~6.0.0 (compatible with @typescript-eslint <6.1.0)
+- Bump recharts from 2.15.4 to 3.9.2
+- Bump eslint from 8.57.1 to 10.7.0
+- Bump @radix-ui/react-slot from 1.2.4 to 1.3.0
+- Bump typescript from 5.9.3 to 7.0.2
+- Bump eslint-plugin-react-hooks from 4.6.2 to 7.1.1
+- Bump lucide-react from 0.562.0 to 1.24.0
+- Bump @types/node from 20.19.26 to 26.1.1
+- Bump react-icons from 4.12.0 to 5.7.0
+- Bump @radix-ui/react-separator from 1.1.8 to 1.1.11
+- Bump @radix-ui/react-dropdown-menu from 2.1.16 to 2.1.20
+- Bump actions/checkout from 4 to 7
+- Update!
+- Migrate from React to Next.js
+- Updated the Portfolio component to use WebP images with PNG fallback
+- Update sitemap.xml
+- Update content
+- Update esbuild version to ^0.28.0
+- Add esbuild as a devDependency to package.json
+- Fix vite.config.ts
+- Remove PWA
+- Create SECURITY.md
+- Create README.md
+- Install Vercel Web Analytics
+
+### Added
+- the bundled surface and the two-origin spike (#630)
+- leave the launch document to the network, not a second cache (#625)
+- the launch skeleton covers the gap to the document (#623)
+- play the recitation natively in the shell (#614)
+- paint public rows from a route-scoped snapshot (#613)
+- keep the recitation playing across pages (#612)
+- keep a range of suras at once, from the index (#606)
+- float the recitation and close the ayah with its number (#595)
+- keep a surah's manifest, so it plays with the radio off (#593)
+- list and remove a kept recitation on /device (#592)
+- keep a surah's recitation for offline listening (#590)
+- carry the last screen into the first frame (#582)
+- trim the homepage to a scrolling services row (#581)
+- one boot connection per identity, mirrored in memory (#579)
+- paint the Local Store before the session resolves (#575)
+- the program's three numbers are gated on the web, not only measured (#566)
+- the services menu follows the visitor's order (#565)
+- give a reader a digest built from their own sources (#547)
+- let readers propose sources and an admin approve them (#546)
+- let a reader filter the digest by source (#545)
+- give subscribers 20% off the four services (#539)
+- publish a daily Arabic digest from a fixed source list (#536)
+- a cold navigation gives up after three seconds (#535)
+- enforce caps and post publication rules in Postgres (#534)
+- cut the page to the two plans and reword the copy (#525)
+- list every public page in the sitemap (#524)
+- serve the nearest cached shell instead of /offline (#521)
+- enforce credits and owned-item caps on every write path (#518)
+- refresh route shells after activation, not during install (#517) (#517)
+- add the pricing page and the account usage card (#516) (#516)
+- add plan, credit ledger and owned-item caps (#515) (#515)
+- measure cold open, warm open and tap to paint (#513) (#513)
+- cache by content, not by release (#514) (#514)
+- count /offline serves and cache outcomes in the field (#481)
+- the last two shells, and the measured install budget (#470)
+- render the product dashboards from cached shells (#469)
+- cache the account shells - the guard moves client-side (#448) (#466)
+- record the shell's last flush and the force-stop note on /device (#464)
+- Phase 0 - slow networks are harmless (#458)
+- add the client pull the store could never get (#453)
+- ask for the battery-optimization exemption where it matters (#451)
+- precache the build's public route shells (#446)
+- name the connection inside auth, admin and MCP (#368) (#441)
+- accept the session cookie so a worker can drain and pull (#440)
+- inspect the Outbox and remove this device's copy (#439)
+- bound Cache Storage and purge it on sign-out (#435)
+- render numbers in Aref Ruqaa with ASCII digits (#427)
+- the shell drain drill as one script (#426)
+- give the shell a legible local fallback (#417)
+- set the reader in KFGQPC Hafs with ayah cards (#400)
+- wake a closed shell when the account moves (#380)
+- publish the reader's tables and follow the hint (ADR-0060) (#377)
+- drain the shell's Outbox with the app closed (#376)
+- give the reader an Outbox, a sync cursor and a guest claim (#374)
+- serve the reader's position and bookmarks to a signed-in account (#373)
+- let a resumed vendoring run trust what the manifests already say (#371)
+- the two owned tables the reader syncs through (#365)
+- pull on Realtime hints while the app is foregrounded (#360)
+- drain the Outbox from the service worker (#343)
+- play the recitation one Ayah at a time (#341)
+- vendor the recitation into R2 as published (#336)
+- remember the reader's place and their marks (#328)
+- add the reader at /quran and list it in the services menu (#325)
+- vendor the Uthmani text and its Tanzil metadata (#324)
+- move the site footer onto /account (#302)
+- show the shell's version only on /account (#299)
+- float a lone back control on secondary pages (#298)
+- move the home FAQ onto its own /account/faq page (#294)
+- show every account row to guests, prompt on the gated ones (#290)
+- make the shell's update dialogs look like the product (#284)
+- watch the train, and skip the run that lost the race (#281)
+- give secondary pages a back header, not the app chrome (#277)
+- serve the APK from our own origin, so an update survives any network
+- title a shell release with its own tag, and migrate the legacy assets
+- name the published APK `royaraqamia-<version>.apk`
+- tag web releases as `web-X.Y.Z`
+- give the shell its own version, and its own release
+- install the app from /account, or check the shell for updates
+- one app shell for every device
+- let the shell release itself
+- download, verify and install the published APK
+- hold the splash to the launcher icon's proportion
+- draw the splash from the launch theme
+- give the shell its own version, an update manifest, and a native prompt
+- announce a waiting build instead of swapping it in silently
+- let users disconnect a connected MCP client
+- reload the document on a worker swap instead of prompting
+- deliver notifications to the Android shell over FCM
+- complete the Google round trip in a callback route
+- publish App Links verification for the Android shell
+- let the site detect the Android shell and reach the system browser
+- build the app as a Capacitor shell over the live site
+- rename the Scanner and trim its page copy
+- add the public QR and barcode Scanner
+- history-aware back button and local post timestamp
+- clamp future write times (ADR-0033) + multi-device e2e
+- incremental sync cursor, tombstone retention, write conformance
+- full-snapshot reconcile on open + local-first charts
+- add labels to name and handle dialog inputs
+- show author handle under the name
+- edit profile name, photo, and handle in dialogs
+- inline name and avatar editor
+- add display-name and avatar write endpoints
+- add hideClose option to DialogContent
+- add my-posts page and nav link
+- link post authors to their public profile
+- rename habits list and add empty state
+- add create FAB and refine mobile date header
+- add create FAB and drop redundant dashboard UI
+- show freshness of cached public content (#170)
+- queue lead form submissions offline through the Outbox (#169)
+- offline-first links through the Local Store and Outbox (#167)
+- link الرَّوابط المختصَرة from the user dropdown
+- open the shortener to visitors, gate codes and analytics
+- open SpendTrack to visitors with a device-local dashboard
+- add guest mode and open HabitFlow to visitors
+- use Arabic titles for LinkSnap, SpendTrack and HabitFlow
+- offline-first expenses, budgets, categories and recurring (#166)
+- add روابطي المختصَرة and move the LinkSnap dashboard there
+- add page titles to LinkSnap, SpendTrack and HabitFlow
+- expose LinkSnap, HabitFlow and SpendTrack in services menu
+- surface sync status and outbox diagnostics (#165)
+- sync local writes through an outbox with guest claim (#164)
+- render and write from a durable local store (#163)
+- full-screen composer on mobile, taller dialog on desktop
+- replay-safe write contract for owned records (#162)
+- stale-while-revalidate shell caching and never-cache bypass (#161)
+- check username availability live while typing
+- list verified members only
+- remove the member count badge
+- open the account page from the user dropdown card
+- transliterate Arabic names into latin usernames
+- add member directory, public profiles, and people search
+- show sign-in prompt to guests instead of redirecting
+- prompt guests to sign in from the compose FAB
+- add WhatsApp link to user menu and account page
+- render dropdowns as bottom sheets below lg
+- inspect links and adapt formats (video/audio/image)
+- copy control for guide snippets with inline confirm state
+- add a save fallback link for mobile browsers
+- auto-save the file instead of a second button
+- public connection guide at /mcp/guide with nav, account links, and robots allow
+- wire fail-closed rate limits into /mcp, /register, /token, and consent
+- per-IP rate-limit policies and https-only redirect-URI gate
+- dual-mode auth — anonymous callers reach the public tool surface
+- surface provider failure code
+- mount navbar chrome and add site nav entry
+- add admin console for jobs, blocklist, platforms and limits (#154)
+- add Platform allowlist and per-Platform circuit breaker (#152)
+- tolerate a slow provider acknowledgement (#151)
+- dispatch to the provider and complete via signed callback (#151)
+- sweep stale and old jobs, expire signed links (#155)
+- gate the tool with Turnstile, limits and SSRF guards (#153)
+- add the Media Downloader tool and async job pipeline (#150)
+- link the secondary CTA to the community
+- browse services from the hero CTA
+- show the bottom tab bar on auth pages
+- show the bell to visitors with a sign-in prompt
+- replace the tablet/mobile menu with an app-style bottom tab bar
+- index community posts and harden robots/sitemap
+- refresh the request summary copy
+- separate the tier name from its backend qualifier
+- add icons and scrolling to the services dropdown
+- align card and booking summary copy
+- trim the apply cohort card
+- share one course summary across the card and apply page
+- polish converter result captions and typography
+- add IQWealth as a keyless IQD market source
+- display converted amounts as whole numbers
+- hold the last known parallel rate and flag it in health
+- add Lira Scope as a keyless SYP market source
+- split gold/silver into a dedicated converter
+- carry the last parallel rate forward until it goes stale
+- show SYP conversion in old lira on the caption line
+- drop post titles for body-first posts
+- start the converter on the visitor's currency
+- resolve the converter target from the visitor's country
+- label the amount as gram count for metal sources
+- add gold karat selector to the converter
+- add YER parallel markets to the converter
+- let authors edit and delete their posts
+- show official and parallel prices for dual-rate currencies
+- add a share button to post cards
+- show the post body on feed cards
+- show post publisher on feed cards
+- searchable, RTL currency pickers
+- source the Syrian Pound from a market feed
+- align converter fields with form primitives and add Hijri date
+- scope the board to Arab, USD and EUR currencies
+- add Arab-world currencies and keep expenses curated
+- hide the floating WhatsApp button on /rates
+- add public rates page, board UI and API routes
+- add snapshotted rates service, controllers and loaders
+- add keyless fiat and metal rate providers
+- add rate snapshot and sync run schema
+- add shared currency metadata and conversion math
+- reject breached passwords via free HaveIBeenPwned range API
+- social-style feed with keyset load-more pagination
+- add compose FAB so any signed-in user can publish
+- mount the search box on the blog index
+- keep the intake confirmation after a refresh
+- let signed-in submitters edit their own submissions
+- require a cohort on the apply form
+- add cohort management to the training console
+- move contact details to the last booking step
+- rewrite the retainer pitch and sync the page metadata
+- book training by cohort and enroll applicants from admin
+- add dated cohorts with seats and enroll/release
+- show the reference code on every intake confirmation
+- convert project request and retainer forms to multi-step wizards
+- rename the retainer offering, raise its fee, add form summaries
+- cover every country and default the phone picker to the visitor's location
+- harden the calendar and date/time pickers
+- use the shared DatePicker for the retainer start date
+- drop the other project type from project requests
+- mark a retainer whose paid period has passed
+- an Admin can run the retainer book
+- an Admin can work the project request queue
+- a visitor can request monthly maintenance
+- a visitor can request a project build
+- add coming-soon entries to the services dropdown
+- advertise installment payment on the training card
+- rewrite the web-dev benefits and refine pricing labels
+- revise web-dev pricing and add an employment retainer option
+- update payment methods and training details
+- add lite mode for low-end devices
+- add typed auth-failure outcome and Admin adapter
+- notify admins on new booking requests
+- raise topic floor to 30 and surface it in the booking form
+- refresh the course copy and drop the unused whatsapp helper
+- rework the apply page after submission and note installment payment
+- clamp the course copy and remove the curriculum breakdown
+- add a collapsible text component
+- record which Admin issued a certificate
+- add the Admin Console and give LinkSnap's admin a real door
+- : make bookings anonymous and unpaid
+- accept course applications in-app instead of via WhatsApp
+- hide linksnap, blogpress, habitflow, spendtrack from UI and remove command palette icon
+- add .agents folder with all installed skills
+- add skills-lock.json and update AGENTS.md with full skill inventory
+- prioritize verify and consultation products in nav order
+- searchable country-code selector on booking phone field
+- add country dial-code data and phone parsing utils
+- add icon-only command palette beside navbar account controls
+- add switcher and command palette to blog, verify, consultation booking
+- drop email field from booking form (account email auto-used)
+- arabize product labels, drop taglines, expand products dropdown
+- add TimePicker primitive and replace native time and date inputs
+- show release version in footer and mobile menu
+- add consultations bookings, availability, packages, and settings dashboard
+- add booking wizard, payment steps, and /consultation/book page
+- expose public and admin booking API routes
+- add contracts, repositories, service, and controllers
+- add consultation booking schema, RLS, and settings
+- rebuild calendar grid with container queries
+- keep push delivery diagnostics in the service worker
+- prune superseded device rows and track endpoint liveness
+- render all sections on page entry instead of lazily on scroll
+- add edge-cacheable Cache-Control header for version endpoint
+- challenge anonymous MCP requests with OAuth 401
+- add admin certificate tools and document MCP encryption key
+- add per-user write tools for user products
+- add read-only MCP tools for user products
+- add stateless streamable HTTP transport and tools registry
+- add OAuth authorization server HTTP endpoints
+- add OAuth 2.1 provider with PKCE, code exchange, and refresh rotation
+- add scope model and session resolution for user-scoped access
+- add OAuth tables, token crypto, and oauth repository
+- add channel toggles to announcement composer
+- add broadcast API client for combined channel sends
+- add broadcast endpoint supporting notification and email channels
+- add EmailBroadcastService and fail-safe admin broadcaster
+- resolve recipient emails via admin users service
+- add broadcast email contract and batch email client
+- extract calendar formatting helpers with unit tests
+- add new testimonial and update existing one - Add new testimonial from شهد الحسن (متدربة - دورة UI/UX) - Update existing testimonial from نصرات الحلاق with minor formatting adjustment
+- save on Cmd/Ctrl+S in the editor
+- announce active page in mobile nav links
+- optimistic toggle with snapshot rollback
+- route-scope Tailwind CSS per product with scoped entries
+- add undo toasts for destructive actions
+- add Cmd+K quick-create actions across products
+- add category splits and per-expense currency
+- add CSV export and streak-frozen recovery nudges
+- add password-protected short links with unlock flow
+- add post export (markdown/html), duplicate, and editor reading progress
+- add live slug availability check and re-slugging
+- add per-row share sheet with copy fallback
+- add NextSupa perf architect subagent
+- add multi-select user picker to certificate and announcement forms
+- persist and notify targeted recipients by user id
+- support targeted admin announcement recipients
+- add searchable admin users API
+- add admin user selection schemas and recipient_user_ids
+- add recipient_user_ids column and regenerate types
+- add version:replay audit of historical release windows
+- add habit reminder push webhook endpoint with per-user daily dedupe
+- dispatch habit reminders to the app webhook via pg_net
+- add browser subscription client and notification dropdown toggle
+- handle push events and notification clicks in the service worker
+- add subscribe/unsubscribe API with CSRF guard and rate limit
+- wire push dispatch into notification producers and admin broadcaster
+- add PushService with VAPID dispatch, allowlist, and endpoint pruning
+- add push subscriptions repository with chunked dispatch reads
+- add shared push subscription contract and URL mapping
+- add push_subscriptions table, RLS policies, and generated types
+- add VAPID env config and key generator script
+- add fully automated release versioning pipeline
+- cache public blog pages at CDN edge for 60s
+- add weekly/monthly targets and custom reminder time
+- redesign toasts to match Roya Raqamia design system
+- add undo action to expense delete toast
+- add CSV export and import with auto category creation
+- add insights strip with top category, daily average, and period-over-period change
+- add scheduled posts calendar view with drag-to-reschedule
+- add bulk actions for posts (publish/unpublish/delete/setCategory)
+- enable package import optimization for icon bundles
+- add analytics date-range + CSV export and bulk link actions
+- add device/OS/browser analytics breakdown
+- add link expiry with active/expired/blocked status
+- add many-to-many tags for posts
+- thread per-user currency through dashboard and UI
+- add in-editor SEO and stats side panel
+- add content-stats util and live toolbar counters
+- persist and validate per-user currency
+- debounce auto-save and surface live saving state
+- add user_settings migration for per-user currency
+- add shared currency map and formatting util
+- add insights strip with best day/hour, recovery rate and streak celebration
+- add guided first-habit onboarding with template gallery
+- add per-log notes/journal for habits
+- add skip/miss streak-freeze for habit logs
+- add recurring expenses with monthly materialization
+- add per-category monthly budgets
+- enable searching transactions by description
+- use DatePicker in certificate form dates
+- use DatePicker in expense dialog
+- use DateRangePicker in transaction filters
+- add Arabic RTL Calendar and DatePicker primitives
+- add QR code modal to dashboard link rows
+- add pure helper for short link URL used by QR codes
+- scheduled daily habit_reminder notifications via pg_cron
+- admin system_announcement broadcast
+- monthly budget with expense_alert notifications
+- notify recipient when a certificate is issued
+- notify admins when a post is published
+- notify link owner on click with cooldown
+- add service-role notification service for production
+- wire password reset through Resend instead of Supabase built-in email
+- distraction-free mode, slash commands menu, and code language selector
+- dashboard category filter, scheduled tab, views, and pinning
+- scheduled status, category service/repo, and view counting
+- add categories, scheduled publishing, and view counts schema
+- add shared EmptyState component and migrate product empty states
+- unified AppShell with product switcher and command palette
+- add otp_codes migration and lock down RLS
+
+### Fixed
+- lift the tab bar, retire the offline pill, date the hero (#636)
+- lift the corner floats clear of the player (#634)
+- compare the crossing href's origin, not its prefix (#632)
+- regenerate the plugin lists and stop a dirty tree blocking the manifest (#631)
+- materialize each recurring expense by its own identity (#629)
+- refuse a busy Download Job before it spends a Credit (#628)
+- build the recitation's MediaController on the main looper (#627)
+- keep the WebView's own IME connection (#624)
+- trim the FAQ, quiet the news strip, add a sura search (#616)
+- publish a digest and its stories in one transaction (#611)
+- charge a drafts slot when a post is unpublished (#610)
+- fire habit reminders on the Damascus clock (#609)
+- close the app on Back at the root of the history (#594)
+- align the services row and neutralise testimonial surfaces (#588)
+- publish a scheduled post when its time comes (#586)
+- refuse blocked and expired links on unlock (#583)
+- let an idempotent create replay past the item cap (#580)
+- dedupe feed proposals against the source file and the indexes (#578)
+- keep a published post's date on re-publish (#577)
+- approve a source request in one transaction (#572) (#574)
+- harden feed probe against SSRF (#573)
+- patch body-parser and fast-uri advisories (#543)
+- normalise the RSC cache key and preload navigations (#537)
+- reconcile queued Download Jobs and size the stale deadline to the duration cap (#533)
+- bump ip-address to 10.7.4 for the zone-parse ReDoS (#532)
+- count short links by code and keep the E2E account off the caps (#523)
+- fetch only same-origin URLs while precaching (#522)
+- a visitor's bad link must not trip a Platform's breaker (#520)
+- bulk delete must tombstone, not hard-delete (#519)
+- read a clean drain report as success (#505) (#505)
+- keep refused serve reports and page on the regression doors (#483)
+- name the cause on Community reads and BlogPress uploads (#482)
+- keep an enrollment inside the application's course (#479)
+- revoke direct client writes to short_links (#478)
+- rate-limit the authorize and revoke endpoints (#477)
+- mark account-scoped notification responses no-store (#468)
+- restore post view counting after the updated_at trigger was dropped (#467)
+- rename «طلباتي» and name MCP in connected-apps (#465)
+- verify agent re-dispatches and check heartbeats every six hours (#443)
+- adopt a published version's bytes instead of rebuilding (#436)
+- escape backslashes in the matrix table's cells (#434)
+- bump hono past GHSA-5r4p-p66f-jhc7 (#433)
+- give the manifest rebase a history it can see (#432)
+- assign the trigger's columns through jsonb, not EXECUTE (#429)
+- spell «جاري» with a final ya everywhere (#425)
+- draw the silent-letter marks as marks (#424)
+- wait for the release train on main, not on a run (#423)
+- make service-worker cache writes durable and recoverable (#393) (#422)
+- stamp the shell manifest with the publish date (#421)
+- never cache account-scoped reads (#420)
+- keep WebView debugging out of release builds (#419)
+- surface load-more and search failures (#416)
+- hold offline rendering at every web breakpoint (#414)
+- surface and retry failed new-post creation (#413)
+- re-run Repo Checks after a title correction, and read the live title (#418)
+- bound and rate-limit public search queries (#412)
+- read failures throw instead of returning empty data (#411)
+- make the notification menu keyboard-operable (#406) (#410)
+- speak Arabic when the network, not the server, fails (#409)
+- clear the probe's own row before it asks for a hint (#379)
+- make the server-owned surfaces say why they cannot work (#372)
+- apply the sync tables under a version of their own (#367)
+- let the last reading position be written on unmount (#362)
+- derive the unvendored Surah in the audio e2e spec (#361)
+- pass ref when dispatching the issue implementer (#353)
+- fold combining marks into one canonical order (#351)
+- retry bucket requests and skip what a resume already uploaded (#342)
+- take the S3 origin from the endpoint and say which URL failed (#339)
+- never let a missing chunk take the page down (#335)
+- never let the toaster chunk take the page down (#334)
+- ask for durable storage on a real save, not only on install (#329)
+- flush the outbox when a write lands, in every product (#327)
+- tombstone post deletes so a replayed delete is idempotent (#319)
+- apply last-write-wins to replayed post creates (#318)
+- re-verify the access row on every context-cache hit (#316)
+- keep the sync cursor behind rows a pending write skipped (#314)
+- refuse SVG uploads to the public post-images bucket (#315)
+- stop the dark theme painting a band behind the account footer (#308)
+- keep the fixed chrome clear of the system bars (#306)
+- reserve the band the floating back control occupies (#303)
+- bound the update gesture and tie the offer to its worker (#301)
+- reserve the top band only where the bar renders (#300)
+- validate write payloads at the API boundary (#295)
+- accept only http(s) callback file links (#293)
+- date the rate series by the provider quote date (#292)
+- keep the admin certificates API out of Cache Storage (#291)
+- declare the camera permission the Scanner needs (#283)
+- land the release tag with its commit (#279)
+- withhold the push plugin a build cannot serve (#278)
+- give the update prompt the Hero CTA's colours (#276)
+- claim the refresh token atomically so rotation is single-use (#275)
+- pass only provided fields through spendtrack_update_expense (#273)
+- resolve certificates_verify on the public client (#272)
+- sweep exchanged authorization codes and shred their bridge session (#271)
+- keep one HabitFlow log per habit and date on a merge (#269)
+- normalize trailing-dot hostnames so the Blocklist and Platform allowlist cannot be bypassed (#229) (#270)
+- age the health signal by quote date, not fetch time (#268)
+- treat a 401 as a transient sync failure so the Outbox re-arms (#266)
+- claim password-reset tokens atomically to enforce single use (#267)
+- stop pruning push subscriptions by shared User-Agent (#264)
+- let a submitter edit a retainer after its start has passed (#263)
+- defer close, and no-op what lands after it (#204) (#260)
+- sync HabitFlow and LinkSnap tombstones across devices
+- stop a manifest publish from losing the version, and what #244 left stale
+- let the manifest wait for the release train
+- drop unused execFileSync import
+- group the redirects into GITHUB_OUTPUT, as shellcheck asks
+- draw the desktop icon from the logo's shape, and the 16px tab icon at all
+- store gradlew executable, so Gradle runs on Linux and macOS
+- guard the install against a dead activity, bound the download, store it internally
+- sign out a grant's own Supabase session on a live revoke
+- one logo proportion across the app's surfaces, measured
+- read a grant's last use, and kill in-flight consents on disconnect
+- use the log-injection sanitizer shape CodeQL recognises
+- match the DevTools target by host and keep bridge logs to one line
+- prune a token FCM names as the invalid field
+- give the Sync Engine its own BroadcastChannel so teardown cannot post to a closed one (#203)
+- merge the duplicated auth-contracts import (#205)
+- fold [Unreleased] entries into the release section
+- drop the sync channel reference when the effect cleans up
+- gate expense split replacement on the last-write-wins update
+- refuse agent commits in the shared checkout
+- carry the client updatedAt so log writes honour last-write-wins
+- treat an empty metal feed as a failed Rate Sync Run
+- shred the bridge ciphertext when a grant is revoked
+- match the never-cache list to the real account-tool routes
+- log why a grant was retired; correct the root-cause record
+- mint a dedicated Supabase session per MCP grant
+- make the browser detector prove it can read a symbol
+- fall back to the WASM engine when the browser detector cannot answer
+- pace deployment pruning around Vercel's deletion rate limit
+- answer GET /mcp with 405 instead of an SSE stream nothing can complete
+- invalidate the token cache on revoke and rotation
+- make authorization-code exchange atomic to prevent replay
+- close stale Local Store connections on versionchange
+- never cache product sync APIs and repair cacheFirst fallback
+- validate backup restore input before the destructive wipe
+- chain the issue implementer via dispatch, not workflow_run
+- retryable repository failures + diagnosable sync status
+- bold the requirements line and end summary lines with a period
+- last-write-wins for HabitFlow and LinkSnap writes
+- restore even spacing between habit modal sections
+- proper LWW on updated_at, local-first totals, reconcile on open
+- last-write-wins on expense update and delete
+- stop leaking clientId into expense update rows
+- align budget card save button on tablet and desktop
+- stop sending non-uuid clientId on budget sync
+- drop duplicate calendar card inside the date picker
+- clear the SECURITY DEFINER advisor findings
+- center calendar inside the mobile date-picker sheet
+- move pg_trgm out of the exposed public schema
+- don't overwrite profile on OAuth code exchange
+- eliminate reduced-motion hydration mismatches
+- require community_visible in posts public RLS read policy
+- refuse leaving enrolled through the manual status update path
+- keep the first variant source's value in the composite provider
+- reject slash-backslash prefixes in safeRedirect
+- allow every DOWNLOAD_FORMAT in download_jobs check
+- reveal the popper scrollbar on hover, not focus
+- point empty-state CTA to the shortener page
+- place search icon at start and clear at end in RTL search
+- align member username under name in RTL lists
+- show the full member roster and the real total
+- preserve paragraph breaks in post card excerpt
+- hide carousel scrollbars after global scrollbar change
+- keep copy button legible when snippet scrolls
+- left-align the submit action
+- retry transient provider dispatch
+- show WhatsAppFloat on homepage only
+- keep refresh grant working after access rows are swept
+- bump sharp to 0.35.5 (CVE-2026-96889)
+- retire the unlayered dark-theme-override stylesheet
+- pin proxy-addr, source-map-js and postcss-selector-parser to patched versions
+- send browser headers when scraping the SYP market feed
+- declare react-is required by recharts peer dependency
+- respect RTL in Radix components
+- give segmented-control selection an AA-contrast fill
+- make the selected converter toggle clearly active
+- force Latin digits in the number input spinner
+- show post card focus ring only for keyboard focus
+- pin the converted currency symbol to the left via flex order
+- show only the provider quote date in the header
+- place the converted currency symbol left of the value
+- generate ASCII-only slugs in the composer
+- render composer placeholders with RTL bidi
+- right-align Arabic placeholders in post composer
+- hide WhatsApp float on account pages
+- harden email signup/login, recovery, and abuse controls
+- cap testimonials height via scrollable body
+- restore testimonials scroll and fill portfolio image
+- stop middleware racing the browser for token refresh
+- make blog-to-community rename migration idempotent
+- redirect old /blog paths and de-flake mcp write-tools
+- stop gradient highlights clipping Arabic ascenders
+- add the missing damma to the Services heading
+- show the user's profile avatar in the account menu
+- declare NULL-accepting RPC params with DEFAULT NULL
+- import withSentryConfig from @sentry/nextjs/config
+- give calendar nav chevrons an explicit fill
+- correct RTL calendar nav caption contrast and chevron direction
+- keep the global nav override off the calendar nav
+- hide WhatsApp float on request-project and hire pages
+- surface database failures as typed repository errors
+- key field errors by field name for array inputs
+- bound a retainer's preferred start to today
+- name the retainer card and drop the daily-attendance line
+- show post cards again after the flattening removed their entrance animation
+- fix broken log_kind in recovery nudge
+- route broadcast, announcements and user search through the admin seam
+- answer 401/403 on admin auth failure
+- content-version every icon, favicon and badge URL
+- unify every icon on the purple tile and fix the badge silhouette
+- key dark: variants off a class, not the OS scheme
+- compare null before typeof in isAuthFailure guard
+- harden the apply flow for concurrent applicant bursts
+- stop certificate detail values clipping on narrow screens
+- show the user's real name instead of repeating their email
+- require a lowercase letter, matching the new Auth policy
+- revoke client execute on pg_net's http functions
+- revoke client execute on trigger-only functions
+- base is_admin() on verified identity only
+- drop client write access to public.users
+- tighten social proof strip spacing and link a11y
+- stop the 404 page double-branding its title
+- hide cover placeholders when a post has no image and drop related posts
+- stop the dark theme painting a nav band behind the wizard buttons
+- mirror the drop-columns migration filename to the applied version
+- hide WhatsApp float on training apply and auth pages
+- mirror the consultation migration filename to the applied version
+- sanitize or() filter terms in every search path (#90)
+- mirror the training migration filenames to the applied versions
+- stop the OpenCode Agent hanging on an unanswered permission prompt (#89)
+- bump sharp to >=0.35.4 for libheif CVEs (GHSA-g89c-p67h-r497, GHSA-2jg2-4ch7-h545)
+- add missing vite dependency, dedupe devDeps, and fix invalidation cache key in test
+- import jest-dom/vitest types instead of jest-dom/jest to fix tsc errors in test files
+- resolve hono and sharp vulnerabilities via npm audit fix
+- center layout, align background with privacy page, remove product mentions
+- reinstall corrupted @tiptap/react and react-hook-form type declarations
+- upgrade browserslist to 4.28.7 to patch memory/prototype CVEs
+- upgrade fast-uri to 3.1.6 to patch SSRF CVE
+- upgrade qs to 6.16.0 to patch array-limit bypass CVE
+- force navbar to always use dark colors regardless of browser theme
+- hide WhatsApp float on blog listing and post pages
+- dedupe slot step rows, Hijri dates, 12h times, custom scrollbar
+- stack backup action buttons on narrow screens to stop 360px overflow
+- remove ambient glows and min-h-screen overflow on verify pages
+- hide WhatsApp float on verify and consultation booking pages
+- remove subtitle from services section header
+- remove subtitles from homepage section headers
+- tighten vertical spacing on certificate verify page
+- remove blog page hero title
+- remove pricing from consultation section
+- race-proof OTP brute-force counter
+- remove hero and trust badges from verify and booking pages
+- remove footer from verify, consultation booking, and auth pages
+- remove page titles from product app dashboards
+- force Latin digits on native numeric and temporal inputs
+- remove site footer from HabitFlow, BlogPress, LinkSnap, and SpendTrack
+- render single Navbar on HabitFlow, BlogPress, and LinkSnap app routes
+- remove viewport-capped scroll wrapper around calendar grid
+- hide WhatsApp float on product workspace routes
+- a11y semantics and Arabic plural forms in dashboard components
+- correct UI typography, spacing, and a11y defects across dashboard
+- stop persisting checkout credentials for opencode app auth
+- apply intended release name via valid sentry version input
+- make the notifications list scroll instead of clipping
+- refresh subscription liveness on site visits
+- persist push opt-out where the service worker can read it
+- re-subscribe inside the service worker on endpoint rotation
+- raise horizontal scroll arrows above card layers so they stay clickable
+- drop custom legal-page backgrounds and tokenize to main theme
+- restore spacing lost with global heading margins
+- remove global heading margins breaking flex centering
+- show verified badge on mobile and harden dialog footer spacing
+- stop caching no-store API responses
+- remove duplicate sw.js cache-control definition
+- cap function duration to bound hung SSE streams
+- redirect unauthenticated consent visitors without a base URL
+- use refreshSession for user-scoped client and persist rotated token
+- allow OAuth loopback callbacks on any port via form-action port wildcards
+- redirect consent to the client callback with a 302 GET and allow loopback form-action
+- nest staleTimes under experimental and skip Sentry plugin outside Vercel
+- pass rehypeHighlight as a plugin tuple to fix prerender crash
+- retry transient web-push failures with exponential backoff
+- serve well-known discovery routes with the standard Response API
+- send landing CTA logins straight to the product dashboard
+- preserve current path as redirect target on navbar login link
+- shrink grid columns on narrow screens and show single star
+- preserve redirect target across login flows and MCP connect
+- validate redirect_uri before OAuth error redirects
+- import NextResponse in OAuth discovery routes
+- default sender name to رؤية رقمية when RESEND_FROM_NAME is missing
+- use permissive batch validation so one bad address can't fail the whole broadcast
+- make Turnstile responsive on narrow screens and match primary theme
+- make lazy-section anchors scroll to the mounted section
+- stop card override from painting opaque panels on text
+- match reserved hero-visual height to measured footprint
+- harden testimonials carousel a11y and strict typing
+- harden link edit dialog a11y and submit guards
+- responsive link edit dialog with internal scroll
+- consistent scrollable dialog content across products
+- restore perf_indexes_and_search migration filename to match remote
+- attach scoped CSS to unlock flow via route move and rewrite
+- restore corrupted Arabic text in product FeaturesBento sections
+- show update popup only on release version with 30-min reminder
+- circle-crop app icons and add proper maskable/badge assets
+- use square brand logo for PWA icons and circular favicon
+- auto re-subscribe after VAPID key rotation
+- allow modern Chrome FCM endpoints on google.com hosts
+- notify newly attached recipients when editing a certificate
+- strip internal recipient fields from public verify endpoints
+- keep push disabled when toggled off
+- grade next version across all commits since last tag
+- treat blank PUSH_ENDPOINT_ALLOWLIST as unset
+- harden webhook fan-out, click handling, and subscribe rollback
+- revoke authenticated execute on habit reminder push webhook
+- align push migration filenames with applied remote versions
+- load web-push via default import in generate-vapid script
+- harden certificate verification page (a11y, reduced motion, clipboard)
+- use timezone-safe certificate expiry check
+- keep package-lock.json in sync with package.json during releases
+- ensure tags are fetched before release version computation
+- allowlist client-public NEXT_PUBLIC_* values in gitleaks
+- bump nanoid to 3.3.18 to clear high-severity advisory
+- align links_expiry migration filename with remote version
+- detect chunked supabase session cookies
+- hide bell for unauthenticated visitors
+- drop invalid optimizePackageImports for next 16
+- serve webp via LazyImage with png error fallback
+- dedupe @radix-ui/react-dismissable-layer so popovers/selects stay clickable inside modal dialogs
+- layer select dropdown above modal z-index so in-dialog category picker opens
+- layer popover above modal z-index so in-dialog date picker opens
+- align migration filenames with remote schema_migrations versions
+- stop leaking internal error messages on logout failure
+- stop double-decrementing unread count on self mark-as-read
+- fail closed on rate-limiter errors for auth and notifications
+- only confirm the session account if its email matches the OTP target
+- make pending-login store stateless across serverless instances
+- paginate getUserByEmail beyond first 100 users
+- clear poll timer on unmount to avoid leak
+- resolve npm audit vulnerabilities (postcss + undici)
+- align local migration filenames with remote Supabase versions
+- resolve 19 TypeScript errors across linksnap and spendtrack
+- implement missing parseAdminEmails function
+- add challenges.cloudflare.com to CSP for Turnstile captcha
+- harden safe-redirect against double-encoded payloads
+- redirect to login on session expiry and show 'session expired' message
+- remove React cache() from getAuthUser — it only works in RSC renders
+- replace listUsers with targeted getUserByEmail and surface signIn errors
+- replace plaintext password cookie with server-side token store
+- rate-limit OTP verification and require pending record for resend
+- keep users on update-password page after password reset
+- stabilize OTP repository timestamp assertion
+
 ## [1.149.4] - 2026-10-27
 
 ### Changed
