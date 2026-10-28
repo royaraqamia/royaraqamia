@@ -97,3 +97,12 @@ is the one that decays silently.
 The user-agent token is a contract between the native shell and the site, and it is one-sided: a shell
 that does not send it is simply not recognised, which is why an old shell keeps the web prompt and stays
 quiet about APKs. That is inherent — the thing that announces updates has to arrive in an update.
+
+## Amendment (2026-10-28): `versionCode` carries the UI
+
+The counter used to carry the shell's own code, because the UI arrived over the network on every
+launch. With [ADR-0088](0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) the owned surfaces
+ship inside the APK, so a `versionCode` now carries their UI too: a bundled route changes only when a
+new build is installed (ADR-0044's in-place path, #503's channel), while a web deploy still reaches
+the remote surfaces as before. The user-agent token and the "an old shell keeps the web prompt"
+property are unchanged — that is still how the site knows which build it is talking to.

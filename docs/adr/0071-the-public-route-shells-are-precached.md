@@ -253,3 +253,12 @@ measured rather than estimated: the #555 build's own HTML for those 33 documents
 one pass still covers it: nine idle windows of four routes at 33. Raising it further is a routing-mistake question, not a
 byte one: the 146-route measurement in the amendment above is why the cap tracks what a _visit_ is
 worth fetching, not what would fit.
+
+## Amendment (2026-10-28): the precache is the remote surfaces' mechanism
+
+The route precache exists so a public route opened offline has a document. [ADR-0088](0088-the-app-bundles-the-surfaces-whose-rows-are-local.md)
+moves the owned surfaces into the APK, where the document is local and its staleness is `versionCode`
+rather than a cache header — so the precache keeps covering the **remote** surfaces it was built for
+(Community, News, rates, verify, the marketing pages) and stops being the answer for HabitFlow,
+SpendTrack, LinkSnap, BlogPress and the Quran text. The cache-naming rule and the build-id
+revalidation that made a deploy safe still govern those documents; a bundled one is not cached at all.

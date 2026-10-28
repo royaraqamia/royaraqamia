@@ -60,6 +60,7 @@ content).
 Being honest about the floor is part of the spec, because a promise we cannot keep is worse than a
 stated limit.
 
+- **A bundled surface is offline by construction, not by cache.** The owned products (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran text) ship inside the Android APK — the document is in the package, its staleness is `versionCode`, and no worker, header or cache participates ([ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md)). Everything in this section about shells, revalidation and cache naming governs the **remote** surfaces: Community, News, rates, verify, the marketing pages.
 - **A route never visited, opened offline for the first time, cannot render its own document — but it
   no longer replaces the screen.** There is no cached HTML or RSC payload for it, and nothing can
   synthesise one. The worker refreshes every _static_ route's shell in the background after it
