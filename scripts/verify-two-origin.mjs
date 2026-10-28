@@ -37,6 +37,24 @@ const DEVTOOLS_PORT = 9222;
 const REMOTE = 'https://royaraqamia.com';
 const BUNDLED = 'https://localhost';
 
+/**
+ * The document's origin, or null for anything unparseable.
+ *
+ * `url.startsWith(REMOTE)` also matches `https://royaraqamia.com.example`, so every
+ * "did it land here?" row compares origins instead of prefixes.
+ */
+function originOf(url) {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+const onRemote = (url) => originOf(url) === REMOTE;
+const onBundled = (url) => originOf(url) === BUNDLED;
+
 const serialFlag = process.argv.indexOf('--serial');
 const SERIAL = serialFlag > -1 ? process.argv[serialFlag + 1] : undefined;
 
@@ -204,26 +222,26 @@ const launched = await waitForPanel();
 const coldMs = Date.now() - coldStart;
 record('local launch', 'cold launch → panel mounted', {
   url: launched?.url ?? (await findPage()).url,
-  bundled: launched?.url?.startsWith(BUNDLED) ?? false,
+  bundled: onBundled(launched?.url),
   msToPanel: coldMs,
 });
 saveScreenshot('01-bundled-launch');
 
 // 2. The panel's own crossing, same WebView (the default mechanism), then back.
 const openedWebView = await pressPanel('فتح /community');
-const crossed = await waitForUrl((url) => url.startsWith(REMOTE));
+const crossed = await waitForUrl(onRemote);
 record('local → remote (same WebView)', 'panel → فتح /community', {
   tapped: openedWebView,
   url: crossed.url,
-  reachedRemote: crossed.url?.startsWith(REMOTE) ?? false,
+  reachedRemote: onRemote(crossed.url),
 });
 saveScreenshot('02-community-webview');
 
 adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
-const back = await waitForUrl((url) => url.startsWith(BUNDLED), 15000);
+const back = await waitForUrl(onBundled, 15000);
 record('remote → local (back gesture)', 'KEYCODE_BACK', {
   url: back.url,
-  backHome: back.url?.startsWith(BUNDLED) ?? false,
+  backHome: onBundled(back.url),
   appAlive: Boolean(adb('shell', 'pidof', PACKAGE).trim()),
 });
 saveScreenshot('03-back-to-bundled');
@@ -257,24 +275,24 @@ await new Promise((done) => setTimeout(done, 2000));
 const afterTabBack = await findPage();
 record('remote → local (Custom Tab dismissed)', 'KEYCODE_BACK', {
   url: afterTabBack.url,
-  backOnBundledRoute: afterTabBack.url?.startsWith(BUNDLED) ?? false,
+  backOnBundledRoute: onBundled(afterTabBack.url),
 });
 saveScreenshot('05-tab-dismissed');
 
 // 4. Deep links, through the intent filter (autoVerify plus the manifest's shapes).
 adb('shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', `${REMOTE}/habitflow`);
-const deepLocal = await waitForUrl((url) => url.startsWith(BUNDLED) || url.startsWith(REMOTE));
+const deepLocal = await waitForUrl((url) => onBundled(url) || onRemote(url));
 record('deep link → local route', `${REMOTE}/habitflow`, {
   url: deepLocal.url,
-  landedBundled: deepLocal.url?.startsWith(BUNDLED) ?? false,
+  landedBundled: onBundled(deepLocal.url),
 });
 saveScreenshot('06-deep-link-local');
 
 adb('shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', `${REMOTE}/community`);
-const deepRemote = await waitForUrl((url) => url.startsWith(REMOTE));
+const deepRemote = await waitForUrl(onRemote);
 record('deep link → remote route', `${REMOTE}/community`, {
   url: deepRemote.url,
-  reachedRemote: deepRemote.url?.startsWith(REMOTE) ?? false,
+  reachedRemote: onRemote(deepRemote.url),
 });
 saveScreenshot('07-deep-link-remote');
 
