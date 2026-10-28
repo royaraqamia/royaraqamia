@@ -599,8 +599,9 @@ Three constraints, all of them things a short run would otherwise measure dishon
   release: measured on Android 15 (#485), leaving idle reschedules the deferred job to the next
   period and the queued write arrived at the next launch. A late write is the platform's behaviour
   here, not a lost one, and the row above states it that way. `npm run android:drill -- --matrix`
-  still asserts the old expectation and reports this row as `FAIL`; repointing it would chase a
-  component the cutover deletes (#662), so that failure is expected until the shell goes.
+  still asserts the old expectation — «deferred while idle, drains after release» — and reports this
+  row as `FAIL`; repointing it would chase a component the cutover deletes (#662), so that failure is
+  expected until the shell goes.
 - **A case the device refuses is recorded as `skipped`, never as a pass.** An OEM that ignores
   `force-idle`, a build where `run-as` cannot signal the app, a drain that starts and finishes
   before the kill lands — each prints the device's own words in the table.
