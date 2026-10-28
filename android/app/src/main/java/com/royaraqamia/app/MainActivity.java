@@ -292,10 +292,43 @@ public class MainActivity extends BridgeActivity {
                         webView.goBack();
                         return;
                     }
+                    // A bundled shell that has crossed to the live site has no
+                    // entry to go back to (issue #500: the remote document
+                    // reports `history.length === 1`), so this used to leave the
+                    // app from a remote page. Return to the bundled root instead.
+                    String bundledRoot = bundledRootFor(bridge, webView);
+                    if (bundledRoot != null) {
+                        webView.loadUrl(bundledRoot);
+                        return;
+                    }
                     finish();
                 }
             }
         );
+    }
+
+    /**
+     * The bundled document's root, when the WebView is showing something else of
+     * ours and this build serves one (issue #500).
+     *
+     * Only a build without `server.url` has a bundled document to return to, and
+     * only the site's own origin is captured here — anything else (an OAuth page,
+     * a link that left the site) keeps the old behaviour of letting the press
+     * leave the app. The remote-URL shell that ships today is unchanged: it sets
+     * `server.url`, so this answers null and `finish()` runs exactly as before.
+     */
+    @Nullable
+    private String bundledRootFor(@Nullable Bridge bridge, @Nullable WebView webView) {
+        if (bridge == null || webView == null) return null;
+        if (bridge.getServerUrl() != null) return null;
+
+        String current = webView.getUrl();
+        String appUrl = bridge.getAppUrl();
+        if (current == null || appUrl == null) return null;
+        if (current.startsWith(appUrl)) return null;
+        if (!current.startsWith(WEB_ORIGIN)) return null;
+
+        return appUrl.endsWith("/") ? appUrl : appUrl + "/";
     }
 
     /**
