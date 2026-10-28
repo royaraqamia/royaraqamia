@@ -1027,7 +1027,10 @@ first weeks — one per commit — is not how an app ships.
    `android/release-notes/unreleased/` into this release's notes, freezes them in
    `android/release-notes/<version>.md`, and prepends the release to `public/android/changelog.json`.
    It refuses to cut without a note: the pull-request check (`--check-notes`) demands one from the
-   change itself, so this is the second line of the same rule.
+   change itself, so this is the second line of the same rule. Agents write the fragment with
+   `npm run android:note -- "إصلاح: …"` / `"ميزة: …"` / `"تحسين: …"` — never by hand — and repeat the
+   same line in the pull request body; `AGENTS.md` makes that part of the change, and `-- --list` shows
+   what the next cut will carry.
 3. **The shell's JVM tests**, so nothing lands on main without them.
 4. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into

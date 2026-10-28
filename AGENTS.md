@@ -42,6 +42,15 @@ taskkill /PID $p.Id /T /F
 
 **Arabic copy:** write «جاري» (final ya), never «جارٍ» (tanween). `npm run check:arabic` enforces it and `npm run fix:arabic` rewrites it; ADR 0054 records why.
 
+**Android release notes are the agent's job, in the same change.** A pull request that touches `android/**`, `capacitor.config.ts` or a Capacitor plugin dependency ships to users, so it also carries the Arabic line those users read in the app's changelog (ADR-0090). Do not wait to be asked, and never leave it to the owner:
+
+```bash
+npm run android:note -- "إصلاح: …"        # ميزة: / إصلاح: / تحسين: — one line per thing a user notices
+npm run android:note -- --list            # what the next cut will ship
+```
+
+Write for the user, in Arabic, not about the code: no file names, versions, commit types or internal terms. A purely internal change still ships an APK, so it still gets a line (`تحسين: تحسينات عامة في الأداء والاستقرار`). Put the same lines in the pull request body under `## Release note`. `shell-version.yml` fails the pull request without a note, and the weekly cut refuses to ship without one — never bypass that check.
+
 **Definition of done — land the work, every time.** A task is not finished when the code works; it is finished when the change is committed, pushed, open as a pull request, and squash-merged into local `main` — subject `"<PR title> (#N)"`, body = the branch's reasoning — with the pull request itself never touched after it opens: `gh pr merge`, auto-merge and `--delete-branch` stay the repository owner's manual step, and an agent never runs them. Leave the worktree and branch in place (the pull request needs the branch); the reconcile — a local squash whose PR GitHub has since merged is stale and is dropped at the start of the next task — is landing.md step 1. Sequence and conventions: [docs/agents/landing.md](docs/agents/landing.md). One-shot: `/land`.
 
 ## Detailed references
