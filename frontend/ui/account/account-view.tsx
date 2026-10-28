@@ -31,6 +31,7 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
+import { ShellChangelogRow } from '@/frontend/ui/account/changelog-view';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
 
 /** The legal pages, public like the FAQ row — a plain link for guests and members. */
@@ -161,6 +162,10 @@ export function AccountView() {
         )}
 
         <InstallSection />
+
+        {/* Only inside the shell: a browser visitor is not running an APK whose
+            changelog this is (ADR-0090). */}
+        <ShellChangelogRow />
 
         {/* Public, so it is a plain link for guests and members alike — unlike
             the rows above, it has nothing to gate. */}
