@@ -169,7 +169,7 @@ jobs:
             - `tdd` — for writing tests during implementation
 
             Connected tooling (installed for this run, authenticated by environment):
-            - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only (`vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`); do not deploy — Vercel builds a preview for the pull request — and never deploy to production.
+            - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only (`vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`); do not deploy — pull-request branches create no preview deployment — and never deploy to production.
             - The Supabase MCP server is the only database surface; apply schema changes only through `apply_migration` as described below.
 
             First, read the plan from /tmp/plan.md (use the Read tool). If it says "DECISION: CANNOT", respond with the reason and stop.

@@ -7,7 +7,8 @@ name: 'Prune Deployments'
 # problems had the same cause: every branch push became a preview deployment on
 # top of one production deployment per merge and per release commit.
 #
-# `vercel.json` now sets `git.deploymentEnabled` to `main` only, so pull-request
+# `vercel.json` now sets `git.deploymentEnabled` to `main` only (`"**": false`; a
+# bare `"*"` stops at `/` and missed every `type/name` branch), so pull-request
 # branches no longer consume the daily cap or the storage meters. That leaves
 # ~30 deployments/day (merges plus release commits), which this job keeps flat at
 # `keep` deployments instead of sawtoothing towards the cap.

@@ -60,7 +60,7 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
 
 ## Load testing
 
-- `npm run load-test -- --url <endpoint> --concurrency 100 --total 200` — concurrency smoke test for `POST /api/training/applications`. Writes real rows and triggers notifications, so target a preview deployment backed by a throwaway database; production is refused unless `--allow-prod` is passed.
+- `npm run load-test -- --url <endpoint> --concurrency 100 --total 200` — concurrency smoke test for `POST /api/training/applications`. Writes real rows and triggers notifications, so point it at a local app backed by a throwaway database; production is refused unless `--allow-prod` is passed.
 
 ## Agent workflows
 
@@ -81,7 +81,7 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 **The Android train is watched:** `.github/workflows/release-health.yml` asks `scripts/android-release.mjs --health` daily whether native changes have sat unreleased past the weekly cadence — and opens (or closes) one `release:alert` issue if they have. A release that never started, or failed on a build or a missing note, is what that catches (ADR-0090).
 
-**Manual override:** `vercel deploy` (preview) or `vercel deploy --prod` (production). Or use the `deploy-to-vercel` skill.
+**Manual override:** `vercel deploy --prod` (production). There are no preview deployments to produce, so a bare `vercel deploy` is not part of the flow.
 
 **Linked project:** Use `vercel create_git_project` for repo-linked auto-deploys.
 

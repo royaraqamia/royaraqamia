@@ -10,7 +10,7 @@ name: 'E2E: Worker Swap'
 # must not be made a required status check on `main`.
 #
 # The other specs under e2e/ are gated behind their own env flags (a test user,
-# a preview deployment, a real push subscription); this job is not the place to
+# a deployed origin, a real push subscription); this job is not the place to
 # grow them.
 
 on:
