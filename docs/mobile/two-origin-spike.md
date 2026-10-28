@@ -54,35 +54,39 @@ screenshot, into `spike-evidence/` (git-ignored). It does **not** judge the rows
 whether a tab dismissed where it should, and the feel of the back gesture are still a human's, which
 is why the table says "paste the result".
 
-## Emulator dry run (not the result)
+## Device run — RMX3195, Android 13 (API 33)
 
-Run once on API 35 (`sdk_gphone64_x86_64`, WebView 35) so the device session starts with the
-mechanics already checked. An emulator does not answer the table — it is here to separate "the
-design cannot work" from "the phone will settle it".
+The spike APK (release-signed, `versionCode` 20021, WebView debugging on for the session) installed
+over the shipped shell with its data intact, then `npm run spike:verify` plus a manual pass for the
+rows a script cannot judge. An emulator (API 35) was run first and reproduced every failure below,
+so the mechanics were already separated from "the phone will settle it".
 
-| Step                                          | Observed                                                                                                                                                                            |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cold launch                                   | `https://localhost/` — the bundled document, no network round trip                                                                                                                  |
-| Panel → `فتح /community` (same WebView)       | the WebView lands on `https://royaraqamia.com/community`                                                                                                                            |
-| Back from that remote document                | **the activity finishes**: the remote document reports `history.length === 1`, so `canGoBack()` is false and `MainActivity`'s back handler exits. The row fails as the spike stands |
-| Panel → `Custom Tab` → `فتح /community`       | a Custom Tab activity starts (dumped), so the mechanism itself works                                                                                                                |
-| Deep link `https://royaraqamia.com/habitflow` | lands on the **remote** document — `webUrlFor` has no owned/remote split, so an owned route resolves like any other URL                                                             |
-| Deep link `https://royaraqamia.com/community` | lands on the remote document, as it should                                                                                                                                          |
-| `royar://auth/callback?code=spike`            | reaches the app and is mapped onto `https://royaraqamia.com/auth/callback?code=spike`                                                                                               |
+| Step                                          | Observed                                                                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Cold launch                                   | `https://localhost/` — the bundled document; document committed in **2.6 s**, panel mounted at **4.1 s**                            |
+| Panel → `فتح /community` (same WebView)       | lands on `https://royaraqamia.com/community` in the same WebView                                                                    |
+| Back from that remote document                | **exits to the home screen** before the fix below; after it, back returns to `https://localhost/` with the app alive                |
+| Panel → `Custom Tab` → `فتح /community`       | Chrome's Custom Tab opens on `/community`, the app's WebView stays on `https://localhost/`                                          |
+| Custom Tab dismissed                          | back returns to the bundled route, app still there                                                                                  |
+| Deep link `https://royaraqamia.com/habitflow` | lands on the **remote** habitflow page — `webUrlFor` has no owned/remote split                                                      |
+| Deep link `https://royaraqamia.com/community` | lands on the remote page directly, with no chooser (`autoVerify` verified the release signature)                                    |
+| `royar://auth/callback?code=spike`            | reaches the app, mapped onto `https://royaraqamia.com/auth/callback?code=spike`                                                     |
+| Session, Bearer-capable route                 | `/linksnap/api/links` → **200** for the app's token, before and after the cookie jar is cleared                                     |
+| Session, owned data                           | `/habitflow/api/habits` → **200** with the WebView's cookies present, **401** after `Network.clearBrowserCookies` — see finding 9   |
+| The update dialog                             | **untested**: it needs a newer shell release to exist, and publishing one needs the upload keystore, which is not in the repository |
 
-Two consequences worth carrying into the design rather than the device session:
+What the run decided, as opposed to recorded:
 
-- **The same-WebView crossing does not leave a back entry.** Whatever the mechanism inside Chromium,
-  the remote document sees `history.length === 1` after `location.assign` from the bundled one, so
-  Back exits instead of returning. A promoted design needs either a Custom-Tab-only crossing or an
-  origin-aware history handler in `MainActivity` — the spike does not have one, and that is exactly
-  the sort of thing this row exists to catch.
-- **A deep link into an owned route is a remote URL today.** `webUrlFor` maps every
-  `royaraqamia.com` link to itself; the owned/remote split (#502/#503) has to map them to bundled
-  routes. The table's third row cannot pass before that exists.
-
-Both numbers the emulator cannot give (cold/warm timings, scroll position, tab dismissal feel) and
-every row still need a real device.
+- **Custom Tab is the only crossing that keeps the app's place.** Same-WebView works as navigation
+  and cannot come home by itself: the remote document reports `history.length === 1`, so there is no
+  entry for Back to take. The fix in this branch (`MainActivity.bundledRootFor`, active only in a
+  build without `server.url`) returns to the bundled root, which costs the scroll position and a
+  re-mount — the row's "same scroll position" is not reachable this way.
+- **A deep link into an owned route is a remote URL today**, so the local-deep-link row fails on any
+  device until #502/#503 add the split.
+- **The WebView restores the last document across an activity restart.** Leaving the app while it
+  shows the site and reopening it came back to `https://royaraqamia.com/community`, not the bundled
+  root: restore is a third way into the remote origin, and a promoted design has to clear or map it.
 
 ## The veto table
 
@@ -90,18 +94,20 @@ Every row must be answered **on a cheap real device**, not the emulator, and the
 back into the issue. The commands are the real ones on this branch — see the first finding for
 why they are `https://` and `royar://`, not the scheme the issue names.
 
-| Question                            | How to ask it                                                                                                | Passing answer                                                                                                                                                                                                                                                            | Result |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Local route → remote route and back | Panel → _فتح /community_ under each mechanism, then the back gesture                                         | Same WebView: back returns to the bundled route at the same scroll position, no duplicate entry. Custom Tab: the tab dismisses back into the bundled route, and the app is where it was                                                                                   |        |
-| Deep link into a local route        | `adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/habitflow`                      | Lands on the bundled surface with the app warm; no network round trip for the document                                                                                                                                                                                    |        |
-| Deep link into a remote route       | `adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/community`                      | Resolves through the chosen mechanism — not a blank WebView, not the site's 404 inside the APK                                                                                                                                                                            |        |
-| OAuth sign-in                       | `adb shell am start -a android.intent.action.VIEW -d "royar://auth/callback?code=test"` after a real sign-in | The return trip reaches the app (panel's _روابط عائدة_ list) and the bundled surface is authenticated afterwards. **This spike signs in with Bearer**, so the row records the return trip; whether an OAuth-minted session can cross the origin at all is #501's question |        |
-| Session continuity                  | Sign in on the site, then in the app; compare the probes                                                     | `/linksnap/api/links` answers 200 for the app's token (the server accepts a Bearer credential from a bundled origin). The reverse — a session started in the app being usable on the site — is **not** possible today and must be stated as such                          |        |
-| The update dialog                   | Open `app-info` from the bundled surface's `/account` crossing, or trigger the shell's own update prompt     | Still reachable and still works from inside a bundled route                                                                                                                                                                                                               |        |
+| Question                            | How to ask it                                                                                                | Passing answer                                                                                                                                                                                                                                                            | Result (RMX3195)                                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local route → remote route and back | Panel → _فتح /community_ under each mechanism, then the back gesture                                         | Same WebView: back returns to the bundled route at the same scroll position, no duplicate entry. Custom Tab: the tab dismisses back into the bundled route, and the app is where it was                                                                                   | Custom Tab **passes**; same WebView **fails** the scroll/no-dead-end answer, and passed only after `bundledRootFor`                                            |
+| Deep link into a local route        | `adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/habitflow`                      | Lands on the bundled surface with the app warm; no network round trip for the document                                                                                                                                                                                    | **fails** — lands on the remote page; needs the owned/remote split                                                                                             |
+| Deep link into a remote route       | `adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/community`                      | Resolves through the chosen mechanism — not a blank WebView, not the site's 404 inside the APK                                                                                                                                                                            | **passes** — the app answers it directly (verified signature)                                                                                                  |
+| OAuth sign-in                       | `adb shell am start -a android.intent.action.VIEW -d "royar://auth/callback?code=test"` after a real sign-in | The return trip reaches the app (panel's _روابط عائدة_ list) and the bundled surface is authenticated afterwards. **This spike signs in with Bearer**, so the row records the return trip; whether an OAuth-minted session can cross the origin at all is #501's question | return trip **reaches the app**; the bundled surface is **not** authenticated by it, and a Google-only account cannot use the Bearer panel at all (finding 10) |
+| Session continuity                  | Sign in on the site, then in the app; compare the probes                                                     | `/linksnap/api/links` answers 200 for the app's token (the server accepts a Bearer credential from a bundled origin). The reverse — a session started in the app being usable on the site — is **not** possible today and must be stated as such                          | **200** for the Bearer route; owned data is 200 only through the WebView cookie jar (finding 9), 401 without it                                                |
+| The update dialog                   | Open `app-info` from the bundled surface's `/account` crossing, or trigger the shell's own update prompt     | Still reachable and still works from inside a bundled route                                                                                                                                                                                                               | **untested** — no newer shell release to trigger it                                                                                                            |
 
 Baseline numbers (`#487`'s instrumentation, cheap device): cold open → content, warm open →
 content, tap → optimistic paint, APK size delta, build time delta. Append them here and wire
-them as the shell-release budget.
+them as the shell-release budget. What this run could measure: document committed 2.6 s and panel
+mounted 4.1 s after a force-stop (cold), release APK 15.4 MiB against the shipped shell's 16.1 MiB
+built from the same tree.
 
 ## Findings from building it
 
@@ -150,17 +156,44 @@ of them blocks the device rows above.
    required at boot, so a build machine without `.env.local` otherwise fails at runtime, not build
    time.
 
+9. **`CapacitorHttp` carries the WebView's cookies, across origins.** Measured on the phone:
+   `/habitflow/api/habits` answered **200** while the WebView held the site's five cookies, and
+   **401** after `Network.clearBrowserCookies` — same app, same token, same request. Native HTTP is
+   not subject to `SameSite`, so a bundled surface can authenticate an owned-data read with a
+   session the user established by visiting the site in the same WebView. Two consequences: the
+   cross-origin boundary is not what it looks like (a cookie the page could never send is sent for
+   it), and #501 cannot be answered with "does Bearer work" alone — it has to decide whether that
+   jar is a credential the app is allowed to lean on.
+
+10. **A Google-only account cannot use the Bearer panel at all.** The spike mints its token with a
+    password grant, and the owner of this device signs in with Google; the run used the repo's E2E
+    fixture account instead. So an OAuth-provider account has no path to a token the app owns today
+    — the provider flow has to run in a context that can hand one over (a PKCE flow the shell
+    completes, i.e. #501), or sessions stay cookie-based for those users.
+
+11. **The WebView restores the last document across an activity restart.** Leave the app while it
+    shows the site, reopen it, and it comes back to `https://royaraqamia.com/community`, not the
+    bundled root. Restore is a third way into the remote origin, alongside a deep link and a
+    crossing, and the design has to clear or map it.
+
+12. **Back across origins needs the shell, not the page.** `bundledRootFor` in `MainActivity`
+    returns to the bundled root when a build without `server.url` is showing our own site — the
+    only thing that made the first row pass. It costs the scroll position the row asks for, which is
+    the argument for crossing remote surfaces through a Custom Tab instead of the same WebView.
+
 ### Measured build (this branch, debug)
 
-| Artifact        | Size    |
-| --------------- | ------- |
-| Everything      | 8.36 MB |
-| JavaScript      | 1.56 MB |
-| CSS             | 277 KB  |
-| Fonts (`woff2`) | 291 KB  |
-| Debug APK       | 18.8 MB |
+| Artifact        | Size     |
+| --------------- | -------- |
+| Everything      | 8.36 MB  |
+| JavaScript      | 1.56 MB  |
+| CSS             | 277 KB   |
+| Fonts (`woff2`) | 291 KB   |
+| Debug APK       | 18.8 MiB |
+| Release APK     | 15.4 MiB |
 
-The shipped shell's debug APK, built from the same tree on the same machine, is 19.2 MB — so the
+The shipped shell's APKs, built from the same tree on the same machine, are 19.2 MiB (debug) and
+16.1 MiB (release) — so the
 bundled document costs essentially nothing in install size: its assets are text, `woff2` and `webp`,
 which the APK's compression already handles. That is a debug-to-debug reading, not the release delta
 #502/#503 have to own.
