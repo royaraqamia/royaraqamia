@@ -581,11 +581,11 @@ worker delivers it. The table below is the rest of phase 7's matrix — the part
 for the two environmental reasons above. `--matrix` fills the three rows that do not need a person
 pressing buttons:
 
-| Case                    | What it does                                                                                                     | What it proves                                                                            |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Force-stop              | queues offline, `am force-stop`, restores the radio, waits a minute, launches                                    | nothing arrives before the launch, and the launch then delivers exactly one habit         |
-| Doze                    | queues offline, `am kill`s, forces `mState=IDLE`, restores the radio, waits a minute, releases                   | the `CONNECTED` job is deferred while idle, and the release drains exactly one            |
-| Process death mid-flush | queues offline, `am kill`s, restores the radio, `SIGKILL`s the process the moment the worker starts it, launches | the queue survives an interrupted drain, and the retry leaves exactly one habit — not two |
+| Case                    | What it does                                                                                                     | What it proves                                                                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Force-stop              | queues offline, `am force-stop`, restores the radio, waits a minute, launches                                    | nothing arrives before the launch, and the launch then delivers exactly one habit                                                          |
+| Doze                    | queues offline, `am kill`s, forces `mState=IDLE`, restores the radio, waits a minute, releases                   | the `CONNECTED` job is deferred while idle and is still queued after release; the write lands at the next launch or period, not on release |
+| Process death mid-flush | queues offline, `am kill`s, restores the radio, `SIGKILL`s the process the moment the worker starts it, launches | the queue survives an interrupted drain, and the retry leaves exactly one habit — not two                                                  |
 
 ```powershell
 npm run android:drill -- --device <serial> --matrix
@@ -595,8 +595,13 @@ Three constraints, all of them things a short run would otherwise measure dishon
 
 - **Doze is a deferral test, not a 15-minute clock.** The floor is `PERIOD_MINUTES = 15` in
   `SyncScheduler.java`, which WorkManager enforces; what the case watches is that the forced-idle
-  device runs no worker at all, and that releasing it drains. Timing the period belongs to the
-  manual row below, with the phone left alone for a quarter of an hour.
+  device runs no worker at all, and that the job is still there after release. It does not drain on
+  release: measured on Android 15 (#485), leaving idle reschedules the deferred job to the next
+  period and the queued write arrived at the next launch. A late write is the platform's behaviour
+  here, not a lost one, and the row above states it that way. `npm run android:drill -- --matrix`
+  still asserts the old expectation — «deferred while idle, drains after release» — and reports this
+  row as `FAIL`; repointing it would chase a component the cutover deletes (#662), so that failure is
+  expected until the shell goes.
 - **A case the device refuses is recorded as `skipped`, never as a pass.** An OEM that ignores
   `force-idle`, a build where `run-as` cannot signal the app, a drain that starts and finishes
   before the kill lands — each prints the device's own words in the table.
@@ -626,18 +631,18 @@ WebView 124 and reaches `VALIDATED` here, so `--avd <that AVD>` runs the whole d
 drain logged `the drain failed: null`, retried five times, then gave up — `drained (failed=0)` only
 appears once that fix is in the build.
 
-| Case                     | Expected                                                                 | Observed                                                                                                                                                                                             |
-| ------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Force-stop               | nothing until launch                                                     | pass — nothing for 60s; the launch delivered exactly one                                                                                                                                             |
-| Doze                     | deferred while idle, drains after release                                | fail — nothing drained inside the release window; the habit was on the server after the next launch, so the queue was late, not lost ([#485](https://github.com/royaraqamia/royaraqamia/issues/485)) |
-| Process death mid-flush  | one habit, no duplicate                                                  | pass — `SIGKILL` landed mid-flush; the retry delivered exactly one                                                                                                                                   |
-| FCM wake, backgrounded   | the drain runs without the app being opened                              | _(manual)_                                                                                                                                                                                           |
-| FCM wake, killed         | the drain runs from a closed process                                     | _(manual)_                                                                                                                                                                                           |
-| 15-minute floor          | a queued write drains within one period, with no signal                  | _(manual, 15+ min)_                                                                                                                                                                                  |
-| No network at launch     | the shell opens, the queue waits, and it drains when the network returns | _(manual)_                                                                                                                                                                                           |
-| Low storage / full quota | the failure is visible and the write is not silently lost                | _(manual)_                                                                                                                                                                                           |
-| Worker swap mid-queue    | the queue survives the swap and each intent is delivered once            | _(manual)_                                                                                                                                                                                           |
-| Several tabs             | one intent per write, not one per tab                                    | _(manual)_                                                                                                                                                                                           |
+| Case                     | Expected                                                                 | Observed                                                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Force-stop               | nothing until launch                                                     | pass — nothing for 60s; the launch delivered exactly one                                                                                                                                                                         |
+| Doze                     | deferred while idle, the write lands at the next launch or period        | fail against the old expectation — nothing drained inside the release window; the habit was on the server after the next launch, so the queue was late, not lost ([#485](https://github.com/royaraqamia/royaraqamia/issues/485)) |
+| Process death mid-flush  | one habit, no duplicate                                                  | pass — `SIGKILL` landed mid-flush; the retry delivered exactly one                                                                                                                                                               |
+| FCM wake, backgrounded   | the drain runs without the app being opened                              | _(manual)_                                                                                                                                                                                                                       |
+| FCM wake, killed         | the drain runs from a closed process                                     | _(manual)_                                                                                                                                                                                                                       |
+| 15-minute floor          | a queued write drains within one period, with no signal                  | _(manual, 15+ min)_                                                                                                                                                                                                              |
+| No network at launch     | the shell opens, the queue waits, and it drains when the network returns | _(manual)_                                                                                                                                                                                                                       |
+| Low storage / full quota | the failure is visible and the write is not silently lost                | _(manual)_                                                                                                                                                                                                                       |
+| Worker swap mid-queue    | the queue survives the swap and each intent is delivered once            | _(manual)_                                                                                                                                                                                                                       |
+| Several tabs             | one intent per write, not one per tab                                    | _(manual)_                                                                                                                                                                                                                       |
 
 ### The wake
 
