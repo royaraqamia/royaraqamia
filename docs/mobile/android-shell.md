@@ -15,6 +15,12 @@ own CSP (`default-src 'self'`), Supabase cookie auth and the offline-first servi
 (ADR-0027…0030) all stop matching. The reasoning, and what it costs, is ADR-0036, amended by
 ADR-0088.
 
+> **Direction (ADR-0089).** The app is becoming a native Jetpack Compose application, and the
+> WebView shell described on this page is what ships until the update floor moves past it. The
+> decision and what it costs are [ADR-0089](../adr/0089-the-android-app-is-native.md); the order of
+> work is [native-app.md](native-app.md). This page stays the runbook for the shell while it exists,
+> and its measurements are the baseline the native app has to beat.
+
 ## Prerequisites
 
 | Thing           | Where                                                          | Notes                                                                                                                                                |
