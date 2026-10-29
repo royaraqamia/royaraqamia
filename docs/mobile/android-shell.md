@@ -57,6 +57,12 @@ then read the generated `android/app/src/main/assets/capacitor.config.json` back
 the build before Gradle signs anything (issue #398). The generated file is what the APK bundles, so a
 `cap sync` run by hand cannot leak inspection into a release, and the debug build keeps it.
 
+**A release build is minified** ([ADR-0094](../adr/0094-the-release-build-is-minified.md)): R8 renames
+what the app reaches from code and keeps what Capacitor's plugin list and the merged manifest name, so
+the APK is 11.4 MiB rather than 21.7 MiB with Compose. A stack trace from a released shell is only
+readable beside `android/app/build/outputs/mapping/release/mapping.txt` from the same build; the file
+is not committed, and nothing uploads it yet.
+
 The launcher icon is generated from `public/icons/icon-maskable-1024x1024.png`, the
 same artwork the PWA ships, so the two installs look like one product: one purple, one logo.
 That is the PWA's _full-bleed_ tile — the layer an adaptive icon is cut from — rather than its

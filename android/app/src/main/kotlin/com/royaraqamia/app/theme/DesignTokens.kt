@@ -53,22 +53,28 @@ object DesignTokens {
     }
 
     /**
-     * Fluid spacing, in dp: a surface interpolates between [min] and [max] the
-     * way the stylesheet's `clamp()` does, instead of picking one number that is
-     * wrong on a phone or on a tablet.
+     * Fluid spacing, in dp: a surface resolves `clamp([min], [preferred]vw,
+     * [max])` against the window's width, the way the stylesheet does, instead
+     * of picking one number that is wrong on a phone or on a tablet.
      */
     object Spacing {
         const val sectionMin: Float = 60f
+        const val sectionPreferred: Float = 8f
         const val sectionMax: Float = 96f
         const val sectionSmMin: Float = 40f
+        const val sectionSmPreferred: Float = 6f
         const val sectionSmMax: Float = 64f
         const val containerPaddingMin: Float = 16f
+        const val containerPaddingPreferred: Float = 4f
         const val containerPaddingMax: Float = 32f
         const val cardPaddingMin: Float = 24f
+        const val cardPaddingPreferred: Float = 3f
         const val cardPaddingMax: Float = 32f
         const val elementGapMin: Float = 16f
+        const val elementGapPreferred: Float = 2f
         const val elementGapMax: Float = 24f
         const val elementGapSmMin: Float = 12f
+        const val elementGapSmPreferred: Float = 1.5f
         const val elementGapSmMax: Float = 16f
     }
 
@@ -76,6 +82,7 @@ object DesignTokens {
     object TypeScale {
         object H1 {
             const val sizeMin: Float = 32f
+            const val sizePreferred: Float = 5f
             const val sizeMax: Float = 64f
             const val weight: Int = 700
             const val lineHeight: Float = 1.2f
@@ -84,6 +91,7 @@ object DesignTokens {
 
         object H2 {
             const val sizeMin: Float = 28f
+            const val sizePreferred: Float = 4f
             const val sizeMax: Float = 48f
             const val weight: Int = 700
             const val lineHeight: Float = 1.2f
@@ -92,6 +100,7 @@ object DesignTokens {
 
         object H3 {
             const val sizeMin: Float = 24f
+            const val sizePreferred: Float = 3f
             const val sizeMax: Float = 36f
             const val weight: Int = 700
             const val lineHeight: Float = 1.3f
@@ -99,6 +108,7 @@ object DesignTokens {
 
         object H4 {
             const val sizeMin: Float = 20f
+            const val sizePreferred: Float = 2.5f
             const val sizeMax: Float = 28f
             const val weight: Int = 700
             const val lineHeight: Float = 1.4f
@@ -106,6 +116,7 @@ object DesignTokens {
 
         object H5 {
             const val sizeMin: Float = 18f
+            const val sizePreferred: Float = 2f
             const val sizeMax: Float = 24f
             const val weight: Int = 500
             const val lineHeight: Float = 1.5f
@@ -113,6 +124,7 @@ object DesignTokens {
 
         object H6 {
             const val sizeMin: Float = 16f
+            const val sizePreferred: Float = 1.5f
             const val sizeMax: Float = 20f
             const val weight: Int = 500
             const val lineHeight: Float = 1.5f
@@ -120,6 +132,7 @@ object DesignTokens {
 
         object Body {
             const val sizeMin: Float = 16f
+            const val sizePreferred: Float = 1.5f
             const val sizeMax: Float = 18f
             const val weight: Int = 400
             const val lineHeight: Float = 1.6f
@@ -127,12 +140,14 @@ object DesignTokens {
 
         object Small {
             const val sizeMin: Float = 14f
+            const val sizePreferred: Float = 1.25f
             const val sizeMax: Float = 16f
             const val lineHeight: Float = 1.5f
         }
 
         object Xs {
             const val sizeMin: Float = 12f
+            const val sizePreferred: Float = 1f
             const val sizeMax: Float = 14f
             const val lineHeight: Float = 1.5f
         }

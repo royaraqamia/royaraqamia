@@ -4,6 +4,9 @@ apply plugin: 'com.android.application'
 // that survive are converted as they are touched, not in one pass.
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+// The app's UI toolkit from ADR-0089 onward. It is wired now, with the theme,
+// so that the first screen lands as a screen rather than as a dependency change.
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 // Both of these come from the shell's own counter file (android/shell-version.properties,
 // ADR-0043), and neither has anything to do with package.json:
@@ -83,7 +86,13 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            // Compose costs about 5.4 MiB of dex before a single screen exists, and
+            // the release budget is 20 MiB (docs/mobile/native-app.md). R8 pays for
+            // it: the WebView, the plugins and the Compose stack are all reachable
+            // from code the build can see, so shrinking takes far more than it costs
+            // (ADR-0094). The `debug` build is not minified, which keeps stack traces
+            // and `chrome://inspect` usable.
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (hasKeystore) {
                 signingConfig signingConfigs.release
@@ -94,6 +103,7 @@ android {
     // above) with the published manifest, so BuildConfig has to be generated.
     buildFeatures {
         buildConfig true
+        compose true
     }
 }
 
@@ -131,6 +141,11 @@ dependencies {
     implementation project(':capacitor-android')
     // The generated contract types decode through kotlinx.serialization (#648).
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+    // The app's own UI (ADR-0089, #647). The BOM pins the Compose artifacts to
+    // one release, so the material3 behaviour baseline cannot arrive at a version
+    // the runtime does not have.
+    implementation platform("androidx.compose:compose-bom:$composeBomVersion")
+    implementation "androidx.compose.material3:material3"
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.json:json:$jsonVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

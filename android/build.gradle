@@ -15,6 +15,9 @@ buildscript {
         // applied; it is the only place either version is written.
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20'
         classpath 'org.jetbrains.kotlin:kotlin-serialization:2.2.20'
+        // Compose's compiler plugin ships with Kotlin now, and its version has to
+        // be the Kotlin one (ADR-0089, #647).
+        classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.20'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
