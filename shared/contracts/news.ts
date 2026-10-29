@@ -268,6 +268,22 @@ export interface NewsBoard {
   preferences: NewsPreferencesEffect | null;
   /** The reader's own digest for this day, when it exists; null otherwise. */
   personal: NewsPersonalView | null;
+  /**
+   * Set when the reader has opened every digest their plan allows today. `day`
+   * is then null: the archive is still there, but this reader has seen their
+   * share of it until Damascus midnight (ADR-0093).
+   */
+  limit: NewsDigestLimit | null;
+}
+
+/** The daily digest allowance, as the page states it when it runs out. */
+export interface NewsDigestLimit {
+  /** Digests a day for this reader's plan. */
+  cap: number;
+  /** Digests already opened today, including the one this request asked for. */
+  used: number;
+  /** True for a visitor: the remedy is signing in, not upgrading. */
+  visitor: boolean;
 }
 
 export interface NewsPreferencesEffect {

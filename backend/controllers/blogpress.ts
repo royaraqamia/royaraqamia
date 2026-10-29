@@ -4,7 +4,7 @@ import {
 } from '@/backend/config/blogpress';
 import { createPlanGate } from '@/backend/config/plans';
 import { errorResult, errorResultAt } from '@/backend/middleware/http';
-import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   PostSchema,
   TagInputSchema,
@@ -63,15 +63,13 @@ export async function createPost(body?: Record<string, unknown> | null): Promise
       const { posts, repository } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
 
-      // A draft takes a draft slot; a post that arrives already published pays
-      // the publish credit and takes a published slot in the same request
-      // (#527). The composer sends the fields and `status: 'published'`, so it
-      // never needs a spare draft slot and a refused publish writes nothing.
+      // A draft takes a draft slot; a post that arrives already published takes
+      // a published slot in the same request (#527). The composer sends the
+      // fields and `status: 'published'`, so it never needs a spare draft slot
+      // and a refused publish writes nothing.
       if (input?.status === 'published') {
         await plan.cap(userId, OWNED_ITEMS.communityPublished);
-        const { id, slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
-          posts.createAndPublishPost(userId, input)
-        );
+        const { id, slug } = await posts.createAndPublishPost(userId, input);
         return jsonResult(
           200,
           { id, slug },
@@ -103,9 +101,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
       }
 
       const { repository } = createBlogpressPostsModule(supabase);
-      await createPlanGate().meter({ userId }, USAGE_ACTIONS.communityPostEdit, () =>
-        repository.updatePost(id, userId, validated.data)
-      );
+      await repository.updatePost(id, userId, validated.data);
 
       return jsonResult(
         200,
@@ -157,9 +153,7 @@ export async function duplicatePost(id: string): Promise<HttpResult> {
       const { posts } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
       await plan.cap(userId, OWNED_ITEMS.communityDrafts);
-      const { id: newId } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostDuplicate, () =>
-        posts.duplicatePost(id, userId)
-      );
+      const { id: newId } = await posts.duplicatePost(id, userId);
       return jsonResult(200, { success: true, id: newId });
     },
     { mapError: errorResult }
@@ -196,9 +190,7 @@ export async function publishPost(id: string): Promise<HttpResult> {
       const { posts } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
       await plan.cap(userId, OWNED_ITEMS.communityPublished);
-      const { slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
-        posts.publishPost(id, userId)
-      );
+      const { slug } = await posts.publishPost(id, userId);
 
       return jsonResult(
         200,
@@ -315,12 +307,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         if (published > 0) await plan.cap(userId, OWNED_ITEMS.communityDrafts, published);
       }
 
-      const { affected, slugs } = await plan.meterMany(
-        userId,
-        USAGE_ACTIONS.communityPostPublish,
-        action === 'publish' ? targets.length : 0,
-        () => posts.bulkActionPosts(targets, userId, action)
-      );
+      const { affected, slugs } = await posts.bulkActionPosts(targets, userId, action);
 
       if (action === 'publish' || action === 'unpublish') {
         return jsonResult(
@@ -361,9 +348,7 @@ export async function saveAndPublishPost(
       const { posts } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
       await plan.cap(userId, OWNED_ITEMS.communityPublished);
-      const { slug } = await plan.meter({ userId }, USAGE_ACTIONS.communityPostPublish, () =>
-        posts.saveAndPublishPost(id, userId, validated.data)
-      );
+      const { slug } = await posts.saveAndPublishPost(id, userId, validated.data);
 
       return jsonResult(
         200,
@@ -378,12 +363,7 @@ export async function saveAndPublishPost(
 export async function uploadMedia(formData: FormData): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const plan = createPlanGate();
-      // The service answers a rejected file with a message rather than throwing,
-      // so the reservation is released explicitly on that path.
-      const reservation = await plan.reserve(userId, USAGE_ACTIONS.communityMediaUpload);
       const result = await createBlogpressMediaService(supabase).uploadImage(formData, userId);
-      if ('error' in result) await plan.release(userId, reservation);
       return jsonResult(200, result);
     },
     { mapError: errorResult }

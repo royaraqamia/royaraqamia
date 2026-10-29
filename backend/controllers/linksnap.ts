@@ -1,7 +1,7 @@
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { createPlanGate } from '@/backend/config/plans';
 import { AppError, describeError, getErrorMessage } from '@/backend/shared/errors';
-import { OWNED_ITEMS, USAGE_ACTIONS } from '@/shared/contracts/plans';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
 import {
@@ -277,15 +277,13 @@ export async function shortenUrl(
       if (!replayed || replayed.deletedAt) await plan.cap(userId, OWNED_ITEMS.shortLinks);
     }
 
-    const newLink = await plan.meter({ userId, ip }, USAGE_ACTIONS.shortLinkCreate, () =>
-      shorten.execute(
-        originalUrl as string,
-        userId,
-        customCode as string | undefined,
-        parseExpiresAt(body.expiresAt),
-        typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
-        meta
-      )
+    const newLink = await shorten.execute(
+      originalUrl as string,
+      userId,
+      customCode as string | undefined,
+      parseExpiresAt(body.expiresAt),
+      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
+      meta
     );
 
     return jsonResult(200, {

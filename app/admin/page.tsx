@@ -66,7 +66,7 @@ const SECTIONS = [
   {
     href: '/admin/plans',
     label: 'الاشتراكات',
-    description: 'تفعيل الخطط المدفوعة ومتابعة رصيد الاستهلاك لكل مستخدم',
+    description: 'تفعيل الخطط المدفوعة ومتابعة استهلاك كل مستخدم',
     icon: Wallet,
   },
   {

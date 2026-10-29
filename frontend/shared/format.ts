@@ -32,7 +32,7 @@ function localIsoDate(): string {
 }
 
 /**
- * Credits, counts and caps read as ASCII digits with grouping (`10,000`), never
+ * Counts and caps read as ASCII digits with grouping (`10,000`), never
  * an Arabic-locale numeral system. Read-only figures only — an editable input
  * keeps the raw value.
  */

@@ -4,7 +4,7 @@ import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'الاشتراكات',
-  description: 'تفعيل الخطط المدفوعة ومتابعة رصيد الاستهلاك لكل مستخدم.',
+  description: 'تفعيل الخطط المدفوعة ومتابعة استهلاك كل مستخدم.',
 };
 
 export default function AdminPlansLayout({ children }: { children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export default function AdminPlansLayout({ children }: { children: React.ReactNo
       <AdminPageHeader
         icon={Wallet}
         title="الاشتراكات والاستهلاك"
-        description="رصيد الفترة الجارية لكل مستخدم، وتفعيل الخطة المدفوعة يدوياً عند وصول الدفعة."
+        description="استهلاك كل مستخدم من التَّنزيلات والحدود اليوميّة، وتفعيل الخطة المدفوعة يدوياً عند وصول الدفعة."
       />
       {children}
     </div>

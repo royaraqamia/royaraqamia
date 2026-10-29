@@ -5,8 +5,9 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { LocalUsageReportSchema } from '@/shared/contracts/plans';
 
 /**
- * The signed-in user's own allowance: plan, cap, spend and remaining credits.
- * The account card reads it; nothing here mutates anything.
+ * The signed-in user's own counted actions: plan, each counter against its cap,
+ * and when the daily ones return. The account card reads it; nothing here
+ * mutates anything.
  */
 export async function getMyUsage(): Promise<HttpResult> {
   return withAuthenticatedUser(

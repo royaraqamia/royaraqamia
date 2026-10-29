@@ -27,6 +27,6 @@ describe('Hero', () => {
 
   it('renders the description text', () => {
     render(<Hero />);
-    expect(screen.getByText(/نبني منتجات/)).toBeInTheDocument();
+    expect(screen.getByText(/نُقدِّم حزمةً متكاملة/)).toBeInTheDocument();
   });
 });

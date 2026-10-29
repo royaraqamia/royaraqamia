@@ -71,12 +71,19 @@ const EMPTY_BOARD: NewsBoard = {
   hasAnyDigest: false,
   preferences: null,
   personal: null,
+  limit: null,
 };
 
 interface Reader {
   userId: string;
   client: SupabaseClient<Database>;
   preferences: NewsSourcePreferences;
+}
+
+/** The reader a request already resolved, so the page does not resolve twice. */
+export interface NewsViewer {
+  userId: string;
+  client: SupabaseClient<Database>;
 }
 
 /**
@@ -87,8 +94,14 @@ interface Reader {
  * does not pay for a preference only members can have. A failed read is the same
  * as no preference — showing the shared digest is never wrong.
  */
-async function readReader(): Promise<Reader | null> {
+async function readReader(viewer?: NewsViewer | null): Promise<Reader | null> {
   try {
+    if (viewer !== undefined) {
+      if (viewer === null) return null;
+      const preferences = await createNewsPreferencesServiceFor(viewer.client).get(viewer.userId);
+      return { userId: viewer.userId, client: viewer.client, preferences };
+    }
+
     const { user, client } = await identity.resolveOptional();
     if (!user || !client) return null;
 
@@ -110,11 +123,12 @@ async function loadSharedBoard(
 
 export async function loadNewsBoard(
   params: NewsSearchParams = {},
-  view: NewsView = 'mine'
+  view: NewsView = 'mine',
+  viewer?: NewsViewer | null
 ): Promise<NewsBoard> {
   const query = parseNewsQuery(params);
   try {
-    const reader = await readReader();
+    const reader = await readReader(viewer);
     const shared = await loadSharedBoard(query, reader?.preferences.sourceIds ?? null);
 
     if (!reader) {

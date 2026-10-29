@@ -10,15 +10,11 @@ import { formatCount } from '@/frontend/shared/format';
 
 const PLAN_LABELS = { free: 'الخطة المجانيَّة', pro: 'الخطة المدفوعة' } as const;
 
-function usagePercent(spent: number, cap: number): number {
-  if (cap <= 0) return 100;
-  return Math.min(100, Math.round((spent / cap) * 100));
-}
-
 /**
- * The member's allowance at a glance: one number, because the credit pool is
- * the one allowance that changes as they work. Owned-item caps are deliberately
- * absent — they bind at the moment something is created, not here (ADR-0075).
+ * The member's counted actions at a glance: downloads, digests opened, scans and
+ * surah reads, each against its own cap. There is no shared balance to show any
+ * more — one number per action is what the plan actually enforces (ADR-0093) —
+ * and owned-item caps stay where they bind, at the moment something is created.
  *
  * Nothing renders for a visitor: the card is the account's own data, and the
  * pricing page is where a guest learns what a plan would give them.
@@ -49,8 +45,9 @@ export function UsageCard() {
 
       {loading && !state && (
         <div className="mt-4 space-y-2" aria-busy="true" aria-label="جاري تحميل الاستهلاك">
-          <div className="h-7 w-32 rounded-lg bg-muted/60 animate-pulse" />
-          <div className="h-1.5 w-full rounded-full bg-muted/60 animate-pulse" />
+          <div className="h-4 w-40 rounded-lg bg-muted/60 animate-pulse" />
+          <div className="h-4 w-32 rounded-lg bg-muted/60 animate-pulse" />
+          <div className="h-4 w-36 rounded-lg bg-muted/60 animate-pulse" />
         </div>
       )}
 
@@ -69,35 +66,26 @@ export function UsageCard() {
 
       {state && (
         <>
-          <div className="mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
-            <p className="flex items-baseline gap-1.5" dir="ltr">
-              <span className="text-2xl font-black tracking-tight text-foreground">
-                {state.unlimited ? 'غير محدود' : formatCount(state.remaining)}
-              </span>
-              {!state.unlimited && (
-                <span className="text-sm text-muted-foreground">/ {formatCount(state.cap)}</span>
-              )}
-            </p>
-            <p className="text-xs text-muted-foreground">متبقٍّ لك</p>
-          </div>
-
-          {!state.unlimited && (
-            <div
-              className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted"
-              role="img"
-              aria-label={`استُهلك ${usagePercent(state.spent, state.cap)} بالمئة من الرصيد`}
-            >
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${usagePercent(state.spent, state.cap)}%` }}
-              />
-            </div>
-          )}
+          <ul className="mt-3 space-y-1.5">
+            {state.counters.map((counter) => (
+              <li
+                key={counter.key}
+                className="flex items-center justify-between gap-3 text-xs sm:text-sm"
+              >
+                <span className="text-muted-foreground">{counter.label}</span>
+                <span className="shrink-0 font-bold text-foreground" dir="ltr">
+                  {state.unlimited
+                    ? 'غير محدود'
+                    : `${formatCount(counter.used)} / ${formatCount(counter.cap)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
             {state.unlimited
-              ? 'حساب مشرف: لا ينطبق عليه حدُّ الاستهلاك.'
-              : `رصيد يتجدَّد تدريجيًّا خلال ${state.windowDays} يوماً، ويُستهلك عند النَّشر والإنشاء والتَّنزيل.`}
+              ? 'حساب مشرف: لا تنطبق عليه حدود الاستهلاك.'
+              : 'التَّنزيلات لا تتجدَّد أبدًا، والعدّادات اليوميّة تعود عند منتصف اللَّيل بتوقيت دمشق.'}
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">

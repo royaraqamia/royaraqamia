@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { updateSession } from '@/backend/middleware/session';
+import { withVisitorCookie } from '@/backend/middleware/visitor-cookie';
 import { COUNTRY_COOKIE_NAME, COUNTRY_ISO_PATTERN } from '@/frontend/ui/shared/country-cookie';
 
 /**
@@ -42,7 +43,7 @@ function withCountryCookie(request: NextRequest, response: NextResponse): NextRe
 
 export async function proxy(request: NextRequest) {
   const response = await updateSession(request);
-  return withCountryCookie(request, response);
+  return withVisitorCookie(request, withCountryCookie(request, response));
 }
 
 export const config = {

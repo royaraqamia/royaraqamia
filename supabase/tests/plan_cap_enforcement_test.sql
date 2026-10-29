@@ -59,7 +59,7 @@ insert into public.habits (id, user_id, name)
 select gen_random_uuid(), '00000000-0000-0000-0000-00000000ca02'::uuid, 'admin-habit-' || n
 from generate_series(1, 5) as n;
 
--- Ten published posts (the free cap) and one draft, for the author.
+-- Five published posts (the free cap) and one draft, for the author.
 insert into public.posts (id, author_id, slug, content, status, published_at, community_visible)
 select
   ('00000000-0000-0000-0000-0000000ca1' || lpad(n::text, 2, '0'))::uuid,
@@ -69,7 +69,7 @@ select
   'published',
   now(),
   true
-from generate_series(1, 10) as n;
+from generate_series(1, 5) as n;
 
 insert into public.posts (id, author_id, slug, content, status)
 values (
@@ -291,10 +291,10 @@ select set_config(
 
 select throws_ok(
   $$insert into public.posts (author_id, slug, content, status, published_at, community_visible)
-    values ('00000000-0000-0000-0000-00000000ca03', 'cap-eleventh', 'body', 'published', now(), true)$$,
+    values ('00000000-0000-0000-0000-00000000ca03', 'cap-sixth', 'body', 'published', now(), true)$$,
   'PL001',
   null,
-  'an eleventh published post is refused at the free cap'
+  'a sixth published post is refused at the free cap'
 );
 
 select throws_ok(
@@ -379,8 +379,8 @@ select is(
   'bulk_publish_posts publishes the owned row'
 );
 
--- Ten already published plus this one is exactly the cap, so the batch takes
--- no eleventh slot: the check counts only the rows that are not published yet.
+-- Five already published plus this one is exactly the cap, so the batch takes
+-- no sixth slot: the check counts only the rows that are not published yet.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-00000000ca03","email":"cap-author@example.invalid"}',

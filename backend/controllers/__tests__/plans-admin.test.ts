@@ -4,6 +4,8 @@ const mockGetAuthUser = vi.fn();
 const mockSyncAdminAllowlistMirror = vi.fn();
 const mockListUsers = vi.fn();
 const mockGetSettings = vi.fn();
+const mockListLimits = vi.fn();
+const mockListCounters = vi.fn();
 const mockActivate = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
@@ -30,6 +32,8 @@ vi.mock('@/backend/config/plans', () => ({
   createUsageService: () => ({
     listUsers: mockListUsers,
     getSettings: mockGetSettings,
+    listLimits: mockListLimits,
+    listCounters: mockListCounters,
     activate: mockActivate,
   }),
 }));
@@ -44,13 +48,22 @@ const SETTINGS = {
   priceCents: 1000,
   currency: 'USD',
   durationDays: 30,
-  windowDays: 30,
-  freeCredits: 100,
-  proCredits: 10000,
-  anonymousDailyCredits: 10,
 };
 
-const PAGE = { users: [], total: 0, page: 1, pageSize: 25, windowDays: 30 };
+const LIMITS = [{ key: 'notes', label: 'الملاحظات', freeCap: 5, proCap: 50, sortOrder: 115 }];
+const COUNTERS = [
+  {
+    key: 'downloader.job.create',
+    label: 'تنزيل وسائط',
+    window: 'lifetime' as const,
+    visitorCap: 1,
+    freeCap: 5,
+    proCap: 50,
+    sortOrder: 10,
+  },
+];
+
+const PAGE = { users: [], total: 0, page: 1, pageSize: 25 };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -58,6 +71,8 @@ beforeEach(() => {
   mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
   mockListUsers.mockResolvedValue(PAGE);
   mockGetSettings.mockResolvedValue(SETTINGS);
+  mockListLimits.mockResolvedValue(LIMITS);
+  mockListCounters.mockResolvedValue(COUNTERS);
   mockActivate.mockResolvedValue({
     plan: 'pro',
     expiresAt: '2026-11-21T12:00:00.000Z',
@@ -71,7 +86,9 @@ describe('listPlanUsers', () => {
 
     expect(result.status).toBe(200);
     expect(mockListUsers).toHaveBeenCalledWith({ page: 2, pageSize: 10, search: 'ahmed' });
-    expect(result).toMatchObject({ body: { success: true, total: 0, settings: SETTINGS } });
+    expect(result).toMatchObject({
+      body: { success: true, total: 0, settings: SETTINGS, limits: LIMITS, counters: COUNTERS },
+    });
   });
 
   it('defaults the page and drops an empty search', async () => {

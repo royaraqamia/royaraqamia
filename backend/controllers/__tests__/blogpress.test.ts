@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockGetAuthUser = vi.fn();
 const planMocks = vi.hoisted(() => ({
   cap: vi.fn(),
-  meter: vi.fn(),
-  meterMany: vi.fn(),
+  count: vi.fn(),
+  claim: vi.fn(),
 }));
 const mockPosts = {
   publishPost: vi.fn(),
@@ -43,9 +43,8 @@ vi.mock('@/backend/config/blogpress', () => ({
 
 vi.mock('@/backend/config/plans', () => ({
   createPlanGate: () => ({
-    meter: planMocks.meter,
-    meterMany: planMocks.meterMany,
-    reserve: async () => 'event-1',
+    count: planMocks.count,
+    claim: planMocks.claim,
     release: async () => {},
     cap: planMocks.cap,
     caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
@@ -93,12 +92,6 @@ describe('blogpress controller', () => {
     mockRepository.bulkSetPostCategories.mockResolvedValue(undefined);
     mockPosts.restorePost.mockResolvedValue({ id: 'p-1' });
     planMocks.cap.mockResolvedValue(undefined);
-    planMocks.meter.mockImplementation(
-      async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
-    );
-    planMocks.meterMany.mockImplementation(
-      async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run()
-    );
   });
 
   it('returns 401 when there is no session user', async () => {
@@ -118,7 +111,6 @@ describe('blogpress controller', () => {
       expect.objectContaining({ slug: 'draft-post', content: 'مسوَّدة' })
     );
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_drafts');
-    expect(planMocks.meter).not.toHaveBeenCalled();
     expect(result).toMatchObject({ status: 200, body: { id: 'p-1' } });
   });
 
@@ -160,7 +152,7 @@ describe('blogpress controller', () => {
     expect(mockRepository.createPost).not.toHaveBeenCalled();
   });
 
-  it('creates and publishes a new post in one metered request', async () => {
+  it('creates and publishes a new post in one request', async () => {
     const result = await createPost({
       slug: 'post-abc12345',
       content: 'منشور جديد',
@@ -168,12 +160,6 @@ describe('blogpress controller', () => {
     });
 
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published');
-    expect(planMocks.meter).toHaveBeenCalledTimes(1);
-    expect(planMocks.meter).toHaveBeenCalledWith(
-      { userId: 'u-1' },
-      'community.post.publish',
-      expect.any(Function)
-    );
     expect(mockPosts.createAndPublishPost).toHaveBeenCalledWith(
       'u-1',
       expect.objectContaining({ slug: 'post-abc12345', content: 'منشور جديد', status: 'published' })
@@ -188,21 +174,6 @@ describe('blogpress controller', () => {
 
   it('writes nothing when the published cap refuses the new post', async () => {
     planMocks.cap.mockRejectedValue(new Error('cap reached'));
-
-    const result = await createPost({
-      slug: 'post-abc12345',
-      content: 'منشور جديد',
-      status: 'published',
-    });
-
-    expect(result).toEqual(expect.objectContaining({ status: 500 }));
-    expect(planMocks.meter).not.toHaveBeenCalled();
-    expect(mockPosts.createAndPublishPost).not.toHaveBeenCalled();
-    expect(mockRepository.createPost).not.toHaveBeenCalled();
-  });
-
-  it('writes nothing when the publish credit is refused', async () => {
-    planMocks.meter.mockRejectedValue(new Error('no credits'));
 
     const result = await createPost({
       slug: 'post-abc12345',
@@ -393,9 +364,6 @@ describe('blogpress bulk publish', () => {
     });
     planMocks.cap.mockResolvedValue(undefined);
     mockRepository.countPostsInStatus.mockResolvedValue(0);
-    planMocks.meterMany.mockImplementation(
-      async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run()
-    );
   });
 
   it('charges a bulk unpublish the rows that leave published, not the selection', async () => {
@@ -422,7 +390,7 @@ describe('blogpress bulk publish', () => {
     expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
   });
 
-  it('caps and meters only the posts that will transition', async () => {
+  it('caps only the posts that will transition', async () => {
     mockRepository.resolveBulkPublishTargets.mockResolvedValue({
       transitionIds: [P1, P2, P3],
       alreadyPublishedIds: [P4, P5],
@@ -436,17 +404,11 @@ describe('blogpress bulk publish', () => {
 
     expect(mockRepository.resolveBulkPublishTargets).toHaveBeenCalledWith(requested, 'u-1');
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 3);
-    expect(planMocks.meterMany).toHaveBeenCalledWith(
-      'u-1',
-      'community.post.publish',
-      3,
-      expect.any(Function)
-    );
     expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1, P2, P3], 'u-1', 'publish');
     expect(result).toMatchObject({ status: 200, body: { success: true, affected: 3 } });
   });
 
-  it('charges duplicate ids once', async () => {
+  it('counts duplicate ids once', async () => {
     mockRepository.resolveBulkPublishTargets.mockResolvedValue({
       transitionIds: [P1, P2],
       alreadyPublishedIds: [],
@@ -460,17 +422,11 @@ describe('blogpress bulk publish', () => {
 
     expect(mockRepository.resolveBulkPublishTargets).toHaveBeenCalledWith([P1, P2], 'u-1');
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 2);
-    expect(planMocks.meterMany).toHaveBeenCalledWith(
-      'u-1',
-      'community.post.publish',
-      2,
-      expect.any(Function)
-    );
     expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1, P2], 'u-1', 'publish');
     expect(result).toMatchObject({ status: 200, body: { success: true, affected: 2 } });
   });
 
-  it('charges nothing for ids the caller does not own', async () => {
+  it('caps nothing for ids the caller does not own', async () => {
     mockRepository.resolveBulkPublishTargets.mockResolvedValue({
       transitionIds: [P1],
       alreadyPublishedIds: [],
@@ -483,12 +439,6 @@ describe('blogpress bulk publish', () => {
     });
 
     expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published', 1);
-    expect(planMocks.meterMany).toHaveBeenCalledWith(
-      'u-1',
-      'community.post.publish',
-      1,
-      expect.any(Function)
-    );
     expect(mockPosts.bulkActionPosts).toHaveBeenCalledWith([P1], 'u-1', 'publish');
     expect(result).toMatchObject({ status: 200, body: { success: true, affected: 1 } });
   });
@@ -505,7 +455,6 @@ describe('blogpress bulk publish', () => {
     });
 
     expect(planMocks.cap).not.toHaveBeenCalled();
-    expect(planMocks.meterMany).not.toHaveBeenCalled();
     expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
     expect(result).toMatchObject({ status: 200, body: { success: true, affected: 0 } });
   });

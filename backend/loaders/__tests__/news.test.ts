@@ -67,6 +67,7 @@ function board(overrides: Partial<NewsBoard> = {}): NewsBoard {
     hasAnyDigest: true,
     preferences: null,
     personal: null,
+    limit: null,
     ...overrides,
   };
 }

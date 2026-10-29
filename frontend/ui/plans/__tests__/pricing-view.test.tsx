@@ -30,35 +30,73 @@ const catalog: PlanCatalog = {
     priceCents: 1200,
     currency: 'USD',
     durationDays: 30,
-    windowDays: 30,
-    freeCredits: 250,
-    proCredits: 5000,
-    anonymousDailyCredits: 7,
   },
   limits: [
     { key: 'habits', label: 'العادات', freeCap: 7, proCap: 77, sortOrder: 10 },
-    { key: 'short_links', label: 'الروابط المختصرة', freeCap: 9, proCap: 99, sortOrder: 20 },
+    { key: 'expenses', label: 'المصروفات', freeCap: 2, proCap: 22, sortOrder: 20 },
+    { key: 'budgets', label: 'الميزانيات', freeCap: 1, proCap: 11, sortOrder: 30 },
+    { key: 'short_links', label: 'الروابط المختصرة', freeCap: 9, proCap: 99, sortOrder: 40 },
     {
       key: 'community_published',
       label: 'المنشورات المنشورة',
       freeCap: 4,
       proCap: 44,
-      sortOrder: 30,
+      sortOrder: 50,
     },
-    { key: 'quran_bookmarks', label: 'علامات القرآن', freeCap: 6, proCap: 66, sortOrder: 40 },
-    { key: 'notes', label: 'الملاحظات', freeCap: 8, proCap: 88, sortOrder: 45 },
+    {
+      key: 'community_drafts',
+      label: 'مسودات المنشورات',
+      freeCap: 3,
+      proCap: 33,
+      sortOrder: 60,
+    },
+    { key: 'quran_bookmarks', label: 'علامات القرآن', freeCap: 6, proCap: 66, sortOrder: 70 },
+    { key: 'notes', label: 'الملاحظات', freeCap: 8, proCap: 88, sortOrder: 80 },
     {
       key: 'mcp_connected_apps',
       label: 'تطبيقات MCP المتصلة',
       freeCap: 2,
       proCap: 22,
-      sortOrder: 50,
+      sortOrder: 90,
     },
   ],
-  costs: [
-    { actionKey: 'community.post.publish', label: 'نشر منشور', cost: 25, sortOrder: 10 },
-    { actionKey: 'linksnap.link.create', label: 'إنشاء رابط مختصر', cost: 2, sortOrder: 20 },
-    { actionKey: 'downloader.job.create', label: 'طلب تنزيل وسائط', cost: 10, sortOrder: 30 },
+  counters: [
+    {
+      key: 'downloader.job.create',
+      label: 'تنزيل وسائط',
+      window: 'lifetime',
+      visitorCap: 1,
+      freeCap: 5,
+      proCap: 55,
+      sortOrder: 10,
+    },
+    {
+      key: 'news.digest.open',
+      label: 'فتح مُلخَّص أخبار',
+      window: 'daily',
+      visitorCap: 1,
+      freeCap: 5,
+      proCap: 55,
+      sortOrder: 20,
+    },
+    {
+      key: 'scanner.scan',
+      label: 'مسح رمز',
+      window: 'daily',
+      visitorCap: 1,
+      freeCap: 5,
+      proCap: 55,
+      sortOrder: 30,
+    },
+    {
+      key: 'quran.surah.read',
+      label: 'قراءة سورة في اليوم',
+      window: 'daily',
+      visitorCap: 1,
+      freeCap: 5,
+      proCap: 55,
+      sortOrder: 40,
+    },
   ],
 };
 
@@ -66,11 +104,8 @@ function usage(overrides: Partial<UsageState>): UsageState {
   return {
     plan: 'free',
     unlimited: false,
-    cap: 250,
-    spent: 1,
-    remaining: 249,
-    windowDays: 30,
     expiresAt: null,
+    counters: [],
     ...overrides,
   };
 }
@@ -88,14 +123,19 @@ describe('PricingView', () => {
   it('renders every number from the catalog', () => {
     render(<PricingView catalog={catalog} />);
 
-    expect(screen.getByText('250')).toBeInTheDocument();
-    expect(screen.getByText('5,000')).toBeInTheDocument();
     expect(screen.getByText('$12')).toBeInTheDocument();
 
-    // What each allowance buys is derived from the same cap and cost rows.
+    // Each allowance comes from the same cap and counter rows.
     expect(screen.getByText(/حتى 77 عادة/)).toBeInTheDocument();
     expect(screen.getByText(/88 ملاحظة/)).toBeInTheDocument();
     expect(screen.getByText(/حتى 22 تطبيقات MCP/)).toBeInTheDocument();
+    expect(screen.getByText(/55 تنزيلًا/)).toBeInTheDocument();
+  });
+
+  it('states the visitor allowance once, as a footnote', () => {
+    render(<PricingView catalog={catalog} />);
+
+    expect(screen.getByText(/بدون حساب: 1 تنزيل/)).toBeInTheDocument();
   });
 
   it('sends a guest to sign-in with the price in the WhatsApp message', () => {
@@ -128,7 +168,7 @@ describe('PricingView', () => {
 
   it('marks the paid plan as current and drops the free card action for a member', () => {
     mocks.session.user = { id: 'u1' };
-    mocks.usage.state = usage({ plan: 'pro', cap: 5000, remaining: 4999 });
+    mocks.usage.state = usage({ plan: 'pro' });
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByText('الخطَّة الحاليَّة')).toHaveAttribute('aria-disabled', 'true');
@@ -150,13 +190,11 @@ describe('PricingView', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'خطط التَّسعير' })).toBeInTheDocument();
     expect(screen.getByText('موصَى به لك')).toBeInTheDocument();
 
-    // The reference tables, the guest line, the FAQ and the closing call to
-    // action live on `/account/faq` or nowhere; the plans are the whole page.
+    // The reference tables, the FAQ and the closing call to action live on
+    // `/account/faq` or nowhere; the plans and the visitor line are the page.
     expect(screen.queryByText(/ما يستهلك الرصيد/)).not.toBeInTheDocument();
     expect(screen.queryByText(/ما يمكنك حفظه/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/ما لا يستهلك الرصيد/)).not.toBeInTheDocument();
     expect(screen.queryByText(/أسئلة شائعة/)).not.toBeInTheDocument();
     expect(screen.queryByText(/جاهز للبدء/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/متبقٍّ لك/)).not.toBeInTheDocument();
   });
 });

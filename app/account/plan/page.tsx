@@ -5,7 +5,7 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 
 export const metadata: Metadata = {
   title: 'الاشتراك والاستهلاك',
-  description: 'خطتك الحالية في رؤيَة رَقَميَّة، ورصيد استهلاكك، وسجل تفعيل الاشتراك.',
+  description: 'خطتك الحالية في رؤيَة رَقَميَّة، واستهلاكك لكل عنصر، وسجل تفعيل الاشتراك.',
 };
 
 /**

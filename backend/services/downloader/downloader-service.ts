@@ -60,8 +60,9 @@ export class BlockedLinkError extends Error {
 
 /**
  * The global concurrency cap refuses a new job before it is written and before
- * its Credit is spent. An `AppError` so the controller answers the 503 and the
- * message reaches the visitor; the gate behind the call refunds on a throw.
+ * its download is counted. An `AppError` so the controller answers the 503 and
+ * the message reaches the visitor; the gate behind the call releases the count on
+ * a throw.
  */
 export class DownloadBusyError extends AppError {
   constructor() {
@@ -109,7 +110,7 @@ export interface DownloaderServiceDeps {
  * them. Every limit is read from the tunable settings row, so an Admin change
  * takes effect without a deploy. The concurrency cap counts jobs already in
  * flight at the provider and refuses a new one at `create`, before the row and
- * the Credit behind it exist; `dispatch` re-checks it only as the backstop for
+ * the counted download exist; `dispatch` re-checks it only as the backstop for
  * two creates that race. A known Platform is refused at `create` when the
  * allowlist disables it or its circuit breaker is open, a blocked link is refused
  * before any work, and provider failures are counted per Platform so a repeatedly
@@ -261,9 +262,9 @@ export class DownloaderService {
 
   /**
    * Refuse a new job while every provider slot is taken, before the row exists
-   * and before the Credit behind it is spent. A metered action is charged only
-   * when it succeeds (ADR-0075), so `PlanGate.meter` refunds the throw rather
-   * than leaving a visitor 5 Credits down for a job that never ran. `dispatch`
+   * and before the download is counted. A counted action is recorded only when
+   * the work succeeds (ADR-0093), so `PlanGate.count` releases the throw rather
+   * than leaving a visitor a download down for a job that never ran. `dispatch`
    * re-checks as the backstop for two creates that both clear this one.
    */
   private async assertCapacity(): Promise<void> {

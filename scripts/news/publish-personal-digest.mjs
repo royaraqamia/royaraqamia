@@ -1,19 +1,13 @@
 #!/usr/bin/env node
 /**
- * Publishes one reader's personal digest, charging the credit that pays for it.
+ * Publishes one reader's personal digest.
  *
  *   node scripts/news/publish-personal-digest.mjs --digest .news/personal/<id>/resolved.json --user <uuid>
  *
- * Two decisions worth naming:
- *
- *   * the credit is spent **here**, not when the prompt was prepared: a run whose
- *     model output failed validation publishes nothing and costs nothing;
- *   * a refusal (an exhausted allowance) is not a run failure — the reader keeps
- *     the shared digest, and the workflow carries on with the next reader.
- *
- * The spend is idempotent and refundable: a re-run for the same reader and day
- * reuses a client event id, so it cannot charge twice, and a publish that fails
- * after a successful spend gives the credit back.
+ * Generation is not metered: what the plan limits is how many digests a reader
+ * *opens* per day, and that is counted by the board route against the digest's
+ * own date (ADR-0093). A nightly run that produces a digest nobody opens costs
+ * the reader nothing, and a failed run needs no refund.
  *
  * Writes are ordered like `publish-digest.mjs` so a failure cannot leave a
  * digest claiming stories it does not have.
@@ -21,14 +15,6 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-
-import { v5 as uuidv5 } from 'uuid';
-
-const ACTION_KEY = 'news.digest.generate';
-
-function digestEventId(userId, digestDate) {
-  return uuidv5(`${ACTION_KEY}:${userId}:${digestDate}`, uuidv5.DNS);
-}
 
 function parseArgs(argv) {
   const options = { digest: '', user: '', dryRun: false };
@@ -90,29 +76,11 @@ export async function publishPersonalDigest({
   log = console.log,
 }) {
   if (dryRun) {
-    log(
-      `[dry-run] would charge ${ACTION_KEY} and publish ${digest.story_count} stories for ${userId}`
-    );
+    log(`[dry-run] would publish ${digest.story_count} stories for ${userId}`);
     return { id: null, published: false, dryRun: true };
   }
 
   const base = `${config.url}/rest/v1`;
-
-  const spend = await request(`${base}/rpc/spend_credits_once`, config.key, {
-    method: 'POST',
-    body: {
-      p_user_id: userId,
-      p_action_key: ACTION_KEY,
-      p_client_event_id: digestEventId(userId, digest.digest_date),
-    },
-  });
-
-  if (!spend?.allowed) {
-    log(`Skipped ${userId}: allowance exhausted (remaining ${spend?.remaining ?? 0}).`);
-    return { id: null, published: false, dryRun: false };
-  }
-
-  const eventId = spend.eventId ?? null;
 
   const storyRows = digest.stories.map((story) => ({
     position: story.position,
@@ -169,20 +137,8 @@ export async function publishPersonalDigest({
       body: { story_count: storyRows.length },
     });
   } catch (error) {
-    if (eventId) {
-      try {
-        await request(`${base}/rpc/refund_credits`, config.key, {
-          method: 'POST',
-          body: { p_user_id: userId, p_event_id: eventId },
-        });
-      } catch (refundError) {
-        log(
-          `Refund failed for ${userId} (event ${eventId}): ${
-            refundError instanceof Error ? refundError.message : refundError
-          }`
-        );
-      }
-    }
+    // Nothing was charged, so nothing is refunded: a half-written digest is the
+    // only thing to undo, and the upsert on the next run replaces it.
     throw error;
   }
 

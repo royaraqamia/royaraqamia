@@ -110,7 +110,7 @@ async function ensurePlan(userId: string) {
 
   // Read the plan back through the same RPC the cap check uses, so a stale or
   // expired row cannot pass unnoticed.
-  const state = await supabase.rpc('get_usage_state', { p_user_id: userId });
+  const state = await supabase.rpc('get_usage_counters', { p_user_id: userId });
   if (state.error) {
     console.error(`Failed to read the test account's plan: ${state.error.message}`);
     process.exit(1);

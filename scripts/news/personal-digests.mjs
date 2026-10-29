@@ -16,7 +16,7 @@
  *
  * A reader with no selection, or with fewer than MIN_CANDIDATES usable stories,
  * is skipped and named in the summary: publishing a nearly empty digest would
- * be worse than leaving them on the shared one, and it would still cost a credit.
+ * be worse than leaving them on the shared one.
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -102,7 +102,7 @@ export async function preparePersonalDigests({
   for (const reader of readers.slice(0, limit)) {
     if (reader.sourceIds.length === 0) {
       // "Everything" is the shared digest; a personal one would be a duplicate
-      // that costs a credit.
+      // of it.
       skipped.push({ userId: reader.userId, reason: 'no selection' });
       continue;
     }

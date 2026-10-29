@@ -18,13 +18,20 @@ import {
 import { PlanActivationForm } from '@/frontend/ui/admin/plans/plan-activation-form';
 import { useAdminPlans } from '@/frontend/state/plans/use-admin-plans';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { AdminUserUsage } from '@/shared/contracts/plans';
+import type { AdminUserUsage, PlanLimit, UsageLimit } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: 'مجاني', pro: 'مدفوع' } as const;
 
-function usagePercent(spent: number, cap: number): number {
-  if (cap <= 0) return 100;
-  return Math.min(100, Math.round((spent / cap) * 100));
+function limitOf(limits: PlanLimit[], key: string, plan: 'free' | 'pro'): number {
+  const limit = limits.find((entry) => entry.key === key);
+  if (!limit) return 0;
+  return plan === 'pro' ? limit.proCap : limit.freeCap;
+}
+
+function counterOf(counters: UsageLimit[], key: string, plan: 'free' | 'pro'): number {
+  const limit = counters.find((entry) => entry.key === key);
+  if (!limit) return 0;
+  return plan === 'pro' ? limit.proCap : limit.freeCap;
 }
 
 export function PlansView() {
@@ -51,23 +58,31 @@ export function PlansView() {
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
-          label="رصيد الخطة المجانية"
-          value={result ? formatCount(result.settings.freeCredits) : '—'}
-          hint={result ? `كل ${result.settings.windowDays} يوماً` : undefined}
-        />
-        <SummaryCard
-          label="رصيد الخطة المدفوعة"
-          value={result ? formatCount(result.settings.proCredits) : '—'}
-          hint={
+          label="سعر الخطة المدفوعة"
+          value={
             result
-              ? `${formatCount(result.settings.priceCents / 100)} ${result.settings.currency} / ${result.settings.durationDays} يوماً`
-              : undefined
+              ? `${formatCount(result.settings.priceCents / 100)} ${result.settings.currency}`
+              : '—'
           }
+          hint={result ? `كل ${result.settings.durationDays} يوماً` : undefined}
         />
         <SummaryCard
-          label="حصة الزائر"
-          value={result ? formatCount(result.settings.anonymousDailyCredits) : '—'}
-          hint="يومياً، لكل بصمة IP مجزَّأة"
+          label="حدّ العناصر"
+          value={
+            result
+              ? `${formatCount(limitOf(result.limits, 'notes', 'free'))} / ${formatCount(limitOf(result.limits, 'notes', 'pro'))}`
+              : '—'
+          }
+          hint="مجاني / مدفوع، ولكل عنصر حصّته"
+        />
+        <SummaryCard
+          label="التَّنزيلات"
+          value={
+            result
+              ? `${formatCount(counterOf(result.counters, 'downloader.job.create', 'free'))} / ${formatCount(counterOf(result.counters, 'downloader.job.create', 'pro'))}`
+              : '—'
+          }
+          hint="مجاني / مدفوع، والزّائر تنزيل واحد"
         />
       </div>
 
@@ -133,24 +148,16 @@ export function PlansView() {
               <div className="mt-3 space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                   <span>
-                    المستهلك {formatCount(user.spent)} من {formatCount(user.cap)}
-                  </span>
-                  <span>
-                    {user.unlimited ? 'غير محدود (مشرف)' : `المتبقي ${formatCount(user.remaining)}`}
+                    {user.unlimited
+                      ? 'غير محدود (مشرف)'
+                      : user.counters
+                          .map(
+                            (counter) =>
+                              `${counter.label} ${formatCount(counter.used)}/${formatCount(counter.cap)}`
+                          )
+                          .join(' · ')}
                   </span>
                 </div>
-                {!user.unlimited && (
-                  <div
-                    className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
-                    role="img"
-                    aria-label={`استُهلك ${usagePercent(user.spent, user.cap)} بالمئة من الرصيد`}
-                  >
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${usagePercent(user.spent, user.cap)}%` }}
-                    />
-                  </div>
-                )}
                 {user.plan === 'pro' && user.expiresAt && (
                   <p className="text-xs text-muted-foreground">
                     ينتهي في {formatHijriDate(user.expiresAt)}
