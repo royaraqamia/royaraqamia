@@ -709,12 +709,21 @@ site page by page and then stopped on the home page — Back walks them as it al
 press closes. That report is also why this is native code and not a page listener: a press answered
 through the Capacitor bridge would do nothing whenever the bridge failed to inject (ADR-0043).
 
+An open dialogue was not in that history at all: the overlay is component state, so the press walked
+past it and left the page the dialogue was opened on. The page now puts an entry there for it
+(`frontend/ui/primitives/overlay-back.ts`, ADR-0095): opening an overlay pushes a same-URL entry tagged
+with a depth marker, and the press pops it and closes the overlay opened last, at any nesting depth.
+Nothing navigates — the URL never changes — and closing the overlay any other way takes the entry back
+off the history, so the press that follows still walks the page as it always did. Chrome's back gesture
+and the in-app back control reach the same entry, so all three agree.
+
 Check both branches with a debug build:
 
 ```powershell
 adb shell input keyevent 4   # at the root: the app leaves the foreground; `topResumedActivity` moves on
 adb shell dumpsys activity activities | Select-String 'topResumedActivity'
 adb shell input keyevent 4   # on a page reached by an App Link: back should walk, not exit
+adb shell input keyevent 4   # with a dialogue open: it closes, the page and its URL stay
 ```
 
 The shell's counter moves for this (ADR-0043): a shell installed before it keeps the old behaviour until
