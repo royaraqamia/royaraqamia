@@ -147,13 +147,16 @@ export function NoteBodyEditor({
   }
 
   return (
-    <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+    <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', className)}>
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
         // One row everywhere: the tools scroll sideways instead of wrapping, so
-        // the toolbar never eats the first lines of the note on a phone.
-        className="flex flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none border-b border-border/50 px-2 py-1.5"
+        // the toolbar never eats the first lines of the note on a phone. The row
+        // owns that scroll — `min-w-0` keeps its widest state from widening the
+        // dialogue's grid track, which used to scroll the whole composer
+        // sideways instead of the tools.
+        className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto border-b border-border/50 px-2 py-1.5"
       >
         <ToolbarButton
           label="عريض"

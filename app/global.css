@@ -1364,6 +1364,41 @@ select,
   background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
 }
 
+/* The rich-text toolbar's sideways scroll. A hairline bar that stays invisible
+   until the row is hovered — the tools (bold/italic/…) are 30px targets in a
+   row that already carries a border, so a permanent 8px strip under them reads
+   as a second, wrong border. The thumb is the muted foreground, not the site
+   purple, for the same reason. Touch keeps no bar at all: `:hover` never fires
+   there, and the row scrolls by drag. */
+.scrollbar-toolbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  overscroll-behavior-x: contain;
+}
+
+.scrollbar-toolbar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-toolbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-toolbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.scrollbar-toolbar:hover,
+.scrollbar-toolbar:has(:focus-visible) {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent;
+}
+
+.scrollbar-toolbar:hover::-webkit-scrollbar-thumb,
+.scrollbar-toolbar:has(:focus-visible)::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
 /* ========================================
    HERO SECTION & HEADER ENHANCEMENTS
    ======================================== */

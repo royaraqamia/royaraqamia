@@ -147,7 +147,7 @@ export function PostComposerDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
+        <div className="min-w-0 space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
           <div className="space-y-1.5 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
             <Label htmlFor="composer-body" required>
               النَّص
