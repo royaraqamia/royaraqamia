@@ -5,9 +5,27 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { useOverlayBack } from '@/frontend/ui/primitives/overlay-back';
 
-function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+function Dialog({
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  // Android's back button closes the dialogue, the same way the close button
+  // does — see `overlay-back.ts` for why the press needs a history entry to
+  // land on.
+  const [resolvedOpen, setOpen] = useOverlayBack({ open, defaultOpen, onOpenChange });
+
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      {...props}
+      open={resolvedOpen}
+      onOpenChange={setOpen}
+    />
+  );
 }
 
 function DialogTrigger(props: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
