@@ -133,6 +133,11 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
+  // The layout viewport shrinks with the on-screen keyboard instead of being
+  // covered by it. Without this a full-screen dialog keeps its `100dvh` height,
+  // its footer stays below the keyboard, and Chrome pans the focused field up —
+  // which is what slid the note/post composer's bottom bar over its text.
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
     { media: '(prefers-color-scheme: light)', color: '#0f172a' },

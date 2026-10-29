@@ -96,8 +96,11 @@ export function NoteBodyEditor({
       attributes: {
         id: surfaceId,
         'aria-label': ariaLabel,
+        // No focus ring on purpose: a text field always matches `:focus-visible`,
+        // so a ring here stayed drawn for as long as the note was being typed —
+        // the wrapper's border is the only frame this surface needs.
         class: cn(
-          'prose prose-sm dark:prose-invert max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+          'prose prose-sm dark:prose-invert max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none',
           surfaceClassName
         ),
         dir: 'auto',
@@ -148,7 +151,9 @@ export function NoteBodyEditor({
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
-        className="flex flex-wrap items-center gap-0.5 border-b border-border/50 px-2 py-1.5"
+        // One row everywhere: the tools scroll sideways instead of wrapping, so
+        // the toolbar never eats the first lines of the note on a phone.
+        className="flex flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none border-b border-border/50 px-2 py-1.5"
       >
         <ToolbarButton
           label="عريض"
@@ -174,7 +179,7 @@ export function NoteBodyEditor({
           onClick={() => editor.chain().focus().toggleStrike().run()}
           icon={Strikethrough}
         />
-        <span aria-hidden="true" className="mx-1 h-5 w-px bg-border/70" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
         <ToolbarButton
           label="عنوان رئيسيّ"
           active={editor.isActive('heading', { level: 1 })}
@@ -187,7 +192,7 @@ export function NoteBodyEditor({
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           icon={Heading2}
         />
-        <span aria-hidden="true" className="mx-1 h-5 w-px bg-border/70" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
         <ToolbarButton
           label="قائمة نقطيَّة"
           active={editor.isActive('bulletList')}
@@ -218,7 +223,7 @@ export function NoteBodyEditor({
           onClick={() => toggleLink(editor)}
           icon={Link2}
         />
-        <span aria-hidden="true" className="mx-1 h-5 w-px bg-border/70" />
+        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
         <ToolbarButton
           label="تراجع"
           onClick={() => editor.chain().focus().undo().run()}
@@ -252,7 +257,7 @@ function ToolbarButton({ label, icon: Icon, onClick, active }: ToolbarButtonProp
       aria-label={label}
       aria-pressed={active === undefined ? undefined : active}
       onClick={onClick}
-      className={active ? 'bg-primary/10 text-primary' : undefined}
+      className={cn('shrink-0', active && 'bg-primary/10 text-primary')}
     >
       <Icon aria-hidden="true" />
     </Button>

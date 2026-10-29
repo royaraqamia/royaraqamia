@@ -19,6 +19,18 @@ vi.mock('sonner', () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
 
+// The real editor is Tiptap; the dialog's job is what it does with the Markdown
+// the editor hands back, so the surface is a plain field here.
+vi.mock('@/frontend/ui/notes/note-body-editor', () => ({
+  NoteBodyEditor: ({ onChange }: { onChange: (markdown: string) => void }) => (
+    <textarea
+      id="composer-body"
+      aria-label="نص المنشور"
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 import { PostComposerDialog } from '../post-composer-dialog';
 
 beforeEach(() => {
@@ -47,7 +59,7 @@ describe('PostComposerDialog', () => {
 
     expect(screen.getByText('تعديل المنشور')).toBeInTheDocument();
 
-    const body = screen.getByLabelText(/النَّص/);
+    const body = await screen.findByLabelText(/النَّص/);
     fireEvent.change(body, { target: { value: 'نص محدَّث طويل بما يكفي.' } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
 
@@ -69,7 +81,9 @@ describe('PostComposerDialog', () => {
 
     render(<PostComposerDialog open onOpenChange={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText(/النَّص/), { target: { value: 'محتوى المنشور.' } });
+    fireEvent.change(await screen.findByLabelText(/النَّص/), {
+      target: { value: 'محتوى المنشور.' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
     await waitFor(() => expect(mocks.createPost).toHaveBeenCalledTimes(1));

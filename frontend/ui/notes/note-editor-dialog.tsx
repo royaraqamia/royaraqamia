@@ -1,13 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 
 import { NOTE_TITLE_MAX, type Note } from '@/shared/contracts/notes';
 import type { NotesLocalStore } from '@/frontend/api/notes/local-store';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/frontend/ui/primitives/dropdown-menu';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
@@ -138,10 +144,32 @@ function NoteEditorDialogBody({
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent className="max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
+      <DialogContent className="max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
         <DialogHeader>
           <DialogTitle className="text-center">الملاحظة</DialogTitle>
         </DialogHeader>
+
+        {/* The note's own actions, in the header the way a card carries them:
+            delete is a menu item, not a bar of red across the composer. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="إجراءات الملاحظة"
+              className="absolute top-4 start-4 size-9 rounded-full border border-border bg-muted text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-safe"
+            >
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem variant="destructive" onClick={() => setConfirmOpen(true)}>
+              <Trash2 className="size-4" />
+              <span>حذف</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
           <div className="space-y-1.5">
@@ -169,26 +197,11 @@ function NoteEditorDialogBody({
 
           <p className="text-[11px] text-muted-foreground">
             {wordCount > 0 ? `${wordCount} كلمة · ` : ''}
-            آخر تعديل {calculateTimeAgo(note.updatedAt)} · يُحفظ تلقائيًّا على هذا الجهاز
+            آخر تعديل {calculateTimeAgo(note.updatedAt)} · يُحفظ تلقائيًّا
           </p>
         </div>
 
-        <DialogActions
-          onCancel={onClose}
-          cancelLabel="تمّ"
-          leading={
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setConfirmOpen(true)}
-              aria-label="حذف الملاحظة"
-              className="w-full rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
-            >
-              <Trash2 aria-hidden="true" />
-              حذف
-            </Button>
-          }
-        >
+        <DialogActions onCancel={onClose} cancelLabel="تمّ">
           {null}
         </DialogActions>
       </DialogContent>

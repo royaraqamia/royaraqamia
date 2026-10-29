@@ -32,6 +32,14 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: mocks.refresh, push: mocks.push }),
 }));
 
+// The composer's body is Tiptap; this suite is about the menu handing it the
+// right Markdown, so the surface stays a plain field.
+vi.mock('@/frontend/ui/notes/note-body-editor', () => ({
+  NoteBodyEditor: ({ initialMarkdown }: { initialMarkdown: string }) => (
+    <textarea id="composer-body" aria-label="نص المنشور" defaultValue={initialMarkdown} />
+  ),
+}));
+
 import { PostActionsMenu } from '../post-actions-menu';
 
 /* Radix Popper measures the trigger with ResizeObserver; jsdom does not ship it. */
@@ -122,6 +130,6 @@ describe('PostActionsMenu', () => {
 
     expect(await screen.findByText('تعديل المنشور')).toBeInTheDocument();
     expect(screen.queryByLabelText(/العنوان/)).not.toBeInTheDocument();
-    expect(screen.getByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
   });
 });

@@ -9,4 +9,5 @@
 @source './';
 @source '../../frontend/ui/Navbar.tsx';
 @source '../../frontend/ui/app-shell';
+@source '../../frontend/ui/notes';
 @source '../../frontend/ui/plans';

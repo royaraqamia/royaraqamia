@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { NewsBoard } from '@/frontend/ui/news/NewsBoard';
+import { NewsSettingsFab } from '@/frontend/ui/news/NewsSettingsFab';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -59,6 +60,8 @@ export default function NewsPage() {
           </Suspense>
         </div>
       </main>
+
+      <NewsSettingsFab />
     </div>
   );
 }
