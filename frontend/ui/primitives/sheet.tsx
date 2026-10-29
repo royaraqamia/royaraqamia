@@ -5,9 +5,21 @@ import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { useOverlayBack } from '@/frontend/ui/primitives/overlay-back';
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+function Sheet({
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  // Sheets claim the back press like dialogues do: on a phone the bottom sheet
+  // *is* the dialogue.
+  const [resolvedOpen, setOpen] = useOverlayBack({ open, defaultOpen, onOpenChange });
+
+  return (
+    <SheetPrimitive.Root data-slot="sheet" {...props} open={resolvedOpen} onOpenChange={setOpen} />
+  );
 }
 
 function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
