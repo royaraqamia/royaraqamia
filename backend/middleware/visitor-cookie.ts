@@ -17,7 +17,7 @@ const VISITOR_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 /** The visitor id this request carries, or null when it has none yet. */
 export function readVisitorKey(request: NextRequest): string | null {
-  const value = request.cookies.get(VISITOR_COOKIE_NAME)?.value;
+  const value = request.cookies?.get?.(VISITOR_COOKIE_NAME)?.value;
   if (!value) return null;
   // The id is a UUID we minted; anything else is a hand-written cookie and is
   // treated as absent rather than trusted as a subject.

@@ -35,6 +35,23 @@ function counterCapOf(
   return plan === PRO ? limit.proCap : limit.freeCap;
 }
 
+function quotaCapOf(
+  catalog: PlanCatalog,
+  key: string,
+  plan: typeof FREE | typeof PRO | 'visitor'
+): number {
+  const quota = catalog.quotas.find((entry) => entry.key === key);
+  if (!quota) return 0;
+  if (plan === 'visitor') return quota.visitorCap;
+  return plan === PRO ? quota.proCap : quota.freeCap;
+}
+
+/** The owned-item cap a visitor gets, read from the same catalog row. */
+function visitorItemCap(catalog: PlanCatalog, key: string): number {
+  const limit = catalog.limits.find((entry) => entry.key === key);
+  return limit ? limit.visitorCap : 0;
+}
+
 /**
  * The public pricing page. Every number comes from the plan catalog
  * (`plan_settings`, `plan_limits`, `usage_limits`), so the page cannot promise an
@@ -108,9 +125,12 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
                 تتجدَّد أبدًا.
               </PlanPoint>
               <PlanPoint>
-                يوميًّا: {formatCount(counterCapOf(catalog, 'news.digest.open', FREE))} مُلخَّصات
-                أخبار، و{formatCount(counterCapOf(catalog, 'scanner.scan', FREE))} عمليات مسح، و
+                يوميًّا: {formatCount(counterCapOf(catalog, 'scanner.scan', FREE))} عمليات مسح، و
                 {formatCount(counterCapOf(catalog, 'quran.surah.read', FREE))} سور.
+              </PlanPoint>
+              <PlanPoint>
+                أخبار: {formatCount(quotaCapOf(catalog, 'news.story.cards', FREE))} بطاقات في
+                الصفحة، و{formatCount(quotaCapOf(catalog, 'news.sources', FREE))} مصادر مختارة.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'mcp_connected_apps', FREE))} تطبيق MCP متَّصل.
@@ -170,9 +190,12 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
                 يتجدَّد أبدًا.
               </PlanPoint>
               <PlanPoint>
-                يوميًّا: {formatCount(counterCapOf(catalog, 'news.digest.open', PRO))} مُلخَّص
-                أخبار، و{formatCount(counterCapOf(catalog, 'scanner.scan', PRO))} عملية مسح، و
+                يوميًّا: {formatCount(counterCapOf(catalog, 'scanner.scan', PRO))} عملية مسح، و
                 {formatCount(counterCapOf(catalog, 'quran.surah.read', PRO))} سورة.
+              </PlanPoint>
+              <PlanPoint>
+                أخبار: {formatCount(quotaCapOf(catalog, 'news.story.cards', PRO))} بطاقة في الصفحة،
+                و{formatCount(quotaCapOf(catalog, 'news.sources', PRO))} مصدرًا مختارًا.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'mcp_connected_apps', PRO))} تطبيقات MCP متَّصلة.
@@ -190,10 +213,11 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
       </PlanViewerProvider>
 
       <p className="mx-auto max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
-        بدون حساب: {formatCount(counterCapOf(catalog, 'downloader.job.create', 'visitor'))} تنزيل، و
-        {formatCount(counterCapOf(catalog, 'news.digest.open', 'visitor'))} مُلخَّص أخبار يوميًّا، و
+        بدون حساب: {formatCount(visitorItemCap(catalog, 'notes'))} عنصر من كل نوع، و
+        {formatCount(counterCapOf(catalog, 'downloader.job.create', 'visitor'))} تنزيل، و
         {formatCount(counterCapOf(catalog, 'scanner.scan', 'visitor'))} عملية مسح، و
-        {formatCount(counterCapOf(catalog, 'quran.surah.read', 'visitor'))} سورة يوميًّا.
+        {formatCount(counterCapOf(catalog, 'quran.surah.read', 'visitor'))} سورة يوميًّا، و
+        {formatCount(quotaCapOf(catalog, 'news.story.cards', 'visitor'))} بطاقة أخبار.
       </p>
     </div>
   );

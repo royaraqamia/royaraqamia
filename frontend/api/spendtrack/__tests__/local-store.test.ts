@@ -270,7 +270,7 @@ describe('SpendtrackLocalStore', () => {
   });
 
   it('notifies subscribers on every committed write', async () => {
-    const store = await open();
+    const store = await open(userIdentity('u-1'));
     let calls = 0;
     const unsubscribe = store.subscribeWrites(() => {
       calls += 1;

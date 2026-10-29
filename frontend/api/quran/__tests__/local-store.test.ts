@@ -8,6 +8,7 @@ import {
   quranStoreMigrations,
 } from '@/frontend/api/quran/local-store';
 import { openLocalStore } from '@/frontend/shared/local-store/idb';
+import { PlanCapReachedError } from '@/frontend/shared/plans/plan-limits';
 import {
   GUEST_IDENTITY,
   localStoreName,
@@ -91,7 +92,7 @@ describe('QuranLocalStore', () => {
   });
 
   it('lists marks in the order of the text', async () => {
-    const store = await open();
+    const store = await QuranLocalStore.open(userIdentity('u-1'), factory);
     await store.toggleBookmark(112, 1);
     await store.toggleBookmark(2, 255);
     await store.toggleBookmark(2, 1);
@@ -117,8 +118,20 @@ describe('QuranLocalStore', () => {
     store.close();
   });
 
-  it('notifies subscribers of every committed write, and stops when they leave', async () => {
+  it('gives a guest one bookmark, and frees the slot when it is removed', async () => {
     const store = await open();
+    await store.toggleBookmark(2, 255);
+
+    await expect(store.toggleBookmark(3, 7)).rejects.toBeInstanceOf(PlanCapReachedError);
+
+    const [mark] = await store.listBookmarks();
+    await store.removeBookmark(mark!.clientId);
+    await expect(store.toggleBookmark(3, 7)).resolves.toBeUndefined();
+    store.close();
+  });
+
+  it('notifies subscribers of every committed write, and stops when they leave', async () => {
+    const store = await QuranLocalStore.open(userIdentity('u-1'), factory);
     const listener = vi.fn();
     const unsubscribe = store.subscribeWrites(listener);
 

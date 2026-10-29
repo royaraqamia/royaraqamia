@@ -55,7 +55,7 @@ describe('NotesLocalStore', () => {
   });
 
   it('edits in place, newest edit first, and queues an update', async () => {
-    const store = await open();
+    const store = await open(userIdentity('u-1'));
     const first = await store.createNote({ title: 'أولى' });
     const second = await store.createNote({ title: 'ثانية' });
 
@@ -84,7 +84,7 @@ describe('NotesLocalStore', () => {
   });
 
   it('applies a server page last-write-wins and advances the cursor', async () => {
-    const store = await open();
+    const store = await open(userIdentity('u-1'));
     const older = serverNote({
       id: '11111111-1111-7111-8111-111111111111',
       title: 'قديمة',

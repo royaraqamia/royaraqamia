@@ -22,7 +22,7 @@ vi.mock('@/backend/config/identity', async () => {
 });
 
 vi.mock('@/backend/config/env', () => ({
-  env: { appUrl: 'https://royaraqamia.com' },
+  env: { appUrl: 'https://royaraqamia.com', anonymousIpSalt: 'test-salt' },
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
@@ -198,6 +198,40 @@ describe('linksnap controller', () => {
       undefined,
       undefined,
       { clientId: undefined, updatedAt: undefined }
+    );
+  });
+
+  it('tags a truly anonymous create with the visitor subject, so its one link can be counted', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue(null);
+    mockGetSessionUser.mockResolvedValue(null);
+    mockShorten.execute.mockResolvedValue({
+      code: 'abc123',
+      originalUrl: 'https://example.com',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      userId: null,
+      expiresAt: null,
+      isBlocked: false,
+      clientId: null,
+    });
+
+    const { shortenUrl } = await import('@/backend/controllers/linksnap');
+    const result = await shortenUrl(
+      null,
+      '1.2.3.4',
+      { originalUrl: 'https://example.com' },
+      'visitor-1'
+    );
+
+    expect(result).toEqual(expect.objectContaining({ status: 200 }));
+    expect(mockShorten.execute).toHaveBeenCalledWith(
+      'https://example.com',
+      null,
+      undefined,
+      undefined,
+      undefined,
+      { clientId: undefined, updatedAt: undefined },
+      { visitorKey: 'visitor-1', ipHash: expect.any(String) }
     );
   });
 

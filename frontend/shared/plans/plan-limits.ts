@@ -1,5 +1,6 @@
 import {
   VISITOR_COUNTER_CAPS,
+  VISITOR_ITEM_CAPS,
   type LocalUsageActionKey,
   type OwnedItemKey,
   type PlanCaps,
@@ -60,9 +61,14 @@ interface LocalUsageCounters {
 export class PlanCapReachedError extends Error {
   constructor(
     readonly item: OwnedItemKey,
-    readonly cap: number
+    readonly cap: number,
+    readonly visitor = false
   ) {
-    super(`بلغتَ الحدّ الأعلى للخطة الحالية (${cap}) لهذا العنصر.`);
+    super(
+      visitor
+        ? `الزُّوّار يحفظون ${cap} فقط من هذا العنصر. سجِّل الدُّخول لمتابعة الاستخدام.`
+        : `بلغتَ الحدّ الأعلى للخطة الحالية (${cap}) لهذا العنصر.`
+    );
     this.name = 'PlanCapReachedError';
   }
 }
@@ -130,9 +136,13 @@ export function readCachedUsage(identity: LocalIdentity): UsageState | null {
 }
 
 /**
- * Refuse a create that would pass a cap the account has already reached. A
- * guest, or a device that has not fetched the caps yet, is allowed through and
- * the server answers the truth when the intent replays.
+ * Refuse a create that would pass a cap the account has already reached.
+ *
+ * A signed-in account with no cached caps yet is let through and the server
+ * answers the truth when the intent replays. A guest has no account to read a
+ * cap for, so the visitor number applies (one item, mirrored from
+ * `plan_limits.visitor_cap`) — that check is the only place a visitor limit can
+ * live, because their items never reach the server.
  */
 export function assertOwnedItemSlot(
   identity: LocalIdentity,
@@ -140,10 +150,14 @@ export function assertOwnedItemSlot(
   currentCount: number
 ): void {
   const caps = readCachedCaps(identity);
-  if (!caps || caps.unlimited) return;
+  if (caps?.unlimited) return;
 
-  const cap = caps.caps[item];
-  if (typeof cap === 'number' && currentCount >= cap) throw new PlanCapReachedError(item, cap);
+  const visitor = caps === null && !identityUserId(identity);
+  const cap = caps ? caps.caps[item] : visitor ? VISITOR_ITEM_CAPS[item] : undefined;
+
+  if (typeof cap === 'number' && currentCount >= cap) {
+    throw new PlanCapReachedError(item, cap, visitor);
+  }
 }
 
 function today(): string {

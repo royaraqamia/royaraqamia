@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(39);
+select plan(41);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -617,6 +617,38 @@ select is(
   (select status::text from public.posts where id = '00000000-0000-0000-0000-0000000cb111'),
   'published',
   'a refused bulk unpublish writes nothing'
+);
+
+-- ---------------------------------------------------------------------------
+-- The visitor rules and the news-source ceiling (ADR-0093)
+-- ---------------------------------------------------------------------------
+
+select throws_ok(
+  $$insert into public.news_source_preferences (user_id, source_ids)
+    values (
+      '00000000-0000-0000-0000-00000000ca05',
+      array['a','b','c','d','e','f']
+    )$$,
+  'PL001',
+  null,
+  'a free reader cannot select more than five news sources'
+);
+
+insert into public.short_links (
+  code, original_url, is_blocked, created_at, updated_at, visitor_key
+) values (
+  'cap-anon-1', 'https://example.com/one', false, now(), now(), 'visitor-cap'
+);
+
+select throws_ok(
+  $$insert into public.short_links (
+      code, original_url, is_blocked, created_at, updated_at, visitor_key
+    ) values (
+      'cap-anon-2', 'https://example.com/two', false, now(), now(), 'visitor-cap'
+    )$$,
+  'PL001',
+  null,
+  'a visitor cannot create a second live anonymous link'
 );
 
 -- ---------------------------------------------------------------------------

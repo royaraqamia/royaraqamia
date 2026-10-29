@@ -71,7 +71,7 @@ const EMPTY_BOARD: NewsBoard = {
   hasAnyDigest: false,
   preferences: null,
   personal: null,
-  limit: null,
+  cards: null,
 };
 
 interface Reader {
