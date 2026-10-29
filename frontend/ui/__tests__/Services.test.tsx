@@ -23,6 +23,7 @@ const MENU_ENTRIES: [name: string, href: string][] = [
   ['اختصار الرَّوابط', '/linksnap'],
   ['تتبُّع العادات', '/habitflow'],
   ['تتبُّع المصاريف', '/spendtrack'],
+  ['المُلاحظات', '/notes'],
   ['ربط الـ MCP', '/mcp/guide'],
 ];
 

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { SYNC_HINT_TABLES as BLOGPRESS } from '@/frontend/state/blogpress/use-blogpress-store';
 import { SYNC_HINT_TABLES as HABITFLOW } from '@/frontend/state/habitflow/use-habit-sync';
 import { SYNC_HINT_TABLES as LINKSNAP } from '@/frontend/state/linksnap/use-linksnap';
+import { SYNC_HINT_TABLES as NOTES } from '@/frontend/state/notes/use-notes';
 import { NEWS_SYNC_HINT_TABLES } from '@/frontend/api/news';
 import { SYNC_HINT_TABLES as QURAN } from '@/frontend/state/quran/use-quran-reader';
 import { SYNC_HINT_TABLES as SPENDTRACK } from '@/frontend/state/spendtrack/use-spendtrack';
@@ -58,6 +59,7 @@ const SUBSCRIBED = [
   ...HABITFLOW,
   ...SPENDTRACK,
   ...LINKSNAP,
+  ...NOTES,
   ...QURAN,
   ...BLOGPRESS,
   ...NEWS_SYNC_HINT_TABLES,

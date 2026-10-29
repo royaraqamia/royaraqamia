@@ -88,6 +88,12 @@ const PROBES = [
       service.from('quran_bookmarks').delete().eq('user_id', userId).eq('surah', 2).eq('ayah', 255),
     row: () => ({ surah: 2, ayah: 255 }),
   },
+  {
+    product: 'Notes',
+    table: 'notes',
+    idColumn: 'id',
+    row: () => ({ title: `realtime hint check ${Date.now()}`, body: '' }),
+  },
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

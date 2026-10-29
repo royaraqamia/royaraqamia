@@ -6,6 +6,7 @@ import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
 import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
+import { NotesLocalStore } from '@/frontend/api/notes/local-store';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { DRAINABLE_PRODUCTS, PULLABLE_PRODUCTS } from '@/frontend/api/sync-products';
@@ -28,6 +29,7 @@ const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () =
   blogpress: (factory) => BlogpressLocalStore.open(userIdentity(SESSION.userId), factory),
   quran: (factory) => QuranLocalStore.open(userIdentity(SESSION.userId), factory),
   linksnap: (factory) => LinksnapLocalStore.open(userIdentity(SESSION.userId), factory),
+  notes: (factory) => NotesLocalStore.open(userIdentity(SESSION.userId), factory),
   leads: (factory) => LeadsLocalStore.open(factory),
 };
 
@@ -87,7 +89,7 @@ describe('DRAINABLE_PRODUCTS', () => {
 describe('PULLABLE_PRODUCTS', () => {
   it('covers the products whose pull can run without the page', () => {
     expect(PULLABLE_PRODUCTS.map((product) => product.product).sort()).toEqual(
-      ['blogpress', 'habitflow', 'linksnap', 'quran', 'spendtrack'].sort()
+      ['blogpress', 'habitflow', 'linksnap', 'notes', 'quran', 'spendtrack'].sort()
     );
   });
 

@@ -327,3 +327,62 @@ test('a never-visited product subroute keeps the product chrome and names the mi
   await expect(page.getByRole('heading', { name: 'فتح الرَّابط' })).toHaveCount(0);
   await expectNotOffline(page);
 });
+
+test('Notes reloads offline and keeps the note written with the radio off', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  await signIn(context, baseURL!);
+
+  const title = `E2E-${Date.now()}`;
+  const page = await context.newPage();
+  await gotoUnderWorkerControl(page, `${baseURL}/notes`);
+  await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
+
+  // Warm the editor's chunk while online, then write with the radio off.
+  await page.locator('#btn-new-note').click();
+  await expect(page.locator('#note-title')).toBeVisible();
+  await context.setOffline(true);
+  await page.locator('#note-title').fill(title);
+  await page.waitForTimeout(900);
+
+  // The reload is the drill: the cached document paints the same note.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'المُلاحظات' })).toBeVisible();
+  await expect(page.locator('#note-title')).toHaveValue(title);
+  await expectNoStoreSkeleton(page);
+  await expectOfflinePill(page);
+  await expectNotOffline(page);
+
+  // Clean up so the suite is idempotent.
+  await context.setOffline(false);
+  await expect
+    .poll(
+      async () => {
+        const res = await context.request.fetch(`${baseURL}/notes/api/sync`);
+        if (!res.ok()) return [];
+        const body = (await res.json()) as { notes?: Array<{ id: string; title: string }> };
+        return body.notes ?? [];
+      },
+      { timeout: 30_000 }
+    )
+    .toEqual(expect.arrayContaining([expect.objectContaining({ title })]));
+
+  const res = await context.request.fetch(`${baseURL}/notes/api/sync`);
+  const body = (await res.json()) as { notes?: Array<{ id: string; title: string }> };
+  const created = (body.notes ?? []).find((note) => note.title === title);
+  if (created) {
+    await context.request.fetch(`${baseURL}/notes/api/notes/${created.id}`, {
+      method: 'DELETE',
+      data: {},
+    });
+  }
+
+  await context.close();
+});

@@ -38,7 +38,7 @@ messenger is_.
 | Public content read on the client (news digest, filtered Community feed) | Yes — last-seen snapshot, marked stale and read-only (#555)     | No            |
 | Auth shells (login, signup, OTP, reset, password update)                 | Yes — SWR cache since #447; every submit still needs the server | No            |
 | Scanner (decodes on the device; owns no server surface)                  | Yes — once the engine is cached                                 | No            |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress               | Yes — from Local Store                                          | Yes — Outbox  |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress, Notes        | Yes — from Local Store                                          | Yes — Outbox  |
 | Non-inventory leads — Training Application, Project Request, Retainer    | n/a                                                             | Yes — Outbox  |
 | Consultation Booking (reserves Availability Slots)                       | No — a live read, refused offline with a needs-connection state | No            |
 | Auth, Push, Media Downloader, Rates refresh, MCP, Admin                  | No                                                              | No            |
@@ -123,7 +123,7 @@ stated limit.
   paint stays instant — and never-cache API reads inside a painted page rely on the page's own
   states rather than on this rule.
 - **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
-  `/spendtrack`, `/linksnap` and `/blogpress` used to be in the worker's never-cache list
+  `/spendtrack`, `/linksnap`, `/blogpress` and `/notes` used to be in the worker's never-cache list
   (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
   session's data to the next on a shared device), and an offline reload landed on `/offline`.
   #449 made them data-free static shells with a client gate that paints the Local Store into
@@ -445,6 +445,11 @@ weak-network soak — is owner-run and recorded in
 Phases 1–4 have landed. Where each one's state is written down: the [Architecture](#architecture)
 section for the mechanisms, the [surfaces audit](offline-surfaces-audit.md) for what a route shows when
 the server is unreachable, and the [Verification](#verification) section for what runs.
+
+Notes joined the Local-Store row without changing the program (ADR-0092): it is the sixth owned
+product, its root is a data-free precached shell, and it is wired to the drain, the background pull
+and the Realtime hint tier. It ships as a remote shell rather than a bundled surface, which
+`perf/surfaces.json` records as `bundle: remote`; the APK's bundled list is unchanged.
 
 0. **Baseline** — this spec, ADR-0058 … ADR-0061, and the `CONTEXT.md` vocabulary.
 1. **Close the web gaps** — flush-on-write in all five products, `persist()` on a real save, and the

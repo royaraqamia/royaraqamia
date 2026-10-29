@@ -40,10 +40,11 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 // build's own HTML, against the 6 MB ceiling below. Raised to 34 when `/athkar`
 // joined the public reading surfaces: it is a prerendered document with no
 // server read, so it belongs in the list, and dropping the tail instead would
-// take `/verify`'s shell away. The worker fetches the list in idle windows after
+// take `/verify`'s shell away. Raised to 35 for `/notes` (ADR-0092), the sixth
+// data-free product shell. The worker fetches the list in idle windows after
 // activation (#489), four routes per window, and as many windows as the list
 // needs, so one pass covers this cap.
-export const MAX_PRECACHE_ROUTES = 34;
+export const MAX_PRECACHE_ROUTES = 35;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
 // only thing fetched here (no RSC variants). The 29 shells the #450 build
@@ -100,8 +101,8 @@ export const DYNAMIC_BY_DESIGN = [
     reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
   },
   // The shell's changelog. It is inherently about the newest release, so a frozen
-  // document would show a stale list; it is also shell-only, and adding its route
-  // to the precache list would exceed the 33-shell budget and drop `/verify`.
+  // document would show a stale list; it is also shell-only, and spending a
+  // precache slot on it would push a public page out of the cap.
   {
     route: '/account/changelog',
     reason: 'shows the newest release notes — a precached shell would pin an old list',

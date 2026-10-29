@@ -12,6 +12,10 @@ import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
 import { pullLinksnapData } from '@/frontend/api/linksnap/pull';
 import { LinksnapSyncEngine } from '@/frontend/api/linksnap/sync-engine';
 import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
+import { NotesLocalStore } from '@/frontend/api/notes/local-store';
+import { pullNotesData } from '@/frontend/api/notes/pull';
+import { NotesSyncEngine } from '@/frontend/api/notes/sync-engine';
+import { createNotesHttpSyncTransport } from '@/frontend/api/notes/sync-transport';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { pullQuranData } from '@/frontend/api/quran/pull';
 import { QuranSyncEngine } from '@/frontend/api/quran/sync-engine';
@@ -132,6 +136,12 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
     createEngine: (deps) => new LinksnapSyncEngine(deps),
   },
   {
+    product: 'notes',
+    identity: signedInIdentity,
+    open: openOutboxOnly('notes', createNotesHttpSyncTransport),
+    createEngine: (deps) => new NotesSyncEngine(deps),
+  },
+  {
     product: 'leads',
     /**
      * Lead submissions are the exception to the identity rule: the store *is*
@@ -224,6 +234,19 @@ export const PULLABLE_PRODUCTS: readonly PullableProduct[] = [
       const store = await LinksnapLocalStore.open(identity, factory);
       try {
         return await pullLinksnapData(store);
+      } finally {
+        store.close();
+      }
+    },
+  },
+  {
+    product: 'notes',
+    identity: signedInIdentity,
+    async refresh({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('notes', identity))) return 0;
+      const store = await NotesLocalStore.open(identity, factory);
+      try {
+        return await pullNotesData(store);
       } finally {
         store.close();
       }
