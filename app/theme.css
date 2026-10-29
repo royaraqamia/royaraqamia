@@ -43,11 +43,12 @@
      `Aref Ruqaa Digits` face is unicode-range-limited to U+0030-0039, so it
      only ever supplies numerals. Editable fields opt back out (see
      app/global.css) because the calligraphic bold face is hard to read while
-     typing. */
-  --font-digits: 'Aref Ruqaa Digits';
+     typing. The family names come from the one token source through
+     `app/tokens.css` (ADR-0089), so the app's theme names the same faces. */
+  --font-digits: var(--family-digits);
   --font-sans: var(--font-digits), var(--font-arabic);
   --font-mono: var(--font-digits), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font-heading: 'Aref Ruqaa', var(--font-arabic);
+  --font-heading: var(--family-heading), var(--font-arabic);
 }
 
 /* Compositor-only transition (ADR 0004). Replaces `transition-all`, which
