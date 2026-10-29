@@ -10,8 +10,10 @@ import {
   hslToArgb,
   ownedProperties,
   remToDp,
+  renderAndroidColors,
   renderCss,
   renderKotlin,
+  shellColors,
   weightRange,
 } from '../generate-tokens.mjs';
 
@@ -93,7 +95,7 @@ function declarations(block) {
 }
 
 describe('the source', () => {
-  it('is what the two committed outputs were generated from', async () => {
+  it('is what the committed outputs were generated from', async () => {
     const files = await generate();
     for (const [file, expected] of files) {
       expect(await readFile(path.join(ROOT, file), 'utf8'), file).toBe(expected);
@@ -173,6 +175,91 @@ describe('renderKotlin', () => {
     expect(kotlin).toContain('const val digitsWeightMax = 900');
     expect(kotlin).toContain('const val digitsRangeStart = 48');
     expect(kotlin).toContain('const val digitsRangeEnd = 57');
+  });
+});
+
+/**
+ * The shell's palette exactly as `res/values/colors.xml` carried it before the
+ * migration (#647). Every name is an `@color/roy_*` reference a layout, a
+ * drawable, a style or `ShellBatteryPrompt` resolves against, so a dropped or
+ * renamed entry would be a build failure or a wrong colour rather than a diff.
+ */
+const SHELL_COLORS = new Map([
+  ['roy_background', '#FF121216'],
+  ['roy_border_hairline', '#9935353B'],
+  ['roy_border', '#FF35353B'],
+  ['roy_track', '#FF26262B'],
+  ['roy_foreground', '#FFF5F5F5'],
+  ['roy_muted_foreground', '#FFADADAD'],
+  ['roy_subtle', '#FF8A8A8A'],
+  ['roy_primary', '#FF8F70E6'],
+  ['roy_primary_foreground', '#FFFFFFFF'],
+  ['roy_gradient_start', '#FF8B5CF6'],
+  ['roy_gradient_mid', '#FF7C3AED'],
+  ['roy_gradient_end', '#FF6366F1'],
+  ['roy_primary_glow', '#809333EA'],
+  ['roy_ripple_on_primary', '#33FFFFFF'],
+  ['roy_ripple_on_surface', '#1FFFFFFF'],
+  ['roy_scrim', '#B3000000'],
+  ['roy_launch_background', '#FF0F172A'],
+  ['roy_skeleton_card', '#FF1B2334'],
+  ['roy_skeleton_shape', '#FF2C3A55'],
+  ['roy_skeleton_hairline', '#FF22304A'],
+]);
+
+describe('renderAndroidColors', () => {
+  const xml = renderAndroidColors(tokens);
+  const emitted = new Map(
+    [...xml.matchAll(/<color name="([a-z0-9_]+)">(#[0-9A-F]{8})<\/color>/g)].map((match) => [
+      match[1],
+      match[2],
+    ])
+  );
+
+  it('reproduces the palette the resources used to declare by hand', () => {
+    expect([...emitted.entries()]).toEqual([...SHELL_COLORS.entries()]);
+  });
+
+  it('is a resource file, not a description of one', () => {
+    expect(xml.startsWith('<?xml version="1.0" encoding="utf-8"?>')).toBe(true);
+    expect(xml).toContain('<resources>');
+    expect(xml.trimEnd().endsWith('</resources>')).toBe(true);
+    // `launch-skeleton.test.mjs` reads this entry with a single-line pattern.
+    expect(xml).toMatch(/<color name="roy_launch_background">#[0-9A-F]{8}<\/color>/);
+  });
+
+  it('follows the token a colour is named after', () => {
+    const edited = structuredClone(tokens);
+    edited.color.primary = '0 0% 50%';
+    edited.color.secondary = '0 0% 40%';
+    const colors = shellColors(edited);
+    expect(colors.get('roy_primary')).toBe('#FF808080');
+    // `track` is the site's `secondary`, not a second copy of it.
+    expect(colors.get('roy_track')).toBe('#FF666666');
+    // A change to one token leaves the rest alone.
+    expect(colors.get('roy_background')).toBe('#FF121216');
+  });
+
+  it('flattens the alpha the site writes as a slash', () => {
+    const colors = shellColors(tokens);
+    expect(colors.get('roy_border_hairline')).toBe('#9935353B'); // border at 60%
+    expect(colors.get('roy_primary_glow')).toBe('#809333EA'); // 50%
+    expect(colors.get('roy_ripple_on_surface')).toBe('#1FFFFFFF'); // 12%
+    expect(colors.get('roy_scrim')).toBe('#B3000000'); // black at 70%
+  });
+
+  it('refuses a shell colour it cannot resolve', () => {
+    const unknownToken = structuredClone(tokens);
+    unknownToken.shell.color.scrim = { token: 'scrim' };
+    expect(() => shellColors(unknownToken)).toThrow(/unknown token/);
+
+    const badHex = structuredClone(tokens);
+    badHex.shell.color.scrim = { hex: 'black' };
+    expect(() => shellColors(badHex)).toThrow(/#RRGGBB/);
+
+    const noSource = structuredClone(tokens);
+    noSource.shell.color.scrim = { alpha: 0.5 };
+    expect(() => shellColors(noSource)).toThrow(/neither a "token" nor a "hex"/);
   });
 });
 

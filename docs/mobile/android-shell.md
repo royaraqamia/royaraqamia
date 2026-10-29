@@ -979,9 +979,10 @@ without a VPN, returned all 7,447,105 bytes with the sha256 the manifest publish
 **What the two dialogs look like.** They are not the platform's any more (ADR-0054). The card is the
 site's own surface — `background` with a hairline `border/60` edge and a 24dp radius, IBM Plex Sans
 Arabic, centred text, the Hero CTA's gradient on a pill for the primary action and the label alone, in
-`muted-foreground`, for the secondary — and the values are the site's tokens restated in
-`android/app/src/main/res/values/colors.xml`, each with the CSS declaration it came from written above
-it. The shell is dark-only and RTL on every device, because the site is: both questions were previously
+`muted-foreground`, for the secondary — and the values are generated into
+`android/app/src/main/res/values/colors.xml` from `shared/tokens/tokens.json` (`npm run tokens:generate`,
+ADR-0089), so the palette the shell draws and the palette the site paints are one file instead of two
+kept in step by hand. The shell is dark-only and RTL on every device, because the site is: both questions were previously
 answered by the OS, so a phone in light mode or an English locale got a shell that did not look like the
 page it was hosting.
 

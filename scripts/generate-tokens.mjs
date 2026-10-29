@@ -9,23 +9,28 @@
  *   - `app/tokens.css` — the CSS custom properties Tailwind's `@theme` maps to
  *     utilities, plus the two `@font-face` declarations for the heading and
  *     digits faces;
+ *   - `android/app/src/main/res/values/colors.xml` — the shell's own palette, in
+ *     the form Android reads. The dialogs and the launch skeleton are drawn by the
+ *     platform rather than by the WebView, so they cannot read a CSS custom
+ *     property; this used to be twenty hex values restated by hand beside a
+ *     comment explaining how to convert each one (ADR-0054).
  *   - `android/app/src/main/kotlin/com/royaraqamia/app/theme/DesignTokens.kt` —
  *     the same colours, type steps, spacing and radii as plain Kotlin constants
  *     the Compose theme reads.
  *
- * Both outputs are committed, so a pull request that edits the token without
+ * Every output is committed, so a pull request that edits the token without
  * regenerating fails CI (`npm run check:tokens`), and a stylesheet that
  * re-declares a generated property by hand fails it too — that is the drift the
  * ADR is about.
  *
  * Usage:
  *
- *   node scripts/generate-tokens.mjs            # write both outputs
+ *   node scripts/generate-tokens.mjs            # write every output
  *   node scripts/generate-tokens.mjs --check    # fail if they are stale
  *
  * Colour values stay HSL components (`240 10% 8%`) because that is what Tailwind's
- * `hsl(var(--background))` mapping consumes; the Kotlin side converts them to
- * opaque ARGB, which is why the conversion is unit-tested rather than trusted.
+ * `hsl(var(--background))` mapping consumes; Android's two outputs convert them
+ * to ARGB, which is why the conversion is unit-tested rather than trusted.
  */
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -37,20 +42,21 @@ export const SOURCE = 'shared/tokens/tokens.json';
 export const CSS_OUTPUT = 'app/tokens.css';
 export const KOTLIN_OUTPUT =
   'android/app/src/main/kotlin/com/royaraqamia/app/theme/DesignTokens.kt';
+export const ANDROID_COLORS_OUTPUT = 'android/app/src/main/res/values/colors.xml';
 
 /** The reverse of a `rem` length in CSS pixels, which is the unit Compose's `dp` reads. */
 const REM = 16;
+
+/** The radius token is `--radius`; the JSON name says what it is, not what it is called. */
+const RADIUS_PROPERTIES = {
+  base: '--radius',
+};
 
 /**
  * The spacing tokens predate the source and are referenced by name in every
  * surface stylesheet, so the JSON key and the custom property are not always the
  * same word. Mapping them here keeps the stylesheets still.
  */
-/** The radius token is `--radius`; the JSON name says what it is, not what it is called. */
-const RADIUS_PROPERTIES = {
-  base: '--radius',
-};
-
 const SPACE_PROPERTIES = {
   section: '--section-spacing',
   'section-sm': '--section-spacing-sm',
@@ -65,8 +71,8 @@ export function fluid({ min, preferred, max }) {
   return `clamp(${min}, ${preferred}, ${max})`;
 }
 
-/** `240 10% 8%` -> `0xFF14161A`. Opaque: every token in the file is a surface colour. */
-export function hslToArgb(components) {
+/** `240 10% 8%` -> the opaque ARGB value `0xFF14161A`, as a number. */
+export function hslToArgbValue(components) {
   const match = /^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/.exec(components.trim());
   if (!match) {
     throw new Error(`generate-tokens: "${components}" is not an "H S% L%" triplet`);
@@ -90,8 +96,17 @@ export function hslToArgb(components) {
   ][sector];
 
   const channel = (value) => Math.round((value + offset) * 255);
-  const argb = (0xff000000 + (channel(red) << 16) + (channel(green) << 8) + channel(blue)) >>> 0;
-  return `0x${argb.toString(16).toUpperCase().padStart(8, '0')}`;
+  return (0xff000000 + (channel(red) << 16) + (channel(green) << 8) + channel(blue)) >>> 0;
+}
+
+/** A Kotlin `Long` literal: `0xFF14161A`. */
+export function hslToArgb(components) {
+  return `0x${hslToArgbValue(components).toString(16).toUpperCase().padStart(8, '0')}`;
+}
+
+/** An Android resource value: `#FF14161A`, with the alpha channel written out. */
+export function toAndroidColor(value) {
+  return `#${value.toString(16).toUpperCase().padStart(8, '0')}`;
 }
 
 /** `1.125rem` -> `18`. Any other unit is a token the generator cannot place on a device. */
@@ -141,7 +156,7 @@ export function ownedProperties(tokens) {
 
 /** Reject a source the emitters would otherwise render as `undefined`. */
 export function validate(tokens) {
-  for (const section of ['color', 'radius', 'space', 'font', 'type', 'shadow', 'motion']) {
+  for (const section of ['color', 'radius', 'space', 'font', 'type', 'shadow', 'motion', 'shell']) {
     if (!tokens[section] || typeof tokens[section] !== 'object') {
       throw new Error(`generate-tokens: the source has no "${section}" section`);
     }
@@ -169,20 +184,19 @@ export function validate(tokens) {
     }
     fluid(entry);
   }
+  if (!tokens.shell.color || Object.keys(tokens.shell.color).length === 0) {
+    throw new Error('generate-tokens: the source has no "shell.color" entries');
+  }
+  shellColors(tokens);
   return tokens;
 }
 
-/**
- * A token's own reasoning, wrapped as CSS comments. The source is JSON, so a
- * note lives beside the value it explains instead of in a stylesheet that no
- * longer declares it.
- */
-export function commentFor(tokens, section, name) {
-  const note = tokens.notes?.[`${section}.${name}`];
+/** The note for a token, wrapped to a readable width. Empty when there is none. */
+function noteLines(tokens, key, width = 76) {
+  const note = tokens.notes?.[key];
   if (!note) {
     return [];
   }
-  const width = 76;
   const lines = [];
   let current = '';
   for (const word of note.split(/\s+/)) {
@@ -196,7 +210,25 @@ export function commentFor(tokens, section, name) {
   if (current) {
     lines.push(current);
   }
-  return ['    /*', ...lines.map((line) => `       ${line}`), '     */'];
+  return lines;
+}
+
+/**
+ * A token's own reasoning, wrapped as CSS comments. The source is JSON, so a
+ * note lives beside the value it explains instead of in a stylesheet that no
+ * longer declares it.
+ */
+export function commentFor(tokens, section, name) {
+  const lines = noteLines(tokens, `${section}.${name}`);
+  return lines.length === 0 ? [] : ['    /*', ...lines.map((line) => `       ${line}`), '     */'];
+}
+
+/** The same note in XML, which is the form Android's resources are read in. */
+function xmlComment(tokens, key, indent = '    ') {
+  const lines = noteLines(tokens, key);
+  return lines.length === 0
+    ? []
+    : [`${indent}<!--`, ...lines.map((l) => `${indent}  ${l}`), `${indent}-->`];
 }
 
 function fontFace(face, { unicodeRange = false } = {}) {
@@ -301,7 +333,81 @@ export function renderCss(tokens) {
   return lines.join('\n');
 }
 
-/** `100 900` -> `[100, 900]`, so the app can clamp a variable weight. */
+/**
+ * The shell's colours, resolved to Android's `#AARRGGBB`.
+ *
+ * An entry is either a `token` from the shared palette or a `hex` only the shell
+ * needs, and either may carry an `alpha` — what the site writes as `bg-black/70`
+ * or `border-border/60` and what Android needs flattened into the value itself.
+ * Only the colours the shell actually draws are emitted, under the resource names
+ * it already references, so adding a token cannot quietly add a resource.
+ */
+export function shellColors(tokens) {
+  const colors = new Map();
+  for (const [name, entry] of Object.entries(tokens.shell?.color ?? {})) {
+    let value;
+    if (entry.token !== undefined) {
+      const triplet = tokens.color[entry.token];
+      if (triplet === undefined) {
+        throw new Error(
+          `generate-tokens: shell colour "${name}" names unknown token "${entry.token}"`
+        );
+      }
+      value = hslToArgbValue(triplet);
+    } else if (entry.hex !== undefined) {
+      const match = /^#([0-9A-Fa-f]{6})$/.exec(entry.hex);
+      if (!match) {
+        throw new Error(`generate-tokens: shell colour "${name}" is not a "#RRGGBB" value`);
+      }
+      value = 0xff000000 + parseInt(match[1], 16);
+    } else {
+      throw new Error(
+        `generate-tokens: shell colour "${name}" has neither a "token" nor a "hex" value`
+      );
+    }
+
+    const alpha = entry.alpha ?? 1;
+    if (!(alpha >= 0 && alpha <= 1)) {
+      throw new Error(`generate-tokens: shell colour "${name}" has an alpha outside 0-1`);
+    }
+    colors.set(
+      `roy_${name.replace(/-/g, '_')}`,
+      toAndroidColor(((value & 0x00ffffff) | (Math.round(alpha * 255) << 24)) >>> 0)
+    );
+  }
+  return colors;
+}
+
+/** The app's resource palette: the colours the platform draws with. */
+export function renderAndroidColors(tokens) {
+  validate(tokens);
+
+  const lines = [
+    '<?xml version="1.0" encoding="utf-8"?>',
+    '<!--',
+    '  Generated by `npm run tokens:generate` from `shared/tokens/tokens.json`.',
+    '  Do not edit: change the token and regenerate.',
+    '',
+    "  The shell's dialogs, its launch skeleton and its update bar are drawn by",
+    '  Android rather than by the WebView, so they cannot read a CSS custom',
+    "  property (ADR-0054). A colour with a `token` is one of the site's own; one",
+    '  with only a `hex` is a colour only the shell needs. `npm run check:tokens`',
+    '  fails a stale copy, which is what keeps the two clients agreeing.',
+    '-->',
+    '<resources>',
+  ];
+
+  const colors = shellColors(tokens);
+  for (const name of Object.keys(tokens.shell.color)) {
+    const resource = `roy_${name.replace(/-/g, '_')}`;
+    lines.push(...xmlComment(tokens, `shell.color.${name}`));
+    lines.push(`    <color name="${resource}">${colors.get(resource)}</color>`);
+  }
+
+  lines.push('</resources>', '');
+  return lines.join('\n');
+}
+
 export function weightRange(weight) {
   const parts = String(weight).trim().split(/\s+/).map(Number);
   if (parts.length === 0 || parts.some((part) => !Number.isFinite(part))) {
@@ -423,11 +529,12 @@ export function renderKotlin(tokens) {
   return lines.join('\n');
 }
 
-/** Both outputs, keyed by repo-relative path, without touching the disk. */
+/** Every output, keyed by repo-relative path, without touching the disk. */
 export async function generate() {
   const source = JSON.parse(await readFile(path.join(ROOT, SOURCE), 'utf8'));
   return new Map([
     [CSS_OUTPUT, renderCss(source)],
+    [ANDROID_COLORS_OUTPUT, renderAndroidColors(source)],
     [KOTLIN_OUTPUT, renderKotlin(source)],
   ]);
 }
@@ -471,6 +578,7 @@ async function main(argv) {
   const source = JSON.parse(await readFile(path.join(ROOT, SOURCE), 'utf8'));
   const files = new Map([
     [CSS_OUTPUT, renderCss(source)],
+    [ANDROID_COLORS_OUTPUT, renderAndroidColors(source)],
     [KOTLIN_OUTPUT, renderKotlin(source)],
   ]);
 
