@@ -88,6 +88,22 @@ async function ensureProfile(id: string, email: string) {
 }
 
 /**
+ * A function the migration in this branch adds is not in the linked project
+ * until that migration is applied, and `migration-drift` only applies after a
+ * merge. A pull request therefore runs against a project that does not have it
+ * yet, so a bootstrap that refused there would be red for the whole branch over
+ * something the merge resolves — the same "a script that cannot run is worse
+ * than no script" this file already learned once.
+ */
+function isMissingFunction(error: { code?: string; message: string }): boolean {
+  return (
+    error.code === 'PGRST202' ||
+    error.code === '42883' ||
+    error.message.includes('Could not find the function')
+  );
+}
+
+/**
  * Put the account on Pro, extended from today on every run.
  *
  * A row is written directly rather than through `activate_plan`: that RPC
@@ -109,13 +125,35 @@ async function ensurePlan(userId: string) {
   }
 
   // Read the plan back through the same RPC the cap check uses, so a stale or
-  // expired row cannot pass unnoticed.
+  // expired row cannot pass unnoticed. Where the function is not in the project
+  // yet, read the row itself rather than fail: the merge applies the migration.
   const state = await supabase.rpc('get_usage_counters', { p_user_id: userId });
-  if (state.error) {
+  let plan: string;
+
+  if (state.error && !isMissingFunction(state.error)) {
     console.error(`Failed to read the test account's plan: ${state.error.message}`);
     process.exit(1);
   }
-  const plan = (state.data as { plan?: string } | null)?.plan ?? 'unknown';
+
+  if (state.error) {
+    const row = await supabase
+      .from('user_plans')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (row.error) {
+      console.error(`Failed to read the test account's plan row: ${row.error.message}`);
+      process.exit(1);
+    }
+    plan = (row.data as { plan?: string } | null)?.plan ?? 'unknown';
+    console.warn(
+      `get_usage_counters is not in this project yet (${state.error.message}); ` +
+        `read user_plans instead: ${plan}`
+    );
+  } else {
+    plan = (state.data as { plan?: string } | null)?.plan ?? 'unknown';
+  }
+
   console.log(`Test account is on plan: ${plan} (expires ${expiresAt})`);
   if (plan !== 'pro') {
     console.error('Expected the test account to resolve as Pro; the owned-item caps still apply.');
