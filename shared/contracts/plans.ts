@@ -21,6 +21,7 @@ import {
   LOCAL_USAGE_ACTIONS,
   PLAN_IDS,
   USAGE_WINDOWS,
+  type OwnedItemKey,
   type PlanId,
   type PlanQuota,
   type UsageCounterKey,
@@ -95,6 +96,15 @@ export interface UsageCounterState {
   key: UsageCounterKey;
   label: string;
   window: UsageWindow;
+  cap: number;
+  used: number;
+  remaining: number;
+}
+
+/** Where one owned-item cap stands for one account. */
+export interface OwnedItemState {
+  key: OwnedItemKey;
+  label: string;
   cap: number;
   used: number;
   remaining: number;
@@ -192,6 +202,8 @@ export interface PlanActivationRecord {
 /** The account's plan page: the current allowance plus every grant. */
 export interface MyPlan {
   state: UsageState;
+  /** Each owned-item cap against what the account holds right now. */
+  limits: OwnedItemState[];
   activations: PlanActivationRecord[];
 }
 
@@ -216,6 +228,16 @@ export const UsageStatePayloadSchema = z.object({
   expiresAt: z.string().nullable(),
   counters: z.array(UsageCounterStatePayloadSchema),
 });
+
+export const OwnedItemStatePayloadSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  cap: z.number().int().nonnegative(),
+  used: z.number().int().nonnegative(),
+  remaining: z.number().int().nonnegative(),
+});
+
+export const OwnedItemStatesPayloadSchema = z.array(OwnedItemStatePayloadSchema);
 
 /**
  * The body `GET /api/me/usage` returns. The controller validates what it emits

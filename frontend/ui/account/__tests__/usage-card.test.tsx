@@ -66,22 +66,23 @@ describe('UsageCard', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows each counted action against its own cap', () => {
+  it('states the plan and links to the page that details it', () => {
     mocks.session.user = { id: 'u1' };
     mocks.usage.state = freeState;
 
     render(<UsageCard />);
 
-    expect(screen.getByText('تنزيل وسائط')).toBeInTheDocument();
-    expect(screen.getByText('2 / 5')).toBeInTheDocument();
-    expect(screen.getByText('مسح رمز')).toBeInTheDocument();
-    expect(screen.getByText('1 / 5')).toBeInTheDocument();
+    expect(screen.getByText('الاشتراك والاستهلاك')).toBeInTheDocument();
+    expect(screen.getByText('الخطَّة المجانيَّة')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /التَّفاصيل والسِّجل/ })).toHaveAttribute(
       'href',
       '/account/plan'
     );
     // A free member is nudged to the page that sells the upgrade.
     expect(screen.getByRole('link', { name: /ترقية الخطَّة/ })).toHaveAttribute('href', '/pricing');
+    // The per-item numbers live on `/account/plan` only.
+    expect(screen.queryByText('تنزيل وسائط')).not.toBeInTheDocument();
+    expect(screen.queryByText('2 / 5')).not.toBeInTheDocument();
   });
 
   it('drops the upgrade nudge once the plan is paid', () => {
@@ -104,7 +105,6 @@ describe('UsageCard', () => {
 
     render(<UsageCard />);
 
-    expect(screen.getByText('2 / 50')).toBeInTheDocument();
     expect(screen.getByText('الخطَّة المدفوعة')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ترقية الخطَّة/ })).not.toBeInTheDocument();
   });
@@ -115,6 +115,6 @@ describe('UsageCard', () => {
 
     render(<UsageCard />);
 
-    expect(screen.getAllByText('غير محدود').length).toBeGreaterThan(0);
+    expect(screen.getByText('غير محدود')).toBeInTheDocument();
   });
 });

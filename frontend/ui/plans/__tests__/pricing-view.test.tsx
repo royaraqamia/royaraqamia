@@ -156,6 +156,8 @@ describe('PricingView', () => {
     expect(screen.getByText(/88 ملاحظة/)).toBeInTheDocument();
     expect(screen.getByText(/حتى 22 تطبيقات MCP/)).toBeInTheDocument();
     expect(screen.getByText(/55 تنزيلًا/)).toBeInTheDocument();
+    // The one-line summary under the price is gone; the bullets carry it.
+    expect(screen.queryByText(/من كل نوع/)).not.toBeInTheDocument();
   });
 
   it('sends a guest to sign-in with the price in the WhatsApp message', () => {

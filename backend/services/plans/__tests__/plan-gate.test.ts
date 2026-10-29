@@ -30,6 +30,7 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
     listQuotas: vi.fn(async () => []),
     newsCardCap: vi.fn(async () => 5),
     getState: vi.fn(async () => freeState),
+    getOwnedItemStates: vi.fn(async () => []),
     listActivations: vi.fn(async () => []),
     record: vi.fn(async () => ({
       allowed: true,

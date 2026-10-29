@@ -88,17 +88,6 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               <SectionTitleHighlight>$0</SectionTitleHighlight>
             </p>
 
-            <p className="mt-2 text-sm text-muted-foreground">
-              <strong className="font-bold text-foreground">
-                {formatCount(capOf(catalog, 'notes', FREE))}
-              </strong>{' '}
-              عناصر من كل نوع، و
-              <strong className="font-bold text-foreground">
-                {formatCount(counterCapOf(catalog, 'downloader.job.create', FREE))}
-              </strong>{' '}
-              تنزيلات.
-            </p>
-
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'habits', FREE))} عادات، و
@@ -151,17 +140,6 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               <SectionTitleHighlight>
                 {priceLabel(settings.priceCents, settings.currency)}
               </SectionTitleHighlight>
-            </p>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              <strong className="font-bold text-foreground">
-                {formatCount(capOf(catalog, 'notes', PRO))}
-              </strong>{' '}
-              عنصرًا من كل نوع، و
-              <strong className="font-bold text-foreground">
-                {formatCount(counterCapOf(catalog, 'downloader.job.create', PRO))}
-              </strong>{' '}
-              تنزيلًا.
             </p>
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">

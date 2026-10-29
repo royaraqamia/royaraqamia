@@ -24,7 +24,7 @@ export async function getMyCaps(): Promise<PlanCaps> {
 
 export async function getMyPlan(): Promise<MyPlan> {
   const data = await request<{ success: boolean } & MyPlan>('/api/me/plan');
-  return { state: data.state, activations: data.activations };
+  return { state: data.state, limits: data.limits, activations: data.activations };
 }
 
 export interface LocalUsageReportEntry {

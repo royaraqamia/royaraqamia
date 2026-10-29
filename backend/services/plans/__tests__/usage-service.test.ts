@@ -44,6 +44,9 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
     listQuotas: vi.fn(async () => []),
     newsCardCap: vi.fn(async () => 5),
     getState: vi.fn(async () => freeState),
+    getOwnedItemStates: vi.fn(async () => [
+      { key: 'habits' as const, label: 'العادات', cap: 5, used: 2, remaining: 3 },
+    ]),
     listActivations: vi.fn(async () => []),
     record: vi.fn(async () => ({
       allowed: true,
@@ -92,6 +95,7 @@ describe('UsageService', () => {
 
     await expect(service.myPlan('user-1')).resolves.toMatchObject({
       state: freeState,
+      limits: [{ key: 'habits', used: 2, cap: 5 }],
       activations: [{ id: 'a1', amountCents: 1000 }],
     });
   });
