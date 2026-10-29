@@ -1245,6 +1245,27 @@ select,
   background: hsl(var(--border));
 }
 
+/* A dialog that draws no bar at all on phones and tablets — the note and post
+   composers. Scrolling is unchanged; only the 6px strip goes, because on touch
+   `:active` fires during the gesture and the bar painted itself mid-scroll.
+   Above `lg` the thin `.dialog-scrollbar` bar stays. */
+@media (max-width: 1023.98px) {
+  .dialog-scrollbar-touch-none,
+  .dialog-scrollbar-touch-none:hover,
+  .dialog-scrollbar-touch-none:focus,
+  .dialog-scrollbar-touch-none:active {
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+  }
+
+  .dialog-scrollbar-touch-none::-webkit-scrollbar,
+  .dialog-scrollbar-touch-none:hover::-webkit-scrollbar,
+  .dialog-scrollbar-touch-none:focus::-webkit-scrollbar,
+  .dialog-scrollbar-touch-none:active::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Touch action utilities for gesture handling */
 .touch-action-manipulation {
   touch-action: manipulation;
