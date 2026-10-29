@@ -24,9 +24,11 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
   return {
     getSettings: vi.fn(),
     listLimits: vi.fn(async () => [
-      { key: 'habits', label: 'العادات', freeCap: 5, proCap: 50, sortOrder: 10 },
+      { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 5, proCap: 50, sortOrder: 10 },
     ]),
     listCounters: vi.fn(async () => []),
+    listQuotas: vi.fn(async () => []),
+    newsCardCap: vi.fn(async () => 5),
     getState: vi.fn(async () => freeState),
     listActivations: vi.fn(async () => []),
     record: vi.fn(async () => ({
@@ -106,11 +108,11 @@ describe('PlanGate', () => {
     const { repository, gate } = makeGate();
 
     await expect(
-      gate.claim({ userId: 'user-1' }, 'news.digest.open', { dedupeKey: 'news:2026-10-29' })
+      gate.claim({ userId: 'user-1' }, 'scanner.scan', { dedupeKey: 'scan:2026-10-29' })
     ).resolves.toBe('event-1');
 
     expect(repository.record).toHaveBeenCalledWith(
-      expect.objectContaining({ dedupeKey: 'news:2026-10-29' })
+      expect.objectContaining({ dedupeKey: 'scan:2026-10-29' })
     );
   });
 

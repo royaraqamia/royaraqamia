@@ -27,6 +27,7 @@ import {
   ShortLinkRedirectError,
 } from '@/backend/services/linksnap/redirect-url';
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
+import { hashAnonymousSubject } from '@/backend/services/plans/plan-gate';
 import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import {
@@ -252,7 +253,8 @@ export async function shortenUrl(
     password?: unknown;
     clientId?: unknown;
     updatedAt?: unknown;
-  }
+  },
+  visitorKey: string | null = null
 ): Promise<HttpResult> {
   try {
     const { originalUrl, customCode } = body;
@@ -269,22 +271,41 @@ export async function shortenUrl(
     const plan = createPlanGate();
     const shorten = createShortenUrlService();
     const meta = offlineCreateMeta(body);
-    // The standing cap is the account's shelf; a visitor has none to fill. A
-    // replayed create whose row is still live already holds its slot, so only a
-    // first write or a tombstone revival checks the cap (ADR-0075).
+    // The standing cap is the account's shelf. A replayed create whose row is
+    // still live already holds its slot, so only a first write or a tombstone
+    // revival checks the cap (ADR-0075). A visitor has a shelf of one, tagged on
+    // the row and enforced by `assert_anonymous_link_cap` (ADR-0093).
     if (userId) {
       const replayed = meta.clientId ? await shorten.findByClientId(userId, meta.clientId) : null;
       if (!replayed || replayed.deletedAt) await plan.cap(userId, OWNED_ITEMS.shortLinks);
     }
 
-    const newLink = await shorten.execute(
-      originalUrl as string,
-      userId,
-      customCode as string | undefined,
-      parseExpiresAt(body.expiresAt),
-      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
-      meta
-    );
+    const expiresAt = parseExpiresAt(body.expiresAt);
+    const password =
+      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined;
+
+    // An anonymous create also carries its owner, so the row can be counted
+    // against the visitor's one-link slot. A signed-in create is owned by
+    // `user_id` and needs nothing else.
+    const newLink =
+      userId === null
+        ? await shorten.execute(
+            originalUrl as string,
+            null,
+            customCode as string | undefined,
+            expiresAt,
+            password,
+            meta,
+            { visitorKey, ipHash: ip ? hashAnonymousSubject(ip) : null }
+          )
+        : await shorten.execute(
+            originalUrl as string,
+            userId,
+            customCode as string | undefined,
+            expiresAt,
+            password,
+            meta
+          );
 
     return jsonResult(200, {
       success: true,

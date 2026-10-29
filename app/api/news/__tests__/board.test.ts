@@ -39,14 +39,11 @@ vi.mock('@/backend/config/identity', () => ({
   identity: { resolveOptional: async () => ({ user: null, client: null }) },
 }));
 
-vi.mock('@/backend/middleware/visitor-cookie', () => ({
-  readVisitorKey: () => 'visitor-1',
-}));
+const mockResolveNewsCardCap = vi.fn(async (_userId: string | null): Promise<number> => 5);
 
-const mockClaimNewsDigestOpen = vi.fn(async (..._args: unknown[]): Promise<unknown> => null);
-
-vi.mock('@/backend/services/news/digest-access', () => ({
-  claimNewsDigestOpen: (...args: unknown[]) => mockClaimNewsDigestOpen(...args),
+vi.mock('@/backend/services/news/card-limit', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/backend/services/news/card-limit')>()),
+  resolveNewsCardCap: (userId: string | null) => mockResolveNewsCardCap(userId),
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
@@ -69,7 +66,7 @@ vi.mock('@/backend/transport/http-result', () => ({
 }));
 
 import { GET as boardGET } from '@/app/api/news/board/route';
-import type { NewsBoard } from '@/shared/contracts/news';
+import type { NewsBoard, NewsStory } from '@/shared/contracts/news';
 
 interface RouteResponse {
   status: number;
@@ -91,14 +88,30 @@ const SHARED_BOARD: NewsBoard = {
   hasAnyDigest: true,
   preferences: null,
   personal: null,
-  limit: null,
+  cards: null,
 };
+
+function story(id: string): NewsStory {
+  return {
+    id,
+    position: 1,
+    category: 'tech',
+    region: 'world',
+    headline: `خبر ${id}`,
+    summary: 'ملخّص',
+    whyItMatters: null,
+    sourceId: 'example',
+    sourceName: 'Example',
+    sourceUrl: 'https://example.com/story',
+    sourcePublishedAt: null,
+  };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockCheckRateLimitApi.mockResolvedValue(null);
   mockLoadNewsBoard.mockResolvedValue(SHARED_BOARD);
-  mockClaimNewsDigestOpen.mockResolvedValue(null);
+  mockResolveNewsCardCap.mockResolvedValue(5);
 });
 
 /**
@@ -158,7 +171,7 @@ describe('GET /api/news/board', () => {
     );
   });
 
-  it('answers an empty board with the limit when the reader has seen their share', async () => {
+  it('cuts the day to the plan’s cards and says how many were hidden', async () => {
     mockLoadNewsBoard.mockResolvedValue({
       ...SHARED_BOARD,
       day: {
@@ -167,39 +180,68 @@ describe('GET /api/news/board', () => {
           date: '2026-10-25',
           title: 'عنوان',
           lede: 'مقدّمة',
-          storyCount: 1,
+          storyCount: 3,
           model: 'model',
           publishedAt: '2026-10-25T06:00:00.000Z',
         },
-        stories: [],
+        stories: [story('s-1'), story('s-2'), story('s-3')],
       },
     });
-    mockClaimNewsDigestOpen.mockResolvedValue({ cap: 1, used: 1, visitor: true });
+    mockResolveNewsCardCap.mockResolvedValue(1);
 
     const res = (await boardGET(request())) as unknown as RouteResponse;
+    const board = (res.data as { board: NewsBoard }).board;
 
+    expect(board.day?.stories).toHaveLength(1);
+    expect(board.cards).toEqual({ cap: 1, total: 3, shown: 1, visitor: true });
     expect(res.headers['Cache-Control']).toBe('no-store');
-    expect((res.data as { board: NewsBoard }).board.day).toBeNull();
-    expect((res.data as { board: NewsBoard }).board.limit).toEqual({
-      cap: 1,
-      used: 1,
-      visitor: true,
-    });
-    expect(mockClaimNewsDigestOpen).toHaveBeenCalledWith(
-      expect.objectContaining({ visitorKey: 'visitor-1' }),
-      '2026-10-25'
-    );
   });
 
-  it('does not count an open for a search over the archive', async () => {
+  it('serves the whole digest, publicly, when it fits under the cap', async () => {
     mockLoadNewsBoard.mockResolvedValue({
       ...SHARED_BOARD,
-      search: { query: 'اتفاق', category: null, hits: [], truncated: false },
+      day: {
+        digest: {
+          id: 'digest-1',
+          date: '2026-10-25',
+          title: 'عنوان',
+          lede: 'مقدّمة',
+          storyCount: 2,
+          model: 'model',
+          publishedAt: '2026-10-25T06:00:00.000Z',
+        },
+        stories: [story('s-1'), story('s-2')],
+      },
     });
 
-    await boardGET(request({ q: 'اتفاق' }));
+    const res = (await boardGET(request())) as unknown as RouteResponse;
+    const board = (res.data as { board: NewsBoard }).board;
 
-    expect(mockClaimNewsDigestOpen).not.toHaveBeenCalled();
+    expect(board.day?.stories).toHaveLength(2);
+    expect(board.cards).toBeNull();
+    expect(res.headers['Cache-Control']).toBe('public, max-age=0, must-revalidate');
+  });
+
+  it('caps the search hits too, not just the day', async () => {
+    mockLoadNewsBoard.mockResolvedValue({
+      ...SHARED_BOARD,
+      search: {
+        query: 'اتفاق',
+        category: null,
+        hits: [
+          { ...story('s-1'), digestDate: '2026-10-25' },
+          { ...story('s-2'), digestDate: '2026-10-24' },
+        ],
+        truncated: false,
+      },
+    });
+    mockResolveNewsCardCap.mockResolvedValue(1);
+
+    const res = (await boardGET(request({ q: 'اتفاق' }))) as unknown as RouteResponse;
+    const board = (res.data as { board: NewsBoard }).board;
+
+    expect(board.search?.hits).toHaveLength(1);
+    expect(board.cards).toEqual({ cap: 1, total: 2, shown: 1, visitor: true });
   });
 
   it('returns 429 with the limiter’s message when the per-IP limit is exhausted', async () => {

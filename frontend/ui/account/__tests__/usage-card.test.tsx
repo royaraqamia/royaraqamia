@@ -39,8 +39,8 @@ const freeState: UsageState = {
       remaining: 3,
     },
     {
-      key: 'news.digest.open',
-      label: 'فتح مُلخَّص أخبار',
+      key: 'scanner.scan',
+      label: 'مسح رمز',
       window: 'daily',
       cap: 5,
       used: 1,
@@ -74,7 +74,7 @@ describe('UsageCard', () => {
 
     expect(screen.getByText('تنزيل وسائط')).toBeInTheDocument();
     expect(screen.getByText('2 / 5')).toBeInTheDocument();
-    expect(screen.getByText('فتح مُلخَّص أخبار')).toBeInTheDocument();
+    expect(screen.getByText('مسح رمز')).toBeInTheDocument();
     expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /التَّفاصيل والسِّجل/ })).toHaveAttribute(
       'href',

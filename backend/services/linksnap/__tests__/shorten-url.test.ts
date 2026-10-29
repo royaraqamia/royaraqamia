@@ -24,6 +24,29 @@ describe('ShortenUrlService.execute', () => {
     vi.useRealTimers();
   });
 
+  it('hands the visitor subject to the repository for an anonymous create', async () => {
+    const { repository, service } = makeRepo();
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.create as ReturnType<typeof vi.fn>).mockImplementation(async (link) => link);
+
+    const owner = { visitorKey: 'visitor-1', ipHash: 'hash-1' };
+
+    await service.execute(
+      'https://example.com',
+      null,
+      undefined,
+      null,
+      undefined,
+      undefined,
+      owner
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+      owner
+    );
+  });
+
   it('generates a unique random code when no custom code is given', async () => {
     const { repository, service } = makeRepo();
     (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);

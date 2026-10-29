@@ -17,10 +17,11 @@ Four consequences are deliberate:
 - **Opt-in, not automatic.** The preference stores which sources were kept; `personal_enabled`
   records that the reader asked for a digest at all. Picking sources alone does not spend credits,
   and a reader who forgets they opted in does not wake up to a bill.
-- **Generation is free; opening is counted.** `publish-personal-digest.mjs` writes the digest and
-  charges nothing (ADR-0093), because a run whose model output failed validation publishes nothing
-  and a digest nobody opens should cost the reader nothing. What the plan limits is how many digests
-  a reader _opens_ per day, counted by the board route against the digest's date.
+- **Generation is free; reading is limited by cards.** `publish-personal-digest.mjs` writes the
+  digest and charges nothing (ADR-0093), because a run whose model output failed validation publishes
+  nothing and a digest nobody opens should cost the reader nothing. What the plan limits is how many
+  story cards a page shows — 1 for a visitor, 5 on Free, 50 on Pro — so a personal digest with eight
+  stories shows five to a Free reader.
 - **A floor, not a target.** 3-12 stories, target 8. A reader who follows two quiet feeds gets
   nothing rather than a one-story "digest", because a nearly empty personal page reads as a broken
   site and the shared digest is strictly better.

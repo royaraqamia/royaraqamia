@@ -7,11 +7,20 @@ export interface ShortLinkWriteMeta {
   deletedAt?: string | null;
 }
 
+/**
+ * Who created an anonymous link: the visitor cookie and the salted address. A
+ * signed-in create is owned by `user_id` and carries neither.
+ */
+export interface AnonymousLinkOwner {
+  visitorKey: string | null;
+  ipHash: string | null;
+}
+
 export interface ShortLinkRepository {
   findByCode(code: string): Promise<ShortLink | null>;
   /** Finds a user's link by its client-minted id (idempotent replay target). */
   findByClientId(userId: string, clientId: string): Promise<ShortLink | null>;
-  create(link: ShortLink): Promise<ShortLink>;
+  create(link: ShortLink, owner?: AnonymousLinkOwner): Promise<ShortLink>;
   listByUserId(userId: string): Promise<ShortLink[]>;
   /**
    * Sync read: includes tombstoned links so a delete made on another device

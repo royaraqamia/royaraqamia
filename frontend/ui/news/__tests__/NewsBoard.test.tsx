@@ -49,7 +49,7 @@ const BOARD: NewsBoardData = {
   hasAnyDigest: true,
   preferences: null,
   personal: null,
-  limit: null,
+  cards: null,
 };
 
 function response(cacheControl: string, body: unknown = { board: BOARD }) {
@@ -103,6 +103,25 @@ describe('NewsBoard snapshots', () => {
     // Give the recorder effect a turn: the assertion is that it does nothing.
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(listSnapshotKeys()).toEqual([]);
+  });
+
+  it('states how many cards the plan hid', async () => {
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: {
+          ...BOARD,
+          cards: { cap: 1, total: 3, shown: 1, visitor: true },
+        },
+      })
+    );
+
+    render(<NewsBoard />);
+
+    await expect(screen.findByText(/تعرض لك الصفحة 1 من 3 بطاقة/)).resolves.toBeTruthy();
+    expect(screen.getByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=%2Fnews'
+    );
   });
 
   it('paints the last-seen digest when the read cannot answer', async () => {

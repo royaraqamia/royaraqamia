@@ -141,7 +141,7 @@ describe('HabitLocalStore', () => {
   });
 
   it('merges server data by last-write-wins and keeps pending local edits', async () => {
-    const repo = await openGuest();
+    const repo = await HabitLocalStore.open(userIdentity('u-1'), new IDBFactory());
     const synced = await repo.createHabit({ name: 'مصطفى', frequency: 'daily' });
     // Simulate that `synced` already flushed: no intent is left for it.
     for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);

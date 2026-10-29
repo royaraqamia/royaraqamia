@@ -13,6 +13,8 @@ import {
   type PlanCaps,
   type PlanId,
   type PlanLimit,
+  type PlanQuota,
+  type PlanQuotaKey,
   type PlanSettings,
   type UsageCounterKey,
   type UsageCounterState,
@@ -96,6 +98,36 @@ export class UsageService {
 
   listCounters(): Promise<UsageLimit[]> {
     return this.repository.listCounters();
+  }
+
+  listQuotas(): Promise<PlanQuota[]> {
+    return this.repository.listQuotas();
+  }
+
+  /** How many news cards this reader's plan may show. */
+  newsCardCap(userId: string): Promise<number> {
+    return this.repository.newsCardCap(userId);
+  }
+
+  /**
+   * The plan's number for a quota that is neither a row nor an action (news
+   * sources, news cards). An Admin is unlimited, exactly as elsewhere.
+   */
+  async quotaCap(userId: string, key: PlanQuotaKey): Promise<{ cap: number; unlimited: boolean }> {
+    const [state, quotas] = await Promise.all([
+      this.repository.getState(userId),
+      this.repository.listQuotas(),
+    ]);
+
+    const quota = quotas.find((entry) => entry.key === key);
+    if (!quota) return { cap: 0, unlimited: state.unlimited };
+
+    if (state.unlimited) return { cap: quota.proCap, unlimited: true };
+
+    return {
+      cap: state.plan === 'pro' ? quota.proCap : quota.freeCap,
+      unlimited: false,
+    };
   }
 
   state(userId: string): Promise<UsageState> {

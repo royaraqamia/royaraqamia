@@ -51,7 +51,6 @@ export type OwnedItemKey = (typeof OWNED_ITEMS)[keyof typeof OWNED_ITEMS];
  */
 export const USAGE_COUNTERS = {
   downloads: 'downloader.job.create',
-  newsDigests: 'news.digest.open',
   scannerScans: 'scanner.scan',
   quranSurahs: 'quran.surah.read',
 } as const;
@@ -70,9 +69,33 @@ export const USAGE_WINDOWS = ['lifetime', 'daily'] as const satisfies readonly U
  */
 export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   'downloader.job.create': 1,
-  'news.digest.open': 1,
   'scanner.scan': 1,
   'quran.surah.read': 1,
+};
+
+/**
+ * The owned-item cap a visitor gets, mirrored from `plan_limits.visitor_cap`.
+ *
+ * A visitor owns no rows on the server, so this number only ever binds on the
+ * device: the local-first products (HabitFlow, SpendTrack, Notes, Quran
+ * bookmarks) count their own items and refuse the second one. It is friction,
+ * not enforcement — clearing site data starts again — and the products that
+ * need an account (Community, MCP) have no visitor allowance at all, which is
+ * what the zeroes say.
+ */
+export const VISITOR_ITEM_CAPS: Record<OwnedItemKey, number> = {
+  habits: 1,
+  expenses: 1,
+  expense_categories: 1,
+  budgets: 1,
+  notes: 1,
+  quran_bookmarks: 1,
+  short_links: 1,
+  community_drafts: 0,
+  community_published: 0,
+  community_tags: 0,
+  community_categories: 0,
+  mcp_connected_apps: 0,
 };
 
 /**
@@ -143,10 +166,34 @@ export interface PlanSettings {
 export interface PlanLimit {
   key: string;
   label: string;
+  /** What a visitor may hold. Zero means the product needs an account. */
+  visitorCap: number;
   freeCap: number;
   proCap: number;
   sortOrder: number;
 }
+
+/**
+ * A per-plan number that is neither a row an account owns nor an action it
+ * takes: how many news cards a page may show, how many sources a selection may
+ * hold. Kept in its own catalog so `plan_limits` stays "one cap per table".
+ */
+export interface PlanQuota {
+  key: string;
+  label: string;
+  visitorCap: number;
+  freeCap: number;
+  proCap: number;
+  sortOrder: number;
+}
+
+/** The quota keys the code names; the numbers live in `plan_quotas`. */
+export const PLAN_QUOTAS = {
+  newsCards: 'news.story.cards',
+  newsSources: 'news.sources',
+} as const;
+
+export type PlanQuotaKey = (typeof PLAN_QUOTAS)[keyof typeof PLAN_QUOTAS];
 
 /** One counted action's catalogue row. */
 export interface UsageLimit {
@@ -243,6 +290,7 @@ export interface PlanCatalog {
   settings: PlanSettings;
   limits: PlanLimit[];
   counters: UsageLimit[];
+  quotas: PlanQuota[];
 }
 
 /** One manual grant, as the user's own history shows it. */

@@ -32,13 +32,21 @@ const catalog: PlanCatalog = {
     durationDays: 30,
   },
   limits: [
-    { key: 'habits', label: 'العادات', freeCap: 7, proCap: 77, sortOrder: 10 },
-    { key: 'expenses', label: 'المصروفات', freeCap: 2, proCap: 22, sortOrder: 20 },
-    { key: 'budgets', label: 'الميزانيات', freeCap: 1, proCap: 11, sortOrder: 30 },
-    { key: 'short_links', label: 'الروابط المختصرة', freeCap: 9, proCap: 99, sortOrder: 40 },
+    { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 7, proCap: 77, sortOrder: 10 },
+    { key: 'expenses', label: 'المصروفات', visitorCap: 1, freeCap: 2, proCap: 22, sortOrder: 20 },
+    { key: 'budgets', label: 'الميزانيات', visitorCap: 1, freeCap: 1, proCap: 11, sortOrder: 30 },
+    {
+      key: 'short_links',
+      label: 'الروابط المختصرة',
+      visitorCap: 1,
+      freeCap: 9,
+      proCap: 99,
+      sortOrder: 40,
+    },
     {
       key: 'community_published',
       label: 'المنشورات المنشورة',
+      visitorCap: 0,
       freeCap: 4,
       proCap: 44,
       sortOrder: 50,
@@ -46,15 +54,24 @@ const catalog: PlanCatalog = {
     {
       key: 'community_drafts',
       label: 'مسودات المنشورات',
+      visitorCap: 0,
       freeCap: 3,
       proCap: 33,
       sortOrder: 60,
     },
-    { key: 'quran_bookmarks', label: 'علامات القرآن', freeCap: 6, proCap: 66, sortOrder: 70 },
-    { key: 'notes', label: 'الملاحظات', freeCap: 8, proCap: 88, sortOrder: 80 },
+    {
+      key: 'quran_bookmarks',
+      label: 'علامات القرآن',
+      visitorCap: 1,
+      freeCap: 6,
+      proCap: 66,
+      sortOrder: 70,
+    },
+    { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 8, proCap: 88, sortOrder: 80 },
     {
       key: 'mcp_connected_apps',
       label: 'تطبيقات MCP المتصلة',
+      visitorCap: 0,
       freeCap: 2,
       proCap: 22,
       sortOrder: 90,
@@ -69,15 +86,6 @@ const catalog: PlanCatalog = {
       freeCap: 5,
       proCap: 55,
       sortOrder: 10,
-    },
-    {
-      key: 'news.digest.open',
-      label: 'فتح مُلخَّص أخبار',
-      window: 'daily',
-      visitorCap: 1,
-      freeCap: 5,
-      proCap: 55,
-      sortOrder: 20,
     },
     {
       key: 'scanner.scan',
@@ -96,6 +104,24 @@ const catalog: PlanCatalog = {
       freeCap: 5,
       proCap: 55,
       sortOrder: 40,
+    },
+  ],
+  quotas: [
+    {
+      key: 'news.story.cards',
+      label: 'بطاقات أخبار في الصفحة',
+      visitorCap: 1,
+      freeCap: 6,
+      proCap: 66,
+      sortOrder: 10,
+    },
+    {
+      key: 'news.sources',
+      label: 'مصادر أخبار مختارة',
+      visitorCap: 0,
+      freeCap: 4,
+      proCap: 44,
+      sortOrder: 20,
     },
   ],
 };
@@ -135,7 +161,7 @@ describe('PricingView', () => {
   it('states the visitor allowance once, as a footnote', () => {
     render(<PricingView catalog={catalog} />);
 
-    expect(screen.getByText(/بدون حساب: 1 تنزيل/)).toBeInTheDocument();
+    expect(screen.getByText(/بدون حساب: 1 عنصر من كل نوع/)).toBeInTheDocument();
   });
 
   it('sends a guest to sign-in with the price in the WhatsApp message', () => {

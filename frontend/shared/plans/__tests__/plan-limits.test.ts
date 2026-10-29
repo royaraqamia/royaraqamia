@@ -39,7 +39,6 @@ const freeCaps: PlanCaps = {
   counters: {
     'scanner.scan': { window: 'daily', cap: 5 },
     'quran.surah.read': { window: 'daily', cap: 5 },
-    'news.digest.open': { window: 'daily', cap: 5 },
     'downloader.job.create': { window: 'lifetime', cap: 5 },
   },
 };
@@ -60,6 +59,22 @@ describe('local plan limits', () => {
   it('never refuses a create before the caps are known', () => {
     expect(() => assertOwnedItemSlot(identity, 'habits', 50)).not.toThrow();
     expect(readCachedCaps(identity)).toBeNull();
+  });
+
+  it('gives a guest one of each item, and frees the slot when it is deleted', () => {
+    expect(() => assertOwnedItemSlot(GUEST_IDENTITY, 'habits', 0)).not.toThrow();
+
+    let thrown: unknown;
+    try {
+      assertOwnedItemSlot(GUEST_IDENTITY, 'habits', 1);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(PlanCapReachedError);
+    expect(thrown).toMatchObject({ item: 'habits', cap: 1, visitor: true });
+
+    // The cap counts live items, so deleting the one habit frees the slot.
+    expect(() => assertOwnedItemSlot(GUEST_IDENTITY, 'habits', 0)).not.toThrow();
   });
 
   it('refuses a create at the cached cap, and allows one slot below it', () => {

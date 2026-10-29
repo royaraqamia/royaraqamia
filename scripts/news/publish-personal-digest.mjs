@@ -4,10 +4,10 @@
  *
  *   node scripts/news/publish-personal-digest.mjs --digest .news/personal/<id>/resolved.json --user <uuid>
  *
- * Generation is not metered: what the plan limits is how many digests a reader
- * *opens* per day, and that is counted by the board route against the digest's
- * own date (ADR-0093). A nightly run that produces a digest nobody opens costs
- * the reader nothing, and a failed run needs no refund.
+ * Generation is not metered: what the plan limits is how many story cards the
+ * page shows, applied by the board route (ADR-0093). A nightly run that produces
+ * a digest nobody opens costs the reader nothing, and a failed run needs no
+ * refund.
  *
  * Writes are ordered like `publish-digest.mjs` so a failure cannot leave a
  * digest claiming stories it does not have.
