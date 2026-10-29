@@ -46,12 +46,6 @@ function quotaCapOf(
   return plan === PRO ? quota.proCap : quota.freeCap;
 }
 
-/** The owned-item cap a visitor gets, read from the same catalog row. */
-function visitorItemCap(catalog: PlanCatalog, key: string): number {
-  const limit = catalog.limits.find((entry) => entry.key === key);
-  return limit ? limit.visitorCap : 0;
-}
-
 /**
  * The public pricing page. Every number comes from the plan catalog
  * (`plan_settings`, `plan_limits`, `usage_limits`), so the page cannot promise an
@@ -63,13 +57,13 @@ function visitorItemCap(catalog: PlanCatalog, key: string): number {
  * midnight for a digest, a scan or a surah).
  *
  * It is deliberately reachable without an account: the account row links here
- * for guests too, and a visitor has an allowance of their own — stated once as a
- * footnote rather than as a third column, because a visitor is not a plan.
+ * for guests too, and the visitor allowance is stated where a visitor meets it —
+ * in the product, when a create is refused — rather than as a third column.
  */
 export function PricingView({ catalog }: { catalog: PlanCatalog }) {
   const { settings } = catalog;
 
-  const subscribeMessage = `أريد الاشتراك في الخطة المدفوعة: ${priceLabel(
+  const subscribeMessage = `أريد الاشتراك في الخطَّة المدفوعة: ${priceLabel(
     settings.priceCents,
     settings.currency
   )} كل ${settings.durationDays} يومًا.`;
@@ -87,7 +81,7 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
           {/* Free */}
           <div
             role="group"
-            aria-label="الخطة المجانيَّة"
+            aria-label="الخطَّة المجانيَّة"
             className="flex flex-col rounded-3xl border border-border/60 bg-card/80 p-6"
           >
             <p className="flex items-baseline gap-1.5 text-3xl font-black tracking-tight">
@@ -146,7 +140,7 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
           {/* Paid */}
           <div
             role="group"
-            aria-label="الخطة المدفوعة"
+            aria-label="الخطَّة المدفوعة"
             className="relative flex flex-col rounded-3xl border border-primary/30 bg-linear-to-b from-primary/5 to-transparent p-6"
           >
             <span className="absolute -top-3 start-6 rounded-full border border-primary/30 bg-background px-3 py-1 text-[11px] font-bold text-primary">
@@ -211,14 +205,6 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
           </div>
         </section>
       </PlanViewerProvider>
-
-      <p className="mx-auto max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
-        بدون حساب: {formatCount(visitorItemCap(catalog, 'notes'))} عنصر من كل نوع، و
-        {formatCount(counterCapOf(catalog, 'downloader.job.create', 'visitor'))} تنزيل، و
-        {formatCount(counterCapOf(catalog, 'scanner.scan', 'visitor'))} عملية مسح، و
-        {formatCount(counterCapOf(catalog, 'quran.surah.read', 'visitor'))} سورة يوميًّا، و
-        {formatCount(quotaCapOf(catalog, 'news.story.cards', 'visitor'))} بطاقة أخبار.
-      </p>
     </div>
   );
 }

@@ -1,89 +1,68 @@
 'use client';
 
-import { FilePlus2, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 import type { Note } from '@/shared/contracts/notes';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { notePreview } from '@/frontend/shared/notes/text';
-import { Button } from '@/frontend/ui/primitives/button';
 import { cn } from '@/frontend/shared/cn';
 
 interface NotesListProps {
   notes: Note[];
   selectedId: string | null;
   query: string;
-  canCreate: boolean;
   onSelect: (id: string) => void;
   onQueryChange: (query: string) => void;
-  onCreate: () => void;
 }
 
 /**
- * The list half of the master-detail surface: search, the create action, and
- * one row per live note, newest edit first. A row is the whole selection target;
- * delete lives in the editor so a thumb cannot miss it and lose a note.
+ * The list half of the master-detail surface: search and one row per live note,
+ * newest edit first. A row is the whole selection target; create lives on the
+ * page's FAB and delete lives in the editor, so a thumb cannot miss either.
+ *
+ * The search field is the community/news one, down to the class names. Those
+ * ask a server, so they commit on Enter; this list is already in memory, so the
+ * filter runs on every keystroke — the same field, minus a round trip.
  */
-export function NotesList({
-  notes,
-  selectedId,
-  query,
-  canCreate,
-  onSelect,
-  onQueryChange,
-  onCreate,
-}: NotesListProps) {
+export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }: NotesListProps) {
   return (
     <section
       aria-label="قائمة الملاحظات"
-      className="flex min-h-0 flex-col rounded-3xl border border-border/60 bg-card/60"
+      className="flex flex-col rounded-3xl border border-border/60 bg-card/60"
     >
-      <div className="space-y-3 border-b border-border/50 p-3">
-        <div className="flex items-center gap-2">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground"
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="ابحث في ملاحظاتك…"
-              aria-label="ابحث في الملاحظات"
-              className="h-10 w-full rounded-full border border-input/70 bg-background/70 ps-9 pe-9 text-sm outline-none transition-safe focus-visible:ring-2 focus-visible:ring-ring/40"
-            />
-            {query !== '' && (
-              <button
-                type="button"
-                onClick={() => onQueryChange('')}
-                aria-label="مسح البحث"
-                className="absolute inset-y-0 end-2 my-auto flex size-7 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted hover:text-foreground"
-              >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            )}
-          </div>
-
-          <Button
-            type="button"
-            size="icon-sm"
-            id="btn-new-note"
-            onClick={onCreate}
-            disabled={!canCreate}
-            aria-label="ملاحظة جديدة"
-            title={canCreate ? 'ملاحظة جديدة' : 'بلغتَ الحدّ الأعلى للخطة الحالية'}
-            className="shrink-0"
-          >
-            <FilePlus2 aria-hidden="true" />
-          </Button>
+      <div className="border-b border-border/50 p-3">
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
+            aria-hidden="true"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') onQueryChange('');
+            }}
+            placeholder="ابحث في ملاحظاتك…"
+            aria-label="ابحث في الملاحظات"
+            autoComplete="off"
+            className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+          />
+          {query !== '' && (
+            <button
+              type="button"
+              onClick={() => onQueryChange('')}
+              className="absolute inset-e-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
+              aria-label="إلغاء البحث"
+            >
+              <X className="size-3" />
+            </button>
+          )}
         </div>
-        <p className="px-1 text-[11px] font-medium text-muted-foreground">
-          عدد الملاحظات: {notes.length}
-        </p>
       </div>
 
       {notes.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+        <div className="flex min-h-[40vh] flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
           <p className="text-sm font-bold text-foreground">
             {query === '' ? 'لا ملاحظات بعد' : 'لا نتائج للبحث'}
           </p>
@@ -92,12 +71,6 @@ export function NotesList({
               ? 'اكتب أول ملاحظة، وستُحفظ على هذا الجهاز حتى بلا اتِّصال.'
               : 'جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات.'}
           </p>
-          {query === '' && canCreate && (
-            <Button type="button" size="sm" variant="outline" onClick={onCreate}>
-              <FilePlus2 aria-hidden="true" />
-              ملاحظة جديدة
-            </Button>
-          )}
         </div>
       ) : (
         <ul role="list" className="min-h-0 flex-1 overflow-y-auto p-2">

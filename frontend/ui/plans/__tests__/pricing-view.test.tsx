@@ -158,12 +158,6 @@ describe('PricingView', () => {
     expect(screen.getByText(/55 تنزيلًا/)).toBeInTheDocument();
   });
 
-  it('states the visitor allowance once, as a footnote', () => {
-    render(<PricingView catalog={catalog} />);
-
-    expect(screen.getByText(/بدون حساب: 1 عنصر من كل نوع/)).toBeInTheDocument();
-  });
-
   it('sends a guest to sign-in with the price in the WhatsApp message', () => {
     render(<PricingView catalog={catalog} />);
 
