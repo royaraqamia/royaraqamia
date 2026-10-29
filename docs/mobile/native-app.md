@@ -51,6 +51,14 @@ No product UI. This phase exists to make everything after it mechanical.
 a process kill; deleting a field from a Zod schema fails the build; changing a token changes both
 outputs; the fixtures run green in both languages.
 
+**Wired today (#648).** `npm run contracts:generate` writes
+`android/app/src/main/kotlin/com/royaraqamia/app/contracts/generated/` from the schemas named in
+`scripts/generate-contracts.mjs`, and `npm run check:contracts` fails CI when the committed output is
+stale. Decoding goes through `ContractCodec`, which returns `ApiResult`: a body that does not match
+the contract is `ApiError.InvalidContract` naming the field, not an exception on a background
+thread. The Kotlin Gradle plugin is pinned in `android/build.gradle` rather than `variables.gradle`,
+because a buildscript classpath is resolved before that file is applied.
+
 **Retires:** nothing. This phase is additive.
 
 ## Phase 1 — the HabitFlow slice

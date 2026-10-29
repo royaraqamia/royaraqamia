@@ -2,7 +2,7 @@ import { createUsageService } from '@/backend/config/plans';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { LocalUsageReportSchema } from '@/shared/contracts/plans';
+import { LocalUsageReportSchema, MyUsageResponseSchema } from '@/shared/contracts/plans';
 
 /**
  * The signed-in user's own counted actions: plan, each counter against its cap,
@@ -13,7 +13,9 @@ export async function getMyUsage(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async (identity) => {
       const state = await createUsageService().state(identity.userId);
-      return jsonResult(200, { success: true, state });
+      // Parsed rather than spread: this is the shape the app decodes, so a
+      // state that drifts from the contract fails here instead of on a device.
+      return jsonResult(200, MyUsageResponseSchema.parse({ success: true, state }));
     },
     { whenFailed: { success: false, error: 'تعذّر تحميل استهلاكك.' } }
   );

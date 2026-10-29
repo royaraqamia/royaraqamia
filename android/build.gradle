@@ -9,6 +9,12 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        // The app is Kotlin from the first generated contract type onward
+        // (ADR-0089, #648). Pinned here rather than in `variables.gradle`
+        // because a buildscript classpath is resolved before that file is
+        // applied; it is the only place either version is written.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20'
+        classpath 'org.jetbrains.kotlin:kotlin-serialization:2.2.20'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
