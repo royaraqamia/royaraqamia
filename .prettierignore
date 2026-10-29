@@ -15,6 +15,7 @@ package.json
 backend/config/generated/app-version.ts
 docs/specs/surfaces.md
 # Generated from `shared/tokens/tokens.json` by `scripts/generate-tokens.mjs`;
-# `npm run check:tokens` compares bytes, so Prettier must not rewrite it.
+# `npm run check:tokens` compares bytes, so Prettier must not rewrite them.
 app/tokens.css
+android/app/src/main/res/values/colors.xml
 /capacitor-web/spike/

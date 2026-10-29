@@ -141,3 +141,18 @@ every six hours and on a fresh launch, still has no «لاحقًا» for a shell
 unsupported, and the page still stays quiet from its own user agent while this is pending. What
 changed is what it looks like when it arrives, and that a download can now be refused at the point of
 doing rather than only before it.
+
+## Amendment (2026-10-29): the palette is generated
+
+`res/values/colors.xml` is not written by hand any more. `shared/tokens/tokens.json` is the source, and
+`npm run tokens:generate` writes that file along with the site's `app/tokens.css` and the app's
+`DesignTokens.kt` (ADR-0089, #647); `npm run check:tokens` fails a stale copy, and the committed file is
+byte-compared, so a hand edit does not survive CI.
+
+The decision above does not move: the dialogs are still painted from the site's tokens, and the
+`@color/roy_*` names the layouts, the drawables, the styles and `ShellBatteryPrompt` reference are the
+same ones. What is gone is the "same shape of problem" named above — a token change now reaches the
+shell by regenerating, rather than by someone noticing the two files disagree. A colour that only the
+shell needs is still written down, but in the same file as everything else, under `shell.color`, with
+the three stops of the CTA gradient carried there because the site spells that gradient out in place
+rather than through a token.
