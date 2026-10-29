@@ -198,6 +198,7 @@
     '/api/consultation',
     '/habitflow/api',
     '/spendtrack/api',
+    '/notes/api',
     '/linksnap/api',
     '/spendtrack/categories',
     '/blogpress/editor',

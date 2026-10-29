@@ -46,6 +46,7 @@ const catalog: PlanCatalog = {
       sortOrder: 30,
     },
     { key: 'quran_bookmarks', label: 'علامات القرآن', freeCap: 6, proCap: 66, sortOrder: 40 },
+    { key: 'notes', label: 'الملاحظات', freeCap: 8, proCap: 88, sortOrder: 45 },
     {
       key: 'mcp_connected_apps',
       label: 'تطبيقات MCP المتصلة',
@@ -93,6 +94,7 @@ describe('PricingView', () => {
 
     // What each allowance buys is derived from the same cap and cost rows.
     expect(screen.getByText(/حتى 77 عادة/)).toBeInTheDocument();
+    expect(screen.getByText(/88 ملاحظة/)).toBeInTheDocument();
     expect(screen.getByText(/حتى 22 تطبيقات MCP/)).toBeInTheDocument();
   });
 

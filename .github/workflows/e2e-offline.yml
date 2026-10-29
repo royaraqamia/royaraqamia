@@ -169,6 +169,8 @@ jobs:
           e2e/blogpress-offline.spec.ts
           e2e/product-offline-render.spec.ts
           e2e/quran-sync.spec.ts
+          e2e/notes-offline.spec.ts
+          e2e/notes.spec.ts
           e2e/sync-chaos.spec.ts
           e2e/sync-flush.spec.ts
           --project=existing-tests
@@ -192,6 +194,7 @@ jobs:
           SYNC_FLUSH_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           SYNC_CHAOS_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
           QURAN_SYNC_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
+          NOTES_OFFLINE_E2E: ${{ secrets.E2E_TEST_EMAIL != '' && '1' || '0' }}
 
       - name: Upload failure artifacts
         if: failure()

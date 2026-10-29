@@ -73,6 +73,10 @@ const SERVICE_COPY: Record<string, { description: string; colorKey: ColorKey }> 
     description: 'تتبَّع مصاريفك وحلِّل أنماط إنفاقك.',
     colorKey: 'orange',
   },
+  '/notes': {
+    description: 'اكتب ملاحظاتك ونظِّمها، تعمل بلا اتِّصال وتُزامَن مع حسابك.',
+    colorKey: 'violet',
+  },
   '/mcp/guide': {
     description: 'اربط وكلاء البرمجة بأدواتنا عبر بروتوكول MCP.',
     colorKey: 'indigo',

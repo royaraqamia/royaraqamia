@@ -10,6 +10,7 @@ import {
   NotebookPen,
   ScanBarcode,
   ScanLine,
+  StickyNote,
   SunMoon,
   Wallet,
   type LucideIcon,
@@ -29,6 +30,7 @@ export type AppProduct =
   | 'quran'
   | 'athkar'
   | 'news'
+  | 'notes'
   | 'community';
 
 export interface AppProductDef {
@@ -132,5 +134,12 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/spendtrack',
     landingPath: '/spendtrack',
     icon: Wallet,
+  },
+  {
+    id: 'notes',
+    label: 'المُلاحظات',
+    appPath: '/notes',
+    landingPath: '/notes',
+    icon: StickyNote,
   },
 ];

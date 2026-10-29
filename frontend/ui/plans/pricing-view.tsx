@@ -86,7 +86,8 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'habits', FREE))} عادات، و
-                {formatCount(capOf(catalog, 'short_links', FREE))} رابطًا محفوظًا.
+                {formatCount(capOf(catalog, 'short_links', FREE))} رابطًا محفوظًا، و
+                {formatCount(capOf(catalog, 'notes', FREE))} ملاحظة.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'community_published', FREE))} منشورًا في المجتمع، و
@@ -131,7 +132,8 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'habits', PRO))} عادة، و
-                {formatCount(capOf(catalog, 'short_links', PRO))} رابطًا محفوظًا.
+                {formatCount(capOf(catalog, 'short_links', PRO))} رابطًا محفوظًا، و
+                {formatCount(capOf(catalog, 'notes', PRO))} ملاحظة.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'community_published', PRO))} منشورًا في المجتمع، و

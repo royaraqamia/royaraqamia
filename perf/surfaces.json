@@ -116,6 +116,21 @@
       "paint": "quran"
     },
     {
+      "id": "notes",
+      "routes": ["/notes"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "remote",
+      "specs": [
+        "e2e/product-offline-render.spec.ts",
+        "e2e/notes-offline.spec.ts",
+        "e2e/notes.spec.ts"
+      ],
+      "paint": "notes"
+    },
+    {
       "id": "quran-surah",
       "routes": ["/quran/[surah]"],
       "owner": "local-store",

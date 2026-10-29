@@ -290,6 +290,14 @@ export class SupabaseUsageRepository implements UsageRepository {
             .eq('user_id', userId)
             .is('deleted_at', null)
         );
+      case 'notes':
+        return this.headCount(
+          this.supabase
+            .from('notes')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+        );
       case 'mcp_connected_apps': {
         // One grant may hold an access and a refresh row for the same app, so the
         // cap counts the app, not the token.

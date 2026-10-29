@@ -46,6 +46,13 @@
       "auth": false,
       "ceiling": { "cold": 2200, "warm": 450 },
       "tapNote": "Reading is not a local write: a position is saved off the paint path, so there is no optimistic frame to time."
+    },
+    {
+      "id": "notes",
+      "path": "/notes",
+      "auth": false,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "The first tap opens the editor's own chunk, so the number would measure a chunk fetch rather than the store write."
     }
   ]
 }

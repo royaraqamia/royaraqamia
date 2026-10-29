@@ -56,6 +56,7 @@ export const OWNED_ITEMS = {
   communityTags: 'community_tags',
   communityCategories: 'community_categories',
   quranBookmarks: 'quran_bookmarks',
+  notes: 'notes',
   mcpConnectedApps: 'mcp_connected_apps',
 } as const;
 
