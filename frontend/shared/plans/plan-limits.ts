@@ -1,10 +1,13 @@
+// `plans.constants`, not `plans`: this module rides in the shell (the session
+// provider imports it), so a value import from the schemas would put zod in the
+// initial bundle of every route.
 import {
   VISITOR_COUNTER_CAPS,
   type LocalUsageActionKey,
   type OwnedItemKey,
   type PlanCaps,
-  type UsageState,
-} from '@/shared/contracts/plans';
+} from '@/shared/contracts/plans.constants';
+import type { UsageState } from '@/shared/contracts/plans';
 import {
   identityUserId,
   userIdentity,
