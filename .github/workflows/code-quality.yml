@@ -41,6 +41,9 @@ jobs:
       - name: Digits Are ASCII
         run: npm run check:digits
 
+      - name: Generated Contracts Are Current
+        run: npm run check:contracts
+
       - name: Surface Matrix
         run: npm run check:surfaces
 
