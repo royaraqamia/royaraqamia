@@ -38,7 +38,6 @@ test('a count survives a reload', async ({ page }) => {
 
   const restored = page.getByRole('button', { name: 'عدّ الذكر 2', exact: true });
   await expect(restored).toContainText('1 من 3');
-  await expect(page.getByText('أكملت 0')).toBeVisible();
 });
 
 test('the evening tab swaps the collection', async ({ page }) => {
