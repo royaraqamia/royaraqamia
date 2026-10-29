@@ -12,6 +12,7 @@
    which is what keeps a surface's classes out of the shell. Adding an import
    to `app/layout.tsx` means adding its source here too. */
 @import './surface.css';
+@import './tokens.css';
 
 @source './layout.tsx';
 @source '../frontend/ui/primitives';
@@ -27,24 +28,9 @@
 
 /* Aref Ruqaa is loaded by hand rather than through `next/font/local`: the site
    needs two faces backed by the same file, one for headings and one restricted
-   to digits. `unicode-range` is what lets numerals pick Aref Ruqaa without
-   changing the family of the surrounding Arabic text. */
-@font-face {
-  font-family: 'Aref Ruqaa';
-  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Aref Ruqaa Digits';
-  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0030-0039;
-}
+   to digits. Both `@font-face` declarations, and every custom property this
+   file reads, are generated from `shared/tokens/tokens.json` into `tokens.css`
+   (ADR-0089, #647) — edit the token, not this file. */
 
 /* Editable controls keep the UI face. This rule is intentionally unlayered so
    it wins over Tailwind's `font-mono`/`font-sans` utilities, which are layered. */
@@ -57,78 +43,6 @@ select,
 
 .font-aref-ruqaa {
   font-family: var(--font-heading);
-}
-
-@layer base {
-  :root {
-    --background: 240 10% 8%;
-    --foreground: 0 0% 96%;
-    --card: 240 8% 11%;
-    --card-foreground: 0 0% 96%;
-    --popover: 240 8% 11%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 256 70% 67%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 6% 16%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 240 5% 18%;
-    --muted-foreground: 0 0% 68%;
-    --accent: 240 6% 16%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 22%;
-    --input: 240 5% 22%;
-    --ring: 256 70% 67%;
-    --radius: 0.5rem;
-    --section-spacing: clamp(3.75rem, 8vw, 6rem);
-    --section-spacing-sm: clamp(2.5rem, 6vw, 4rem);
-    --container-padding: clamp(1rem, 4vw, 2rem);
-    --card-padding: clamp(1.5rem, 3vw, 2rem);
-    --element-gap: clamp(1rem, 2vw, 1.5rem);
-    --element-gap-sm: clamp(0.75rem, 1.5vw, 1rem);
-
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 45 100% 51%;
-    --warning-foreground: 0 0% 10%;
-    --accent-indigo: 239 84% 67%;
-    --accent-indigo-foreground: 0 0% 100%;
-    --accent-purple: 256 80% 55%;
-    --accent-purple-foreground: 0 0% 100%;
-
-    /* Filled selection states (segmented controls, filter chips). Deliberately
-       darker than --primary so white-on-fill labels clear WCAG AA while the
-       fill keeps >=3:1 against the muted track. Distinct from --primary so the
-       brand accent can stay lighter for text on dark surfaces. See issue #148. */
-    --selected: 256 70% 61%;
-    --selected-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    /* Premium Shadow Tokens */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
-    --shadow-elevated: 0 20px 40px rgba(99, 102, 241, 0.12);
-    --shadow-hover: 0 8px 25px rgba(99, 102, 241, 0.15);
-    --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    --shadow-primary: 0 4px 14px rgba(99, 102, 241, 0.25);
-    --shadow-success: 0 4px 14px rgba(16, 185, 129, 0.2);
-    --shadow-warning: 0 4px 14px rgba(245, 158, 11, 0.2);
-    --shadow-error: 0 4px 14px rgba(239, 68, 68, 0.2);
-
-    /* Animation Tokens */
-    --duration-fast: 0.15s;
-    --duration-normal: 0.3s;
-    --duration-slow: 0.6s;
-    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
 }
 
 @layer base {
@@ -161,52 +75,52 @@ select,
   }
 
   h1 {
-    font-size: clamp(2rem, 5vw, 4rem);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-size: var(--type-h1-size);
+    font-weight: var(--type-h1-weight);
+    line-height: var(--type-h1-leading);
+    letter-spacing: var(--type-h1-tracking);
   }
 
   h2 {
-    font-size: clamp(1.75rem, 4vw, 3rem);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
+    font-size: var(--type-h2-size);
+    font-weight: var(--type-h2-weight);
+    line-height: var(--type-h2-leading);
+    letter-spacing: var(--type-h2-tracking);
   }
 
   h3 {
     font-family: var(--font-sans);
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    font-weight: 700;
-    line-height: 1.3;
+    font-size: var(--type-h3-size);
+    font-weight: var(--type-h3-weight);
+    line-height: var(--type-h3-leading);
   }
 
   h4 {
     font-family: var(--font-sans);
-    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-    font-weight: 700;
-    line-height: 1.4;
+    font-size: var(--type-h4-size);
+    font-weight: var(--type-h4-weight);
+    line-height: var(--type-h4-leading);
   }
 
   h5 {
     font-family: var(--font-sans);
-    font-size: clamp(1.125rem, 2vw, 1.5rem);
-    font-weight: 500;
-    line-height: 1.5;
+    font-size: var(--type-h5-size);
+    font-weight: var(--type-h5-weight);
+    line-height: var(--type-h5-leading);
   }
 
   h6 {
     font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.5vw, 1.25rem);
-    font-weight: 500;
-    line-height: 1.5;
+    font-size: var(--type-h6-size);
+    font-weight: var(--type-h6-weight);
+    line-height: var(--type-h6-leading);
   }
 
   p {
     font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.5vw, 1.125rem);
-    line-height: 1.6;
-    font-weight: 400;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-leading);
+    font-weight: var(--type-body-weight);
   }
 
   button,
@@ -222,7 +136,7 @@ select,
   }
 
   small {
-    font-size: clamp(0.875rem, 1.25vw, 1rem);
+    font-size: var(--type-small-size);
     color: hsl(var(--muted-foreground));
   }
 
@@ -367,45 +281,45 @@ select,
 @layer components {
   /* Typography Utility Classes */
   .text-fluid-h1 {
-    font-size: clamp(2rem, 5vw, 4rem);
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-size: var(--type-h1-size);
+    line-height: var(--type-h1-leading);
+    letter-spacing: var(--type-h1-tracking);
   }
 
   .text-fluid-h2 {
-    font-size: clamp(1.75rem, 4vw, 3rem);
-    line-height: 1.2;
-    letter-spacing: -0.01em;
+    font-size: var(--type-h2-size);
+    line-height: var(--type-h2-leading);
+    letter-spacing: var(--type-h2-tracking);
   }
 
   .text-fluid-h3 {
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    line-height: 1.3;
+    font-size: var(--type-h3-size);
+    line-height: var(--type-h3-leading);
   }
 
   .text-fluid-h4 {
-    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-    line-height: 1.4;
+    font-size: var(--type-h4-size);
+    line-height: var(--type-h4-leading);
   }
 
   .text-fluid-h5 {
-    font-size: clamp(1.125rem, 2vw, 1.5rem);
-    line-height: 1.5;
+    font-size: var(--type-h5-size);
+    line-height: var(--type-h5-leading);
   }
 
   .text-fluid-body {
-    font-size: clamp(1rem, 1.5vw, 1.125rem);
-    line-height: 1.6;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-leading);
   }
 
   .text-fluid-small {
-    font-size: clamp(0.875rem, 1.25vw, 1rem);
-    line-height: 1.5;
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-leading);
   }
 
   .text-fluid-xs {
-    font-size: clamp(0.75rem, 1vw, 0.875rem);
-    line-height: 1.5;
+    font-size: var(--type-xs-size);
+    line-height: var(--type-xs-leading);
   }
 
   .tracking-extra-wide {
