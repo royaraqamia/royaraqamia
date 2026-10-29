@@ -217,6 +217,18 @@ export const UsageStatePayloadSchema = z.object({
   counters: z.array(UsageCounterStatePayloadSchema),
 });
 
+/**
+ * The body `GET /api/me/usage` returns. The controller validates what it emits
+ * against this, so the app can decode the endpoint through a generated type
+ * (ADR-0089, #648) instead of a hand-written mirror of the state.
+ */
+export const MyUsageResponseSchema = z.object({
+  success: z.literal(true),
+  state: UsageStatePayloadSchema,
+});
+
+export type MyUsageResponse = z.infer<typeof MyUsageResponseSchema>;
+
 export const UsageOutcomePayloadSchema = z.object({
   allowed: z.boolean(),
   duplicate: z.boolean(),

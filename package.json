@@ -34,6 +34,8 @@
     "check:digits": "node scripts/check-digits.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:surfaces": "node scripts/check-surfaces.mjs",
+    "check:contracts": "node scripts/generate-contracts.mjs --check",
+    "contracts:generate": "node scripts/generate-contracts.mjs",
     "check:precache": "node scripts/check-precache.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",

@@ -1,4 +1,9 @@
 apply plugin: 'com.android.application'
+// The app's own code is Kotlin from here (ADR-0089, #648): the generated
+// contract types, the codec, and the models built from them. The Java classes
+// that survive are converted as they are touched, not in one pass.
+apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 // Both of these come from the shell's own counter file (android/shell-version.properties,
 // ADR-0043), and neither has anything to do with package.json:
@@ -98,6 +103,15 @@ repositories {
     }
 }
 
+// Kotlin shares the module's Java bytecode target. The Capacitor sync writes
+// Java 21 into `capacitor.build.gradle`, which is applied after this file, so
+// the Kotlin side names the same target here.
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
@@ -115,6 +129,8 @@ dependencies {
     // which does not travel to a consumer.
     implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersion"
     implementation project(':capacitor-android')
+    // The generated contract types decode through kotlinx.serialization (#648).
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.json:json:$jsonVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
