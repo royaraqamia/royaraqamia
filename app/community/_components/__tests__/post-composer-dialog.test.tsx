@@ -19,6 +19,18 @@ vi.mock('sonner', () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
 
+// The real editor is Tiptap; the dialog's job is what it does with the Markdown
+// the editor hands back, so the surface is a plain field here.
+vi.mock('@/frontend/ui/notes/note-body-editor', () => ({
+  NoteBodyEditor: ({ onChange }: { onChange: (markdown: string) => void }) => (
+    <textarea
+      id="composer-body"
+      aria-label="نص المنشور"
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 import { PostComposerDialog } from '../post-composer-dialog';
 
 beforeEach(() => {
