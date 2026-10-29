@@ -72,14 +72,14 @@ test('a visited public page paints offline with its heading and content', async 
 
   await gotoUnderWorkerControl(page, '/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
-  await expect(page.getByText('نبني منتجات رقميَّة', { exact: false })).toBeVisible();
+  await expect(page.getByText('نُقدِّم حزمةً متكاملة', { exact: false })).toBeVisible();
 
   // Radio off: both the document and any image the page paints must come from cache.
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
-  await expect(page.getByText('نبني منتجات رقميَّة', { exact: false })).toBeVisible();
+  await expect(page.getByText('نُقدِّم حزمةً متكاملة', { exact: false })).toBeVisible();
 
   expect(await brokenImages(page)).toEqual([]);
   expect(imageFailures).toEqual([]);

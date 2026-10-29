@@ -40,10 +40,8 @@ export function Hero() {
 
               {/* Description */}
               <p className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto leading-relaxed font-normal pt-1">
-                نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
-                <br />
-                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء
-                التَّطبيقات.
+                نُقدِّم حزمةً متكاملة من المنتجات الرَّقميَّة، بالإضافة إلى خدماتنا الاحترافيَّة في
+                بناء وصيانة المشاريع البرمجيَّة، والتَّدريب، والاستشارات التِّقنيَّة.
               </p>
 
               {/* Social Proof Strip - Trust Signals */}
