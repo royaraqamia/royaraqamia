@@ -227,7 +227,7 @@ describe('DownloaderService.create', () => {
     expect(repository.events.map((event) => event.status)).toEqual(['queued']);
   });
 
-  it('refuses with a busy 503 before a row exists or a Credit is spent', async () => {
+  it('refuses with a busy 503 before a row exists or a download is counted', async () => {
     const settings = new InMemoryDownloadSettingsRepository({
       ...DEFAULT_DOWNLOAD_SETTINGS,
       maxConcurrentJobs: 1,

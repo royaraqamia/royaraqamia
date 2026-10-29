@@ -14,37 +14,41 @@ import {
   type PlanId,
   type PlanLimit,
   type PlanSettings,
-  type UsageActionCost,
-  type UsageActionKey,
+  type UsageCounterKey,
+  type UsageCounterState,
+  type UsageLimit,
   type UsageState,
 } from '@/shared/contracts/plans';
 
 /**
- * The allowance a refused action produced. 402 is the honest status: the
- * request is well-formed and the user is allowed to make it, but the plan's
- * allowance is spent (ADR-0075).
+ * Who is being counted. A signed-in caller counts against their own allowance;
+ * a visitor counts against the pair (cookie, salted address), which is one
+ * allowance even when the cookie is cleared (ADR-0093).
  */
-export class InsufficientCreditsError extends AppError {
-  constructor(readonly state: UsageState) {
-    super(
-      'نفدت حصَّتك لهذه الفترة. ارتقِ إلى الخطة المدفوعة للمتابعة.',
-      402,
-      'insufficient_credits'
-    );
-  }
+export interface CounterSubject {
+  userId: string | null;
+  visitorKey?: string | null;
+  ipHash?: string | null;
 }
 
 /**
- * A visitor's allowance, exhausted. Distinct from the signed-in refusal: the
- * remedy is signing in, not upgrading, and the caller says so.
+ * A counted action, used up. 402 is the honest status: the request is
+ * well-formed and the user is allowed to make it, but their allowance is gone.
+ * The code says which remedy applies — signing in for a visitor, upgrading for
+ * a member (ADR-0093).
  */
-export class AnonymousAllowanceExhaustedError extends AppError {
+export class UsageLimitReachedError extends AppError {
   constructor(
-    readonly cap: number,
-    readonly spent: number,
-    readonly remaining: number
+    readonly state: UsageCounterState,
+    readonly visitor: boolean
   ) {
-    super('انتهت حصَّتك اليومية كزائر. سجِّل الدُّخول لمتابعة الاستخدام.', 402, 'anonymous_limit');
+    super(
+      visitor
+        ? 'انتهت حصَّتك كزائر لهذا الحدّ. سجِّل الدُّخول لمتابعة الاستخدام.'
+        : `بلغتَ الحدّ الأعلى للخطة الحالية (${state.cap}) لهذا العنصر. ارتقِ إلى الخطة المدفوعة للمتابعة.`,
+      402,
+      visitor ? 'visitor_limit' : 'usage_limit'
+    );
   }
 }
 
@@ -57,7 +61,7 @@ export class PlanTargetNotFoundError extends AppError {
 /**
  * A standing cap, reached. The remedy is the same as an empty allowance —
  * upgrade — so it answers 402 too, with a code the client can tell apart: the
- * account is not out of credits, it is out of slots for one kind of item.
+ * account is not out of actions, it is out of slots for one kind of item.
  */
 export class OwnedItemCapReachedError extends AppError {
   constructor(
@@ -74,10 +78,10 @@ export class OwnedItemCapReachedError extends AppError {
 }
 
 /**
- * Reads and spends the plan allowance. It holds no window arithmetic: the
- * rolling 30-day sum, the cap and the atomic insert all live in Postgres
- * (ADR-0075), so two concurrent requests cannot both spend the last credit.
- * This layer decides what a refusal means to the caller.
+ * Reads and counts the plan allowance. It holds no counting arithmetic: the
+ * count, the cap and the atomic insert all live in Postgres (ADR-0093), so two
+ * concurrent requests cannot both take the last slot. This layer decides what a
+ * refusal means to the caller.
  */
 export class UsageService {
   constructor(private readonly repository: UsageRepository) {}
@@ -90,8 +94,8 @@ export class UsageService {
     return this.repository.listLimits();
   }
 
-  listActionCosts(): Promise<UsageActionCost[]> {
-    return this.repository.listActionCosts();
+  listCounters(): Promise<UsageLimit[]> {
+    return this.repository.listCounters();
   }
 
   state(userId: string): Promise<UsageState> {
@@ -109,87 +113,55 @@ export class UsageService {
   }
 
   /**
-   * Spend, run the action, and give the credit back if the action failed.
-   *
-   * The reservation is taken first so concurrent requests cannot overrun the
-   * cap; the refund is what keeps the "charged when it succeeded" promise when
-   * the write behind the action throws. A refund that itself fails is logged,
-   * never surfaced: the user's real error is the action's.
+   * Count one action, or throw the refusal. A refusal wrote nothing, so there
+   * is nothing to give back; a caller whose work then fails uses `release`.
    */
-  async runMetered<T>(
-    userId: string,
-    actionKey: UsageActionKey,
-    run: () => Promise<T>
-  ): Promise<T> {
-    const eventId = await this.reserve(userId, actionKey);
+  async consume(
+    subject: CounterSubject,
+    actionKey: UsageCounterKey,
+    options: { dedupeKey?: string | null; clientEventId?: string | null } = {}
+  ): Promise<string | null> {
+    const outcome = await this.repository.record({
+      actionKey,
+      userId: subject.userId,
+      visitorKey: subject.visitorKey ?? null,
+      ipHash: subject.ipHash ?? null,
+      dedupeKey: options.dedupeKey ?? null,
+      clientEventId: options.clientEventId ?? null,
+    });
 
-    try {
-      return await run();
-    } catch (error) {
-      await this.release(userId, eventId);
-      throw error;
+    if (!outcome.allowed) {
+      throw new UsageLimitReachedError(outcome.state, subject.userId === null);
     }
-  }
 
-  /**
-   * One action that applies to several items (a bulk publish). Every unit is
-   * spent separately, and a failure refunds all of them, not just the last.
-   */
-  async runMeteredMany<T>(
-    userId: string,
-    actionKey: UsageActionKey,
-    count: number,
-    run: () => Promise<T>
-  ): Promise<T> {
-    const eventIds: (string | null)[] = [];
-
-    try {
-      for (let index = 0; index < count; index += 1) {
-        eventIds.push(await this.reserve(userId, actionKey));
-      }
-      return await run();
-    } catch (error) {
-      for (const eventId of eventIds) await this.release(userId, eventId);
-      throw error;
-    }
-  }
-
-  /**
-   * Take the credit, or throw the refusal. Exposed for a flow that has to decide
-   * after the reservation whether the action really happened (a media upload
-   * that answers with a validation message rather than throwing).
-   */
-  async reserve(userId: string, actionKey: UsageActionKey): Promise<string | null> {
-    const outcome = await this.repository.spend(userId, actionKey);
-    if (!outcome.allowed) throw new InsufficientCreditsError(outcome.state);
     return outcome.eventId;
   }
 
-  /** Give a reservation back. Never throws: the caller's real error is the one to show. */
-  async release(userId: string, eventId: string | null): Promise<void> {
-    await this.refundQuietly(() => this.repoRefund(userId, eventId));
-  }
-
-  async runMeteredAnonymous<T>(
-    ipHash: string,
-    actionKey: UsageActionKey,
-    run: () => Promise<T>
+  /** Count the action, run the work, and release the count if the work failed. */
+  async runCounted<T>(
+    subject: CounterSubject,
+    actionKey: UsageCounterKey,
+    run: () => Promise<T>,
+    options: { dedupeKey?: string | null } = {}
   ): Promise<T> {
-    const outcome = await this.repository.spendAnonymous(ipHash, actionKey);
-    if (!outcome.allowed) {
-      throw new AnonymousAllowanceExhaustedError(outcome.cap, outcome.spent, outcome.remaining);
-    }
+    const eventId = await this.consume(subject, actionKey, options);
 
     try {
       return await run();
     } catch (error) {
-      await this.refundQuietly(() => this.repoRefundAnonymous(ipHash, outcome.eventId));
+      await this.release(subject.userId, eventId);
       throw error;
     }
   }
 
-  async refund(userId: string, eventId: string | null): Promise<boolean> {
-    return this.repoRefund(userId, eventId);
+  /** Give a count back. Never throws: the caller's real error is the one to show. */
+  async release(userId: string | null, eventId: string | null): Promise<void> {
+    if (!eventId) return;
+    try {
+      await this.repository.release(userId, eventId);
+    } catch (error) {
+      logger.warn('Failed to release a counted action', { error: String(error) });
+    }
   }
 
   /**
@@ -217,28 +189,41 @@ export class UsageService {
     return state;
   }
 
-  /** The account's caps, resolved for its current plan. */
+  /** The account's allowances, resolved for its current plan. */
   async caps(userId: string): Promise<PlanCaps> {
-    const [state, limits] = await Promise.all([
+    const [state, limits, counters] = await Promise.all([
       this.repository.getState(userId),
       this.repository.listLimits(),
+      this.repository.listCounters(),
     ]);
+
+    const resolved = state.unlimited || state.plan === 'pro';
 
     const caps = limits.reduce(
       (all, limit) => {
-        all[limit.key as OwnedItemKey] =
-          state.unlimited || state.plan === 'pro' ? limit.proCap : limit.freeCap;
+        all[limit.key as OwnedItemKey] = resolved ? limit.proCap : limit.freeCap;
         return all;
       },
       {} as Record<OwnedItemKey, number>
     );
 
-    return { plan: state.plan, unlimited: state.unlimited, caps };
+    const counterCaps = counters.reduce(
+      (all, limit) => {
+        all[limit.key as UsageCounterKey] = {
+          window: limit.window,
+          cap: resolved ? limit.proCap : limit.freeCap,
+        };
+        return all;
+      },
+      {} as PlanCaps['counters']
+    );
+
+    return { plan: state.plan, unlimited: state.unlimited, caps, counters: counterCaps };
   }
 
   /**
    * Reconciliation for the counters a device keeps itself (a scan, a surah read
-   * today). Each event carries a client id, so replaying a report never charges
+   * today). Each event carries a client id, so replaying a report never counts
    * twice; a refusal leaves the event unrecorded and the caller is told how many
    * were refused.
    */
@@ -249,42 +234,21 @@ export class UsageService {
     let recorded = 0;
     let alreadyRecorded = 0;
     let refused = 0;
-    let state = await this.repository.getState(userId);
 
     for (const event of report.events) {
-      const outcome = await this.repository.spendOnce(userId, event.actionKey, event.clientEventId);
-      state = outcome.state;
+      const outcome = await this.repository.record({
+        actionKey: event.actionKey,
+        userId,
+        clientEventId: event.clientEventId,
+      });
 
-      if (!outcome.allowed) {
-        refused += 1;
-      } else if (outcome.eventId) {
-        recorded += 1;
-      } else if (!outcome.state.unlimited) {
-        alreadyRecorded += 1;
-      }
+      if (!outcome.allowed) refused += 1;
+      else if (outcome.duplicate) alreadyRecorded += 1;
+      else recorded += 1;
     }
 
+    const state = await this.repository.getState(userId);
     return { recorded, alreadyRecorded, refused, state };
-  }
-
-  private async repoRefund(userId: string, eventId: string | null): Promise<boolean> {
-    // An Admin's spend (or a refusal) wrote no event, so there is nothing to
-    // return. Not an error: the action still failed for its own reason.
-    if (!eventId) return false;
-    return this.repository.refund(userId, eventId);
-  }
-
-  private async repoRefundAnonymous(ipHash: string, eventId: string | null): Promise<boolean> {
-    if (!eventId) return false;
-    return this.repository.refundAnonymous(ipHash, eventId);
-  }
-
-  private async refundQuietly(refund: () => Promise<boolean>): Promise<void> {
-    try {
-      await refund();
-    } catch (error) {
-      logger.warn('Failed to refund a metered credit', { error: String(error) });
-    }
   }
 
   async ownedItemCap(item: OwnedItemKey, plan: PlanId): Promise<number> {

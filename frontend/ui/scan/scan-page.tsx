@@ -19,13 +19,8 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 import { cn } from '@/frontend/shared/cn';
 import { shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
 import { useSession } from '@/frontend/state/session-provider';
-import { identityFromUser, identityUserId } from '@/frontend/shared/local-store/identity';
-import {
-  ANONYMOUS_DAILY_CREDITS_FALLBACK,
-  localUsageToday,
-  readCachedUsage,
-  recordLocalUsage,
-} from '@/frontend/shared/plans/plan-limits';
+import { identityFromUser } from '@/frontend/shared/local-store/identity';
+import { canRecordLocalUsage, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
 import {
   SCAN_FORMAT_LABELS,
@@ -249,19 +244,14 @@ export function ScanPage() {
   }
 
   /**
-   * One scan is one metered action (ADR-0075). It is counted on the device and
+   * One scan is one counted action (ADR-0093). It is counted on the device and
    * reported later, never sent from here: the scanner still speaks to no server
-   * at all (ADR-0034). A guest gets the visitor allowance; a signed-in account
-   * gets whatever its cached allowance says is left.
+   * at all (ADR-0034). The device knows the visitor cap and, once the account's
+   * caps are cached, the plan's cap too; a cold signed-in device is let through
+   * and the server answers the truth when the count replays.
    */
   function mayScan(): boolean {
-    const identity = identityFromUser(user);
-    const usage = readCachedUsage(identity);
-
-    if (identityUserId(identity)) {
-      return !usage || usage.unlimited || usage.remaining > 0;
-    }
-    return localUsageToday(identity, 'scanner.scan') < ANONYMOUS_DAILY_CREDITS_FALLBACK;
+    return canRecordLocalUsage(identityFromUser(user), 'scanner.scan');
   }
 
   /** The one place a decoded code becomes a result: camera and loop both stop. */

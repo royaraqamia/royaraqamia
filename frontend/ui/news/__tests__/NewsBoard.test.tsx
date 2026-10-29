@@ -49,6 +49,7 @@ const BOARD: NewsBoardData = {
   hasAnyDigest: true,
   preferences: null,
   personal: null,
+  limit: null,
 };
 
 function response(cacheControl: string, body: unknown = { board: BOARD }) {

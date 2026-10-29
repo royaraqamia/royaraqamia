@@ -32,9 +32,9 @@
 #
 # Readers who opted into a digest of their own (ADR-0079) get one after the
 # shared digest publishes: the same candidate list, narrowed to their sources,
-# one prompt per reader and the same validator with a 3-12 window. The credit
-# (`news.digest.generate`) is spent at publish time, so a failed or rejected run
-# costs nothing and a reader with no allowance keeps the shared digest.
+# one prompt per reader and the same validator with a 3-12 window. Generation is
+# not metered; what the plan limits is how many digests a reader opens per day,
+# counted by the board route (ADR-0093).
 
 name: 'News Digest'
 

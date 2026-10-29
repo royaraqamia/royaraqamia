@@ -20,7 +20,7 @@ import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-stora
 import { logger } from '@/frontend/shared/logger';
 import { markContent } from '@/frontend/shared/perf-marks';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
-import { recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
+import { localDay, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import type { Bookmark, ReadingPosition } from '@/shared/contracts/quran';
 
@@ -307,14 +307,12 @@ export function useQuranReader(): QuranReaderState {
       const store = storeRef.current;
       if (!store || !isAyahRef(surah, ayah)) return;
 
-      // Reading a surah is metered once a day, and counted on the device: the
+      // Reading a surah is counted once a day, and counted on the device: the
       // reader works offline, and the count is reported for reconciliation
-      // (ADR-0075) rather than fetched before the page paints (ADR-0073).
-      recordLocalUsage(
-        identity,
-        'quran.surah.read',
-        `quran:${surah}:${new Date().toISOString().slice(0, 10)}`
-      );
+      // (ADR-0093) rather than fetched before the page paints (ADR-0073). The
+      // dedupe key uses the same Damascus day the counter does, so a surah read
+      // near midnight is not counted twice or lost.
+      recordLocalUsage(identity, 'quran.surah.read', `quran:${surah}:${localDay()}`);
 
       try {
         await store.saveReadingPosition(surah, ayah);

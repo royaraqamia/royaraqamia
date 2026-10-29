@@ -3,12 +3,16 @@ import type {
   ActivationResult,
   AdminPlansQuery,
   AdminUserUsagePage,
+  PlanLimit,
   PlanSettings,
+  UsageLimit,
 } from '@/shared/contracts/plans';
 import { request } from '@/frontend/transport/http';
 
 export interface AdminPlansResult extends AdminUserUsagePage {
   settings: PlanSettings;
+  limits: PlanLimit[];
+  counters: UsageLimit[];
 }
 
 export async function fetchPlanUsers(query: AdminPlansQuery): Promise<AdminPlansResult> {

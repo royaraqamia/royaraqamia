@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ANONYMOUS_DAILY_CREDITS_FALLBACK,
   PlanCapReachedError,
   assertOwnedItemSlot,
   cachePlanLimits,
+  canRecordLocalUsage,
   clearPlanLimits,
   flushLocalUsage,
+  localUsageCap,
   localUsageToday,
   readCachedCaps,
   readLocalUsageQueue,
   recordLocalUsage,
 } from '@/frontend/shared/plans/plan-limits';
 import { GUEST_IDENTITY, userIdentity } from '@/frontend/shared/local-store/identity';
-import type { PlanCaps, UsageState } from '@/shared/contracts/plans';
+import { VISITOR_COUNTER_CAPS, type PlanCaps, type UsageState } from '@/shared/contracts/plans';
 
 const mocks = vi.hoisted(() => ({
   reportLocalUsage: vi.fn(async (_events: Array<{ clientEventId: string; actionKey: string }>) => ({
@@ -35,16 +36,19 @@ const freeCaps: PlanCaps = {
   plan: 'free',
   unlimited: false,
   caps: { habits: 5 } as PlanCaps['caps'],
+  counters: {
+    'scanner.scan': { window: 'daily', cap: 5 },
+    'quran.surah.read': { window: 'daily', cap: 5 },
+    'news.digest.open': { window: 'daily', cap: 5 },
+    'downloader.job.create': { window: 'lifetime', cap: 5 },
+  },
 };
 
 const state: UsageState = {
   plan: 'free',
   unlimited: false,
-  cap: 100,
-  spent: 1,
-  remaining: 99,
-  windowDays: 30,
   expiresAt: null,
+  counters: [],
 };
 
 describe('local plan limits', () => {
@@ -85,7 +89,7 @@ describe('local plan limits', () => {
     expect(readCachedCaps(identity)).toBeNull();
   });
 
-  it('counts a locally metered action once per dedupe key per day', () => {
+  it('counts a locally counted action once per dedupe key per day', () => {
     expect(localUsageToday(identity, 'quran.surah.read')).toBe(0);
 
     expect(recordLocalUsage(identity, 'quran.surah.read', 'quran:2:2026-10-22')).toBe(true);
@@ -103,23 +107,37 @@ describe('local plan limits', () => {
     expect(localUsageToday(identity, 'scanner.scan')).toBe(2);
   });
 
-  it('mirrors the seeded visitor allowance', () => {
-    expect(ANONYMOUS_DAILY_CREDITS_FALLBACK).toBe(10);
+  it('mirrors the seeded visitor caps', () => {
+    expect(VISITOR_COUNTER_CAPS['scanner.scan']).toBe(1);
+    expect(VISITOR_COUNTER_CAPS['downloader.job.create']).toBe(1);
   });
 
-  it('stops the guest at the visitor allowance without touching an account', () => {
-    for (let scan = 0; scan < ANONYMOUS_DAILY_CREDITS_FALLBACK; scan += 1) {
-      recordLocalUsage(GUEST_IDENTITY, 'scanner.scan');
-    }
+  it('stops the guest at the visitor cap without touching an account', () => {
+    expect(recordLocalUsage(GUEST_IDENTITY, 'scanner.scan')).toBe(true);
+    expect(recordLocalUsage(GUEST_IDENTITY, 'scanner.scan')).toBe(false);
 
-    expect(localUsageToday(GUEST_IDENTITY, 'scanner.scan')).toBe(ANONYMOUS_DAILY_CREDITS_FALLBACK);
+    expect(localUsageToday(GUEST_IDENTITY, 'scanner.scan')).toBe(1);
     expect(localUsageToday(identity, 'scanner.scan')).toBe(0);
     expect(readLocalUsageQueue(identity)).toHaveLength(0);
   });
 
+  it('stops a signed-in account at its cached daily cap, and lets a cold device through', () => {
+    expect(canRecordLocalUsage(identity, 'scanner.scan')).toBe(true);
+    expect(localUsageCap(identity, 'scanner.scan')).toBeNull();
+
+    cachePlanLimits('user-1', freeCaps, state);
+    expect(localUsageCap(identity, 'scanner.scan')).toBe(5);
+
+    for (let scan = 0; scan < 5; scan += 1) {
+      expect(recordLocalUsage(identity, 'scanner.scan')).toBe(true);
+    }
+    expect(recordLocalUsage(identity, 'scanner.scan')).toBe(false);
+    expect(localUsageToday(identity, 'scanner.scan')).toBe(5);
+  });
+
   it('does not report a guest queue to the account the guest signs into', async () => {
     recordLocalUsage(GUEST_IDENTITY, 'scanner.scan');
-    recordLocalUsage(GUEST_IDENTITY, 'scanner.scan');
+    recordLocalUsage(GUEST_IDENTITY, 'quran.surah.read');
 
     await flushLocalUsage('user-1');
 
@@ -149,7 +167,7 @@ describe('local plan limits', () => {
     expect(readLocalUsageQueue(identity)).toHaveLength(0);
   });
 
-  it("keeps a guest's read from suppressing the signed-in reader's credit", () => {
+  it("keeps a guest's read from suppressing the signed-in reader's count", () => {
     const dedupeKey = 'quran:2:2026-10-22';
 
     expect(recordLocalUsage(GUEST_IDENTITY, 'quran.surah.read', dedupeKey)).toBe(true);

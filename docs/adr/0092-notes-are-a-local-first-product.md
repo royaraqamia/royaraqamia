@@ -41,10 +41,10 @@ Artifacts, and the offline promise here is already the same as the other owned p
 then it reloads with the radio off. The `bundle: remote` row in `perf/surfaces.json` is the honest
 record; moving it to `bundled` is a separate Android change.
 
-**The cap is an owned-item cap, not a metered action.** Creating a note costs no credits; it takes a
-standing slot, 100 on Free and 10,000 on Pro, enforced on the device from the cached caps and at the
-row by the same Postgres trigger every other capped table uses (ADR-0075). An account that lapses
-back to Free keeps its notes and cannot add more.
+**The cap is an owned-item cap, not a metered action.** Creating a note costs nothing; it takes a
+standing slot, 5 on Free and 50 on Pro (ADR-0093 restated the numbers), enforced on the device from
+the cached caps and at the row by the same Postgres trigger every other capped table uses
+(ADR-0075). An account that lapses back to Free keeps its notes and cannot add more.
 
 **Background tiers are wired, deliberately.** Notes joins `DRAINABLE_PRODUCTS` (a closed tab's Outbox
 still reaches the server), `PULLABLE_PRODUCTS` (a phone that never opens the app still learns what a

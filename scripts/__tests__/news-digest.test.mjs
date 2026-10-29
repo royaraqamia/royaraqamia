@@ -701,11 +701,8 @@ describe('publishing a personal digest', () => {
     vi.unstubAllGlobals();
   });
 
-  it('charges once, with a deterministic client event id, and writes the digest', async () => {
+  it('publishes the digest without charging anything', async () => {
     const calls = stubFetch((url) => {
-      if (url.includes('/rpc/spend_credits_once')) {
-        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
-      }
       if (url.includes('/news_user_digests?on_conflict')) return json([{ id: 'digest-1' }]);
       return json(null);
     });
@@ -713,30 +710,11 @@ describe('publishing a personal digest', () => {
     const result = await publish();
 
     expect(result).toEqual({ id: 'digest-1', published: true, dryRun: false });
-
-    const spends = calls.filter((call) => call.url.endsWith('/rpc/spend_credits_once'));
-    expect(spends).toHaveLength(1);
-    expect(spends[0].body).toMatchObject({
-      p_user_id: userId,
-      p_action_key: 'news.digest.generate',
-    });
-    expect(spends[0].body.p_client_event_id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(calls.some((call) => call.url.includes('/rpc/refund_credits'))).toBe(false);
+    expect(calls.some((call) => call.url.includes('/rpc/'))).toBe(false);
   });
 
-  it('makes no second charge for the same reader and day', async () => {
-    const spent = new Set();
-    let charges = 0;
-    const calls = stubFetch((url, init) => {
-      if (url.includes('/rpc/spend_credits_once')) {
-        const eventId = JSON.parse(init.body).p_client_event_id;
-        if (spent.has(eventId)) {
-          return json({ allowed: true, eventId: null, remaining: 10 });
-        }
-        spent.add(eventId);
-        charges += 1;
-        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
-      }
+  it('replaces the day’s digest on a re-run instead of adding one', async () => {
+    const calls = stubFetch((url) => {
       if (url.includes('/news_user_digests?on_conflict')) return json([{ id: 'digest-1' }]);
       return json(null);
     });
@@ -744,59 +722,33 @@ describe('publishing a personal digest', () => {
     await publish();
     await publish();
 
-    const eventIds = calls
-      .filter((call) => call.url.endsWith('/rpc/spend_credits_once'))
-      .map((call) => call.body.p_client_event_id);
-
-    expect(eventIds).toHaveLength(2);
-    expect(new Set(eventIds).size).toBe(1);
-    expect(charges).toBe(1);
+    const upserts = calls.filter((call) => call.url.includes('/news_user_digests?on_conflict'));
+    expect(upserts).toHaveLength(2);
+    expect(upserts[0].url).toContain('on_conflict=user_id,digest_date');
   });
 
-  it('refunds exactly once when a write fails after a successful spend', async () => {
+  it('throws when the digest write fails, with nothing to undo', async () => {
     const calls = stubFetch((url) => {
-      if (url.includes('/rpc/spend_credits_once')) {
-        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
-      }
-      if (url.includes('/rpc/refund_credits')) return json(true);
       if (url.includes('/news_user_digests?on_conflict')) return json({ message: 'boom' }, 500);
       return json(null);
     });
 
     await expect(publish()).rejects.toThrow('HTTP 500');
 
-    const refunds = calls.filter((call) => call.url.endsWith('/rpc/refund_credits'));
-    expect(refunds).toHaveLength(1);
-    expect(refunds[0].body).toEqual({ p_user_id: userId, p_event_id: 'event-1' });
+    expect(calls.some((call) => call.url.includes('/rpc/'))).toBe(false);
   });
 
-  it('logs a refund failure without masking the publish error', async () => {
-    const messages = [];
-    stubFetch((url) => {
-      if (url.includes('/rpc/spend_credits_once')) {
-        return json({ allowed: true, eventId: 'event-1', remaining: 10 });
-      }
-      if (url.includes('/rpc/refund_credits')) return json({ message: 'down' }, 503);
-      if (url.includes('/news_user_digests?on_conflict')) return json({ message: 'boom' }, 500);
+  it('writes the digest even when the reader’s daily allowance is used up', async () => {
+    // Opening is what the plan limits, not generation: the board route counts it
+    // and answers an empty board. The nightly run has no allowance to consult.
+    const calls = stubFetch((url) => {
+      if (url.includes('/news_user_digests?on_conflict')) return json([{ id: 'digest-1' }]);
       return json(null);
     });
 
-    await expect(publish(userId, (message) => messages.push(message))).rejects.toThrow('HTTP 500');
+    const result = await publish();
 
-    expect(messages.join('\n')).toContain('Refund failed');
-    expect(messages.join('\n')).toContain('event-1');
-  });
-
-  it('writes nothing and refunds nothing when the allowance is exhausted', async () => {
-    const messages = [];
-    const calls = stubFetch(() => json({ allowed: false, remaining: 0 }));
-
-    const result = await publish(userId, (message) => messages.push(message));
-
-    expect(result).toEqual({ id: null, published: false, dryRun: false });
-    expect(calls).toHaveLength(1);
-    expect(calls[0].url).toContain('/rpc/spend_credits_once');
-    expect(calls.some((call) => call.url.includes('/rpc/refund_credits'))).toBe(false);
-    expect(messages.join('\n')).toContain('Skipped');
+    expect(result).toEqual({ id: 'digest-1', published: true, dryRun: false });
+    expect(calls.some((call) => call.url.includes('/rpc/'))).toBe(false);
   });
 });

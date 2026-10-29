@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createPlanGate } from '@/backend/config/plans';
-import { OWNED_ITEMS, USAGE_ACTIONS, type OwnedItemKey } from '@/shared/contracts/plans';
+import { OWNED_ITEMS, type OwnedItemKey } from '@/shared/contracts/plans';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
 import { registerSystemTools } from './system';
@@ -35,20 +35,10 @@ const CAPPED_TOOLS: Record<string, OwnedItemKey> = {
 type ToolHandler = (...args: unknown[]) => unknown;
 type RegisterTool = (name: string, config: unknown, handler: ToolHandler) => unknown;
 
-/** A tool result flagged as an error means the action did not happen. */
-function isToolError(result: unknown): boolean {
-  return (
-    typeof result === 'object' &&
-    result !== null &&
-    (result as { isError?: unknown }).isError === true
-  );
-}
-
 /**
- * Wraps `registerTool` so every write tool spends one `mcp.tool.write` credit
- * before it runs and checks its cap first (ADR-0075). A refusal comes back as a
- * tool error — the same shape a handler's own failure takes — because an MCP
- * client has no HTTP status to read.
+ * Wraps `registerTool` so every write tool checks its cap first (ADR-0093). A
+ * refusal comes back as a tool error — the same shape a handler's own failure
+ * takes — because an MCP client has no HTTP status to read.
  */
 function meteredWrites(server: McpServer, ctx: McpUserContext): McpServer {
   const register = server.registerTool.bind(server) as RegisterTool;
@@ -58,30 +48,22 @@ function meteredWrites(server: McpServer, ctx: McpUserContext): McpServer {
       if (property !== 'registerTool') return Reflect.get(target, property, receiver);
 
       return (name: string, config: unknown, handler: ToolHandler) => {
-        const meteredHandler = async (...args: unknown[]): Promise<unknown> => {
+        const cappedHandler = async (...args: unknown[]): Promise<unknown> => {
           const userId = ctx.userId;
           // Write tools already require a user; this only keeps the wrapper
           // honest if one is ever registered without that guard.
           if (!userId) return handler(...args);
 
           try {
-            const plan = createPlanGate();
             const item = CAPPED_TOOLS[name];
-            if (item) await plan.cap(userId, item);
-
-            // Reserved, not charged up front: a handler answers a scope or
-            // validation failure as a tool error rather than throwing, and a
-            // refused call must not keep the credit.
-            const reservation = await plan.reserve(userId, USAGE_ACTIONS.mcpToolWrite);
-            const result = await handler(...args);
-            if (isToolError(result)) await plan.release(userId, reservation);
-            return result;
+            if (item) await createPlanGate().cap(userId, item);
+            return await handler(...args);
           } catch (error) {
             return toolErrorResponse(error);
           }
         };
 
-        return register(name, config, meteredHandler);
+        return register(name, config, cappedHandler);
       };
     },
   }) as unknown as McpServer;

@@ -12,7 +12,7 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createPlanGate } from '@/backend/config/plans';
-import { USAGE_ACTIONS } from '@/shared/contracts/plans';
+import { USAGE_COUNTERS } from '@/shared/contracts/plans';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { runAfter } from '@/backend/config/after';
@@ -44,7 +44,11 @@ const DownloadJobIdSchema = z.string().uuid();
  * the job is accepted, then dispatched to the Media Provider after the response.
  * The global concurrency cap lives in the service.
  */
-export async function createDownloadJob(body: unknown, ip: string): Promise<HttpResult> {
+export async function createDownloadJob(
+  body: unknown,
+  ip: string,
+  visitorKey: string | null = null
+): Promise<HttpResult> {
   const parsed = CreateDownloadJobSchema.safeParse(body);
   if (!parsed.success) {
     return jsonResult(400, {
@@ -69,13 +73,14 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
   try {
     const service = createDownloaderService();
-    // A download spends provider CPU, so it is the priciest credit in the
-    // catalogue. Signed-in callers spend their own allowance; a visitor spends
-    // the shared per-IP one.
+    // A download spends provider CPU, so it is the priciest counted action in
+    // the catalogue and the one allowance that never refills: a deleted job does
+    // not give the download back (ADR-0093). Signed-in callers count against
+    // their own allowance; a visitor against the cookie and the salted address.
     const { user } = await getOptionalUser();
-    const job = await createPlanGate().meter(
-      { userId: user?.id ?? null, ip },
-      USAGE_ACTIONS.downloaderJobCreate,
+    const job = await createPlanGate().count(
+      { userId: user?.id ?? null, ip, visitorKey },
+      USAGE_COUNTERS.downloads,
       () => service.create(request)
     );
 
