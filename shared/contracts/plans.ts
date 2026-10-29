@@ -17,117 +17,23 @@ import { z } from 'zod';
  * actions, never a shared balance that trades one for another.
  */
 
-export type PlanId = 'free' | 'pro';
-
-export const PLAN_IDS = ['free', 'pro'] as const satisfies readonly PlanId[];
-
-/**
- * The standing caps, mirrored by `public.plan_limits`. The key is what a cap
- * check asks about; the label and numbers live in the database so the pricing
- * page and the enforcement read one source.
- */
-export const OWNED_ITEMS = {
-  habits: 'habits',
-  expenses: 'expenses',
-  expenseCategories: 'expense_categories',
-  budgets: 'budgets',
-  shortLinks: 'short_links',
-  communityDrafts: 'community_drafts',
-  communityPublished: 'community_published',
-  communityTags: 'community_tags',
-  communityCategories: 'community_categories',
-  quranBookmarks: 'quran_bookmarks',
-  notes: 'notes',
-  mcpConnectedApps: 'mcp_connected_apps',
-} as const;
-
-export type OwnedItemKey = (typeof OWNED_ITEMS)[keyof typeof OWNED_ITEMS];
+import {
+  LOCAL_USAGE_ACTIONS,
+  PLAN_IDS,
+  USAGE_WINDOWS,
+  type PlanId,
+  type PlanQuota,
+  type UsageCounterKey,
+  type UsageWindow,
+} from './plans.constants';
 
 /**
- * The counted actions, mirrored by `public.usage_limits`. An action that leaves
- * no row to count is counted in `usage_events` instead, and the enforcement code
- * names it through this object so a typo is a type error, not a runtime refusal
- * for an action that does not exist.
+ * Every runtime constant is re-exported here, so callers keep one import path.
+ * A client module that needs only a constant imports `plans.constants` and
+ * stays out of zod — the shell does exactly that, because this file is behind
+ * the session provider on every route.
  */
-export const USAGE_COUNTERS = {
-  downloads: 'downloader.job.create',
-  scannerScans: 'scanner.scan',
-  quranSurahs: 'quran.surah.read',
-} as const;
-
-export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
-
-/** A lifetime count never refills; a daily count resets at Damascus midnight. */
-export type UsageWindow = 'lifetime' | 'daily';
-
-export const USAGE_WINDOWS = ['lifetime', 'daily'] as const satisfies readonly UsageWindow[];
-
-/**
- * The caps a visitor gets, mirrored from the seeded `usage_limits` rows. A
- * visitor has no account to read a cap for, so the device carries these numbers
- * to refuse a scan or a surah read offline; the server always reads the table.
- */
-export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
-  'downloader.job.create': 1,
-  'scanner.scan': 1,
-  'quran.surah.read': 1,
-};
-
-/**
- * The owned-item cap a visitor gets, mirrored from `plan_limits.visitor_cap`.
- *
- * A visitor owns no rows on the server, so this number only ever binds on the
- * device: the local-first products (HabitFlow, SpendTrack, Notes, Quran
- * bookmarks) count their own items and refuse the second one. It is friction,
- * not enforcement — clearing site data starts again — and the products that
- * need an account (Community, MCP) have no visitor allowance at all, which is
- * what the zeroes say.
- */
-export const VISITOR_ITEM_CAPS: Record<OwnedItemKey, number> = {
-  habits: 1,
-  expenses: 1,
-  expense_categories: 1,
-  budgets: 1,
-  notes: 1,
-  quran_bookmarks: 1,
-  short_links: 1,
-  community_drafts: 0,
-  community_published: 0,
-  community_tags: 0,
-  community_categories: 0,
-  mcp_connected_apps: 0,
-};
-
-/**
- * The counted actions a client performs with no server in the loop, reported
- * afterwards for reconciliation (ADR-0075). A scan never leaves the device
- * except as this counter (ADR-0034), and reading a surah is counted locally so
- * the reader works offline.
- */
-export const LOCAL_USAGE_ACTIONS = [
-  USAGE_COUNTERS.scannerScans,
-  USAGE_COUNTERS.quranSurahs,
-] as const;
-
-export type LocalUsageActionKey = (typeof LOCAL_USAGE_ACTIONS)[number];
-
-/** One counted action's allowance, as the offline client caches it. */
-export interface CounterAllowance {
-  window: UsageWindow;
-  cap: number;
-}
-
-/**
- * The allowances for one account, as the offline client caches them: a cap
- * check that has to hit the network could not refuse a write while offline, and
- * the queue would then carry an intent the server is certain to reject.
- */
-export interface PlanCaps {
-  plan: PlanId;
-  unlimited: boolean;
-  caps: Record<OwnedItemKey, number>;
-  counters: Record<UsageCounterKey, CounterAllowance>;
-}
+export * from './plans.constants';
 
 /**
  * A local counter report. `clientEventId` is minted once per counted action and
@@ -172,28 +78,6 @@ export interface PlanLimit {
   proCap: number;
   sortOrder: number;
 }
-
-/**
- * A per-plan number that is neither a row an account owns nor an action it
- * takes: how many news cards a page may show, how many sources a selection may
- * hold. Kept in its own catalog so `plan_limits` stays "one cap per table".
- */
-export interface PlanQuota {
-  key: string;
-  label: string;
-  visitorCap: number;
-  freeCap: number;
-  proCap: number;
-  sortOrder: number;
-}
-
-/** The quota keys the code names; the numbers live in `plan_quotas`. */
-export const PLAN_QUOTAS = {
-  newsCards: 'news.story.cards',
-  newsSources: 'news.sources',
-} as const;
-
-export type PlanQuotaKey = (typeof PLAN_QUOTAS)[keyof typeof PLAN_QUOTAS];
 
 /** One counted action's catalogue row. */
 export interface UsageLimit {
