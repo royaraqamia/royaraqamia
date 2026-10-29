@@ -36,16 +36,18 @@ test('an offline note reaches the server after reconnect', async ({ browser, bas
   await gotoUnderWorkerControl(page, `${baseURL}/notes`);
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
 
-  // Warm the editor chunk while still online.
-  await page.locator('#btn-new-note').click();
-  await expect(page.locator('#note-title')).toBeVisible();
+  // Warm the editor chunk while still online: the FAB's composer creates the
+  // note, and the note it creates opens in the editor.
+  await page.locator('#btn-new-note').dispatchEvent('click');
+  await page.locator('#composer-note-title').fill(title);
+  await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
+  await expect(page.locator('#note-title')).toHaveValue(title);
 
   // Radio off: the write must land in the Local Store and render from there.
   await context.setOffline(true);
-  await page.locator('#note-title').fill(title);
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('سطر كُتب بلا اتِّصال.');
-  await expect(page.getByRole('heading', { name: 'المُلاحظات' })).toBeVisible();
+  await expect(page.locator('#note-body')).toBeVisible();
 
   // Radio back on: the `online` trigger flushes the Outbox.
   await context.setOffline(false);
