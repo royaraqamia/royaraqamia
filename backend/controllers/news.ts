@@ -3,6 +3,7 @@ import {
   createNewsPreferencesServiceFor,
   createNewsSourceRequestsServiceFor,
 } from '@/backend/config/news';
+import { createUsageService } from '@/backend/config/plans';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { newsSourceRequestRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
@@ -11,6 +12,7 @@ import { messageError } from '@/backend/transport/authenticated-handler';
 import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
+import { PLAN_QUOTAS } from '@/shared/contracts/plans';
 import { newsSourcePreferencesSchema, newsSourceRequestSchema } from '@/shared/contracts/news';
 
 /** A refusal the form can show as-is, with the status the service chose for it. */
@@ -59,6 +61,18 @@ export async function updateMyNewsSources(body: unknown, headers: Headers): Prom
       const parsed = newsSourcePreferencesSchema.safeParse(body);
       if (!parsed.success) {
         return jsonResult(400, { success: false, error: 'اختيار غير صالح.' });
+      }
+
+      // The plan caps how many sources a selection may hold (ADR-0093). The
+      // trigger on `news_source_preferences` is the enforcement — this is the
+      // readable refusal before the write is attempted.
+      const quota = await createUsageService().quotaCap(userId, PLAN_QUOTAS.newsSources);
+      if (!quota.unlimited && parsed.data.sourceIds.length > quota.cap) {
+        return jsonResult(402, {
+          success: false,
+          code: 'usage_limit',
+          error: `يمكنك اختيار ${quota.cap} مصادر كحدّ أقصى في خطتك الحالية.`,
+        });
       }
 
       const preferences = await createNewsPreferencesServiceFor(supabase).save(userId, {

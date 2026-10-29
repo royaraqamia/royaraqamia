@@ -8,8 +8,7 @@ import {
 } from '@/backend/loaders/news';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { newsBoardRateLimitPolicy } from '@/backend/config/rate-limiter';
-import { readVisitorKey } from '@/backend/middleware/visitor-cookie';
-import { claimNewsDigestOpen } from '@/backend/services/news/digest-access';
+import { applyNewsCardLimit, resolveNewsCardCap } from '@/backend/services/news/card-limit';
 import { getClientIp } from '@/backend/transport/http';
 import { NO_STORE, PUBLIC_CACHEABLE } from '@/backend/transport/cache-policy';
 import { toNextResponse } from '@/backend/transport/http-result';
@@ -63,24 +62,14 @@ export async function GET(request: NextRequest) {
     viewer
   );
 
-  const limit = board.search
-    ? null
-    : await claimNewsDigestOpen(
-        {
-          userId: viewer?.userId ?? null,
-          visitorKey: readVisitorKey(request),
-          ip: getClientIp(request),
-        },
-        board.day?.digest.date ?? null
-      );
-
-  const answered: NewsBoard = limit
-    ? { ...board, day: null, personal: null, limit }
-    : { ...board, limit: null };
+  // The page is always served; only the number of story cards follows the plan
+  // (ADR-0093). A visitor sees one, Free five, Pro fifty.
+  const cap = await resolveNewsCardCap(viewer?.userId ?? null);
+  const answered = applyNewsCardLimit(board, cap, viewer === null);
 
   return NextResponse.json<{ board: NewsBoard }>(
     { board: answered },
-    { headers: personalised(answered) || limit ? NO_STORE : PUBLIC_CACHEABLE }
+    { headers: personalised(answered) || answered.cards !== null ? NO_STORE : PUBLIC_CACHEABLE }
   );
 }
 

@@ -28,7 +28,7 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
   return {
     getSettings: vi.fn(),
     listLimits: vi.fn(async () => [
-      { key: 'habits', label: 'العادات', freeCap: 5, proCap: 50, sortOrder: 10 },
+      { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 5, proCap: 50, sortOrder: 10 },
     ]),
     listCounters: vi.fn(async () => [
       {
@@ -41,6 +41,8 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
         sortOrder: 30,
       },
     ]),
+    listQuotas: vi.fn(async () => []),
+    newsCardCap: vi.fn(async () => 5),
     getState: vi.fn(async () => freeState),
     listActivations: vi.fn(async () => []),
     record: vi.fn(async () => ({

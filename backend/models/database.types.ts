@@ -1455,6 +1455,7 @@ export type Database = {
           pro_cap: number;
           sort_order: number;
           updated_at: string;
+          visitor_cap: number;
         };
         Insert: {
           free_cap: number;
@@ -1463,6 +1464,7 @@ export type Database = {
           pro_cap: number;
           sort_order?: number;
           updated_at?: string;
+          visitor_cap?: number;
         };
         Update: {
           free_cap?: number;
@@ -1471,6 +1473,37 @@ export type Database = {
           pro_cap?: number;
           sort_order?: number;
           updated_at?: string;
+          visitor_cap?: number;
+        };
+        Relationships: [];
+      };
+      plan_quotas: {
+        Row: {
+          free_cap: number;
+          key: string;
+          label_ar: string;
+          pro_cap: number;
+          sort_order: number;
+          updated_at: string;
+          visitor_cap: number;
+        };
+        Insert: {
+          free_cap: number;
+          key: string;
+          label_ar: string;
+          pro_cap: number;
+          sort_order?: number;
+          updated_at?: string;
+          visitor_cap: number;
+        };
+        Update: {
+          free_cap?: number;
+          key?: string;
+          label_ar?: string;
+          pro_cap?: number;
+          sort_order?: number;
+          updated_at?: string;
+          visitor_cap?: number;
         };
         Relationships: [];
       };
@@ -1940,11 +1973,13 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           expires_at: string | null;
+          ip_hash: string | null;
           is_blocked: boolean;
           original_url: string;
           password_hash: string | null;
           updated_at: string;
           user_id: string | null;
+          visitor_key: string | null;
         };
         Insert: {
           client_id?: string | null;
@@ -1952,11 +1987,13 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           expires_at?: string | null;
+          ip_hash?: string | null;
           is_blocked?: boolean;
           original_url: string;
           password_hash?: string | null;
           updated_at?: string;
           user_id?: string | null;
+          visitor_key?: string | null;
         };
         Update: {
           client_id?: string | null;
@@ -1964,11 +2001,13 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           expires_at?: string | null;
+          ip_hash?: string | null;
           is_blocked?: boolean;
           original_url?: string;
           password_hash?: string | null;
           updated_at?: string;
           user_id?: string | null;
+          visitor_key?: string | null;
         };
         Relationships: [];
       };
@@ -2376,6 +2415,7 @@ export type Database = {
         Returns: Json;
       };
       materialize_due_recurring_expenses: { Args: never; Returns: boolean };
+      news_card_cap: { Args: { p_user_id: string }; Returns: number };
       publish_post: {
         Args: { p_fields?: Json; p_post_id: string };
         Returns: string;

@@ -458,15 +458,22 @@ is never a monthly charge on saved data, and lowering it never deletes anything.
 _Avoid_: Limit, storage quota, seat
 
 **Counted action**:
-An action that leaves no row to count — a download, a digest opened, a scan, a surah read — measured
-against its own cap instead of a shared balance. A `lifetime` count never refills (a download is
-never given back); a `daily` count returns at Damascus midnight. Free 5, Pro 50, visitor 1.
+An action that leaves no row to count — a download, a scan, a surah read — measured against its own
+cap instead of a shared balance. A `lifetime` count never refills (a download is never given back); a
+`daily` count returns at Damascus midnight. Free 5, Pro 50, visitor 1.
 _Avoid_: Credit, quota, token, balance, points
 
+**Card allowance**:
+How many news story cards a page may render — 1 for a visitor, 5 on Free, 50 on Pro — across the
+day's digest, the search hits and the reader's own digest. The page always renders and says how many
+cards it hid; it is a display limit, not a counted action (ADR-0093).
+_Avoid_: Read limit, paywall, meter
+
 **Visitor allowance**:
-What someone without an account may do: one download ever, and one digest, one scan and one surah a
-day. The subject is a first-party cookie plus a salted IP hash, never an account, so the two
-identify one allowance. When it runs out the site offers sign-in — the free Plan.
+What someone without an account may do: one of each item on the device (HabitFlow, SpendTrack,
+Notes, Quran bookmarks), one download ever, one scan and one surah a day, one news card, and no
+source selection. The subject is a first-party cookie plus a salted IP hash, never an account, so the
+two identify one allowance. When it runs out the site offers sign-in — the free Plan.
 _Avoid_: Guest quota, trial, rate limit
 
 **Activation**:
@@ -476,9 +483,8 @@ fit.
 _Avoid_: Purchase, payment, upgrade, renewal
 
 **Usage card**:
-The account page's report of each counted action against its own cap — downloads, digests opened,
-scans, surah reads. There is no single number any more: one balance across actions was the credit
-pool ADR-0093 removed.
+The account page's report of each counted action against its own cap — downloads, scans, surah reads.
+There is no single number any more: one balance across actions was the credit pool ADR-0093 removed.
 _Avoid_: Dashboard, meter, quota bar
 
 **Local usage report**:

@@ -1,7 +1,9 @@
 import {
   ShortLinkRepository,
+  type AnonymousLinkOwner,
   type ShortLinkWriteMeta,
 } from '@/backend/repositories/linksnap/short-link-repository';
+import { AppError } from '@/backend/shared/errors';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
@@ -93,7 +95,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return data ? this.toDomain(data as ShortLinkDbRow) : null;
   }
 
-  async create(link: ShortLink): Promise<ShortLink> {
+  async create(link: ShortLink, owner?: AnonymousLinkOwner): Promise<ShortLink> {
     const supabase = this.adminClient;
     const row = this.toDb(link);
 
@@ -135,9 +137,28 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       return current;
     }
 
-    const { data, error } = await supabase.from('short_links').insert(row).select().single();
+    // A visitor's row records its own subject, which is what the one-link cap
+    // counts. An account row is owned by `user_id` and carries neither.
+    const payload: Database['public']['Tables']['short_links']['Insert'] = {
+      ...row,
+      visitor_key: link.userId || !owner ? null : owner.visitorKey,
+      ip_hash: link.userId || !owner ? null : owner.ipHash,
+    };
+
+    const { data, error } = await supabase.from('short_links').insert(payload).select().single();
 
     if (error) {
+      // `assert_anonymous_link_cap` refused a second anonymous link for this
+      // visitor. The trigger is the enforcement; this turns its SQLSTATE into
+      // the refusal the page knows how to explain.
+      if (error.code === 'PL001') {
+        throw new AppError(
+          'الزُّوّار ينشئون رابطًا واحدًا فقط. سجِّل الدُّخول لإنشاء المزيد.',
+          402,
+          'visitor_limit'
+        );
+      }
+
       throw new Error(`Failed to create short link: ${error.message}`);
     }
 

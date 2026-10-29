@@ -35,31 +35,58 @@ a lifetime budget, not a shelf.
 | Quran bookmarks                                  | 5    | 50  |
 | connected MCP apps                               | 1    | 10  |
 
-| counted action  | window   | visitor | free | pro |
-| --------------- | -------- | ------- | ---- | --- |
-| a download      | lifetime | 1       | 5    | 50  |
-| a digest opened | daily    | 1       | 5    | 50  |
-| a scan          | daily    | 1       | 5    | 50  |
-| a surah read    | daily    | 1       | 5    | 50  |
+| counted action | window   | visitor | free | pro |
+| -------------- | -------- | ------- | ---- | --- |
+| a download     | lifetime | 1       | 5    | 50  |
+| a scan         | daily    | 1       | 5    | 50  |
+| a surah read   | daily    | 1       | 5    | 50  |
+
+| quota (neither a row nor an action) | visitor | free | pro |
+| ----------------------------------- | ------- | ---- | --- |
+| news story cards on a page          | 1       | 5    | 50  |
+| news sources a selection may hold   | —       | 5    | 50  |
 
 Community publish consumes a published slot; editing, duplicating and uploading
 an image are free. MCP write calls, consultations, training applications,
 project requests and the retainer are unmetered.
+
+### A visitor gets one of each item, on the device
+
+A visitor owns no server rows, so their item cap cannot be checked where the
+other caps are: HabitFlow, SpendTrack, Notes and the Quran reader keep their
+data in the Local Store under the guest bucket, and the create is refused on the
+device (`VISITOR_ITEM_CAPS`, mirrored from `plan_limits.visitor_cap`). It is the
+same slot rule as Free and Pro — deleting the item frees the slot — and it is
+friction, not enforcement: clearing site data starts again. Community, Quran
+bookmarks' account rows and MCP need a session and have no visitor allowance.
+
+LinkSnap is the one anonymous **server** row. It records its own subject
+(`visitor_key`, `ip_hash`) and `assert_anonymous_link_cap` refuses a second live
+link for that subject. A visitor cannot delete it — deletion needs a session —
+and deleting would kill a link they may have shared, so the slot is used for the
+life of the link.
+
+### News is limited by cards, not by opens
+
+Generation is not metered, and neither is opening: the nightly workflow writes a
+personal digest and the board route serves it for free. What the plan limits is
+how many story cards a page shows — 1 for a visitor, 5 on Free, 50 on Pro —
+across the day's digest, the search hits and the reader's own digest. The page
+itself always renders, with the archive strip, the filters and the search box,
+and states how many cards it hid. Capping search as well is deliberate: leaving
+it open would be a one-click way around the limit.
+
+The source selection is capped separately (5 / 50) by a trigger on
+`news_source_preferences`, replacing the old 64-id ceiling. A save above the cap
+is refused outright rather than grandfathered, so a reader already over it must
+cut down before they can change anything.
 
 ### A day is a Damascus day
 
 Every daily count flips at `date_trunc('day', now() at time zone 'Asia/Damascus')`,
 which is the day the news digest itself uses (`digest_date`). The device computes
 the same day with `Intl.DateTimeFormat(..., { timeZone: 'Asia/Damascus' })`, so a
-scan counted offline and a digest opened online agree about when "today" ended.
-
-### A digest is counted when it is opened
-
-Generation is not metered: the nightly workflow writes a reader's personal digest
-whether or not they will open it, and charging that would bill for output nobody
-saw. The board route counts the digest _day_ it answered, deduplicated by that
-date, so a refresh or a Realtime update is free and moving through the archive
-costs one per day opened. A search over the archive is not an open.
+scan counted offline and a surah read online agree about when "today" ended.
 
 ### The visitor subject is a cookie plus the salted address
 
@@ -79,13 +106,15 @@ unlimited and write no event.
 
 ## Consequences
 
-- The catalog is data: `plan_limits` and `usage_limits` are public reads, seeded
-  by the migration, and the pricing page, the account card, the Admin Console and
-  the enforcement all read the same rows. The pricing page keeps one display-only
-  fallback copy for a database outage (ADR-0075's rule, unchanged).
+- The catalog is data: `plan_limits`, `usage_limits` and `plan_quotas` are public
+  reads, seeded by the migration, and the pricing page, the account card, the
+  Admin Console and the enforcement all read the same rows. The pricing page
+  keeps one display-only fallback copy for a database outage (ADR-0075's rule,
+  unchanged).
 - The pricing page states two tiers plus a footnote for visitors, because a
-  visitor is not a plan. It no longer says "N credits"; it says how many items
-  and how many actions, which is what the database refuses on.
+  visitor is not a plan. It no longer says "N credits"; it says how many items,
+  how many actions and how many news cards, which is what the database refuses
+  on.
 - `plan_settings` keeps price, currency and duration. The credit columns, the
   rolling window and `user_plans.window_reset_at` are dropped, as is
   `usage_action_costs`.
@@ -103,9 +132,10 @@ unlimited and write no event.
   account, with no path to a sixth except a plan change. That is the decision,
   not an oversight.
 - **A visitor allowance is friction, not identity.** A new address, or a browser
-  that drops both the cookie and the address, starts again.
-- **The news cap is a reading limit on the archive.** It is enforced at the route
-  that serves the board; a client that never asks for the board (an offline
-  snapshot) does not consume, and cannot be counted.
+  that drops both the cookie and the address, starts again; a cleared Local Store
+  resets the device-side item caps entirely.
+- **The news cap is a display limit, not a read limit.** It is applied at the
+  route that serves the board, so the rows exist and only the rendered cards are
+  cut; an offline snapshot keeps whatever it recorded.
 - **The offline overrun is still real.** Two devices offline at once can each
   count the day's remaining actions before either reports.

@@ -269,19 +269,20 @@ export interface NewsBoard {
   /** The reader's own digest for this day, when it exists; null otherwise. */
   personal: NewsPersonalView | null;
   /**
-   * Set when the reader has opened every digest their plan allows today. `day`
-   * is then null: the archive is still there, but this reader has seen their
-   * share of it until Damascus midnight (ADR-0093).
+   * Set when the plan caps how many cards the page may show. The page always
+   * renders; only the number of story cards is limited (ADR-0093).
    */
-  limit: NewsDigestLimit | null;
+  cards: NewsCardsLimit | null;
 }
 
-/** The daily digest allowance, as the page states it when it runs out. */
-export interface NewsDigestLimit {
-  /** Digests a day for this reader's plan. */
+/** The card allowance: how many story cards this reader's plan may show. */
+export interface NewsCardsLimit {
+  /** Cards a page may show on this reader's plan. */
   cap: number;
-  /** Digests already opened today, including the one this request asked for. */
-  used: number;
+  /** Cards the digest, or the search, actually has. */
+  total: number;
+  /** Cards rendered after the cap. */
+  shown: number;
   /** True for a visitor: the remedy is signing in, not upgrading. */
   visitor: boolean;
 }

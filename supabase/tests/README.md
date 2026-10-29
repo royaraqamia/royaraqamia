@@ -44,6 +44,8 @@ test here.
   accepts a revival.
 - The Admin exemption holds at the cap, and a non-admin at the cap is refused.
 - A sixth published post is refused at the free cap.
+- A free reader cannot save more than five news sources, and a visitor cannot create a
+  second live anonymous link (ADR-0093).
 - A client cannot write `status`, `published_at`, `community_visible`, `view_count` or
   `featured`; it keeps writing the editor-owned columns.
 - `publish_post`, `unpublish_post`, `set_post_featured` and `bulk_publish_posts` move the

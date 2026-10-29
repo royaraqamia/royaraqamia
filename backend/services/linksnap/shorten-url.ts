@@ -1,4 +1,7 @@
-import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import {
+  ShortLinkRepository,
+  type AnonymousLinkOwner,
+} from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
@@ -31,7 +34,8 @@ export class ShortenUrlService {
     customCode?: string,
     expiresAt?: Date | null,
     password?: string,
-    meta?: ShortenMeta
+    meta?: ShortenMeta,
+    owner?: AnonymousLinkOwner
   ): Promise<ShortLink> {
     const sanitizedUrl = SecurityValidator.validateUrl(originalUrl);
     const clientId = meta?.clientId ?? null;
@@ -90,6 +94,8 @@ export class ShortenUrlService {
       deletedAt: null,
     };
 
-    return await this.shortLinkRepository.create(shortLink);
+    return owner
+      ? await this.shortLinkRepository.create(shortLink, owner)
+      : await this.shortLinkRepository.create(shortLink);
   }
 }

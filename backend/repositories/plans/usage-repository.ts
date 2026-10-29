@@ -12,6 +12,7 @@ import {
   type AdminUserUsagePage,
   type OwnedItemKey,
   type PlanLimit,
+  type PlanQuota,
   type PlanSettings,
   type PlanActivationRecord,
   type UsageCounterKey,
@@ -22,6 +23,7 @@ import {
 
 type PlanSettingsRow = Database['public']['Tables']['plan_settings']['Row'];
 type PlanLimitRow = Database['public']['Tables']['plan_limits']['Row'];
+type PlanQuotaRow = Database['public']['Tables']['plan_quotas']['Row'];
 type UsageLimitRow = Database['public']['Tables']['usage_limits']['Row'];
 type ActivationRow = Database['public']['Tables']['plan_activations']['Row'];
 
@@ -45,6 +47,9 @@ export interface UsageRepository {
   getSettings(): Promise<PlanSettings>;
   listLimits(): Promise<PlanLimit[]>;
   listCounters(): Promise<UsageLimit[]>;
+  listQuotas(): Promise<PlanQuota[]>;
+  /** How many news cards this reader's plan may show. */
+  newsCardCap(userId: string): Promise<number>;
   getState(userId: string): Promise<UsageState>;
   listActivations(userId: string): Promise<PlanActivationRecord[]>;
   /** Count one action, or answer that the allowance is used up. */
@@ -70,6 +75,18 @@ function toLimit(row: PlanLimitRow): PlanLimit {
   return {
     key: row.key,
     label: row.label_ar,
+    visitorCap: row.visitor_cap,
+    freeCap: row.free_cap,
+    proCap: row.pro_cap,
+    sortOrder: row.sort_order,
+  };
+}
+
+function toQuota(row: PlanQuotaRow): PlanQuota {
+  return {
+    key: row.key,
+    label: row.label_ar,
+    visitorCap: row.visitor_cap,
     freeCap: row.free_cap,
     proCap: row.pro_cap,
     sortOrder: row.sort_order,
@@ -136,6 +153,28 @@ export class SupabaseUsageRepository implements UsageRepository {
 
     if (error) throw error;
     return (data ?? []).map(toUsageLimit);
+  }
+
+  async listQuotas(): Promise<PlanQuota[]> {
+    const { data, error } = await this.supabase
+      .from('plan_quotas')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map(toQuota);
+  }
+
+  /**
+   * The card allowance for one reader. Resolved in Postgres because the number
+   * depends on the effective plan (an expired Pro is Free) and the Admin
+   * exemption; a visitor has no account and never reaches this.
+   */
+  async newsCardCap(userId: string): Promise<number> {
+    const { data, error } = await this.supabase.rpc('news_card_cap', { p_user_id: userId });
+
+    if (error) throw error;
+    return typeof data === 'number' ? data : 5;
   }
 
   async getState(userId: string): Promise<UsageState> {

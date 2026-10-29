@@ -42,7 +42,7 @@ const BOARD: NewsBoard = {
   hasAnyDigest: true,
   preferences: { selectedSources: 2, filtered: true, fellBack: false },
   personal: { enabled: true, available: true, active: false },
-  limit: null,
+  cards: null,
 };
 
 /**
