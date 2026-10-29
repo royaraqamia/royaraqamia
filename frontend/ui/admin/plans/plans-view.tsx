@@ -58,7 +58,7 @@ export function PlansView() {
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
-          label="سعر الخطة المدفوعة"
+          label="سعر الخطَّة المدفوعة"
           value={
             result
               ? `${formatCount(result.settings.priceCents / 100)} ${result.settings.currency}`
@@ -202,7 +202,7 @@ export function PlansView() {
         }}
       >
         <DialogContent className="sm:max-w-md">
-          <DialogTitle className="leading-snug!">تفعيل الخطة المدفوعة</DialogTitle>
+          <DialogTitle className="leading-snug!">تفعيل الخطَّة المدفوعة</DialogTitle>
           <DialogDescription className="text-pretty">
             سجِّل المبلغ المستلم وطريقة الدفع. التفعيل يمنح 30 يوماً كاملة ويبدأ فترة استهلاك جديدة.
           </DialogDescription>

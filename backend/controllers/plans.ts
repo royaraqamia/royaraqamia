@@ -32,7 +32,7 @@ export async function getMyCaps(): Promise<HttpResult> {
       const caps = await createUsageService().caps(identity.userId);
       return jsonResult(200, { success: true, ...caps });
     },
-    { whenFailed: { success: false, error: 'تعذّر تحميل حدود الخطة.' } }
+    { whenFailed: { success: false, error: 'تعذّر تحميل حدود الخطَّة.' } }
   );
 }
 

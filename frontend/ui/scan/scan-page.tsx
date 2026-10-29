@@ -14,6 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { cn } from '@/frontend/shared/cn';
@@ -482,7 +483,7 @@ export function ScanPage() {
             <>
               نفدت حصَّتك لهذه الفترة.{' '}
               <Link href="/pricing" className="underline underline-offset-4">
-                ارتقِ إلى الخطة المدفوعة
+                ارتقِ إلى الخطَّة المدفوعة
               </Link>{' '}
               للمتابعة.
             </>
@@ -525,14 +526,15 @@ export function ScanPage() {
               {!scanning && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
                   <ScanBarcode className="size-12 text-white/80" />
-                  <Button
+                  <HeroCtaButton
                     type="button"
                     onClick={() => void startCamera()}
-                    disabled={status === 'starting' || busy}
+                    isLoading={status === 'starting'}
+                    disabled={busy}
                   >
                     {status === 'starting' ? <Loader2 className="animate-spin" /> : <Camera />}
                     {status === 'starting' ? 'جاري تشغيل الكاميرا…' : 'تشغيل الكاميرا'}
-                  </Button>
+                  </HeroCtaButton>
                 </div>
               )}
 

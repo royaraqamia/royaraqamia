@@ -8,7 +8,7 @@ import { useMyUsage } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
 import { formatCount } from '@/frontend/shared/format';
 
-const PLAN_LABELS = { free: 'الخطة المجانيَّة', pro: 'الخطة المدفوعة' } as const;
+const PLAN_LABELS = { free: 'الخطَّة المجانيَّة', pro: 'الخطَّة المدفوعة' } as const;
 
 /**
  * The member's counted actions at a glance: downloads, digests opened, scans and
@@ -82,12 +82,6 @@ export function UsageCard() {
             ))}
           </ul>
 
-          <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-            {state.unlimited
-              ? 'حساب مشرف: لا تنطبق عليه حدود الاستهلاك.'
-              : 'التَّنزيلات لا تتجدَّد أبدًا، والعدّادات اليوميّة تعود عند منتصف اللَّيل بتوقيت دمشق.'}
-          </p>
-
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">
             <Link
               href="/account/plan"
@@ -102,7 +96,7 @@ export function UsageCard() {
                 className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-4"
               >
                 <Sparkles className="size-3.5" aria-hidden="true" />
-                ترقية الخطة
+                ترقية الخطَّة
               </Link>
             )}
           </div>
