@@ -164,3 +164,23 @@ describe('SupabaseUsageRepository.countOwned', () => {
     ]);
   });
 });
+
+describe('SupabaseUsageRepository.getOwnedItemStates', () => {
+  it('reads every owned-item cap from the function that counts them', async () => {
+    const calls: { name: string; args: { p_user_id: string } }[] = [];
+    const client = {
+      rpc: (name: string, args: { p_user_id: string }) => {
+        calls.push({ name, args });
+        return Promise.resolve({
+          data: [{ key: 'notes', label: 'الملاحظات', cap: 5, used: 2, remaining: 3 }],
+          error: null,
+        });
+      },
+    } as unknown as SupabaseClient<Database>;
+
+    await expect(new SupabaseUsageRepository(client).getOwnedItemStates('user-1')).resolves.toEqual(
+      [{ key: 'notes', label: 'الملاحظات', cap: 5, used: 2, remaining: 3 }]
+    );
+    expect(calls).toEqual([{ name: 'get_owned_item_states', args: { p_user_id: 'user-1' } }]);
+  });
+});

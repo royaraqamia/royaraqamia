@@ -2382,6 +2382,7 @@ export type Database = {
           total: number;
         }[];
       };
+      get_owned_item_states: { Args: { p_user_id: string }; Returns: Json };
       get_total_expenses: {
         Args: {
           p_categories?: string[];

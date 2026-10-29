@@ -4,6 +4,7 @@ import {
   ActivationPayloadSchema,
   AdminPlansQuerySchema,
   AdminUserUsagePayloadSchema,
+  OwnedItemStatesPayloadSchema,
   UsageOutcomePayloadSchema,
   UsageStatePayloadSchema,
   type ActivatePlanInput,
@@ -11,6 +12,7 @@ import {
   type AdminPlansQuery,
   type AdminUserUsagePage,
   type OwnedItemKey,
+  type OwnedItemState,
   type PlanLimit,
   type PlanQuota,
   type PlanSettings,
@@ -51,6 +53,8 @@ export interface UsageRepository {
   /** How many news cards this reader's plan may show. */
   newsCardCap(userId: string): Promise<number>;
   getState(userId: string): Promise<UsageState>;
+  /** Each owned-item cap against what the account holds right now. */
+  getOwnedItemStates(userId: string): Promise<OwnedItemState[]>;
   listActivations(userId: string): Promise<PlanActivationRecord[]>;
   /** Count one action, or answer that the allowance is used up. */
   record(input: RecordUsageInput): Promise<UsageOutcome>;
@@ -194,6 +198,24 @@ export class SupabaseUsageRepository implements UsageRepository {
         key: counter.key as UsageCounterKey,
       })),
     };
+  }
+
+  /**
+   * The owned-item caps for one account, each with what it already holds. The
+   * count lives in Postgres (`private.owned_item_count`) so the page and the
+   * create-time trigger cannot disagree about what an account owns.
+   */
+  async getOwnedItemStates(userId: string): Promise<OwnedItemState[]> {
+    const { data, error } = await this.supabase.rpc('get_owned_item_states', {
+      p_user_id: userId,
+    });
+
+    if (error) throw error;
+
+    return OwnedItemStatesPayloadSchema.parse(data).map((item) => ({
+      ...item,
+      key: item.key as OwnedItemKey,
+    }));
   }
 
   async listActivations(userId: string): Promise<PlanActivationRecord[]> {

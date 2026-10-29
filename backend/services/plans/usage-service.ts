@@ -136,12 +136,13 @@ export class UsageService {
 
   /** The account's plan page: the allowance and every grant it came from. */
   async myPlan(userId: string): Promise<MyPlan> {
-    const [state, activations] = await Promise.all([
+    const [state, limits, activations] = await Promise.all([
       this.repository.getState(userId),
+      this.repository.getOwnedItemStates(userId),
       this.repository.listActivations(userId),
     ]);
 
-    return { state, activations };
+    return { state, limits, activations };
   }
 
   /**

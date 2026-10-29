@@ -10,7 +10,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
 import type { PlanActivationMethod } from '@/shared/contracts/plans';
 
-const PLAN_LABELS = { free: 'الخطَّة المجانيَّة', pro: 'الخطَّة المدفوعة' } as const;
+const PLAN_LABELS = { free: 'الخطَّة المجَّانيَّة', pro: 'الخطَّة المدفوعة' } as const;
 
 const METHOD_LABELS: Record<PlanActivationMethod, string> = {
   shamcash: 'ShamCash',
@@ -54,7 +54,7 @@ export function PlanView() {
         <div className="space-y-1">
           <p className="text-base font-bold text-foreground">سجِّل الدُّخول لعرض اشتراكك</p>
           <p className="text-xs text-muted-foreground sm:text-sm">
-            استهلاكك وسجلّ التفعيل يتبعان حسابك.
+            استهلاكك وسجلّ الاشتراك يتبعان حسابك.
           </p>
         </div>
         <SignInCta
@@ -90,7 +90,27 @@ export function PlanView() {
 
   if (!plan) return null;
 
-  const { state, activations } = plan;
+  const { state, limits, activations } = plan;
+
+  /**
+   * One list, counted actions first: the caps the plan enforces are stated
+   * together, because a member reads "what is left" in one place rather than
+   * guessing which of two lists a number belongs to (ADR-0093).
+   */
+  const rows = [
+    ...state.counters.map((counter) => ({
+      key: counter.key,
+      label: counter.label,
+      used: counter.used,
+      cap: counter.cap,
+    })),
+    ...limits.map((item) => ({
+      key: item.key,
+      label: item.label,
+      used: item.used,
+      cap: item.cap,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -106,16 +126,16 @@ export function PlanView() {
         </div>
 
         <ul className="mt-3 space-y-1.5">
-          {state.counters.map((counter) => (
+          {rows.map((row) => (
             <li
-              key={counter.key}
+              key={row.key}
               className="flex items-center justify-between gap-3 text-xs sm:text-sm"
             >
-              <span className="text-muted-foreground">{counter.label}</span>
+              <span className="text-muted-foreground">{row.label}</span>
               <span className="shrink-0 font-bold text-foreground" dir="ltr">
                 {state.unlimited
                   ? 'غير محدود'
-                  : `${formatCount(counter.used)} / ${formatCount(counter.cap)}`}
+                  : `${formatCount(row.used)} / ${formatCount(row.cap)}`}
               </span>
             </li>
           ))}
@@ -123,18 +143,19 @@ export function PlanView() {
 
         {state.plan === 'pro' && state.expiresAt && (
           <p className="mt-2 text-xs text-muted-foreground">
-            تنتهي الخطَّة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطَّة المجانيَّة
+            تنتهي الخطَّة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطَّة المجَّانيَّة
             بحدودها.
           </p>
         )}
       </section>
 
-      <section aria-label="سجل التفعيل" className="space-y-2">
-        <h2 className="text-sm font-bold text-foreground sm:text-base">سجل التَّفعيل</h2>
+      <section aria-label="سجل الاشتراك" className="space-y-2">
+        <h2 className="text-sm font-bold text-foreground sm:text-base">سجل الاشتراك</h2>
 
         {activations.length === 0 ? (
           <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
-            لا يوجد سجل تفعيل بعد. أنت على الخطَّة المجانيَّة، ويمكنك الترقية من صفحة الاشتراكات.
+            لا يوجد سجل اشتراك بعد. أنت على الخطَّة المجَّانيَّة، ويمكنك التَّرقية من صفحة
+            الاشتراكات.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -162,11 +183,6 @@ export function PlanView() {
             ))}
           </ul>
         )}
-
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          التَّفعيل يدويّ بعد تأكيد الدَّفعة، ولا يوجد تجديد تلقائي: تنتهي الخطَّة وحدها بعد 30
-          يوماً.
-        </p>
       </section>
     </div>
   );

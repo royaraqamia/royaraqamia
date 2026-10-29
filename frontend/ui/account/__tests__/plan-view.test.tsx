@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { MyPlan, UsageState } from '@/shared/contracts/plans';
+import type { MyPlan, OwnedItemState, UsageState } from '@/shared/contracts/plans';
 
 const mocks = vi.hoisted(() => ({
   session: {
@@ -41,6 +41,23 @@ const freeState: UsageState = {
   ],
 };
 
+const freeLimits: OwnedItemState[] = [
+  {
+    key: 'notes',
+    label: 'الملاحظات',
+    cap: 5,
+    used: 1,
+    remaining: 4,
+  },
+  {
+    key: 'mcp_connected_apps',
+    label: 'تطبيقات MCP المتصلة',
+    cap: 1,
+    used: 0,
+    remaining: 1,
+  },
+];
+
 beforeEach(() => {
   mocks.session.user = null;
   mocks.session.isLoading = false;
@@ -56,13 +73,14 @@ describe('PlanView', () => {
     render(<PlanView />);
 
     expect(screen.getByText('سجِّل الدُّخول لعرض اشتراكك')).toBeInTheDocument();
-    expect(screen.queryByText('سجل التَّفعيل')).not.toBeInTheDocument();
+    expect(screen.queryByText('سجل الاشتراك')).not.toBeInTheDocument();
   });
 
   it('renders the allowance and every activation behind it', () => {
     mocks.session.user = { id: 'u1' };
     mocks.plan.plan = {
       state: { ...freeState, plan: 'pro', expiresAt: '2026-11-21T12:00:00.000Z' },
+      limits: freeLimits,
       activations: [
         {
           id: 'a1',
@@ -84,18 +102,36 @@ describe('PlanView', () => {
     expect(screen.getByText('$12')).toBeInTheDocument();
     expect(screen.getByText('ShamCash')).toBeInTheDocument();
     expect(screen.getByText('«تحويل»')).toBeInTheDocument();
+    // The owned-item caps share the same list as the counted actions.
+    expect(screen.getByText('الملاحظات')).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
+    expect(screen.getByText('تطبيقات MCP المتصلة')).toBeInTheDocument();
+    expect(screen.getByText('0 / 1')).toBeInTheDocument();
+  });
+
+  it('keeps the payment note off the page', () => {
+    mocks.session.user = { id: 'u1' };
+    mocks.plan.plan = { state: freeState, limits: freeLimits, activations: [] };
+
+    render(<PlanView />);
+
+    expect(screen.queryByText(/يدويّ بعد تأكيد الدَّفعة/)).not.toBeInTheDocument();
   });
 
   it('reports an Admin as unlimited', () => {
     mocks.session.user = { id: 'admin-1' };
-    mocks.plan.plan = { state: { ...freeState, unlimited: true }, activations: [] };
+    mocks.plan.plan = {
+      state: { ...freeState, unlimited: true },
+      limits: freeLimits,
+      activations: [],
+    };
 
     render(<PlanView />);
 
     expect(screen.getAllByText('غير محدود').length).toBeGreaterThan(0);
     expect(
       screen.getByText(
-        'لا يوجد سجل تفعيل بعد. أنت على الخطَّة المجانيَّة، ويمكنك الترقية من صفحة الاشتراكات.'
+        'لا يوجد سجل اشتراك بعد. أنت على الخطَّة المجَّانيَّة، ويمكنك التَّرقية من صفحة الاشتراكات.'
       )
     ).toBeInTheDocument();
   });
