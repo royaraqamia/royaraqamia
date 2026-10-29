@@ -59,7 +59,10 @@ comment on table public.plan_limits is
 create table if not exists public.usage_limits (
   key text primary key,
   label_ar text not null,
-  window text not null check (window in ('lifetime', 'daily')),
+  -- `window` is a reserved word in Postgres, so the column is quoted wherever
+  -- it stands alone (a qualified `l.window` needs no quotes). The name keeps
+  -- the vocabulary the contract and the ADR use.
+  "window" text not null check ("window" in ('lifetime', 'daily')),
   visitor_cap integer not null check (visitor_cap >= 0),
   free_cap integer not null check (free_cap >= 0),
   pro_cap integer not null check (pro_cap >= 0),
@@ -68,14 +71,14 @@ create table if not exists public.usage_limits (
 );
 
 insert into public.usage_limits
-  (key, label_ar, window, visitor_cap, free_cap, pro_cap, sort_order) values
+  (key, label_ar, "window", visitor_cap, free_cap, pro_cap, sort_order) values
   ('downloader.job.create', 'تنزيل وسائط',              'lifetime', 1, 5, 50, 10),
   ('news.digest.open',      'فتح مُلخَّص أخبار',          'daily',    1, 5, 50, 20),
   ('scanner.scan',          'مسح رمز',                   'daily',    1, 5, 50, 30),
   ('quran.surah.read',      'قراءة سورة في اليوم',       'daily',    1, 5, 50, 40)
 on conflict (key) do update
   set label_ar = excluded.label_ar,
-      window = excluded.window,
+      "window" = excluded."window",
       visitor_cap = excluded.visitor_cap,
       free_cap = excluded.free_cap,
       pro_cap = excluded.pro_cap,
