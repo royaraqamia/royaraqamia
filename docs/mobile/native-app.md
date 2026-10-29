@@ -14,14 +14,14 @@ These are the numbers a phase exit is measured against, on a real device rather 
 They replace the shell's, which are in [android-shell.md](android-shell.md) and stay there as the
 baseline being beaten.
 
-| Measure                                | Budget                      | Today (shell)                         |
-| -------------------------------------- | --------------------------- | ------------------------------------- |
-| Cold start, process dead → first frame | 400 ms                      | 3.6–8.1 s to document commit          |
-| Warm start, activity recreated → frame | 300 ms                      | 1.0–3.0 s                             |
-| Tap → painted frame                    | 100 ms                      | `perf/paint-budget.json` rows         |
-| Offline write → drained                | 5 s after the radio returns | not possible for owned rows at launch |
-| Release APK (universal)                | 20 MiB                      | 16.1 MiB                              |
-| Scroll, 60 fps list of 500 rows        | no dropped frame > 2        | not measured                          |
+| Measure                                | Budget                      | Today (shell)                                                                 |
+| -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
+| Cold start, process dead → first frame | 400 ms                      | 3.6–8.1 s to document commit                                                  |
+| Warm start, activity recreated → frame | 300 ms                      | 1.0–3.0 s                                                                     |
+| Tap → painted frame                    | 100 ms                      | `perf/paint-budget.json` rows                                                 |
+| Offline write → drained                | 5 s after the radio returns | not possible for owned rows at launch                                         |
+| Release APK (universal)                | 20 MiB                      | 11.4 MiB, minified ([ADR-0094](../adr/0094-the-release-build-is-minified.md)) |
+| Scroll, 60 fps list of 500 rows        | no dropped frame > 2        | not measured                                                                  |
 
 ## Phase 0 — the seam
 
@@ -58,6 +58,15 @@ stale. Decoding goes through `ContractCodec`, which returns `ApiResult`: a body 
 the contract is `ApiError.InvalidContract` naming the field, not an exception on a background
 thread. The Kotlin Gradle plugin is pinned in `android/build.gradle` rather than `variables.gradle`,
 because a buildscript classpath is resolved before that file is applied.
+
+**Wired today (#647).** Compose is a dependency of the app module: the BOM is pinned in
+`android/variables.gradle`, the compiler plugin sits beside the Kotlin plugin in
+`android/build.gradle`, and `android/app/src/main/kotlin/com/royaraqamia/app/theme/` holds the theme
+the tokens generate — colour, type, spacing and shape, in the two faces the APK already bundles.
+`npm run tokens:generate` writes `ThemeColors.kt` alongside `DesignTokens.kt`, so a colour the theme
+can name is a colour the tokens have. The release build is minified for the same reason the theme
+exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)); the first Compose screen is still
+Phase 2's.
 
 **Retires:** nothing. This phase is additive.
 

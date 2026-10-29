@@ -56,9 +56,9 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
 - RTL-first (Arabic primary)
 - Design tokens are generated, not typed: `shared/tokens/tokens.json` is the
   source, `npm run tokens:generate` writes the site's `app/tokens.css`, the
-  shell's `res/values/colors.xml` and the app's `DesignTokens.kt`, and
-  `npm run check:tokens` fails a stale output or a stylesheet that re-declares a
-  generated property by hand
+  shell's `res/values/colors.xml` and the app's `DesignTokens.kt` and
+  `ThemeColors.kt`, and `npm run check:tokens` fails a stale output or a
+  stylesheet that re-declares a generated property by hand
 - Radix + shadcn primitives
 - No inline styles
 - Stylesheets are cut by surface, not by component: `app/global.css` is the

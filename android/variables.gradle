@@ -31,4 +31,9 @@ ext {
     cordovaAndroidVersion = '14.0.1'
     // The generated contract types and the codec that reads them (#648).
     kotlinxSerializationVersion = '1.9.0'
+    // Compose, the app's UI toolkit (ADR-0089, #647). One BOM pins every Compose
+    // artifact to the same release; the compiler plugin that has to match it
+    // lives beside the Kotlin plugin in `build.gradle`, because a buildscript
+    // classpath is resolved before this file is applied.
+    composeBomVersion = '2025.12.01'
 }
