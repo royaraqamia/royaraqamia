@@ -17,9 +17,20 @@ import { Capacitor } from '@capacitor/core';
 
 import { Button } from '@/frontend/ui/primitives/button';
 
+import { openInSystemBrowser } from '@/frontend/shared/native-shell';
+import { NATIVE_OAUTH_CALLBACK_URL } from '@/shared/contracts/auth';
+
 import { openRemote, remoteMechanism, setRemoteMechanism, type RemoteMechanism } from './crossing';
 import { runProbes, type ProbeResult } from './probes';
-import { restoreSession, signIn, signOut, spikeSession, subscribeToSpikeSession } from './session';
+import {
+  beginProviderSignIn,
+  completeProviderSignIn,
+  restoreSession,
+  signIn,
+  signOut,
+  spikeSession,
+  subscribeToSpikeSession,
+} from './session';
 
 interface DeepLink {
   url: string;
@@ -56,6 +67,14 @@ export function SpikePanel() {
       setLinks((previous) =>
         [{ url: event.url, at: new Date().toLocaleTimeString('ar') }, ...previous].slice(0, 5)
       );
+      if (!event.url.startsWith(NATIVE_OAUTH_CALLBACK_URL)) return;
+      setBusy(true);
+      setError(null);
+      void completeProviderSignIn(event.url)
+        .catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        })
+        .finally(() => setBusy(false));
     }).then((handle) => {
       dispose = () => handle.remove();
     });
@@ -74,6 +93,20 @@ export function SpikePanel() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleProviderSignIn() {
+    setBusy(true);
+    setError(null);
+    try {
+      const url = await beginProviderSignIn('google');
+      if (!(await openInSystemBrowser(url))) {
+        throw new Error('تعذّر فتح المتصفح');
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
       setBusy(false);
     }
   }
@@ -138,6 +171,14 @@ export function SpikePanel() {
             />
             <Button size="sm" disabled={busy} onClick={() => void handleSignIn()}>
               دخول
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void handleProviderSignIn()}
+            >
+              دخول Google
             </Button>
           </div>
         )}

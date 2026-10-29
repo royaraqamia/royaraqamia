@@ -62,6 +62,38 @@ export function getPublicSupabase() {
   return publicClient;
 }
 
+/**
+ * A Supabase client that acts as the caller, not as the deployment.
+ *
+ * `@supabase/ssr` builds a client around a cookie jar, which is exactly the
+ * thing a native client does not have. This factory is the other half of the
+ * identity seam: the access token the request carried becomes the
+ * `Authorization` header every PostgREST call uses, so RLS authorizes the
+ * token's user. The key stays the publishable one — escalating to the service
+ * role here would make the token decorative.
+ */
+export function createTokenSupabaseClient(accessToken: string) {
+  if (!env.supabaseUrl) {
+    throw new Error('[createTokenSupabaseClient] Missing env var: NEXT_PUBLIC_SUPABASE_URL');
+  }
+  if (!env.supabasePublishableKey) {
+    throw new Error(
+      '[createTokenSupabaseClient] Missing env var: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
+    );
+  }
+
+  return createClient<Database>(env.supabaseUrl, env.supabasePublishableKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+    global: {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  });
+}
+
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
 export async function createServerSupabaseClient(cookieStore?: CookieStore) {

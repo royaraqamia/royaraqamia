@@ -4,27 +4,20 @@
  * The credential half of the spike, measured instead of assumed.
  *
  * These are the calls the veto table's "session continuity" row needs: a token
- * minted in the bundled origin, sent to the live server, and answered. Two
- * endpoints are probed on purpose, because they sit on opposite sides of the
- * seam that #501 exists to close:
+ * minted in the bundled origin, sent to the live server, and answered. Both
+ * probed endpoints now resolve a Bearer token (issue #501):
  *
- *   * `/linksnap/api/links` already resolves a Bearer token
- *     (`withSessionOrBearerUser`), so it answers 200 and proves the token is
- *     real and the server accepts it from a bundled origin.
- *   * `/habitflow/api/habits` resolves the session cookie only
- *     (`withAuthenticatedUser`), so the same token is answered 401 — which is
- *     the finding: owned data needs a token-scoped client on the server, not
- *     just a header the route reads.
+ *   * `/linksnap/api/links` has always accepted one (`withSessionOrBearerUser`).
+ *   * `/habitflow/api/habits` used to resolve the session cookie only, so the
+ *     same token was answered 401. Its handlers now run through the
+ *     request-aware identity seam and a client scoped to the caller's token.
  *
- * `CapacitorHttp` is used rather than `fetch` because native HTTP has no CORS
- * gate: the probe measures the *server's* answer, not the preflight. Plain
- * `fetch` from `https://localhost` is the other half of that finding.
+ * `authorizedRequest` uses `CapacitorHttp` rather than `fetch` because native
+ * HTTP has no CORS gate, and re-authenticates at most once if either endpoint
+ * rejects an expired token.
  */
 
-import { CapacitorHttp } from '@capacitor/core';
-
-import { REMOTE_ORIGIN } from './crossing';
-import { accessToken } from './session';
+import { authorizedRequest } from './session';
 
 export interface Probe {
   path: string;
@@ -39,7 +32,7 @@ export const PROBES: Probe[] = [
   },
   {
     path: '/habitflow/api/habits',
-    note: 'يقرأ الجلسة من الكوكي فقط (withAuthenticatedUser)',
+    note: 'يقرأ الرمز والعميل الخاص به بعد #501',
   },
 ];
 
@@ -62,22 +55,10 @@ function excerpt(data: unknown): string {
 
 /** Run every probe with the current Bearer token. */
 export async function runProbes(): Promise<ProbeResult[]> {
-  const token = await accessToken();
-  if (!token) {
-    return PROBES.map((probe) => ({
-      path: probe.path,
-      status: 'لا يوجد رمز',
-      detail: 'سجّل الدخول أولاً',
-    }));
-  }
-
   const results: ProbeResult[] = [];
   for (const probe of PROBES) {
     try {
-      const response = await CapacitorHttp.get({
-        url: `${REMOTE_ORIGIN}${probe.path}`,
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authorizedRequest(probe.path);
       results.push({
         path: probe.path,
         status: response.status,

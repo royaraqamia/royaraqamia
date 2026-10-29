@@ -10,6 +10,10 @@ import type { AuthUser } from '@/backend/identity';
  * The page guards ask the identity module; they no longer resolve identity
  * themselves. `getAuthUser` and `getOptionalUser` keep their signatures so
  * existing callers are unchanged.
+ *
+ * Both reach the request-aware reader, so a route that receives a Bearer token
+ * acts as that token's user with a client carrying it — and a request with no
+ * token still resolves exactly as the cookie path always did.
  */
 
 export async function getAuthUser(): Promise<{

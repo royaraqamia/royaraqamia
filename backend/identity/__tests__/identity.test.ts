@@ -4,6 +4,8 @@ import {
   createBearerIdentityReader,
   createCookieSessionIdentityReader,
   createIdentityModule,
+  createRequestIdentityReader,
+  createTokenSessionReader,
   type SessionIdentityReader,
 } from '@/backend/identity';
 
@@ -167,5 +169,140 @@ describe('identity module', () => {
     });
     await expect(module.resolveAdmin()).resolves.toEqual({ kind: 'forbidden' });
     expect(bearer.read).toHaveBeenCalledWith('Bearer token');
+  });
+});
+
+describe('token-scoped session reader', () => {
+  it('validates the token and builds a client that carries it', async () => {
+    const getUser = vi.fn().mockResolvedValue({ user: { id: 'u-4', email: 'd@e.com' } });
+    const client = { from: vi.fn() };
+    const createClient = vi.fn().mockReturnValue(client);
+    const reader = createTokenSessionReader({ getUser, createClient });
+
+    await expect(reader.read('Bearer token-4')).resolves.toEqual({
+      user: { id: 'u-4', email: 'd@e.com' },
+      client,
+    });
+    expect(getUser).toHaveBeenCalledWith('token-4');
+    expect(createClient).toHaveBeenCalledWith('token-4');
+  });
+
+  it('never builds a client for an absent or rejected token', async () => {
+    const createClient = vi.fn();
+    const reader = createTokenSessionReader({
+      getUser: vi.fn().mockResolvedValue({ user: null }),
+      createClient,
+    });
+
+    await expect(reader.read(null)).resolves.toBeNull();
+    await expect(reader.read('Basic abc')).resolves.toBeNull();
+    await expect(reader.read('Bearer ')).resolves.toBeNull();
+    await expect(reader.read('Bearer rejected')).resolves.toBeNull();
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it('reports a rejected token without throwing', async () => {
+    const onError = vi.fn();
+    const reader = createTokenSessionReader({
+      getUser: vi.fn().mockRejectedValue(new Error('expired')),
+      createClient: vi.fn(),
+      onError,
+    });
+
+    await expect(reader.read('Bearer stale')).resolves.toBeNull();
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('request identity reader', () => {
+  const cookie = sessionReader({
+    read: vi.fn().mockResolvedValue({ user: { id: 'cookie-user' }, client: { kind: 'cookie' } }),
+    readOptional: vi.fn().mockResolvedValue({ user: { id: 'cookie-user' }, client: null }),
+  });
+
+  function tokenReader(result: { user: { id: string }; client: unknown } | null) {
+    return { read: vi.fn().mockResolvedValue(result) };
+  }
+
+  const anonymous = { kind: 'anonymous' };
+
+  it('prefers the token over the cookie and keeps its scoped client', async () => {
+    const token = tokenReader({ user: { id: 'token-user' }, client: { kind: 'token' } });
+    const reader = createRequestIdentityReader({
+      authorization: async () => 'Bearer token',
+      session: cookie,
+      token,
+      anonymousClient: () => anonymous as never,
+    });
+
+    await expect(reader.read()).resolves.toEqual({
+      user: { id: 'token-user' },
+      client: { kind: 'token' },
+    });
+    expect(token.read).toHaveBeenCalledWith('Bearer token');
+  });
+
+  it('resolves the cookie exactly as before when no header was sent', async () => {
+    const token = tokenReader({ user: { id: 'token-user' }, client: {} });
+    const reader = createRequestIdentityReader({
+      authorization: async () => null,
+      session: cookie,
+      token,
+      anonymousClient: () => anonymous as never,
+    });
+
+    await expect(reader.read()).resolves.toEqual({
+      user: { id: 'cookie-user' },
+      client: { kind: 'cookie' },
+    });
+    expect(token.read).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to the cookie when a Bearer token is rejected', async () => {
+    const token = tokenReader(null);
+    const reader = createRequestIdentityReader({
+      authorization: async () => 'Bearer stale',
+      session: cookie,
+      token,
+      anonymousClient: () => anonymous as never,
+    });
+
+    await expect(reader.readOptional()).resolves.toEqual({ user: null, client: null });
+    await expect(reader.read()).resolves.toEqual({
+      user: null,
+      client: anonymous,
+    });
+  });
+
+  it('ignores a non-Bearer scheme and keeps the cookie path', async () => {
+    const token = tokenReader({ user: { id: 'token-user' }, client: {} });
+    const reader = createRequestIdentityReader({
+      authorization: async () => 'Basic abc',
+      session: cookie,
+      token,
+      anonymousClient: () => anonymous as never,
+    });
+
+    await expect(reader.read()).resolves.toEqual({
+      user: { id: 'cookie-user' },
+      client: { kind: 'cookie' },
+    });
+    expect(token.read).not.toHaveBeenCalled();
+  });
+
+  it('catches an authorization lookup that runs outside a request', async () => {
+    const reader = createRequestIdentityReader({
+      authorization: async () => {
+        throw new Error('no request');
+      },
+      session: cookie,
+      token: tokenReader(null),
+      anonymousClient: () => anonymous as never,
+    });
+
+    await expect(reader.read()).resolves.toEqual({
+      user: { id: 'cookie-user' },
+      client: { kind: 'cookie' },
+    });
   });
 });

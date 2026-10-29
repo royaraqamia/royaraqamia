@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * The two halves of the credential/origin question (issue #500): what counts as
@@ -18,11 +18,12 @@ const preferences = {
 
 const httpPost = vi.fn();
 const httpGet = vi.fn();
+const httpRequest = vi.fn();
 const browserOpen = vi.fn(async (_options: { url: string }) => {});
 
 vi.mock('@capacitor/preferences', () => ({ Preferences: preferences }));
 vi.mock('@capacitor/core', () => ({
-  CapacitorHttp: { post: httpPost, get: httpGet },
+  CapacitorHttp: { post: httpPost, get: httpGet, request: httpRequest },
   Capacitor: { isNativePlatform: () => true },
 }));
 vi.mock('@capacitor/browser', () => ({ Browser: { open: browserOpen } }));
@@ -58,6 +59,7 @@ beforeEach(() => {
   preferences.remove.mockClear();
   httpPost.mockReset();
   httpGet.mockReset();
+  httpRequest.mockReset();
   browserOpen.mockClear();
 });
 
@@ -119,7 +121,7 @@ describe('Bearer session', () => {
     expect(spikeSession()?.userId).toBe('user-1');
     // Rotated refresh token is written back, access token never is.
     expect(preferences.set).toHaveBeenCalledWith({
-      key: 'spike.refresh-token',
+      key: 'royaraqamia.session.refresh-token',
       value: 'refresh-1',
     });
     expect(preferences.set).not.toHaveBeenCalledWith(
@@ -136,7 +138,7 @@ describe('Bearer session', () => {
 
     expect(await restoreSession()).toBeNull();
     expect(spikeSession()).toBeNull();
-    expect(preferences.remove).toHaveBeenCalledWith({ key: 'spike.refresh-token' });
+    expect(preferences.remove).toHaveBeenCalledWith({ key: 'royaraqamia.session.refresh-token' });
   });
 
   it('refreshes before answering with an almost-expired token', async () => {
@@ -158,5 +160,169 @@ describe('Bearer session', () => {
     // 30s of life is under the one-minute margin, so the next read re-mints.
     expect(await accessToken()).toBe('access-1');
     expect(httpPost).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('session refresh and provider sign-in', () => {
+  function expiredResponse(id: string) {
+    return {
+      status: 200,
+      data: {
+        access_token: `access-${id}`,
+        refresh_token: `refresh-${id}`,
+        expires_in: 3600,
+        user: { id: 'user-1', email: 'a@b.c' },
+      },
+    };
+  }
+
+  it('single-flights concurrent refreshes into one grant', async () => {
+    preferences.get.mockResolvedValue({ value: 'refresh-stored' });
+    let release: (value: unknown) => void = () => undefined;
+    httpPost.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        })
+    );
+
+    const { restoreSession } = await sessionModule();
+    const first = restoreSession();
+    const second = restoreSession();
+
+    // Both callers are waiting on the same grant; no second POST has happened.
+    await vi.waitFor(() => expect(httpPost).toHaveBeenCalledTimes(1));
+
+    release(expiredResponse('1'));
+    const [a, b] = await Promise.all([first, second]);
+    expect(a?.accessToken).toBe('access-1');
+    expect(b?.accessToken).toBe('access-1');
+    expect(httpPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-authenticates once when concurrent requests are rejected', async () => {
+    preferences.get.mockResolvedValue({ value: 'refresh-stored' });
+    httpPost.mockResolvedValueOnce(expiredResponse('1'));
+
+    const { restoreSession, authorizedRequest } = await sessionModule();
+    await restoreSession();
+
+    // The old token is rejected by both calls; the refresh is shared.
+    httpRequest
+      .mockResolvedValueOnce({ status: 401, data: { error: 'expired' } })
+      .mockResolvedValueOnce({ status: 401, data: { error: 'expired' } })
+      .mockResolvedValueOnce({ status: 200, data: { ok: 'first' } })
+      .mockResolvedValueOnce({ status: 200, data: { ok: 'second' } });
+
+    let release: (value: unknown) => void = () => undefined;
+    httpPost.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        })
+    );
+
+    const pending = Promise.all([
+      authorizedRequest('/habitflow/api/habits'),
+      authorizedRequest('/habitflow/api/habits'),
+    ]);
+    await vi.waitFor(() => expect(httpPost).toHaveBeenCalledTimes(2));
+    release(expiredResponse('2'));
+    const [first, second] = await pending;
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(httpPost).toHaveBeenCalledTimes(2);
+    const retries = httpRequest.mock.calls.filter(
+      (call) =>
+        (call[0] as { headers: { Authorization: string } }).headers.Authorization ===
+        'Bearer access-2'
+    );
+    expect(retries).toHaveLength(2);
+  });
+
+  it('builds a PKCE authorize URL and exchanges the returned code', async () => {
+    const store = new Map<string, string>();
+    preferences.set.mockImplementation(async ({ key, value }) => {
+      store.set(key, value);
+    });
+    preferences.get.mockImplementation(async ({ key }) => ({ value: store.get(key) ?? null }));
+    preferences.remove.mockImplementation(async ({ key }) => {
+      store.delete(key);
+    });
+
+    const { beginProviderSignIn, completeProviderSignIn } = await sessionModule();
+
+    const url = await beginProviderSignIn('google');
+    const parsed = new URL(url);
+    expect(parsed.pathname).toBe('/auth/v1/authorize');
+    expect(parsed.searchParams.get('provider')).toBe('google');
+    expect(parsed.searchParams.get('redirect_to')).toBe('royar://auth/callback');
+    expect(parsed.searchParams.get('code_challenge_method')).toBe('s256');
+    expect(parsed.searchParams.get('code_challenge')).toBeTruthy();
+    expect(url).not.toContain('access-token');
+    expect(url).not.toContain('refresh-token');
+
+    httpPost.mockResolvedValueOnce(expiredResponse('provider'));
+    const state = parsed.searchParams.get('state') ?? '';
+    const session = await completeProviderSignIn(
+      `royar://auth/callback?code=code-1&state=${encodeURIComponent(state)}`
+    );
+
+    expect(session?.email).toBe('a@b.c');
+    expect(httpPost).toHaveBeenCalledWith(
+      expect.objectContaining({ url: expect.stringContaining('grant_type=pkce') })
+    );
+    const body = httpPost.mock.calls[0]?.[0] as { data: Record<string, string> };
+    expect(body.data.auth_code).toBe('code-1');
+    expect(body.data.code_verifier).toBeTruthy();
+    // The verifier is one-shot: a replay has nothing to exchange.
+    await expect(
+      completeProviderSignIn(`royar://auth/callback?code=code-2&state=${encodeURIComponent(state)}`)
+    ).rejects.toThrow('no pending sign-in');
+  });
+
+  it('clears the token on sign-out without touching other preferences', async () => {
+    preferences.get.mockResolvedValue({ value: 'refresh-stored' });
+    httpPost.mockResolvedValueOnce(expiredResponse('1'));
+
+    const { restoreSession, signOut, spikeSession } = await sessionModule();
+    await restoreSession();
+    await signOut();
+
+    expect(spikeSession()).toBeNull();
+    expect(preferences.remove).toHaveBeenCalledWith({
+      key: 'royaraqamia.session.refresh-token',
+    });
+    expect(preferences.remove).toHaveBeenCalledWith({ key: 'royaraqamia.session.pkce' });
+  });
+});
+
+describe('secure storage', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'Capacitor');
+  });
+
+  it('keeps the refresh token in the platform secure store, not Preferences', async () => {
+    const secure = {
+      setData: vi.fn(async (_options: { key: string; value: string }) => {}),
+      getData: vi.fn(async (_options: { key: string }) => ({ value: null as string | null })),
+      deleteData: vi.fn(async (_options: { key: string }) => {}),
+    };
+    (globalThis as typeof globalThis & { Capacitor?: unknown }).Capacitor = {
+      Plugins: { NativeBiometric: secure },
+    };
+
+    httpPost.mockResolvedValueOnce(tokenResponse());
+    const { signIn } = await sessionModule();
+    await signIn('a@b.c', 'secret');
+
+    expect(secure.setData).toHaveBeenCalledWith({
+      key: 'royaraqamia.session.refresh-token',
+      value: 'refresh-1',
+    });
+    expect(preferences.set).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'refresh-1' })
+    );
   });
 });
