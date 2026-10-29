@@ -72,7 +72,6 @@ describe('AthkarReader', () => {
 
     fireEvent.click(second);
     expect(second).toHaveTextContent('1 من 3');
-    expect(screen.getByText('أكملت 0')).toBeInTheDocument();
 
     fireEvent.click(second);
     fireEvent.click(second);
@@ -80,7 +79,6 @@ describe('AthkarReader', () => {
 
     expect(second).toHaveTextContent('3 من 3');
     expect(second).toBeDisabled();
-    expect(screen.getByText('أكملت 1')).toBeInTheDocument();
   });
 
   it('undoes a mistap with إعادة', () => {
@@ -116,7 +114,6 @@ describe('AthkarReader', () => {
     render(<AthkarReader collections={COLLECTIONS} />);
 
     expect(counter(2)).toHaveTextContent('0 من 3');
-    expect(screen.getByText('أكملت 0')).toBeInTheDocument();
   });
 
   it('renders the source and only the virtue the narration gives', () => {

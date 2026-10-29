@@ -9,7 +9,7 @@ import {
   type AthkarPeriod,
 } from '@/shared/contracts/athkar';
 import { AthkarCard } from './athkar-card';
-import { completedCount, countFor } from './count-store';
+import { countFor } from './count-store';
 import { useAthkarCounts } from './use-athkar-counts';
 
 interface AthkarReaderProps {
@@ -17,8 +17,7 @@ interface AthkarReaderProps {
 }
 
 /**
- * The two sittings as one surface: a tab per collection, a count per dhikr, and
- * today's progress.
+ * The two sittings as one surface: a tab per collection and a count per dhikr.
  *
  * The tab is local state, not part of the URL: the page is one route and the
  * two lists are the same kind of thing, so a link to "the evening tab" would be
@@ -26,6 +25,10 @@ interface AthkarReaderProps {
  * panel reliably. The default is the morning one because it is also what a
  * prerendered page can show without waiting for a clock, and the tabs are the
  * first thing after the heading.
+ *
+ * The tablist is the only thing left in the row above the lists — the daily
+ * total and the note about the midnight reset went, so what the sitting has
+ * done is read from the cards themselves.
  */
 export function AthkarReader({ collections }: AthkarReaderProps) {
   const [period, setPeriod] = useState<AthkarPeriod>('morning');
@@ -34,8 +37,6 @@ export function AthkarReader({ collections }: AthkarReaderProps) {
   const tabRefs = useRef<Partial<Record<AthkarPeriod, HTMLButtonElement | null>>>({});
 
   const collection = collections[period];
-  const total = collection.items.length;
-  const done = completedCount(counts, period, collection.items);
 
   const select = (next: AthkarPeriod) => {
     setPeriod(next);
@@ -74,7 +75,7 @@ export function AthkarReader({ collections }: AthkarReaderProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex justify-center">
         <div
           role="tablist"
           aria-label="وقت الأذكار"
@@ -97,10 +98,12 @@ export function AthkarReader({ collections }: AthkarReaderProps) {
                 onClick={() => select(option)}
                 onKeyDown={onTabKeyDown}
                 className={cn(
-                  'rounded-full px-5 py-2 text-sm font-bold transition-colors',
+                  'rounded-full border px-5 py-2 text-sm font-bold transition-colors',
                   selected
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? // The Hero's main button, so the sitting that is on reads
+                      // as the surface's action rather than a filled tab.
+                      'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
                 {collections[option].title}
@@ -108,16 +111,7 @@ export function AthkarReader({ collections }: AthkarReaderProps) {
             );
           })}
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          <span className="text-foreground/80">{ready ? `أكملت ${done}` : 'أكملت —'}</span> من{' '}
-          {total}
-        </p>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        يُصفَّر العدّ عند منتصف اللَّيل بتوقيت جهازك، ويُحفظ في هذا المتصفِّح وحده.
-      </p>
 
       <section
         role="tabpanel"
