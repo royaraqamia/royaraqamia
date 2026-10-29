@@ -1189,9 +1189,14 @@ async function writePrefixMarker(requested, served) {
 /** The longest ancestor document this device holds, or null. */
 async function nearestCachedShell(pathname) {
   const cache = await caches.open(CACHE);
-  for (const prefix of shellPrefixCandidates(pathname)) {
-    const response = await cache.match(prefix);
-    if (response) return { served: prefix, response };
+  // The document at the requested path itself comes first, for a shell whose URL
+  // carries view state (`/notes?note=<id>`): a cache key includes the query, so
+  // the exact hit above cannot answer it, and without this the fallback would go
+  // straight to `/` and replace the note with the homepage (#678). The bare path
+  // is the same route, which is what the nearest-shell promise already offers.
+  for (const candidate of [pathname, ...shellPrefixCandidates(pathname)]) {
+    const response = await cache.match(candidate);
+    if (response) return { served: candidate, response };
   }
   return null;
 }

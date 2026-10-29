@@ -8,7 +8,6 @@
  * only exist for formatting disappear.
  */
 
-const HTML_TAG = /<\/?[a-z][^>]*>/gi;
 const IMAGE = /!\[([^\]]*)\]\([^)]*\)/g;
 const LINK = /\[([^\]]*)\]\([^)]*\)/g;
 const FENCE = /^(\s*)(```|~~~)[^\n]*$/gm;
@@ -19,11 +18,10 @@ const RULE = /^\s{0,3}(?:[-*_]\s*){3,}$/gm;
 const EMPHASIS = /(\*\*|__|\*|_|~~|`)/g;
 
 export function markdownToPlainText(markdown: string): string {
-  return markdown
+  return stripHtmlTags(markdown)
     .replace(FENCE, '')
     .replace(IMAGE, '$1')
     .replace(LINK, '$1')
-    .replace(HTML_TAG, '')
     .replace(HEADING, '')
     .replace(BLOCKQUOTE, '')
     .replace(LIST_MARKER, '')
@@ -31,6 +29,34 @@ export function markdownToPlainText(markdown: string): string {
     .replace(EMPHASIS, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Drops HTML tag spans from a single left-to-right pass.
+ *
+ * A preview is text in React, never markup, so this only keeps a pasted tag from
+ * showing up as `<b>`; a replace-based tag regex can be defeated by a nested
+ * `<scr<script>ipt>`, so the scan walks the string once and removes every span
+ * that starts a tag. A comparison such as `1 < 2 > 0` is left alone: `<` starts
+ * a tag only when a name or a closing slash follows it (CodeQL
+ * js/incomplete-multi-character-sanitization).
+ */
+function stripHtmlTags(value: string): string {
+  let output = '';
+  let index = 0;
+  while (index < value.length) {
+    const char = value[index];
+    if (char === '<' && /[a-z/]/i.test(value[index + 1] ?? '')) {
+      const close = value.indexOf('>', index + 1);
+      if (close !== -1) {
+        index = close + 1;
+        continue;
+      }
+    }
+    output += char;
+    index += 1;
+  }
+  return output;
 }
 
 /**
