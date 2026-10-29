@@ -124,6 +124,7 @@ export function createNewsService(repository: NewsRepository): NewsService {
           hasAnyDigest: dates.length > 0,
           preferences: null,
           personal: null,
+          limit: null,
         };
       }
 
@@ -135,6 +136,7 @@ export function createNewsService(repository: NewsRepository): NewsService {
         hasAnyDigest: dates.length > 0,
         preferences: selected.preferences,
         personal: null,
+        limit: null,
       };
     },
 

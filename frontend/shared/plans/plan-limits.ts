@@ -1,8 +1,9 @@
-import type {
-  LocalUsageActionKey,
-  OwnedItemKey,
-  PlanCaps,
-  UsageState,
+import {
+  VISITOR_COUNTER_CAPS,
+  type LocalUsageActionKey,
+  type OwnedItemKey,
+  type PlanCaps,
+  type UsageState,
 } from '@/shared/contracts/plans';
 import {
   identityUserId,
@@ -28,14 +29,18 @@ import { ApiError } from '@/frontend/transport/http';
  * a cold device must not block a create. The server is always the authority.
  */
 
-const CAPS_PREFIX = 'royaraqamia:plan-caps:';
-const USAGE_PREFIX = 'royaraqamia:usage:';
+const CAPS_PREFIX = 'royaraqamia:plan-caps:v2:';
+const USAGE_PREFIX = 'royaraqamia:usage:v2:';
 const LOCAL_USAGE_QUEUE_PREFIX = 'royaraqamia:local-usage-queue:';
 const LOCAL_USAGE_COUNTERS_PREFIX = 'royaraqamia:local-usage-counters:';
 const LOCAL_USAGE_MARKS_PREFIX = 'royaraqamia:local-usage-marks:';
 
-/** The visitor allowance, mirrored from the seeded `plan_settings` row. */
-export const ANONYMOUS_DAILY_CREDITS_FALLBACK = 10;
+/**
+ * A day is a Damascus day, the same one the server counts against: a daily
+ * allowance that flipped at UTC midnight would hand a reader in Damascus a new
+ * allowance two hours early (ADR-0093).
+ */
+const DAMASCUS_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Damascus' });
 
 interface CachedCaps extends PlanCaps {
   fetchedAt: number;
@@ -142,7 +147,41 @@ export function assertOwnedItemSlot(
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return DAMASCUS_DAY.format(new Date());
+}
+
+/** The Damascus day a local count belongs to, as `YYYY-MM-DD`. */
+export function localDay(): string {
+  return today();
+}
+
+/**
+ * The daily cap a device can enforce for itself, or null when it does not know
+ * one. A signed-in account with no cached caps is "not known yet" and is let
+ * through — the server answers the truth when the intent replays. A guest has no
+ * account to fetch a cap for, so the mirrored visitor number applies.
+ */
+export function localUsageCap(
+  identity: LocalIdentity,
+  actionKey: LocalUsageActionKey
+): number | null {
+  const caps = readCachedCaps(identity);
+  if (caps) {
+    if (caps.unlimited) return null;
+    return caps.counters[actionKey]?.cap ?? null;
+  }
+
+  return identityUserId(identity) ? null : VISITOR_COUNTER_CAPS[actionKey];
+}
+
+/** Whether this identity may still count one more of the action today. */
+export function canRecordLocalUsage(
+  identity: LocalIdentity,
+  actionKey: LocalUsageActionKey
+): boolean {
+  const cap = localUsageCap(identity, actionKey);
+  if (cap === null) return true;
+  return localUsageToday(identity, actionKey) < cap;
 }
 
 /**
@@ -154,9 +193,11 @@ function today(): string {
  * each other's counts.
  *
  * `dedupeKey` makes the action once-per-day (`quran:2:2026-10-22`): a re-read
- * the same day is not another credit, and the mark survives a flush so it stays
- * true until the date changes. Returns false when the action was already
- * counted, so the caller can skip its own bookkeeping too.
+ * the same day is not another count, and the mark survives a flush so it stays
+ * true until the date changes. Returns false when the action was already counted
+ * or the device already knows the day's cap is reached, so the caller can skip
+ * its own bookkeeping too — and so the queue never carries an intent the server
+ * is certain to refuse.
  */
 export function recordLocalUsage(
   identity: LocalIdentity,
@@ -169,8 +210,11 @@ export function recordLocalUsage(
     const marksKey = scopedKey(LOCAL_USAGE_MARKS_PREFIX, identity);
     const marks = readJson<Record<string, string>>(marksKey) ?? {};
     if (marks[dedupeKey] === date) return false;
+    if (!canRecordLocalUsage(identity, actionKey)) return false;
     marks[dedupeKey] = date;
     writeJson(marksKey, marks);
+  } else if (!canRecordLocalUsage(identity, actionKey)) {
+    return false;
   }
 
   const countersKey = scopedKey(LOCAL_USAGE_COUNTERS_PREFIX, identity);

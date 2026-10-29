@@ -10,8 +10,8 @@ price struck through.
 
 `PRO_SERVICE_DISCOUNT_PERCENT` is a constant in `shared/service-pricing.ts`, next to the helpers that
 apply it, not a column in `plan_settings`. ADR-0075's "every number comes from the catalog" rule is
-about allowances the database enforces: a credit pool or a cap is checked in Postgres, so a page that
-guessed it could promise something the write path refuses. A service discount is a marketing promise
+about allowances the database enforces: an item cap or a counted action is checked in Postgres
+(ADR-0093), so a page that guessed it could promise something the write path refuses. A service discount is a marketing promise
 on a flow that takes no payment; there is nothing to enforce, and the base prices it moves are already
 code constants (`TRAINING_COURSE`, `CONSULTATION_START_PRICE_USD`, `PROJECT_REQUEST_*_START_PRICE_USD`,
 `RETAINER_DEFAULT_MONTHLY_FEE_USD`). Keeping the percentage beside them means one deploy changes the

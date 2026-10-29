@@ -25,13 +25,28 @@ vi.mock('next/server', () => ({
 }));
 
 vi.mock('@/backend/loaders/news', () => ({
-  loadNewsBoard: (params: unknown, view: string) => mockLoadNewsBoard(params, view),
+  loadNewsBoard: (params: unknown, view: string, viewer?: unknown) =>
+    mockLoadNewsBoard(params, view, viewer),
   parseNewsQuery: (params: Record<string, string | undefined>) => ({
     q: params.q,
     category: params.category,
     date: params.date,
   }),
   parseNewsView: (params: { view?: string }) => (params.view === 'public' ? 'public' : 'mine'),
+}));
+
+vi.mock('@/backend/config/identity', () => ({
+  identity: { resolveOptional: async () => ({ user: null, client: null }) },
+}));
+
+vi.mock('@/backend/middleware/visitor-cookie', () => ({
+  readVisitorKey: () => 'visitor-1',
+}));
+
+const mockClaimNewsDigestOpen = vi.fn(async (..._args: unknown[]): Promise<unknown> => null);
+
+vi.mock('@/backend/services/news/digest-access', () => ({
+  claimNewsDigestOpen: (...args: unknown[]) => mockClaimNewsDigestOpen(...args),
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
@@ -76,12 +91,14 @@ const SHARED_BOARD: NewsBoard = {
   hasAnyDigest: true,
   preferences: null,
   personal: null,
+  limit: null,
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockCheckRateLimitApi.mockResolvedValue(null);
   mockLoadNewsBoard.mockResolvedValue(SHARED_BOARD);
+  mockClaimNewsDigestOpen.mockResolvedValue(null);
 });
 
 /**
@@ -103,7 +120,8 @@ describe('GET /api/news/board', () => {
     expect(res.headers['Cache-Control']).toBe('public, max-age=0, must-revalidate');
     expect(mockLoadNewsBoard).toHaveBeenCalledWith(
       { q: undefined, category: 'tech', date: '2026-10-25', view: 'mine' },
-      'mine'
+      'mine',
+      null
     );
   });
 
@@ -135,8 +153,53 @@ describe('GET /api/news/board', () => {
 
     expect(mockLoadNewsBoard).toHaveBeenCalledWith(
       { q: 'اتفاق', category: undefined, date: undefined, view: 'public' },
-      'public'
+      'public',
+      null
     );
+  });
+
+  it('answers an empty board with the limit when the reader has seen their share', async () => {
+    mockLoadNewsBoard.mockResolvedValue({
+      ...SHARED_BOARD,
+      day: {
+        digest: {
+          id: 'digest-1',
+          date: '2026-10-25',
+          title: 'عنوان',
+          lede: 'مقدّمة',
+          storyCount: 1,
+          model: 'model',
+          publishedAt: '2026-10-25T06:00:00.000Z',
+        },
+        stories: [],
+      },
+    });
+    mockClaimNewsDigestOpen.mockResolvedValue({ cap: 1, used: 1, visitor: true });
+
+    const res = (await boardGET(request())) as unknown as RouteResponse;
+
+    expect(res.headers['Cache-Control']).toBe('no-store');
+    expect((res.data as { board: NewsBoard }).board.day).toBeNull();
+    expect((res.data as { board: NewsBoard }).board.limit).toEqual({
+      cap: 1,
+      used: 1,
+      visitor: true,
+    });
+    expect(mockClaimNewsDigestOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ visitorKey: 'visitor-1' }),
+      '2026-10-25'
+    );
+  });
+
+  it('does not count an open for a search over the archive', async () => {
+    mockLoadNewsBoard.mockResolvedValue({
+      ...SHARED_BOARD,
+      search: { query: 'اتفاق', category: null, hits: [], truncated: false },
+    });
+
+    await boardGET(request({ q: 'اتفاق' }));
+
+    expect(mockClaimNewsDigestOpen).not.toHaveBeenCalled();
   });
 
   it('returns 429 with the limiter’s message when the per-IP limit is exhausted', async () => {

@@ -215,7 +215,15 @@ left open, decided here:
   spend is visible on the account card. Local-counter reports are the exception:
   they are deduplicated by design.
 
-## Amendment (2026-10-23): "enforceable on the server" means in Postgres
+## Amendment (2026-10-29): the credit pool is gone
+
+ADR-0093 replaces the rolling credit ledger with counted actions and restates the
+caps. Everything below about **owned-item caps** still holds — the trigger, the
+advisory lock, the `PL001` refusal, grandfathering and delete-frees-a-slot are
+unchanged — and everything below about **credits** (`spend_credits`,
+`spend_credits_once`, `spend_anonymous_credits`, `refund_*`, `get_usage_state`,
+`usage_action_costs`, the 30-day window and `plan_settings`' credit columns) is
+superseded and removed by that migration. Read ADR-0093 for the current model.
 
 The amendment above treated `PlanGate` as the enforcement point. It is not: the
 caps were counted in Node and the row inserted afterwards, in another

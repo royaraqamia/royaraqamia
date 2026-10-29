@@ -445,53 +445,51 @@ _Avoid_: Permission, consent, access token, connection
 ### Plans & usage
 
 **Plan**:
-What an account may spend and keep: the free plan or the paid plan, either of which reaches
-every product. A Plan is an entitlement, not a payment record — money moves off-system and an
-operator activates the plan by hand (ADR-0006, ADR-0075).
+What an account may keep and how many times it may act: the free plan or the paid plan, either of
+which reaches every product. A Plan is an entitlement, not a payment record — money moves off-system
+and an operator activates the plan by hand (ADR-0006, ADR-0093).
 _Avoid_: Subscription, tier, membership, package
 
-**Credit**:
-The unit one metered action spends from the Plan's rolling allowance. Reads are never charged; an
-action is. The remaining figure is computed from the ledger, never stored as a balance.
-_Avoid_: Quota, token, balance, points
-
-**Allowance window**:
-The rolling 30 days a credit spend counts against, floored by the last Activation or by the
-moment a paid Plan lapsed. A window has no reset date, only a length — the card reports what is
-left now.
-_Avoid_: Billing period, cycle, month
-
 **Owned-item cap**:
-How many things an account may hold — habits, expenses, short links, drafts, bookmarks, connected
-apps. A standing limit checked when a row is created; it is never a monthly charge on saved data,
-and lowering it never deletes anything.
+How many things an account may hold — notes, habits, expenses, links, drafts, posts, bookmarks,
+connected apps. A standing limit checked when a row is created; deleting the item frees its slot, it
+is never a monthly charge on saved data, and lowering it never deletes anything. Free 5, Pro 50
+(ADR-0093).
 _Avoid_: Limit, storage quota, seat
 
+**Counted action**:
+An action that leaves no row to count — a download, a digest opened, a scan, a surah read — measured
+against its own cap instead of a shared balance. A `lifetime` count never refills (a download is
+never given back); a `daily` count returns at Damascus midnight. Free 5, Pro 50, visitor 1.
+_Avoid_: Credit, quota, token, balance, points
+
+**Visitor allowance**:
+What someone without an account may do: one download ever, and one digest, one scan and one surah a
+day. The subject is a first-party cookie plus a salted IP hash, never an account, so the two
+identify one allowance. When it runs out the site offers sign-in — the free Plan.
+_Avoid_: Guest quota, trial, rate limit
+
 **Activation**:
-An operator's deliberate grant of the paid Plan for 30 days, recorded with amount, method, note
-and expiry in `plan_activations`. It raises the cap and starts a fresh window. Expiry lowers the
-cap and starts a fresh window too.
+An operator's deliberate grant of the paid Plan for 30 days, recorded with amount, method, note and
+expiry in `plan_activations`. It raises every cap; expiry lowers them again. Nothing is trimmed to
+fit.
 _Avoid_: Purchase, payment, upgrade, renewal
 
 **Usage card**:
-The account page's report of one number: credits spent and remaining in the current window, plus
-what the Plan makes available next. It never mixes in Owned-item caps.
+The account page's report of each counted action against its own cap — downloads, digests opened,
+scans, surah reads. There is no single number any more: one balance across actions was the credit
+pool ADR-0093 removed.
 _Avoid_: Dashboard, meter, quota bar
-
-**Anonymous allowance**:
-A visitor's 10 credits per rolling 24 hours, keyed on a salted IP hash rather than an account.
-When it runs out the site offers sign-in — the free Plan — instead of a dead end.
-_Avoid_: Guest quota, trial, rate limit
 
 **Local usage report**:
 The count of actions a device performed while no server was in the loop — a scan, a surah read
-today — sent afterwards for reconciliation, each with a client event id so a retried report is
-never charged twice. Only the count travels; the content never does.
+today — sent afterwards for reconciliation, each with a client event id so a retried report is never
+counted twice. Only the count travels; the content never does.
 _Avoid_: Telemetry, analytics, log
 
 **Plan gate**:
-The single seam a metered or capped write goes through: it reserves a credit, checks a standing cap
-first, and refunds when the action behind it fails.
+The single seam a counted or capped write goes through: it checks a standing cap first, counts an
+action atomically, and releases the count when the work behind it fails.
 _Avoid_: Middleware, interceptor, paywall
 
 ### News

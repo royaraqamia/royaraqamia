@@ -24,12 +24,14 @@ export async function listPlanUsers(query: {
       }
 
       const service = createUsageService();
-      const [page, settings] = await Promise.all([
+      const [page, settings, limits, counters] = await Promise.all([
         service.listUsers(parsed.data),
         service.getSettings(),
+        service.listLimits(),
+        service.listCounters(),
       ]);
 
-      return jsonResult(200, { success: true, ...page, settings });
+      return jsonResult(200, { success: true, ...page, settings, limits, counters });
     },
     { whenFailed: { success: false, error: 'تعذّر تحميل قائمة الاشتراكات.' } }
   );

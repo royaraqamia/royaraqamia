@@ -17,10 +17,10 @@ Four consequences are deliberate:
 - **Opt-in, not automatic.** The preference stores which sources were kept; `personal_enabled`
   records that the reader asked for a digest at all. Picking sources alone does not spend credits,
   and a reader who forgets they opted in does not wake up to a bill.
-- **Charged at publish, not at generation.** `news.digest.generate` (5 credits) is spent by
-  `publish-personal-digest.mjs` through `spend_credits`, so a run whose model output failed
-  validation costs nothing, and a refusal (an exhausted allowance) leaves the reader on the shared
-  digest instead of failing the workflow.
+- **Generation is free; opening is counted.** `publish-personal-digest.mjs` writes the digest and
+  charges nothing (ADR-0093), because a run whose model output failed validation publishes nothing
+  and a digest nobody opens should cost the reader nothing. What the plan limits is how many digests
+  a reader _opens_ per day, counted by the board route against the digest's date.
 - **A floor, not a target.** 3-12 stories, target 8. A reader who follows two quiet feeds gets
   nothing rather than a one-story "digest", because a nearly empty personal page reads as a broken
   site and the shared digest is strictly better.

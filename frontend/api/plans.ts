@@ -14,7 +14,12 @@ export async function getMyUsage(): Promise<UsageState> {
 
 export async function getMyCaps(): Promise<PlanCaps> {
   const data = await request<{ success: boolean } & PlanCaps>('/api/me/caps');
-  return { plan: data.plan, unlimited: data.unlimited, caps: data.caps };
+  return {
+    plan: data.plan,
+    unlimited: data.unlimited,
+    caps: data.caps,
+    counters: data.counters,
+  };
 }
 
 export async function getMyPlan(): Promise<MyPlan> {

@@ -6,52 +6,63 @@ import type {
   LocalUsageReportInput,
   OwnedItemKey,
   PlanCaps,
-  UsageActionKey,
+  UsageCounterKey,
 } from '@/shared/contracts/plans';
-import type { UsageService } from '@/backend/services/plans/usage-service';
+import type { CounterSubject, UsageService } from '@/backend/services/plans/usage-service';
 
 /**
- * What the request knows about who is spending. A signed-in caller spends their
- * own allowance; a visitor spends the shared per-IP allowance, which exists so
- * the public tools stay usable without an account (ADR-0075).
+ * What the request knows about who is being counted. A signed-in caller counts
+ * against their own allowance; a visitor counts against the pair (cookie,
+ * salted address), which exists so the public tools stay usable without an
+ * account (ADR-0093).
  */
 export interface PlanSubject {
   userId: string | null;
+  visitorKey?: string | null;
   ip?: string | null;
 }
 
 /**
- * The ledger's subject for a visitor: a salted hash, never the address itself.
- * The salt is server-only, so a database dump cannot be reversed by enumerating
- * the IPv4 space, and rotating the salt deliberately forgets every visitor's
- * window.
+ * The ledger's address half for a visitor: a salted hash, never the address
+ * itself. The salt is server-only, so a database dump cannot be reversed by
+ * enumerating the IPv4 space, and rotating the salt deliberately forgets every
+ * visitor's allowance.
  */
 export function hashAnonymousSubject(ip: string): string {
   return createHmac('sha256', env.anonymousIpSalt).update(ip.trim()).digest('hex');
 }
 
 /**
- * The one door every metered or capped write goes through.
+ * The one door every counted or capped write goes through.
  *
  * It exists so a controller says what the action is and what to run, and never
- * repeats the "reserve, run, refund" or "resolve the plan, count, compare"
- * choreography — getting that wrong is how a refused action still charges, or a
+ * repeats the "count, run, release" or "resolve the plan, count, compare"
+ * choreography — getting that wrong is how a refused action still counts, or a
  * cap check passes because it looked at the wrong plan.
  */
 export class PlanGate {
   constructor(private readonly usage: UsageService) {}
 
-  /** Spend for whoever made the request, run the action, refund on failure. */
-  async meter<T>(
+  /** Count one action, run the work, and release the count if the work failed. */
+  async count<T>(
     subject: PlanSubject,
-    actionKey: UsageActionKey,
-    run: () => Promise<T>
+    actionKey: UsageCounterKey,
+    run: () => Promise<T>,
+    options: { dedupeKey?: string | null } = {}
   ): Promise<T> {
-    if (subject.userId) return this.usage.runMetered(subject.userId, actionKey, run);
-    if (!subject.ip) {
-      throw new AppError('A metered action needs a signed-in user or a client address.', 500);
-    }
-    return this.usage.runMeteredAnonymous(hashAnonymousSubject(subject.ip), actionKey, run);
+    return this.usage.runCounted(this.subject(subject), actionKey, run, options);
+  }
+
+  /**
+   * Count one action without wrapping any work (an open the request already
+   * answered). Returns the event id, which a later failure can release.
+   */
+  claim(
+    subject: PlanSubject,
+    actionKey: UsageCounterKey,
+    options: { dedupeKey?: string | null } = {}
+  ): Promise<string | null> {
+    return this.usage.consume(this.subject(subject), actionKey, options);
   }
 
   /** Refuse a create that would pass a standing cap. */
@@ -59,30 +70,29 @@ export class PlanGate {
     await this.usage.assertOwnedItemCap(userId, item, incoming);
   }
 
-  /** Take one credit without wrapping an action (bulk flows use `meterMany`). */
-  reserve(userId: string, actionKey: UsageActionKey): Promise<string | null> {
-    return this.usage.reserve(userId, actionKey);
-  }
-
-  release(userId: string, eventId: string | null): Promise<void> {
+  release(userId: string | null, eventId: string | null): Promise<void> {
     return this.usage.release(userId, eventId);
   }
 
-  meterMany<T>(
-    userId: string,
-    actionKey: UsageActionKey,
-    count: number,
-    run: () => Promise<T>
-  ): Promise<T> {
-    return this.usage.runMeteredMany(userId, actionKey, count, run);
-  }
-
-  /** The caps to cache on the client, resolved for the account's plan. */
+  /** The allowances to cache on the client, resolved for the account's plan. */
   caps(userId: string): Promise<PlanCaps> {
     return this.usage.caps(userId);
   }
 
   report(userId: string, report: LocalUsageReportInput) {
     return this.usage.reportLocalUsage(userId, report);
+  }
+
+  private subject(subject: PlanSubject): CounterSubject {
+    if (subject.userId) return { userId: subject.userId };
+
+    const visitorKey = subject.visitorKey ?? null;
+    const ipHash = subject.ip ? hashAnonymousSubject(subject.ip) : null;
+
+    if (!visitorKey && !ipHash) {
+      throw new AppError('A counted action needs a signed-in user or a visitor.', 500);
+    }
+
+    return { userId: null, visitorKey, ipHash };
   }
 }

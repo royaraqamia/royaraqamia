@@ -2,50 +2,41 @@ import { describe, expect, it, vi } from 'vitest';
 import { hashAnonymousSubject, PlanGate } from '@/backend/services/plans/plan-gate';
 import { UsageService } from '@/backend/services/plans/usage-service';
 import type { UsageRepository } from '@/backend/repositories/plans/usage-repository';
-import type { UsageState } from '@/shared/contracts/plans';
+import type { UsageCounterState, UsageState } from '@/shared/contracts/plans';
+
+const downloadCounter: UsageCounterState = {
+  key: 'downloader.job.create',
+  label: 'تنزيل وسائط',
+  window: 'lifetime',
+  cap: 5,
+  used: 1,
+  remaining: 4,
+};
 
 const freeState: UsageState = {
   plan: 'free',
   unlimited: false,
-  cap: 100,
-  spent: 0,
-  remaining: 100,
-  windowDays: 30,
   expiresAt: null,
+  counters: [downloadCounter],
 };
 
 function makeRepository(overrides: Partial<UsageRepository> = {}): UsageRepository {
   return {
     getSettings: vi.fn(),
     listLimits: vi.fn(async () => [
-      { key: 'habits', label: 'العادات', freeCap: 5, proCap: 200, sortOrder: 10 },
+      { key: 'habits', label: 'العادات', freeCap: 5, proCap: 50, sortOrder: 10 },
     ]),
-    listActionCosts: vi.fn(),
+    listCounters: vi.fn(async () => []),
     getState: vi.fn(async () => freeState),
     listActivations: vi.fn(async () => []),
-    spend: vi.fn(async () => ({
-      allowed: true as const,
-      state: freeState,
-      cost: 1,
+    record: vi.fn(async () => ({
+      allowed: true,
+      duplicate: false,
       eventId: 'event-1',
+      state: downloadCounter,
     })),
-    spendOnce: vi.fn(async () => ({
-      allowed: true as const,
-      state: freeState,
-      cost: 1,
-      eventId: 'event-2',
-    })),
-    spendAnonymous: vi.fn(async () => ({
-      allowed: true as const,
-      cap: 10,
-      spent: 1,
-      remaining: 9,
-      cost: 1,
-      eventId: 'event-3',
-    })),
+    release: vi.fn(async () => true),
     countOwned: vi.fn(async () => 0),
-    refund: vi.fn(async () => true),
-    refundAnonymous: vi.fn(async () => true),
     activate: vi.fn(),
     userExists: vi.fn(async () => true),
     listUsers: vi.fn(),
@@ -59,79 +50,68 @@ function makeGate(overrides: Partial<UsageRepository> = {}) {
 }
 
 describe('PlanGate', () => {
-  it('spends the signed-in user allowance and runs the action', async () => {
+  it('counts a signed-in action and runs the work', async () => {
     const { repository, gate } = makeGate();
 
     await expect(
-      gate.meter({ userId: 'user-1', ip: '1.1.1.1' }, 'linksnap.link.create', async () => 'ok')
+      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => 'ok')
     ).resolves.toBe('ok');
-    expect(repository.spend).toHaveBeenCalledWith('user-1', 'linksnap.link.create');
-    expect(repository.spendAnonymous).not.toHaveBeenCalled();
+
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionKey: 'downloader.job.create',
+        userId: 'user-1',
+        visitorKey: null,
+      })
+    );
   });
 
-  it('spends the visitor allowance against a salted hash, never the address', async () => {
+  it('counts a visitor against the cookie and the salted address, never the address', async () => {
     const { repository, gate } = makeGate();
 
-    await gate.meter(
-      { userId: null, ip: '203.0.113.7' },
+    await gate.count(
+      { userId: null, visitorKey: 'visitor-1', ip: '203.0.113.7' },
       'downloader.job.create',
       async () => 'ok'
     );
 
-    const [subject] = vi.mocked(repository.spendAnonymous).mock.calls[0] ?? [];
-    expect(subject).toBe(hashAnonymousSubject('203.0.113.7'));
-    expect(subject).not.toContain('203.0.113.7');
+    const [input] = vi.mocked(repository.record).mock.calls[0] ?? [];
+    expect(input?.visitorKey).toBe('visitor-1');
+    expect(input?.ipHash).toBe(hashAnonymousSubject('203.0.113.7'));
+    expect(input?.ipHash).not.toContain('203.0.113.7');
   });
 
-  it('refuses to meter a subject it cannot identify', async () => {
+  it('refuses to count a subject it cannot identify', async () => {
     const { gate } = makeGate();
 
     await expect(
-      gate.meter({ userId: null, ip: null }, 'scanner.scan', async () => 'never')
-    ).rejects.toThrow('A metered action needs a signed-in user or a client address.');
+      gate.count({ userId: null, ip: null }, 'scanner.scan', async () => 'never')
+    ).rejects.toThrow('A counted action needs a signed-in user or a visitor.');
   });
 
-  it('refunds a signed-in reservation when the metered action throws', async () => {
+  it('releases the count when the work behind it throws', async () => {
     const { repository, gate } = makeGate();
-    const refusal = new Error('busy');
+    const failure = new Error('busy');
 
     await expect(
-      gate.meter({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => {
-        throw refusal;
-      })
-    ).rejects.toBe(refusal);
-
-    expect(repository.refund).toHaveBeenCalledWith('user-1', 'event-1');
-  });
-
-  it('refunds a visitor reservation when the metered action throws', async () => {
-    const { repository, gate } = makeGate();
-    const refusal = new Error('busy');
-
-    await expect(
-      gate.meter({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', async () => {
-        throw refusal;
-      })
-    ).rejects.toBe(refusal);
-
-    expect(repository.refundAnonymous).toHaveBeenCalledWith(
-      hashAnonymousSubject('203.0.113.7'),
-      'event-3'
-    );
-  });
-
-  it('refunds every unit of a bulk spend when the action fails', async () => {
-    const { repository, gate } = makeGate();
-    const failure = new Error('bulk failed');
-
-    await expect(
-      gate.meterMany('user-1', 'community.post.publish', 3, async () => {
+      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => {
         throw failure;
       })
     ).rejects.toBe(failure);
 
-    expect(repository.spend).toHaveBeenCalledTimes(3);
-    expect(repository.refund).toHaveBeenCalledTimes(3);
+    expect(repository.release).toHaveBeenCalledWith('user-1', 'event-1');
+  });
+
+  it('claims one action without wrapping any work', async () => {
+    const { repository, gate } = makeGate();
+
+    await expect(
+      gate.claim({ userId: 'user-1' }, 'news.digest.open', { dedupeKey: 'news:2026-10-29' })
+    ).resolves.toBe('event-1');
+
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({ dedupeKey: 'news:2026-10-29' })
+    );
   });
 
   it('checks the standing cap through the service', async () => {
@@ -141,6 +121,6 @@ describe('PlanGate', () => {
       statusCode: 402,
       code: 'owned_item_cap',
     });
-    expect(repository.spend).not.toHaveBeenCalled();
+    expect(repository.record).not.toHaveBeenCalled();
   });
 });

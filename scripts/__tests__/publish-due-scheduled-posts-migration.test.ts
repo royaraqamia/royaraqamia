@@ -8,9 +8,8 @@ import { describe, expect, it } from 'vitest';
  * SQL is the production code path. There is no local Supabase stack — these
  * assertions read the latest definition out of the migration history (a later
  * `create or replace` wins, as on the project) and pin the rules #570 depends
- * on: only due, live rows are touched, the published cap and the publish credit
- * are charged in the same transaction, and a refused or lost row is left
- * scheduled with nothing charged.
+ * on: only due, live rows are touched, the published cap is taken in the same
+ * transaction, and a refused or lost row is left scheduled with nothing charged.
  */
 
 const migrationsDir = resolve(process.cwd(), 'supabase/migrations');
@@ -83,18 +82,10 @@ describe('the scheduled-post promotion', () => {
     expect(body).toMatch(/when sqlstate 'pl001' then continue;/);
   });
 
-  it('spends one publish credit, and keeps the row scheduled when it cannot', () => {
-    expect(body).toContain(
-      "v_spend := public.spend_credits(v_due.author_id, 'community.post.publish');"
-    );
-    expect(body).toContain(
-      "if not coalesce((v_spend ->> 'allowed')::boolean, false) then continue; end if;"
-    );
-  });
-
-  it('tolerates an Admin spend, which carries no event to refund', () => {
-    expect(body).toContain("v_event_id := nullif(v_spend ->> 'eventid', '')::uuid;");
-    expect(body).toContain('elsif v_event_id is not null then');
+  it('charges nothing for the promotion: publishing is a slot, not a counted action', () => {
+    expect(body).not.toContain('spend_credits');
+    expect(body).not.toContain('refund_credits');
+    expect(body).not.toContain('v_spend');
   });
 
   it('publishes the row it locked, and only while it is still a live scheduled row', () => {
@@ -105,7 +96,7 @@ describe('the scheduled-post promotion', () => {
     expect(body).toContain("and p.status = 'scheduled'");
   });
 
-  it('refunds the credit when the guarded update loses the row', () => {
-    expect(body).toContain('perform public.refund_credits(v_due.author_id, v_event_id);');
+  it('leaves the row scheduled when the guarded update loses it', () => {
+    expect(body).toContain('if found then v_promoted := v_promoted + 1; end if;');
   });
 });

@@ -4,54 +4,55 @@ import {
   ActivationPayloadSchema,
   AdminPlansQuerySchema,
   AdminUserUsagePayloadSchema,
-  AnonymousSpendPayloadSchema,
-  SpendPayloadSchema,
+  UsageOutcomePayloadSchema,
   UsageStatePayloadSchema,
   type ActivatePlanInput,
   type ActivationResult,
   type AdminPlansQuery,
   type AdminUserUsagePage,
-  type AnonymousSpendOutcome,
   type OwnedItemKey,
   type PlanLimit,
   type PlanSettings,
   type PlanActivationRecord,
-  type SpendOutcome,
-  type UsageActionCost,
-  type UsageActionKey,
+  type UsageCounterKey,
+  type UsageLimit,
+  type UsageOutcome,
   type UsageState,
 } from '@/shared/contracts/plans';
 
 type PlanSettingsRow = Database['public']['Tables']['plan_settings']['Row'];
 type PlanLimitRow = Database['public']['Tables']['plan_limits']['Row'];
-type ActionCostRow = Database['public']['Tables']['usage_action_costs']['Row'];
+type UsageLimitRow = Database['public']['Tables']['usage_limits']['Row'];
 type ActivationRow = Database['public']['Tables']['plan_activations']['Row'];
 
+/** One counted action, as the caller knows it before the database resolves the subject. */
+export interface RecordUsageInput {
+  actionKey: UsageCounterKey;
+  userId: string | null;
+  visitorKey?: string | null;
+  ipHash?: string | null;
+  clientEventId?: string | null;
+  dedupeKey?: string | null;
+}
+
 /**
- * Everything the app knows about plans and allowance. The rolling window, the
- * cap and the atomic spend live in Postgres (ADR-0075), so this port is a set
- * of calls rather than an aggregate: a balance computed in Node could not be
- * serialised against a concurrent request.
+ * Everything the app knows about plans and allowances. The count, the cap and
+ * the insert live in Postgres (ADR-0093), so this port is a set of calls rather
+ * than an aggregate: a count computed in Node could not be serialised against a
+ * concurrent request.
  */
 export interface UsageRepository {
   getSettings(): Promise<PlanSettings>;
   listLimits(): Promise<PlanLimit[]>;
-  listActionCosts(): Promise<UsageActionCost[]>;
+  listCounters(): Promise<UsageLimit[]>;
   getState(userId: string): Promise<UsageState>;
   listActivations(userId: string): Promise<PlanActivationRecord[]>;
-  spend(userId: string, actionKey: UsageActionKey): Promise<SpendOutcome>;
-  /** A spend a client-reported counter already has an id for (idempotent). */
-  spendOnce(
-    userId: string,
-    actionKey: UsageActionKey,
-    clientEventId: string
-  ): Promise<SpendOutcome>;
-  spendAnonymous(ipHash: string, actionKey: UsageActionKey): Promise<AnonymousSpendOutcome>;
+  /** Count one action, or answer that the allowance is used up. */
+  record(input: RecordUsageInput): Promise<UsageOutcome>;
+  /** Delete an event a failed action wrote. Scoped to its subject. */
+  release(userId: string | null, eventId: string): Promise<boolean>;
   /** How many of an owned item the account currently holds (tombstones excluded). */
   countOwned(item: OwnedItemKey, userId: string): Promise<number>;
-  /** Give a reserved spend back when the action it preceded failed. */
-  refund(userId: string, eventId: string): Promise<boolean>;
-  refundAnonymous(ipHash: string, eventId: string): Promise<boolean>;
   activate(input: ActivatePlanInput & { activatedBy: string }): Promise<ActivationResult>;
   userExists(userId: string): Promise<boolean>;
   listUsers(query: AdminPlansQuery): Promise<AdminUserUsagePage>;
@@ -62,10 +63,6 @@ function toSettings(row: PlanSettingsRow): PlanSettings {
     priceCents: row.price_cents,
     currency: row.currency,
     durationDays: row.duration_days,
-    windowDays: row.window_days,
-    freeCredits: row.free_credits,
-    proCredits: row.pro_credits,
-    anonymousDailyCredits: row.anonymous_daily_credits,
   };
 }
 
@@ -79,11 +76,14 @@ function toLimit(row: PlanLimitRow): PlanLimit {
   };
 }
 
-function toActionCost(row: ActionCostRow): UsageActionCost {
+function toUsageLimit(row: UsageLimitRow): UsageLimit {
   return {
-    actionKey: row.action_key,
+    key: row.key,
     label: row.label_ar,
-    cost: row.cost,
+    window: row.window === 'daily' ? 'daily' : 'lifetime',
+    visitorCap: row.visitor_cap,
+    freeCap: row.free_cap,
+    proCap: row.pro_cap,
     sortOrder: row.sort_order,
   };
 }
@@ -128,23 +128,33 @@ export class SupabaseUsageRepository implements UsageRepository {
     return (data ?? []).map(toLimit);
   }
 
-  async listActionCosts(): Promise<UsageActionCost[]> {
+  async listCounters(): Promise<UsageLimit[]> {
     const { data, error } = await this.supabase
-      .from('usage_action_costs')
+      .from('usage_limits')
       .select('*')
       .order('sort_order', { ascending: true });
 
     if (error) throw error;
-    return (data ?? []).map(toActionCost);
+    return (data ?? []).map(toUsageLimit);
   }
 
   async getState(userId: string): Promise<UsageState> {
-    const { data, error } = await this.supabase.rpc('get_usage_state', {
+    const { data, error } = await this.supabase.rpc('get_usage_counters', {
       p_user_id: userId,
     });
 
     if (error) throw error;
-    return toUsageState(UsageStatePayloadSchema.parse(data));
+    const payload = UsageStatePayloadSchema.parse(data);
+
+    return {
+      plan: payload.plan,
+      unlimited: payload.unlimited,
+      expiresAt: payload.expiresAt,
+      counters: payload.counters.map((counter) => ({
+        ...counter,
+        key: counter.key as UsageCounterKey,
+      })),
+    };
   }
 
   async listActivations(userId: string): Promise<PlanActivationRecord[]> {
@@ -159,39 +169,35 @@ export class SupabaseUsageRepository implements UsageRepository {
     return (data ?? []).map(toActivation);
   }
 
-  async spend(userId: string, actionKey: UsageActionKey): Promise<SpendOutcome> {
-    const { data, error } = await this.supabase.rpc('spend_credits', {
-      p_user_id: userId,
-      p_action_key: actionKey,
+  async record(input: RecordUsageInput): Promise<UsageOutcome> {
+    const { data, error } = await this.supabase.rpc('record_usage', {
+      p_action_key: input.actionKey,
+      p_user_id: input.userId,
+      p_visitor_key: input.visitorKey ?? null,
+      p_ip_hash: input.ipHash ?? null,
+      p_client_event_id: input.clientEventId ?? null,
+      p_dedupe_key: input.dedupeKey ?? null,
     });
 
     if (error) throw error;
-    const payload = SpendPayloadSchema.parse(data);
-    const state = { ...toUsageState(payload), remaining: payload.remaining };
+    const payload = UsageOutcomePayloadSchema.parse(data);
 
-    return payload.allowed
-      ? { allowed: true, state, cost: payload.cost, eventId: payload.eventId }
-      : { allowed: false, state, cost: payload.cost, eventId: null };
+    return {
+      allowed: payload.allowed,
+      duplicate: payload.duplicate,
+      eventId: payload.eventId,
+      state: { ...payload.counter, key: payload.counter.key as UsageCounterKey },
+    };
   }
 
-  async spendOnce(
-    userId: string,
-    actionKey: UsageActionKey,
-    clientEventId: string
-  ): Promise<SpendOutcome> {
-    const { data, error } = await this.supabase.rpc('spend_credits_once', {
+  async release(userId: string | null, eventId: string): Promise<boolean> {
+    const { data, error } = await this.supabase.rpc('release_usage', {
+      p_event_id: eventId,
       p_user_id: userId,
-      p_action_key: actionKey,
-      p_client_event_id: clientEventId,
     });
 
     if (error) throw error;
-    const payload = SpendPayloadSchema.parse(data);
-    const state = { ...toUsageState(payload), remaining: payload.remaining };
-
-    return payload.allowed
-      ? { allowed: true, state, cost: payload.cost, eventId: payload.eventId }
-      : { allowed: false, state, cost: payload.cost, eventId: null };
+    return data === true;
   }
 
   /**
@@ -314,54 +320,6 @@ export class SupabaseUsageRepository implements UsageRepository {
     }
   }
 
-  async spendAnonymous(ipHash: string, actionKey: UsageActionKey): Promise<AnonymousSpendOutcome> {
-    const { data, error } = await this.supabase.rpc('spend_anonymous_credits', {
-      p_ip_hash: ipHash,
-      p_action_key: actionKey,
-    });
-
-    if (error) throw error;
-    const payload = AnonymousSpendPayloadSchema.parse(data);
-
-    return payload.allowed
-      ? {
-          allowed: true,
-          cap: payload.cap,
-          spent: payload.spent,
-          remaining: payload.remaining,
-          cost: payload.cost,
-          eventId: payload.eventId,
-        }
-      : {
-          allowed: false,
-          cap: payload.cap,
-          spent: payload.spent,
-          remaining: payload.remaining,
-          cost: payload.cost,
-          eventId: null,
-        };
-  }
-
-  async refund(userId: string, eventId: string): Promise<boolean> {
-    const { data, error } = await this.supabase.rpc('refund_credits', {
-      p_user_id: userId,
-      p_event_id: eventId,
-    });
-
-    if (error) throw error;
-    return data === true;
-  }
-
-  async refundAnonymous(ipHash: string, eventId: string): Promise<boolean> {
-    const { data, error } = await this.supabase.rpc('refund_anonymous_credits', {
-      p_ip_hash: ipHash,
-      p_event_id: eventId,
-    });
-
-    if (error) throw error;
-    return data === true;
-  }
-
   async activate(input: ActivatePlanInput & { activatedBy: string }): Promise<ActivationResult> {
     const { data, error } = await this.supabase.rpc('activate_plan', {
       p_user_id: input.userId,
@@ -402,9 +360,9 @@ export class SupabaseUsageRepository implements UsageRepository {
       total: payload.total,
       page: payload.page,
       pageSize: payload.pageSize,
-      windowDays: payload.windowDays,
     };
   }
+
   private async headCount(
     query: PromiseLike<{ count: number | null; error: unknown }>
   ): Promise<number> {
@@ -412,23 +370,4 @@ export class SupabaseUsageRepository implements UsageRepository {
     if (error) throw error;
     return count ?? 0;
   }
-}
-
-function toUsageState(payload: {
-  plan: 'free' | 'pro';
-  unlimited: boolean;
-  cap: number;
-  spent: number;
-  windowDays: number;
-  expiresAt: string | null;
-}): UsageState {
-  return {
-    plan: payload.plan,
-    unlimited: payload.unlimited,
-    cap: payload.cap,
-    spent: payload.spent,
-    remaining: Math.max(payload.cap - payload.spent, 0),
-    windowDays: payload.windowDays,
-    expiresAt: payload.expiresAt,
-  };
 }

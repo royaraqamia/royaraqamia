@@ -15,6 +15,7 @@ const mockRequest: Record<string, unknown> = {
   headers: new Headers(),
   cookies: {
     getAll: vi.fn().mockReturnValue([]),
+    get: vi.fn().mockReturnValue(undefined),
     set: vi.fn(),
   },
   nextUrl: mockNextUrl,
@@ -63,6 +64,7 @@ vi.mock('next/server', () => ({
         headers: new Headers({ location: href }),
         status: 307,
         url: href,
+        cookies: { set: cookieSetMock },
       };
     }),
   },
@@ -137,7 +139,35 @@ describe('proxy', () => {
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
 
-    expect(cookieSetMock).not.toHaveBeenCalled();
+    expect(cookieSetMock).not.toHaveBeenCalledWith(
+      'rr-country',
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it('mints a visitor id when the request carries none, and leaves an existing one alone', async () => {
+    const { proxy } = await import('@/proxy');
+    await proxy(mockRequest as never);
+
+    expect(cookieSetMock).toHaveBeenCalledWith(
+      'rar_visitor',
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
+      expect.objectContaining({ path: '/', httpOnly: true })
+    );
+
+    cookieSetMock.mockClear();
+    (mockRequest.cookies as { get: ReturnType<typeof vi.fn> }).get.mockReturnValue({
+      value: '11111111-1111-4111-8111-111111111111',
+    });
+
+    await proxy(mockRequest as never);
+
+    expect(cookieSetMock).not.toHaveBeenCalledWith(
+      'rar_visitor',
+      expect.anything(),
+      expect.anything()
+    );
   });
 
   it('does not refresh the session on public pages, even with a session cookie', async () => {

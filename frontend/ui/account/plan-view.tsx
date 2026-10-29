@@ -27,11 +27,6 @@ function formatMoney(cents: number, currency: string): string {
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
 }
 
-function usagePercent(spent: number, cap: number): number {
-  if (cap <= 0) return 100;
-  return Math.min(100, Math.round((spent / cap) * 100));
-}
-
 /**
  * The member's plan and every activation behind it. The view owns the guard
  * (as the other `/account` children do), so the document is a data-free shell
@@ -59,7 +54,7 @@ export function PlanView() {
         <div className="space-y-1">
           <p className="text-base font-bold text-foreground">سجِّل الدُّخول لعرض اشتراكك</p>
           <p className="text-xs text-muted-foreground sm:text-sm">
-            رصيدك وسجلّ التفعيل يتبعان حسابك.
+            استهلاكك وسجلّ التفعيل يتبعان حسابك.
           </p>
         </div>
         <SignInCta
@@ -110,35 +105,31 @@ export function PlanView() {
           </Badge>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
-          <p className="flex items-baseline gap-1.5" dir="ltr">
-            <span className="text-2xl font-black tracking-tight text-foreground">
-              {state.unlimited ? 'غير محدود' : formatCount(state.remaining)}
-            </span>
-            {!state.unlimited && (
-              <span className="text-sm text-muted-foreground">/ {formatCount(state.cap)}</span>
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground">رصيد متبقٍّ من {state.windowDays} يوماً</p>
-        </div>
+        <ul className="mt-3 space-y-1.5">
+          {state.counters.map((counter) => (
+            <li
+              key={counter.key}
+              className="flex items-center justify-between gap-3 text-xs sm:text-sm"
+            >
+              <span className="text-muted-foreground">{counter.label}</span>
+              <span className="shrink-0 font-bold text-foreground" dir="ltr">
+                {state.unlimited
+                  ? 'غير محدود'
+                  : `${formatCount(counter.used)} / ${formatCount(counter.cap)}`}
+              </span>
+            </li>
+          ))}
+        </ul>
 
-        {!state.unlimited && (
-          <div
-            className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted"
-            role="img"
-            aria-label={`استُهلك ${usagePercent(state.spent, state.cap)} بالمئة من الرصيد`}
-          >
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${usagePercent(state.spent, state.cap)}%` }}
-            />
-          </div>
-        )}
+        <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+          {state.unlimited
+            ? 'حساب مشرف: لا تنطبق عليه حدود الاستهلاك.'
+            : 'التَّنزيلات حدٌّ دائم لا يتجدَّد، والعدّادات اليوميّة تعود عند منتصف اللَّيل بتوقيت دمشق.'}
+        </p>
 
         {state.plan === 'pro' && state.expiresAt && (
-          <p className="mt-2.5 text-xs text-muted-foreground">
-            تنتهي الخطة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطة المجانيَّة برصيد
-            جديد.
+          <p className="mt-2 text-xs text-muted-foreground">
+            تنتهي الخطة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطة المجانيَّة بحدودها.
           </p>
         )}
       </section>

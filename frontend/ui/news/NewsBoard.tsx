@@ -11,6 +11,7 @@ import {
   usePublicSnapshotRecorder,
 } from '@/frontend/shared/local-store/snapshot';
 import { requestWithMeta } from '@/frontend/transport/http';
+import { formatCount } from '@/frontend/shared/format';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
 import { StoryCard } from '@/frontend/ui/news/StoryCard';
@@ -31,6 +32,7 @@ import {
   formatDigestDayShort,
   type NewsBoard as NewsBoardData,
   type NewsCategory,
+  type NewsDigestLimit,
   type NewsPersonalView,
 } from '@/shared/contracts/news';
 
@@ -73,6 +75,7 @@ export function NewsBoard() {
 
   const [liveBoard, setLiveBoard] = useState<NewsDigestSnapshot | null>(null);
   const [personal, setPersonal] = useState<NewsPersonalView | null>(null);
+  const [limit, setLimit] = useState<NewsDigestLimit | null>(null);
   const [recordable, setRecordable] = useState<NewsDigestSnapshot | null>(null);
   const [failure, setFailure] = useState<ReadFailure | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +91,7 @@ export function NewsBoard() {
         const next = toNewsDigestSnapshot(data.board, new Date().toISOString());
         setLiveBoard(next);
         setPersonal(data.board.personal);
+        setLimit(data.board.limit ?? null);
         // A personalised answer is `no-store`: it is not a public row, so it is
         // not recorded (the redaction rule, enforced at the response).
         setRecordable(keepable ? next : null);
@@ -260,6 +264,24 @@ export function NewsBoard() {
                 لا أخبار في هذا القسم لهذا اليوم.
               </p>
             )}
+          </section>
+        ) : limit ? (
+          <section
+            aria-label="حدّ المُلخَّصات اليومي"
+            className="rounded-3xl border border-primary/30 bg-primary/5 p-8 text-center"
+          >
+            <h2 className="text-xl font-extrabold">بلغتَ حدّ مُلخَّصات اليوم</h2>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+              {limit.visitor
+                ? 'شاهدت المُخلَّص المسموح به للزُّوّار اليوم. سجِّل الدُّخول لمتابعة قراءة أرشيف الأخبار.'
+                : `شاهدت ${formatCount(limit.cap)} مُلخَّصات اليوم، وهو حدّ خطتك الحالية. يعود العدّاد عند منتصف اللَّيل بتوقيت دمشق.`}
+            </p>
+            <Link
+              href={limit.visitor ? '/auth/login?redirect=%2Fnews' : '/pricing'}
+              className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {limit.visitor ? 'تسجيل الدُّخول' : 'الاطّلاع على الخطط'}
+            </Link>
           </section>
         ) : (
           <section className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center">

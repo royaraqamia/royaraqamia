@@ -32,16 +32,15 @@ vi.mock('@/backend/config/downloader', () => ({
 }));
 
 // The gate double is configurable through `mockMeter`, so a test can make the
-// spend refuse (a 402) while every other test passes straight through.
+// count refuse (a 402) while every other test passes straight through.
 vi.mock('@/backend/config/plans', () => ({
   createPlanGate: () => ({
-    meter: (subject: unknown, action: string, run: () => Promise<unknown>) =>
+    count: (subject: unknown, action: string, run: () => Promise<unknown>) =>
       mockMeter(subject, action, run),
-    meterMany: async (_u: string, _a: string, _c: number, run: () => Promise<unknown>) => run(),
-    reserve: async () => 'event-1',
+    claim: async () => 'event-1',
     release: async () => {},
     cap: async () => {},
-    caps: async () => ({ plan: 'free', unlimited: false, caps: {} }),
+    caps: async () => ({ plan: 'free', unlimited: false, caps: {}, counters: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
   }),
 }));
@@ -49,17 +48,16 @@ vi.mock('@/backend/config/plans', () => ({
 import { createDownloadJob, recordDownloadCallback } from '@/backend/controllers/downloader';
 import { downloaderRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { DownloadBusyError } from '@/backend/services/downloader/downloader-service';
-import { InsufficientCreditsError } from '@/backend/services/plans/usage-service';
-import type { UsageState } from '@/shared/contracts/plans';
+import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
+import type { UsageCounterState } from '@/shared/contracts/plans';
 
-const freeState: UsageState = {
-  plan: 'free',
-  unlimited: false,
-  cap: 100,
-  spent: 40,
-  remaining: 60,
-  windowDays: 30,
-  expiresAt: null,
+const downloadCounter: UsageCounterState = {
+  key: 'downloader.job.create',
+  label: 'تنزيل وسائط',
+  window: 'lifetime',
+  cap: 5,
+  used: 5,
+  remaining: 0,
 };
 
 const VALID_BODY = { url: 'https://example.com/v/1', format: 'video-720p' };
@@ -139,13 +137,13 @@ describe('downloader controller createDownloadJob', () => {
   });
 
   it('answers 402 with the plan refusal code when the allowance is spent', async () => {
-    mockMeter.mockRejectedValue(new InsufficientCreditsError(freeState));
+    mockMeter.mockRejectedValue(new UsageLimitReachedError(downloadCounter, false));
 
     const result = await createDownloadJob(VALID_BODY, IP);
 
     expect(result).toMatchObject({
       status: 402,
-      body: { success: false, code: 'insufficient_credits' },
+      body: { success: false, code: 'usage_limit' },
     });
     expect(mockCreate).not.toHaveBeenCalled();
     expect(mockRunAfter).not.toHaveBeenCalled();

@@ -28,11 +28,25 @@ import { UsageCard } from '../usage-card';
 const freeState: UsageState = {
   plan: 'free',
   unlimited: false,
-  cap: 100,
-  spent: 40,
-  remaining: 60,
-  windowDays: 30,
   expiresAt: null,
+  counters: [
+    {
+      key: 'downloader.job.create',
+      label: 'تنزيل وسائط',
+      window: 'lifetime',
+      cap: 5,
+      used: 2,
+      remaining: 3,
+    },
+    {
+      key: 'news.digest.open',
+      label: 'فتح مُلخَّص أخبار',
+      window: 'daily',
+      cap: 5,
+      used: 1,
+      remaining: 4,
+    },
+  ],
 };
 
 beforeEach(() => {
@@ -52,14 +66,16 @@ describe('UsageCard', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows the remaining credits and where to find the details', () => {
+  it('shows each counted action against its own cap', () => {
     mocks.session.user = { id: 'u1' };
     mocks.usage.state = freeState;
 
     render(<UsageCard />);
 
-    expect(screen.getByText('60')).toBeInTheDocument();
-    expect(screen.getByText('/ 100')).toBeInTheDocument();
+    expect(screen.getByText('تنزيل وسائط')).toBeInTheDocument();
+    expect(screen.getByText('2 / 5')).toBeInTheDocument();
+    expect(screen.getByText('فتح مُلخَّص أخبار')).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /التَّفاصيل والسِّجل/ })).toHaveAttribute(
       'href',
       '/account/plan'
@@ -73,26 +89,32 @@ describe('UsageCard', () => {
     mocks.usage.state = {
       ...freeState,
       plan: 'pro',
-      cap: 10000,
-      spent: 2000,
-      remaining: 8000,
+      counters: [
+        {
+          key: 'downloader.job.create',
+          label: 'تنزيل وسائط',
+          window: 'lifetime',
+          cap: 50,
+          used: 2,
+          remaining: 48,
+        },
+      ],
       expiresAt: '2026-11-21T12:00:00.000Z',
     };
 
     render(<UsageCard />);
 
-    expect(screen.getByText('8,000')).toBeInTheDocument();
+    expect(screen.getByText('2 / 50')).toBeInTheDocument();
     expect(screen.getByText('الخطة المدفوعة')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ترقية الخطة/ })).not.toBeInTheDocument();
   });
 
-  it('reports an Admin as unlimited instead of a bar', () => {
+  it('reports an Admin as unlimited', () => {
     mocks.session.user = { id: 'admin-1' };
     mocks.usage.state = { ...freeState, unlimited: true };
 
     render(<UsageCard />);
 
     expect(screen.getAllByText('غير محدود').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 });

@@ -4,7 +4,7 @@ import { FreePlanCta, PaidPlanCta, PlanViewerProvider } from '@/frontend/ui/plan
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { formatCount } from '@/frontend/shared/format';
 import { PRO_SERVICE_DISCOUNT_PERCENT } from '@/shared/service-pricing';
-import type { PlanCatalog, UsageActionKey } from '@/shared/contracts/plans';
+import type { PlanCatalog } from '@/shared/contracts/plans';
 
 const FREE = 'free' as const;
 const PRO = 'pro' as const;
@@ -24,30 +24,33 @@ function capOf(catalog: PlanCatalog, key: string, plan: typeof FREE | typeof PRO
   return plan === PRO ? limit.proCap : limit.freeCap;
 }
 
-function actionsFor(catalog: PlanCatalog, credits: number, key: UsageActionKey): number {
-  const cost = catalog.costs.find((entry) => entry.actionKey === key)?.cost ?? 1;
-  return Math.floor(credits / cost);
+function counterCapOf(
+  catalog: PlanCatalog,
+  key: string,
+  plan: typeof FREE | typeof PRO | 'visitor'
+): number {
+  const limit = catalog.counters.find((entry) => entry.key === key);
+  if (!limit) return 0;
+  if (plan === 'visitor') return limit.visitorCap;
+  return plan === PRO ? limit.proCap : limit.freeCap;
 }
 
 /**
  * The public pricing page. Every number comes from the plan catalog
- * (`plan_settings`, `plan_limits`, `usage_action_costs`), so the page cannot
- * promise an allowance the database does not enforce (ADR-0075).
+ * (`plan_settings`, `plan_limits`, `usage_limits`), so the page cannot promise an
+ * allowance the database does not enforce (ADR-0093).
+ *
+ * Two kinds of allowance are stated apart, because they behave differently: an
+ * owned-item cap frees a slot when the item is deleted, a counted action is a
+ * number of times (never refilling for a download, resetting at Damascus
+ * midnight for a digest, a scan or a surah).
  *
  * It is deliberately reachable without an account: the account row links here
- * for guests too, and a visitor has an allowance of their own.
+ * for guests too, and a visitor has an allowance of their own — stated once as a
+ * footnote rather than as a third column, because a visitor is not a plan.
  */
 export function PricingView({ catalog }: { catalog: PlanCatalog }) {
   const { settings } = catalog;
-  const free = settings.freeCredits;
-  const pro = settings.proCredits;
-
-  const postsFree = actionsFor(catalog, free, 'community.post.publish');
-  const linksFree = actionsFor(catalog, free, 'linksnap.link.create');
-  const downloadsFree = actionsFor(catalog, free, 'downloader.job.create');
-
-  const postsPro = actionsFor(catalog, pro, 'community.post.publish');
-  const linksPro = actionsFor(catalog, pro, 'linksnap.link.create');
 
   const subscribeMessage = `أريد الاشتراك في الخطة المدفوعة: ${priceLabel(
     settings.priceCents,
@@ -75,23 +78,39 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
             </p>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              <strong className="font-bold text-foreground">{formatCount(free)}</strong> رصيدًا كل{' '}
-              {settings.windowDays} يومًا
+              <strong className="font-bold text-foreground">
+                {formatCount(capOf(catalog, 'notes', FREE))}
+              </strong>{' '}
+              عناصر من كل نوع، و
+              <strong className="font-bold text-foreground">
+                {formatCount(counterCapOf(catalog, 'downloader.job.create', FREE))}
+              </strong>{' '}
+              تنزيلات.
             </p>
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>
-                حتى {formatCount(postsFree)} منشورات، أو {formatCount(linksFree)} رابطًا مختصرًا، أو{' '}
-                {formatCount(downloadsFree)} تنزيلًا — كلُّها من الرصيد نفسه.
-              </PlanPoint>
-              <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'habits', FREE))} عادات، و
-                {formatCount(capOf(catalog, 'short_links', FREE))} رابطًا محفوظًا، و
+                {formatCount(capOf(catalog, 'expenses', FREE))} مصروفًا، و
+                {formatCount(capOf(catalog, 'budgets', FREE))} ميزانيات، و
                 {formatCount(capOf(catalog, 'notes', FREE))} ملاحظة.
               </PlanPoint>
               <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'community_published', FREE))} منشورًا في المجتمع، و
+                حتى {formatCount(capOf(catalog, 'short_links', FREE))} رابطًا مختصرًا، و
                 {formatCount(capOf(catalog, 'quran_bookmarks', FREE))} علامة في القرآن.
+              </PlanPoint>
+              <PlanPoint>
+                حتى {formatCount(capOf(catalog, 'community_published', FREE))} منشورًا في المجتمع، و
+                {formatCount(capOf(catalog, 'community_drafts', FREE))} مسودّات.
+              </PlanPoint>
+              <PlanPoint>
+                {formatCount(counterCapOf(catalog, 'downloader.job.create', FREE))} تنزيلات، لا
+                تتجدَّد أبدًا.
+              </PlanPoint>
+              <PlanPoint>
+                يوميًّا: {formatCount(counterCapOf(catalog, 'news.digest.open', FREE))} مُلخَّصات
+                أخبار، و{formatCount(counterCapOf(catalog, 'scanner.scan', FREE))} عمليات مسح، و
+                {formatCount(counterCapOf(catalog, 'quran.surah.read', FREE))} سور.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'mcp_connected_apps', FREE))} تطبيق MCP متَّصل.
@@ -121,23 +140,39 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
             </p>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              <strong className="font-bold text-foreground">{formatCount(pro)}</strong> رصيدًا كل{' '}
-              {settings.windowDays} يومًا
+              <strong className="font-bold text-foreground">
+                {formatCount(capOf(catalog, 'notes', PRO))}
+              </strong>{' '}
+              عنصرًا من كل نوع، و
+              <strong className="font-bold text-foreground">
+                {formatCount(counterCapOf(catalog, 'downloader.job.create', PRO))}
+              </strong>{' '}
+              تنزيلًا.
             </p>
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>
-                حتى {formatCount(postsPro)} منشورًا، أو {formatCount(linksPro)} رابطًا مختصرًا، أو{' '}
-                {formatCount(actionsFor(catalog, pro, 'downloader.job.create'))} تنزيلًا.
-              </PlanPoint>
-              <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'habits', PRO))} عادة، و
-                {formatCount(capOf(catalog, 'short_links', PRO))} رابطًا محفوظًا، و
+                {formatCount(capOf(catalog, 'expenses', PRO))} مصروفًا، و
+                {formatCount(capOf(catalog, 'budgets', PRO))} ميزانيّة، و
                 {formatCount(capOf(catalog, 'notes', PRO))} ملاحظة.
               </PlanPoint>
               <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'community_published', PRO))} منشورًا في المجتمع، و
+                حتى {formatCount(capOf(catalog, 'short_links', PRO))} رابطًا مختصرًا، و
                 {formatCount(capOf(catalog, 'quran_bookmarks', PRO))} علامة في القرآن.
+              </PlanPoint>
+              <PlanPoint>
+                حتى {formatCount(capOf(catalog, 'community_published', PRO))} منشورًا في المجتمع، و
+                {formatCount(capOf(catalog, 'community_drafts', PRO))} مسودّة.
+              </PlanPoint>
+              <PlanPoint>
+                {formatCount(counterCapOf(catalog, 'downloader.job.create', PRO))} تنزيلًا، لا
+                يتجدَّد أبدًا.
+              </PlanPoint>
+              <PlanPoint>
+                يوميًّا: {formatCount(counterCapOf(catalog, 'news.digest.open', PRO))} مُلخَّص
+                أخبار، و{formatCount(counterCapOf(catalog, 'scanner.scan', PRO))} عملية مسح، و
+                {formatCount(counterCapOf(catalog, 'quran.surah.read', PRO))} سورة.
               </PlanPoint>
               <PlanPoint>
                 حتى {formatCount(capOf(catalog, 'mcp_connected_apps', PRO))} تطبيقات MCP متَّصلة.
@@ -153,6 +188,13 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
           </div>
         </section>
       </PlanViewerProvider>
+
+      <p className="mx-auto max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
+        بدون حساب: {formatCount(counterCapOf(catalog, 'downloader.job.create', 'visitor'))} تنزيل، و
+        {formatCount(counterCapOf(catalog, 'news.digest.open', 'visitor'))} مُلخَّص أخبار يوميًّا، و
+        {formatCount(counterCapOf(catalog, 'scanner.scan', 'visitor'))} عملية مسح، و
+        {formatCount(counterCapOf(catalog, 'quran.surah.read', 'visitor'))} سورة يوميًّا.
+      </p>
     </div>
   );
 }
