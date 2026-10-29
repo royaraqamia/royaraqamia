@@ -21,6 +21,7 @@ import {
   type NewsDigestSnapshot,
 } from '@/frontend/ui/news/news-snapshot';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 import {
   ReadFailureNotice,
   toReadFailure,
@@ -29,7 +30,6 @@ import {
 import { formatCapturedAt } from '@/frontend/ui/news/news-format';
 import {
   NEWS_RETENTION_DAYS,
-  formatDigestDayShort,
   type NewsBoard as NewsBoardData,
   type NewsCategory,
   type NewsCardsLimit,
@@ -249,16 +249,11 @@ export function NewsBoard() {
         ) : view.day ? (
           <section aria-label="مُلخَّص اليوم">
             {stories.length > 0 ? (
-              <>
-                <p className="mb-4 text-center text-[11px] font-bold text-muted-foreground">
-                  مُلخَّص {formatDigestDayShort(view.day.digest.date)}
-                </p>
-                <div className="space-y-4">
-                  {stories.map((story) => (
-                    <StoryCard key={story.id} story={story} />
-                  ))}
-                </div>
-              </>
+              <div className="space-y-4">
+                {stories.map((story) => (
+                  <StoryCard key={story.id} story={story} />
+                ))}
+              </div>
             ) : (
               <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
                 لا أخبار في هذا القسم لهذا اليوم.
@@ -291,12 +286,14 @@ export function NewsBoard() {
                 ? `تعرض لك الصفحة ${formatCount(cards.shown)} من ${formatCount(cards.total)} بطاقة كزائر. سجِّل الدُّخول لرؤية المزيد.`
                 : `تعرض لك الصفحة ${formatCount(cards.shown)} من ${formatCount(cards.total)} بطاقة، وهو حدّ خطتك الحالية.`}
             </p>
-            <Link
-              href={cards.visitor ? '/auth/login?redirect=%2Fnews' : '/pricing'}
-              className="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              {cards.visitor ? 'تسجيل الدُّخول' : 'الاطّلاع على الخطط'}
-            </Link>
+            <HeroCtaButton asChild className="mt-4">
+              <Link href={cards.visitor ? '/auth/login?redirect=%2Fnews' : '/pricing'}>
+                <HeroCtaSheen />
+                <span className="relative z-10">
+                  {cards.visitor ? 'تسجيل الدُّخول' : 'الاطّلاع على الخطط'}
+                </span>
+              </Link>
+            </HeroCtaButton>
           </div>
         ) : null}
       </div>
