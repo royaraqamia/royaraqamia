@@ -59,7 +59,7 @@ export function NoteComposerDialog({ open, onOpenChange, onCreate }: NoteCompose
           <DialogTitle className="text-center">ملاحظة جديدة</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
+        <div className="min-w-0 space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
           <div className="space-y-1.5">
             <Label htmlFor="composer-note-title">العنوان</Label>
             <Input
