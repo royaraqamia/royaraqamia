@@ -45,6 +45,15 @@ export interface BearerIdentityReader {
 }
 
 /**
+ * Reads a bearer token into the same shape as a cookie session: the user plus a
+ * client that carries the caller's token. `null` means the token was absent or
+ * rejected; it never throws.
+ */
+export interface TokenSessionReader {
+  read(authorization: string | null): Promise<SessionResolution | null>;
+}
+
+/**
  * The three outcomes the guards need. `anonymous` and `forbidden` are distinct
  * so an Admin policy can answer 401 versus 403 without inspecting a message.
  */
@@ -108,6 +117,13 @@ export interface BearerReaderDeps {
   onError?: (error: unknown) => void;
 }
 
+/** The token a `Bearer` header names, or null when the header is another shape. */
+function bearerToken(authorization: string | null): string | null {
+  if (!authorization || !authorization.startsWith('Bearer ')) return null;
+  const token = authorization.substring(7);
+  return token.length > 0 ? token : null;
+}
+
 /**
  * The bearer adapter: the public client plus a token argument, not the cookie
  * path. Its contract always yields an email string, so an absent one is `''`.
@@ -115,8 +131,7 @@ export interface BearerReaderDeps {
 export function createBearerIdentityReader(deps: BearerReaderDeps): BearerIdentityReader {
   return {
     async read(authorization) {
-      if (!authorization || !authorization.startsWith('Bearer ')) return null;
-      const token = authorization.substring(7);
+      const token = bearerToken(authorization);
       if (!token) return null;
 
       try {
@@ -126,6 +141,106 @@ export function createBearerIdentityReader(deps: BearerReaderDeps): BearerIdenti
         deps.onError?.(error);
         return null;
       }
+    },
+  };
+}
+
+export interface TokenSessionReaderDeps {
+  /** Validates the token; the same reader the user-only adapter uses. */
+  getUser: (token: string) => Promise<{ user: AuthUser | null }>;
+  /** Builds a client whose requests carry this token, not the deployment's. */
+  createClient: (token: string) => SupabaseClient<Database>;
+  onError?: (error: unknown) => void;
+}
+
+/**
+ * The token-scoped session adapter.
+ *
+ * A header is not a credential: the route has to act as the token's user, and
+ * a client built from cookies would quietly resolve someone else (or nobody).
+ * The token is validated first, so a client is only ever built for a live
+ * identity.
+ */
+export function createTokenSessionReader(deps: TokenSessionReaderDeps): TokenSessionReader {
+  return {
+    async read(authorization) {
+      const token = bearerToken(authorization);
+      if (!token) return null;
+
+      try {
+        const { user } = await deps.getUser(token);
+        const authUser = toAuthUser(user);
+        if (!authUser) return null;
+        return { user: authUser, client: deps.createClient(token) };
+      } catch (error) {
+        deps.onError?.(error);
+        return null;
+      }
+    },
+  };
+}
+
+export interface RequestIdentityReaderDeps {
+  /** The request's `Authorization` header, or null when there is no request. */
+  authorization: () => Promise<string | null>;
+  session: SessionIdentityReader;
+  token: TokenSessionReader;
+  /**
+   * The client an unauthenticated resolution carries. It is never used: every
+   * caller checks the user first, and the RLS it runs under is the anonymous
+   * one rather than a cookie jar that could name somebody else.
+   */
+  anonymousClient: () => SupabaseClient<Database>;
+}
+
+function isBearer(authorization: string | null): boolean {
+  return Boolean(authorization && authorization.startsWith('Bearer '));
+}
+
+/**
+ * The request-aware reader: a Bearer token when one was sent, else the cookie.
+ *
+ * A Bearer header is authoritative, including when its token is rejected. The
+ * app has no jar to fall back to, and an expired token must not let whatever
+ * cookies a native HTTP stack happens to hold answer for another identity —
+ * the boundary ADR-0088 draws. A request with no Bearer header follows the
+ * cookie path exactly as before, and a non-Bearer scheme is not a token either.
+ *
+ * The authorization lookup is guarded because some callers run outside a
+ * request (a build-time render, a unit test) and there is simply no header
+ * there.
+ */
+export function createRequestIdentityReader(
+  deps: RequestIdentityReaderDeps
+): SessionIdentityReader {
+  async function requestAuthorization(): Promise<string | null> {
+    try {
+      return await deps.authorization();
+    } catch {
+      return null;
+    }
+  }
+
+  return {
+    async read() {
+      const authorization = await requestAuthorization();
+      if (isBearer(authorization)) {
+        const bearer = await deps.token.read(authorization);
+        return bearer ?? { user: null, client: deps.anonymousClient() };
+      }
+      return deps.session.read();
+    },
+
+    async readOptional() {
+      try {
+        const authorization = await requestAuthorization();
+        if (isBearer(authorization)) {
+          return (await deps.token.read(authorization)) ?? { user: null, client: null };
+        }
+      } catch {
+        // A token that cannot be read is not a session; answer anonymously.
+      }
+      return deps.session.readOptional();
     },
   };
 }
@@ -168,14 +283,20 @@ export interface IdentityModule {
   resolveAdmin(): Promise<AdminResolution>;
 }
 
+/**
+ * `request` is the Bearer-or-cookie reader the request-scoped guards use; the
+ * bare `session` reader stays the cookie-only fallback for callers that do not
+ * have a request (and for tests that only exercise the cookie path).
+ */
 export function createIdentityModule(
   session: SessionIdentityReader,
   bearer: BearerIdentityReader,
-  admin: AdminIdentityReader
+  admin: AdminIdentityReader,
+  request: SessionIdentityReader = session
 ): IdentityModule {
   return {
-    resolveSession: () => session.read(),
-    resolveOptional: () => session.readOptional(),
+    resolveSession: () => request.read(),
+    resolveOptional: () => request.readOptional(),
     resolveBearer: (authorization) => bearer.read(authorization),
     resolveAdmin: () => admin.read(),
   };

@@ -17,16 +17,19 @@ import {
  * the one implementation of "who is this?" in the identity module (ADR-0058,
  * ADR-0059) instead of teaching a product to re-authenticate itself.
  *
- * A rejected token falls through to the cookie rather than failing the request:
- * a stale token in page state is not evidence that the session is gone. The
- * optional reader is what keeps an unauthenticated public call (LinkSnap's
- * anonymous shorten) from paying for an auth round-trip it cannot use.
+ * A Bearer header is authoritative: it is the credential the client chose to
+ * present, and the app behind it has no cookie jar to fall back to. A request
+ * with no token follows the cookie path (via the optional reader, which keeps
+ * an unauthenticated public call such as LinkSnap's anonymous shorten from
+ * paying for an auth round-trip it cannot use).
  */
 export async function resolveBearerOrSessionUser(
   authorization: string | null
 ): Promise<AuthUser | null> {
   const bearer = await identity.resolveBearer(authorization);
   if (bearer) return bearer;
+  // A rejected Bearer token is final: it must not wear the cookie's identity.
+  if (authorization?.startsWith('Bearer ')) return null;
 
   const { user } = await identity.resolveOptional();
   return user;

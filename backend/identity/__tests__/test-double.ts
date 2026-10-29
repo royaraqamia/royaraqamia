@@ -11,6 +11,9 @@ import type { AuthUser } from '../index';
 export interface IdentityDoubleOptions {
   session: () => Promise<{ user: AuthUser | null; client: unknown }>;
   optional?: () => Promise<{ user: AuthUser | null; client: unknown }>;
+  /** What the request-aware reader answers; defaults to the cookie result. */
+  request?: () => Promise<{ user: AuthUser | null; client: unknown }>;
+  requestOptional?: () => Promise<{ user: AuthUser | null; client: unknown }>;
   bearer?: (authorization: string | null) => Promise<AuthUser | null>;
   admin?: () => Promise<
     | { kind: 'anonymous' }
@@ -22,8 +25,8 @@ export interface IdentityDoubleOptions {
 export function identityDouble(options: IdentityDoubleOptions) {
   return {
     identity: {
-      resolveSession: () => options.session(),
-      resolveOptional: () => (options.optional ?? defaultOptional)(),
+      resolveSession: () => (options.request ?? options.session)(),
+      resolveOptional: () => (options.requestOptional ?? options.optional ?? defaultOptional)(),
       resolveBearer: options.bearer ?? (async () => null),
       resolveAdmin: options.admin ?? (async () => ({ kind: 'anonymous' as const })),
     },

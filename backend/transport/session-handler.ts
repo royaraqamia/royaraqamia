@@ -6,7 +6,12 @@ import {
   type SessionIdentity,
 } from '@/backend/transport/authenticated-handler';
 
-/** Handler adapter for the session cookie: handlers receive the user and a scoped client. */
+/**
+ * Handler adapter for a request-scoped identity. A request that carried
+ * `Authorization: Bearer` is resolved from that token and receives a client
+ * carrying it; a request without one follows the session cookie exactly as
+ * before. Handlers only ever see the user and a client scoped to that user.
+ */
 export function withAuthenticatedUser(
   run: (identity: SessionIdentity) => Promise<HttpResult>,
   policy: HandlerPolicy = {}
