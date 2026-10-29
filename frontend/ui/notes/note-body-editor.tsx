@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useEffect, useId, useReducer, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -8,7 +8,6 @@ import type { Editor } from '@tiptap/core';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
 import {
-  ArrowRight,
   Bold,
   Code,
   Heading1,
@@ -20,15 +19,12 @@ import {
   Quote,
   Redo2,
   Strikethrough,
-  Trash2,
   Underline,
   Undo2,
 } from 'lucide-react';
 
-import { NOTE_TITLE_MAX, type Note } from '@/shared/contracts/notes';
-import type { NotesLocalStore } from '@/frontend/api/notes/local-store';
-import { calculateTimeAgo } from '@/frontend/shared/format';
 import { Button } from '@/frontend/ui/primitives/button';
+import { cn } from '@/frontend/shared/cn';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
@@ -39,15 +35,6 @@ const turndown = new TurndownService({
   strongDelimiter: '**',
   linkStyle: 'inlined',
 });
-
-const AUTOSAVE_DELAY_MS = 500;
-
-interface NoteEditorProps {
-  note: Note;
-  store: NotesLocalStore;
-  onBack: () => void;
-  onDelete: () => void;
-}
 
 function toggleLink(editor: Editor) {
   const previous = editor.getAttributes('link').href as string | undefined;
@@ -60,120 +47,90 @@ function toggleLink(editor: Editor) {
   editor.chain().focus().extendMarkRange('link').setLink({ href: href.trim() }).run();
 }
 
+interface NoteBodyEditorProps {
+  /** The Markdown the document opens with; the editor owns it from then on. */
+  initialMarkdown: string;
+  /** Receives the document as Markdown on every edit. */
+  onChange: (markdown: string) => void;
+  placeholder?: string;
+  /** The editable surface's id, so a `<Label htmlFor>` can name it. */
+  id?: string;
+  /** The accessible name of the editable surface. */
+  ariaLabel?: string;
+  /** Height of the editable surface. */
+  surfaceClassName?: string;
+  className?: string;
+}
+
 /**
- * One note, editor and all.
- *
- * The body is Markdown in the store, converted at this boundary: `marked` on the
- * way in, `turndown` on the way out. Every keystroke lands in local state and a
- * short debounce writes it to the Local Store; the Outbox carries it to the
- * server whenever the browser is online, so there is no Save button to forget.
+ * The rich-text half of a note: Tiptap renders the document, `marked` converts
+ * the stored Markdown on the way in and `turndown` converts it back on the way
+ * out, so the store keeps one plain format whichever surface opened the note —
+ * the editor pane or the composer dialog.
  */
-export function NoteEditor({ note, store, onBack, onDelete }: NoteEditorProps) {
-  const [title, setTitle] = useState(note.title);
-  const [body, setBody] = useState(note.body);
+export function NoteBodyEditor({
+  initialMarkdown,
+  onChange,
+  placeholder = 'اكتب ملاحظتك هنا…',
+  id,
+  ariaLabel = 'نصّ الملاحظة',
+  surfaceClassName = 'min-h-[45vh]',
+  className,
+}: NoteBodyEditorProps) {
   const [, forceRender] = useReducer((value: number) => value + 1, 0);
+  const generatedId = useId();
+  const surfaceId = id ?? generatedId;
 
-  // The last values that reached the store, so an unchanged note is not written
-  // again and a pull that repaints the list does not fight the cursor.
-  const savedRef = useRef({ title: note.title, body: note.body });
-
-  // What the component currently holds. Kept in a ref as well as in state so the
-  // unmount/pagehide flush can read the newest edit without re-running effects.
-  const latestRef = useRef({ id: note.id, title, body });
-  latestRef.current = { id: note.id, title, body };
+  // The editor outlives any single render, so it reads the newest callback from
+  // a ref rather than capturing the one it was created with.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-      Placeholder.configure({ placeholder: 'اكتب ملاحظتك هنا…' }),
+      Placeholder.configure({ placeholder }),
     ],
     editorProps: {
       attributes: {
-        class:
-          'prose prose-sm dark:prose-invert max-w-none min-h-[45vh] w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-xl p-4 sm:p-5 selection:bg-primary/20',
+        id: surfaceId,
+        'aria-label': ariaLabel,
+        class: cn(
+          'prose prose-sm dark:prose-invert max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+          surfaceClassName
+        ),
         dir: 'auto',
       },
     },
     onUpdate: ({ editor: current }) => {
-      setBody(turndown.turndown(current.getHTML()));
+      onChangeRef.current(turndown.turndown(current.getHTML()));
       forceRender();
     },
     onTransaction: () => forceRender(),
   });
 
-  // The note's Markdown arrives from the store, so the document is set once the
-  // editor exists. A note with no body leaves the placeholder visible.
+  // The document arrives as Markdown, so it is set once the editor exists. An
+  // empty note leaves the placeholder visible.
   useEffect(() => {
     if (!editor) return;
     let cancelled = false;
     void (async () => {
       try {
-        const html = note.body ? await marked.parse(note.body) : '';
+        const html = initialMarkdown ? await marked.parse(initialMarkdown) : '';
         if (!cancelled) editor.commands.setContent(html, { emitUpdate: false });
       } catch {
-        if (!cancelled) editor.commands.setContent(`<p>${note.body}</p>`, { emitUpdate: false });
+        if (!cancelled)
+          editor.commands.setContent(`<p>${initialMarkdown}</p>`, { emitUpdate: false });
       }
     })();
     return () => {
       cancelled = true;
     };
-    // The parent keys this component by note id, so this runs once per note.
+    // The document is the one the caller opened with: a later `initialMarkdown`
+    // belongs to another note, and the caller keys this component by note id.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
-
-  // Autosave: the store write is the durable step, and its Outbox intent is
-  // queued in the same transaction, so a closed tab cannot lose the edit.
-  const flush = useCallback(() => {
-    const pending = latestRef.current;
-    const saved = savedRef.current;
-    if (pending.title === saved.title && pending.body === saved.body) return;
-
-    void store
-      .updateNote(pending.id, { title: pending.title, body: pending.body })
-      .then((updated) => {
-        if (updated) savedRef.current = { title: pending.title, body: pending.body };
-      })
-      .catch(() => {
-        // The edit stays in this component's state; the next keystroke retries.
-      });
-  }, [store]);
-
-  useEffect(() => {
-    const saved = savedRef.current;
-    if (title === saved.title && body === saved.body) return undefined;
-
-    const timer = setTimeout(flush, AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [title, body, flush]);
-
-  // The debounce is short, but closing a tab or navigating away inside it must
-  // not lose the last keystroke: flush on hide and on unmount as well.
-  useEffect(() => {
-    const onHide = () => flush();
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flush();
-    };
-    window.addEventListener('pagehide', onHide);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      window.removeEventListener('pagehide', onHide);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      flush();
-    };
-  }, [flush]);
-
-  const handleDeleteClick = useCallback(() => {
-    // The unmount flush must not resurrect the note the parent is about to
-    // tombstone, so mark the current values as already accounted for first.
-    savedRef.current = latestRef.current;
-    onDelete();
-  }, [onDelete]);
-
-  const wordCount = useMemo(() => {
-    const text = body.trim();
-    return text === '' ? 0 : text.split(/\s+/).length;
-  }, [body]);
 
   if (!editor) {
     return (
@@ -187,45 +144,7 @@ export function NoteEditor({ note, store, onBack, onDelete }: NoteEditorProps) {
   }
 
   return (
-    <article className="flex min-h-[60vh] flex-col rounded-3xl border border-border/60 bg-card/60">
-      <div className="flex items-center gap-2 border-b border-border/50 px-3 py-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="lg:hidden"
-          onClick={onBack}
-          aria-label="الرُّجوع إلى الملاحظات"
-        >
-          <ArrowRight aria-hidden="true" />
-        </Button>
-
-        <div className="min-w-0 flex-1">
-          <label className="sr-only" htmlFor="note-title">
-            عنوان الملاحظة
-          </label>
-          <input
-            id="note-title"
-            value={title}
-            maxLength={NOTE_TITLE_MAX}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="بدون عنوان"
-            className="w-full bg-transparent px-1 text-lg font-bold tracking-tight outline-none placeholder:text-muted-foreground/60"
-          />
-        </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleDeleteClick}
-          aria-label="حذف الملاحظة"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 aria-hidden="true" />
-        </Button>
-      </div>
-
+    <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
@@ -313,15 +232,7 @@ export function NoteEditor({ note, store, onBack, onDelete }: NoteEditorProps) {
       </div>
 
       <EditorContent editor={editor} className="flex-1" />
-
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 px-4 py-2 text-[11px] text-muted-foreground">
-        <span>يُحفظ تلقائيًّا على هذا الجهاز</span>
-        <span>
-          {wordCount > 0 ? `${wordCount} كلمة · ` : ''}
-          آخر تعديل {calculateTimeAgo(note.updatedAt)}
-        </span>
-      </footer>
-    </article>
+    </div>
   );
 }
 

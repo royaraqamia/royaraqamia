@@ -81,7 +81,7 @@ describe('UsageCard', () => {
       '/account/plan'
     );
     // A free member is nudged to the page that sells the upgrade.
-    expect(screen.getByRole('link', { name: /ترقية الخطة/ })).toHaveAttribute('href', '/pricing');
+    expect(screen.getByRole('link', { name: /ترقية الخطَّة/ })).toHaveAttribute('href', '/pricing');
   });
 
   it('drops the upgrade nudge once the plan is paid', () => {
@@ -105,8 +105,8 @@ describe('UsageCard', () => {
     render(<UsageCard />);
 
     expect(screen.getByText('2 / 50')).toBeInTheDocument();
-    expect(screen.getByText('الخطة المدفوعة')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /ترقية الخطة/ })).not.toBeInTheDocument();
+    expect(screen.getByText('الخطَّة المدفوعة')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ترقية الخطَّة/ })).not.toBeInTheDocument();
   });
 
   it('reports an Admin as unlimited', () => {

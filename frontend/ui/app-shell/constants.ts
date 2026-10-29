@@ -137,7 +137,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   },
   {
     id: 'notes',
-    label: 'المُلاحظات',
+    label: 'الملاحظات',
     appPath: '/notes',
     landingPath: '/notes',
     icon: StickyNote,

@@ -17,7 +17,7 @@ export interface HabitBackupPayload {
 export class HabitRestorePlanLimitError extends AppError {
   constructor(readonly backupHabits: number) {
     super(
-      `النسخة الاحتياطية تحتوي على ${backupHabits} عادات، أكثر من الحدّ الذي تسمح به خطتك. احذف عادات أو ارتقِ إلى الخطة المدفوعة.`,
+      `النسخة الاحتياطية تحتوي على ${backupHabits} عادات، أكثر من الحدّ الذي تسمح به خطتك. احذف عادات أو ارتقِ إلى الخطَّة المدفوعة.`,
       402,
       'owned_item_cap'
     );

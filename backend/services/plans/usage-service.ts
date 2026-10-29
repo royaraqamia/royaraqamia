@@ -47,7 +47,7 @@ export class UsageLimitReachedError extends AppError {
     super(
       visitor
         ? 'انتهت حصَّتك كزائر لهذا الحدّ. سجِّل الدُّخول لمتابعة الاستخدام.'
-        : `بلغتَ الحدّ الأعلى للخطة الحالية (${state.cap}) لهذا العنصر. ارتقِ إلى الخطة المدفوعة للمتابعة.`,
+        : `بلغتَ الحدّ الأعلى للخطة الحالية (${state.cap}) لهذا العنصر. ارتقِ إلى الخطَّة المدفوعة للمتابعة.`,
       402,
       visitor ? 'visitor_limit' : 'usage_limit'
     );
@@ -72,7 +72,7 @@ export class OwnedItemCapReachedError extends AppError {
     readonly count: number
   ) {
     super(
-      `بلغتَ الحدّ الأعلى للخطة الحالية (${cap}). احذف عنصرًا أو ارتقِ إلى الخطة المدفوعة.`,
+      `بلغتَ الحدّ الأعلى للخطة الحالية (${cap}). احذف عنصرًا أو ارتقِ إلى الخطَّة المدفوعة.`,
       402,
       'owned_item_cap'
     );

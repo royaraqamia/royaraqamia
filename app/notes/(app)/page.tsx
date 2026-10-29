@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { NotesPageClient } from '@/frontend/ui/notes/notes-page-client';
 
 export const metadata: Metadata = {
-  title: 'المُلاحظات',
+  title: 'الملاحظات',
   description:
     'دفتر ملاحظات سريع يعمل بلا اتِّصال: اكتب ونظِّم وابحث، ويُزامَن تلقائيًّا مع حسابك.',
 };

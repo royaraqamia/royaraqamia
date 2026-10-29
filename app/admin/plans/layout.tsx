@@ -13,7 +13,7 @@ export default function AdminPlansLayout({ children }: { children: React.ReactNo
       <AdminPageHeader
         icon={Wallet}
         title="الاشتراكات والاستهلاك"
-        description="استهلاك كل مستخدم من التَّنزيلات والحدود اليوميّة، وتفعيل الخطة المدفوعة يدوياً عند وصول الدفعة."
+        description="استهلاك كل مستخدم من التَّنزيلات والحدود اليوميّة، وتفعيل الخطَّة المدفوعة يدوياً عند وصول الدفعة."
       />
       {children}
     </div>

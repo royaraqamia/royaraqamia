@@ -10,7 +10,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
 import type { PlanActivationMethod } from '@/shared/contracts/plans';
 
-const PLAN_LABELS = { free: 'الخطة المجانيَّة', pro: 'الخطة المدفوعة' } as const;
+const PLAN_LABELS = { free: 'الخطَّة المجانيَّة', pro: 'الخطَّة المدفوعة' } as const;
 
 const METHOD_LABELS: Record<PlanActivationMethod, string> = {
   shamcash: 'ShamCash',
@@ -121,15 +121,10 @@ export function PlanView() {
           ))}
         </ul>
 
-        <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-          {state.unlimited
-            ? 'حساب مشرف: لا تنطبق عليه حدود الاستهلاك.'
-            : 'التَّنزيلات حدٌّ دائم لا يتجدَّد، والعدّادات اليوميّة تعود عند منتصف اللَّيل بتوقيت دمشق.'}
-        </p>
-
         {state.plan === 'pro' && state.expiresAt && (
           <p className="mt-2 text-xs text-muted-foreground">
-            تنتهي الخطة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطة المجانيَّة بحدودها.
+            تنتهي الخطَّة في {formatHijriDate(state.expiresAt)}، ثم تعود إلى الخطَّة المجانيَّة
+            بحدودها.
           </p>
         )}
       </section>
@@ -139,7 +134,7 @@ export function PlanView() {
 
         {activations.length === 0 ? (
           <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
-            لا يوجد سجل تفعيل بعد. أنت على الخطة المجانيَّة، ويمكنك الترقية من صفحة الاشتراكات.
+            لا يوجد سجل تفعيل بعد. أنت على الخطَّة المجانيَّة، ويمكنك الترقية من صفحة الاشتراكات.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -169,7 +164,8 @@ export function PlanView() {
         )}
 
         <p className="text-xs leading-relaxed text-muted-foreground">
-          التَّفعيل يدويّ بعد تأكيد الدَّفعة، ولا يوجد تجديد تلقائي: تنتهي الخطة وحدها بعد 30 يوماً.
+          التَّفعيل يدويّ بعد تأكيد الدَّفعة، ولا يوجد تجديد تلقائي: تنتهي الخطَّة وحدها بعد 30
+          يوماً.
         </p>
       </section>
     </div>
