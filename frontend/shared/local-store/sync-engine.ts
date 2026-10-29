@@ -61,6 +61,9 @@ export interface SyncEngineDeps {
  * lets `dispose()` drop the reference so a flush that lands after teardown
  * cannot post to a closed channel (#200).
  */
+/** The soonest a scheduled retry may run, so a zero backoff cannot spin. */
+const RETRY_FLOOR_MS = 250;
+
 export class SyncEngine {
   private syncing = false;
   private lastError: string | null = null;
@@ -73,6 +76,8 @@ export class SyncEngine {
   private disposed = false;
   /** Run when a sibling tab announces a completed flush. */
   private syncListeners: Array<() => void> = [];
+  /** The pending retry a previous run scheduled, if any. */
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly isOnline: () => boolean;
   private readonly now: () => number;
@@ -114,6 +119,7 @@ export class SyncEngine {
    */
   dispose(): void {
     this.disposed = true;
+    this.clearRetryTimer();
     this.channel?.close();
     this.channel = null;
     this.syncListeners = [];
@@ -160,6 +166,7 @@ export class SyncEngine {
 
   /** Replays the due intents, if this tab wins the leader lock. */
   async flush(): Promise<void> {
+    this.clearRetryTimer();
     if (this.syncing) return;
     if (!this.deps.isSignedIn()) return;
     if (!this.isOnline()) {
@@ -173,6 +180,41 @@ export class SyncEngine {
     } else {
       await this.run();
     }
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer !== null) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+  }
+
+  /**
+   * Comes back on its own when a run stops for a reason that has an expiry.
+   *
+   * Two cases would otherwise wait for an event that may never arrive: an intent
+   * that backed off (a write made offline, or a transport that failed) is not due
+   * on the flush that follows the `online` event, and a write enqueued while a
+   * run was in flight is missing from that run's snapshot. A page with no further
+   * interaction — an open note, a closed tab — would then sit with a pending
+   * count and nothing to move it. The delay is the earliest `nextAttemptAt`, so
+   * the ordered replay resumes exactly when it may, and `dispose()` drops it.
+   */
+  private async scheduleRetry(): Promise<void> {
+    this.clearRetryTimer();
+    if (this.disposed || !this.deps.isSignedIn() || !this.isOnline()) return;
+
+    const entries = await this.deps.store.getOutbox();
+    if (this.disposed) return;
+    const pending = entries.filter((entry) => entry.status === 'pending');
+    if (pending.length === 0) return;
+
+    const earliest = Math.min(...pending.map((entry) => entry.nextAttemptAt));
+    const delay = Math.max(RETRY_FLOOR_MS, earliest - this.now());
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      void this.flush();
+    }, delay);
   }
 
   private async run(): Promise<void> {
@@ -214,6 +256,7 @@ export class SyncEngine {
     } finally {
       await this.setSyncing(false);
       this.broadcastSynced();
+      await this.scheduleRetry();
     }
   }
 

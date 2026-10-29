@@ -18,6 +18,11 @@ describe('markdownToPlainText', () => {
   it('keeps a fenced code block’s contents', () => {
     expect(markdownToPlainText('```ts\nconst a = 1;\n```')).toBe('const a = 1;');
   });
+
+  it('drops a pasted tag in one pass and keeps a bare comparison', () => {
+    expect(markdownToPlainText('<b>عريض</b> و 1 < 2 > 0')).toBe('عريض و 1 < 2 > 0');
+    expect(markdownToPlainText('<scr<script>ipt>alert(1)</script>')).toBe('ipt>alert(1)');
+  });
 });
 
 describe('normalizeForSearch', () => {

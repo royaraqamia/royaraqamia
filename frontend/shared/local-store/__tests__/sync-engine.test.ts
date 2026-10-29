@@ -48,8 +48,12 @@ class FakeBroadcastChannel {
 }
 
 const RealBroadcastChannel = globalThis.BroadcastChannel;
+const engines: SyncEngine[] = [];
 
 afterEach(() => {
+  // A pending retry timer would otherwise outlive the test and touch a store
+  // that this suite no longer owns.
+  for (const engine of engines.splice(0)) engine.dispose();
   (globalThis as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel =
     RealBroadcastChannel;
   FakeBroadcastChannel.instances = [];
@@ -91,7 +95,7 @@ class FakeOutbox implements OutboxStore {
 }
 
 function makeEngine(entries: OutboxEntry[], transport?: SyncTransport): SyncEngine {
-  return new SyncEngine(
+  const engine = new SyncEngine(
     {
       store: new FakeOutbox(entries),
       transport: transport ?? { async send() {} },
@@ -100,6 +104,8 @@ function makeEngine(entries: OutboxEntry[], transport?: SyncTransport): SyncEngi
     },
     OPTIONS
   );
+  engines.push(engine);
+  return engine;
 }
 
 describe('SyncEngine channel ownership', () => {
@@ -216,6 +222,88 @@ describe('SyncEngine outbox ordering', () => {
   });
 });
 
+describe('SyncEngine retry scheduling', () => {
+  it('flushes a write enqueued while a flush was already in flight', async () => {
+    vi.useFakeTimers();
+    const store = new FakeOutbox([entry({ seq: 1 })]);
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const sent: string[] = [];
+    const engine = new SyncEngine(
+      {
+        store,
+        transport: {
+          async send(e) {
+            sent.push(e.type);
+            if (e.seq === 1) await gate;
+          },
+        },
+        isSignedIn: () => true,
+        now: () => NOW,
+      },
+      OPTIONS
+    );
+    engines.push(engine);
+
+    const first = engine.flush();
+    await vi.waitFor(() => expect(sent).toEqual(['expense.create']));
+
+    // The autosave lands while the first run is still sending; its own flush
+    // call cannot start a second run.
+    store.entries.push(entry({ seq: 2, id: 'b', type: 'expense.update' }));
+    await engine.flush();
+    release();
+    await first;
+
+    // The run that ended scheduled its own follow-up instead of stranding it.
+    await vi.advanceTimersByTimeAsync(500);
+    expect(sent).toEqual(['expense.create', 'expense.update']);
+    expect(store.entries).toHaveLength(0);
+    vi.useRealTimers();
+  });
+
+  it('retries a backing-off intent once its delay expires, with no other trigger', async () => {
+    vi.useFakeTimers();
+    let now = NOW;
+    const store = new FakeOutbox([entry()]);
+    let failures = 1;
+    const sent: string[] = [];
+    const engine = new SyncEngine(
+      {
+        store,
+        transport: {
+          async send(e) {
+            if (failures > 0) {
+              failures -= 1;
+              throw new Error('network');
+            }
+            sent.push(e.type);
+          },
+        },
+        isSignedIn: () => true,
+        now: () => now,
+        random: () => 0,
+      },
+      OPTIONS
+    );
+    engines.push(engine);
+
+    // The write made offline backs off, so the flush after reconnecting has
+    // nothing due yet.
+    await engine.flush();
+    expect(sent).toEqual([]);
+    expect(store.entries[0]!.attempts).toBe(1);
+
+    now += 1;
+    await vi.advanceTimersByTimeAsync(500);
+    expect(sent).toEqual(['expense.create']);
+    expect(store.entries).toHaveLength(0);
+    vi.useRealTimers();
+  });
+});
+
 describe('SyncEngine transient re-arm', () => {
   it('retries a 401-marked intent on the next flush once the session is valid, without retry()', async () => {
     const store = new FakeOutbox([entry()]);
@@ -236,6 +324,7 @@ describe('SyncEngine transient re-arm', () => {
       },
       OPTIONS
     );
+    engines.push(engine);
 
     // A 401 is transient: the entry backs off and stays pending, not failed.
     await engine.flush();
