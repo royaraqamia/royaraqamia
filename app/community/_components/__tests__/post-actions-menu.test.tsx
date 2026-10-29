@@ -130,6 +130,6 @@ describe('PostActionsMenu', () => {
 
     expect(await screen.findByText('تعديل المنشور')).toBeInTheDocument();
     expect(screen.queryByLabelText(/العنوان/)).not.toBeInTheDocument();
-    expect(screen.getByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
   });
 });

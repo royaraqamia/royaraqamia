@@ -1,18 +1,39 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
+import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
-import { NoteBodyEditor } from '@/frontend/ui/notes/note-body-editor';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { createPost, updatePost } from '@/frontend/api/blogpress';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import { stripMarkdown } from '@/shared/reading-time';
 
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
+
+/**
+ * The editor is Tiptap, `marked` and `turndown` — a third of `/community`'s
+ * budget, and a reader who only scrolls the feed never needs it. It arrives as
+ * its own chunk when a composer opens, and a chunk that cannot be fetched
+ * renders the frame rather than taking the page down with it.
+ */
+const NoteBodyEditor = dynamic(
+  tolerateChunkFailure('post editor', () =>
+    import('@/frontend/ui/notes/note-body-editor').then((module) => ({
+      default: module.NoteBodyEditor,
+    }))
+  ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-40 animate-pulse rounded-xl bg-muted/20" aria-hidden="true" />
+    ),
+  }
+);
 
 export interface PostComposerDialogProps {
   open: boolean;

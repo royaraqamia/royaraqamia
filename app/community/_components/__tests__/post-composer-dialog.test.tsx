@@ -59,7 +59,7 @@ describe('PostComposerDialog', () => {
 
     expect(screen.getByText('تعديل المنشور')).toBeInTheDocument();
 
-    const body = screen.getByLabelText(/النَّص/);
+    const body = await screen.findByLabelText(/النَّص/);
     fireEvent.change(body, { target: { value: 'نص محدَّث طويل بما يكفي.' } });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التعديلات' }));
 
@@ -81,7 +81,9 @@ describe('PostComposerDialog', () => {
 
     render(<PostComposerDialog open onOpenChange={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText(/النَّص/), { target: { value: 'محتوى المنشور.' } });
+    fireEvent.change(await screen.findByLabelText(/النَّص/), {
+      target: { value: 'محتوى المنشور.' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
     await waitFor(() => expect(mocks.createPost).toHaveBeenCalledTimes(1));
