@@ -44,6 +44,9 @@ jobs:
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 
+      - name: Generated Tokens Are Current
+        run: npm run check:tokens
+
       - name: Surface Matrix
         run: npm run check:surfaces
 

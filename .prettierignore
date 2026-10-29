@@ -14,4 +14,7 @@ CHANGELOG.md
 package.json
 backend/config/generated/app-version.ts
 docs/specs/surfaces.md
+# Generated from `shared/tokens/tokens.json` by `scripts/generate-tokens.mjs`;
+# `npm run check:tokens` compares bytes, so Prettier must not rewrite it.
+app/tokens.css
 /capacitor-web/spike/
