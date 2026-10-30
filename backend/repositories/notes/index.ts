@@ -153,6 +153,20 @@ export function createNotesRepository(supabase: SupabaseClient<Database>): Notes
       // A delete only ever follows the create that owns the row: the Outbox
       // replays in write order, so there is nothing to insert here. A note whose
       // create failed permanently leaves this a no-op, which is the safe answer.
+      const { data: existing, error: readError } = await supabase
+        .from('notes')
+        .select('id, updated_at')
+        .eq('user_id', userId)
+        .eq('id', id)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      if (!existing) return;
+
+      // Last-write-wins applies to deletes too: a delete queued before another
+      // device edited the note must not tombstone that edit, nor walk
+      // `updated_at` backwards to its own older stamp (ADR-0029).
+      if (storedIsNewer((existing as NoteRow).updated_at, meta?.updatedAt)) return;
+
       const { error } = await supabase
         .from('notes')
         .update({ deleted_at: stamp, updated_at: stamp })
