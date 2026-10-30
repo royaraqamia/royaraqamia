@@ -8,6 +8,7 @@ import {
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
 import { FeedProbeError, type FeedProbeResult } from '@/backend/services/news/feed-probe';
 import { hasFileSourceUrl, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
+import { isPublicHttpUrl } from '@/shared/network';
 import {
   canonicalNewsFeedUrl,
   type NewsSourceApprovalInput,
@@ -18,39 +19,34 @@ import {
 } from '@/shared/contracts/news';
 
 /**
- * A reader proposing a feed, and an Admin deciding on it (ADR-0078).
+ * A reader proposing a source, and an Admin deciding on it (ADR-0078).
  *
- * Every refusal here is a 409/422 with a sentence the form can show as-is: the
- * submitter is a reader, not an operator, and "the URL did not look like a feed"
- * is the useful answer.
+ * Submission no longer reads the URL: the form promises that the reader never
+ * has to know what a feed is, so the row is stored and the resolver worker
+ * answers it later (ADR-0105). Every refusal left here is about the *record* —
+ * a duplicate, a second open request — not about the link answering correctly.
  */
-export class FeedUnavailableError extends AppError {
-  constructor(readonly failure: 'unreachable' | 'not-a-feed') {
-    super(
-      failure === 'unreachable'
-        ? 'تعذّر الوصول إلى هذا الرابط. تأكَّد من أنَّه يعمل ثم أعد المحاولة.'
-        : 'هذا الرابط لا يعرض خلاصة RSS أو Atom، أو لا يحتوي أخبارًا.',
-      422,
-      failure === 'unreachable' ? 'feed_unreachable' : 'feed_not_a_feed'
-    );
+export class NewsSourceUrlInvalidError extends AppError {
+  constructor() {
+    super('أدخل رابطًا يبدأ بـ https://', 422, 'invalid_url');
   }
 }
 
 export class NewsSourceAlreadyKnownError extends AppError {
   constructor() {
-    super('هذا المصدر موجود في القائمة بالفعل.', 409, 'source_known');
+    super('هذا المصدر موجود في قائمة المصادر بالفعل.', 409, 'source_known');
   }
 }
 
 export class NewsSourceAlreadyQueuedError extends AppError {
   constructor() {
-    super('هناك طلب قيد المراجعة لهذا المصدر.', 409, 'source_queued');
+    super('هذا الرابط مُرسَل مسبقًا من قِبَل قارئ آخر.', 409, 'source_queued');
   }
 }
 
 export class NewsSourceRequestPendingError extends AppError {
   constructor() {
-    super('لديك طلب قيد المراجعة. انتظر قراره قبل إرسال طلب جديد.', 409, 'request_pending');
+    super('لديك طلب قيد المعالجة. انتظر نتيجة الطلب الأول قبل إرسال غيره.', 409, 'request_pending');
   }
 }
 
@@ -62,7 +58,37 @@ export class NewsSourceRequestNotFoundError extends AppError {
 
 export class NewsSourceRequestDecidedError extends AppError {
   constructor() {
-    super('تمَّ البتُّ في هذا الطلب من قبل.', 409, 'request_decided');
+    super('تم اتخاذ القرار لهذا الطلب من قبل.', 409, 'request_decided');
+  }
+}
+
+export class NewsSourceRequestResolvingError extends AppError {
+  constructor() {
+    super(
+      'لم ينتهِ تحقّق النظام من هذا الرابط بعد. أعد المحاولة بعد قليل.',
+      409,
+      'request_resolving'
+    );
+  }
+}
+
+/** The Admin is answering a `needs_review` row, and a decision needs a feed. */
+export class NewsSourceFeedRequiredError extends AppError {
+  constructor() {
+    super('الصق رابط خلاصة RSS أو Atom للمصدر قبل قبوله.', 422, 'feed_required');
+  }
+}
+
+/** The URL an Admin pasted does not answer with a feed; the probe's own sentence. */
+export class FeedUnavailableError extends AppError {
+  constructor(readonly failure: 'unreachable' | 'not-a-feed') {
+    super(
+      failure === 'unreachable'
+        ? 'تعذّر الوصول إلى الرابط. تحقّق من صحّته ثم أعد المحاولة.'
+        : 'هذا الرابط ليس خلاصة RSS أو Atom، ولا يحتوي عناصر.',
+      422,
+      failure === 'unreachable' ? 'feed_unreachable' : 'feed_not_a_feed'
+    );
   }
 }
 
@@ -80,6 +106,7 @@ const MAX_SOURCE_ID_ATTEMPTS = 99;
 const SOURCE_ID_TAKEN = 'NS001';
 const REQUEST_DECIDED = 'NS002';
 const SOURCE_URL_TAKEN = 'NS003';
+const FEED_MISSING = 'NS004';
 const REQUEST_MISSING = 'P0002';
 
 function errorCode(error: unknown): string | null {
@@ -127,14 +154,15 @@ interface RequestsDeps {
   requests: NewsSourceRequestsRepository;
   sources: NewsSourcesRepository;
   catalogue: NewsCatalogue;
+  /** Only an Admin's pasted URL is probed synchronously. */
   probe: (url: string) => Promise<FeedProbeResult>;
 }
 
-/** Submission needs no catalogue read: a proposal is deduplicated by URL. */
-type SubmitDeps = Omit<RequestsDeps, 'catalogue'>;
+/** Submission needs no catalogue read and no probe: a proposal is deduplicated by URL. */
+type SubmitDeps = Pick<RequestsDeps, 'requests' | 'sources'>;
 
 /** A decision needs no source read: the approval RPC owns both writes. */
-type ApprovalDeps = Pick<RequestsDeps, 'requests' | 'catalogue'>;
+type ApprovalDeps = Pick<RequestsDeps, 'requests' | 'catalogue' | 'probe'>;
 
 /** A host-derived slug: `example.com` → `example-com`, the id a story publishes under. */
 function slugForHost(hostname: string): string {
@@ -149,12 +177,16 @@ function slugForHost(hostname: string): string {
 export function createNewsSourceRequestsService({
   requests,
   sources,
-  probe,
 }: SubmitDeps): NewsSourceRequestsService {
   return {
+    /**
+     * Files the URL and returns. Nothing here fetches the target: a link that is
+     * slow, blocked or not a feed is the resolver's problem, and the reader is
+     * told what happened on their next visit rather than in a failed submit.
+     */
     async submit(userId: string, input: NewsSourceRequestInput): Promise<NewsSourceRequest> {
       const url = canonicalNewsFeedUrl(input.url);
-      if (!url) throw new FeedUnavailableError('not-a-feed');
+      if (!url) throw new NewsSourceUrlInvalidError();
 
       // The file list is the base the fetch merges onto and wins a URL collision,
       // so a feed already in it would be queued, approved and then dropped (#551).
@@ -162,13 +194,6 @@ export function createNewsSourceRequestsService({
       if (await sources.findIdByUrl(url)) throw new NewsSourceAlreadyKnownError();
       if (await requests.findPendingIdByUrl(url)) throw new NewsSourceAlreadyQueuedError();
       if ((await requests.countPending(userId)) > 0) throw new NewsSourceRequestPendingError();
-
-      try {
-        await probe(url);
-      } catch (error) {
-        if (error instanceof FeedProbeError) throw new FeedUnavailableError(error.failure);
-        throw error;
-      }
 
       try {
         return await requests.insert({ userId, url, name: input.name.trim() });
@@ -186,11 +211,19 @@ export function createNewsSourceRequestsService({
 export function createNewsAdminService({
   requests,
   catalogue,
+  probe,
 }: ApprovalDeps): NewsSourceAdminService {
-  async function pendingOrThrow(id: string): Promise<NewsSourceRequest> {
+  /**
+   * A row is decidable once the resolver has answered it. `resolving` is not a
+   * refusal of the reader's link — it is "not yet", and the queue says so.
+   */
+  async function decidableOrThrow(id: string): Promise<NewsSourceRequest> {
     const request = await requests.findById(id);
     if (!request) throw new NewsSourceRequestNotFoundError();
-    if (request.status !== 'pending') throw new NewsSourceRequestDecidedError();
+    if (request.status === 'resolving') throw new NewsSourceRequestResolvingError();
+    if (request.status !== 'ready' && request.status !== 'needs_review') {
+      throw new NewsSourceRequestDecidedError();
+    }
     return request;
   }
 
@@ -201,6 +234,8 @@ export function createNewsAdminService({
         throw new NewsSourceAlreadyKnownError();
       case REQUEST_DECIDED:
         throw new NewsSourceRequestDecidedError();
+      case FEED_MISSING:
+        throw new NewsSourceFeedRequiredError();
       case REQUEST_MISSING:
         throw new NewsSourceRequestNotFoundError();
       default:
@@ -216,23 +251,47 @@ export function createNewsAdminService({
     /**
      * One call to `public.approve_news_source_request`: the Approved Source and
      * the request's decision commit together, so a failure leaves the request
-     * `pending` and the retry safe (#572). The slug is still chosen here, from
-     * the catalogue; if it was taken between that read and the RPC, the next
-     * suffix is tried.
+     * open and the retry safe (#572). The slug is still chosen here, from the
+     * catalogue; if it was taken between that read and the RPC, the next suffix
+     * is tried.
+     *
+     * The feed being approved is the one the resolver found (`ready`), or the one
+     * the Admin pasted (`needs_review`) — never the reader's original link, which
+     * may be a page, a channel or a post rather than a feed.
      */
     async approve(
       id: string,
       input: NewsSourceApprovalInput,
       reviewedBy: string
     ): Promise<NewsSourceRequest> {
-      const request = await pendingOrThrow(id);
+      const request = await decidableOrThrow(id);
+
+      const pasted = input.feedUrl ? canonicalNewsFeedUrl(input.feedUrl) : null;
+      if (input.feedUrl && (!pasted || !isPublicHttpUrl(pasted))) {
+        throw new NewsSourceUrlInvalidError();
+      }
+
+      const feedUrl = pasted ?? request.resolvedUrl;
+      if (!feedUrl) throw new NewsSourceFeedRequiredError();
+
+      // A pasted URL is the Admin's own claim; the probe is what makes it a feed
+      // rather than a page that will quietly fetch nothing tomorrow. It runs
+      // only for a paste: a `ready` row was probed by the resolver already.
+      if (pasted) {
+        try {
+          await probe(pasted);
+        } catch (error) {
+          if (error instanceof FeedProbeError) throw new FeedUnavailableError(error.failure);
+          throw error;
+        }
+      }
 
       // The feed may have reached the file after it was proposed, and the file
       // wins the merge — approving would write a row the fetch then drops (#551).
-      if (hasFileSourceUrl(request.url)) throw new NewsSourceAlreadyKnownError();
+      if (hasFileSourceUrl(feedUrl)) throw new NewsSourceAlreadyKnownError();
 
       const taken = new Set((await catalogue.list()).map((source) => source.id));
-      const base = slugForHost(new URL(request.url).hostname) || 'source';
+      const base = slugForHost(new URL(feedUrl).hostname) || 'source';
 
       for (let attempt = 1; attempt <= MAX_SOURCE_ID_ATTEMPTS; attempt += 1) {
         const sourceId = attempt === 1 ? base : `${base}-${attempt}`;
@@ -243,7 +302,9 @@ export function createNewsAdminService({
             id: request.id,
             sourceId,
             sourceName: request.name,
-            sourceUrl: request.url,
+            sourceUrl: feedUrl,
+            // A pasted URL is an XML feed; the worker's answer carries a kind.
+            kind: pasted ? 'feed' : (request.kind ?? 'feed'),
             category: input.category,
             region: input.region,
             tier: input.tier,
@@ -263,7 +324,7 @@ export function createNewsAdminService({
       input: NewsSourceRejectionInput,
       reviewedBy: string
     ): Promise<NewsSourceRequest> {
-      const request = await pendingOrThrow(id);
+      const request = await decidableOrThrow(id);
 
       await requests.markRejected({ id: request.id, note: input.note ?? null, reviewedBy });
       return (await requests.findById(request.id)) ?? { ...request, status: 'rejected' };

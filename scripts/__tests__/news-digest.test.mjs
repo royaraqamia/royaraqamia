@@ -13,6 +13,7 @@ import {
   mergeSources,
   normalizeTitle,
   parseFeed,
+  parseTelegramPreview,
   readSources,
   stripHtml,
   titleSimilarity,
@@ -184,6 +185,38 @@ describe('feed parsing', () => {
     expect(stripHtml('<p>قبل</p><script>alert(1)</script ><p>بعد</p>')).toBe('قبل بعد');
     expect(stripHtml('<script type="x">alert(2)</script foo><p>نص</p>')).toBe('نص');
     expect(stripHtml('<style>.a{}</style ><p>نص</p>')).toBe('نص');
+  });
+});
+
+describe('reading a Telegram channel preview', () => {
+  const PREVIEW = `<!doctype html><html><body>
+    <section class="tgme_channel_info"><div class="tgme_channel_info_header_title">قناة</div></section>
+    <div class="tgme_widget_message_wrap"><div class="tgme_widget_message" data-post="example/12">
+      <div class="tgme_widget_message_text js-message_text">خبرٌ أوّل<br/>تفصيلٌ ثانٍ</div>
+      <a class="tgme_widget_message_date" href="https://t.me/example/12">
+        <time datetime="2026-10-30T06:00:00+00:00">06:00</time></a>
+    </div></div>
+    <div class="tgme_widget_message_wrap"><div class="tgme_widget_message" data-post="example/11">
+      <div class="tgme_widget_message_photo"></div>
+      <a href="https://t.me/example/11"><time datetime="2026-10-29T18:00:00+00:00">18:00</time></a>
+    </div></div>
+  </body></html>`;
+
+  it('turns each post with text into an item that links to the post', () => {
+    const items = parseTelegramPreview(PREVIEW);
+
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      url: 'https://t.me/example/12',
+      publishedAt: '2026-10-30T06:00:00.000Z',
+    });
+    expect(items[0].title).toContain('خبرٌ أوّل');
+    expect(items[0].excerpt).toContain('تفصيلٌ ثانٍ');
+  });
+
+  it('yields nothing for something that is not a preview', () => {
+    expect(parseTelegramPreview('')).toEqual([]);
+    expect(parseTelegramPreview('<html><body>Please open Telegram</body></html>')).toEqual([]);
   });
 });
 
@@ -479,6 +512,7 @@ describe('approved sources', () => {
       id: 'example-com',
       name: 'مثال',
       url: 'https://example.com/rss',
+      kind: 'feed',
       category: 'tech',
       region: 'world',
       tier: 1,

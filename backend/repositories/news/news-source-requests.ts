@@ -11,7 +11,9 @@ import {
 import type {
   NewsCategory,
   NewsRegion,
+  NewsSourceKind,
   NewsSourceRequest,
+  NewsSourceRequestFailure,
   NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
 
@@ -24,6 +26,12 @@ type RequestSelectRow = Pick<
   | 'url'
   | 'name'
   | 'status'
+  | 'kind'
+  | 'resolved_url'
+  | 'failure'
+  | 'failure_detail'
+  | 'attempts'
+  | 'resolved_at'
   | 'category'
   | 'region'
   | 'tier'
@@ -34,7 +42,7 @@ type RequestSelectRow = Pick<
 >;
 
 const REQUEST_COLUMNS =
-  'id, url, name, status, category, region, tier, note, created_at, reviewed_at, source_id';
+  'id, url, name, status, kind, resolved_url, failure, failure_detail, attempts, resolved_at, category, region, tier, note, created_at, reviewed_at, source_id';
 
 /**
  * PostgREST reports a violation only as text (`duplicate key value violates
@@ -59,6 +67,12 @@ function mapRequest(row: RequestSelectRow): NewsSourceRequest {
     url: row.url,
     name: row.name,
     status: row.status as NewsSourceRequestStatus,
+    kind: (row.kind ?? null) as NewsSourceKind | null,
+    resolvedUrl: row.resolved_url,
+    failure: (row.failure ?? null) as NewsSourceRequestFailure | null,
+    failureDetail: row.failure_detail,
+    attempts: row.attempts,
+    resolvedAt: row.resolved_at,
     category: (row.category ?? null) as NewsCategory | null,
     region: (row.region ?? null) as NewsRegion | null,
     tier: row.tier === 1 ? 1 : row.tier === 2 ? 2 : null,
@@ -103,7 +117,9 @@ export function createNewsSourceRequestsRepository(
           user_id: input.userId,
           url: input.url,
           name: input.name,
-          status: 'pending',
+          // The reader's only write: the row is what the resolver picks up, so
+          // submitting cannot fail on a URL the system has not read yet.
+          status: 'resolving',
         })
         .select(REQUEST_COLUMNS)
         .single();
@@ -168,6 +184,7 @@ export function createNewsSourceRequestsRepository(
         p_tier: input.tier,
         p_note: input.note,
         p_reviewed_by: input.reviewedBy,
+        p_kind: input.kind,
       });
 
       if (error) throw error;

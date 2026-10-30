@@ -63,20 +63,25 @@ export function createNewsSourceRequestsServiceFor(
   return createNewsSourceRequestsService({
     requests: createNewsSourceRequestsRepository(supabase),
     sources: createNewsSourcesRepository(supabase),
-    probe: (url) => probeFeed(url),
   });
 }
 
 /**
  * The Admin queue. Service-role on purpose: the request table has no admin
- * policy, so the decision path is the only thing that can move a row out of
- * `pending`, and it is reachable only behind `withAdminUser`.
+ * policy, so the decision path is the only thing that can move a row out of the
+ * system states, and it is reachable only behind `withAdminUser`.
+ *
+ * The feed probe is wired here rather than to submission: the only person who
+ * supplies a URL that has not been resolved is the Admin answering a
+ * `needs_review` row, and that paste is verified before it is approved
+ * (ADR-0105).
  */
 export function createDefaultNewsAdminService(): NewsSourceAdminService {
   const supabase = getAdminSupabase();
   return createNewsAdminService({
     requests: createNewsSourceRequestsRepository(supabase),
     catalogue: createNewsCatalogueFor(supabase),
+    probe: (url) => probeFeed(url),
   });
 }
 

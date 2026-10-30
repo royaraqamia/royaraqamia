@@ -52,7 +52,13 @@ describe('createNewsSourceRequestsRepository.insert', () => {
         id: 'request-1',
         url: 'https://example.com/rss',
         name: 'مثال',
-        status: 'pending',
+        status: 'resolving',
+        kind: null,
+        resolved_url: null,
+        failure: null,
+        failure_detail: null,
+        attempts: 0,
+        resolved_at: null,
         category: null,
         region: null,
         tier: null,
@@ -75,8 +81,15 @@ describe('createNewsSourceRequestsRepository.insert', () => {
       user_id: 'u-1',
       url: 'https://example.com/rss',
       name: 'مثال',
-      status: 'pending',
+      status: 'resolving',
     });
-    expect(filed).toMatchObject({ id: 'request-1', status: 'pending', sourceId: null });
+    expect(filed).toMatchObject({
+      id: 'request-1',
+      status: 'resolving',
+      kind: null,
+      resolvedUrl: null,
+      attempts: 0,
+      sourceId: null,
+    });
   });
 });

@@ -1,6 +1,7 @@
 import type {
   NewsCategory,
   NewsRegion,
+  NewsSourceKind,
   NewsSourceRequest,
   NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
@@ -14,13 +15,18 @@ export interface NewNewsSourceRequest {
 /**
  * One approval: the source it creates and the decision it records. Both halves
  * are written by `public.approve_news_source_request` in one transaction (#572),
- * so a refusal leaves the request `pending` and safe to retry.
+ * so a refusal leaves the request open and safe to retry.
+ *
+ * `sourceUrl` and `kind` are the resolved feed, which is not necessarily the URL
+ * the reader pasted: a `needs_review` row is answered by the Admin pasting the
+ * feed the source actually publishes (ADR-0105).
  */
 export interface ApproveNewsSourceRequest {
   id: string;
   sourceId: string;
   sourceName: string;
   sourceUrl: string;
+  kind: NewsSourceKind;
   category: NewsCategory;
   region: NewsRegion;
   tier: 1 | 2;
@@ -58,9 +64,10 @@ export class NewsSourceRequestDbError extends Error {
 }
 
 /**
- * The intake queue a reader's proposal moves through: `pending` until an Admin
- * approves or rejects it. A reader can only insert a pending row (RLS), so every
- * transition in this interface is an Admin action.
+ * The intake queue a reader's proposal moves through: `resolving` when the
+ * reader files it, then whatever the resolution worker and the Admin decide.
+ * A reader can only insert a `resolving` row (RLS), so every transition past
+ * that in this interface is an Admin action.
  */
 export interface NewsSourceRequestsRepository {
   countPending(userId: string): Promise<number>;
