@@ -77,10 +77,12 @@ test('native web push round-trip', async ({ browser, baseURL }) => {
       return sub ? sub.toJSON() : null;
     });
 
-  // Auto-heal subscribes when permission is granted; fall back to the toggle.
+  // Auto-heal subscribes when permission is granted; fall back to the toggle,
+  // which now lives on the notification page behind the bell.
   let subJson = await getSub();
   if (!subJson) {
-    await page.locator('button[aria-label^="الإشعارات"]').first().click();
+    await page.locator('a[aria-label^="الإشعارات"]').first().click();
+    await page.waitForURL('**/notifications**');
     const enableBtn = page.getByRole('button', { name: 'تفعيل إشعارات الجهاز' });
     await enableBtn.waitFor({ state: 'visible', timeout: 15_000 });
     await enableBtn.click();

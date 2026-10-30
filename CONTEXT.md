@@ -554,6 +554,13 @@ The area under `/admin` that an Admin signs into to operate across the product f
 It is the single door to every operator-facing surface.
 _Avoid_: Dashboard, backoffice, admin panel, CMS
 
+**Notification Centre**:
+The page at `/notifications` a signed-in person reads their alerts on, and the place their
+conversations will live. Two tabs — المحادثات and التنبيهات — with the tab in the URL. It is a page,
+not the bell's panel ([ADR-0097](adr/0097-notifications-are-a-page-with-two-tabs.md)).
+_Sold as_: الإشعارات
+_Avoid_: Notification panel, notification drawer, bell menu, inbox
+
 **Bundled surface**:
 A product surface whose document ships inside the Android APK and is served by the shell from
 `https://localhost/`. Its staleness is the APK's `versionCode`, never a cache header. The surfaces

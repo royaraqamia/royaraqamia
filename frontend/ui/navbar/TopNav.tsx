@@ -7,12 +7,12 @@ import NextImage from 'next/image';
 import { NavDropdown, type NavLink } from './NavDropdown';
 import { tolerateChunkFailure } from '../shared/lazy-chunk';
 
-// Splitted off the initial chunk — same pattern as Navbar/FloatingActions:
-// Supabase notifications, web-push, PWA context, portals and dialogs load on demand,
-// keeping the critical-path bundle lean (fewer long tasks / lower TBT).
-const NotificationDropdown = dynamic(
-  tolerateChunkFailure('notification dropdown', () =>
-    import('../shared/notification-dropdown').then((m) => ({ default: m.NotificationDropdown }))
+// Splitted off the initial chunk — same pattern as Navbar/FloatingActions: the
+// unread count comes from the notifications context (a Supabase-backed fetch),
+// so the bell loads on demand and the critical path stays lean.
+const NotificationBell = dynamic(
+  tolerateChunkFailure('notification bell', () =>
+    import('../shared/notification-bell').then((m) => ({ default: m.NotificationBell }))
   ),
   { ssr: false, loading: () => null }
 );
@@ -78,7 +78,7 @@ export function TopNav({
 
       {/* Primary Actions & Controls Container */}
       <div className="flex items-center shrink-0">
-        <NotificationDropdown />
+        <NotificationBell />
       </div>
     </>
   );
