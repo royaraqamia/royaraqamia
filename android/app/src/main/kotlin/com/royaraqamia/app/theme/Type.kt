@@ -66,6 +66,17 @@ data class RoyTypeScale(
      */
     fun digits(style: TextStyle): TextStyle =
         style.copy(fontFamily = RoyFonts.digits, fontWeight = FontWeight.Normal)
+
+    /**
+     * [style] for an editable field: the UI face, always.
+     *
+     * A field may hold a number — a price, a count, a code — and a caret inside
+     * Aref Ruqaa is a number the user cannot compare with the one they meant to
+     * type. The stylesheet makes `--font-digits` opt-in per node and an `input`
+     * never inherits it; this is the app's half of the same rule, and a field asks
+     * for it rather than carrying whatever style it was drawn with.
+     */
+    fun field(style: TextStyle): TextStyle = style.copy(fontFamily = RoyFonts.ui)
 }
 
 /** One step of the fluid scale: floor, slope and ceiling, in the units Compose reads. */
