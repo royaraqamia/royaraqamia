@@ -84,6 +84,20 @@
     "glyph": {
       "description": "The size an icon is drawn at. The drawing itself is the site's own (ADR-0100).",
       "sizes": { "md": "1.5rem", "sm": "1rem" }
+    },
+    "guestMark": {
+      "description": "The circle around the guest prompt's lock: `size-14 rounded-full border border-border/40 bg-muted/60 shadow-inner`.",
+      "size": "3.5rem",
+      "radius": "pill",
+      "surface": { "color": "muted", "alpha": 0.6 },
+      "content": { "color": "muted-foreground", "alpha": 0.8 },
+      "border": { "color": "border", "alpha": 0.4, "width": "1px" },
+      "shadow": {
+        "inset": true,
+        "offsetY": "2px",
+        "blur": "4px",
+        "color": { "raw": "#000000", "alpha": 0.05 }
+      }
     }
   }
 }

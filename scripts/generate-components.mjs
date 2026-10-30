@@ -89,15 +89,23 @@ export function spaceProperty(tokens, name) {
 
 /** A colour reference as `hsl(var(--token) / alpha)`; alpha 1 omits the slash. */
 export function colorValue(tokens, ref) {
-  if (!ref || typeof ref.color !== 'string') {
+  if (!ref || (typeof ref.color !== 'string' && typeof ref.raw !== 'string')) {
     throw new Error('generate-components: a colour is a token name plus an optional alpha');
-  }
-  if (!(ref.color in tokens.color)) {
-    throw new Error(`generate-components: "${ref.color}" is not a colour token`);
   }
   const alpha = ref.alpha ?? 1;
   if (!(alpha > 0 && alpha <= 1)) {
-    throw new Error(`generate-components: "${ref.color}" has an alpha outside 0-1`);
+    throw new Error(`generate-components: "${ref.color ?? ref.raw}" has an alpha outside 0-1`);
+  }
+  // A shadow is the one place a raw colour is allowed: CSS shadows are black at a
+  // low alpha and the palette has no black to name (ADR-0099).
+  if (ref.raw !== undefined) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(ref.raw)) {
+      throw new Error(`generate-components: "${ref.raw}" is not a "#RRGGBB" colour`);
+    }
+    return alpha === 1 ? ref.raw : `color-mix(in srgb, ${ref.raw} ${alpha * 100}%, transparent)`;
+  }
+  if (!(ref.color in tokens.color)) {
+    throw new Error(`generate-components: "${ref.color}" is not a colour token`);
   }
   return alpha === 1 ? `hsl(var(--${ref.color}))` : `hsl(var(--${ref.color}) / ${alpha})`;
 }
@@ -288,6 +296,30 @@ export function renderCss(recipes, tokens) {
     }
   }
 
+  const mark = recipes.primitives?.guestMark;
+  if (mark) {
+    const shadow = mark.shadow;
+    const offset = shadow?.offsetY ? `${lengthToPx(shadow.offsetY)}px` : '0';
+    lines.push(
+      "/* The guest prompt's circle: a shape, a surface and the site's inner shadow. */",
+      '.roy-guest-mark {',
+      '  display: flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      `  width: ${lengthToPx(mark.size)}px;`,
+      `  height: ${lengthToPx(mark.size)}px;`,
+      `  border-radius: ${radiusProperty(mark.radius)};`,
+      `  background-color: ${colorValue(tokens, mark.surface)};`,
+      ...borderDeclarations(tokens, mark.border).map((line) => `  ${line};`),
+      mark.content ? `  color: ${colorValue(tokens, mark.content)};` : '',
+      shadow
+        ? `  box-shadow: ${shadow.inset ? 'inset ' : ''}0 ${offset} ${lengthToPx(shadow.blur)}px ${colorValue(tokens, mark.shadow.color)};`
+        : '',
+      '}',
+      ''
+    );
+  }
+
   // Inside `components`, so a utility at a call site still wins — the cascade
   // order the badge's other variants rely on.
   const body = lines
@@ -435,6 +467,25 @@ export function renderKotlin(recipes, tokens) {
       lines.push(`        val ${name}: Dp = ${float(lengthToPx(size))}.dp`);
     }
     lines.push('    }', '');
+  }
+
+  const mark = recipes.primitives?.guestMark;
+  if (mark) {
+    lines.push(
+      "    /** The guest prompt's circle: a shape, a surface and the site's inner shadow. */",
+      '    object GuestMark {',
+      `        val size: Dp = ${float(lengthToPx(mark.size))}.dp`,
+      `        val radius: Shape get() = ${radiusShape(mark.radius)}`,
+      `        val surface: Color get() = RoyColors.${camelCase(mark.surface.color)}.copy(alpha = ${float(mark.surface.alpha)})`,
+      `        val content: Color get() = RoyColors.${camelCase(mark.content.color)}.copy(alpha = ${float(mark.content.alpha ?? 1)})`,
+      `        val border: BorderStroke get() = BorderStroke(${float(lengthToPx(mark.border.width))}.dp, RoyColors.${camelCase(mark.border.color)}.copy(alpha = ${float(mark.border.alpha)}))`,
+      `        val shadowInset: Boolean = ${mark.shadow.inset === true}`,
+      `        val shadowOffsetY: Dp = ${float(lengthToPx(mark.shadow.offsetY))}.dp`,
+      `        val shadowBlur: Dp = ${float(lengthToPx(mark.shadow.blur))}.dp`,
+      `        val shadowColor: Color get() = Color.Black.copy(alpha = ${float(mark.shadow.color.alpha)})`,
+      '    }',
+      ''
+    );
   }
 
   lines.push('}', '');
