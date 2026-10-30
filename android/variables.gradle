@@ -36,4 +36,9 @@ ext {
     // lives beside the Kotlin plugin in `build.gradle`, because a buildscript
     // classpath is resolved before this file is applied.
     composeBomVersion = '2025.12.01'
+    // Coroutines, for the session and every call a screen makes off the main
+    // thread (#501). Compose already resolves them transitively; naming the
+    // version here keeps the app's own code on one line instead of on whatever
+    // the Compose classpath happens to bring.
+    kotlinxCoroutinesVersion = '1.10.2'
 }

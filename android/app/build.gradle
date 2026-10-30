@@ -141,6 +141,9 @@ dependencies {
     implementation project(':capacitor-android')
     // The generated contract types decode through kotlinx.serialization (#648).
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+    // The session and the HTTP client (#501): one client, awaited on IO, so a
+    // screen never blocks a frame on a socket.
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
     // The app's own UI (ADR-0089, #647). The BOM pins the Compose artifacts to
     // one release, so the material3 behaviour baseline cannot arrive at a version
     // the runtime does not have.
