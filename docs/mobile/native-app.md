@@ -88,8 +88,15 @@ document hands the route over (`shell/WebSurface.kt`) and the shell stays undern
 a web surface lands on the app's own frame — [ADR-0105](../adr/0105-the-shell-launches-and-the-document-is-a-destination.md)
 records that interim and the criterion it leaves to #662. `shell/NativeSurfaces.kt` is the empty set
 that decides which routes are drawn instead of handed over; a surface's port is what puts a route in
-it. Still owed from this slice: the top bar and the `خدماتنا` menu, the Aref Ruqaa assertion on a
-number the shell draws, and the cold-start budget measured on a mid-range device.
+it.
+
+The top bar and the `خدماتنا` menu landed with it (#647): `shell/ShellTopBar.kt` draws the mark and the
+pill, `shell/ShellServices.kt` the sheet and its sixteen rows — the site's order, the site's words in
+`shared/copy/shell-services.json`, the site's glyphs through `vectors:generate`, and a parity row whose
+states are the trigger and the rows. The menu's table moved out of `frontend/ui/app-shell/constants.ts`
+into `frontend/ui/navbar/services-link.ts` in the same change, because the generated copy is now its
+only source of words. Still owed from this slice: the cold-start budget measured on a mid-range device,
+and the two chrome gaps [two-clients.md](two-clients.md) lists.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
