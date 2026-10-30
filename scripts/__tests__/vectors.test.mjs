@@ -25,6 +25,8 @@ describe('lucide file names', () => {
     expect(slug('RotateCw')).toBe('rotate-cw');
     expect(slug('ArrowLeft')).toBe('arrow-left');
     expect(slug('CircleDashed')).toBe('circle-dashed');
+    // A trailing digit is its own word: the module is `link-2.mjs` (#647).
+    expect(slug('Link2')).toBe('link-2');
   });
 });
 
@@ -49,6 +51,9 @@ describe('SVG primitives as path data', () => {
     expect(lineToPath({ x1: 1, y1: 2, x2: 3, y2: 4 })).toBe('M1 2L3 4');
     expect(pointsToPath('1,2 3,4')).toBe('M1 2L3 4');
     expect(pointsToPath('1,2 3,4', true)).toBe('M1 2L3 4z');
+    // The other spelling the source uses: a flat list of numbers (#647, `Package`).
+    expect(pointsToPath('3.29 7 12 12 20.71 7')).toBe('M3.29 7L12 12L20.71 7');
+    expect(() => pointsToPath('1 2 3')).toThrow();
   });
 
   it('passes a path through unchanged', () => {

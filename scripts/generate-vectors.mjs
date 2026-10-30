@@ -27,10 +27,15 @@ export const OUTPUT = 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vector
 
 /** `RotateCw` -> `rotate-cw`, the lucide module's own file name. */
 export function slug(name) {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-    .toLowerCase();
+  return (
+    name
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+      // A trailing digit is its own word in lucide's file names: `Link2` is
+      // `link-2.mjs`, not `link2.mjs` (#647).
+      .replace(/([a-z])(\d)/g, '$1-$2')
+      .toLowerCase()
+  );
 }
 
 /** One number, without a pointless `.0`. */
@@ -81,14 +86,30 @@ export function lineToPath({ x1, y1, x2, y2 }) {
   return `M${n(x1)} ${n(y1)}L${n(x2)} ${n(y2)}`;
 }
 
-/** `<polyline points>` and `<polygon points>` — the same, closed for a polygon. */
+/**
+ * `<polyline points>` and `<polygon points>` — the same, closed for a polygon.
+ *
+ * A `points` attribute is a flat list of numbers separated by spaces or commas
+ * (`"3.29 7 12 12 20.71 7"`, `"1,2 3,4"`), not a list of pairs. Reading it as
+ * pairs made every coordinate after the first `undefined`, which is how the
+ * `Package` glyph failed to generate (#647).
+ */
 export function pointsToPath(points, closed = false) {
-  const pairs = String(points)
+  const numbers = String(points)
     .trim()
-    .split(/\s+/)
-    .map((pair) => pair.split(',').map(Number));
-  const [first, ...rest] = pairs;
-  const path = [`M${n(first[0])} ${n(first[1])}`, ...rest.map(([x, y]) => `L${n(x)} ${n(y)}`)];
+    .split(/[\s,]+/)
+    .map(Number);
+  if (
+    numbers.length < 4 ||
+    numbers.length % 2 !== 0 ||
+    numbers.some((value) => !Number.isFinite(value))
+  ) {
+    throw new Error(`generate-vectors: "<polyline points="${points}">" is not a list of pairs`);
+  }
+  const path = [`M${n(numbers[0])} ${n(numbers[1])}`];
+  for (let index = 2; index < numbers.length; index += 2) {
+    path.push(`L${n(numbers[index])} ${n(numbers[index + 1])}`);
+  }
   return `${path.join('')}${closed ? 'z' : ''}`;
 }
 

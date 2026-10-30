@@ -36,6 +36,7 @@ import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.plans.PlanCard
 import com.royaraqamia.app.plans.UsageUiState
 import com.royaraqamia.app.session.SignInOutcome
+import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import kotlinx.coroutines.launch
 
@@ -178,6 +179,7 @@ private fun SignInForm(busy: Boolean, error: String?, onSubmit: (String, String)
         enabled = !busy,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         modifier = Modifier.fillMaxWidth(),
+        textStyle = LocalRoyTypeScale.current.let { it.field(it.body) },
     )
     OutlinedTextField(
         value = password,
@@ -188,6 +190,7 @@ private fun SignInForm(busy: Boolean, error: String?, onSubmit: (String, String)
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         modifier = Modifier.fillMaxWidth(),
+        textStyle = LocalRoyTypeScale.current.let { it.field(it.body) },
     )
     if (error != null) {
         Text(

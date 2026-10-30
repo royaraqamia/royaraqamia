@@ -133,6 +133,19 @@ class ThemeTest {
     }
 
     @Test
+    fun `an editable field never takes the digit face`() {
+        val scale = royTypeScale(320f)
+        val digits = scale.digits(scale.body)
+        val field = scale.field(digits)
+
+        // The rule the stylesheet states: a read-only number is Aref Ruqaa, a
+        // field is not — even when the style it is handed was (ADR-0098).
+        assertEquals(RoyFonts.ui, field.fontFamily)
+        assertNotEquals(RoyFonts.digits, field.fontFamily)
+        assertEquals(digits.fontSize, field.fontSize)
+    }
+
+    @Test
     fun `material roles sit on the sites steps`() {
         val scale = royTypeScale(320f)
         val material = royTypography(scale)

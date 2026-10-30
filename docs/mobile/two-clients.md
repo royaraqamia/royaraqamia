@@ -129,6 +129,11 @@ narrower route to read.
   JVM against a Playwright capture at a pinned viewport/DPR, failing on the element
   that moved rather than a pixel count).
 - **The outbox's write semantics in the app** — see the gap in rule 3.
+- **Where the app's chrome is not yet the site's chrome.** Two gaps are deliberate and listed, not
+  discovered: the services menu shows the site's shipped order and not the per-device drag order the
+  sheet keeps in `localStorage` (`rr:services-order:v1`), and the top bar has no notification bell until
+  the notifications surface lands (#659) — the site's bell shows an unread count, and a bell that cannot
+  say how many are unread is a control that lies.
 - **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
   column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws
   it, with its own check.
