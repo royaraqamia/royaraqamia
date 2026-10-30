@@ -130,4 +130,23 @@
     color: hsl(var(--muted-foreground) / 0.8);
     box-shadow: inset 0 2px 4px color-mix(in srgb, #000000 5%, transparent);
   }
+  /* The site's primary action: a gradient pill with the site's own bloom. */
+  .roy-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    min-width: 176px;
+    padding-left: 24px;
+    padding-right: 24px;
+    border-radius: 9999px;
+    background-image: linear-gradient(to right, #9333EA, #7C3AED, #4F46E5);
+    color: #FFFFFF;
+    border: 1px solid color-mix(in srgb, #FFFFFF 20%, transparent);
+    font-family: var(--family-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-leading);
+    font-weight: 700;
+    box-shadow: 0 10px 30px color-mix(in srgb, #9333EA 50%, transparent);
+  }
 }

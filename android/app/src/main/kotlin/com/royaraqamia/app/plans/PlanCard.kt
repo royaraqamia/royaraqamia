@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,8 +32,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -257,8 +261,28 @@ private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Button(onClick = onSignIn, shape = RoyShape.pill) {
-                Text(text = PlanCardCopy.SIGN_IN, style = type.small.copy(fontWeight = FontWeight.Bold))
+            Box(
+                modifier =
+                    Modifier.height(Recipes.Cta.height)
+                        .widthIn(min = Recipes.Cta.minWidth)
+                        .shadow(
+                            elevation = Recipes.Cta.bloomY,
+                            shape = Recipes.Cta.radius,
+                            ambientColor = Recipes.Cta.bloom,
+                            spotColor = Recipes.Cta.bloom,
+                        )
+                        .clip(Recipes.Cta.radius)
+                        .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                        .border(Recipes.Cta.border, Recipes.Cta.radius)
+                        .clickable(onClick = onSignIn)
+                        .padding(horizontal = Recipes.Cta.paddingX),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = PlanCardCopy.SIGN_IN,
+                    style = Recipes.Cta.text(type),
+                    color = Recipes.Cta.content,
+                )
             }
         }
     }
