@@ -23,8 +23,10 @@ import {
   NEWS_CATEGORY_LABELS,
   NEWS_REGION_LABELS,
   NEWS_REGIONS,
+  NEWS_SOURCE_REQUEST_FAILURE_LABELS,
   NEWS_SOURCE_REQUEST_STATUSES,
   NEWS_SOURCE_REQUEST_STATUS_LABELS,
+  NEWS_SOURCE_URL_MAX,
   type NewsCategory,
   type NewsRegion,
   type NewsSourceRequest,
@@ -32,7 +34,9 @@ import {
 } from '@/shared/contracts/news';
 
 const STATUS_TONES = {
-  pending: 'secondary',
+  resolving: 'secondary',
+  ready: 'secondary',
+  needs_review: 'warning',
   approved: 'success',
   rejected: 'destructive',
 } as const;
@@ -48,12 +52,15 @@ const FILTERS: readonly { value: StatusFilter; label: string }[] = [
 ];
 
 /**
- * The review queue for reader-proposed feeds (ADR-0078).
+ * The review queue for reader-proposed sources (ADR-0078, ADR-0105).
  *
- * Approving is the gate: the row it writes is what the daily fetch reads, so a
- * source that was never reviewed cannot enter a digest. The form asks for the
- * three facts the prompt needs — category, region, priority tier — because a
- * proposal carries only a name and a URL.
+ * The reader pastes any link, so the queue is where the system's answer meets a
+ * person's decision: `ready` rows carry the feed the resolver found and only need
+ * the three facts the prompt uses, while `needs_review` rows carry the reason the
+ * resolver could not convert them and are answered by pasting the feed the source
+ * really publishes (Facebook, X and Instagram have none).
+ *
+ * Approving is still the gate: the row it writes is what the daily fetch reads.
  */
 export default function AdminNewsSourcesPage() {
   const [requests, setRequests] = useState<NewsSourceRequest[]>([]);
@@ -61,7 +68,10 @@ export default function AdminNewsSourcesPage() {
   const [loading, setLoading] = useState(true);
   const [decidingId, setDecidingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<
-    Record<string, { category: NewsCategory; region: NewsRegion; tier: 1 | 2; note: string }>
+    Record<
+      string,
+      { category: NewsCategory; region: NewsRegion; tier: 1 | 2; note: string; feedUrl: string }
+    >
   >({});
 
   const fetchData = useCallback(async () => {
@@ -87,6 +97,7 @@ export default function AdminNewsSourcesPage() {
       region: request.region ?? 'world',
       tier: request.tier ?? 2,
       note: '',
+      feedUrl: '',
     };
 
   const patchDraft = (request: NewsSourceRequest, patch: Partial<ReturnType<typeof draftFor>>) => {
@@ -106,6 +117,7 @@ export default function AdminNewsSourcesPage() {
               region: draft.region,
               tier: draft.tier,
               note: draft.note.trim() || undefined,
+              feedUrl: draft.feedUrl.trim() || undefined,
             }
           : { action, note: draft.note.trim() || undefined }
       );
@@ -124,7 +136,7 @@ export default function AdminNewsSourcesPage() {
       <AdminPageHeader
         icon={Newspaper}
         title="مصادر الأخبار"
-        description="اقبل أو ارفض المصادر التي يقترحها القرَّاء. المقبول يصبح متاحًا للجلب في ملخَّص اليوم التالي."
+        description="اقبل أو ارفض المصادر التي يقترحها القرَّاء. النظام يبحث عن الخلاصة تلقائيًّا؛ وما لم يجد له خلاصة يظهر بوصفه «يحتاج مراجعة» وتُلصق له الخلاصة يدويًّا. المقبول يصبح متاحًا للجلب في ملخَّص اليوم التالي."
       />
 
       <div role="group" aria-label="تصفية حسب الحالة" className="mb-6 flex flex-wrap gap-2">
@@ -164,7 +176,8 @@ export default function AdminNewsSourcesPage() {
         <ul className="space-y-3">
           {requests.map((request) => {
             const draft = draftFor(request);
-            const isPending = request.status === 'pending';
+            const isDecidable = request.status === 'ready' || request.status === 'needs_review';
+            const needsFeed = request.status === 'needs_review';
 
             return (
               <li
@@ -177,13 +190,49 @@ export default function AdminNewsSourcesPage() {
                     <p className="mt-1 truncate text-xs text-muted-foreground" dir="ltr">
                       {request.url}
                     </p>
+                    {request.resolvedUrl && request.resolvedUrl !== request.url ? (
+                      <p className="mt-1 truncate text-[11px] text-muted-foreground" dir="ltr">
+                        {request.resolvedUrl}
+                      </p>
+                    ) : null}
                   </div>
                   <Badge variant={STATUS_TONES[request.status]}>
                     {NEWS_SOURCE_REQUEST_STATUS_LABELS[request.status]}
                   </Badge>
                 </div>
 
-                {isPending ? (
+                {request.status === 'needs_review' && request.failure ? (
+                  <div className="mt-3 rounded-xl border border-border/50 bg-muted/40 p-3">
+                    <p className="text-xs leading-6 text-muted-foreground">
+                      {NEWS_SOURCE_REQUEST_FAILURE_LABELS[request.failure]}
+                    </p>
+                    {request.failureDetail ? (
+                      <p className="mt-1 text-[11px] text-muted-foreground" dir="ltr">
+                        <code>{request.failureDetail}</code>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {needsFeed ? (
+                  <label className="mt-3 flex flex-col gap-1.5">
+                    <span className="text-[11px] font-bold text-muted-foreground">
+                      رابط خلاصة RSS أو Atom للمصدر
+                    </span>
+                    <Input
+                      value={draft.feedUrl}
+                      onChange={(event) => patchDraft(request, { feedUrl: event.target.value })}
+                      maxLength={NEWS_SOURCE_URL_MAX}
+                      placeholder="https://example.com/rss"
+                      inputMode="url"
+                      dir="ltr"
+                      className="h-10"
+                      aria-label={`رابط خلاصة ${request.name}`}
+                    />
+                  </label>
+                ) : null}
+
+                {isDecidable ? (
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <label className="flex flex-col gap-1.5">
                       <span className="text-[11px] font-bold text-muted-foreground">التصنيف</span>
@@ -248,7 +297,7 @@ export default function AdminNewsSourcesPage() {
                 ) : null}
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {isPending ? (
+                  {isDecidable ? (
                     <>
                       <Input
                         value={draft.note}
@@ -263,7 +312,7 @@ export default function AdminNewsSourcesPage() {
                         type="button"
                         size="sm"
                         onClick={() => void decide(request, 'approve')}
-                        disabled={decidingId === request.id}
+                        disabled={decidingId === request.id || (needsFeed && !draft.feedUrl.trim())}
                       >
                         قبول
                       </Button>

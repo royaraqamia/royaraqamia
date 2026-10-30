@@ -29,6 +29,7 @@ import {
   isPublishableUrl,
   mergeSources,
   parseFeed,
+  parseTelegramPreview,
   readSources,
   titleSimilarity,
   toApprovedSource,
@@ -95,8 +96,9 @@ async function fetchText(url) {
 async function fetchSource(source) {
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
-      const xml = await fetchText(source.url);
-      return parseFeed(xml);
+      const body = await fetchText(source.url);
+      // A Telegram channel has no XML document: its public preview is the feed.
+      return source.kind === 'telegram' ? parseTelegramPreview(body) : parseFeed(body);
     } catch (error) {
       if (attempt === 2) {
         return { error: error instanceof Error ? error.message : String(error) };
@@ -151,7 +153,7 @@ async function loadApprovedSources(env = process.env) {
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return [];
 
-  const endpoint = `${url}/rest/v1/news_sources?select=id,name,url,category,region,tier,fresh_hours&enabled=is.true`;
+  const endpoint = `${url}/rest/v1/news_sources?select=id,name,url,kind,category,region,tier,fresh_hours&enabled=is.true`;
 
   try {
     const response = await fetch(endpoint, {

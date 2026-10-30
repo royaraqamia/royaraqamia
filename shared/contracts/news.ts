@@ -139,25 +139,77 @@ export interface NewsPersonalView {
   active: boolean;
 }
 
-/** The states a reader's source proposal can be in. */
-export const NEWS_SOURCE_REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
+/**
+ * The states a reader's source proposal can be in.
+ *
+ * The reader pastes any link, so the first three states are the system's, not a
+ * person's: `resolving` is a row the worker has not answered yet, `ready` is a
+ * URL the worker turned into a fetchable feed, and `needs_review` is one it
+ * could not (Facebook, X and Instagram have no free public read; a page may
+ * simply publish no feed). Only `approved` and `rejected` are an Admin's
+ * decision (ADR-0105).
+ */
+export const NEWS_SOURCE_REQUEST_STATUSES = [
+  'resolving',
+  'ready',
+  'needs_review',
+  'approved',
+  'rejected',
+] as const;
 export type NewsSourceRequestStatus = (typeof NEWS_SOURCE_REQUEST_STATUSES)[number];
 
 export const NEWS_SOURCE_REQUEST_STATUS_LABELS: Record<NewsSourceRequestStatus, string> = {
-  pending: 'قيد المراجعة',
+  resolving: 'جاري التحقّق',
+  ready: 'جاهز للمراجعة',
+  needs_review: 'يحتاج مراجعة',
   approved: 'مقبول',
   rejected: 'مرفوض',
 };
 
+/** How a resolved source is read: an XML feed, or a Telegram channel preview. */
+export const NEWS_SOURCE_KINDS = ['feed', 'telegram'] as const;
+export type NewsSourceKind = (typeof NEWS_SOURCE_KINDS)[number];
+
+/** Why the worker could not turn a URL into a feed. */
+export const NEWS_SOURCE_REQUEST_FAILURES = ['unsupported', 'no-feed', 'unreachable'] as const;
+export type NewsSourceRequestFailure = (typeof NEWS_SOURCE_REQUEST_FAILURES)[number];
+
 /**
- * A feed a reader proposed. It is an intake record, not a catalogue entry: only
- * an Admin's approval creates the `news_sources` row the fetch reads.
+ * What the reader and the Admin are told. The reader is not asked to act on
+ * most of these — an Admin resolves them — so they say what happened, not what
+ * to do.
+ */
+export const NEWS_SOURCE_REQUEST_FAILURE_LABELS: Record<NewsSourceRequestFailure, string> = {
+  unsupported: 'هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ.',
+  'no-feed': 'لم نجد خلاصة RSS أو Atom على هذه الصفحة.',
+  unreachable: 'تعذّر الوصول إلى الرابط.',
+};
+
+/** A request an Admin can still decide, and that counts against the open rule. */
+export function isOpenNewsSourceRequest(status: NewsSourceRequestStatus): boolean {
+  return status === 'resolving' || status === 'ready' || status === 'needs_review';
+}
+
+/**
+ * A source a reader proposed. It is an intake record, not a catalogue entry:
+ * only an Admin's approval creates the `news_sources` row the fetch reads.
  */
 export interface NewsSourceRequest {
   id: string;
+  /** The URL as pasted, canonicalised. Never rewritten: it is what was asked for. */
   url: string;
   name: string;
   status: NewsSourceRequestStatus;
+  /** What the URL resolved to, once the worker (or an Admin) answered. */
+  kind: NewsSourceKind | null;
+  /** The fetchable feed, which an Admin approves; null while it is unknown. */
+  resolvedUrl: string | null;
+  failure: NewsSourceRequestFailure | null;
+  /** The machine's one-line reason, for the Admin queue. */
+  failureDetail: string | null;
+  /** How many worker runs have tried; a stuck row is visible in the queue. */
+  attempts: number;
+  resolvedAt: string | null;
   category: NewsCategory | null;
   region: NewsRegion | null;
   tier: 1 | 2 | null;
@@ -196,12 +248,20 @@ export const newsSourceRequestSchema = z.object({
 
 export type NewsSourceRequestInput = z.infer<typeof newsSourceRequestSchema>;
 
-/** What an Admin confirms when accepting a proposal; the request carries no defaults. */
+/**
+ * What an Admin confirms when accepting a proposal; the request carries no
+ * defaults.
+ *
+ * `feedUrl` is how a `needs_review` row is answered: the worker could not find
+ * a feed, so the Admin pastes the one the source really publishes. It is
+ * ignored for a `ready` row, whose resolved URL is the decision.
+ */
 export const newsSourceApprovalSchema = z.object({
   category: z.enum(NEWS_CATEGORIES),
   region: z.enum(NEWS_REGIONS),
   tier: z.union([z.literal(1), z.literal(2)]).default(2),
   note: z.string().trim().max(NEWS_SOURCE_NOTE_MAX).optional(),
+  feedUrl: z.string().trim().max(NEWS_SOURCE_URL_MAX).optional(),
 });
 
 export type NewsSourceApprovalInput = z.infer<typeof newsSourceApprovalSchema>;

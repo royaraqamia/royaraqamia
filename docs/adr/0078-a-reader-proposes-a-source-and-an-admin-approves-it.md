@@ -1,5 +1,9 @@
 # A reader may propose a source, and approval is a row rather than a deploy
 
+> **Superseded in part by [ADR 0105](0105-a-pasted-url-is-resolved-by-adapters.md)**, which drops the
+> synchronous probe: the reader pastes any URL, the row starts as `resolving`, and a worker resolves it
+> into a feed or marks it `needs_review`. The review step below is unchanged.
+
 Readers can submit an RSS/Atom feed from `/account/news`. The server probes it (a real document, at
 least one item), the proposal lands in `news_source_requests` as `pending`, and an Admin accepts or
 rejects it in `/admin/news`. Accepting writes one row to `news_sources`; the daily fetch merges that
