@@ -68,6 +68,15 @@ can name is a colour the tokens have. The release build is minified for the same
 exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)); the first Compose screen is still
 Phase 2's.
 
+**Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
+(`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
+the same moment, and ends the session only when the server _refuses_ the token — a refresh that never
+reached an answer keeps it, because a tunnel is not a sign-out. `ApiClient` sends that bearer to an
+owned route, allows one refresh and one retry, and decodes through the contract; `HttpTransport` is
+the one place a socket exists, with its timeouts. Still owed: the password grant, the provider return
+on `royar://auth`, the identity partition a sign-out performs (ADR-0070), and the Keystore path itself
+— it cannot run in a unit test, so it is verified on a device.
+
 **Retires:** nothing. This phase is additive.
 
 ## Phase 1 — the HabitFlow slice
