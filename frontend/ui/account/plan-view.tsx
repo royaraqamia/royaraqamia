@@ -40,16 +40,16 @@ export function PlanView() {
 
   if (sessionLoading) {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label={PLAN_CARD_COPY.loadingLabel}>
-        <div className="h-32 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+      <div className="roy-skeletons" aria-busy="true" aria-label={PLAN_CARD_COPY.loadingLabel}>
+        <div className="roy-skeleton roy-skeleton--block-1" />
+        <div className="roy-skeleton roy-skeleton--block-2" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <section className="flex flex-col items-center gap-3 rounded-2xl card-padding border border-border/50 bg-card/60 text-center">
+      <section className="roy-card items-center text-center">
         <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
           <Lock size={24} aria-hidden="true" />
         </div>
@@ -69,11 +69,11 @@ export function PlanView() {
 
   if (failed && !plan) {
     return (
-      <section className="rounded-2xl card-padding border border-border/50 bg-card/60 text-center">
+      <section className="roy-card text-center">
         <p role="alert" className="text-sm text-muted-foreground">
           {PLAN_CARD_COPY.failed}
         </p>
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => void reload()}>
+        <Button variant="outline" size="sm" onClick={() => void reload()}>
           <RotateCw className="size-4" aria-hidden="true" />
           {PLAN_CARD_COPY.retry}
         </Button>
@@ -83,9 +83,9 @@ export function PlanView() {
 
   if (loading && !plan) {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label={PLAN_CARD_COPY.loadingLabel}>
-        <div className="h-32 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+      <div className="roy-skeletons" aria-busy="true" aria-label={PLAN_CARD_COPY.loadingLabel}>
+        <div className="roy-skeleton roy-skeleton--block-1" />
+        <div className="roy-skeleton roy-skeleton--block-2" />
       </div>
     );
   }
@@ -116,10 +116,7 @@ export function PlanView() {
 
   return (
     <div className="space-y-4">
-      <section
-        aria-label={PLAN_CARD_COPY.cardLabel}
-        className="rounded-2xl card-padding border border-border/50 bg-card/60"
-      >
+      <section aria-label={PLAN_CARD_COPY.cardLabel} className="roy-card">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-bold text-foreground sm:text-base">
             {PLAN_CARD_COPY.cardTitle}
@@ -129,14 +126,11 @@ export function PlanView() {
           </Badge>
         </div>
 
-        <ul className="mt-3 space-y-1.5">
+        <ul className="roy-rows">
           {rows.map((row) => (
-            <li
-              key={row.key}
-              className="flex items-center justify-between gap-3 text-xs sm:text-sm"
-            >
-              <span className="text-muted-foreground">{row.label}</span>
-              <span className="shrink-0 font-bold text-foreground" dir="ltr">
+            <li key={row.key} className="roy-row">
+              <span className="roy-row-label">{row.label}</span>
+              <span className="roy-row-value">
                 {state.unlimited
                   ? PLAN_CARD_COPY.unlimited
                   : `${formatCount(row.used)} / ${formatCount(row.cap)}`}
@@ -146,7 +140,7 @@ export function PlanView() {
         </ul>
 
         {state.plan === 'pro' && state.expiresAt && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-fluid-xs text-muted-foreground">
             {PLAN_CARD_COPY.expires.replace('{date}', formatHijriDate(state.expiresAt))}
           </p>
         )}

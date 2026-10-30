@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "notes": {
+    "source": "The shapes and values a ported component is made of, in both clients. `npm run components:generate` writes `app/components.css` and the app's `Recipes.kt` from this file; a component that draws a card, a badge, a skeleton or a row reads one of these rather than typing `rounded-2xl`, `p-4` or `128.dp` (ADR-0099).",
+    "tokens": "A value is either a token name (`radius.2xl`, `space.card-padding`, `color.card`) or a plain number with its unit, and never both spelled differently on the two sides - that is the drift this replaces. A colour is a token name plus an optional alpha.",
+    "gate": "`npm run check:components` fails a stale output and a name that is not in `shared/tokens/tokens.json`. A ported component carries no visual literal: `npm run check:parity` fails one that does."
+  },
+  "primitives": {
+    "card": {
+      "description": "The account surface's card: the site's `rounded-2xl border border-border/50 bg-card/60`.",
+      "radius": "2xl",
+      "padding": "card-padding",
+      "gap": "element-gap-sm",
+      "surface": { "color": "card", "alpha": 0.6 },
+      "border": { "color": "border", "alpha": 0.5, "width": "1px" },
+      "shadow": "none"
+    },
+    "badge": {
+      "description": "The site's pill badge. Geometry is generated; the tones the port does not draw stay in `badge.tsx`, where they were.",
+      "radius": "pill",
+      "border": { "width": "1px" },
+      "type": { "step": "xs", "weight": 700, "tracking": "-0.025em" },
+      "sizes": {
+        "default": {
+          "height": "1.5rem",
+          "paddingX": "0.625rem",
+          "paddingY": "0.125rem",
+          "step": "xs"
+        }
+      },
+      "tones": {
+        "success": {
+          "surface": { "color": "success", "alpha": 0.1 },
+          "border": { "color": "success", "alpha": 0.3 },
+          "content": { "color": "success" }
+        },
+        "neutral": {
+          "surface": { "color": "secondary", "alpha": 0.8 },
+          "border": { "color": "border", "alpha": 0.6 },
+          "content": { "color": "secondary-foreground" }
+        }
+      }
+    },
+    "skeleton": {
+      "description": "The page-level loading state: two blocks that pulse while the read is out.",
+      "radius": "2xl",
+      "gap": "0.75rem",
+      "blocks": ["8rem", "5rem"],
+      "fill": { "color": "muted", "alpha": 0.4 },
+      "border": { "color": "border", "alpha": 0.4, "width": "1px" },
+      "pulse": { "from": 1, "to": 0.5, "durationMs": 2000 }
+    },
+    "row": {
+      "description": "One label and its numbers: muted label at the start, bold count at the end, never mirrored.",
+      "gap": "0.375rem",
+      "label": { "step": "xs", "color": "muted-foreground" },
+      "value": {
+        "step": "xs",
+        "color": "foreground",
+        "weight": 700,
+        "digits": true,
+        "direction": "ltr"
+      }
+    }
+  }
+}
