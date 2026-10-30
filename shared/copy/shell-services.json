@@ -1,0 +1,36 @@
+{
+  "surface": "home",
+  "component": "shell-services",
+  "web": {
+    "file": "frontend/ui/navbar/services-copy.ts",
+    "export": "SERVICES_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesCopy.kt",
+    "object": "ServicesCopy"
+  },
+  "notes": {
+    "source": "The `خدماتنا` menu, in both clients (#647): its trigger and its sixteen rows. The rows are the ones the site ships, in its order, and the hidden product (`blogpress`) is absent from both — a row a user cannot reach is not a row. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "placeholders": "None: every row is a name, not a sentence.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key whose row neither client draws."
+  },
+  "strings": {
+    "trigger": "خدماتنا",
+    "requestProject": "طلب بناء مشروع",
+    "hire": "طلب التَّعاقُد الشَّهري",
+    "news": "أخبار اليوم",
+    "training": "التَّسجيل في التَّدريب",
+    "verify": "التَّحقُّق من الشَّهادة",
+    "consultation": "حجز استشارة",
+    "rates": "أسعار الصَّرف",
+    "downloader": "مُنزِّل الوسائط",
+    "scan": "ماسح QR و Barcode",
+    "quran": "القرآن الكريم",
+    "athkar": "أذكار الصَّباح والمساء",
+    "notes": "الملاحظات",
+    "mcpGuide": "ربط الـ MCP",
+    "linkSnap": "اختصار الرَّوابط",
+    "habitFlow": "تتبُّع العادات",
+    "spendTrack": "تتبُّع المصاريف"
+  }
+}

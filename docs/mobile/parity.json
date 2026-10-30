@@ -20,10 +20,22 @@
       },
       "copySource": "shared/copy/plan-card.json",
       "states": [
-        { "name": "Loading", "copy": "loadingLabel" },
-        { "name": "Ready", "copy": "cardTitle" },
-        { "name": "SignedOut", "copy": "signInTitle" },
-        { "name": "Failed", "copy": "failed" }
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "Ready",
+          "copy": "cardTitle"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signInTitle"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        }
       ]
     },
     {
@@ -44,9 +56,106 @@
       },
       "copySource": "shared/copy/shell-tab-bar.json",
       "states": [
-        { "name": "Home", "copy": "homeLabel" },
-        { "name": "Community", "copy": "communityLabel" },
-        { "name": "Account", "copy": "accountLabel" }
+        {
+          "name": "Home",
+          "copy": "homeLabel"
+        },
+        {
+          "name": "Community",
+          "copy": "communityLabel"
+        },
+        {
+          "name": "Account",
+          "copy": "accountLabel"
+        }
+      ]
+    },
+    {
+      "id": "shell-services",
+      "surface": "home",
+      "issue": "#647",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/navbar/services-link.ts",
+        "copyModule": "frontend/ui/navbar/services-copy.ts",
+        "copyExport": "SERVICES_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellServices.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellServices.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesCopy.kt",
+        "copyObject": "ServicesCopy"
+      },
+      "copySource": "shared/copy/shell-services.json",
+      "states": [
+        {
+          "name": "Trigger",
+          "copy": "trigger"
+        },
+        {
+          "name": "RequestProject",
+          "copy": "requestProject"
+        },
+        {
+          "name": "Hire",
+          "copy": "hire"
+        },
+        {
+          "name": "News",
+          "copy": "news"
+        },
+        {
+          "name": "Training",
+          "copy": "training"
+        },
+        {
+          "name": "Verify",
+          "copy": "verify"
+        },
+        {
+          "name": "Consultation",
+          "copy": "consultation"
+        },
+        {
+          "name": "Rates",
+          "copy": "rates"
+        },
+        {
+          "name": "Downloader",
+          "copy": "downloader"
+        },
+        {
+          "name": "Scan",
+          "copy": "scan"
+        },
+        {
+          "name": "Quran",
+          "copy": "quran"
+        },
+        {
+          "name": "Athkar",
+          "copy": "athkar"
+        },
+        {
+          "name": "LinkSnap",
+          "copy": "linkSnap"
+        },
+        {
+          "name": "HabitFlow",
+          "copy": "habitFlow"
+        },
+        {
+          "name": "SpendTrack",
+          "copy": "spendTrack"
+        },
+        {
+          "name": "Notes",
+          "copy": "notes"
+        },
+        {
+          "name": "McpGuide",
+          "copy": "mcpGuide"
+        }
       ]
     }
   ]

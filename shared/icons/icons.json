@@ -1,5 +1,28 @@
 {
   "schemaVersion": 1,
   "strokeWidth": 2,
-  "icons": ["House", "Lock", "RotateCw", "UserRound", "Users"]
+  "icons": [
+    "BookOpen",
+    "CalendarCheck",
+    "CalendarClock",
+    "Coins",
+    "Download",
+    "GraduationCap",
+    "House",
+    "Link2",
+    "Lock",
+    "Newspaper",
+    "Package",
+    "Plug",
+    "Rocket",
+    "RotateCw",
+    "ScanBarcode",
+    "ScanLine",
+    "SquareCheck",
+    "StickyNote",
+    "SunMoon",
+    "UserRound",
+    "Users",
+    "Wallet"
+  ]
 }

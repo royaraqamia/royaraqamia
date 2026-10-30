@@ -16,20 +16,20 @@ package com.royaraqamia.app.shell
 sealed interface ShellTab {
     val route: String
 
-    /** Whether this tab is the active one while the shell shows [route]. */
-    fun isActive(route: String): Boolean
+    /** Whether this tab is the active one while the shell shows [current]. */
+    fun isActive(current: String): Boolean
 
     data object Home : ShellTab {
         override val route: String = Routes.HOME
 
-        override fun isActive(route: String): Boolean = Routes.normalize(route) == Routes.HOME
+        override fun isActive(current: String): Boolean = Routes.normalize(current) == route
     }
 
     data object Community : ShellTab {
         override val route: String = "/community"
 
-        override fun isActive(route: String): Boolean {
-            val normalized = Routes.normalize(route)
+        override fun isActive(current: String): Boolean {
+            val normalized = Routes.normalize(current)
             return normalized == route || normalized.startsWith("$route/")
         }
     }
@@ -37,7 +37,7 @@ sealed interface ShellTab {
     data object Account : ShellTab {
         override val route: String = "/account"
 
-        override fun isActive(route: String): Boolean = Routes.normalize(route).startsWith(route)
+        override fun isActive(current: String): Boolean = Routes.normalize(current).startsWith(route)
     }
 
     companion object {

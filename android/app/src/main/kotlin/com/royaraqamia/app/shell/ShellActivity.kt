@@ -55,7 +55,11 @@ class ShellActivity : ComponentActivity() {
                 // The app is RTL before it is anything else (ADR-0089): the site is
                 // Arabic, and a screen laid out left-to-right is the wrong screen.
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    ShellFrame(currentRoute = current, onSelect = ::select)
+                    ShellFrame(
+                        currentRoute = current,
+                        onSelect = { tab -> openRoute(tab.route) },
+                        onOpenRoute = ::openRoute,
+                    )
                 }
                 LaunchedEffect(Unit) {
                     // One drawn frame first: the splash lifts onto the app's own
@@ -95,11 +99,15 @@ class ShellActivity : ComponentActivity() {
         handOver()
     }
 
-    private fun select(tab: ShellTab) {
-        stack.open(tab.route)
+    /**
+     * Navigate to a route: a tab, a services row, or anything else the frame
+     * offers. The route decides whether the shell draws it or hands it over.
+     */
+    private fun openRoute(route: String) {
+        stack.open(route)
         current = stack.route
-        // A tab tap is a navigation, so a web-backed destination is opened again
-        // even when it is the one already showing.
+        // A tap is a navigation, so a web-backed destination is opened again even
+        // when it is the one already showing.
         handOver()
     }
 
