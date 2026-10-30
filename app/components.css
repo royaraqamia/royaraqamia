@@ -117,4 +117,17 @@
     width: 16px;
     height: 16px;
   }
+  /* The guest prompt's circle: a shape, a surface and the site's inner shadow. */
+  .roy-guest-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background-color: hsl(var(--muted) / 0.6);
+    border: 1px solid hsl(var(--border) / 0.4);
+    color: hsl(var(--muted-foreground) / 0.8);
+    box-shadow: inset 0 2px 4px color-mix(in srgb, #000000 5%, transparent);
+  }
 }

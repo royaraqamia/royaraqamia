@@ -50,7 +50,7 @@ export function PlanView() {
   if (!user) {
     return (
       <section className="roy-card items-center text-center">
-        <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
+        <div className="roy-guest-mark">
           <Lock className="roy-glyph roy-glyph--md" aria-hidden="true" />
         </div>
         <div className="space-y-1">
