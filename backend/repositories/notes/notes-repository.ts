@@ -38,6 +38,10 @@ export interface NotesRepository {
   getNote(userId: string, id: string): Promise<Note | null>;
   /** Creates or edits one note; an older replay is dropped, not applied. */
   saveNote(userId: string, id: string, note: NoteWrite, meta?: NoteWriteMeta): Promise<void>;
-  /** Tombstones one note. A note that never reached the server is a no-op. */
+  /**
+   * Tombstones one note; an older replay is dropped, not applied, so a delete
+   * queued before a newer edit cannot undo it. A note that never reached the
+   * server is a no-op.
+   */
   deleteNote(userId: string, id: string, meta?: NoteWriteMeta): Promise<void>;
 }

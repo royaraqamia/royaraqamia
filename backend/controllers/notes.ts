@@ -7,7 +7,7 @@ import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import { messageError } from '@/backend/transport/authenticated-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
-import type { NoteUpdateInput, NoteWriteInput } from '@/shared/contracts/notes';
+import type { NoteDeleteInput, NoteUpdateInput, NoteWriteInput } from '@/shared/contracts/notes';
 
 /**
  * Notes' sync endpoints (ADR-0092).
@@ -118,17 +118,14 @@ export async function updateNote(id: string, input: NoteUpdateInput): Promise<Ht
   );
 }
 
-export async function deleteNote(
-  id: string,
-  body: { updatedAt?: string } = {}
-): Promise<HttpResult> {
+export async function deleteNote(id: string, input: NoteDeleteInput): Promise<HttpResult> {
   if (!NoteIdSchema.safeParse(id).success) {
     return jsonResult(400, { success: false, error: 'معرّف الملاحظة غير صالح.' });
   }
 
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createNotesService(supabase).deleteNote(userId, id, offlineMeta(body));
+      await createNotesService(supabase).deleteNote(userId, id, offlineMeta(input));
       return jsonResult(200, { success: true });
     },
     { mapError: errorResultAt(400, 'فشل حذف الملاحظة') }
