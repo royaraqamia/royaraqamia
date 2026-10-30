@@ -1,0 +1,12 @@
+/* Notifications stylesheet (issue #497).
+
+   Loaded by `app/notifications/layout.tsx`, so it only reaches a visitor on that
+   surface. It carries the utilities the notification page renders and nothing the
+   shell already ships in `app/global.css`: same layer order, same tokens, nothing
+   redefined. */
+
+@import '../surface.css';
+
+@source './';
+@source '../../frontend/ui/notifications';
+@source '../../frontend/ui/shared';

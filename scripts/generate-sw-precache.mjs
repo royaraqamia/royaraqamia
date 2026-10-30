@@ -107,6 +107,15 @@ export const DYNAMIC_BY_DESIGN = [
     route: '/account/changelog',
     reason: 'shows the newest release notes — a precached shell would pin an old list',
   },
+  // The notification centre. Its document carries nothing: the feed is a client
+  // read, so a precached shell would paint an empty frame with the radio off, and
+  // the slot it costs evicts `/verify`'s shell from the tail. The page stays a
+  // shell the worker caches at runtime after the first visit.
+  {
+    route: '/notifications',
+    reason:
+      'the feed is a per-identity client read, so there is nothing to serve offline; the slot belongs to `/verify`',
+  },
 ];
 
 /**
