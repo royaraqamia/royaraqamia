@@ -94,6 +94,7 @@ export function createNewsPrivateSourcesServiceFor(
 ): NewsPrivateSourcesService {
   return createNewsPrivateSourcesService({
     sources: createNewsUserSourcesRepository(supabase),
+    preferences: createNewsPreferencesServiceFor(supabase),
     quota: newsPrivateSourceQuota,
   });
 }

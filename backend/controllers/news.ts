@@ -14,7 +14,11 @@ import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { PLAN_QUOTAS } from '@/shared/contracts/plans';
-import { newsSourcePreferencesSchema, newsSourceRequestSchema } from '@/shared/contracts/news';
+import {
+  newsPersonalDigestToggleSchema,
+  newsSourcePreferencesSchema,
+  newsSourceRequestSchema,
+} from '@/shared/contracts/news';
 
 /** A refusal the form can show as-is, with the status the service chose for it. */
 function serviceErrorResponse(error: unknown, log: string): HttpResult {
@@ -134,6 +138,35 @@ export async function deleteMyNewsPrivateSource(id: string, headers: Headers): P
     },
     {
       mapError: (error) => serviceErrorResponse(error, 'Failed to remove a private news source'),
+    }
+  );
+}
+
+/**
+ * Turns the reader's own digest on, without touching what they selected.
+ *
+ * The button that calls this sits beside their private sources, and is the only
+ * place a reader is told why nothing has arrived: a private source is read by
+ * their own digest and by nothing else (ADR-0106). It is their click, because a
+ * digest costs credits.
+ */
+export async function enableMyPersonalDigest(body: unknown, headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      if (!newsPersonalDigestToggleSchema.safeParse(body).success) {
+        return jsonResult(400, { success: false, error: 'طلب غير صالح.' });
+      }
+
+      const summary =
+        await createNewsPrivateSourcesServiceFor(supabase).enablePersonalDigest(userId);
+      return jsonResult(200, { success: true, ...summary });
+    },
+    {
+      mapError: (error) => serviceErrorResponse(error, 'Failed to enable the personal news digest'),
     }
   );
 }

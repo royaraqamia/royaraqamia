@@ -1,0 +1,67 @@
+# Exercises the private-source path against the deployment (ADR-0106)
+#
+# Unit tests cannot reach Postgres, and the parts of this feature most likely to
+# be wrong are all there: two `security definer` RPCs, a quota trigger that must
+# tell "new slot" from "same feed again", the redefined partial indexes, and
+# three RLS policies. `scripts/news/smoke-private-sources.mjs` signs up two
+# disposable readers through the real API — so RLS answers for a real session —
+# asserts what each may see and do, then deletes them (their rows cascade).
+#
+# Manual only, and it asks for a word: this writes to the deployment. Run it
+# after a migration that touches news sources has been applied:
+#
+#   gh workflow run 'News Source Smoke' -f confirm=run
+#
+# Secrets: SUPABASE_SERVICE_ROLE_KEY (repository → Actions). The URL and the
+# publishable key are public and pinned here, as in the other workflows.
+
+name: 'News Source Smoke'
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "run": this creates and deletes two real accounts'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-source-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      CONFIRM: ${{ inputs.confirm }}
+      SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Require an explicit go-ahead
+        run: |
+          if [ "$CONFIRM" != "run" ]; then
+            echo "::error::this job writes to the deployment; re-run it with confirm=run"
+            exit 1
+          fi
+
+      - name: Check the private-source path
+        run: node scripts/news/smoke-private-sources.mjs

@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { deleteNewsPrivateSource, getMyNewsPrivateSources } from '@/frontend/api/news';
+import {
+  deleteNewsPrivateSource,
+  enableMyPersonalDigest,
+  getMyNewsPrivateSources,
+} from '@/frontend/api/news';
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { ApiError } from '@/frontend/transport/http';
@@ -29,6 +33,7 @@ export function NewsPrivateSources() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [enablingDigest, setEnablingDigest] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +85,20 @@ export function NewsPrivateSources() {
   const cap = summary?.cap ?? 0;
   const used = summary?.used ?? 0;
 
+  const enableDigest = async () => {
+    setEnablingDigest(true);
+    try {
+      setSummary(await enableMyPersonalDigest());
+      toast.success('شغّلنا مُلخَّصك الخاص؛ ستصل أخبار هذه المصادر صباحًا.');
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError ? error.message : 'تعذّر تشغيل المُلخَّص. أعد المحاولة.'
+      );
+    } finally {
+      setEnablingDigest(false);
+    }
+  };
+
   const remove = async (id: string) => {
     setRemovingId(id);
     try {
@@ -109,8 +128,7 @@ export function NewsPrivateSources() {
             مصادرك الخاصّة
           </h2>
           <p className="mt-1 text-sm leading-7 text-muted-foreground">
-            روابط أضفتها أنت. لا يراها أحد غيرك، وتظهر في مُلخَّصك الخاص وحده — شغّل «مُلخَّص خاص
-            بي» في الأعلى لتصلك.
+            روابط أضفتها أنت. لا يراها أحد غيرك، وتظهر في مُلخَّصك الخاص وحده.
           </p>
         </div>
 
@@ -122,6 +140,23 @@ export function NewsPrivateSources() {
           </Badge>
         ) : null}
       </div>
+
+      {sources.length > 0 && !summary?.personalEnabled ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+          <p className="text-xs leading-6 text-muted-foreground">
+            مصادرك جاهزة، لكن مُلخَّصك الخاص مُتوقّف — ومصادرك الخاصّة لا تظهر في غيره. شغّله لتصلك
+            أخبارها صباحًا.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void enableDigest()}
+            disabled={enablingDigest}
+          >
+            {enablingDigest ? 'جاري التشغيل…' : 'شغّل مُلخَّصي الخاص'}
+          </Button>
+        </div>
+      ) : null}
 
       {sources.length === 0 ? (
         <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
