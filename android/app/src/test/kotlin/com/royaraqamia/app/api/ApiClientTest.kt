@@ -2,6 +2,7 @@ package com.royaraqamia.app.api
 
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.McpConnectedAppActionResult
 import com.royaraqamia.app.contracts.generated.MyUsageResponse
 import com.royaraqamia.app.contracts.generated.MyUsageResponseStatePlan
 import com.royaraqamia.app.net.HttpResponse
@@ -148,5 +149,39 @@ class ApiClientTest {
         assertEquals(ApiResult.Failure(ApiError.Network("connection refused")), result)
         assertTrue("the session survives a dead network", session.signedIn)
         assertEquals("an unreachable server asks for no refresh", 0, refresher.calls.get())
+    }
+
+    @Test
+    fun `a delete sends the method the route dispatches on`() {
+        val transport = RecordingTransport { HttpResponse(200, """{"success":true}""") }
+        val client = ApiClient(baseUrl, signedIn(CountingRefresher { RefreshOutcome.Refused }), transport)
+
+        val result = runBlocking {
+            client.delete<McpConnectedAppActionResult>("/api/me/mcp/connected-apps/client-1")
+        }
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(true, (result as ApiResult.Success).value.success)
+
+        val request = transport.requests.single()
+        assertEquals("DELETE", request.method)
+        assertEquals("$baseUrl/api/me/mcp/connected-apps/client-1", request.url)
+        assertEquals("Bearer access-1", request.bearer)
+    }
+
+    @Test
+    fun `a revoked session answers a delete as a sign-in, not a retry loop`() {
+        val refresher = CountingRefresher { RefreshOutcome.Refused }
+        val transport =
+            RecordingTransport { request ->
+                if (request.bearer == "Bearer access-1") HttpResponse(401, "expired")
+                else HttpResponse(401, "still expired")
+            }
+        val client = ApiClient(baseUrl, signedIn(refresher), transport)
+
+        val result = runBlocking { client.delete<McpConnectedAppActionResult>("/api/me/x") }
+
+        assertEquals(ApiResult.Failure(ApiError.NotSignedIn), result)
+        assertEquals("one refresh, never two", 1, refresher.calls.get())
     }
 }
