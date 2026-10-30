@@ -62,7 +62,8 @@ async function call(path, { method = 'GET', token = SERVICE_KEY, body, prefer } 
 /** A disposable account, confirmed so no mail is sent. */
 async function createUser(label) {
   const email = `news-smoke-${label}-${random()}@example.invalid`;
-  const password = `sm-${random()}${random()}`;
+  // GoTrue refuses anything without all four character classes.
+  const password = `Sm-${random()}${random()}A9!`;
 
   const created = await call('/auth/v1/admin/users', {
     method: 'POST',
@@ -103,6 +104,17 @@ async function accept(requestId, url, kind = 'feed') {
   return call('/rest/v1/rpc/accept_news_private_source', {
     method: 'POST',
     body: { p_request_id: requestId, p_kind: kind, p_resolved_url: url },
+  });
+}
+
+/**
+ * The worker's own write: a row an Admin may decide is `ready`, not `resolving`.
+ * The smoke uses it so the approval RPCs are exercised with a real resolved row.
+ */
+async function markReady(requestId, url) {
+  return call(`/rest/v1/news_source_requests?id=eq.${requestId}`, {
+    method: 'PATCH',
+    body: { status: 'ready', kind: 'feed', resolved_url: url },
   });
 }
 
@@ -219,6 +231,10 @@ async function main() {
       'مصدر للقائمة',
       `https://example.com/news-smoke-${suffix}/catalogue.xml`
     );
+    await markReady(
+      forCatalogue.body[0].id,
+      `https://example.com/news-smoke-${suffix}/catalogue.xml`
+    );
     const catalogue = await call('/rest/v1/rpc/approve_news_source_request', {
       method: 'POST',
       body: {
@@ -250,6 +266,38 @@ async function main() {
       publicRead.ok && publicRead.body?.length === 1,
       JSON.stringify(publicRead.body)
     );
+
+    // ---- the private destination: the same decision, into the reader's list ----
+    const forPrivate = await submit(
+      other,
+      'مصدر خاصّ',
+      `https://example.com/news-smoke-${suffix}/private.xml`
+    );
+    await markReady(forPrivate.body[0].id, `https://example.com/news-smoke-${suffix}/private.xml`);
+    const privateApprove = await call('/rest/v1/rpc/approve_news_source_request', {
+      method: 'POST',
+      body: {
+        p_request_id: forPrivate.body[0].id,
+        p_source_id: `smoke-private-${suffix}`,
+        p_source_name: 'مصدر خاصّ',
+        p_source_url: `https://example.com/news-smoke-${suffix}/private.xml`,
+        p_category: 'world',
+        p_region: 'world',
+        p_tier: 2,
+        p_note: null,
+        p_reviewed_by: other.id,
+        p_kind: 'feed',
+        p_destination: 'private',
+      },
+    });
+    check(
+      'the private destination writes the reader’s own source, not the catalogue',
+      privateApprove.ok &&
+        Boolean(privateApprove.body?.[0]?.user_source_id) &&
+        !privateApprove.body?.[0]?.source_id,
+      JSON.stringify(privateApprove.body)
+    );
+    if (privateApprove.ok) sourceIds.push(privateApprove.body[0].user_source_id);
 
     // ---- the reader may remove their own source ----
     const removed = await call(`/rest/v1/news_user_sources?id=eq.${sourceIds[0] ?? 'none'}`, {

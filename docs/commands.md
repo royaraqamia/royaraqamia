@@ -35,6 +35,11 @@ notes, JVM tests, signed build, asset, re-download check, release, and one commi
 the notes, the changelog and the manifest. A week with no native change publishes nothing. See
 `docs/mobile/android-shell.md`.
 
+`News Source Smoke` (`.github/workflows/news-source-smoke.yml`) is the one job that writes to the
+deployment on purpose: it signs up two disposable readers, exercises the private-source RPCs, the plan
+cap and the RLS policies through the real API, and deletes them. Run it after a migration that touches
+news sources lands — `gh workflow run 'News Source Smoke' -f confirm=run` (ADR-0106).
+
 ## Runtime metrics
 
 Field Web Vitals from Vercel Speed Insights (p75, last 7 days). Budget and
