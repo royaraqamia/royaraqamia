@@ -276,7 +276,16 @@ export interface NewsPrivateSourcesSummary {
   limited: boolean;
   cap: number;
   used: number;
+  /**
+   * Whether the personal digest is on. A private source is only ever read by
+   * that digest, so this is what tells the account page to offer the switch
+   * rather than leave a reader wondering why nothing arrives (ADR-0106).
+   */
+  personalEnabled: boolean;
 }
+
+/** The one thing the account page may change about a private source's delivery. */
+export const newsPersonalDigestToggleSchema = z.object({ personalEnabled: z.literal(true) });
 
 export const NEWS_SOURCE_NAME_MAX = 120;
 export const NEWS_SOURCE_URL_MAX = 500;

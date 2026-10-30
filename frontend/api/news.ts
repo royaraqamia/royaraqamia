@@ -98,6 +98,28 @@ export async function getMyNewsPrivateSources(): Promise<NewsPrivateSourcesSumma
     limited: result.limited,
     cap: result.cap,
     used: result.used,
+    personalEnabled: result.personalEnabled,
+  };
+}
+
+/**
+ * Turns this account's own digest on, leaving its selection alone.
+ *
+ * A private source is read by the personal digest and by nothing else, so this
+ * is the one action that makes an added feed arrive.
+ */
+export async function enableMyPersonalDigest(): Promise<NewsPrivateSourcesSummary> {
+  const result = await request<{ success: boolean } & NewsPrivateSourcesSummary>(
+    '/api/me/news-private-sources',
+    { method: 'PATCH', body: JSON.stringify({ personalEnabled: true }) }
+  );
+
+  return {
+    sources: result.sources,
+    limited: result.limited,
+    cap: result.cap,
+    used: result.used,
+    personalEnabled: result.personalEnabled,
   };
 }
 
