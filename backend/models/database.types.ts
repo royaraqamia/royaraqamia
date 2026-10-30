@@ -977,6 +977,7 @@ export type Database = {
           tier: number | null;
           url: string;
           user_id: string;
+          user_source_id: string | null;
         };
         Insert: {
           attempts?: number;
@@ -998,6 +999,7 @@ export type Database = {
           tier?: number | null;
           url: string;
           user_id: string;
+          user_source_id?: string | null;
         };
         Update: {
           attempts?: number;
@@ -1019,6 +1021,7 @@ export type Database = {
           tier?: number | null;
           url?: string;
           user_id?: string;
+          user_source_id?: string | null;
         };
         Relationships: [];
       };
@@ -1105,6 +1108,63 @@ export type Database = {
           run_url?: string | null;
           story_count?: number;
           title?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      news_user_sources: {
+        Row: {
+          category: string;
+          created_at: string;
+          failure_count: number;
+          fresh_hours: number | null;
+          id: string;
+          kind: string;
+          last_checked_at: string | null;
+          last_error: string | null;
+          name: string;
+          region: string;
+          request_id: string | null;
+          status: string;
+          tier: number;
+          updated_at: string;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          category?: string;
+          created_at?: string;
+          failure_count?: number;
+          fresh_hours?: number | null;
+          id?: string;
+          kind?: string;
+          last_checked_at?: string | null;
+          last_error?: string | null;
+          name: string;
+          region?: string;
+          request_id?: string | null;
+          status?: string;
+          tier?: number;
+          updated_at?: string;
+          url: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          failure_count?: number;
+          fresh_hours?: number | null;
+          id?: string;
+          kind?: string;
+          last_checked_at?: string | null;
+          last_error?: string | null;
+          name?: string;
+          region?: string;
+          request_id?: string | null;
+          status?: string;
+          tier?: number;
+          updated_at?: string;
+          url?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -2310,9 +2370,33 @@ export type Database = {
         };
         Returns: Json;
       };
+      accept_news_private_source: {
+        Args: { p_kind: string; p_request_id: string; p_resolved_url: string };
+        Returns: {
+          attempts: number;
+          category: string | null;
+          created_at: string;
+          failure: string | null;
+          failure_detail: string | null;
+          id: string;
+          kind: string | null;
+          name: string;
+          note: string | null;
+          region: string | null;
+          resolved_at: string | null;
+          resolved_url: string | null;
+          reviewed_at: string | null;
+          source_id: string | null;
+          status: string;
+          tier: number | null;
+          url: string;
+          user_source_id: string | null;
+        }[];
+      };
       approve_news_source_request: {
         Args: {
           p_category: string;
+          p_destination?: string;
           p_kind?: string;
           p_note: string | null;
           p_region: string;
@@ -2341,6 +2425,7 @@ export type Database = {
           status: string;
           tier: number | null;
           url: string;
+          user_source_id: string | null;
         }[];
       };
       bulk_publish_posts: {

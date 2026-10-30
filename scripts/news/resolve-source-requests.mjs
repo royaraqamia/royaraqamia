@@ -3,14 +3,16 @@
  * Drains the reader-proposal queue: every `resolving` row gets an answer.
  *
  * The form no longer reads the URL it is given (ADR-0105), so this is where a
- * link becomes a feed, or stops pretending it can be one. A row is written to
- * `ready` with the feed the digest will fetch, or to `needs_review` with the
- * reason — never left `resolving`, and never deleted.
+ * link becomes a source, or stops pretending it can be one. A resolved link is
+ * accepted straight into the reader's own list (`accept_news_private_source`,
+ * ADR-0106) — no Admin, no catalogue. A link that cannot be converted, or one
+ * the plan has no room for, is written to `needs_review` with the reason, where
+ * an Admin answers it.
  *
  *   node scripts/news/resolve-source-requests.mjs
  *   node scripts/news/resolve-source-requests.mjs --dry-run --limit 5
  *
- * The write is conditional on the row still being `resolving`, so a second run
+ * The write is conditional on the row still being unresolved, so a second run
  * (or an Admin's decision racing this one) cannot be overwritten.
  *
  * Exit codes: 0 when every claimed row was answered, 1 when the queue could not
@@ -93,29 +95,61 @@ export async function writeAnswer(config, id, patch) {
   return Array.isArray(rows) ? rows.length : 0;
 }
 
-/** The patch a resolution becomes. One answer per row; the worker never re-asks. */
+/** The patch a failed resolution becomes. One answer per row; the worker never re-asks. */
 export function answerFor(row, resolution) {
   const attempts = Number(row?.attempts ?? 0) + 1;
 
-  if (resolution.failure) {
-    return {
-      status: 'needs_review',
-      attempts,
-      resolved_at: new Date().toISOString(),
-      failure: resolution.failure,
-      failure_detail: String(resolution.detail ?? '').slice(0, 500) || null,
-    };
+  return {
+    status: 'needs_review',
+    attempts,
+    resolved_at: new Date().toISOString(),
+    failure: resolution.failure ?? 'unreachable',
+    failure_detail: String(resolution.detail ?? '').slice(0, 500) || null,
+  };
+}
+
+/** PostgREST reports a refusal as `{ code, message, details, hint }` in the body. */
+async function rpcErrorCode(response) {
+  try {
+    const body = await response.json();
+    return typeof body?.code === 'string' ? body.code : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Turns a resolved row into the reader's own source (ADR-0106).
+ *
+ * The RPC is one transaction: the private source and the request's approval
+ * commit together, and the plan's cap is the trigger's answer. A cap refusal is
+ * not the reader's fault and not a dead end — the row goes to `needs_review`
+ * with `quota`, so an Admin can still send it to the catalogue.
+ */
+export async function acceptPrivateSource(config, id, resolution) {
+  const response = await fetch(`${config.url}/rest/v1/rpc/accept_news_private_source`, {
+    method: 'POST',
+    headers: headers(config),
+    body: JSON.stringify({
+      p_request_id: id,
+      p_kind: resolution.kind,
+      p_resolved_url: resolution.url,
+    }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+  if (response.ok) return { accepted: true };
+
+  const code = await rpcErrorCode(response);
+  // NS002: the row was decided between the read and this call, which means the
+  // answer is already somewhere. Nothing to do, nothing to undo.
+  if (code === 'NS002') return { accepted: false, decided: true };
+
+  if (code === 'PL001') {
+    return { accepted: false, failure: 'quota', detail: 'the plan private-source cap is reached' };
   }
 
-  return {
-    status: 'ready',
-    kind: resolution.kind,
-    resolved_url: resolution.url,
-    failure: null,
-    failure_detail: null,
-    resolved_at: new Date().toISOString(),
-    attempts,
-  };
+  throw new Error(`accepting the source failed: HTTP ${response.status}`);
 }
 
 async function main() {
@@ -143,7 +177,7 @@ async function main() {
     for (const { row, resolution } of results) {
       const label = resolution.failure
         ? `needs_review (${resolution.failure}: ${resolution.detail})`
-        : `ready → ${resolution.kind} ${resolution.url}`;
+        : `accepted → ${resolution.kind} ${resolution.url}`;
 
       if (options.dryRun) {
         console.log(`  ${row.id} ${row.url} → ${label}`);
@@ -152,11 +186,31 @@ async function main() {
       }
 
       try {
-        const written = await writeAnswer(config, row.id, answerFor(row, resolution));
-        if (written === 0) {
-          console.log(`  ${row.id} skipped: no longer resolving`);
-        } else {
+        if (resolution.failure) {
+          const written = await writeAnswer(config, row.id, answerFor(row, resolution));
+          console.log(
+            written === 0
+              ? `  ${row.id} skipped: no longer resolving`
+              : `  ${row.id} ${row.name}: ${label}`
+          );
+          answered += 1;
+          continue;
+        }
+
+        const accepted = await acceptPrivateSource(config, row.id, resolution);
+
+        if (accepted.accepted) {
           console.log(`  ${row.id} ${row.name}: ${label}`);
+        } else if (accepted.failure === 'quota') {
+          // The plan said no; the row still needs an answer.
+          await writeAnswer(
+            config,
+            row.id,
+            answerFor(row, { failure: 'quota', detail: accepted.detail })
+          );
+          console.log(`  ${row.id} ${row.name}: needs_review (quota)`);
+        } else {
+          console.log(`  ${row.id} skipped: already decided`);
         }
         answered += 1;
       } catch (error) {

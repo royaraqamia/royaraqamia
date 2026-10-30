@@ -5,8 +5,10 @@ import {
 import { request } from '@/frontend/transport/http';
 import type {
   NewsCategory,
+  NewsPrivateSourcesSummary,
   NewsRegion,
   NewsSource,
+  NewsSourceDestination,
   NewsSourceRequest,
   NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
@@ -84,6 +86,28 @@ export async function getMyNewsSourceRequests(): Promise<NewsSourceRequest[]> {
   return result.requests;
 }
 
+/** The feeds this account added for itself, and the plan's ceiling. */
+export async function getMyNewsPrivateSources(): Promise<NewsPrivateSourcesSummary> {
+  const result = await request<{ success: boolean } & NewsPrivateSourcesSummary>(
+    '/api/me/news-private-sources',
+    { cache: 'no-store' }
+  );
+
+  return {
+    sources: result.sources,
+    limited: result.limited,
+    cap: result.cap,
+    used: result.used,
+  };
+}
+
+/** Removes one of this account's own feeds. */
+export async function deleteNewsPrivateSource(id: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/me/news-private-sources/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 /** Files a link for resolution; the server answers before it reads the target. */
 export async function submitNewsSourceRequest(input: {
   url: string;
@@ -121,6 +145,8 @@ export async function decideNewsSourceRequest(
         note?: string;
         /** The feed an Admin pastes for a `needs_review` row. */
         feedUrl?: string;
+        /** The reader's own list, or the catalogue (ADR-0106). */
+        destination: NewsSourceDestination;
       }
     | { action: 'reject'; note?: string }
 ): Promise<NewsSourceRequest> {

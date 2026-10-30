@@ -14,7 +14,6 @@ import {
   NEWS_SOURCE_REQUEST_FAILURE_LABELS,
   NEWS_SOURCE_REQUEST_STATUS_LABELS,
   NEWS_SOURCE_URL_MAX,
-  isOpenNewsSourceRequest,
   type NewsSourceRequest,
 } from '@/shared/contracts/news';
 
@@ -30,12 +29,9 @@ const STATUS_TONES = {
  * Proposing a source, and the state of what this account already proposed.
  *
  * The field takes any link — a page, a channel, a feed — because the reader is
- * not asked to know what a feed is (ADR-0105). The row's status is the only
- * record the reader sees: `resolving` is the system reading the link,
- * `needs_review` is a person answering it, and the decision stays an Admin's.
- *
- * The form is closed while a request is open — one at a time is a product rule
- * the server also enforces.
+ * not asked to know what a feed is (ADR-0105). A link that resolves becomes one
+ * of the reader's own sources without a queue (ADR-0106); this list is the audit
+ * trail of what they asked for and what the system made of it.
  */
 export function NewsSourceRequestForm() {
   const { user } = useSession();
@@ -64,7 +60,7 @@ export function NewsSourceRequestForm() {
 
   if (!user) return null;
 
-  const open = requests.some((request) => isOpenNewsSourceRequest(request.status));
+  const open = requests.some((request) => request.status === 'resolving');
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -76,7 +72,7 @@ export function NewsSourceRequestForm() {
       setRequests((current) => [request, ...current]);
       setName('');
       setUrl('');
-      toast.success('استلمنا الرابط، وسيتحقّق منه النظام تلقائيًّا.');
+      toast.success('استلمنا الرابط، وسيتحقّق منه النظام ويضيفه إلى مصادرك.');
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'تعذّر إرسال الطلب. أعد المحاولة.');
     } finally {
@@ -92,47 +88,47 @@ export function NewsSourceRequestForm() {
         </h2>
         <p className="mt-1 text-sm leading-7 text-muted-foreground">
           ألصق رابط أي مصدر تثق به: صفحة موقع، أو قناة يوتيوب، أو قناة تلغرام، أو خلاصة RSS. نبحث عن
-          الخلاصة تلقائيًّا في الخلفية، ثم يراجع فريق الموقع المصدر قبل إضافته إلى القائمة.
+          الخلاصة تلقائيًّا في الخلفية، ويصبح المصدر في قائمتك الخاصّة وحدك.
         </p>
       </div>
 
       {open ? (
-        <p className="rounded-2xl border border-border/60 bg-card/60 p-4 text-sm text-muted-foreground">
-          لديك طلب قيد المعالجة. يمكنك إرسال طلب جديد بعد البتُّ فيه.
+        <p className="rounded-2xl border border-border/60 bg-card/60 p-3 text-xs text-muted-foreground">
+          أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز.
         </p>
-      ) : (
-        <form onSubmit={submit} className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-foreground">اسم المصدر</span>
-              <Input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                maxLength={NEWS_SOURCE_NAME_MAX}
-                placeholder="مثال: صحيفة محليَّة"
-                required
-              />
-            </label>
+      ) : null}
 
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-foreground">رابط المصدر</span>
-              <Input
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                maxLength={NEWS_SOURCE_URL_MAX}
-                placeholder="https://example.com"
-                inputMode="url"
-                dir="ltr"
-                required
-              />
-            </label>
-          </div>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-foreground">اسم المصدر</span>
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={NEWS_SOURCE_NAME_MAX}
+              placeholder="مثال: صحيفة محليَّة"
+              required
+            />
+          </label>
 
-          <HeroCtaButton type="submit" disabled={submitting}>
-            {submitting ? 'جاري الإرسال…' : 'إرسال الطلب'}
-          </HeroCtaButton>
-        </form>
-      )}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-foreground">رابط المصدر</span>
+            <Input
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              maxLength={NEWS_SOURCE_URL_MAX}
+              placeholder="https://example.com"
+              inputMode="url"
+              dir="ltr"
+              required
+            />
+          </label>
+        </div>
+
+        <HeroCtaButton type="submit" disabled={submitting}>
+          {submitting ? 'جاري الإرسال…' : 'إرسال الطلب'}
+        </HeroCtaButton>
+      </form>
 
       {!loading && requests.length > 0 ? (
         <ul className="space-y-2">

@@ -6,8 +6,10 @@ import {
   type NewsSourceRequestsRepository,
 } from '@/backend/repositories/news/news-source-requests-repository';
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
+import type { NewsUserSourcesRepository } from '@/backend/repositories/news/news-user-sources-repository';
 import { FeedProbeError, type FeedProbeResult } from '@/backend/services/news/feed-probe';
 import { hasFileSourceUrl, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
+import { NewsPrivateSourcesLimitError } from '@/backend/services/news/news-private-sources-service';
 import { isPublicHttpUrl } from '@/shared/network';
 import {
   canonicalNewsFeedUrl,
@@ -19,12 +21,13 @@ import {
 } from '@/shared/contracts/news';
 
 /**
- * A reader proposing a source, and an Admin deciding on it (ADR-0078).
+ * A reader proposing a source, and an Admin deciding on it (ADR-0078, ADR-0105,
+ * ADR-0106).
  *
- * Submission no longer reads the URL: the form promises that the reader never
- * has to know what a feed is, so the row is stored and the resolver worker
- * answers it later (ADR-0105). Every refusal left here is about the *record* —
- * a duplicate, a second open request — not about the link answering correctly.
+ * Submission no longer reads the URL — the resolver does, afterwards — and it no
+ * longer asks an Admin for permission: a resolved link becomes a private source
+ * for the reader who asked. What is left here is the record: the plan's ceiling,
+ * the reader's own duplicates, and the catalogue's.
  */
 export class NewsSourceUrlInvalidError extends AppError {
   constructor() {
@@ -34,19 +37,23 @@ export class NewsSourceUrlInvalidError extends AppError {
 
 export class NewsSourceAlreadyKnownError extends AppError {
   constructor() {
-    super('هذا المصدر موجود في قائمة المصادر بالفعل.', 409, 'source_known');
+    super(
+      'هذا المصدر موجود في قائمة المصادر بالفعل، ويمكنك اختياره من القائمة.',
+      409,
+      'source_known'
+    );
   }
 }
 
 export class NewsSourceAlreadyQueuedError extends AppError {
   constructor() {
-    super('هذا الرابط مُرسَل مسبقًا من قِبَل قارئ آخر.', 409, 'source_queued');
+    super('هذا الرابط مُرسَل مسبقًا ولم ينتهِ تحقّقه بعد.', 409, 'source_queued');
   }
 }
 
-export class NewsSourceRequestPendingError extends AppError {
+export class NewsSourceAlreadyHeldError extends AppError {
   constructor() {
-    super('لديك طلب قيد المعالجة. انتظر نتيجة الطلب الأول قبل إرسال غيره.', 409, 'request_pending');
+    super('هذا المصدر موجود في مصادرك الخاصّة بالفعل.', 409, 'source_held');
   }
 }
 
@@ -99,15 +106,17 @@ const ADMIN_REQUESTS_LIMIT = 100;
 const MAX_SOURCE_ID_ATTEMPTS = 99;
 
 /**
- * SQLSTATEs `public.approve_news_source_request` raises (#572). The RPC does both
- * writes in one transaction, so the service can translate a refusal into the
- * Admin's 409/404 without having written a source first.
+ * SQLSTATEs the approval RPCs raise (#572). Both writes happen in one
+ * transaction, so the service can translate a refusal into the Admin's 409/404
+ * without having written a source first.
  */
 const SOURCE_ID_TAKEN = 'NS001';
 const REQUEST_DECIDED = 'NS002';
 const SOURCE_URL_TAKEN = 'NS003';
 const FEED_MISSING = 'NS004';
 const REQUEST_MISSING = 'P0002';
+/** The plan's private-source ceiling, raised by the trigger (ADR-0106). */
+const QUOTA_REACHED = 'PL001';
 
 function errorCode(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) return null;
@@ -116,16 +125,17 @@ function errorCode(error: unknown): string | null {
 }
 
 /**
- * The refusals the partial unique indexes raise (#551), which the pre-checks
- * cannot see: another reader's open request is hidden by RLS, and two submits
- * from one account can race past `countPending`. Anything else — a broken
- * connection, a permissions change — stays a failure, not a duplicate.
+ * The refusals the partial unique index raises (#551), which the pre-checks
+ * cannot see: two submits from one account can race past the counts. Anything
+ * else — a broken connection, a permissions change — stays a failure.
  */
 function submissionError(error: unknown): never {
   if (error instanceof NewsSourceRequestDbError) {
+    // Both indexes now say the same thing: this reader already has an open
+    // request for this URL.
     if (error.constraint === OPEN_REQUEST_URL_CONSTRAINT) throw new NewsSourceAlreadyQueuedError();
     if (error.constraint === OPEN_REQUEST_USER_CONSTRAINT) {
-      throw new NewsSourceRequestPendingError();
+      throw new NewsSourceAlreadyQueuedError();
     }
   }
   throw error;
@@ -153,13 +163,17 @@ export interface NewsSourceAdminService {
 interface RequestsDeps {
   requests: NewsSourceRequestsRepository;
   sources: NewsSourcesRepository;
+  /** The reader's own list, for the plan's ceiling and the duplicate check. */
+  privateSources: NewsUserSourcesRepository;
   catalogue: NewsCatalogue;
+  /** The plan's private-source allowance, resolved from `plan_quotas`. */
+  quota: (userId: string) => Promise<{ cap: number; unlimited: boolean }>;
   /** Only an Admin's pasted URL is probed synchronously. */
   probe: (url: string) => Promise<FeedProbeResult>;
 }
 
-/** Submission needs no catalogue read and no probe: a proposal is deduplicated by URL. */
-type SubmitDeps = Pick<RequestsDeps, 'requests' | 'sources'>;
+/** Submission needs no catalogue read: a proposal is deduplicated by URL. */
+type SubmitDeps = Pick<RequestsDeps, 'requests' | 'sources' | 'privateSources' | 'quota'>;
 
 /** A decision needs no source read: the approval RPC owns both writes. */
 type ApprovalDeps = Pick<RequestsDeps, 'requests' | 'catalogue' | 'probe'>;
@@ -177,6 +191,8 @@ function slugForHost(hostname: string): string {
 export function createNewsSourceRequestsService({
   requests,
   sources,
+  privateSources,
+  quota,
 }: SubmitDeps): NewsSourceRequestsService {
   return {
     /**
@@ -188,12 +204,24 @@ export function createNewsSourceRequestsService({
       const url = canonicalNewsFeedUrl(input.url);
       if (!url) throw new NewsSourceUrlInvalidError();
 
-      // The file list is the base the fetch merges onto and wins a URL collision,
-      // so a feed already in it would be queued, approved and then dropped (#551).
+      // The file list and the catalogue are what every reader already has, so a
+      // private copy would only fetch the same feed twice.
       if (hasFileSourceUrl(url)) throw new NewsSourceAlreadyKnownError();
       if (await sources.findIdByUrl(url)) throw new NewsSourceAlreadyKnownError();
-      if (await requests.findPendingIdByUrl(url)) throw new NewsSourceAlreadyQueuedError();
-      if ((await requests.countPending(userId)) > 0) throw new NewsSourceRequestPendingError();
+
+      if (await privateSources.findIdByUrl(userId, url)) throw new NewsSourceAlreadyHeldError();
+      if (await requests.findOpenIdByUrl(userId, url)) throw new NewsSourceAlreadyQueuedError();
+
+      // The plan counts what the reader holds *and* what is still resolving: a
+      // row in flight is a source they asked for.
+      const allowance = await quota(userId);
+      if (!allowance.unlimited) {
+        const [held, open] = await Promise.all([
+          privateSources.count(userId),
+          requests.countOpen(userId),
+        ]);
+        if (held + open >= allowance.cap) throw new NewsPrivateSourcesLimitError(allowance.cap);
+      }
 
       try {
         return await requests.insert({ userId, url, name: input.name.trim() });
@@ -227,7 +255,7 @@ export function createNewsAdminService({
     return request;
   }
 
-  /** The refusals the RPC raises that the Admin's form has a sentence for. */
+  /** The refusals the RPCs raise that the Admin's form has a sentence for. */
   function approvalError(error: unknown): never {
     switch (errorCode(error)) {
       case SOURCE_URL_TAKEN:
@@ -236,6 +264,8 @@ export function createNewsAdminService({
         throw new NewsSourceRequestDecidedError();
       case FEED_MISSING:
         throw new NewsSourceFeedRequiredError();
+      case QUOTA_REACHED:
+        throw new NewsPrivateSourcesLimitError();
       case REQUEST_MISSING:
         throw new NewsSourceRequestNotFoundError();
       default:
@@ -249,15 +279,13 @@ export function createNewsAdminService({
     },
 
     /**
-     * One call to `public.approve_news_source_request`: the Approved Source and
-     * the request's decision commit together, so a failure leaves the request
-     * open and the retry safe (#572). The slug is still chosen here, from the
-     * catalogue; if it was taken between that read and the RPC, the next suffix
-     * is tried.
+     * One call to `public.approve_news_source_request`: the source and the
+     * request's decision commit together, so a failure leaves the request open
+     * and the retry safe (#572).
      *
-     * The feed being approved is the one the resolver found (`ready`), or the one
-     * the Admin pasted (`needs_review`) — never the reader's original link, which
-     * may be a page, a channel or a post rather than a feed.
+     * The destination is the Admin's: the reader's own list (the default since
+     * ADR-0106) or the catalogue every reader is offered. A catalogue row needs a
+     * slug and can collide on its URL, so only that branch loops.
      */
     async approve(
       id: string,
@@ -290,10 +318,15 @@ export function createNewsAdminService({
       // wins the merge — approving would write a row the fetch then drops (#551).
       if (hasFileSourceUrl(feedUrl)) throw new NewsSourceAlreadyKnownError();
 
-      const taken = new Set((await catalogue.list()).map((source) => source.id));
+      const kind = pasted ? 'feed' : (request.kind ?? 'feed');
       const base = slugForHost(new URL(feedUrl).hostname) || 'source';
+      const attempts = input.destination === 'catalogue' ? MAX_SOURCE_ID_ATTEMPTS : 1;
+      const taken =
+        input.destination === 'catalogue'
+          ? new Set((await catalogue.list()).map((source) => source.id))
+          : new Set<string>();
 
-      for (let attempt = 1; attempt <= MAX_SOURCE_ID_ATTEMPTS; attempt += 1) {
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
         const sourceId = attempt === 1 ? base : `${base}-${attempt}`;
         if (taken.has(sourceId)) continue;
 
@@ -303,13 +336,13 @@ export function createNewsAdminService({
             sourceId,
             sourceName: request.name,
             sourceUrl: feedUrl,
-            // A pasted URL is an XML feed; the worker's answer carries a kind.
-            kind: pasted ? 'feed' : (request.kind ?? 'feed'),
+            kind,
             category: input.category,
             region: input.region,
             tier: input.tier,
             note: input.note ?? null,
             reviewedBy,
+            destination: input.destination,
           });
         } catch (error) {
           if (errorCode(error) !== SOURCE_ID_TAKEN) approvalError(error);
