@@ -1,13 +1,20 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { createUsageService } from '@/backend/config/plans';
 import { createNewsRepository } from '@/backend/repositories/news';
 import { createNewsPersonalDigestRepository } from '@/backend/repositories/news/news-personal-digest';
 import { createNewsPreferencesRepository } from '@/backend/repositories/news/news-preferences';
 import { createNewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests';
 import { createNewsSourcesRepository } from '@/backend/repositories/news/news-sources';
+import { createNewsUserSourcesRepository } from '@/backend/repositories/news/news-user-sources';
 import { probeFeed } from '@/backend/services/news/feed-probe';
 import { createNewsCatalogue, type NewsCatalogue } from '@/backend/services/news/news-catalogue';
+import {
+  createNewsPrivateSourcesService,
+  type NewsPrivateSourcesService,
+} from '@/backend/services/news/news-private-sources-service';
+import { PLAN_QUOTAS } from '@/shared/contracts/plans';
 import {
   createNewsPersonalDigestService,
   type NewsPersonalDigestService,
@@ -63,6 +70,31 @@ export function createNewsSourceRequestsServiceFor(
   return createNewsSourceRequestsService({
     requests: createNewsSourceRequestsRepository(supabase),
     sources: createNewsSourcesRepository(supabase),
+    privateSources: createNewsUserSourcesRepository(supabase),
+    quota: newsPrivateSourceQuota,
+  });
+}
+
+/**
+ * The plan's private-source allowance (ADR-0106). One function so submission and
+ * the account page cannot disagree about what the ceiling is.
+ */
+export function newsPrivateSourceQuota(
+  userId: string
+): Promise<{ cap: number; unlimited: boolean }> {
+  return createUsageService().quotaCap(userId, PLAN_QUOTAS.newsPrivateSources);
+}
+
+/**
+ * A reader's own sources: the list their personal digest reads. Session-scoped,
+ * so the owner policy answers for every row.
+ */
+export function createNewsPrivateSourcesServiceFor(
+  supabase: SupabaseClient<Database>
+): NewsPrivateSourcesService {
+  return createNewsPrivateSourcesService({
+    sources: createNewsUserSourcesRepository(supabase),
+    quota: newsPrivateSourceQuota,
   });
 }
 

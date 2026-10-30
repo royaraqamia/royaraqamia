@@ -367,19 +367,7 @@ describe('resolving a source', () => {
 });
 
 describe('writing the answer', () => {
-  it('moves a resolved row to ready with the feed', () => {
-    const patch = answerFor({ attempts: 0 }, { kind: 'feed', url: 'https://example.com/rss' });
-
-    expect(patch).toMatchObject({
-      status: 'ready',
-      kind: 'feed',
-      resolved_url: 'https://example.com/rss',
-      attempts: 1,
-      failure: null,
-    });
-  });
-
-  it('moves a converted-failure row to needs_review with the reason', () => {
+  it('moves an unconvertible row to needs_review with the reason', () => {
     const patch = answerFor(
       { attempts: 0 },
       { failure: 'unsupported', detail: 'facebook: no free public feed' }
@@ -391,5 +379,14 @@ describe('writing the answer', () => {
       failure_detail: 'facebook: no free public feed',
       attempts: 1,
     });
+  });
+
+  it('records a plan refusal as the reason the row needs a person', () => {
+    const patch = answerFor(
+      { attempts: 2 },
+      { failure: 'quota', detail: 'the plan private-source cap is reached' }
+    );
+
+    expect(patch).toMatchObject({ status: 'needs_review', failure: 'quota', attempts: 3 });
   });
 });

@@ -29,6 +29,7 @@ import {
   NEWS_SOURCE_URL_MAX,
   type NewsCategory,
   type NewsRegion,
+  type NewsSourceDestination,
   type NewsSourceRequest,
   type NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
@@ -70,7 +71,14 @@ export default function AdminNewsSourcesPage() {
   const [drafts, setDrafts] = useState<
     Record<
       string,
-      { category: NewsCategory; region: NewsRegion; tier: 1 | 2; note: string; feedUrl: string }
+      {
+        category: NewsCategory;
+        region: NewsRegion;
+        tier: 1 | 2;
+        note: string;
+        feedUrl: string;
+        destination: NewsSourceDestination;
+      }
     >
   >({});
 
@@ -98,6 +106,7 @@ export default function AdminNewsSourcesPage() {
       tier: request.tier ?? 2,
       note: '',
       feedUrl: '',
+      destination: 'private',
     };
 
   const patchDraft = (request: NewsSourceRequest, patch: Partial<ReturnType<typeof draftFor>>) => {
@@ -118,12 +127,19 @@ export default function AdminNewsSourcesPage() {
               tier: draft.tier,
               note: draft.note.trim() || undefined,
               feedUrl: draft.feedUrl.trim() || undefined,
+              destination: draft.destination,
             }
           : { action, note: draft.note.trim() || undefined }
       );
 
       setRequests((rows) => rows.map((row) => (row.id === updated.id ? updated : row)));
-      toast.success(action === 'approve' ? 'أُضيف المصدر إلى القائمة.' : 'رُفض الطلب.');
+      toast.success(
+        action === 'approve'
+          ? draft.destination === 'catalogue'
+            ? 'أُضيف المصدر إلى القائمة العامّة.'
+            : 'أُضيف المصدر إلى قائمة القارئ.'
+          : 'رُفض الطلب.'
+      );
     } catch {
       toast.error(action === 'approve' ? 'تعذّر قبول الطلب.' : 'تعذّر رفض الطلب.');
     } finally {
@@ -136,7 +152,7 @@ export default function AdminNewsSourcesPage() {
       <AdminPageHeader
         icon={Newspaper}
         title="مصادر الأخبار"
-        description="اقبل أو ارفض المصادر التي يقترحها القرَّاء. النظام يبحث عن الخلاصة تلقائيًّا؛ وما لم يجد له خلاصة يظهر بوصفه «يحتاج مراجعة» وتُلصق له الخلاصة يدويًّا. المقبول يصبح متاحًا للجلب في ملخَّص اليوم التالي."
+        description="ما لم يستطع النظام تحويله يظهر هنا. الصق له خلاصة RSS أو Atom، واختر وجهته: قائمة القارئ وحدها (الافتراضيّ)، أو القائمة العامّة التي يراها الجميع. أما ما يُحلّ تلقائيًّا فيُضاف إلى قائمة صاحبه دون مرور بهذه الصفحة."
       />
 
       <div role="group" aria-label="تصفية حسب الحالة" className="mb-6 flex flex-wrap gap-2">
@@ -233,7 +249,7 @@ export default function AdminNewsSourcesPage() {
                 ) : null}
 
                 {isDecidable ? (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <label className="flex flex-col gap-1.5">
                       <span className="text-[11px] font-bold text-muted-foreground">التصنيف</span>
                       <Select
@@ -290,6 +306,24 @@ export default function AdminNewsSourcesPage() {
                         <SelectContent>
                           <SelectItem value="1">أولى</SelectItem>
                           <SelectItem value="2">ثانية</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[11px] font-bold text-muted-foreground">الوجهة</span>
+                      <Select
+                        value={draft.destination}
+                        onValueChange={(value) =>
+                          patchDraft(request, { destination: value as NewsSourceDestination })
+                        }
+                      >
+                        <SelectTrigger aria-label={`وجهة ${request.name}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="private">قائمة القارئ وحدها</SelectItem>
+                          <SelectItem value="catalogue">القائمة العامّة</SelectItem>
                         </SelectContent>
                       </Select>
                     </label>

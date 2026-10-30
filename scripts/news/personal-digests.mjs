@@ -3,9 +3,9 @@
  * Prepares one prompt per reader who asked for a digest of their own.
  *
  * ADR-0079: the personal digest is the *same* fetched candidate list, narrowed
- * to the sources the reader kept. Nothing is fetched twice and no new source can
- * appear — the candidate list the daily fetch wrote is the only input, and the
- * validator that gates the shared digest gates this one too.
+ * to the sources the reader kept. ADR-0106 adds one thing: the feeds that only
+ * this reader holds (`news_user_sources`) are candidates for them and for nobody
+ * else, and the shared list never contains them.
  *
  *   node scripts/news/personal-digests.mjs --candidates .news/candidates.json --out .news/personal
  *
@@ -14,9 +14,9 @@
  *   <out>/<user-id>/prompt.txt       the editor prompt for that list
  * and one <out>/manifest.json the workflow loops over.
  *
- * A reader with no selection, or with fewer than MIN_CANDIDATES usable stories,
- * is skipped and named in the summary: publishing a nearly empty digest would
- * be worse than leaving them on the shared one.
+ * A reader with no selection and no private source, or with fewer than
+ * MIN_CANDIDATES usable stories, is skipped and named in the summary: publishing
+ * a nearly empty digest would be worse than leaving them on the shared one.
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -89,6 +89,28 @@ export function narrowCandidates(items, sourceIds) {
   return items.filter((item) => wanted.has(item.sourceId));
 }
 
+/**
+ * One reader's candidate list: the shared digest narrowed to what they kept,
+ * plus the feeds only they hold (ADR-0106).
+ *
+ * A reader with no selection means "every shared source", exactly as before. The
+ * private items are merged after, deduplicated by URL — a feed that is both in
+ * the catalogue and in their own list is one story, and the catalogue's copy is
+ * the one every other reader sees.
+ */
+export function readerCandidates({ shared, privateItems = [], userId, sourceIds }) {
+  const selected = sourceIds.length > 0 ? narrowCandidates(shared, sourceIds) : [...shared];
+  const seen = new Set(selected.map((item) => item.url));
+
+  for (const item of privateItems) {
+    if (item.userId !== userId || seen.has(item.url)) continue;
+    seen.add(item.url);
+    selected.push(item);
+  }
+
+  return selected;
+}
+
 export async function preparePersonalDigests({
   readers,
   candidates,
@@ -98,16 +120,25 @@ export async function preparePersonalDigests({
 }) {
   const users = [];
   const skipped = [];
+  const privateItems = Array.isArray(candidates.privateItems) ? candidates.privateItems : [];
 
   for (const reader of readers.slice(0, limit)) {
-    if (reader.sourceIds.length === 0) {
+    const mine = privateItems.filter((item) => item.userId === reader.userId);
+
+    if (reader.sourceIds.length === 0 && mine.length === 0) {
       // "Everything" is the shared digest; a personal one would be a duplicate
-      // of it.
+      // of it. A reader with a private source is the exception: nothing else
+      // would ever show it.
       skipped.push({ userId: reader.userId, reason: 'no selection' });
       continue;
     }
 
-    const items = narrowCandidates(candidates.items, reader.sourceIds);
+    const items = readerCandidates({
+      shared: candidates.items,
+      privateItems,
+      userId: reader.userId,
+      sourceIds: reader.sourceIds,
+    });
     if (items.length < MIN_CANDIDATES) {
       skipped.push({ userId: reader.userId, reason: `only ${items.length} candidate(s)` });
       continue;
@@ -133,7 +164,7 @@ export async function preparePersonalDigests({
     users.push({
       userId: reader.userId,
       candidateCount: items.length,
-      sourceCount: reader.sourceIds.length,
+      sourceCount: reader.sourceIds.length + mine.length,
       directory,
     });
   }

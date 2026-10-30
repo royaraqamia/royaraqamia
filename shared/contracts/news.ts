@@ -166,12 +166,21 @@ export const NEWS_SOURCE_REQUEST_STATUS_LABELS: Record<NewsSourceRequestStatus, 
   rejected: 'مرفوض',
 };
 
+/** Where an accepted proposal is written: the reader's own list, or the catalogue. */
+export const NEWS_SOURCE_DESTINATIONS = ['private', 'catalogue'] as const;
+export type NewsSourceDestination = (typeof NEWS_SOURCE_DESTINATIONS)[number];
+
 /** How a resolved source is read: an XML feed, or a Telegram channel preview. */
 export const NEWS_SOURCE_KINDS = ['feed', 'telegram'] as const;
 export type NewsSourceKind = (typeof NEWS_SOURCE_KINDS)[number];
 
 /** Why the worker could not turn a URL into a feed. */
-export const NEWS_SOURCE_REQUEST_FAILURES = ['unsupported', 'no-feed', 'unreachable'] as const;
+export const NEWS_SOURCE_REQUEST_FAILURES = [
+  'unsupported',
+  'no-feed',
+  'unreachable',
+  'quota',
+] as const;
 export type NewsSourceRequestFailure = (typeof NEWS_SOURCE_REQUEST_FAILURES)[number];
 
 /**
@@ -183,6 +192,7 @@ export const NEWS_SOURCE_REQUEST_FAILURE_LABELS: Record<NewsSourceRequestFailure
   unsupported: 'هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ.',
   'no-feed': 'لم نجد خلاصة RSS أو Atom على هذه الصفحة.',
   unreachable: 'تعذّر الوصول إلى الرابط.',
+  quota: 'وصلت إلى الحدّ الأقصى من المصادر في خطتك الحالية.',
 };
 
 /** A request an Admin can still decide, and that counts against the open rule. */
@@ -217,6 +227,55 @@ export interface NewsSourceRequest {
   createdAt: string;
   reviewedAt: string | null;
   sourceId: string | null;
+  /** The private source this request created, when it was not sent to the catalogue. */
+  userSourceId: string | null;
+}
+
+/**
+ * A feed one reader added for their own digest (ADR-0106).
+ *
+ * It is not in the catalogue, no other reader can see it, and only the reader's
+ * own personal digest reads it. `broken` is the fetch telling its owner that the
+ * feed stopped answering — three consecutive failures — and the remedy is to ask
+ * for it again or remove it.
+ */
+export interface NewsPrivateSource {
+  id: string;
+  name: string;
+  url: string;
+  kind: NewsSourceKind;
+  category: NewsCategory;
+  region: NewsRegion;
+  status: NewsPrivateSourceStatus;
+  /** Consecutive failed fetches; 0 once the feed answers again. */
+  failureCount: number;
+  lastError: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
+}
+
+export const NEWS_PRIVATE_SOURCE_STATUSES = ['ready', 'broken'] as const;
+export type NewsPrivateSourceStatus = (typeof NEWS_PRIVATE_SOURCE_STATUSES)[number];
+
+export const NEWS_PRIVATE_SOURCE_STATUS_LABELS: Record<NewsPrivateSourceStatus, string> = {
+  ready: 'يعمل',
+  broken: 'توقّف عن العمل',
+};
+
+/**
+ * How many consecutive failures make a source `broken`. The fetch keeps the row
+ * and stops fetching: a feed that is down for a day is usually back, a feed that
+ * is down three days in a row is a different address.
+ */
+export const NEWS_PRIVATE_SOURCE_MAX_FAILURES = 3;
+
+/** What the account page holds, and what the plan allows. */
+export interface NewsPrivateSourcesSummary {
+  sources: NewsPrivateSource[];
+  /** False for a plan with no ceiling (an Admin). */
+  limited: boolean;
+  cap: number;
+  used: number;
 }
 
 export const NEWS_SOURCE_NAME_MAX = 120;
@@ -254,7 +313,9 @@ export type NewsSourceRequestInput = z.infer<typeof newsSourceRequestSchema>;
  *
  * `feedUrl` is how a `needs_review` row is answered: the worker could not find
  * a feed, so the Admin pastes the one the source really publishes. It is
- * ignored for a `ready` row, whose resolved URL is the decision.
+ * ignored for a `ready` row, whose resolved URL is the decision. `destination`
+ * chooses the reader's own list (the default since ADR-0106) or the shared
+ * catalogue every reader is offered.
  */
 export const newsSourceApprovalSchema = z.object({
   category: z.enum(NEWS_CATEGORIES),
@@ -262,6 +323,7 @@ export const newsSourceApprovalSchema = z.object({
   tier: z.union([z.literal(1), z.literal(2)]).default(2),
   note: z.string().trim().max(NEWS_SOURCE_NOTE_MAX).optional(),
   feedUrl: z.string().trim().max(NEWS_SOURCE_URL_MAX).optional(),
+  destination: z.enum(['private', 'catalogue']).default('private'),
 });
 
 export type NewsSourceApprovalInput = z.infer<typeof newsSourceApprovalSchema>;
@@ -269,7 +331,6 @@ export type NewsSourceApprovalInput = z.infer<typeof newsSourceApprovalSchema>;
 export const newsSourceRejectionSchema = z.object({
   note: z.string().trim().max(NEWS_SOURCE_NOTE_MAX).optional(),
 });
-
 export type NewsSourceRejectionInput = z.infer<typeof newsSourceRejectionSchema>;
 
 /** The admin list filter: one status, or every decided row when null. */

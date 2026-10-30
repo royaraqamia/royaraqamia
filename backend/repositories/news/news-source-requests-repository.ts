@@ -1,6 +1,7 @@
 import type {
   NewsCategory,
   NewsRegion,
+  NewsSourceDestination,
   NewsSourceKind,
   NewsSourceRequest,
   NewsSourceRequestStatus,
@@ -32,6 +33,8 @@ export interface ApproveNewsSourceRequest {
   tier: 1 | 2;
   note: string | null;
   reviewedBy: string;
+  /** The reader's own list, or the shared catalogue (ADR-0106). */
+  destination: NewsSourceDestination;
 }
 
 export interface RejectNewsSourceRequest {
@@ -67,15 +70,16 @@ export class NewsSourceRequestDbError extends Error {
  * The intake queue a reader's proposal moves through: `resolving` when the
  * reader files it, then whatever the resolution worker and the Admin decide.
  * A reader can only insert a `resolving` row (RLS), so every transition past
- * that in this interface is an Admin action.
+ * that in this interface is the system's or an Admin's.
  */
 export interface NewsSourceRequestsRepository {
-  countPending(userId: string): Promise<number>;
+  /** Open requests — `resolving`, `ready` or `needs_review` — this reader holds. */
+  countOpen(userId: string): Promise<number>;
   /**
    * The id of the caller's own open request for this URL — RLS scopes the read,
    * so another reader's row is invisible here even when it exists (#551).
    */
-  findPendingIdByUrl(url: string): Promise<string | null>;
+  findOpenIdByUrl(userId: string, url: string): Promise<string | null>;
   /**
    * Files a pending proposal. A collision with either partial unique index is a
    * `NewsSourceRequestDbError` naming that index (#551).
