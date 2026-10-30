@@ -34,7 +34,7 @@ The application is a single Next.js 16 (App Router) deployment that serves multi
 
 - **Marketing site** — the company's landing page, portfolio, services, and training offerings (`app/page.tsx`).
 - **Community** — the public, SEO-oriented article feed rendered from Markdown (`app/community`).
-- **News** — a daily Arabic digest of world news, written by a scheduled workflow from a fixed source list and published to `/news` (`app/news`, `.github/workflows/news-digest.yml`).
+- **News** — a daily Arabic digest of world news, written by a scheduled workflow from a fixed source list and published to `/news` (`app/news`, `.github/workflows/news-digest.yml`). Readers propose sources by pasting any link; an hourly worker (`scripts/news/resolve-source-requests.mjs`) turns it into a feed or flags it for a human.
 
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).

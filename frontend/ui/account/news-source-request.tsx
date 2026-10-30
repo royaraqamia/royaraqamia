@@ -11,23 +11,31 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
   NEWS_SOURCE_NAME_MAX,
+  NEWS_SOURCE_REQUEST_FAILURE_LABELS,
   NEWS_SOURCE_REQUEST_STATUS_LABELS,
   NEWS_SOURCE_URL_MAX,
+  isOpenNewsSourceRequest,
   type NewsSourceRequest,
 } from '@/shared/contracts/news';
 
 const STATUS_TONES = {
-  pending: 'secondary',
+  resolving: 'secondary',
+  ready: 'secondary',
+  needs_review: 'warning',
   approved: 'success',
   rejected: 'destructive',
 } as const;
 
 /**
- * Proposing a feed, and the state of what this account already proposed.
+ * Proposing a source, and the state of what this account already proposed.
  *
- * The form is closed while a request is pending — one at a time is a product
- * rule the server also enforces — and the row's status is the only record the
- * reader sees, because the decision itself is an Admin's.
+ * The field takes any link — a page, a channel, a feed — because the reader is
+ * not asked to know what a feed is (ADR-0105). The row's status is the only
+ * record the reader sees: `resolving` is the system reading the link,
+ * `needs_review` is a person answering it, and the decision stays an Admin's.
+ *
+ * The form is closed while a request is open — one at a time is a product rule
+ * the server also enforces.
  */
 export function NewsSourceRequestForm() {
   const { user } = useSession();
@@ -56,7 +64,7 @@ export function NewsSourceRequestForm() {
 
   if (!user) return null;
 
-  const pending = requests.some((request) => request.status === 'pending');
+  const open = requests.some((request) => isOpenNewsSourceRequest(request.status));
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,7 +76,7 @@ export function NewsSourceRequestForm() {
       setRequests((current) => [request, ...current]);
       setName('');
       setUrl('');
-      toast.success('أرسلنا طلبك للمراجعة.');
+      toast.success('استلمنا الرابط، وسيتحقّق منه النظام تلقائيًّا.');
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'تعذّر إرسال الطلب. أعد المحاولة.');
     } finally {
@@ -83,14 +91,14 @@ export function NewsSourceRequestForm() {
           أضف مصدرًا
         </h2>
         <p className="mt-1 text-sm leading-7 text-muted-foreground">
-          أرسل رابط خلاصة RSS أو Atom لمصدر تثق به. نتحقَّق من الرابط، ثم يراجعه فريق الموقع قبل
-          إضافته إلى قائمة المصادر.
+          ألصق رابط أي مصدر تثق به: صفحة موقع، أو قناة يوتيوب، أو قناة تلغرام، أو خلاصة RSS. نبحث عن
+          الخلاصة تلقائيًّا في الخلفية، ثم يراجع فريق الموقع المصدر قبل إضافته إلى القائمة.
         </p>
       </div>
 
-      {pending ? (
+      {open ? (
         <p className="rounded-2xl border border-border/60 bg-card/60 p-4 text-sm text-muted-foreground">
-          لديك طلب قيد المراجعة. يمكنك إرسال طلب جديد بعد البتُّ فيه.
+          لديك طلب قيد المعالجة. يمكنك إرسال طلب جديد بعد البتُّ فيه.
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-3">
@@ -107,12 +115,12 @@ export function NewsSourceRequestForm() {
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-foreground">رابط الخلاصة</span>
+              <span className="text-xs font-bold text-foreground">رابط المصدر</span>
               <Input
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 maxLength={NEWS_SOURCE_URL_MAX}
-                placeholder="https://example.com/rss"
+                placeholder="https://example.com"
                 inputMode="url"
                 dir="ltr"
                 required
@@ -142,6 +150,16 @@ export function NewsSourceRequestForm() {
               <p className="mt-1 truncate text-[11px] text-muted-foreground" dir="ltr">
                 {request.url}
               </p>
+              {request.status === 'needs_review' && request.failure ? (
+                <p className="mt-1.5 text-xs leading-6 text-muted-foreground">
+                  {NEWS_SOURCE_REQUEST_FAILURE_LABELS[request.failure]}
+                </p>
+              ) : null}
+              {request.resolvedUrl && request.resolvedUrl !== request.url ? (
+                <p className="mt-1 truncate text-[11px] text-muted-foreground" dir="ltr">
+                  {request.resolvedUrl}
+                </p>
+              ) : null}
               {request.note ? (
                 <p className="mt-1.5 text-xs leading-6 text-muted-foreground">{request.note}</p>
               ) : null}

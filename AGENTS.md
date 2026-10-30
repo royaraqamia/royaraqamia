@@ -13,7 +13,7 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 - `npm test` — unit tests (Vitest)
 - `npm run build` — full build (requires `NEXT_PUBLIC_WHATSAPP_PHONE`)
 
-**Scope them to the change.** Routine work runs `npm run typecheck`, `npm run lint:fix` and only the tests the diff reaches (`npx vitest run <path>`, or `npx vitest run --changed`). The full `npm test` and `npm run build` are for a genuinely repo-wide change, a change that could plausibly break the build, or CI. Details: [docs/agents/landing.md](docs/agents/landing.md).
+**Scope them to the change.** Routine work runs `npm run typecheck`, `npm run lint:fix` and only the tests the diff reaches (`npx vitest run <path>`, or `npx vitest run --changed`). **An agent never runs the full `npm test`.** The whole suite is CI's job and it already runs on the pull request: 442 files take ~5 minutes of wall clock and prove nothing this diff's own files did not already prove. "The change is repo-wide, a shared type, a base component" is not a reason to run it — it is a reason to trust CI for it. `npm run build` is likewise for a change that could plausibly break the build, or CI. Details: [docs/agents/landing.md](docs/agents/landing.md).
 
 **Dev server (agents): `npm run dev` (→ `scripts/dev.mjs`) never exits — never run it as a foreground/blocking shell command.**
 

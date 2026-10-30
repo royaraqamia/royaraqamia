@@ -25,6 +25,13 @@ export const REGIONS = ['arab', 'islamic', 'world'];
 
 export const USER_AGENT = 'royaraqamia-news-digest/1.0 (+https://royaraqamia.com)';
 
+/**
+ * How a source is read. `feed` is an XML document; `telegram` is a channel's
+ * public preview, which is HTML and has to be parsed into the same item shape
+ * (ADR-0105). The mirror of `NEWS_SOURCE_KINDS` in `shared/contracts/news.ts`.
+ */
+export const SOURCE_KINDS = ['feed', 'telegram'];
+
 /** Query parameters that only identify a campaign, never the article. */
 const TRACKING_PARAM = /^(?:utm_|at_|traffic_|ito$|fbclid$|gclid$|mc_cid$|mc_eid$|ref$|source$)/i;
 
@@ -178,10 +185,16 @@ export function readSources(path) {
       throw new Error(`${path}: ${id} has an unusable freshHours "${source.freshHours}"`);
     }
 
+    const kind = source.kind === undefined ? 'feed' : String(source.kind);
+    if (!SOURCE_KINDS.includes(kind)) {
+      throw new Error(`${path}: ${id} has unknown kind "${source.kind}"`);
+    }
+
     return {
       id,
       name,
       url,
+      kind,
       category: source.category,
       region: source.region,
       tier: source.tier === 2 ? 2 : 1,
@@ -247,6 +260,56 @@ export function parseFeed(xml) {
     .filter((item) => item.title && item.url);
 }
 
+/**
+ * One Telegram channel's public preview (`t.me/s/<name>`), read as items.
+ *
+ * Telegram publishes no feed, so the channel's own preview page is the closest
+ * honest substitute: it lists the last ~20 posts with their text and their
+ * timestamp, and nothing else (ADR-0105). The reader of a preview page sees
+ * exactly what a reader of the channel sees, and the digest links out to each
+ * post rather than reprinting the channel.
+ *
+ * A post with no text (a bare photo or a poll) yields nothing: a story card with
+ * no headline is worse than a shorter digest.
+ */
+export function parseTelegramPreview(html) {
+  if (typeof html !== 'string' || html.length === 0) return [];
+
+  const blocks = [
+    ...String(html).matchAll(
+      /<div\b[^>]*data-post="([^"]+)"[^>]*>([\s\S]*?)(?=<div\b[^>]*data-post="|<\/body>|$)/gi
+    ),
+  ];
+  if (blocks.length === 0) return [];
+
+  const items = [];
+  for (const [, post, block] of blocks) {
+    const textHtml =
+      /<div\b[^>]*class="[^"]*tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(
+        block
+      )?.[1] ?? '';
+    const text = stripHtml(textHtml);
+    if (!text) continue;
+
+    // The slug is `<channel>/<id>`; the link a reader follows is the post's own.
+    const slug = String(post).trim();
+    const url = canonicalUrl(`https://t.me/${slug}`);
+    if (!url) continue;
+
+    const firstLine = text.split(/\s{2,}|[.!؟?]\s/)[0]?.trim() ?? '';
+    const title = (firstLine || text).slice(0, 140);
+
+    items.push({
+      title,
+      url,
+      publishedAt: toIsoDate(/<time\b[^>]*datetime="([^"]+)"/i.exec(block)?.[1]),
+      excerpt: excerpt(text),
+    });
+  }
+
+  return items.filter((item) => item.title && item.url);
+}
+
 export function chunk(values, size) {
   const chunks = [];
   for (let index = 0; index < values.length; index += size) {
@@ -300,10 +363,14 @@ export function toApprovedSource(row) {
     return null;
   }
 
+  const kind = row?.kind === undefined || row?.kind === null ? 'feed' : String(row.kind);
+  if (!SOURCE_KINDS.includes(kind)) return null;
+
   return {
     id,
     name,
     url,
+    kind,
     category: row.category,
     region: row.region,
     tier: row.tier === 1 ? 1 : 2,

@@ -958,12 +958,18 @@ export type Database = {
       };
       news_source_requests: {
         Row: {
+          attempts: number;
           category: string | null;
           created_at: string;
+          failure: string | null;
+          failure_detail: string | null;
           id: string;
+          kind: string | null;
           name: string;
           note: string | null;
           region: string | null;
+          resolved_at: string | null;
+          resolved_url: string | null;
           reviewed_at: string | null;
           reviewed_by: string | null;
           source_id: string | null;
@@ -973,12 +979,18 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          attempts?: number;
           category?: string | null;
           created_at?: string;
+          failure?: string | null;
+          failure_detail?: string | null;
           id?: string;
+          kind?: string | null;
           name: string;
           note?: string | null;
           region?: string | null;
+          resolved_at?: string | null;
+          resolved_url?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
           source_id?: string | null;
@@ -988,12 +1000,18 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          attempts?: number;
           category?: string | null;
           created_at?: string;
+          failure?: string | null;
+          failure_detail?: string | null;
           id?: string;
+          kind?: string | null;
           name?: string;
           note?: string | null;
           region?: string | null;
+          resolved_at?: string | null;
+          resolved_url?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
           source_id?: string | null;
@@ -1013,6 +1031,7 @@ export type Database = {
           enabled: boolean;
           fresh_hours: number | null;
           id: string;
+          kind: string;
           name: string;
           region: string;
           request_id: string | null;
@@ -1027,6 +1046,7 @@ export type Database = {
           enabled?: boolean;
           fresh_hours?: number | null;
           id: string;
+          kind?: string;
           name: string;
           region: string;
           request_id?: string | null;
@@ -1041,6 +1061,7 @@ export type Database = {
           enabled?: boolean;
           fresh_hours?: number | null;
           id?: string;
+          kind?: string;
           name?: string;
           region?: string;
           request_id?: string | null;
@@ -2292,6 +2313,7 @@ export type Database = {
       approve_news_source_request: {
         Args: {
           p_category: string;
+          p_kind?: string;
           p_note: string | null;
           p_region: string;
           p_request_id: string;
@@ -2302,12 +2324,18 @@ export type Database = {
           p_tier: number;
         };
         Returns: {
+          attempts: number;
           category: string | null;
           created_at: string;
+          failure: string | null;
+          failure_detail: string | null;
           id: string;
+          kind: string | null;
           name: string;
           note: string | null;
           region: string | null;
+          resolved_at: string | null;
+          resolved_url: string | null;
           reviewed_at: string | null;
           source_id: string | null;
           status: string;

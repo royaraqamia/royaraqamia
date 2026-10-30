@@ -1,0 +1,77 @@
+# Resolves the source URLs readers paste into a feed — or a reason
+#
+# The form accepts any link (ADR-0105): a site page, a YouTube channel, a
+# Telegram channel, a bare RSS URL. This job is what answers it, so the reader
+# never waits on a fetch of a host they chose and never sees "this is not a
+# feed". Each `resolving` row becomes `ready` (with the feed the digest will
+# fetch) or `needs_review` (with the reason, for the Admin queue).
+#
+# Why a workflow and not the request path: the app is on Vercel's Hobby plan, and
+# a public form that fetches an arbitrary host is exactly the thing that should
+# not run inside a request. Here it is a deterministic script with a byte cap, a
+# timeout and an SSRF guard, on a repository whose Actions minutes are free
+# because it is public.
+#
+# Secrets (repository → Actions):
+#   SUPABASE_SERVICE_ROLE_KEY - the deployment's key; this job writes the queue
+#   SUPABASE_URL              - optional, falls back to the project's public URL
+#
+# Manual runs: workflow_dispatch takes `dry_run` (resolve and print, write
+# nothing) and `limit` (how many rows to answer this time).
+
+name: 'News Source Requests'
+
+on:
+  schedule:
+    # Hourly. A reader who files at 09:55 is answered before 11:00, and an idle
+    # hour costs one API read.
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Resolve and print without writing to Supabase'
+        type: boolean
+        default: false
+      limit:
+        description: 'How many rows to answer (default 25)'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-source-requests
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Resolve the queue
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "$LIMIT" ]; then args+=(--limit "$LIMIT"); fi
+          node scripts/news/resolve-source-requests.mjs "${args[@]}"

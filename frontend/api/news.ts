@@ -84,7 +84,7 @@ export async function getMyNewsSourceRequests(): Promise<NewsSourceRequest[]> {
   return result.requests;
 }
 
-/** Files a feed for review; the server probes it before the row exists. */
+/** Files a link for resolution; the server answers before it reads the target. */
 export async function submitNewsSourceRequest(input: {
   url: string;
   name: string;
@@ -113,7 +113,15 @@ export async function getAdminNewsSourceRequests(
 export async function decideNewsSourceRequest(
   id: string,
   decision:
-    | { action: 'approve'; category: NewsCategory; region: NewsRegion; tier: 1 | 2; note?: string }
+    | {
+        action: 'approve';
+        category: NewsCategory;
+        region: NewsRegion;
+        tier: 1 | 2;
+        note?: string;
+        /** The feed an Admin pastes for a `needs_review` row. */
+        feedUrl?: string;
+      }
     | { action: 'reject'; note?: string }
 ): Promise<NewsSourceRequest> {
   const result = await request<{ success: boolean; request: NewsSourceRequest }>(

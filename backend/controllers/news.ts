@@ -102,9 +102,12 @@ export async function getMyNewsSourceRequests(): Promise<HttpResult> {
 }
 
 /**
- * Propose a feed. The probe runs inside the service, before the row exists, so
- * nothing that is not a feed can reach the Admin queue; the rate limit is per
- * account, because the probe is an outbound request to a host the reader chose.
+ * Propose a source, whatever kind of link it is.
+ *
+ * The row is written immediately and answered with 202: the reader is not made
+ * to wait for a fetch of a host they chose, and the resolver worker turns the
+ * URL into a feed afterwards (ADR-0105). The rate limit is still per account,
+ * because that queue is what the worker spends its outbound requests on.
  */
 export async function submitNewsSourceRequest(
   body: unknown,
@@ -128,7 +131,7 @@ export async function submitNewsSourceRequest(
         userId,
         parsed.data
       );
-      return jsonResult(201, { success: true, request });
+      return jsonResult(202, { success: true, request });
     },
     {
       mapError: (error) => serviceErrorResponse(error, 'Failed to file a news source request'),
