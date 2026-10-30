@@ -66,9 +66,10 @@ npx vitest run <path>        # the test file(s) beside what you changed
 npx vitest run --changed     # or everything the diff reaches, resolved from git
 ```
 
-- **Tests:** the related files, or `--changed` when the blast radius is not obvious. Reach for the
-  full `npm test` only when the change really is repo-wide — a shared type, a base component, a
-  repository contract interface.
+- **Tests:** the related files, or `--changed` when the blast radius is not obvious. **Never the full
+  `npm test`.** The whole suite runs on the pull request already, so paying ~5 minutes locally proves
+  nothing CI will not: "a shared type", "a base component" and "a repository contract interface" all
+  read as repo-wide, and all of them are still CI's problem, not the local gate's.
 - **Formatting:** `npm run lint:fix` fixes lint rules and leaves layout alone, so a file written by
   hand — or an attribute inserted with a script — passes every other local gate and fails the
   `Format Check` step on the pull request, after the branch is already pushed (#575). The fix is
@@ -81,8 +82,8 @@ npx vitest run --changed     # or everything the diff reaches, resolved from git
   generated module — and then say in the pull request that you did.
 - **Never** weaken, skip or delete a gate to land. Fix the cause, not the symptom.
 
-`/verify` is the deliberate full sweep (`typecheck`, `lint:fix`, full `npm test`) for when you want
-it, and it is what CI approximates.
+`/verify` is the deliberate full sweep (`typecheck`, `lint:fix`, full `npm test`) the owner may ask
+for; it is what CI approximates, and an agent does not reach for it on its own.
 
 ## 3. Commit
 
