@@ -63,3 +63,16 @@
   font-family: var(--font-digits);
   direction: ltr;
 }
+/* An icon: drawn at the size the design gives it, from the site's own glyph. */
+.roy-glyph {
+  display: block;
+  flex-shrink: 0;
+}
+.roy-glyph--md {
+  width: 24px;
+  height: 24px;
+}
+.roy-glyph--sm {
+  width: 16px;
+  height: 16px;
+}

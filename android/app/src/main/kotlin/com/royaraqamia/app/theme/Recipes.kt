@@ -51,4 +51,10 @@ object Recipes {
         val valueColor: Color get() = RoyColors.foreground
     }
 
+    /** The size an icon is drawn at; the drawing is [com.royaraqamia.app.ui.vectors.LucideVectors]. */
+    object Glyph {
+        val md: Dp = 24f.dp
+        val sm: Dp = 16f.dp
+    }
+
 }

@@ -53,6 +53,9 @@ jobs:
       - name: Generated Component Recipes Are Current
         run: npm run check:components
 
+      - name: Generated Icon Vectors Are Current
+        run: npm run check:vectors
+
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 

@@ -215,6 +215,27 @@ export function renderCss(recipes, tokens) {
     );
   }
 
+  const glyph = recipes.primitives?.glyph;
+  if (glyph) {
+    lines.push(
+      "/* An icon: drawn at the size the design gives it, from the site's own glyph. */",
+      '.roy-glyph {',
+      '  display: block;',
+      '  flex-shrink: 0;',
+      '}',
+      ''
+    );
+    for (const [name, size] of Object.entries(glyph.sizes)) {
+      lines.push(
+        `.roy-glyph--${name} {`,
+        `  width: ${lengthToPx(size)}px;`,
+        `  height: ${lengthToPx(size)}px;`,
+        '}',
+        ''
+      );
+    }
+  }
+
   return `${lines.filter((line) => line !== '').join('\n')}\n`;
 }
 
@@ -295,6 +316,18 @@ export function renderKotlin(recipes, tokens) {
       '    }',
       ''
     );
+  }
+
+  const glyph = recipes.primitives?.glyph;
+  if (glyph) {
+    lines.push(
+      '    /** The size an icon is drawn at; the drawing is [com.royaraqamia.app.ui.vectors.LucideVectors]. */',
+      '    object Glyph {'
+    );
+    for (const [name, size] of Object.entries(glyph.sizes)) {
+      lines.push(`        val ${name}: Dp = ${float(lengthToPx(size))}.dp`);
+    }
+    lines.push('    }', '');
   }
 
   lines.push('}', '');

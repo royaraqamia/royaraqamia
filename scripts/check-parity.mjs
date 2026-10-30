@@ -28,6 +28,23 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = join(ROOT, 'docs', 'mobile', 'parity.json');
 const MATRIX = join(ROOT, 'perf', 'surfaces.json');
 const COPY_DIR = join(ROOT, 'shared', 'copy');
+const ICONS = join(ROOT, 'shared', 'icons', 'icons.json');
+const VECTORS = 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vectors/LucideVectors.kt';
+
+/** The glyphs a web component imports from the icon library the site uses. */
+export function importedIcons(source) {
+  const names = new Set();
+  for (const match of source.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]lucide-react['"]/g)) {
+    for (const name of match[1].split(',')) {
+      const trimmed = name
+        .trim()
+        .split(/\s+as\s+/)[0]
+        .trim();
+      if (trimmed) names.add(trimmed);
+    }
+  }
+  return [...names];
+}
 
 /** `planFree` -> `PLAN_FREE`, the app's name for the same string. */
 export function constantName(key) {
@@ -54,9 +71,12 @@ export function copySources(root = ROOT) {
 }
 
 /** Every problem, not just the first. `read` returns null for a missing file. */
-export function validate({ manifest, surfaces, copies, read }) {
+export function validate({ manifest, surfaces, copies, icons, read }) {
   const errors = [];
   const surfaceIds = new Set((surfaces.surfaces ?? []).map((surface) => surface.id));
+  const listedIcons = new Set(icons?.icons ?? []);
+  const vectors = read(VECTORS) ?? '';
+  const usedIcons = new Set();
 
   if (manifest.schemaVersion !== 1) {
     errors.push(`docs/mobile/parity.json: schemaVersion must be 1, not ${manifest.schemaVersion}`);
@@ -189,6 +209,30 @@ export function validate({ manifest, surfaces, copies, read }) {
         errors.push(`"${row.copySource}" key "${key}" is not rendered by ${row.web.component}`);
       }
     }
+
+    // Icons are design too: the glyph the site imports is the glyph the app must
+    // draw, from the generated vector rather than a redrawing (ADR-0100).
+    for (const icon of importedIcons(webComponent)) {
+      usedIcons.add(icon);
+      if (!listedIcons.has(icon)) {
+        errors.push(
+          `"${id}": ${row.web.component} imports the icon ${icon}, which shared/icons/icons.json does not list`
+        );
+        continue;
+      }
+      if (nativeObject && !nativeComponent.includes(`LucideVectors.${icon}`)) {
+        errors.push(`"${id}": ${row.native.component} does not draw LucideVectors.${icon}`);
+      }
+      if (vectors && !vectors.includes(`val ${icon}:`)) {
+        errors.push(`${VECTORS} has no generated ${icon}; run \`npm run vectors:generate\``);
+      }
+    }
+  }
+
+  for (const icon of listedIcons) {
+    if (!usedIcons.has(icon)) {
+      errors.push(`shared/icons/icons.json lists ${icon}, which no ported component draws`);
+    }
   }
 
   for (const [source] of copies) {
@@ -219,12 +263,18 @@ function main() {
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
   const surfaces = JSON.parse(readFileSync(MATRIX, 'utf8'));
   const copies = copySources();
+  const icons = existsSync(ICONS) ? JSON.parse(readFileSync(ICONS, 'utf8')) : null;
   const read = (file) => {
     const target = resolve(ROOT, file);
     return existsSync(target) ? readFileSync(target, 'utf8') : null;
   };
 
-  const errors = validate({ manifest, surfaces, copies, read });
+  if (!icons) {
+    console.error(`x ${relative(ROOT, ICONS)} is missing`);
+    return 1;
+  }
+
+  const errors = validate({ manifest, surfaces, copies, icons, read });
   if (errors.length > 0) {
     for (const error of errors) console.error(`x ${error}`);
     return 1;

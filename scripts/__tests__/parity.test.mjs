@@ -20,10 +20,12 @@ const surfaces = { surfaces: [{ id: 'account-server' }] };
 const files = {
   'web/route.tsx': 'export default function Page() { return <PlanView />; }',
   'web/plan-view.tsx': [
+    "import { Lock } from 'lucide-react';",
     "import { PLAN_CARD_COPY } from './plan-card-copy';",
     'export function PlanView() {',
     '  return (',
     '    <>',
+    '      <Lock className="roy-glyph roy-glyph--md" />',
     '      <div aria-label={PLAN_CARD_COPY.loadingLabel} />',
     '      <p>{PLAN_CARD_COPY.title}</p>',
     '      <p>{PLAN_CARD_COPY.signInTitle}</p>',
@@ -35,6 +37,7 @@ const files = {
   'web/plan-card-copy.ts': 'export const PLAN_CARD_COPY = { title: "a", signInTitle: "b" };',
   'android/PlanCard.kt': [
     'fun PlanCard(state: UsageUiState) {',
+    '  Icon(LucideVectors.Lock)',
     '  Text(PlanCardCopy.LOADING_LABEL)',
     '  Text(PlanCardCopy.TITLE)',
     '  Text(PlanCardCopy.SIGN_IN_TITLE)',
@@ -50,10 +53,13 @@ const files = {
     '}',
   ].join('\n'),
   'android/PlanCardCopy.kt': 'object PlanCardCopy { const val TITLE = "a" }',
+  'android/LucideVectors.kt': 'object LucideVectors { val Lock: ImageVector by lazy {} }',
   'shared/copy/plan-card.json': JSON.stringify({
     strings: { loadingLabel: 'x', title: 'a', signInTitle: 'b', failed: 'c' },
   }),
 };
+
+const icons = { icons: ['Lock'] };
 
 const manifest = {
   schemaVersion: 1,
@@ -97,6 +103,7 @@ function run({ row = {}, manifest: doc, extraFiles = {}, extraCopies = copies } 
     manifest: patched,
     surfaces,
     copies: extraCopies,
+    icons,
     read: (file) => {
       if (file in extraFiles) return extraFiles[file] ?? null;
       return files[file] ?? null;
@@ -114,6 +121,7 @@ describe('a pair that matches', () => {
       manifest: JSON.parse(readFileSync(join(ROOT, 'docs', 'mobile', 'parity.json'), 'utf8')),
       surfaces: JSON.parse(readFileSync(join(ROOT, 'perf', 'surfaces.json'), 'utf8')),
       copies: copySources(ROOT),
+      icons: JSON.parse(readFileSync(join(ROOT, 'shared', 'icons', 'icons.json'), 'utf8')),
       read: (file) => {
         try {
           return readFileSync(join(ROOT, file), 'utf8');
@@ -200,6 +208,36 @@ describe('a pair that drifted', () => {
   it('fails a component that does not read the generated module', () => {
     const errors = run({ extraFiles: { 'web/plan-view.tsx': 'export function PlanView() {}' } });
     expect(errors.join('\n')).toContain('does not import web/plan-card-copy.ts');
+  });
+
+  it('fails an icon the site draws and the app does not', () => {
+    const errors = run({
+      extraFiles: { 'android/PlanCard.kt': 'fun PlanCard() { }' },
+    });
+    expect(errors.join('\n')).toContain('does not draw LucideVectors.Lock');
+  });
+
+  it('fails an icon the manifest does not list', () => {
+    const errors = run({
+      extraFiles: {
+        'web/plan-view.tsx':
+          "import { Lock, Star } from 'lucide-react';\nimport { PLAN_CARD_COPY } from './plan-card-copy';\n" +
+          'const a = PLAN_CARD_COPY.loadingLabel, b = PLAN_CARD_COPY.title, c = PLAN_CARD_COPY.signInTitle, d = PLAN_CARD_COPY.failed;',
+        'android/PlanCard.kt': 'Icon(LucideVectors.Lock)\nIcon(LucideVectors.Star)',
+      },
+    });
+    expect(errors.join('\n')).toContain('imports the icon Star');
+  });
+
+  it('fails a listed icon no ported component draws', () => {
+    const errors = validate({
+      manifest: { ...manifest, components: [{ ...manifest.components[0] }] },
+      surfaces,
+      copies,
+      icons: { icons: ['Lock', 'Star'] },
+      read: (file) => files[file] ?? null,
+    });
+    expect(errors.join('\n')).toContain('lists Star, which no ported component draws');
   });
 });
 

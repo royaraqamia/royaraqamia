@@ -61,6 +61,10 @@
         "digits": true,
         "direction": "ltr"
       }
+    },
+    "glyph": {
+      "description": "The size an icon is drawn at. The drawing itself is the site's own (ADR-0100).",
+      "sizes": { "md": "1.5rem", "sm": "1rem" }
     }
   }
 }

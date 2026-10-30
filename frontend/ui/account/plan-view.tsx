@@ -51,7 +51,7 @@ export function PlanView() {
     return (
       <section className="roy-card items-center text-center">
         <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-          <Lock size={24} aria-hidden="true" />
+          <Lock className="roy-glyph roy-glyph--md" aria-hidden="true" />
         </div>
         <div className="space-y-1">
           <p className="text-base font-bold text-foreground">{PLAN_CARD_COPY.signInTitle}</p>
@@ -74,7 +74,7 @@ export function PlanView() {
           {PLAN_CARD_COPY.failed}
         </p>
         <Button variant="outline" size="sm" onClick={() => void reload()}>
-          <RotateCw className="size-4" aria-hidden="true" />
+          <RotateCw className="roy-glyph roy-glyph--sm" aria-hidden="true" />
           {PLAN_CARD_COPY.retry}
         </Button>
       </section>
