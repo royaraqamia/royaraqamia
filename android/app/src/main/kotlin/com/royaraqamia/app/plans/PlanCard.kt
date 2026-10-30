@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
+import com.royaraqamia.app.theme.royInsetShadow
 import com.royaraqamia.app.ui.vectors.LucideVectors
-import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyShape
 
 /**
@@ -226,14 +226,22 @@ private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
         ) {
             Box(
                 modifier =
-                    Modifier.size(56.dp)
-                        .clip(CircleShape)
-                        .background(RoyColors.muted.copy(alpha = 0.6f)),
+                    Modifier.size(Recipes.GuestMark.size)
+                        .royInsetShadow(
+                            shape = Recipes.GuestMark.radius,
+                            color = Recipes.GuestMark.shadowColor,
+                            blur = Recipes.GuestMark.shadowBlur,
+                            offsetY = Recipes.GuestMark.shadowOffsetY,
+                        )
+                        .clip(Recipes.GuestMark.radius)
+                        .background(Recipes.GuestMark.surface)
+                        .border(Recipes.GuestMark.border, Recipes.GuestMark.radius),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = LucideVectors.Lock,
                     contentDescription = null,
+                    tint = Recipes.GuestMark.content,
                     modifier = Modifier.size(Recipes.Glyph.md),
                 )
             }

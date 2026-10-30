@@ -98,4 +98,17 @@ object Recipes {
         val sm: Dp = 16f.dp
     }
 
+    /** The guest prompt's circle: a shape, a surface and the site's inner shadow. */
+    object GuestMark {
+        val size: Dp = 56f.dp
+        val radius: Shape get() = RoyShape.pill
+        val surface: Color get() = RoyColors.muted.copy(alpha = 0.6f)
+        val content: Color get() = RoyColors.mutedForeground.copy(alpha = 0.8f)
+        val border: BorderStroke get() = BorderStroke(1f.dp, RoyColors.border.copy(alpha = 0.4f))
+        val shadowInset: Boolean = true
+        val shadowOffsetY: Dp = 2f.dp
+        val shadowBlur: Dp = 4f.dp
+        val shadowColor: Color get() = Color.Black.copy(alpha = 0.05f)
+    }
+
 }
