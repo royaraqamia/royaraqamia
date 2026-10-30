@@ -5,6 +5,10 @@ import type { NavLink } from '../navbar/NavDropdown';
 import { SERVICES_ORDER_KEY } from '../navbar/services-order';
 import { ServicesMenuItems } from '../navbar/ServicesMenuItems';
 
+// The rows navigate with the app router, which has no context in jsdom.
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+
 const ITEMS: NavLink[] = [
   { href: '/request-project', label: 'طلب بناء مشروع', isRoute: true },
   { href: '/hire', label: 'طلب التَّعاقُد الشَّهري', isRoute: true },

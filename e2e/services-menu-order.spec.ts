@@ -104,4 +104,22 @@ test.describe('خدماتنا order', () => {
     await expect(page).toHaveURL(/\/quran/);
     await expect(dialog).toBeHidden();
   });
+
+  /**
+   * A row's click closes the sheet *and* navigates, and the close takes the
+   * sheet's history entry back off. Done in that order the pop used to land on
+   * the router's uncommitted push and cancel it; done in the wrong order (push
+   * first) the entry would strand itself behind the new page and Back would step
+   * onto a copy of the page it came from. Both are the same check: one row click,
+   * one forward move, one way back.
+   */
+  test('a row click leaves no history entry behind', async ({ page }) => {
+    const dialog = await openMenu(page);
+
+    await dialog.getByRole('menuitem', { name: 'القرآن الكريم' }).click();
+    await expect(page).toHaveURL(/\/quran/);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/^http:\/\/localhost:3000\/$/);
+  });
 });

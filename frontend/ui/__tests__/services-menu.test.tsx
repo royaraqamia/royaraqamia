@@ -5,6 +5,9 @@ import { NavDropdown } from '../navbar/NavDropdown';
 import { ServicesMenu } from '../navbar/ServicesMenu';
 import { SERVICES_LINK } from '../navbar/services-link';
 
+// The rows navigate with the app router, which has no context in jsdom.
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();

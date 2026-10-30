@@ -254,7 +254,7 @@ export function AccountView() {
           <DialogActions onCancel={() => setPromptHref(null)}>
             <SignInCta
               href={loginHref}
-              onClick={() => setPromptHref(null)}
+              dismiss={() => setPromptHref(null)}
               className="w-full sm:w-auto"
             />
           </DialogActions>

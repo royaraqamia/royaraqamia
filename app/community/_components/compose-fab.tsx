@@ -68,7 +68,7 @@ export function ComposeFab() {
           <DialogActions onCancel={() => setAuthPromptOpen(false)}>
             <SignInCta
               href={loginHref}
-              onClick={() => setAuthPromptOpen(false)}
+              dismiss={() => setAuthPromptOpen(false)}
               className="w-full sm:w-auto"
             />
           </DialogActions>
