@@ -70,6 +70,11 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
   writes `app/components.css` and the app's `Recipes.kt`, and `npm run check:components`
   fails a stale output or a name the tokens do not have
   ([ADR-0099](adr/0099-a-component-is-a-recipe.md))
+- A port draws the site's own glyphs: `shared/icons/icons.json` lists them,
+  `npm run vectors:generate` converts the lucide modules the site imports into Compose
+  vectors, and `npm run check:vectors` fails a stale output. A ported component carries no
+  `sm:`/`md:` utilities — it uses the fluid token steps both clients resolve
+  ([ADR-0100](adr/0100-a-port-draws-the-sites-glyphs-and-scale.md))
 - A ported component's words are generated, not retyped: `shared/copy/<surface>.json` is
   the source, `npm run copy:generate` writes the site's module and the app's Kotlin
   object, `npm run check:copy` fails a stale output and `npm run check:parity` fails a
