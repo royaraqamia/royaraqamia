@@ -40,6 +40,20 @@ if (hasKeystore) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
+// The debug workbench (#647, #501) signs in and reads a real route, so it needs the
+// project's URL and its publishable key. Both are public by design — the key names the
+// project and RLS decides what a token may read — but they are *this machine's*, so they
+// live in the git-ignored `android/local.properties` rather than in the repository, and
+// only the `debug` build type reads them. A release APK therefore carries neither the
+// values nor a screen that could use them, and a pulled branch invents nothing.
+def localPropertiesFile = rootProject.file('local.properties')
+def localProperties = new Properties()
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+def debugSupabaseUrl = localProperties.getProperty('supabase.url', '')
+def debugSupabaseAnonKey = localProperties.getProperty('supabase.anonKey', '')
+
 // The Firebase client config is *committed* (ADR-0050): it holds the project id and the
 // Android API key, which every APK ships anyway, and its absence is what let a released
 // shell reach users with no Firebase app — where `@capacitor/push-notifications` throws
@@ -85,6 +99,13 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // Read by the debug-only workbench (`WorkbenchActivity`). Empty when
+            // `android/local.properties` has no `supabase.url`/`supabase.anonKey`, and
+            // the workbench then says so instead of starting a half-configured app.
+            buildConfigField "String", "SUPABASE_URL", "\"${debugSupabaseUrl}\""
+            buildConfigField "String", "SUPABASE_ANON_KEY", "\"${debugSupabaseAnonKey}\""
+        }
         release {
             // Compose costs about 5.4 MiB of dex before a single screen exists, and
             // the release budget is 20 MiB (docs/mobile/native-app.md). R8 pays for
@@ -149,6 +170,10 @@ dependencies {
     // the runtime does not have.
     implementation platform("androidx.compose:compose-bom:$composeBomVersion")
     implementation "androidx.compose.material3:material3"
+    // Compose's activity entry point (#647): `setContent` lives here, not in the
+    // activity artifact the shell already depends on, so the app pins the same
+    // activity version for both.
+    implementation "androidx.activity:activity-compose:$androidxActivityVersion"
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.json:json:$jsonVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
