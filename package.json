@@ -35,6 +35,7 @@
     "check:digits": "node scripts/check-digits.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:surfaces": "node scripts/check-surfaces.mjs",
+    "check:screens": "node scripts/check-screens.mjs",
     "check:contracts": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
     "check:tokens": "node scripts/generate-tokens.mjs --check",

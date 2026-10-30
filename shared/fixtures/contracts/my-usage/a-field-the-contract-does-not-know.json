@@ -1,0 +1,14 @@
+{
+  "name": "a-field-the-contract-does-not-know",
+  "body": {
+    "success": true,
+    "state": {
+      "plan": "free",
+      "unlimited": false,
+      "expiresAt": null,
+      "bonus": 7,
+      "counters": []
+    },
+    "servedAt": "2026-10-30T00:00:00.000Z"
+  }
+}
