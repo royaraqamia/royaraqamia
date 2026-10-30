@@ -13,6 +13,7 @@
    to `app/layout.tsx` means adding its source here too. */
 @import './surface.css';
 @import './tokens.css';
+@import './components.css';
 
 @source './layout.tsx';
 @source '../frontend/ui/primitives';

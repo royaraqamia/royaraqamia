@@ -43,6 +43,8 @@
     "copy:generate": "node scripts/generate-copy.mjs",
     "check:copy": "node scripts/generate-copy.mjs --check",
     "check:parity": "node scripts/check-parity.mjs",
+    "components:generate": "node scripts/generate-components.mjs",
+    "check:components": "node scripts/generate-components.mjs --check",
     "check:precache": "node scripts/check-precache.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
