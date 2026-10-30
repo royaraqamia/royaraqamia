@@ -5,53 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <meta name="robots" content="noindex" />
-    <title>تعذَّر فتح الموقع · رؤيَة رقَميَّة</title>
+    <title>رؤيَة رقَميَّة</title>
     <style>
       /*
         The shell's local fallback (ADR-0067).
 
         Capacitor loads this page from `https://localhost/unavailable.html` when
         a main-frame navigation fails, and when the installed System WebView is
-        below `android.minWebViewVersion` — before the site is ever requested.
-        It is copied into the APK by `cap sync`, so it has to stand on its own:
-        no external stylesheet, script, font or image.
+        below `android.minWebViewVersion`. It is copied into the APK by
+        `cap sync`, so it has to stand on its own: no external stylesheet,
+        script, font or image.
 
-        The tokens are the site's own (`app/global.css`), restated here because
-        this document cannot fetch them. The type face is the site's body face,
-        bundled beside this file for the same reason: a fallback that only
-        looks right online is not a fallback.
+        It paints nothing on purpose. The page used to explain the failure and
+        offer a retry; the app now shows the site's own background and no
+        notice at all, so an unreachable site reads as an empty screen rather
+        than a second, different screen (the 2026-10-30 withdrawal of the
+        offline card and `/offline`).
 
         The script is deliberately ES5. This page is shown *because* the
-        WebView is old, so it cannot use the syntax the site's bundles use. The
-        version check below reads the major from the WebView's own user agent;
-        `scripts/__tests__/shell-fallback.test.mjs` pins it to the Capacitor
-        config and refuses modern syntax here.
+        WebView may be old, so it cannot use the syntax the site's bundles use.
+        The version check below reads the major from the WebView's own user
+        agent; `scripts/__tests__/shell-fallback.test.mjs` pins it to the
+        Capacitor config and refuses modern syntax here.
       */
-      @font-face {
-        font-family: 'IBM Plex Sans Arabic';
-        src: url('fonts/IBMPlexSansArabic-Regular.woff2') format('woff2');
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: 'IBM Plex Sans Arabic';
-        src: url('fonts/IBMPlexSansArabic-Bold.woff2') format('woff2');
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-      }
-      /* The WebView version numbers take the same digit face as the site and the
-         native update cards; the Arabic around them stays in IBM Plex. */
-      @font-face {
-        font-family: 'Aref Ruqaa Digits';
-        src: url('fonts/ArefRuqaa-Digits.woff2') format('woff2');
-        font-weight: 100 900;
-        font-style: normal;
-        font-display: swap;
-        unicode-range: U+0030-0039;
-      }
-
       html,
       body {
         height: 100%;
@@ -63,99 +39,6 @@
       body {
         --gutter: 24px;
         box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--gutter);
-        min-height: 100vh;
-        font-family: 'Aref Ruqaa Digits', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      .card {
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 420px;
-        padding: 32px 24px;
-        background: #1a1a1e;
-        border: 1px solid rgba(53, 53, 59, 0.6);
-        border-radius: 24px;
-        text-align: center;
-      }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 24px;
-        color: #adadad;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .brand-dot {
-        width: 10px;
-        height: 10px;
-        margin-left: 8px;
-        margin-inline-end: 8px;
-        border-radius: 50%;
-        background: linear-gradient(120deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%);
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        line-height: 1.4;
-      }
-
-      p {
-        margin: 12px 0 0;
-        color: #adadad;
-        font-size: 14px;
-        line-height: 1.7;
-      }
-
-      .meta {
-        margin-top: 16px;
-        color: #8a8a8a;
-        font-size: 13px;
-        line-height: 1.6;
-      }
-
-      .primary {
-        box-sizing: border-box;
-        display: block;
-        width: 100%;
-        min-height: 48px;
-        margin-top: 24px;
-        padding: 12px 16px;
-        border: 0;
-        border-radius: 999px;
-        background: linear-gradient(120deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%);
-        color: #ffffff;
-        font-family: inherit;
-        font-size: 15px;
-        font-weight: 700;
-        line-height: 24px;
-        text-align: center;
-        text-decoration: none;
-        box-shadow: 0 10px 30px -10px rgba(147, 51, 234, 0.5);
-      }
-
-      .primary:active {
-        opacity: 0.85;
-      }
-
-      .hint {
-        margin-top: 16px;
-        color: #8a8a8a;
-        font-size: 13px;
-        line-height: 1.7;
-      }
-
-      [hidden] {
-        display: none !important;
       }
 
       /* The page must not sit under a system bar on an edge-to-edge WebView.
@@ -173,52 +56,10 @@
         body {
           --gutter: 12px;
         }
-
-        .card {
-          padding: 24px 20px;
-        }
-
-        h1 {
-          font-size: 18px;
-        }
       }
     </style>
   </head>
   <body>
-    <main class="card">
-      <div class="brand">
-        <span class="brand-dot" aria-hidden="true"></span>
-        <span>رؤيَة رقَميَّة</span>
-      </div>
-
-      <section id="outdated" hidden>
-        <h1>يلزم تحديث عرض النظام</h1>
-        <p>
-          إصدار «عرض النظام» على هذا الجهاز أقدم من أن يعرض الموقع. حدِّث تطبيق «Android System
-          WebView» من متجر التَّطبيقات، ثمَّ أغلق التَّطبيق وافتحه من جديد.
-        </p>
-        <p class="meta">
-          عرض النظام: <span id="current">—</span> · المطلوب: <span id="required">111</span> أو أحدث
-        </p>
-        <p class="hint">لا حاجة إلى إعادة تثبيت التَّطبيق، ولا إلى حذف أيِّ بيانات.</p>
-      </section>
-
-      <section id="unreachable">
-        <h1 id="unreachable-title">تعذَّر فتح الموقع</h1>
-        <p>
-          لم نتمكَّن من الوصول إلى رؤيَة رقَميَّة. تحقَّق من اتِّصال الإنترنت، ثمَّ أعد المحاولة.
-        </p>
-        <p class="meta">قد يكون الاتِّصال ضعيفًا، أو الموقع غير متاح مؤقتًا.</p>
-        <a class="primary" href="https://royaraqamia.com">إعادة المحاولة</a>
-        <p class="hint">عند عودة الاتِّصال، يُعاد فتح الموقع تلقائيًّا مرة واحدة.</p>
-      </section>
-
-      <noscript>
-        <p class="meta">إن كان الاتِّصال يعمل فافتح الموقع من جديد.</p>
-        <a class="primary" href="https://royaraqamia.com">فتح الموقع</a>
-      </noscript>
-    </main>
-
     <script>
       (function () {
         var MINIMUM_WEBVIEW = 111;
@@ -232,47 +73,33 @@
         var current = match ? parseInt(match[1], 10) : 0;
         var outdated = current > 0 && current < MINIMUM_WEBVIEW;
 
+        // An engine below the floor cannot run the site, and reconnecting does
+        // not change that: the page stays empty and arms nothing.
+        if (outdated) return;
+
         /**
-         * The offline card's one automatic attempt: the first `online` event
-         * after a failed main-frame load navigates to the canonical origin,
-         * once per session. Still no timer — the radio coming back is the only
-         * trigger — and the storage guard turns every page after the first
-         * recovery back into ADR-0067's tap-only page, so a site that stays
-         * down cannot drag this WebView into a reload loop.
+         * The one automatic attempt: the first `online` event after a failed
+         * main-frame load navigates to the canonical origin, once per session.
+         * Still no timer — the radio coming back is the only trigger — and the
+         * storage guard turns every page after the first recovery back into
+         * ADR-0067's tap-only page, so a site that stays down cannot drag this
+         * WebView into a reload loop.
          */
-        function recoverOnce() {
+        try {
+          if (sessionStorage.getItem(RECOVERY_FLAG) !== null) return;
+        } catch (storageErr) {
+          // A denied Storage lets this page attempt one recovery; the flag
+          // is only the loop guard for the page loads after this one.
+        }
+
+        var onOnline = function () {
+          window.removeEventListener('online', onOnline);
           try {
-            if (sessionStorage.getItem(RECOVERY_FLAG) !== null) return;
-          } catch (storageErr) {
-            // A denied Storage lets this page attempt one recovery; the flag
-            // is only the loop guard for the page loads after this one.
-          }
-
-          var onOnline = function () {
-            window.removeEventListener('online', onOnline);
-            try {
-              sessionStorage.setItem(RECOVERY_FLAG, '1');
-            } catch (storageErr) {}
-            window.location.assign('https://royaraqamia.com');
-          };
-          window.addEventListener('online', onOnline, { once: true });
-        }
-
-        if (outdated) {
-          var offline = document.getElementById('unreachable');
-          var unsupported = document.getElementById('outdated');
-          var version = document.getElementById('current');
-          var required = document.getElementById('required');
-
-          if (offline) offline.hidden = true;
-          if (unsupported) unsupported.hidden = false;
-          if (version) version.textContent = String(current);
-          if (required) required.textContent = String(MINIMUM_WEBVIEW);
-          document.title = 'يلزم تحديث عرض النظام · رؤيَة رقَميَّة';
-          return;
-        }
-
-        recoverOnce();
+            sessionStorage.setItem(RECOVERY_FLAG, '1');
+          } catch (storageErr) {}
+          window.location.assign('https://royaraqamia.com');
+        };
+        window.addEventListener('online', onOnline, { once: true });
       })();
     </script>
   </body>

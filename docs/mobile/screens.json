@@ -8,11 +8,6 @@
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
     },
     {
-      "surface": "offline-page",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
-    },
-    {
       "surface": "marketing",
       "native": null,
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."

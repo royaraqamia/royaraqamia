@@ -194,3 +194,19 @@ What does not move: a server-bound action still names the connection where it is
 (`NeedsConnection`, per the [2026-10-20 amendment](#amendment-2026-10-20-the-state-lives-where-the-action-is-attempted)),
 and a cached public read still says it is a saved copy. `e2e/public-offline.spec.ts` now pins that
 surface-level copy instead of the pill.
+
+## Amendment (2026-10-30): a miss is answered by the shell or by nothing
+
+The `/offline` document and the inline "not available offline" card are withdrawn. A navigation the
+worker has no copy of is still answered with the nearest cached ancestor shell at the requested URL
+(#490), but it now paints silently: nothing is recorded about the swap and the app draws no notice.
+When no ancestor is cached � a brand-new install's first hit with no network, or a never-cache
+surface such as `/admin` and the MCP consent document � the worker answers a plain 503 and the
+browser shows its own offline error. The app has no screen of its own to put there.
+
+What does not move: a **server-bound action** attempted from a document already on screen still
+names the connection where it is attempted (`NeedsConnection`), and a cached public read still says
+it is a saved copy. Those are failures of a specific control or read, not a replacement document,
+and they are unaffected. The offline-serve beacon keeps counting the misses (ADR-0074's
+2026-10-30 amendment); `offline-route-card.tsx`, `prefix-serve.ts` and `app/offline/` are deleted
+rather than left unused.

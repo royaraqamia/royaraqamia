@@ -7,7 +7,7 @@ import { LazyMotion, domAnimation, MotionConfig } from 'motion/react';
  * every route shares (#496).
  *
  * It used to wrap the whole app from `app/layout.tsx`, which put `motion` in the
- * initial graph of every surface — `/offline` included, where nothing animates.
+ * initial graph of every surface — static marketing pages included, where nothing animates.
  * `m` throws outside a `LazyMotion`, so a route that renders one has to mount
  * this itself; the list is the grep, not a doc:
  * `grep -rl "from 'motion/react'" app frontend`.

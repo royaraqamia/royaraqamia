@@ -369,41 +369,37 @@ would name 94, but syntax is only the first failure; 111 is the documented runti
 Chrome 111 implements the ES2022 syntax the bundles use. ADR-0067 records the decision and the options
 that were rejected.
 
-The page reads `Chrome/<major>` from its own user agent:
+The page reads `Chrome/<major>` from its own user agent. Both branches paint the same thing — the app's
+dark background, full height, inside the safe area — and differ only in whether recovery is armed:
 
-- **below 111** — the update copy, with the installed and required versions and no retry: the site
-  cannot run until the WebView is updated.
-- **otherwise** — the offline copy and an «إعادة المحاولة» link to `https://royaraqamia.com`. A tap is
-  one navigation. If the site is still unreachable, Capacitor serves this page again — one attempt per
-  tap, not a loop. There is no timer, and no `navigator.onLine` probe: the radio coming back is the
-  only automatic trigger. When it does, the page spends exactly one more attempt on its own
-  (`location.assign` to the canonical origin) — the recovery ADR-0067's amendment bounds to once per
-  session with a `sessionStorage` flag, so a still-down site produces one page load per failure, never
-  a reload loop (#447). The copy itself says so: «عند عودة الاتِّصال، يُعاد فتح الموقع تلقائيًّا مرة
-  واحدة».
+- **below 111** — nothing, and no automatic action: the site cannot run until the WebView is updated,
+  and reconnecting does not change that.
+- **otherwise** — nothing, and one automatic attempt. If the site is unreachable the user sees an empty
+  screen; there is no copy and no tap target. When the radio comes back the page spends exactly one
+  attempt on its own (`location.assign` to the canonical origin) — the recovery ADR-0067's amendment
+  bounds to once per session with a `sessionStorage` flag, so a still-down site produces one page load
+  per failure, never a reload loop (#447). There is no timer and no `navigator.onLine` probe.
 
 The inline script is **ES5** on purpose: the page is shown precisely on WebViews that cannot parse the
-site. Its two IBM Plex Sans Arabic `.woff2` files are the site's own, copied beside it, and the palette
-is the card's from `res/values/colors.xml`. `scripts/__tests__/shell-fallback.test.mjs` pins the config
-to the page, parses the script as ES5, holds the recovery's one-listener/one-flag guard, and compares
-the bundled fonts with `public/fonts/`.
+site. It bundles no font, because there is no text to set, and the palette is the app's own
+`#121216`. `scripts/__tests__/shell-fallback.test.mjs` pins the config to the page, parses the script
+as ES5, holds the recovery's one-listener/one-flag guard, and refuses any copy or font in the file.
 
 The API 30 image's WebView is 83.0.4103.106, which is below the floor — the same image that used to
-render the site without hydrating. A launch there now shows the update card instead of that blank page.
+render the site without hydrating. A launch there now shows the blank page instead of that broken one.
 Measured with the debug APK at counter `20011`:
 
-| Step                                   | What the device showed                                                                                                                 |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Cold launch                            | WebView target `https://localhost/unavailable.html`; «يلزم تحديث عرض النظام»; «عرض النظام: 83 · المطلوب: 111 أو أحدث»; no retry action |
-| The card on the 320px image            | the heading, body and version line all fit inside the card's 320px gutter; the gradient wordmark is above it                           |
-| Offline attempt (UA overridden to 120) | `location.href` is `https://localhost/unavailable.html`; «تعذَّر فتح الموقع» and an «إعادة المحاولة» link are shown                    |
-| Four seconds later                     | URL still `https://localhost/unavailable.html` — one main-frame error produced one page load, not a reload loop                        |
-| Retry after reconnecting               | the «إعادة المحاولة» link navigated to `https://royaraqamia.com/`; the site's server-rendered text was present                         |
+| Step                                   | What the device showed                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Cold launch                            | WebView target `https://localhost/unavailable.html`; an empty dark screen; no heading, copy, version line or action |
+| Offline attempt (UA overridden to 120) | `location.href` is `https://localhost/unavailable.html`; the same empty dark screen; no retry link                  |
+| Four seconds later                     | URL still `https://localhost/unavailable.html` — one main-frame error produced one page load, not a reload loop     |
+| Retry after reconnecting               | no tap exists; the page navigated to `https://royaraqamia.com/` on its own, once, and the site's text was present   |
 
-The offline copy was exercised by overriding the running WebView's user agent to `Chrome/120` in
+The recovery branch was exercised by overriding the running WebView's user agent to `Chrome/120` in
 DevTools, because the only installed image is 83 and would otherwise be stopped by the floor before a
-navigation was attempted; the engine stayed 83, which is enough to prove the page's branch, the link and
-the absence of a loop, not to claim the site hydrates on 83.
+navigation was attempted; the engine stayed 83, which is enough to prove the page's branch and the
+absence of a loop, not to claim the site hydrates on 83.
 
 ### The native bridge on a remote origin
 

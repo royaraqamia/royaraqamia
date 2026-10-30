@@ -154,3 +154,26 @@ cache }` — because the report is still "one fallback serve", and the schema's
 door enum is what grew (`shared/contracts/offline-metrics.ts`). The volume
 argument is unchanged: a prefix serve happens at most once per navigation and
 the beacon is droppable like every other one.
+
+## Amendment (2026-10-30): the beacon counts a miss, not a page
+
+The `/offline` document is withdrawn, so the thing this ADR counts no longer
+exists. The beacon does not go with it: it now fires on every answer the worker
+could not take from Cache Storage, which is what the door already named. The
+endpoint keeps its `/api/offline-serve` name and its payload � `{ version, door,
+cache }` � and the retry queue, the throttling and the Sentry emission are
+unchanged.
+
+The doors lose exactly one member, `no-fallback`: it meant "the `/offline`
+document itself was missing", and there is no document. The other seven are
+unchanged in meaning. `navigation-prefix` is still the graceful fallback and
+still `info`; `navigation-deadline`, `navigation-offline`, `static-offline`,
+`api-offline` and the two `online-only-*` doors now each end in a plain 503
+rather than a rendered page, so a climb in them still means the same thing (an
+ordinary route stopped being answerable from the device) but paging only wakes on
+the two deadline doors.
+
+`shared/contracts/offline-metrics.ts`, `backend/controllers/offline-metrics.ts`,
+`scripts/__tests__/sw.test.mjs` and `backend/controllers/__tests__/offline-metrics.test.ts`
+are updated together; a report naming `no-fallback` is rejected as invalid, which
+is safe because no worker that ships this change can send one.

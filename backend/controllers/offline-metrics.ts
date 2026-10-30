@@ -9,21 +9,20 @@ import {
 } from '@/shared/contracts/offline-metrics';
 
 /**
- * The doors worth waking someone for: a shell that is gone, or an ordinary page
- * that could not answer in time. The accepted doors still reach Sentry as
- * `info` (one issue per door, so a trend is visible) but never page.
+ * The doors worth waking someone for: an ordinary page that could not answer in
+ * time. The accepted doors still reach Sentry as `info` (one issue per door, so a
+ * trend is visible) but never page.
  */
 const OFFLINE_REGRESSION_DOORS = new Set<OfflineServeDoor>([
-  'no-fallback',
   'navigation-deadline',
   'online-only-deadline',
 ]);
 
 /**
- * The field signal for `/offline` (ADR-0074, #474): one beacon per serve, sent
- * by the service worker, written as a single Vercel log line. It deliberately
- * carries no URL, no user and no client id — the door class and three tallies
- * are the whole record, so the log is safe to grep and to keep.
+ * The field signal for an offline cache miss (ADR-0074, #474): one beacon per
+ * miss, sent by the service worker, written as a single Vercel log line. It
+ * deliberately carries no URL, no user and no client id — the door class and
+ * three tallies are the whole record, so the log is safe to grep and to keep.
  *
  * The body is the only input and it is validated before the rate limit so a
  * malformed script cannot spend a bucket; the limiter is fail-closed, so a

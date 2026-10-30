@@ -10,6 +10,12 @@ a decision is filed as an issue, and what is mechanical is recorded below with t
 
 Recorded 2026-10-19 against `main` at `4d93e0cb`.
 
+> **Withdrawn since (2026-10-30):** the `/offline` document and the inline offline card this audit
+> names no longer exist. `/admin`, the MCP consent document and a brand-new install's first hit with
+> no network now answer a plain 503, and a dynamic detail deep link paints its parent shell silently
+> (ADR-0031's and ADR-0071's 2026-10-30 amendments). Everything else below is the audit's dated
+> record of what each route showed when the server was unreachable.
+
 ## Method
 
 Each route's client path was read rather than its intent:

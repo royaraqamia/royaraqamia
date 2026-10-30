@@ -10,7 +10,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | Surface | Routes | Owner | Offline read | Offline write | Shell | Bundle | Verified by | Paint | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `home` | `/` | static | swr | none | pinned | remote | `public-offline.spec.ts` |  | #487 |
-| `offline-page` | `/offline` | static | swr | none | pinned | remote | `public-offline.spec.ts` |  | #490 |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | static | swr | none | precached | remote | `public-offline.spec.ts` |  |  |
 | `habitflow` | `/habitflow` | local-store | store | outbox | precached | bundled | `product-offline-render.spec.ts`<br>`habitflow-sync-resume.spec.ts` | `paint:habitflow` | #493 |
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | local-store | store | outbox | precached | bundled | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #493 |

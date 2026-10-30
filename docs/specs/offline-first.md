@@ -69,10 +69,10 @@ stated limit.
   from a dynamic segment — `/u/[username]`, `/community/[slug]`, `/quran/[surah]`, `/verify/[code]` —
   is a pattern, not a document, so the build has no shell for it; a first offline deep link is
   answered with the **nearest cached ancestor** instead (`/community` for `/community/<slug>`, `/`
-  for `/u/<username>`, since `/u` has no document of its own), at the URL the user asked for, with an
-  inline card saying that link is not available offline (#490, ADR-0071's #490 amendment). That is
-  the case a profile link opened from a message hits. One online visit caches the page like any other
-  navigation, and the next offline open renders it in full.
+  for `/u/<username>`, since `/u` has no document of its own), at the URL the user asked for, and with
+  no notice drawn over it (#490, ADR-0071's 2026-10-30 amendment). That is the case a profile link
+  opened from a message hits. One online visit caches the page like any other navigation, and the next
+  offline open renders it in full.
 - **Server-bound surfaces stay server-bound.** Auth, consultation booking, rate refresh, the media
   downloader, admin and MCP show a needs-connection state by design (ADR-0031); they are not a gap to
   close. Since #447–#450 that state lives inside a cached document for every one of them except
@@ -100,12 +100,12 @@ stated limit.
   so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
   messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen
   (ADR-0061) rather than by bundling, and we do not pretend it is a native-first render.
-- **The floor is two doors, and one surface that still knocks.** `/offline` answers two
-  situations: a brand-new install's first hit with no network (nothing has been cached yet, by
-  definition); and `/admin`, whose guard answers on the server (`identity.resolveAdmin`) so a cached
-  document could not authorize itself. A never-visited dynamic detail route used to be the third
-  door (#473); since #490 it keeps its parent's chrome and says so inline instead, so it no longer
-  reaches a different screen. `/mcp/connect` is the one other user-facing surface that asks
+- **The floor is a plain 503.** A navigation with no cached document answers with a 503 and the
+  browser's own offline error: a brand-new install's first hit with no network (nothing has been
+  cached yet, by definition), and a never-cache surface such as `/admin`, whose guard answers on the
+  server (`identity.resolveAdmin`) so a cached document could not authorize itself. There is no
+  offline page and no card to draw; a never-visited dynamic detail route keeps its parent's chrome
+  instead (#490). `/mcp/connect` is the one other user-facing surface that asks
   the network for its document, and it is not a gap left behind: its URL carries `client_id`,
   `redirect_uri`, the PKCE challenge and `state`, so a bare precached path cannot answer it, and the
   document renders the client the user is being asked about — a consent that cannot reach the server
@@ -128,8 +128,8 @@ stated limit.
   session's data to the next on a shared device), and an offline reload landed on `/offline`.
   #449 made them data-free static shells with a client gate that paints the Local Store into
   them (ADR-0073), so their documents are SWR-cached and precached like the public ones: a
-  reload or deep link paints the product's own chrome and its local rows, never the offline
-  page. The withdrawn device page was the pilot for that shape (ADR-0070, ADR-0084): the queue
+  reload or deep link paints the product's own chrome and its local rows, never a different
+  screen. The withdrawn device page was the pilot for that shape (ADR-0070, ADR-0084): the queue
   and the device's copy were inspectable and removable with no network, precisely because that
   page rendered no account data on the server. `/account` took the same step in #448 (ADR-0031's
   #448 amendment). The first visit still needs the network — there is no document before it — and
@@ -195,18 +195,14 @@ Honest list of what stands between us and the bar, each with the file that shows
    English literal.
 4. **A dynamic detail deep link keeps its parent's chrome, and the item itself still needs one
    visit.** The worker answers a navigation it has no copy of with the longest cached ancestor
-   (`shellPrefixCandidates` in `public/sw-routing.js`, `serveNearestShell` in `public/sw.js`, #490)
-   and records the swap in its bookkeeping cache, which
-   `frontend/ui/shared/offline-route-card.tsx` reads after hydration to draw the shared
-   needs-connection card. So `/community/<slug>`, `/quran/<surah>`, `/u/<username>` and
-   `/verify/<code>` show the app rather than `/offline` — at the cost that what renders is the
+   (`shellPrefixCandidates` in `public/sw-routing.js`, `serveNearestShell` in `public/sw.js`, #490),
+   silently and with no record: `/community/<slug>`, `/quran/<surah>`, `/u/<username>` and
+   `/verify/<code>` show the app at the requested URL — at the cost that what renders is the
    ancestor's content, not the item the user asked for, until that item has been opened online once.
-   The marker is per navigation: the worker clears it before every navigation it answers, so a later
-   online visit never inherits a card. A card needs a page that runs, so the background refresh also
-   queues the `/_next/static` files each shell names and drains twelve per idle window
-   (`ROUTE_REFRESH_ASSET_BATCH`) from a build-stamped queue in the worker's bookkeeping cache — the
-   chunks of a never-visited route otherwise arrive only with a visit, which is exactly the case the
-   prefix serve exists for.
+   The background refresh also queues the `/_next/static` files each shell names and drains twelve
+   per idle window (`ROUTE_REFRESH_ASSET_BATCH`) from a build-stamped queue in the worker's
+   bookkeeping cache — the chunks of a never-visited route otherwise arrive only with a visit, which
+   is exactly the case the prefix serve exists for.
 
 ## Architecture
 
@@ -284,9 +280,10 @@ read is also on the never-cache list — a signed-in reader's bookmarks and posi
 Storage (#392). `scripts/__tests__/api-cache-contract.test.ts` fails an API GET route that is neither
 on the never-cache list nor explicitly `no-store`/`public`.
 
-Cache Storage is bounded in bytes and evicted least-recently-used first, with the offline page and
-the current build's static assets pinned; sign-out purges the runtime cache except that shell, and
-never touches the Local Store or Outbox ([ADR-0069](../adr/0069-the-public-cache-has-a-byte-budget.md), #394).
+Cache Storage is bounded in bytes and evicted least-recently-used first, with the current build's
+static assets and the fixed precache shell pinned; sign-out purges the runtime cache except that
+shell, and never touches the Local Store or Outbox
+([ADR-0069](../adr/0069-the-public-cache-has-a-byte-budget.md), #394, and its 2026-10-30 amendment).
 The caches themselves are named by **schema** (`royaraqamia-data-v1`, `royaraqamia-static-v1`), not by
 release, so a deployment keeps the device's whole library and only a schema bump discards it. Each
 entry is stamped with the build that produced it: a document from an earlier build is served at once
@@ -300,7 +297,7 @@ the device holds (#489) — derived from the build's
 own route manifests and bounded to 6 MB (or what the cache budget has left), so a deep link to a route
 this device never opened still paints its own shell offline once the refresh has reached it
 ([ADR-0071](../adr/0071-the-public-route-shells-are-precached.md), #395). The install itself fetches
-only `/`, `/offline`, the manifest and the icons. Dynamic detail routes,
+only `/`, the manifest and the icons. Dynamic detail routes,
 account tools' API prefixes and every never-cache prefix stay out; the product dashboard roots joined
 the list in #449 (ADR-0073) once they became data-free shells, `/consultation/book`, `/downloader` and
 `/mcp/guide` in #450, and `/news` in #555 once its filters and digest moved to the client
@@ -377,13 +374,12 @@ reading because of a chunk they never asked for (#332).
 - Public cache capped (~150 MB) with LRU eviction; **Owned data and the Outbox are never evicted**.
 - Android: Java `SharedPreferences` holds the FCM token; nothing else moves native.
 - Analytics/errors are best-effort, bounded and droppable; they share none of the Outbox guarantees.
-- **Every fallback serve is counted by door** (ADR-0074, #474): the worker labels each one
-  (`navigation-deadline`, `navigation-offline`, `navigation-prefix`, `online-only-deadline`,
-  `online-only-offline`, `static-offline`, `api-offline`, `no-fallback`) and posts one beacon per
-  serve to `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the previous
-  report. `navigation-prefix` is the graceful fallback (#490): an ancestor shell answered and the
-  client drew the inline card, so the door separates "the user saw the parent's chrome" from "the
-  user saw `/offline`". What
+- **Every miss is counted by door** (ADR-0074, #474, and its 2026-10-30 amendment): the worker
+  labels each one (`navigation-deadline`, `navigation-offline`, `navigation-prefix`,
+  `online-only-deadline`, `online-only-offline`, `static-offline`, `api-offline`) and posts one
+  beacon per miss to `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the
+  previous report. `navigation-prefix` is the graceful fallback (#490): an ancestor shell answered,
+  silently, so the door separates "the user saw the parent's chrome" from "the user got a 503". What
   is deliberately not collected: **no URL** (not even a path), no user, session or client id, no
   cookies (`credentials: 'omit'`), no timing, no sizes. The beacon is droppable — it is not awaited,
   and a limiter outage drops it rather than opening a write path. A beacon the network refuses (the
@@ -392,11 +388,10 @@ reading because of a chunk they never asked for (#332).
   delivers what it could not send; a worker killed mid-write still loses it.
 - **Where a maintainer reads it:** the endpoint writes one `logger.info` line, so the field signal is
   a Vercel log query — filter on `[offline-serve]` and group the door. A door changing shape is the
-  regression signal: `navigation-*` climbing means ordinary routes stopped caching, `no-fallback`
-  means the shell itself is missing. The endpoint also emits one Sentry message per door (fingerprint
-  `offline-serve/<door>`): `warning` for `no-fallback`, `navigation-deadline` and
-  `online-only-deadline`, `info` for the accepted doors, so an alert rule pages without a log query.
-  Nothing in the app reads the count back.
+  regression signal: `navigation-*` climbing means ordinary routes stopped caching. The endpoint also
+  emits one Sentry message per door (fingerprint `offline-serve/<door>`): `warning` for
+  `navigation-deadline` and `online-only-deadline`, `info` for the accepted doors, so an alert rule
+  pages without a log query. Nothing in the app reads the count back.
 
 ## UX
 
@@ -413,8 +408,8 @@ most-complained paths without touching the dashboard architecture: a cold-load d
 navigation (the limit above — ten seconds when it landed, three since #491), the auth shells in the SWR
 cache with their forms answering offline submits inline (ADR-0031's amendment; the shells join
 ADR-0071's precache), and the Android shell's fallback page recovering exactly once when the radio
-returns (ADR-0067's amendment). With it, `/offline` ends up serving only a brand-new install hit with no
-network, and `/admin`.
+returns (ADR-0067's amendment). With it, `/offline` ended up serving only a brand-new install hit with no
+network, and `/admin` — and both now end in a plain 503, since the page was withdrawn on 2026-10-30.
 
 **Phase 1 (#448) landed the same day:** the `/account` subtree's shells joined the SWR cache. The
 layout is no longer dynamic (`headers()` moved into `AccountFooter`), the guarded children guard
@@ -495,21 +490,20 @@ and the Realtime hint tier. It ships as a remote shell rather than a bundled sur
 
   The render drill is separate from the resume proof: `product-offline-render.spec.ts` (#449) visits
   each product root once online, reloads it with the radio off, and asserts the product's own chrome —
-  and the row written offline, where the root shows owned rows — instead of `/offline`. It is the
+  and the row written offline, where the root shows owned rows — rather than a different screen. It is the
   check that the shells are cached documents rather than per-user renders. `public-offline.spec.ts`
   carries the same assertion for the #450 shells: a context that opened neither `/downloader` nor
-  `/consultation/book` deep-links to each with the radio off and reads its heading, not the offline
-  page's retry link. Since #490 the same spec pins the dynamic-detail boundary from the side that
-  matters: a detail route this context never opened (`/quran/7`, `/verify/<code>`, `/u/<username>`)
-  keeps its parent's chrome and shows the inline card rather than `/offline`, and the same link
-  renders the item itself once it has been opened online — the limit stays one visit deep rather than
-  one segment deep. `product-offline-render.spec.ts` proves the product half of it with
-  `/linksnap/unlock/<code>`.
+  `/consultation/book` deep-links to each with the radio off and reads its heading. Since #490 the same
+  spec pins the dynamic-detail boundary from the side that matters: a detail route this context never
+  opened (`/quran/7`, `/verify/<code>`, `/u/<username>`) keeps its parent's chrome at the requested
+  URL, with no notice drawn over it, and the same link renders the item itself once it has been opened
+  online — the limit stays one visit deep rather than one segment deep.
+  `product-offline-render.spec.ts` proves the product half of it with `/linksnap/unlock/<code>`.
 
   #555 added the read half to the same spec. `/news` is opened online, its public snapshot is
   asserted to hold the digest, the route is asserted to be in the precache (the document no longer
   reads `searchParams`), and the reload with the radio off paints rows with no skeleton and no
-  `/offline`. `/community` gets the same treatment for the snapshot it records. A filtered feed page
+  notice. `/community` gets the same treatment for the snapshot it records. A filtered feed page
   is not asserted, because whether a query has hits is live data the suite cannot pin.
 
   What is **not** proven here, on purpose: `lead-offline.spec.ts` has the same shape for a Project
@@ -521,9 +515,9 @@ and the Realtime hint tier. It ships as a remote shell rather than a bundled sur
   to live under, not a flag to switch off.
 
 - **The fallback counter is proven without a network.** `scripts/__tests__/sw.test.mjs` answers only
-  the beacon in its fake network and asserts each door — including `navigation-prefix`, and that a
-  prefix serve keeps `/offline` for an empty cache and for `/admin` — the tallies, the absence of a
-  URL and that the page does not wait on the report; `backend/controllers/__tests__/offline-metrics.test.ts`
+  the beacon in its fake network and asserts each door — including `navigation-prefix`, and that an
+  empty cache and `/admin` end in a plain 503 with nothing written — the tallies, the absence of a
+  URL and that the response does not wait on the report; `backend/controllers/__tests__/offline-metrics.test.ts`
   pins the schema → log-line seam (unknown door, negative tally and unknown version refused before a
   bucket is spent). The field side is the Vercel log query named in
   [Storage & telemetry](#storage--telemetry).

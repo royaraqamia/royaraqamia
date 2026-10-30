@@ -262,3 +262,21 @@ rather than a cache header — so the precache keeps covering the **remote** sur
 (Community, News, rates, verify, the marketing pages) and stops being the answer for HabitFlow,
 SpendTrack, LinkSnap, BlogPress and the Quran text. The cache-naming rule and the build-id
 revalidation that made a deploy safe still govern those documents; a bundled one is not cached at all.
+
+## Amendment (2026-10-30): the prefix serve is silent
+
+The #490 amendment above drew a card for the swap by recording `{ requested, served }` and reading it
+back after hydration. The card and that record are withdrawn: a prefix serve now answers with the
+parent's document and nothing else. `public/sw.js` no longer clears or writes the marker,
+`frontend/shared/prefix-serve.ts` and `frontend/ui/shared/offline-route-card.tsx` are deleted, and the
+swap leaves no trace the client can detect. The chunk collection that made a prefix-served shell
+runnable stays exactly as it was � a shell that paints but cannot hydrate is still a worse answer than
+the parent's screen.
+
+The `/offline` document is withdrawn with the card, so the two shapes that used to end there now end in
+a plain 503: a navigation with no cached ancestor (a brand-new install's first hit with no network) and
+the never-cache surfaces (`/admin`, the MCP consent document). The `navigation-prefix` telemetry door
+stays, because a graceful fallback is still worth telling apart from a miss (ADR-0074's 2026-10-30
+amendment). `e2e/public-offline.spec.ts` now pins that a prefix-served shell paints without the
+withdrawn copy, and `scripts/__tests__/sw.test.mjs` pins the prefix order, the homepage walk, that no
+marker is written, and the 503s.

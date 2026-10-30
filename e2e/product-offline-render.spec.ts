@@ -6,11 +6,10 @@ import { signIn } from './sign-in';
  * The offline-render drill for the five product dashboards (#449, ADR-0073).
  *
  * Before Phase 2 every one of these roots was `force-dynamic` and on the
- * worker's never-cache list, so a reload with the radio off landed on
- * `/offline`. The drill is the promise in the issue: visit the root once online,
- * reload it offline, and assert the product's own chrome — and, where the root
- * shows owned rows, the row written while offline — instead of the offline page's
- * retry link.
+ * worker's never-cache list, so a reload with the radio off landed on a
+ * different screen. The drill is the promise in the issue: visit the root once
+ * online, reload it offline, and assert the product's own chrome — and, where
+ * the root shows owned rows, the row written while offline.
  *
  * Since #493 it also asserts the other half of that promise: the rows are the
  * session-independent part, so no product may show its dashboard skeleton on
@@ -26,11 +25,9 @@ const ENABLED = process.env.PRODUCT_OFFLINE_E2E === '1';
 
 test.skip(!ENABLED, 'requires PRODUCT_OFFLINE_E2E=1 (live Supabase + auth)');
 
-const OFFLINE_RETRY = 'إعادة المحاولة';
-
-/** Asserts this is the product's own document, not `/offline`. */
-async function expectNotOffline(page: Page) {
-  await expect(page.getByRole('link', { name: OFFLINE_RETRY })).toHaveCount(0);
+/** No withdrawn offline card: a prefix-served shell paints silently. */
+async function expectNoOfflineNotice(page: Page) {
+  await expect(page.getByText('هذا الرابط غير متاح دون اتصال')).toHaveCount(0);
 }
 
 /**
@@ -80,7 +77,7 @@ test('HabitFlow reloads offline and keeps the habit written with the radio off',
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
   await expect(page.getByText(name)).toBeVisible();
   await expectNoStoreSkeleton(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // Clean up so the suite is idempotent.
   await context.setOffline(false);
@@ -138,7 +135,7 @@ test('SpendTrack reloads offline and keeps the expense written with the radio of
   await expect(page.getByRole('heading', { name: 'تتبُّع المصاريف' })).toBeVisible();
   await expect(page.getByText(description)).toBeVisible();
   await expectNoStoreSkeleton(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // Clean up so the suite is idempotent.
   await context.setOffline(false);
@@ -183,7 +180,7 @@ test('LinkSnap reloads offline and reports the link it queued', async ({ browser
   await expect(page.locator('#original-url')).toBeVisible();
   await expectNoStoreSkeleton(page);
   await expectOfflinePill(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // Clean up so the suite is idempotent (the queued create flushes on reconnect).
   await context.setOffline(false);
@@ -235,7 +232,7 @@ test('BlogPress reloads offline and paints its posts and stats', async ({ browse
   await expect(page.getByText('إجمالي المنشورات')).toBeVisible();
   await expect(page.getByRole('link', { name })).toBeVisible();
   await expectNoStoreSkeleton(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // Clean up so the suite is idempotent.
   await context.setOffline(false);
@@ -277,7 +274,7 @@ test('Quran reloads offline in the remembered identity', async ({ browser, baseU
   // check has nothing to reach and only the remembered identity can answer.
   await expect(page.locator('[data-quran-signed-in="true"]')).toBeAttached();
   await expectNoStoreSkeleton(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // The reading position is the row the reopen used to lose: the surah's own
   // chrome is painted from the same store.
@@ -292,14 +289,11 @@ test('Quran reloads offline in the remembered identity', async ({ browser, baseU
  * Every product root is a cached shell (ADR-0073), and each one can have a
  * dynamic child the build cannot precache: `/linksnap/unlock/<code>` here, a
  * password-protected share link opened from a message. Before #490 that deep link
- * was answered with `/offline`; now the worker serves the root the device holds
- * at the URL the user asked for, and the app adds the inline card that says the
- * link itself is not available without a connection.
+ * was answered with a different screen; now the worker serves the root the device
+ * holds at the URL the user asked for, silently, and the unlock form itself is
+ * simply not there.
  */
-test('a never-visited product subroute keeps the product chrome and names the missing link', async ({
-  page,
-  baseURL,
-}) => {
+test('a never-visited product subroute keeps the product chrome', async ({ page, baseURL }) => {
   test.setTimeout(120_000);
 
   await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
@@ -319,13 +313,10 @@ test('a never-visited product subroute keeps the product chrome and names the mi
 
   await expect(page).toHaveURL(/\/linksnap\/unlock\/abc123$/);
   await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
-  await expect(
-    page.getByRole('status').filter({ hasText: 'هذا الرابط غير متاح دون اتصال' })
-  ).toBeVisible();
+  await expectNoOfflineNotice(page);
   // The missing item's own screen is the negative control: the unlock form never
-  // rendered, which is the part the card is reporting.
+  // rendered.
   await expect(page.getByRole('heading', { name: 'فتح الرَّابط' })).toHaveCount(0);
-  await expectNotOffline(page);
 });
 
 test('Notes reloads offline and keeps the note written with the radio off', async ({
@@ -360,7 +351,7 @@ test('Notes reloads offline and keeps the note written with the radio off', asyn
   await expect(page.locator('#note-title')).toHaveValue(title);
   await expectNoStoreSkeleton(page);
   await expectOfflinePill(page);
-  await expectNotOffline(page);
+  await expectNoOfflineNotice(page);
 
   // Clean up so the suite is idempotent.
   await context.setOffline(false);

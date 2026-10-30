@@ -54,7 +54,7 @@ export interface AppPerfMarks {
  * the first content surface paints owned rows, and one `tap` record per local
  * mutation. The beacon is deferred off the paint path, uses `keepalive`, is
  * skipped while offline, and is never retried — the same guarantees as the
- * `/offline` beacon (ADR-0074), and no URL, user, session or client id in the
+ * offline-miss beacon (ADR-0074), and no URL, user, session or client id in the
  * payload.
  *
  * Durations come from `performance.timeOrigin` (mark `boot` is `0` for all

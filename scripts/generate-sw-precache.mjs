@@ -139,8 +139,8 @@ function shellCandidates({ appPaths, neverCachePrefixes }) {
       // Internal routes (`/_not-found`) have no user-facing shell.
       .filter((route) => !route.startsWith('/_'))
       .filter((route) => !route.includes('.'))
-      // `/` and `/offline` are already in the worker's fixed precache list.
-      .filter((route) => route !== '/' && route !== '/offline')
+      // `/` is already in the worker's fixed precache list.
+      .filter((route) => route !== '/')
       .filter((route) => !neverCachePrefixes.some((prefix) => isUnderPrefix(route, prefix)))
       .sort()
   );

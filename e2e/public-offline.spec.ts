@@ -117,7 +117,7 @@ test('a visited public page paints from cache offline and shows its age', async 
   await expect(page.locator('#main-content').getByRole('button', { name: /تحديث/ })).toHaveCount(0);
 
   // The visited auth shell answers offline too (#447): the reload paints the
-  // login form, not the offline page. The submit — which still needs Turnstile
+  // login form. The submit — which still needs Turnstile
   // and Supabase — answers with the inline needs-connection state instead of a
   // credential error.
   await page.goto(`${baseURL}/auth/login`, { waitUntil: 'domcontentloaded' });
@@ -163,12 +163,11 @@ test('a never-visited public route deep-links offline from the background precac
   await context.setOffline(true);
   await page.goto(`${baseURL}/privacy`, { waitUntil: 'domcontentloaded' });
 
-  // A hard navigation to a never-visited route must render its own shell, not
-  // the offline fallback. The heading is server-rendered into the precached
-  // document; the offline page's retry link is the negative control.
+  // A hard navigation to a never-visited route must render its own shell. The
+  // heading is server-rendered into the precached document, and it stays at the
+  // requested URL.
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.getByRole('heading', { name: /سياسة الخصوصيَّة/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   // The auth shells are in the precache since #447: an offline navigation to a
   // login page this context never opened lands on the auth document, not on the
@@ -177,24 +176,21 @@ test('a never-visited public route deep-links offline from the background precac
   // visited-page test above.)
   await page.goto(`${baseURL}/auth/login`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/auth\/login$/);
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   // The account shells ride the SWR cache since #448: the document is static
   // and carries nothing account-bearing, so an account deep link this context
-  // never opened lands on its own shell, not on the offline fallback (ADR-0031's
-  // amendment). Everything account-bearing in it paints from client state.
+  // never opened lands on its own shell (ADR-0031's amendment). Everything
+  // account-bearing in it paints from client state.
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/account$/);
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   // The product dashboard roots are data-free shells since #449 (ADR-0073), so
   // the background precache covers one this context never opened: an offline
   // deep link paints the product's own heading, and the Local Store (empty for a
-  // guest here) is what the client awaits, not `/offline`.
+  // guest here) is what the client awaits.
   await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/habitflow$/);
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   // The two Phase 3 shells (#450) are data-free documents too: a deep link to a
   // never-opened `/downloader` or `/consultation/book` paints its own chrome,
@@ -202,12 +198,10 @@ test('a never-visited public route deep-links offline from the background precac
   await page.goto(`${baseURL}/downloader`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/downloader$/);
   await expect(page.getByRole('heading', { name: 'مُنزِّل الوسائط' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await page.goto(`${baseURL}/consultation/book`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/consultation\/book$/);
   await expect(page.getByRole('heading', { name: 'حجز استشارة' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
 
   await context.close();
 });
@@ -294,16 +288,13 @@ test('a community load-more that never leaves keeps the loaded page and names th
   await expect(page.getByText('منشور تجريبيّ')).toBeVisible();
 });
 
-// The card a prefix serve draws (#490). Its own copy is the marker; the shared
-// needs-connection title rides along with it.
-const OFFLINE_ROUTE_CARD = 'هذا الرابط غير متاح دون اتصال';
+/**
+ * The card a prefix serve used to draw (#490, withdrawn 2026-10-30). Its copy
+ * is the negative control: a prefix-served shell paints silently now.
+ */
+const WITHDRAWN_ROUTE_CARD = 'هذا الرابط غير متاح دون اتصال';
 
-/** The `/offline` document's own heading, never a prefix-served shell's. */
-function offlinePageHeading(page: Page) {
-  return page.getByRole('heading', { name: /غير متَّصل/ });
-}
-
-test('a never-visited dynamic detail route keeps its parent shell and names the missing link', async ({
+test('a never-visited dynamic detail route keeps its parent shell', async ({
   browser,
   baseURL,
 }) => {
@@ -317,9 +308,7 @@ test('a never-visited dynamic detail route keeps its parent shell and names the 
 
   // A dynamic segment is a pattern, not a document, so the route precache has
   // no shell for `/quran/7` (ADR-0071). It does hold every static ancestor, and
-  // since #490 a miss is answered with the longest one the device has — which is
-  // the fix for the worst answer this worker used to give: `/offline`, a
-  // different screen replacing the one the user asked for.
+  // since #490 a miss is answered with the longest one the device has.
   await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
   await waitForCachedRoutes(page, ['/quran', '/verify', '/']);
@@ -327,12 +316,11 @@ test('a never-visited dynamic detail route keeps its parent shell and names the 
   await context.setOffline(true);
 
   // `/quran/<surah>`: the reader's own chrome answers at the requested URL, and
-  // the card says the surah itself is not on this device.
+  // nothing says the surah itself is missing.
   await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/quran\/7$/);
   await expect(page.getByRole('heading', { name: 'القرآن الكريم' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
-  await expect(offlinePageHeading(page)).toHaveCount(0);
+  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
   // The surah is what the link asked for, and it is not what rendered.
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toHaveCount(0);
 
@@ -340,24 +328,22 @@ test('a never-visited dynamic detail route keeps its parent shell and names the 
   await page.goto(`${baseURL}/verify/ABC-123`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/verify\/ABC-123$/);
   await expect(page.getByRole('heading', { name: 'التَّحقُّق من الشَّهادة' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
-  await expect(offlinePageHeading(page)).toHaveCount(0);
+  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
   // `/u` is a segment with no document of its own, so the chain walks past it to
   // the homepage — the one ancestor every installed device holds.
   await page.goto(`${baseURL}/u/someone`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/u\/someone$/);
   await expect(page.getByRole('heading', { name: /شريكك الاستراتيجي/ })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toBeVisible();
-  await expect(offlinePageHeading(page)).toHaveCount(0);
+  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
   // The limit is one visit deep, not one segment deep: opening the same detail
-  // route online caches its document like any other navigation, so the card is
-  // gone and the next offline open paints the surah.
+  // route online caches its document like any other navigation, so the next
+  // offline open paints the surah.
   await context.setOffline(false);
   await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toHaveCount(0);
+  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
   // The stored copy is written after the response is returned, so wait for the
   // entry rather than racing the reload against the background write.
@@ -370,8 +356,7 @@ test('a never-visited dynamic detail route keeps its parent shell and names the 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'الأعراف' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: OFFLINE_ROUTE_CARD })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'إعادة المحاولة' })).toHaveCount(0);
+  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
   await context.close();
 });
@@ -474,7 +459,7 @@ test('a repeat client navigation is answered from the cache with the radio off',
 
 /**
  * The public snapshot store (#555): a surface's last-seen rows paint with the
- * radio off instead of a skeleton or `/offline`.
+ * radio off instead of a skeleton or a different screen.
  *
  * `/news` is the case the store was built for. Its document used to read
  * `searchParams` on the server, which is exactly what kept it out of the

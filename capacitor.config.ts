@@ -34,7 +34,8 @@ const config: CapacitorConfig = {
     // Capacitor loads this local page from `https://localhost/unavailable.html`
     // when a main-frame navigation fails, and when the installed System WebView
     // is below `minWebViewVersion` — before the site is requested at all. It is
-    // bundled through `webDir`, so it works in airplane mode (ADR-0067).
+    // bundled through `webDir`, so it works in airplane mode (ADR-0067); since
+    // 2026-10-30 it paints a blank themed page and nothing else.
     errorPath: 'unavailable.html',
   },
   android: {
