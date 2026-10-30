@@ -83,6 +83,11 @@
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
     },
     {
+      "surface": "notifications",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
       "surface": "community",
       "native": null,
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."

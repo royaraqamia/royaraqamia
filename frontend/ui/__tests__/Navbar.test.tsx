@@ -10,8 +10,8 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock('../shared/notification-dropdown', () => ({
-  NotificationDropdown: () => null,
+vi.mock('../shared/notification-bell', () => ({
+  NotificationBell: () => null,
 }));
 
 function renderWithProviders(ui: React.ReactElement) {
