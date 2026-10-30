@@ -45,6 +45,8 @@
     "check:parity": "node scripts/check-parity.mjs",
     "components:generate": "node scripts/generate-components.mjs",
     "check:components": "node scripts/generate-components.mjs --check",
+    "vectors:generate": "node scripts/generate-vectors.mjs",
+    "check:vectors": "node scripts/generate-vectors.mjs --check",
     "check:precache": "node scripts/check-precache.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
