@@ -72,15 +72,109 @@ fun PlanCard(
 ) {
     when (state) {
         UsageUiState.Loading -> Skeleton(modifier)
-        is UsageUiState.Ready -> CardShell(modifier) { Counters(state.model) }
+        is UsageUiState.Ready -> Ready(state.model, modifier)
         UsageUiState.SignedOut -> SignedOut(modifier, onSignIn)
         UsageUiState.Failed -> Failed(onRetry, modifier)
     }
 }
 
+/**
+ * The page's two sections, in the page's order: the card, then the activation
+ * history (ADR-0098). The site wraps them in `space-y-4`; the gap here is the
+ * spacing token step, because a port uses the fluid scale rather than a `sm:`
+ * utility (ADR-0100).
+ */
+@Composable
+private fun Ready(model: UsageScreenModel, modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGap),
+    ) {
+        CardShell { Counters(model) }
+        History(model.activations)
+    }
+}
+
+/**
+ * The site's activation history: what the plan cost, how it was paid, when it
+ * started and when it runs out — or the empty line that names the free plan the
+ * member is on.
+ */
+@Composable
+private fun History(activations: List<UsageScreenModel.Activation>) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+    ) {
+        Text(
+            text = PlanCardCopy.HISTORY_TITLE,
+            style = type.small.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        if (activations.isEmpty()) {
+            CardShell {
+                Text(
+                    text = PlanCardCopy.HISTORY_EMPTY.replace("{plan}", PlanCardCopy.PLAN_FREE),
+                    style = type.small,
+                    color = Recipes.Row.labelColor,
+                )
+            }
+        } else {
+            for (activation in activations) {
+                ActivationRow(activation)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivationRow(activation: UsageScreenModel.Activation) {
+    val type = LocalRoyTypeScale.current
+
+    CardShell {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGapSm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = PlanMoney.label(activation.amountCents, activation.currency),
+                style = type.small.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = UsageCopy.methodLabel(activation.method),
+                style = type.xs,
+                color = Recipes.Row.labelColor,
+            )
+        }
+
+        Text(
+            text =
+                PlanCardCopy.ACTIVATED_LINE.replace("{activated}", PlanDates.label(activation.activatedAt))
+                    .replace("{expires}", PlanDates.label(activation.expiresAt)),
+            style = type.xs,
+            color = Recipes.Row.labelColor,
+        )
+
+        if (activation.note != null) {
+            Text(
+                text = PlanCardCopy.NOTE_LINE.replace("{note}", activation.note),
+                style = type.xs,
+                color = Recipes.Row.labelColor,
+            )
+        }
+    }
+}
+
 /** The site's card surface: `rounded-2xl border border-border/50 bg-card/60`. */
 @Composable
-private fun CardShell(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun CardShell(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val spacing = LocalRoySpacing.current
 
     Card(
