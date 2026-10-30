@@ -95,7 +95,12 @@ states the component draws. `npm run check:parity` fails when
 - the app's sealed interface declares a state the row does not list, or the row lists one the app
   does not declare;
 - a state's string is not rendered on **both** sides from the one generated copy source;
-- a copy key is rendered by neither client — or a `shared/copy/*.json` belongs to no row.
+- a copy key is rendered by neither client — or a `shared/copy/*.json` belongs to no row;
+- **a Kotlin file reads `Recipes` or `LucideVectors` and has no row** — the list cannot fall behind the
+  code ([ADR-0103](../adr/0103-a-port-is-discovered-by-what-it-reads.md)).
+
+A component that draws the site's design but must not be paired yet is listed under `exempt` with a
+reason, the way `screens.json` lists a surface the app does not draw.
 
 `shared/copy/<surface>.json` is the copy source: `npm run copy:generate` writes the site's module and
 the app's object, and `npm run check:copy` fails a stale one. Neither client spells a user-facing

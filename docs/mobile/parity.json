@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, or a copy source no row claims. The rules are in docs/mobile/two-clients.md, and ADR-0098 records why this exists.",
+  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
       "id": "plan-card",

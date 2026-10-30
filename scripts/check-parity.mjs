@@ -51,6 +51,37 @@ export function constantName(key) {
   return key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
 }
 
+/**
+ * The Kotlin files that draw the site's design, discovered rather than listed
+ * (#647, ADR-0103).
+ *
+ * A file that reads the generated recipe or the generated glyphs is drawing the
+ * site's components by definition, so it is a port and owes a parity row. This is
+ * the half `check:screens` cannot do: a `*Screen.kt` is found by its name, and the
+ * plan card is deliberately not a screen, so an unlisted card was invisible. A
+ * file that starts reading `Recipes` now becomes visible the moment it does.
+ *
+ * The generated outputs themselves are excluded: they *are* the recipe, not a
+ * component that draws it.
+ */
+export const PORTED_SIGNAL = /\b(Recipes|LucideVectors)\s*\./;
+
+/** Generated sources: the recipe and the glyphs themselves, not components. */
+const GENERATED = new Set(['app/theme/Recipes.kt', 'app/ui/vectors/LucideVectors.kt']);
+
+export function portedSources(sources) {
+  return sources
+    .filter(({ path, content }) => {
+      const relative = path.split('\\').join('/');
+      const afterApp = relative.slice(relative.indexOf('/app/') + 1);
+      if (GENERATED.has(afterApp)) return false;
+      if (relative.includes('/contracts/generated/')) return false;
+      return PORTED_SIGNAL.test(content);
+    })
+    .map(({ path }) => path.split('\\').join('/'))
+    .sort();
+}
+
 /** The states a Kotlin sealed interface declares: `data object Loading : UsageUiState`. */
 export function declaredStates(source) {
   return [...source.matchAll(/^\s*data (?:object|class) ([A-Z][A-Za-z0-9]*)/gm)].map((m) => m[1]);
@@ -71,7 +102,7 @@ export function copySources(root = ROOT) {
 }
 
 /** Every problem, not just the first. `read` returns null for a missing file. */
-export function validate({ manifest, surfaces, copies, icons, read }) {
+export function validate({ manifest, surfaces, copies, icons, read, sources = [] }) {
   const errors = [];
   const surfaceIds = new Set((surfaces.surfaces ?? []).map((surface) => surface.id));
   const listedIcons = new Set(icons?.icons ?? []);
@@ -89,6 +120,7 @@ export function validate({ manifest, surfaces, copies, icons, read }) {
 
   const ids = new Set();
   const claimedSources = new Set();
+  const claimedFiles = new Set();
 
   for (const row of rows) {
     const id = row.id ?? '(no id)';
@@ -131,6 +163,10 @@ export function validate({ manifest, surfaces, copies, icons, read }) {
     }
     if (typeof row.native?.copyObject !== 'string' || row.native.copyObject.length === 0) {
       errors.push(`"${id}" has no "native.copyObject"`);
+    }
+
+    if (row.native?.component) {
+      claimedFiles.add(row.native.component);
     }
 
     if (row.copySource) {
@@ -241,6 +277,37 @@ export function validate({ manifest, surfaces, copies, icons, read }) {
     }
   }
 
+  /**
+   * Discovery: a Kotlin file that draws from the recipe or the glyphs is a port,
+   * and a port owes a row. Without this, a new `*Card.kt` could be written with
+   * literals and no pair, and every other check would pass (#647, ADR-0103).
+   */
+  const exemptions = new Map();
+  for (const exemption of manifest.exempt ?? []) {
+    if (!exemption?.path || !exemption?.reason) {
+      errors.push('docs/mobile/parity.json: an "exempt" entry needs a "path" and a "reason"');
+      continue;
+    }
+    if (exemptions.has(exemption.path)) {
+      errors.push(`docs/mobile/parity.json: "${exemption.path}" is exempted twice`);
+    }
+    exemptions.set(exemption.path, exemption.reason);
+    if (read(exemption.path) === null) {
+      errors.push(`docs/mobile/parity.json: exempted "${exemption.path}" does not exist`);
+    }
+    if (claimedFiles.has(exemption.path)) {
+      errors.push(`docs/mobile/parity.json: "${exemption.path}" is both a row and exempt`);
+    }
+  }
+
+  for (const path of portedSources(sources)) {
+    if (claimedFiles.has(path) || exemptions.has(path)) continue;
+    errors.push(
+      `${path} draws the site's components (it reads Recipes or LucideVectors) but has no row in ` +
+        'docs/mobile/parity.json: add one (route, copy, states), or list it under "exempt" with a reason'
+    );
+  }
+
   return errors;
 }
 
@@ -250,6 +317,29 @@ function moduleSpecifier(file) {
     .split('/')
     .pop()
     .replace(/\.tsx?$/, '')}`;
+}
+
+/** Every Kotlin source the app ships, as `{ path, content }`. */
+export function kotlinSources(root = ROOT) {
+  const start = join(root, 'android', 'app', 'src', 'main', 'kotlin');
+  if (!existsSync(start)) return [];
+  const sources = [];
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        walk(path);
+        continue;
+      }
+      if (!entry.name.endsWith('.kt')) continue;
+      sources.push({
+        path: relative(root, path).split('\\').join('/'),
+        content: readFileSync(path, 'utf8'),
+      });
+    }
+  };
+  walk(start);
+  return sources;
 }
 
 function main() {
@@ -268,13 +358,14 @@ function main() {
     const target = resolve(ROOT, file);
     return existsSync(target) ? readFileSync(target, 'utf8') : null;
   };
+  const sources = kotlinSources();
 
   if (!icons) {
     console.error(`x ${relative(ROOT, ICONS)} is missing`);
     return 1;
   }
 
-  const errors = validate({ manifest, surfaces, copies, icons, read });
+  const errors = validate({ manifest, surfaces, copies, icons, read, sources });
   if (errors.length > 0) {
     for (const error of errors) console.error(`x ${error}`);
     return 1;

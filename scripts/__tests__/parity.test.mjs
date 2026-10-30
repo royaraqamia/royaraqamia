@@ -3,7 +3,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { constantName, copySources, declaredStates, validate } from '../check-parity.mjs';
+import {
+  constantName,
+  copySources,
+  declaredStates,
+  portedSources,
+  validate,
+} from '../check-parity.mjs';
 
 /**
  * The pair list, and the five rules that keep a port a pair (#647, ADR-0098).
@@ -254,5 +260,105 @@ describe('reading a Kotlin state file', () => {
   it('names a constant the way the generator does', () => {
     expect(constantName('signInTitle')).toBe('SIGN_IN_TITLE');
     expect(constantName('failed')).toBe('FAILED');
+  });
+});
+
+describe('discovering a ported component', () => {
+  const sources = [
+    {
+      path: 'android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt',
+      content: 'Recipes.Card.radius',
+    },
+    {
+      path: 'android/app/src/main/kotlin/com/royaraqamia/app/plans/Copy.kt',
+      content: 'const val A = "b"',
+    },
+    {
+      path: 'android/app/src/main/kotlin/com/royaraqamia/app/theme/Recipes.kt',
+      content: 'object Recipes { val a = 1 }',
+    },
+    {
+      path: 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vectors/LucideVectors.kt',
+      content: 'object LucideVectors { val Lock = 1 }',
+    },
+    {
+      path: 'android/app/src/main/kotlin/com/royaraqamia/app/contracts/generated/PlansContracts.kt',
+      content: 'LucideVectors.NotReal',
+    },
+  ];
+
+  it('counts a file that reads the recipe or the glyphs, and only that', () => {
+    expect(portedSources(sources)).toEqual([
+      'android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt',
+    ]);
+  });
+
+  it('fails a port with no row, naming the file', () => {
+    const errors = validate({
+      manifest: { ...manifest, components: [] },
+      surfaces,
+      copies,
+      icons,
+      read: (file) => files[file] ?? null,
+      sources,
+    });
+    expect(errors.join('\n')).toContain('has no row in docs/mobile/parity.json');
+  });
+
+  it('passes when the port is exempted with a reason', () => {
+    const errors = validate({
+      manifest: {
+        ...manifest,
+        components: [],
+        exempt: [
+          {
+            path: 'android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt',
+            reason: 'drawn by the debug workbench, not a product surface',
+          },
+        ],
+      },
+      surfaces,
+      copies,
+      icons,
+      read: (file) =>
+        file === 'android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt'
+          ? 'Recipes.Card.radius'
+          : (files[file] ?? null),
+      sources,
+    });
+    expect(errors.filter((error) => error.includes('has no row'))).toEqual([]);
+  });
+
+  it('refuses an exemption without a reason, or one that is also a row', () => {
+    const withoutReason = validate({
+      manifest: {
+        ...manifest,
+        exempt: [{ path: 'android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt' }],
+      },
+      surfaces,
+      copies,
+      icons,
+      read: (file) => files[file] ?? null,
+      sources,
+    });
+    expect(withoutReason.join('\n')).toContain('needs a "path" and a "reason"');
+
+    const both = validate({
+      manifest: {
+        ...manifest,
+        exempt: [
+          {
+            path: 'android/PlanCard.kt',
+            reason: 'nope',
+          },
+        ],
+      },
+      surfaces,
+      copies,
+      icons,
+      read: (file) => files[file] ?? null,
+      sources,
+    });
+    expect(both.join('\n')).toContain('is both a row and exempt');
   });
 });
