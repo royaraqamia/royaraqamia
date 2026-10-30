@@ -10,6 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 
 /**
  * The components the app and the site share (#647, ADR-0099), from one recipe.
@@ -49,6 +50,46 @@ object Recipes {
         fun value(scale: RoyTypeScale): TextStyle =
             scale.xs.copy(fontWeight = FontWeight(700)).let { scale.digits(it) }
         val valueColor: Color get() = RoyColors.foreground
+    }
+
+    /** The site's pill badge: geometry here, tones below, interaction in the component. */
+    object Badge {
+        val radius: Shape get() = RoyShape.pill
+        val borderWidth: Dp = 1f.dp
+
+        /** One size step; the text style is the site's step, weight and tracking. */
+        data class Size(
+            val height: Dp,
+            val paddingX: Dp,
+            val paddingY: Dp,
+            val gap: Dp,
+            val text: TextStyle,
+        )
+
+        /** A tone: the surface, its border and the words on it. */
+        data class Tone(val surface: Color, val border: Color, val content: Color)
+
+        fun default(type: RoyTypeScale): Size =
+            Size(24f.dp, 10f.dp, 2f.dp, 6f.dp, type.xs.copy(fontWeight = FontWeight(700), letterSpacing = -0.025f.em))
+        fun sm(type: RoyTypeScale): Size =
+            Size(20f.dp, 8f.dp, 0f.dp, 4f.dp, type.xs.copy(fontWeight = FontWeight(700), letterSpacing = 0.05f.em))
+        fun lg(type: RoyTypeScale): Size =
+            Size(32f.dp, 14f.dp, 4f.dp, 8f.dp, type.small.copy(fontWeight = FontWeight(500), letterSpacing = -0.025f.em))
+
+        val success: Tone
+            get() =
+                Tone(
+                    RoyColors.success.copy(alpha = 0.1f),
+                    RoyColors.success.copy(alpha = 0.3f),
+                    RoyColors.success,
+                )
+        val neutral: Tone
+            get() =
+                Tone(
+                    RoyColors.secondary.copy(alpha = 0.8f),
+                    RoyColors.border.copy(alpha = 0.6f),
+                    RoyColors.secondaryForeground,
+                )
     }
 
     /** The size an icon is drawn at; the drawing is [com.royaraqamia.app.ui.vectors.LucideVectors]. */

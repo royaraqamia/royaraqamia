@@ -215,6 +215,58 @@ export function renderCss(recipes, tokens) {
     );
   }
 
+  const badge = recipes.primitives?.badge;
+  if (badge) {
+    step(tokens, badge.type.step);
+    lines.push(
+      "/* The site's pill badge: geometry here, tones below, interaction in the component. */",
+      '.roy-badge {',
+      '  display: inline-flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      '  flex-shrink: 0;',
+      '  max-width: 100%;',
+      '  user-select: none;',
+      `  border-radius: ${radiusProperty(badge.radius)};`,
+      `  border-width: ${lengthToPx(badge.border.width)}px;`,
+      '  border-style: solid;',
+      '  border-color: transparent;',
+      `  font-size: var(--type-${badge.type.step}-size);`,
+      `  line-height: var(--type-${badge.type.step}-leading);`,
+      `  font-weight: ${badge.type.weight};`,
+      badge.type.tracking ? `  letter-spacing: ${badge.type.tracking};` : '',
+      '}',
+      ''
+    );
+    for (const [name, size] of Object.entries(badge.sizes)) {
+      step(tokens, size.step);
+      lines.push(
+        `.roy-badge--${name} {`,
+        `  height: ${lengthToPx(size.height)}px;`,
+        `  padding: ${lengthToPx(size.paddingY)}px ${lengthToPx(size.paddingX)}px;`,
+        `  gap: ${lengthToPx(size.gap)}px;`,
+        size.fontSize
+          ? `  font-size: ${lengthToPx(size.fontSize)}px;`
+          : `  font-size: var(--type-${size.step}-size);`,
+        size.weight ? `  font-weight: ${size.weight};` : '',
+        size.uppercase ? '  text-transform: uppercase;' : '',
+        size.tracking ? `  letter-spacing: ${size.tracking};` : '',
+        '}',
+        ''
+      );
+    }
+    for (const [name, tone] of Object.entries(badge.tones)) {
+      lines.push(
+        `.roy-badge--${name} {`,
+        `  background-color: ${colorValue(tokens, tone.surface)};`,
+        `  border-color: ${colorValue(tokens, tone.border)};`,
+        `  color: ${colorValue(tokens, tone.content)};`,
+        '}',
+        ''
+      );
+    }
+  }
+
   const glyph = recipes.primitives?.glyph;
   if (glyph) {
     lines.push(
@@ -236,7 +288,13 @@ export function renderCss(recipes, tokens) {
     }
   }
 
-  return `${lines.filter((line) => line !== '').join('\n')}\n`;
+  // Inside `components`, so a utility at a call site still wins — the cascade
+  // order the badge's other variants rely on.
+  const body = lines
+    .filter((line) => line !== '')
+    .map((line) => `  ${line}`)
+    .join('\n');
+  return `${body ? `@layer components {\n${body}\n}` : ''}\n`;
 }
 
 /**
@@ -259,6 +317,7 @@ export function renderKotlin(recipes, tokens) {
     'import androidx.compose.ui.text.font.FontWeight',
     'import androidx.compose.ui.unit.Dp',
     'import androidx.compose.ui.unit.dp',
+    'import androidx.compose.ui.unit.em',
     '',
     '/**',
     ' * The components the app and the site share (#647, ADR-0099), from one recipe.',
@@ -316,6 +375,54 @@ export function renderKotlin(recipes, tokens) {
       '    }',
       ''
     );
+  }
+
+  const badge = recipes.primitives?.badge;
+  if (badge) {
+    const tracking = (value) =>
+      value ? `, letterSpacing = ${float(Number(String(value).replace('em', '')))}.em` : '';
+    const textOf = (size) =>
+      `type.${size.step}.copy(fontWeight = FontWeight(${size.weight ?? badge.type.weight})${tracking(
+        size.tracking ?? badge.type.tracking
+      )})`;
+    lines.push(
+      "    /** The site's pill badge: geometry here, tones below, interaction in the component. */",
+      '    object Badge {',
+      `        val radius: Shape get() = ${radiusShape(badge.radius)}`,
+      `        val borderWidth: Dp = ${float(lengthToPx(badge.border.width))}.dp`,
+      '',
+      "        /** One size step; the text style is the site's step, weight and tracking. */",
+      '        data class Size(',
+      '            val height: Dp,',
+      '            val paddingX: Dp,',
+      '            val paddingY: Dp,',
+      '            val gap: Dp,',
+      '            val text: TextStyle,',
+      '        )',
+      '',
+      '        /** A tone: the surface, its border and the words on it. */',
+      '        data class Tone(val surface: Color, val border: Color, val content: Color)',
+      ''
+    );
+    for (const [name, size] of Object.entries(badge.sizes)) {
+      lines.push(
+        `        fun ${name}(type: RoyTypeScale): Size =`,
+        `            Size(${float(lengthToPx(size.height))}.dp, ${float(lengthToPx(size.paddingX))}.dp, ${float(lengthToPx(size.paddingY))}.dp, ${float(lengthToPx(size.gap))}.dp, ${textOf(size)})`
+      );
+    }
+    lines.push('');
+    for (const [name, tone] of Object.entries(badge.tones)) {
+      lines.push(
+        `        val ${name}: Tone`,
+        '            get() =',
+        '                Tone(',
+        `                    RoyColors.${camelCase(tone.surface.color)}.copy(alpha = ${float(tone.surface.alpha ?? 1)}),`,
+        `                    RoyColors.${camelCase(tone.border.color)}.copy(alpha = ${float(tone.border.alpha ?? 1)}),`,
+        `                    RoyColors.${camelCase(tone.content.color)},`,
+        '                )'
+      );
+    }
+    lines.push('    }', '');
   }
 
   const glyph = recipes.primitives?.glyph;

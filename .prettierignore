@@ -19,5 +19,8 @@ docs/mobile/screens.md
 # Generated from `shared/tokens/tokens.json` by `scripts/generate-tokens.mjs`;
 # `npm run check:tokens` compares bytes, so Prettier must not rewrite them.
 app/tokens.css
+# Generated from `shared/components/recipes.json` by `scripts/generate-components.mjs`;
+# `npm run check:components` compares bytes, so Prettier must not rewrite it.
+app/components.css
 android/app/src/main/res/values/colors.xml
 /capacitor-web/spike/
