@@ -41,10 +41,26 @@ class ApiClient(
     private val transport: Transport = HttpTransport,
 ) {
     suspend fun <T> get(path: String, serializer: KSerializer<T>): ApiResult<T> =
+        request("GET", path, serializer)
+
+    /**
+     * A `DELETE`, through the same bearer, the same one refresh and the same
+     * decode as [get]. Revocation is the first write the app sends (#657): the
+     * answer is a body like any other, so the client decodes it instead of
+     * guessing success from the status.
+     */
+    suspend fun <T> delete(path: String, serializer: KSerializer<T>): ApiResult<T> =
+        request("DELETE", path, serializer)
+
+    private suspend fun <T> request(
+        method: String,
+        path: String,
+        serializer: KSerializer<T>,
+    ): ApiResult<T> =
         withContext(Dispatchers.IO) {
             val sent = session.attempt() ?: return@withContext ApiResult.Failure(ApiError.NotSignedIn)
 
-            val first = send(path, sent.accessToken)
+            val first = send(method, path, sent.accessToken)
             if (first is Answer.Unreachable) {
                 return@withContext ApiResult.Failure(ApiError.Network(first.detail))
             }
@@ -57,7 +73,7 @@ class ApiClient(
                 val renewed =
                     session.attempt() ?: return@withContext ApiResult.Failure(ApiError.NotSignedIn)
 
-                val retry = send(path, renewed.accessToken)
+                val retry = send(method, path, renewed.accessToken)
                 if (retry is Answer.Unreachable) {
                     return@withContext ApiResult.Failure(ApiError.Network(retry.detail))
                 }
@@ -83,11 +99,14 @@ class ApiClient(
     /** [get] with the serializer taken from the type the caller asked for. */
     suspend inline fun <reified T> get(path: String): ApiResult<T> = get(path, serializer<T>())
 
-    private fun send(path: String, accessToken: String): Answer =
+    /** [delete] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> delete(path: String): ApiResult<T> = delete(path, serializer<T>())
+
+    private fun send(method: String, path: String, accessToken: String): Answer =
         try {
             Answer.Sent(
                 transport.send(
-                    method = "GET",
+                    method = method,
                     url = urlFor(path),
                     headers = mapOf("Authorization" to "Bearer $accessToken"),
                     body = null,

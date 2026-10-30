@@ -53,6 +53,11 @@ export const CONTRACTS = [
     file: 'PlansContracts.kt',
     schemas: ['MyUsageResponseSchema', 'MyPlanResponseSchema'],
   },
+  {
+    module: 'shared/contracts/mcp-connected-apps',
+    file: 'McpConnectedAppsContracts.kt',
+    schemas: ['McpConnectedAppListResultSchema', 'McpConnectedAppActionResultSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([
