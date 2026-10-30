@@ -14,6 +14,7 @@ const manifest: ShellManifest = {
   versionName: '1.93.0+shell.20001',
   apkUrl: APK_URL,
   minSupportedVersionCode: 20000,
+  rollout: 100,
 };
 
 const mocks = vi.hoisted(() => ({

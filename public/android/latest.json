@@ -5,6 +5,7 @@
   "sha256": "f654ea26c65dde3c82aab6c788cd51ae5bd6a30da9cfbbe53aac74edb73d0623",
   "sizeBytes": 10696865,
   "minSupportedVersionCode": 20000,
+  "rollout": 100,
   "notes": "fix(android): regenerate the plugin lists and stop a dirty tree blocking the manifest (#631)",
   "releasedAt": "2026-10-27"
 }

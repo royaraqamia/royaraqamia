@@ -111,6 +111,42 @@ describe('toShellUpdateState', () => {
     expect(toShellUpdateState({ versionCode: '20001' }, 20000).updatePending).toBe(false);
     expect(toShellUpdateState(manifest, null)).toEqual(SHELL_UPDATE_IDLE);
   });
+
+  it('keeps a staged rollout quiet on the page, where the device cohort is unknown', async () => {
+    // The native prompt knows the device's Android ID and the rollout bucket; the
+    // page does not, so claiming an update for everyone would leak a staged
+    // release past its cohort. A floor still speaks: it is not optional.
+    const { toShellUpdateState } = await loadModule();
+
+    expect(toShellUpdateState({ versionCode: 20001, rollout: 10 }, 20000).updatePending).toBe(
+      false
+    );
+    expect(
+      toShellUpdateState({ versionCode: 20001, minSupportedVersionCode: 20001, rollout: 10 }, 20000)
+        .unsupported
+    ).toBe(true);
+    expect(toShellUpdateState({ versionCode: 20001, rollout: 100 }, 20000).updatePending).toBe(
+      true
+    );
+  });
+});
+
+describe('requestAppUpdate', () => {
+  it('hands the floor to the native update card when the shell exposes it', async () => {
+    const { requestAppUpdate } = await loadModule();
+    const required = vi.fn();
+    vi.stubGlobal('RoyShellUpdate', { required });
+
+    expect(requestAppUpdate(20042)).toBe(true);
+    expect(required).toHaveBeenCalledWith(20042);
+    vi.unstubAllGlobals();
+  });
+
+  it('is quiet in a browser or a shell too old to expose the interface', async () => {
+    const { requestAppUpdate } = await loadModule();
+
+    expect(requestAppUpdate(20042)).toBe(false);
+  });
 });
 
 describe('fetchShellManifest', () => {
@@ -131,6 +167,7 @@ describe('fetchShellManifest', () => {
       versionName: '1.93.0+shell.20001',
       apkUrl: 'https://example.test/royaraqamia-1.0.4.apk',
       minSupportedVersionCode: 20000,
+      rollout: 100,
     });
   });
 
@@ -148,6 +185,7 @@ describe('fetchShellManifest', () => {
       versionName: null,
       apkUrl: null,
       minSupportedVersionCode: 0,
+      rollout: 100,
     });
   });
 

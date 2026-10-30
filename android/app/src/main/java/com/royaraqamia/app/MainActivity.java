@@ -96,6 +96,7 @@ public class MainActivity extends BridgeActivity {
         // may end in a prompt.
         announceShellVersion();
         shellUpdate = new ShellUpdatePrompt(this, getBridge() != null ? getBridge().getServerUrl() : null);
+        installUpdateBridge(getBridge());
         shellUpdate.maybeCheck(true);
         // The background drain (ADR-0059): the page signals through the bridge
         // when a flush leaves work behind, and the periodic floor covers what the
@@ -348,6 +349,24 @@ public class MainActivity extends BridgeActivity {
         webView.addJavascriptInterface(
             ShellSyncBridge.forApp(() -> SyncScheduler.flushSoon(getApplicationContext())),
             ShellSyncBridge.NAME
+        );
+    }
+
+    /**
+     * Exposes `RoyShellUpdate.required()` to the page (#503).
+     *
+     * An owned API below the supported floor answers `426`; the page's transport
+     * cannot show a native dialog, so it passes the floor here. Like the sync
+     * bridge, this is a plain WebView interface rather than a Capacitor plugin,
+     * because the plugin bridge is exactly what this path cannot assume.
+     */
+    private void installUpdateBridge(@Nullable Bridge bridge) {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null || shellUpdate == null) return;
+
+        webView.addJavascriptInterface(
+            new ShellUpdateBridge(shellUpdate::requireUpdate),
+            ShellUpdateBridge.NAME
         );
     }
 

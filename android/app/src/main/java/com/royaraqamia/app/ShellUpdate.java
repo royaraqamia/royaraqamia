@@ -49,6 +49,10 @@ final class ShellUpdate {
         final String sha256;
         final long sizeBytes;
         final String notes;
+        /** Percentage of devices this release is offered to; 100 means everyone. */
+        final int rollout;
+        /** Whether this device is inside the staged rollout for this release. */
+        final boolean rolloutEligible;
 
         Status(
                 int installedCode,
@@ -58,7 +62,9 @@ final class ShellUpdate {
                 String apkUrl,
                 String sha256,
                 long sizeBytes,
-                String notes) {
+                String notes,
+                int rollout,
+                boolean rolloutEligible) {
             this.installedCode = installedCode;
             this.latestCode = latestCode;
             this.minSupportedCode = minSupportedCode;
@@ -67,21 +73,47 @@ final class ShellUpdate {
             this.sha256 = sha256;
             this.sizeBytes = sizeBytes;
             this.notes = notes;
+            this.rollout = rollout;
+            this.rolloutEligible = rolloutEligible;
         }
 
-        /** A newer APK is published than the one installed. */
+        /**
+         * A newer APK is published than the one installed, and this device is in
+         * the release's rollout cohort. A floor is absolute and does not wait for
+         * a percentage: {@link #unsupported()} is the reason it cannot be declined.
+         */
         boolean updatePending() {
-            return latestCode > installedCode;
+            return latestCode > installedCode && rolloutEligible;
         }
 
         /** The installed shell is too old for the current site (nothing to decline). */
         boolean unsupported() {
             return minSupportedCode > installedCode;
         }
+
+        /**
+         * The same release, with the server's floor merged in. A `426` may arrive
+         * before the manifest names the new floor; the app still has to show the
+         * blocking card rather than a dismissable offer.
+         */
+        Status withMinimumSupportedCode(int floor) {
+            int merged = Math.max(minSupportedCode, floor);
+            return new Status(
+                    installedCode,
+                    latestCode,
+                    merged,
+                    versionName,
+                    apkUrl,
+                    sha256,
+                    sizeBytes,
+                    notes,
+                    rollout,
+                    rolloutEligible);
+        }
     }
 
     static Status idle(int installedCode) {
-        return new Status(installedCode, installedCode, 0, "", "", "", 0, "");
+        return new Status(installedCode, installedCode, 0, "", "", "", 0, "", 100, true);
     }
 
     /**
@@ -108,17 +140,68 @@ final class ShellUpdate {
      * silently — the manifest would look unreadable forever, on every device.
      */
     static Status parse(String json, int installedCode) throws JSONException {
+        return parse(json, installedCode, "");
+    }
+
+    /**
+     * Reads a manifest and decides this device's place in an optional staged
+     * rollout. `deviceSeed` is stable across app updates (the Android ID), so the
+     * same device gets the same answer for the same release, while a later release
+     * is a fresh cohort.
+     */
+    static Status parse(String json, int installedCode, String deviceSeed) throws JSONException {
         JSONObject manifest = new JSONObject(json.replace("\uFEFF", ""));
+        int latestCode = manifest.optInt("versionCode", 0);
+        int rollout = rolloutOf(manifest);
         return new Status(
             installedCode,
-            manifest.optInt("versionCode", 0),
+            latestCode,
             manifest.optInt("minSupportedVersionCode", 0),
             manifest.optString("versionName", ""),
             manifest.optString("apkUrl", ""),
             manifest.optString("sha256", ""),
             manifest.optLong("sizeBytes", 0),
-            manifest.optString("notes", "")
+            manifest.optString("notes", ""),
+            rollout,
+            isRolledOut(deviceSeed, latestCode, rollout)
         );
+    }
+
+    /**
+     * A manifest without `rollout` is a full release; anything outside 0–100 is
+     * not a percentage, and the safe reading of a broken field is "everyone".
+     */
+    private static int rolloutOf(JSONObject manifest) {
+        if (!manifest.has("rollout")) return 100;
+        Object raw = manifest.opt("rollout");
+        if (!(raw instanceof Number)) return 100;
+        int value = ((Number) raw).intValue();
+        if (value < 0) return 0;
+        if (value > 100) return 100;
+        return value;
+    }
+
+    /**
+     * Where a device sits in a release's rollout, 0–99. Deterministic across the
+     * JVM and Android because it is plain integer arithmetic (FNV-1a) over the
+     * device seed and the release counter — no clock, no random source, and a new
+     * release reshuffles the cohort.
+     */
+    static int rolloutBucket(String deviceSeed, int versionCode) {
+        String key = (deviceSeed == null ? "" : deviceSeed) + ":" + versionCode;
+        long hash = 0x811c9dc5L;
+        for (int index = 0; index < key.length(); index++) {
+            hash ^= key.charAt(index);
+            hash = (hash * 0x01000193L) & 0xffffffffL;
+        }
+        return (int) (hash % 100L);
+    }
+
+    /** Whether a release at this percentage includes this device. */
+    static boolean isRolledOut(String deviceSeed, int versionCode, int rollout) {
+        if (rollout >= 100) return true;
+        if (rollout <= 0) return false;
+        return rolloutBucket(deviceSeed, versionCode) < rollout;
     }
 
     /**
@@ -159,6 +242,12 @@ final class ShellUpdate {
 
     /** Fetches the manifest and compares it with the installed shell. */
     static Status check(String manifestUrl, int installedCode) throws IOException, JSONException {
+        return check(manifestUrl, installedCode, "");
+    }
+
+    /** Fetches the manifest and places this device in its optional rollout. */
+    static Status check(String manifestUrl, int installedCode, String deviceSeed)
+            throws IOException, JSONException {
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(manifestUrl).openConnection();
@@ -176,7 +265,7 @@ final class ShellUpdate {
                 throw new IOException("HTTP " + code + " from " + manifestUrl);
             }
 
-            return parse(readFully(connection.getInputStream()), installedCode);
+            return parse(readFully(connection.getInputStream()), installedCode, deviceSeed);
         } finally {
             if (connection != null) connection.disconnect();
         }

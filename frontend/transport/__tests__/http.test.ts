@@ -94,6 +94,39 @@ describe('request', () => {
     expect(error.status).toBe(503);
   });
 
+  it('hands a 426 floor to the native update card before it throws', async () => {
+    const required = vi.fn();
+    vi.stubGlobal('RoyShellUpdate', { required });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(426, {
+          success: false,
+          code: 'app_update_required',
+          error: 'يلزم تحديث التَّطبيق للمتابعة.',
+          minimumVersionCode: 20042,
+        })
+      )
+    );
+
+    const error = await captureError(request('/api/me'));
+
+    expect(required).toHaveBeenCalledWith(20042);
+    expect(error.status).toBe(426);
+    expect(error.message).toBe('يلزم تحديث التَّطبيق للمتابعة.');
+    vi.unstubAllGlobals();
+  });
+
+  it('names an update even when a 426 body carries no floor', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(426, {})));
+
+    const error = await captureError(request('/api/me'));
+
+    expect(error.status).toBe(426);
+    expect(error.message).toBe('يلزم تحديث التَّطبيق للمتابعة.');
+    vi.unstubAllGlobals();
+  });
+
   it('still throws for success:false on a 200 response', async () => {
     vi.stubGlobal(
       'fetch',
