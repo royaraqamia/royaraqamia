@@ -26,6 +26,13 @@
     "retry": "إعادة المحاولة",
     "signInTitle": "سجِّل الدُّخول لعرض اشتراكك",
     "signInBody": "استهلاكك وسجلّ الاشتراك يتبعان حسابك.",
-    "signIn": "تسجيل الدُّخول"
+    "signIn": "تسجيل الدُّخول",
+    "historyTitle": "سجل الاشتراك",
+    "historyEmpty": "لا يوجد سجل اشتراك بعد. أنت على {plan}، ويمكنك التَّرقية من صفحة الاشتراكات.",
+    "activatedLine": "فُعِّلت في {activated}، وتنتهي في {expires}.",
+    "noteLine": "«{note}»",
+    "methodShamcash": "ShamCash",
+    "methodEfendim": "Efendim Pay",
+    "methodOther": "أخرى"
   }
 }

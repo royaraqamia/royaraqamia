@@ -1,6 +1,7 @@
 package com.royaraqamia.app.plans
 
 import com.royaraqamia.app.contracts.generated.MyPlanResponse
+import com.royaraqamia.app.contracts.generated.MyPlanResponseActivationsItemMethod
 import com.royaraqamia.app.contracts.generated.MyPlanResponseStatePlan
 
 /**
@@ -21,6 +22,7 @@ data class UsageScreenModel(
     val unlimited: Boolean,
     val expiresAt: String?,
     val rows: List<Row>,
+    val activations: List<Activation>,
 ) {
     /** One label and the numbers beside it, in the site's own words. */
     data class Row(
@@ -28,6 +30,22 @@ data class UsageScreenModel(
         val label: String,
         val used: Long,
         val cap: Long,
+    )
+
+    /**
+     * One payment behind the plan, as the page's history lists it: what it cost,
+     * how it was paid, when it started and when it runs out, and the note the
+     * member left with it. The card draws them in the order the server sends, which
+     * is the order the page draws ([ADR-0093]).
+     */
+    data class Activation(
+        val id: String,
+        val amountCents: Long,
+        val currency: String,
+        val method: String,
+        val note: String?,
+        val activatedAt: String,
+        val expiresAt: String,
     )
 
     companion object {
@@ -53,6 +71,18 @@ data class UsageScreenModel(
                                 cap = limit.cap,
                             )
                         },
+                activations =
+                    response.activations.map { activation ->
+                        Activation(
+                            id = activation.id,
+                            amountCents = activation.amountCents,
+                            currency = activation.currency,
+                            method = activation.method.id(),
+                            note = activation.note,
+                            activatedAt = activation.activatedAt,
+                            expiresAt = activation.expiresAt,
+                        )
+                    },
             )
 
         /**
@@ -64,6 +94,17 @@ data class UsageScreenModel(
             when (this) {
                 MyPlanResponseStatePlan.FREE -> "free"
                 MyPlanResponseStatePlan.PRO -> "pro"
+            }
+
+        /**
+         * The payment method's contract id. Exhaustive for the same reason: a
+         * method added to `PlanActivationMethodSchema` has to reach the label map.
+         */
+        private fun MyPlanResponseActivationsItemMethod.id(): String =
+            when (this) {
+                MyPlanResponseActivationsItemMethod.SHAMCASH -> "shamcash"
+                MyPlanResponseActivationsItemMethod.EFENDIM -> "efendim"
+                MyPlanResponseActivationsItemMethod.OTHER -> "other"
             }
     }
 }

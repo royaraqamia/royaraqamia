@@ -24,4 +24,11 @@ object PlanCardCopy {
     const val SIGN_IN_TITLE = "سجِّل الدُّخول لعرض اشتراكك"
     const val SIGN_IN_BODY = "استهلاكك وسجلّ الاشتراك يتبعان حسابك."
     const val SIGN_IN = "تسجيل الدُّخول"
+    const val HISTORY_TITLE = "سجل الاشتراك"
+    const val HISTORY_EMPTY = "لا يوجد سجل اشتراك بعد. أنت على {plan}، ويمكنك التَّرقية من صفحة الاشتراكات."
+    const val ACTIVATED_LINE = "فُعِّلت في {activated}، وتنتهي في {expires}."
+    const val NOTE_LINE = "«{note}»"
+    const val METHOD_SHAMCASH = "ShamCash"
+    const val METHOD_EFENDIM = "Efendim Pay"
+    const val METHOD_OTHER = "أخرى"
 }

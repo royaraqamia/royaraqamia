@@ -32,6 +32,14 @@ class UsageCopyTest {
     }
 
     @Test
+    fun `a payment method becomes the page's label`() {
+        assertEquals(PlanCardCopy.METHOD_SHAMCASH, UsageCopy.methodLabel("shamcash"))
+        assertEquals(PlanCardCopy.METHOD_EFENDIM, UsageCopy.methodLabel("efendim"))
+        assertEquals(PlanCardCopy.METHOD_OTHER, UsageCopy.methodLabel("other"))
+        assertEquals("bank", UsageCopy.methodLabel("bank"))
+    }
+
+    @Test
     fun `the expiry sentence substitutes its placeholder and keeps the rest`() {
         val sentence = UsageCopy.expires("23 شعبان 1448 هـ")
 

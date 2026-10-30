@@ -62,16 +62,20 @@ because a buildscript classpath is resolved before that file is applied.
 **Wired today (#647).** Compose is a dependency of the app module: the BOM is pinned in
 `android/variables.gradle`, the compiler plugin sits beside the Kotlin plugin in
 `android/build.gradle`, and `android/app/src/main/kotlin/com/royaraqamia/app/theme/` holds the theme
-the tokens generate — colour, type, spacing and shape, in the two faces the APK already bundles.
+the tokens generate - colour, type, spacing and shape, in the two faces the APK already bundles.
 `npm run tokens:generate` writes `ThemeColors.kt` alongside `DesignTokens.kt`, so a colour the theme
 can name is a colour the tokens have. The release build is minified for the same reason the theme
-exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)). The plan card
-(`plans/PlanCard.kt`) draws `GET /api/me/usage` — counters in the digits face, labels in the UI
-face, the site's own copy — and `src/debug` holds the workbench activity that shows it, reachable
-only in a debug build and reading a project URL from this machine's `android/local.properties`. A
-release APK contains neither (`scripts/__tests__/native-workbench.test.mjs`). It is a card, not a
-screen: `account-server` is four routes and the inventory does not record a surface as native until
-all of it is. Phase 2's first real screen is still owed, with the rest of its acceptance criteria.
+exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)). `plans/PlanCard.kt` draws the
+`/account/plan` page's two sections from the page's own route (`GET /api/me/plan`): the card - rows in
+the digits face, labels in the UI face - and the activation history, each payment with its amount, its
+method, its Hijri dates and its note. It is a listed pair in `docs/mobile/parity.json`: the words come
+from `shared/copy/plan-card.json` through `npm run copy:generate`, and `npm run check:parity` fails a
+state, a string or a route that exists on one side only ([ADR-0098](../adr/0098-a-ported-component-is-a-pair.md)).
+`src/debug` holds the workbench activity that shows it, reachable only in a debug build and reading a
+project URL from this machine's `android/local.properties`; a release APK contains neither
+(`scripts/__tests__/native-workbench.test.mjs`). It is still a card, not a screen: `account-server` is
+four routes and the inventory does not record a surface as native until all of it is. Phase 2's first
+real screen is still owed, with the rest of its acceptance criteria.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at

@@ -15,9 +15,9 @@ import type { PlanActivationMethod } from '@/shared/contracts/plans';
 const PLAN_LABELS = { free: PLAN_CARD_COPY.planFree, pro: PLAN_CARD_COPY.planPro } as const;
 
 const METHOD_LABELS: Record<PlanActivationMethod, string> = {
-  shamcash: 'ShamCash',
-  efendim: 'Efendim Pay',
-  other: 'أخرى',
+  shamcash: PLAN_CARD_COPY.methodShamcash,
+  efendim: PLAN_CARD_COPY.methodEfendim,
+  other: PLAN_CARD_COPY.methodOther,
 };
 
 function formatMoney(cents: number, currency: string): string {
@@ -144,13 +144,14 @@ export function PlanView() {
         )}
       </section>
 
-      <section aria-label="سجل الاشتراك" className="space-y-2">
-        <h2 className="text-sm font-bold text-foreground sm:text-base">سجل الاشتراك</h2>
+      <section aria-label={PLAN_CARD_COPY.historyTitle} className="space-y-2">
+        <h2 className="text-sm font-bold text-foreground sm:text-base">
+          {PLAN_CARD_COPY.historyTitle}
+        </h2>
 
         {activations.length === 0 ? (
           <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
-            لا يوجد سجل اشتراك بعد. أنت على {PLAN_CARD_COPY.planFree}، ويمكنك التَّرقية من صفحة
-            الاشتراكات.
+            {PLAN_CARD_COPY.historyEmpty.replace('{plan}', PLAN_CARD_COPY.planFree)}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -168,11 +169,14 @@ export function PlanView() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  فُعِّلت في {formatHijriDate(activation.activatedAt)}، وتنتهي في{' '}
-                  {formatHijriDate(activation.expiresAt)}.
+                  {PLAN_CARD_COPY.activatedLine
+                    .replace('{activated}', formatHijriDate(activation.activatedAt))
+                    .replace('{expires}', formatHijriDate(activation.expiresAt))}
                 </p>
                 {activation.note && (
-                  <p className="mt-1 text-xs text-muted-foreground">«{activation.note}»</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {PLAN_CARD_COPY.noteLine.replace('{note}', activation.note)}
+                  </p>
                 )}
               </li>
             ))}

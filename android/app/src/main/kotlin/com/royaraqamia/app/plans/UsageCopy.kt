@@ -28,4 +28,13 @@ object UsageCopy {
 
     /** The site's sentence, with the date substituted into its placeholder. */
     fun expires(date: String): String = PlanCardCopy.EXPIRES.replace("{date}", date)
+
+    /** The payment method as the page names it; an unknown id is shown as it came. */
+    fun methodLabel(method: String): String =
+        when (method) {
+            "shamcash" -> PlanCardCopy.METHOD_SHAMCASH
+            "efendim" -> PlanCardCopy.METHOD_EFENDIM
+            "other" -> PlanCardCopy.METHOD_OTHER
+            else -> method
+        }
 }
