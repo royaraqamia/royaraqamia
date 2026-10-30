@@ -22,6 +22,13 @@ export const PLAN_CARD_COPY = {
   signInTitle: 'سجِّل الدُّخول لعرض اشتراكك',
   signInBody: 'استهلاكك وسجلّ الاشتراك يتبعان حسابك.',
   signIn: 'تسجيل الدُّخول',
+  historyTitle: 'سجل الاشتراك',
+  historyEmpty: 'لا يوجد سجل اشتراك بعد. أنت على {plan}، ويمكنك التَّرقية من صفحة الاشتراكات.',
+  activatedLine: 'فُعِّلت في {activated}، وتنتهي في {expires}.',
+  noteLine: '«{note}»',
+  methodShamcash: 'ShamCash',
+  methodEfendim: 'Efendim Pay',
+  methodOther: 'أخرى',
 } as const;
 
 export type PlanCardCopyStrings = typeof PLAN_CARD_COPY;

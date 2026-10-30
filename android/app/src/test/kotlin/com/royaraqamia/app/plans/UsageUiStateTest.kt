@@ -15,7 +15,13 @@ import org.junit.Test
  */
 class UsageUiStateTest {
     private val model =
-        UsageScreenModel(plan = "free", unlimited = false, expiresAt = null, rows = emptyList())
+        UsageScreenModel(
+            plan = "free",
+            unlimited = false,
+            expiresAt = null,
+            rows = emptyList(),
+            activations = emptyList(),
+        )
 
     @Test
     fun `a read becomes the counters`() {
