@@ -40,7 +40,9 @@ export function importedIcons(source) {
         .trim()
         .split(/\s+as\s+/)[0]
         .trim();
-      if (trimmed) names.add(trimmed);
+      // `type LucideIcon` is the library's type, not a drawing: a component that
+      // names the icon type draws no glyph for it (ADR-0100).
+      if (trimmed && !trimmed.startsWith('type ')) names.add(trimmed);
     }
   }
   return [...names];
