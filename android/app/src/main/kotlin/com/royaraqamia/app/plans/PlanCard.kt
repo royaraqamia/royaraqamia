@@ -187,22 +187,28 @@ private fun Counters(model: UsageScreenModel) {
 /** The site's badge: a pill, `text-xs font-bold`, tinted by the plan. */
 @Composable
 private fun Badge(model: UsageScreenModel) {
-    val success = model.unlimited || model.plan == "pro"
-    val border = if (success) RoyColors.success.copy(alpha = 0.3f) else RoyColors.border.copy(alpha = 0.6f)
-    val container = if (success) RoyColors.success.copy(alpha = 0.1f) else RoyColors.secondary.copy(alpha = 0.8f)
-    val content = if (success) RoyColors.success else RoyColors.secondaryForeground
+    val tone = if (model.unlimited || model.plan == "pro") Recipes.Badge.success else Recipes.Badge.neutral
+    val size = Recipes.Badge.default(LocalRoyTypeScale.current)
 
     Surface(
-        shape = RoyShape.pill,
-        color = container,
-        contentColor = content,
-        border = BorderStroke(1.dp, border),
+        shape = Recipes.Badge.radius,
+        color = tone.surface,
+        contentColor = tone.content,
+        border = BorderStroke(Recipes.Badge.borderWidth, tone.border),
     ) {
-        Text(
-            text = if (model.unlimited) PlanCardCopy.UNLIMITED else UsageCopy.planLabel(model.plan),
-            style = LocalRoyTypeScale.current.xs.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-        )
+        Box(
+            modifier =
+                Modifier.height(size.height)
+                    .padding(horizontal = size.paddingX, vertical = size.paddingY),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text =
+                    if (model.unlimited) PlanCardCopy.UNLIMITED
+                    else UsageCopy.planLabel(model.plan),
+                style = size.text,
+            )
+        }
     }
 }
 
