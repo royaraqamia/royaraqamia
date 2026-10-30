@@ -102,6 +102,12 @@ the app's object, and `npm run check:copy` fails a stale one. Neither client spe
 string, because Arabic writes a word's marks in more than one order and the two compare unequal while
 rendering the same ([ADR-0098](../adr/0098-a-ported-component-is-a-pair.md)).
 
+The **drawing** is the pair's third member, and it is a recipe rather than a class list:
+`shared/components/recipes.json` describes the card, the skeleton and the row in token names, and
+`npm run components:generate` writes `app/components.css` and the app's `Recipes.kt` from it. The site
+reads `.roy-card`; the app reads `Recipes.Card.radius`. `npm run check:components` fails a stale output
+or a name the tokens do not have ([ADR-0099](../adr/0099-a-component-is-a-recipe.md)).
+
 The route is part of the pair as well: a ported component reads the same endpoint the web component
 reads. The plan card read `/api/me/usage` while the page read `/api/me/plan`, and so showed counters
 without the owned-item caps — a client that assembles its own subset of a surface will always show
@@ -110,12 +116,12 @@ narrower route to read.
 
 ## What the checks do not cover
 
-- **Pixel-level drift.** The pair list holds structure, strings and states — not weight, tracking,
-  shadows, icons or the exact gap between two rows. It is a listed gap: the plan is generated
-  component recipes (one description of a card, a badge, a button and a skeleton, emitted to CSS and
-  to Compose) and a screenshot diff of the same component rendered by both clients, generated icons
-  from the site's own SVGs rather than redrawn ones. Until that gate exists, a port measured against
-  the site is measured by a person, and the PR that lands it says which details are still off.
+- **Pixel-level drift.** The recipe holds rectangles, radii, gaps, type steps and tones — not weight
+  against a platform's rasteriser, shadows, icons or the optical spacing a person tunes. It is a listed
+  gap: the plan is icons generated from the site's own SVGs (rather than redrawn or substituted) and a
+  screenshot diff of the same component rendered by both clients. Until that gate exists, a port is
+  measured against the site by a person for those details, and the PR that lands it says which are
+  still off.
 - **The outbox's write semantics in the app** — see the gap in rule 3.
 - **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
   column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws
