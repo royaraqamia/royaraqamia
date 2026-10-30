@@ -59,6 +59,10 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
   shell's `res/values/colors.xml` and the app's `DesignTokens.kt` and
   `ThemeColors.kt`, and `npm run check:tokens` fails a stale output or a
   stylesheet that re-declares a generated property by hand
+- What those tokens resolve to in a browser is pinned too: `e2e/visual-baseline.spec.ts`
+  compares every generated custom property, and the computed styles of one real
+  surface, against `e2e/visual-baseline.json`; `npm run visual:baseline` re-records
+  it after an intended change ([ADR-0096](adr/0096-the-visual-baseline-is-values-not-pixels.md))
 - Radix + shadcn primitives
 - No inline styles
 - Stylesheets are cut by surface, not by component: `app/global.css` is the
