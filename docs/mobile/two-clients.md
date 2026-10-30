@@ -116,12 +116,13 @@ narrower route to read.
 
 ## What the checks do not cover
 
-- **Pixel-level drift.** The recipe holds rectangles, radii, gaps, type steps and tones — not weight
-  against a platform's rasteriser, shadows, icons or the optical spacing a person tunes. It is a listed
-  gap: the plan is icons generated from the site's own SVGs (rather than redrawn or substituted) and a
-  screenshot diff of the same component rendered by both clients. Until that gate exists, a port is
-  measured against the site by a person for those details, and the PR that lands it says which are
-  still off.
+- **Pixel-level drift.** The recipe and `e2e/plan-card-recipe.spec.ts` pin every
+  value a browser computes — radius, padding, gaps, alphas, type steps, tones,
+  glyph sizes, the shadow and the gradient — but not the raster: font hinting,
+  shadow falloff at the last pixel, optical alignment. The plan for that is a
+  screenshot diff of the same component rendered by both clients (Paparazzi on the
+  JVM against a Playwright capture at a pinned viewport/DPR, failing on the element
+  that moved rather than a pixel count).
 - **The outbox's write semantics in the app** — see the gap in rule 3.
 - **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
   column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws
