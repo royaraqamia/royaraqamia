@@ -44,6 +44,12 @@ jobs:
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 
+      - name: Generated Copy Is Current
+        run: npm run check:copy
+
+      - name: Ported Components Match The Site
+        run: npm run check:parity
+
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 

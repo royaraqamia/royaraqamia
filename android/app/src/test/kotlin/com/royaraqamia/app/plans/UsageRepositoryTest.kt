@@ -17,10 +17,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The card's read (#648, #501): one authorized GET, and the model it resolves to.
+ * The card's read (#648, #501, ADR-0098): one authorized GET of the page's own
+ * route, and the model it resolves to.
  *
  * The request is asserted as well as the answer, because the path is the part a
- * rename on the site silently breaks: `/api/me/usage` is the route the web's
+ * rename on the site silently breaks: `/api/me/plan` is the route the web's
  * `/account/plan` reads, and the app cannot discover a 404 by type.
  */
 class UsageRepositoryTest {
@@ -33,10 +34,14 @@ class UsageRepositoryTest {
             "unlimited": false,
             "expiresAt": "2027-01-31T00:00:00.000Z",
             "counters": [
-              { "key": "quran.surah.read", "label": "سور القرآن", "window": "lifetime",
+              { "key": "quran.surah.read", "label": "surah read", "window": "lifetime",
                 "cap": 10, "used": 4, "remaining": 6 }
             ]
-          }
+          },
+          "limits": [
+            { "key": "notes", "label": "notes", "cap": 5, "used": 1, "remaining": 4 }
+          ],
+          "activations": []
         }
         """.trimIndent()
 
@@ -58,12 +63,15 @@ class UsageRepositoryTest {
         assertTrue(result is ApiResult.Success)
         val model = (result as ApiResult.Success).value
         assertEquals("pro", model.plan)
-        assertEquals(4L, model.counters.single().used)
-        assertEquals(6L, model.counters.single().remaining)
+        assertEquals(4L, model.rows.first().used)
+        assertEquals(6L, model.rows.first().cap - model.rows.first().used)
+        // The owned-item caps arrive on the same body: the app used to read
+        // `/api/me/usage`, which carries counters only (ADR-0098).
+        assertEquals(listOf("quran.surah.read", "notes"), model.rows.map { it.key })
 
         val request = transport.requests.single()
         assertEquals("GET", request.method)
-        assertEquals("https://app.test/api/me/usage", request.url)
+        assertEquals("https://app.test/api/me/plan", request.url)
         assertEquals("Bearer access-1", request.bearer)
     }
 

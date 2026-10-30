@@ -1,0 +1,21 @@
+{
+  "notes": "What the site reads a date as. `frontend/shared/format.ts` formats with `Intl.DateTimeFormat(\"ar-SA\", { calendar: \"islamic-umalqura\", numberingSystem: \"latn\", month: \"long\" })`; the app draws the same sentence around the same date, so both suites assert these strings instead of each trusting its own platform (ADR-0098).",
+  "cases": [
+    {
+      "iso": "2027-01-31T12:00:00.000Z",
+      "label": "23 شعبان 1448 هـ"
+    },
+    {
+      "iso": "2026-11-21T12:00:00.000Z",
+      "label": "11 جمادى الآخرة 1448 هـ"
+    },
+    {
+      "iso": "2026-12-01T12:00:00.000Z",
+      "label": "21 جمادى الآخرة 1448 هـ"
+    },
+    {
+      "iso": "2026-10-21T12:00:00.000Z",
+      "label": "10 جمادى الأولى 1448 هـ"
+    }
+  ]
+}

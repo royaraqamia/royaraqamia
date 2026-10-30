@@ -137,7 +137,11 @@ private fun Connected() {
     }
 
     if (signedIn) {
-        PlanCard(state = usage, onRetry = { scope.launch { read() } })
+        PlanCard(
+            state = usage,
+            onRetry = { scope.launch { read() } },
+            onSignIn = { signedIn = false },
+        )
     } else {
         SignInForm(
             busy = busy,

@@ -10,6 +10,7 @@ hold them together, so four rules do, and each rule is a check rather than a sen
 | changes a token      | regenerate all four outputs, in the same pull request     | `npm run check:tokens` (Lint & Type Check)    |
 | reads a contract     | read the shared fixtures, not a copy of them              | the Vitest suite and the app's JVM suite      |
 | adds a screen        | list which client draws it, with the ticket or the reason | `npm run check:screens` (Lint & Type Check)   |
+| ports a component    | list the pair, share its copy and its states, same PR     | `npm run check:parity` (Lint & Type Check)    |
 
 The one thing the four rules cannot do is decide for you; they only refuse a pull request that has not
 decided. What follows is what each one means when you are the one holding the keyboard.
@@ -84,11 +85,37 @@ that draws it, or the reason the app does not have one and, where there is one, 
 The convention is what makes the last one work: an app screen is a Kotlin file whose name ends in
 `Screen.kt`. A screen named otherwise is invisible to the check, so it does not get to exist silently.
 
+## 5. A ported component is a pair, and the pair is checked
+
+`docs/mobile/parity.json` has one row per component the app draws natively and the site already draws:
+the web route and component, the Kotlin component, the Kotlin state file, the copy source, and the
+states the component draws. `npm run check:parity` fails when
+
+- a listed file is missing, or a row names a surface `perf/surfaces.json` does not have;
+- the app's sealed interface declares a state the row does not list, or the row lists one the app
+  does not declare;
+- a state's string is not rendered on **both** sides from the one generated copy source;
+- a copy key is rendered by neither client — or a `shared/copy/*.json` belongs to no row.
+
+`shared/copy/<surface>.json` is the copy source: `npm run copy:generate` writes the site's module and
+the app's object, and `npm run check:copy` fails a stale one. Neither client spells a user-facing
+string, because Arabic writes a word's marks in more than one order and the two compare unequal while
+rendering the same ([ADR-0098](../adr/0098-a-ported-component-is-a-pair.md)).
+
+The route is part of the pair as well: a ported component reads the same endpoint the web component
+reads. The plan card read `/api/me/usage` while the page read `/api/me/plan`, and so showed counters
+without the owned-item caps — a client that assembles its own subset of a surface will always show
+less than the design. Where the app needs a body the app can decode, that is a schema to add, not a
+narrower route to read.
+
 ## What the checks do not cover
 
-- **Visual drift.** Generated tokens make a colour or a type step the same in both clients; they cannot
-  make a layout the same. The mitigation is unchanged and human: design review against the web screen
-  for every surface ([native-app.md](native-app.md), risks).
+- **Pixel-level drift.** The pair list holds structure, strings and states — not weight, tracking,
+  shadows, icons or the exact gap between two rows. It is a listed gap: the plan is generated
+  component recipes (one description of a card, a badge, a button and a skeleton, emitted to CSS and
+  to Compose) and a screenshot diff of the same component rendered by both clients, generated icons
+  from the site's own SVGs rather than redrawn ones. Until that gate exists, a port measured against
+  the site is measured by a person, and the PR that lands it says which details are still off.
 - **The outbox's write semantics in the app** — see the gap in rule 3.
 - **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
   column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws

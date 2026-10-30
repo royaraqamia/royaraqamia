@@ -1,0 +1,31 @@
+{
+  "surface": "plan",
+  "component": "plan-card",
+  "web": {
+    "file": "frontend/ui/account/plan-card-copy.ts",
+    "export": "PLAN_CARD_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCardCopy.kt",
+    "object": "PlanCardCopy"
+  },
+  "notes": {
+    "source": "The plan card's words, in both clients. `npm run copy:generate` writes the two files named above from this one; neither client may spell these strings itself. Arabic writes a word's marks in more than one order and the two compare unequal while rendering the same, so a retyped label is a label that fails an exact-text test later (ADR-0098).",
+    "placeholders": "A string may carry `{name}` where a value is interpolated. Each client substitutes it itself rather than formatting around the sentence, so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a copy key the reference component (`frontend/ui/account/plan-view.tsx`) does not render - the site is the design the app is measured against."
+  },
+  "strings": {
+    "planFree": "الخطَّة المجَّانيَّة",
+    "planPro": "الخطَّة المدفوعة",
+    "unlimited": "غير محدود",
+    "cardTitle": "خطتك الحالية",
+    "cardLabel": "خطتك الحالية",
+    "expires": "تنتهي الخطَّة في {date}، ثم تعود إلى الخطَّة المجَّانيَّة بحدودها.",
+    "loadingLabel": "جاري تحميل الاشتراك",
+    "failed": "تعذّر تحميل بيانات اشتراكك.",
+    "retry": "إعادة المحاولة",
+    "signInTitle": "سجِّل الدُّخول لعرض اشتراكك",
+    "signInBody": "استهلاكك وسجلّ الاشتراك يتبعان حسابك.",
+    "signIn": "تسجيل الدُّخول"
+  }
+}
