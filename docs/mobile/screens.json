@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "notes": "One row per surface in perf/surfaces.json: either the Kotlin screen that draws it, or the reason the app does not have one. docs/mobile/screens.md is generated from this file by npm run check:screens, which fails on a surface with no row and on a *Screen.kt with no row. The rules: docs/mobile/two-clients.md (#665).",
+  "screens": [
+    {
+      "surface": "home",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "offline-page",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "marketing",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "habitflow",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "spendtrack",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "linksnap",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "linksnap-unlock",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "blogpress",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "blogpress-editor",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "quran",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "notes",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "quran-surah",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "athkar",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "account-owned",
+      "native": null,
+      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+    },
+    {
+      "surface": "account-server",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "account-changelog",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "community",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "community-post",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "news",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "rates",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "verify",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "verify-code",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "profile",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "scan",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "leads",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "consultation",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "downloader",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "auth",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "mcp-guide",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "mcp-connect",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    },
+    {
+      "surface": "admin",
+      "native": null,
+      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+    }
+  ]
+}

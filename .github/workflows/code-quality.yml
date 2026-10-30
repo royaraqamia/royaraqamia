@@ -50,6 +50,9 @@ jobs:
       - name: Surface Matrix
         run: npm run check:surfaces
 
+      - name: Screen Inventory
+        run: npm run check:screens
+
       - name: Lint
         run: npm run lint
 

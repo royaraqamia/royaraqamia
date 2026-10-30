@@ -1,0 +1,21 @@
+{
+  "name": "a-free-plan-with-one-counter",
+  "body": {
+    "success": true,
+    "state": {
+      "plan": "free",
+      "unlimited": false,
+      "expiresAt": null,
+      "counters": [
+        {
+          "key": "scanner.scan",
+          "label": "ماسح المستندات",
+          "window": "daily",
+          "cap": 3,
+          "used": 1,
+          "remaining": 2
+        }
+      ]
+    }
+  }
+}
