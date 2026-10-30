@@ -38,10 +38,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
+import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyShape
 
@@ -84,31 +84,30 @@ private fun CardShell(modifier: Modifier, content: @Composable ColumnScope.() ->
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoyShape.card,
-        colors = CardDefaults.cardColors(containerColor = RoyColors.card.copy(alpha = 0.6f)),
-        border = BorderStroke(1.dp, RoyColors.border.copy(alpha = 0.5f)),
+        shape = Recipes.Card.radius,
+        colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
+        border = Recipes.Card.border,
     ) {
         Column(
-            modifier = Modifier.padding(spacing.cardPadding),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            modifier = Modifier.padding(Recipes.Card.padding(spacing)),
+            verticalArrangement = Arrangement.spacedBy(Recipes.Card.gap(spacing)),
             content = content,
         )
     }
 }
 
 /**
- * The site's loading state: two radius-`2xl` blocks, `bg-muted/40`, that pulse —
- * the page-level skeleton it draws instead of the card (ADR-0098).
+ * The site's loading state: the recipe's blocks, pulsing — the page-level
+ * skeleton it draws instead of the card (ADR-0098, ADR-0099).
  */
 @Composable
 private fun Skeleton(modifier: Modifier) {
-    val spacing = LocalRoySpacing.current
     val transition = rememberInfiniteTransition(label = "plan-card-skeleton")
     val alpha by
         transition.animateFloat(
-            initialValue = 1f,
-            targetValue = 0.4f,
-            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+            initialValue = Recipes.Skeleton.pulseFrom,
+            targetValue = Recipes.Skeleton.pulseTo,
+            animationSpec = infiniteRepeatable(tween(Recipes.Skeleton.pulseMs), RepeatMode.Reverse),
             label = "plan-card-skeleton-alpha",
         )
 
@@ -119,15 +118,15 @@ private fun Skeleton(modifier: Modifier) {
                 // reader announces the card's state rather than two empty boxes.
                 contentDescription = PlanCardCopy.LOADING_LABEL
             },
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        verticalArrangement = Arrangement.spacedBy(Recipes.Skeleton.gap),
     ) {
-        for (height in listOf(128.dp, 80.dp)) {
+        for (height in Recipes.Skeleton.blocks) {
             Box(
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(height)
-                        .clip(RoyShape.card)
-                        .background(RoyColors.muted.copy(alpha = 0.4f * alpha))
+                        .clip(Recipes.Skeleton.radius)
+                        .background(Recipes.Skeleton.fill.copy(alpha = Recipes.Skeleton.fill.alpha * alpha))
             )
         }
     }
@@ -152,7 +151,7 @@ private fun Counters(model: UsageScreenModel) {
         Badge(model)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2f)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Recipes.Row.gap)) {
         for (row in model.rows) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -162,8 +161,8 @@ private fun Counters(model: UsageScreenModel) {
                 Text(
                     modifier = Modifier.weight(1f),
                     text = row.label,
-                    style = type.xs,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = Recipes.Row.label(type),
+                    color = Recipes.Row.labelColor,
                 )
                 Text(
                     text =
@@ -172,8 +171,8 @@ private fun Counters(model: UsageScreenModel) {
                     // A count never reads right-to-left, whatever the screen's
                     // direction is: `1,200 / 5,000` in an RTL paragraph would put
                     // the cap first.
-                    style = type.digits(type.xs).copy(textDirection = TextDirection.Ltr),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = Recipes.Row.value(type),
+                    color = Recipes.Row.valueColor,
                 )
             }
         }
@@ -182,8 +181,8 @@ private fun Counters(model: UsageScreenModel) {
     if (model.plan == "pro" && model.expiresAt != null) {
         Text(
             text = UsageCopy.expires(PlanDates.label(model.expiresAt)),
-            style = type.xs,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = Recipes.Row.label(type),
+            color = Recipes.Row.labelColor,
         )
     }
 }

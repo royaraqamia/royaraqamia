@@ -50,6 +50,9 @@ jobs:
       - name: Ported Components Match The Site
         run: npm run check:parity
 
+      - name: Generated Component Recipes Are Current
+        run: npm run check:components
+
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 

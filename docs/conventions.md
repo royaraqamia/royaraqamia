@@ -65,6 +65,11 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
   it after an intended change ([ADR-0096](adr/0096-the-visual-baseline-is-values-not-pixels.md))
 - Radix + shadcn primitives
 - No inline styles
+- A shared component is a recipe, not a class list on one side and a Compose argument on
+  the other: `shared/components/recipes.json` is the source, `npm run components:generate`
+  writes `app/components.css` and the app's `Recipes.kt`, and `npm run check:components`
+  fails a stale output or a name the tokens do not have
+  ([ADR-0099](adr/0099-a-component-is-a-recipe.md))
 - A ported component's words are generated, not retyped: `shared/copy/<surface>.json` is
   the source, `npm run copy:generate` writes the site's module and the app's Kotlin
   object, `npm run check:copy` fails a stale output and `npm run check:parity` fails a
