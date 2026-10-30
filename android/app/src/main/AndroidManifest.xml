@@ -10,10 +10,19 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!--
+          The launcher, and the app's navigation root (#647, ADR-0105).
+
+          The splash theme, the first frame and the route grammar are this
+          activity's; the document is a destination it opens rather than the app
+          itself. The deep-link filters live here for the same reason: a link
+          names a route, and the route is what decides whether the shell draws a
+          screen or hands the route to the document.
+        -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".MainActivity"
-            android:label="@string/title_activity_main"
+            android:name=".shell.ShellActivity"
+            android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
@@ -24,9 +33,8 @@
             </intent-filter>
 
             <!--
-              Deep links. The shell serves the live site, so a link to our own
-              origin should open the app rather than a browser tab: autoVerify
-              makes Android confirm us against
+              Deep links. A link to our own origin should open the app rather than
+              a browser tab: autoVerify makes Android confirm us against
               https://royaraqamia.com/.well-known/assetlinks.json, which lists
               both the release and the debug signing certificate.
             -->
@@ -39,10 +47,9 @@
 
             <!--
               The OAuth return trip. Google refuses its consent screen in an
-              embedded WebView, so sign-in leaves for the system browser and
-              comes back on this scheme; MainActivity maps it onto the https
-              callback so the code is exchanged inside the WebView's own cookie
-              jar. Keep in sync with NATIVE_OAUTH_CALLBACK_URL in
+              embedded browser, so sign-in leaves for the system browser and comes
+              back on this scheme; the shell maps it onto the https callback route
+              (`shell/DeepLink.kt`). Keep in sync with NATIVE_OAUTH_CALLBACK_URL in
               shared/contracts/auth.ts and the Supabase redirect allowlist.
             -->
             <intent-filter>
@@ -53,6 +60,22 @@
             </intent-filter>
 
         </activity>
+
+        <!--
+          The document: every surface the shell does not draw yet, opened at the
+          route it was handed (#647). It is no longer the launcher, so it has no
+          splash theme of its own — a second splash on the hand-over would be a
+          frame of the platform between the app's own frame and the surface — and
+          it is `singleTop`, so a second hand-over reuses the instance instead of
+          stacking another copy of the same screen behind the same frame.
+        -->
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:launchMode="singleTop"
+            android:exported="true" />
 
         <!--
           FCM needs a channel on Android 8+; this is the one the system falls

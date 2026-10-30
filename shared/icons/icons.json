@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
-  "notes": {
-    "source": "The glyphs a ported component draws, taken from the very modules the site imports (`lucide-react`). `npm run vectors:generate` writes Compose `ImageVector`s from the same source, so an icon cannot be redrawn by hand or substituted with the nearest Material one (ADR-0100).",
-    "gate": "`npm run check:vectors` fails a stale output. `npm run check:parity` fails a ported component that imports a lucide icon with no vector here, or draws an icon the site does not."
-  },
   "strokeWidth": 2,
-  "icons": ["Lock", "RotateCw"]
+  "icons": ["House", "Lock", "RotateCw", "UserRound", "Users"]
 }

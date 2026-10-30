@@ -244,12 +244,41 @@ describe('the logo is one shape on every surface', () => {
       'utf8'
     );
     if (!manifest.includes('android:theme="@style/AppTheme.NoActionBarLaunch"')) {
-      drifts.push('AndroidManifest.xml: MainActivity must launch with AppTheme.NoActionBarLaunch');
+      drifts.push(
+        'AndroidManifest.xml: the launcher (ShellActivity) must launch with ' +
+          'AppTheme.NoActionBarLaunch'
+      );
     }
 
     // Below API 31 the theme is read by the compat library, which the activity has
-    // to install before `super.onCreate` replaces the starting window.
+    // to install before `super.onCreate` replaces the starting window. The launcher
+    // is the app's own frame since #647, so it is the Kotlin activity that installs
+    // the splash — and the document it hands over to must not install a second one.
     const activity = readFileSync(
+      join(
+        ROOT,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        'com',
+        'royaraqamia',
+        'app',
+        'shell',
+        'ShellActivity.kt'
+      ),
+      'utf8'
+    );
+    const installed = activity.indexOf('installSplashScreen()');
+    const created = activity.indexOf('super.onCreate(savedInstanceState)');
+    if (installed < 0 || created < 0 || installed > created) {
+      drifts.push('ShellActivity: installSplashScreen() must run before super.onCreate()');
+    }
+
+    // The document is a destination now, not the app: a splash of its own would be
+    // a frame of the platform between the shell's frame and the surface (#647).
+    const document = readFileSync(
       join(
         ROOT,
         'android',
@@ -264,10 +293,10 @@ describe('the logo is one shape on every surface', () => {
       ),
       'utf8'
     );
-    const installed = activity.indexOf('SplashScreen.installSplashScreen(this);');
-    const created = activity.indexOf('super.onCreate(savedInstanceState);');
-    if (installed < 0 || created < 0 || installed > created) {
-      drifts.push('MainActivity: installSplashScreen() must run before super.onCreate()');
+    if (document.includes('installSplashScreen')) {
+      drifts.push(
+        'MainActivity: the splash belongs to the launcher; a second one shows on hand-over'
+      );
     }
 
     // The plugin and its fixed `launchShowDuration` are what #212 retires; any of

@@ -11,7 +11,6 @@ import android.webkit.WebView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
-import androidx.core.splashscreen.SplashScreen;
 
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
@@ -81,12 +80,10 @@ public class MainActivity extends BridgeActivity {
         // The recitation's bridge (ADR-0086) is this module's own plugin, not an
         // npm package, so it is registered before the bridge is built.
         registerPlugin(QuranPlayerPlugin.class);
-        // The launch theme (`AppTheme.NoActionBarLaunch`) declares the platform
-        // splash's `windowSplashScreen*` items, and this is what reads them below
-        // API 31: `androidx.core:core-splashscreen` draws the same splash there and
-        // hands the activity to `postSplashScreenTheme`. It has to run before
-        // `super.onCreate`, which is where the starting window is replaced.
-        SplashScreen.installSplashScreen(this);
+        // The splash is the launcher's now (#647): `ShellActivity` installs it,
+        // because the app's first drawn frame is the shell's rather than this
+        // document's. A second splash here would be a frame of the platform between
+        // the app's own frame and the surface the user asked for.
         super.onCreate(savedInstanceState);
         installWebViewSettings(getBridge());
         installLaunchSkeleton();

@@ -20,6 +20,14 @@ ADR-0088.
 > decision and what it costs are [ADR-0089](../adr/0089-the-android-app-is-native.md); the order of
 > work is [native-app.md](native-app.md). This page stays the runbook for the shell while it exists,
 > and its measurements are the baseline the native app has to beat.
+>
+> **Since #647 the launcher is the app's own.** `com.royaraqamia.app.shell.ShellActivity` draws the
+> first Compose frame — the token theme, RTL, the tab bar — and then hands the route to
+> `MainActivity`, which is now the document as a destination rather than the app. The splash is
+> installed by the shell, the deep-link filters are declared on it, and `MainActivity` keeps no
+> splash of its own ([ADR-0105](../adr/0105-the-shell-launches-and-the-document-is-a-destination.md)).
+> A manual launch for a runbook step therefore starts `.shell.ShellActivity`; starting
+> `.MainActivity` directly still opens the document, which is what `npm run android:drill` does.
 
 ## Prerequisites
 
