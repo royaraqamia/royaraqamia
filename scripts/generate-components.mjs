@@ -320,6 +320,36 @@ export function renderCss(recipes, tokens) {
     );
   }
 
+  const cta = recipes.primitives?.cta;
+  if (cta) {
+    step(tokens, cta.type.step);
+    const shadowOffset = cta.shadow?.offsetY ? `${lengthToPx(cta.shadow.offsetY)}px` : '0';
+    lines.push(
+      "/* The site's primary action: a gradient pill with the site's own bloom. */",
+      '.roy-cta {',
+      '  display: inline-flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      `  height: ${lengthToPx(cta.height)}px;`,
+      `  min-width: ${lengthToPx(cta.minWidth)}px;`,
+      `  padding-left: ${lengthToPx(cta.paddingX)}px;`,
+      `  padding-right: ${lengthToPx(cta.paddingX)}px;`,
+      `  border-radius: ${radiusProperty(cta.radius)};`,
+      `  background-image: linear-gradient(${cta.gradient.direction}, ${cta.gradient.stops.join(', ')});`,
+      `  color: ${colorValue(tokens, cta.content)};`,
+      ...borderDeclarations(tokens, cta.border).map((line) => `  ${line};`),
+      `  font-family: var(--family-ui);`,
+      `  font-size: var(--type-${cta.type.step}-size);`,
+      `  line-height: var(--type-${cta.type.step}-leading);`,
+      `  font-weight: ${cta.type.weight};`,
+      cta.shadow
+        ? `  box-shadow: 0 ${shadowOffset} ${lengthToPx(cta.shadow.blur)}px ${colorValue(tokens, cta.shadow.color)};`
+        : '',
+      '}',
+      ''
+    );
+  }
+
   // Inside `components`, so a utility at a call site still wins — the cascade
   // order the badge's other variants rely on.
   const body = lines
@@ -483,6 +513,35 @@ export function renderKotlin(recipes, tokens) {
       `        val shadowOffsetY: Dp = ${float(lengthToPx(mark.shadow.offsetY))}.dp`,
       `        val shadowBlur: Dp = ${float(lengthToPx(mark.shadow.blur))}.dp`,
       `        val shadowColor: Color get() = Color.Black.copy(alpha = ${float(mark.shadow.color.alpha)})`,
+      '    }',
+      ''
+    );
+  }
+
+  const cta = recipes.primitives?.cta;
+  if (cta) {
+    lines.push(
+      "    /** The site's primary action: a gradient pill with the site's own bloom. */",
+      '    object Cta {',
+      `        val radius: Shape get() = ${radiusShape(cta.radius)}`,
+      `        val height: Dp = ${float(lengthToPx(cta.height))}.dp`,
+      `        val paddingX: Dp = ${float(lengthToPx(cta.paddingX))}.dp`,
+      `        val minWidth: Dp = ${float(lengthToPx(cta.minWidth))}.dp`,
+      `        val stops: List<Color> = listOf(${cta.gradient.stops.map((stop) => `Color(0xFF${stop.replace('#', '').toUpperCase()})`).join(', ')})`,
+      `        val content: Color get() = Color(0xFF${cta.content.raw.replace('#', '').toUpperCase()})`,
+      `        val border: BorderStroke get() = BorderStroke(${float(lengthToPx(cta.border.width))}.dp, Color(0x${Math.round(
+        (cta.border.alpha ?? 1) * 255
+      )
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, '0')}${cta.border.raw.replace('#', '').toUpperCase()}))`,
+      `        val bloom: Color get() = Color(0x${Math.round((cta.shadow.color.alpha ?? 1) * 255)
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, '0')}${cta.shadow.color.raw.replace('#', '').toUpperCase()})`,
+      `        val bloomY: Dp = ${float(lengthToPx(cta.shadow.offsetY))}.dp`,
+      `        val bloomBlur: Dp = ${float(lengthToPx(cta.shadow.blur))}.dp`,
+      `        fun text(scale: RoyTypeScale): TextStyle = scale.${cta.type.step}.copy(fontWeight = FontWeight(${cta.type.weight}))`,
       '    }',
       ''
     );
