@@ -42,3 +42,75 @@ enum class MyUsageResponseStateCountersItemWindow {
     @SerialName("lifetime") LIFETIME,
     @SerialName("daily") DAILY,
 }
+
+@Serializable
+data class MyPlanResponse(
+    val success: Boolean,
+    val state: MyPlanResponseState,
+    val limits: List<MyPlanResponseLimitsItem>,
+    val activations: List<MyPlanResponseActivationsItem>,
+)
+
+@Serializable
+data class MyPlanResponseState(
+    val plan: MyPlanResponseStatePlan,
+    val unlimited: Boolean,
+    val expiresAt: String?,
+    val counters: List<MyPlanResponseStateCountersItem>,
+)
+
+@Serializable
+enum class MyPlanResponseStatePlan {
+    @SerialName("free") FREE,
+    @SerialName("pro") PRO,
+}
+
+@Serializable
+data class MyPlanResponseStateCountersItem(
+    val key: String,
+    val label: String,
+    val window: MyPlanResponseStateCountersItemWindow,
+    val cap: Long,
+    val used: Long,
+    val remaining: Long,
+)
+
+@Serializable
+enum class MyPlanResponseStateCountersItemWindow {
+    @SerialName("lifetime") LIFETIME,
+    @SerialName("daily") DAILY,
+}
+
+@Serializable
+data class MyPlanResponseLimitsItem(
+    val key: String,
+    val label: String,
+    val cap: Long,
+    val used: Long,
+    val remaining: Long,
+)
+
+@Serializable
+data class MyPlanResponseActivationsItem(
+    val id: String,
+    val plan: MyPlanResponseActivationsItemPlan,
+    val amountCents: Long,
+    val currency: String,
+    val method: MyPlanResponseActivationsItemMethod,
+    val note: String?,
+    val activatedAt: String,
+    val expiresAt: String,
+)
+
+@Serializable
+enum class MyPlanResponseActivationsItemPlan {
+    @SerialName("free") FREE,
+    @SerialName("pro") PRO,
+}
+
+@Serializable
+enum class MyPlanResponseActivationsItemMethod {
+    @SerialName("shamcash") SHAMCASH,
+    @SerialName("efendim") EFENDIM,
+    @SerialName("other") OTHER,
+}

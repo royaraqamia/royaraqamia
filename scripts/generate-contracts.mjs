@@ -39,15 +39,19 @@ const PACKAGE = 'com.royaraqamia.app.contracts.generated';
  * One entry per contract module that the app decodes. `file` is the generated
  * Kotlin file, `schemas` the Zod exports in that module.
  *
- * Start narrow: the first entry is the one endpoint #648 reads end to end
+ * Start narrow: the first entry is the endpoint #648 reads end to end
  * (`GET /api/me/usage`), which is authorized and returns a shape the app will
  * render as soon as the shell exists. Adding a module is a line here.
+ *
+ * `GET /api/me/plan` joined it with the plan card (#647): the card draws the
+ * allowance, the owned-item caps and the expiry, and the body is the page's own
+ * - one route for both clients (ADR-0098).
  */
 export const CONTRACTS = [
   {
     module: 'shared/contracts/plans',
     file: 'PlansContracts.kt',
-    schemas: ['MyUsageResponseSchema'],
+    schemas: ['MyUsageResponseSchema', 'MyPlanResponseSchema'],
   },
 ];
 

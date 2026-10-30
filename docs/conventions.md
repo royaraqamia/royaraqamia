@@ -65,6 +65,10 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
   it after an intended change ([ADR-0096](adr/0096-the-visual-baseline-is-values-not-pixels.md))
 - Radix + shadcn primitives
 - No inline styles
+- A ported component's words are generated, not retyped: `shared/copy/<surface>.json` is
+  the source, `npm run copy:generate` writes the site's module and the app's Kotlin
+  object, `npm run check:copy` fails a stale output and `npm run check:parity` fails a
+  copy key the reference component does not render ([ADR-0098](adr/0098-a-ported-component-is-a-pair.md))
 - Stylesheets are cut by surface, not by component: `app/global.css` is the
   shell every route loads, and each surface brings its own `app/<surface>/app.css`
   ([performance.md](performance.md#stylesheets-by-surface))

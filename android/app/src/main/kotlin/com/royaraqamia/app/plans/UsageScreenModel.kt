@@ -1,46 +1,58 @@
 package com.royaraqamia.app.plans
 
-import com.royaraqamia.app.contracts.generated.MyUsageResponse
-import com.royaraqamia.app.contracts.generated.MyUsageResponseStatePlan
+import com.royaraqamia.app.contracts.generated.MyPlanResponse
+import com.royaraqamia.app.contracts.generated.MyPlanResponseStatePlan
 
 /**
- * The account card's model, built from the endpoint's generated type (#648).
+ * The plan card's model (#647, #648, ADR-0098).
  *
- * This is deliberately the first consumer of a generated contract: it is what
- * makes "a contract change breaks the app build" true rather than aspirational.
- * Remove or rename `state.plan`, `counters[].remaining` or any other field read
- * here in `shared/contracts/plans.ts`, regenerate, and this file stops
- * compiling.
+ * Built from the body `GET /api/me/plan` returns — the same route the site's
+ * `/account/plan` reads, so the card cannot show fewer rows than the page it
+ * mirrors. [rows] is the one list the card draws: counted actions first, then the
+ * owned-item caps, because a member reads "what is left" in one place rather than
+ * guessing which of two lists a number belongs to (ADR-0093).
+ *
+ * The generated type is what makes "a contract change breaks the app build" true:
+ * remove or rename `state.plan` or `limits[].remaining` in
+ * `shared/contracts/plans.ts`, regenerate, and this file stops compiling.
  */
 data class UsageScreenModel(
     val plan: String,
     val unlimited: Boolean,
     val expiresAt: String?,
-    val counters: List<Counter>,
+    val rows: List<Row>,
 ) {
-    data class Counter(
+    /** One label and the numbers beside it, in the site's own words. */
+    data class Row(
         val key: String,
         val label: String,
         val used: Long,
         val cap: Long,
-        val remaining: Long,
     )
 
     companion object {
-        fun from(response: MyUsageResponse): UsageScreenModel =
+        fun from(response: MyPlanResponse): UsageScreenModel =
             UsageScreenModel(
                 plan = response.state.plan.id(),
                 unlimited = response.state.unlimited,
                 expiresAt = response.state.expiresAt,
-                counters = response.state.counters.map { counter ->
-                    Counter(
-                        key = counter.key,
-                        label = counter.label,
-                        used = counter.used,
-                        cap = counter.cap,
-                        remaining = counter.remaining,
-                    )
-                },
+                rows =
+                    response.state.counters.map { counter ->
+                        Row(
+                            key = counter.key,
+                            label = counter.label,
+                            used = counter.used,
+                            cap = counter.cap,
+                        )
+                    } +
+                        response.limits.map { limit ->
+                            Row(
+                                key = limit.key,
+                                label = limit.label,
+                                used = limit.used,
+                                cap = limit.cap,
+                            )
+                        },
             )
 
         /**
@@ -48,10 +60,10 @@ data class UsageScreenModel(
          * exhaustive `when` on the generated enum, so a plan added to the schema
          * is a compile error here instead of a blank label.
          */
-        private fun MyUsageResponseStatePlan.id(): String =
+        private fun MyPlanResponseStatePlan.id(): String =
             when (this) {
-                MyUsageResponseStatePlan.FREE -> "free"
-                MyUsageResponseStatePlan.PRO -> "pro"
+                MyPlanResponseStatePlan.FREE -> "free"
+                MyPlanResponseStatePlan.PRO -> "pro"
             }
     }
 }

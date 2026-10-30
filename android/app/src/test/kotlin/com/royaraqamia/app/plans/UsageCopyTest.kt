@@ -4,12 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * The card's words and numbers (#647).
+ * The card's numbers (#647) — the half a locale can quietly break.
  *
- * The counts are the half a locale can quietly break: the site formats with
- * `toLocaleString('en-US')`, so the app has to produce the same ASCII, comma-
- * grouped string on a phone whose language is Arabic. A device-locale format would
- * answer in Arabic-Indic digits instead, which is a second numbering system in front
+ * The words themselves are generated from `shared/copy/plan-card.json` and pinned
+ * by `npm run check:copy`; what this suite holds is the app's own rule: a count is
+ * ASCII and grouped exactly the way `toLocaleString('en-US')` groups it, on a
+ * phone whose language is Arabic.
  */
 class UsageCopyTest {
     @Test
@@ -22,12 +22,21 @@ class UsageCopyTest {
 
     @Test
     fun `a plan id becomes the site's label`() {
-        assertEquals(UsageCopy.PLAN_FREE, UsageCopy.planLabel("free"))
-        assertEquals(UsageCopy.PLAN_PRO, UsageCopy.planLabel("pro"))
+        assertEquals(PlanCardCopy.PLAN_FREE, UsageCopy.planLabel("free"))
+        assertEquals(PlanCardCopy.PLAN_PRO, UsageCopy.planLabel("pro"))
     }
 
     @Test
     fun `an unknown plan id is shown rather than blanked`() {
         assertEquals("team", UsageCopy.planLabel("team"))
+    }
+
+    @Test
+    fun `the expiry sentence substitutes its placeholder and keeps the rest`() {
+        val sentence = UsageCopy.expires("23 شعبان 1448 هـ")
+
+        // The words are the site's; the app may not reformat around them.
+        assertEquals(PlanCardCopy.EXPIRES.replace("{date}", "23 شعبان 1448 هـ"), sentence)
+        assertEquals(false, sentence.contains("{date}"))
     }
 }

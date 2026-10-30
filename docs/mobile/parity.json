@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, or a copy source no row claims. The rules are in docs/mobile/two-clients.md, and ADR-0098 records why this exists.",
+  "components": [
+    {
+      "id": "plan-card",
+      "surface": "account-server",
+      "issue": "#647",
+      "web": {
+        "route": "app/account/plan/page.tsx",
+        "component": "frontend/ui/account/plan-view.tsx",
+        "copyModule": "frontend/ui/account/plan-card-copy.ts",
+        "copyExport": "PLAN_CARD_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/plans/UsageUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCardCopy.kt",
+        "copyObject": "PlanCardCopy"
+      },
+      "copySource": "shared/copy/plan-card.json",
+      "states": [
+        { "name": "Loading", "copy": "loadingLabel" },
+        { "name": "Ready", "copy": "cardTitle" },
+        { "name": "SignedOut", "copy": "signInTitle" },
+        { "name": "Failed", "copy": "failed" }
+      ]
+    }
+  ]
+}
