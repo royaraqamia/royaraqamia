@@ -18,7 +18,6 @@ const STATIC_CACHE = `royaraqamia-static-${CACHE_SCHEMA}`;
 // (ADR-0039) — but it now identifies entries rather than naming a cache.
 const BUILD_ID = self.CACHE_VERSION || 'dev';
 const BUILD_HEADER = 'x-sw-build';
-const FALLBACK_URL = '/offline';
 
 // The deadline a cold SWR request gets (#447, documented in
 // docs/specs/offline-first.md): the network must answer within it or the
@@ -36,10 +35,10 @@ const FALLBACK_URL = '/offline';
 // `OFFLINE_REPORT_RETRY_MS`, which keeps its own meaning.
 const NAVIGATION_TIMEOUT_MS = self.NAVIGATION_TIMEOUT_MS || 3_000;
 
-// Field telemetry (ADR-0074, #474). `/offline` serves are counted by the door
-// that led to them, and the cache outcomes tallied since the last report ride
-// along with the next serve — so the volume is bounded by how often the offline
-// page is actually shown, which the roadmap says is almost never. The payload is
+// Field telemetry (ADR-0074, #474). An answer the worker could not take from
+// Cache Storage is counted by the door that led to it, and the cache outcomes
+// tallied since the last report ride along with the next one — so the volume is
+// bounded by how often a request actually misses, which is rare. The payload is
 // a door class and three tallies: never a URL, a user, a client id or a
 // timestamp. A beacon cannot leave a device that is truly offline, so an
 // undelivered report is kept and retried on the next request that reaches the
@@ -117,7 +116,6 @@ const ASSET_QUERY = ASSET_VERSION ? `?v=${ASSET_VERSION}` : '';
 
 const PRECACHE_URLS = [
   '/',
-  FALLBACK_URL,
   `/manifest.json${ASSET_QUERY}`,
   `/icons/icon-192x192.png${ASSET_QUERY}`,
   `/icons/icon-512x512.png${ASSET_QUERY}`,
@@ -240,8 +238,8 @@ async function precache(cache, urls) {
 // ---------------------------------------------------------------------------
 // Route-shell refresh after activation (#489)
 //
-// `install` fetches the irreducible shell: `/`, `/offline`, the manifest and the
-// four icons. The build's route shells are not part of it — 29 documents and
+// `install` fetches the irreducible shell: `/`, the manifest and the four
+// icons. The build's route shells are not part of it — 29 documents and
 // 1.63 MB (ADR-0071) fetched one at a time competes with the page the user is
 // looking at, and the browser may terminate the worker mid-list.
 //
@@ -274,8 +272,8 @@ function whenIdle() {
 // A precached document is a picture of the route. Hydration needs the
 // `/_next/static` files the document names — layout chunks, the route's own
 // chunk, the stylesheet — and a route this device never visited has none of them,
-// so a prefix-served shell would paint and then stay inert: no card, no
-// interactivity. ADR-0071 recorded that as a known limit ("only documents, not
+// so a prefix-served shell would paint and then stay inert: no interactivity.
+// ADR-0071 recorded that as a known limit ("only documents, not
 // their route-specific chunks"); the prefix fallback turns it into a
 // user-visible one, so the refresh collects them alongside the document.
 //
@@ -770,8 +768,7 @@ function withIndex(mutate) {
   return next;
 }
 
-// The offline page and the build's own static assets are never evicted: the
-// page is the only legible surface with no network, and a hashed `_next/static`
+// The build's own static assets are never evicted: a hashed `_next/static`
 // chunk belongs to the build already shipped. Their size is bounded by the
 // build rather than by how much the user browses.
 //
@@ -787,7 +784,6 @@ function isPinned(key, entry) {
   } catch {
     return false;
   }
-  if (url.pathname === FALLBACK_URL) return true;
   if (url.pathname.startsWith('/_next/static/')) return Boolean(entry) && entry.build === BUILD_ID;
   if (isFont(url) || isIcon(url)) return true;
   return PRECACHE_PATHS.has(url.pathname);
@@ -837,8 +833,8 @@ function buildOf(response) {
 }
 
 // Oldest access first; pinned entries are skipped even when they are the oldest.
-// If only pinned entries remain the budget cannot be met, and evicting the
-// offline page or the current build would be the worse failure: it is logged.
+// If only pinned entries remain the budget cannot be met, and evicting a
+// pinned shell of the current build would be the worse failure: it is logged.
 async function enforceBudget(index) {
   let total = accountedBytes(index);
   if (total <= CACHE_BUDGET_BYTES) return;
@@ -939,8 +935,8 @@ async function rebuildIndex() {
   });
 }
 
-// Sign-out drops every runtime cache entry except the offline shell files that
-// carry no account state. `STATIC_CACHE` is build output, not data, and the push
+// Sign-out drops every runtime cache entry except the shell files that carry no
+// account state. `STATIC_CACHE` is build output, not data, and the push
 // preference marker is this device's setting, not an account's; IndexedDB (the
 // Local Store and Outbox) is out of scope and is never opened from here.
 //
@@ -948,7 +944,6 @@ async function rebuildIndex() {
 // without a session and contain nothing account-bearing.
 const SIGN_OUT_SHELL_PATHS = new Set([
   ...PRECACHE_ROUTES,
-  FALLBACK_URL,
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -996,9 +991,9 @@ async function cacheFirst(request) {
   } catch {
     cacheOutcomes.failures += 1;
     // The earlier match was already falsy, so never resolve to `undefined`:
-    // respondWith(undefined) throws. Fall back to the offline page for
-    // navigations and a clean 503 for everything else.
-    if (isNavigationRequest(request)) return serveOffline('static-offline');
+    // respondWith(undefined) throws. Answer navigations with the nearest shell
+    // (or a plain 503) and everything else with a clean 503.
+    if (isNavigationRequest(request)) return offlineMiss('static-offline');
     return new Response('Offline', { status: 503 });
   }
 }
@@ -1036,7 +1031,7 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
       return cached;
     }
     cacheOutcomes.failures += 1;
-    if (isNavigationRequest(request)) return serveOffline('api-offline');
+    if (isNavigationRequest(request)) return offlineMiss('api-offline');
     return new Response('Offline', { status: 503 });
   }
 }
@@ -1129,10 +1124,10 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
 async function missResponse(request, onMiss, door) {
   if (onMiss) return onMiss(request);
   if (isNavigationRequest(request)) {
-    // A never-cache surface (`/admin`) keeps `/offline`: its guard answers on
-    // the server, so the parent shell would be a page that cannot say anything
-    // true about the request the user made (ADR-0031).
-    if (isNeverCache(new URL(request.url))) return serveOffline(door);
+    // A never-cache surface (`/admin`) gets nothing: its guard answers on the
+    // server, so the parent shell would be a page that cannot say anything true
+    // about the request the user made (ADR-0031).
+    if (isNeverCache(new URL(request.url))) return offlineMiss(door);
     return serveNearestShell(request, door);
   }
   return new Response('Offline', { status: 503 });
@@ -1141,50 +1136,15 @@ async function missResponse(request, onMiss, door) {
 // ---------------------------------------------------------------------------
 // The nearest cached shell (#490)
 //
-// `/offline` used to answer a navigation this worker had no copy of, which
-// replaced the screen the user asked for with a different one. The parent
-// segment's document is almost always on the device even when the dynamic child
-// is not — `/community` for `/community/<slug>`, `/quran` for `/quran/<surah>`
-// — so a miss serves the longest cached ancestor instead: the URL stays the one
-// requested, the app's own chrome is what paints, and the client draws an inline
-// card that says this link is not available offline.
-//
-// The swap is invisible in the response, so it is recorded beside the worker's
-// cache bookkeeping and read once by the app after hydration
-// (`frontend/shared/prefix-serve.ts`). `/offline` keeps answering an empty cache
-// and the never-cache surfaces (`/admin`), which never reach this path.
+// A navigation this worker has no copy of is answered with the parent segment's
+// document, which is almost always on the device even when the dynamic child is
+// not — `/community` for `/community/<slug>`, `/quran` for `/quran/<surah>` — so
+// a miss serves the longest cached ancestor instead: the URL stays the one
+// requested and the app's own chrome is what paints. The swap is invisible in
+// the response and nothing is recorded about it; the user sees the parent's
+// screen at their URL. When no ancestor is cached, the navigation is answered
+// with a plain 503.
 // ---------------------------------------------------------------------------
-
-const PREFIX_MARKER_KEY = '/__sw_prefix_serve__';
-const PREFIX_MARKER_VERSION = 1;
-// A navigation clears the marker before it is answered, so what the app reads
-// after hydration always describes the document in front of it: a later online
-// visit to the same URL must not inherit an old prefix serve. The serve path
-// awaits this so a clear can never land after the write it belongs to.
-let prefixMarkerReset = Promise.resolve();
-
-async function clearPrefixMarker() {
-  try {
-    const meta = await caches.open(CACHE_META_NAME);
-    await meta.delete(PREFIX_MARKER_KEY);
-  } catch (error) {
-    console.log('[sw] prefix marker clear failed', String(error));
-  }
-}
-
-async function writePrefixMarker(requested, served) {
-  try {
-    const meta = await caches.open(CACHE_META_NAME);
-    await meta.put(
-      PREFIX_MARKER_KEY,
-      new Response(JSON.stringify({ version: PREFIX_MARKER_VERSION, requested, served }), {
-        headers: { 'content-type': 'application/json' },
-      })
-    );
-  } catch (error) {
-    console.log('[sw] prefix marker write failed', String(error));
-  }
-}
 
 /** The longest ancestor document this device holds, or null. */
 async function nearestCachedShell(pathname) {
@@ -1196,7 +1156,7 @@ async function nearestCachedShell(pathname) {
   // is the same route, which is what the nearest-shell promise already offers.
   for (const candidate of [pathname, ...shellPrefixCandidates(pathname)]) {
     const response = await cache.match(candidate);
-    if (response) return { served: candidate, response };
+    if (response) return response;
   }
   return null;
 }
@@ -1204,34 +1164,30 @@ async function nearestCachedShell(pathname) {
 /**
  * Answers a navigation miss with the nearest cached ancestor and reports it as
  * its own door (ADR-0074): a prefix serve is a graceful fallback the field must
- * be able to tell from a real miss, which stays on `/offline`.
+ * be able to tell from a real miss, which is a plain 503.
  */
 async function serveNearestShell(request, door) {
   const pathname = new URL(request.url).pathname;
-  if (pathname === FALLBACK_URL) return serveOffline(door);
   const shell = await nearestCachedShell(pathname);
-  if (!shell) return serveOffline(door);
-  await prefixMarkerReset;
-  await writePrefixMarker(pathname, shell.served);
+  if (!shell) return offlineMiss(door);
   void reportOfflineServe('navigation-prefix');
-  return shell.response;
+  return shell;
 }
 
 /**
- * Answers the offline page and reports which door led here. `no-fallback` means
- * the page itself was missing from Cache Storage — the first-install shape (the
- * install has not finished precaching, or something evicted the shell), which
- * is the one case that must stay visible rather than being counted as a door.
+ * Answers a miss that nothing on this device can fill: a plain 503, which the
+ * browser renders as its own offline error, and one report for the door that led
+ * here. There is deliberately no local page to paint — a not-cached screen is
+ * the browser's own answer now.
  */
-async function serveOffline(door) {
-  const fallback = await caches.match(FALLBACK_URL);
-  void reportOfflineServe(fallback ? door : 'no-fallback');  if (fallback) return fallback;
+async function offlineMiss(door) {
+  void reportOfflineServe(door);
   return new Response('Offline', { status: 503 });
 }
 
 /**
  * Sends one beacon and resolves whether the server took it. Deliberately not
- * awaited by the caller: `/offline` must paint instantly, and the user is
+ * awaited by the caller: the 503 must go out instantly, and the user is
  * already waiting on a failure. `keepalive` is the best effort at outliving the
  * worker, and `credentials: 'omit'` keeps the request free of the visitor's
  * session — the endpoint reads nothing but the body.
@@ -1331,8 +1287,8 @@ async function flushOfflineReports(force = false) {
 }
 
 /**
- * Counts one `/offline` serve and gets the report out: straight to the endpoint
- * when the network answers, kept for the next request when it does not.
+ * Counts one miss and gets the report out: straight to the endpoint when the
+ * network answers, kept for the next request when it does not.
  */
 async function reportOfflineServe(door) {
   const cache = { ...cacheOutcomes };
@@ -1388,10 +1344,9 @@ async function offlineImage(request) {
 }
 
 // Online-only surfaces (ADR-0031): go straight to the network, never to Cache
-// Storage. A navigation that cannot reach the network falls back to the offline
-// page so the user lands somewhere legible rather than on a browser error. The
-// same navigation deadline bounds a slow navigation (#447): /offline arrives
-// after the deadline instead of whenever the browser's own timeout gives up.
+// Storage. A navigation that cannot reach the network is answered with a plain
+// 503 after the navigation deadline (#447), rather than waiting on the browser's
+// own several-minute timeout; there is no local page to paint.
 // Non-navigations (API reads on never-cache prefixes) stay unbounded — those
 // run inside an already-painted page whose failure state is the app's own job.
 // A navigation takes the browser's preload when there is one (#492): this is the
@@ -1413,7 +1368,7 @@ async function networkOnly(request, preload) {
   } catch {
     if (navigation) {
       cacheOutcomes.failures += 1;
-      return serveOffline('online-only-offline');
+      return offlineMiss('online-only-offline');
     }
     return new Response('Offline', { status: 503 });
   }
@@ -1426,14 +1381,6 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.method !== 'GET') return;
-
-  // This navigation's own answer decides the prefix marker: clear the previous
-  // serve before anything can answer it (#490). A prefix serve writes the marker
-  // back; anything else leaves it cleared.
-  if (isNavigationRequest(request)) {
-    prefixMarkerReset = clearPrefixMarker();
-    event.waitUntil(prefixMarkerReset);
-  }
 
   // Retry what a truly-offline serve could not send (ADR-0074's amendment).
   void flushOfflineReports();

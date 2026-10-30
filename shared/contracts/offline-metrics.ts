@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 /**
- * The doors `/offline` can be reached through (ADR-0074, #474). Each name says
+ * The doors a cache miss can be reached through (ADR-0074, #474). Each name says
  * which accepted path missed, so a field count separates the doors the roadmap
- * expects — a first install, an online-only route, a route never visited before
- * — from a real regression.
+ * expects — an online-only route, a route never visited before — from a real
+ * regression.
  *
  * - `navigation-deadline`: an ordinary navigation whose network answer missed
- *   the 10s deadline (#447).
+ *   the 3s deadline (#447).
  * - `navigation-offline`: an ordinary navigation with no cached copy and no
  *   network answer.
  * - `online-only-deadline`: a never-cache navigation (`/admin`, `/mcp/connect`)
@@ -17,11 +17,8 @@ import { z } from 'zod';
  * - `api-offline`: an API-read navigation whose fetch failed.
  * - `navigation-prefix`: an ordinary navigation with no copy of its own; the
  *   nearest cached ancestor shell answered instead (#490), so the user saw the
- *   parent's chrome and the inline "not available offline" card rather than
- *   `/offline`. Counted as its own door so the field can tell a graceful
- *   fallback from a real miss.
- * - `no-fallback`: the offline page itself was not in Cache Storage — the
- *   first-install shape, and the one that says the shell is missing.
+ *   parent's chrome at the requested URL. Counted as its own door so the field
+ *   can tell a graceful fallback from a real miss.
  */
 export const OfflineServeDoorSchema = z.enum([
   'navigation-deadline',
@@ -31,16 +28,15 @@ export const OfflineServeDoorSchema = z.enum([
   'online-only-offline',
   'static-offline',
   'api-offline',
-  'no-fallback',
 ]);
 
 export type OfflineServeDoor = z.infer<typeof OfflineServeDoorSchema>;
 
 /**
  * Cache outcomes tallied in the worker since the previous report, riding along
- * with an `/offline` serve. `hits` were answered from Cache Storage, `misses`
- * found no entry at request time, `failures` are a failed or deadline-cut fetch.
- * Counts only — no response times, no sizes, no URLs.
+ * with a miss. `hits` were answered from Cache Storage, `misses` found no entry
+ * at request time, `failures` are a failed or deadline-cut fetch. Counts only —
+ * no response times, no sizes, no URLs.
  */
 export const OfflineCacheOutcomesSchema = z.object({
   hits: z.number().int().nonnegative().max(1_000_000),
@@ -50,7 +46,7 @@ export const OfflineCacheOutcomesSchema = z.object({
 
 export type OfflineCacheOutcomes = z.infer<typeof OfflineCacheOutcomesSchema>;
 
-/** One beacon per `/offline` serve. `version` lets a later change add a field. */
+/** One beacon per miss. `version` lets a later change add a field. */
 export const OfflineServeReportSchema = z.object({
   version: z.literal(1),
   door: OfflineServeDoorSchema,

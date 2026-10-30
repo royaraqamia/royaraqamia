@@ -4,7 +4,7 @@ import { getClientIp } from '@/backend/transport/http';
 import { recordOfflineServe } from '@/backend/controllers/offline-metrics';
 
 /**
- * The service worker's `/offline` beacon (ADR-0074). It is never cached and
+ * The service worker's offline-miss beacon (ADR-0074). It is never cached and
  * never read: the answer only tells a maintainer's log query that the worker
  * reported, and the worker deliberately does not await it.
  */

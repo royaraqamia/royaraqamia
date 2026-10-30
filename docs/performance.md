@@ -242,7 +242,7 @@ content surface paints — and one per local mutation's tap, to
 `POST /api/app-perf`. The endpoint validates the body, applies a per-IP limit
 (60/min, fail-closed) and writes a single `logger.info('[app-perf]', …)` line.
 The beacon is deferred past the paint, uses `keepalive`, is skipped while
-offline and is never retried — the `/offline` beacon's guarantees (ADR-0074).
+offline and is never retried — as droppable as the offline-miss beacon (ADR-0074).
 The decision and its privacy boundary are recorded in
 [ADR-0075](adr/0075-launch-and-tap-timings-are-counted.md).
 

@@ -149,11 +149,11 @@ test('an offline in-session account navigation paints; a cold reload is now the 
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('سجِّل الدُّخول إلى حسابك')).toBeVisible();
 
-  // A cold reload now has the document to serve: the cached shell paints
-  // instead of the offline page. This is exactly what #448 landed — the offline
-  // reload of a visited account route is cache-served chrome (ADR-0031's
-  // #448 amendment), and the granularity guarantee (that the last stale copy
-  // is never presented as live) stays an account-view concern.
+  // A cold reload now has the document to serve: the cached shell paints. This
+  // is exactly what #448 landed — the offline reload of a visited account route
+  // is cache-served chrome (ADR-0031's #448 amendment), and the granularity
+  // guarantee (that the last stale copy is never presented as live) stays an
+  // account-view concern.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: /غير متَّصل/ })).toHaveCount(0);
+  await expect(page.getByText('سجِّل الدُّخول إلى حسابك')).toBeVisible();
 });

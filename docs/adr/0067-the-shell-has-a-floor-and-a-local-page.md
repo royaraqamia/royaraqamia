@@ -84,3 +84,20 @@ matters.
 `scripts/__tests__/shell-fallback.test.mjs` holds the guard, not just the copy: one `online`
 listener, the flag written before navigating with `location.assign` (never `location.href`,
 `location.replace` or `location.reload`), and the update-card branch still automatic-free.
+
+## Amendment (2026-10-30): the local page is blank
+
+The page behind the floor no longer draws anything. `unavailable.html` keeps the floor check and the
+one-shot reconnect reload, but its card, its copy, its retry link, its brand line and the
+"update your System WebView" section are removed, and it ships no fonts. It is the site's dark
+background, full height and inside the safe area, and that is all: an unreachable site reads as an
+empty screen rather than as a second, different screen. `capacitor-web/index.html` is blank for the
+same reason.
+
+Two consequences are accepted rather than fixed. An offline launch shows nothing to explain itself
+and nothing to tap; recovery is the silent `online` reload. And a WebView below 111 now opens a
+blank page that no reconnect can repair � the floor still keeps it away from a half-broken site, but
+the instruction to update went with the card. The `�???? ????? ??? ??????�` copy and the version
+numbers are gone from the page, so `scripts/__tests__/shell-fallback.test.mjs` now pins the silence,
+the floor constant, ES5 and the recovery guard, not the copy. The emulator rows in
+`docs/mobile/android-shell.md` record the blank screen.

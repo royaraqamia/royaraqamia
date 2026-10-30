@@ -15,17 +15,6 @@
       "issue": "#487"
     },
     {
-      "id": "offline-page",
-      "routes": ["/offline"],
-      "owner": "static",
-      "read": "swr",
-      "write": "none",
-      "shell": "pinned",
-      "bundle": "remote",
-      "specs": ["e2e/public-offline.spec.ts"],
-      "issue": "#490"
-    },
-    {
       "id": "marketing",
       "routes": ["/pricing", "/privacy", "/security", "/terms", "/app-info"],
       "owner": "static",

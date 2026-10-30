@@ -30,7 +30,6 @@ const APP_PATHS = {
   '/spendtrack/(app)/page': '/spendtrack',
   '/linksnap/(app)/page': '/linksnap',
   '/blogpress/(app)/page': '/blogpress',
-  '/offline/page': '/offline',
   '/mcp/guide/page': '/mcp/guide',
   '/api/rates/route': '/api/rates',
   '/robots.txt/route': '/robots.txt',
@@ -112,7 +111,6 @@ describe('public route shell derivation', () => {
   it('leaves out the fixed shell, internal routes and non-page handlers', () => {
     const routes = select();
     expect(routes).not.toContain('/');
-    expect(routes).not.toContain('/offline');
     expect(routes).not.toContain('/_not-found');
     expect(routes).not.toContain('/api/rates');
     expect(routes).not.toContain('/robots.txt');

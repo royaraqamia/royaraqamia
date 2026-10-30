@@ -88,8 +88,9 @@ describe('recordOfflineServe', () => {
   });
 
   it('accepts a graceful prefix serve as its own door (#490)', async () => {
-    // A prefix serve never shows `/offline`, but it is counted through the same
-    // beacon so the field can tell the fallback from a real miss.
+    // A prefix serve paints the parent's shell instead of failing, but it is
+    // counted through the same beacon so the field can tell the fallback from a
+    // real miss.
     const result = await recordOfflineServe({ ...REPORT, door: 'navigation-prefix' }, IP);
 
     expect(result).toEqual({ status: 200, body: { success: true } });
@@ -100,6 +101,13 @@ describe('recordOfflineServe', () => {
         tags: { 'offline.door': 'navigation-prefix', 'offline.version': '1' },
       })
     );
+  });
+
+  it('refuses the doors the withdrawn offline page owned', async () => {
+    for (const door of ['no-fallback']) {
+      const result = await recordOfflineServe({ ...REPORT, door }, IP);
+      expect(result.status).toBe(400);
+    }
   });
 
   it('never sends a malformed report or the stray keys it stripped', async () => {

@@ -12,7 +12,6 @@ const DISALLOWED_PATHS = [
   '/account',
   '/auth/',
   '/mcp',
-  '/offline',
   '/linksnap',
   '/habitflow',
   '/spendtrack',

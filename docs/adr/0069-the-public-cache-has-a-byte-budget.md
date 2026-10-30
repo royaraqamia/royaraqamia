@@ -111,3 +111,12 @@ should. WhatsApp does not invalidate its local store on a version bump either.
 The one-time cost is the transition: the first worker carrying this change finds
 the old build-named caches, deletes them, and builds the store again. Every
 release after it keeps what the device already has.
+
+## Amendment (2026-10-30): the pinned set loses the offline page
+
+`/offline` is withdrawn (ADR-0031's 2026-10-30 amendment), so the one non-asset entry that was always
+pinned no longer exists. What stays pinned: the manifest and icons, the build's own `/_next/static`
+chunks for the current build, fonts, and anything in the worker's fixed precache list and generated
+route list. The sign-out purge no longer has an `/offline` entry to keep either; its comment and
+`SIGN_OUT_SHELL_PATHS` name the shells that survive. The budget, the LRU ordering and the
+evict-to-90% rule are unchanged.

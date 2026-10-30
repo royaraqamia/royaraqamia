@@ -661,7 +661,6 @@ describe('service worker cache durability', () => {
 
     const cache = await caches.open(DATA_CACHE);
     expect(await cache.match('/')).toBeTruthy();
-    expect(await cache.match('/offline')).toBeTruthy();
     expect(await cache.match(failedUrl)).toBeUndefined();
     expect(log.mock.calls.flat().join(' ')).toContain(failedUrl);
 
@@ -915,7 +914,6 @@ describe('service worker cache budget and eviction', () => {
 
     const entries = await runtimeEntries(ctx);
     expect(totalOf(entries)).toBeLessThanOrEqual(1000);
-    expect(entries).toHaveProperty('/offline');
     expect(ctx.sandbox.indexedDB.open).not.toHaveBeenCalled();
     expect(ctx.sandbox.indexedDB.databases).not.toHaveBeenCalled();
   });
@@ -945,7 +943,7 @@ describe('service worker cache budget and eviction', () => {
     expect(totalOf(entries)).toBeLessThanOrEqual(1000);
   });
 
-  it("never evicts the offline page or the current build's static assets", async () => {
+  it("never evicts the current build's static assets", async () => {
     const ctx = await boot({ budgetBytes: 1000, fetchImpl: async () => emptyResponse() });
 
     // The build asset goes in first, so it is the oldest entry once pages land.
@@ -957,19 +955,18 @@ describe('service worker cache budget and eviction', () => {
     await visit(ctx, '/a', 300);
     await visit(ctx, '/b', 300);
     // One more page forces an eviction. It must take the oldest page, not the
-    // older static chunk or the offline page.
+    // older static chunk.
     await visit(ctx, '/c', 300);
 
     const entries = await runtimeEntries(ctx);
     const staticEntries = await runtimeEntries(ctx, STATIC_CACHE);
     expect(staticEntries['/_next/static/chunks/app.js']).toBe(300);
-    expect(entries).toHaveProperty('/offline');
     expect(entries['/a']).toBeUndefined();
     expect(entries['/b']).toBe(300);
     expect(entries['/c']).toBe(300);
   });
 
-  it('purges account-bearing entries on sign-out and keeps the offline shell', async () => {
+  it('purges account-bearing entries on sign-out and keeps the shell', async () => {
     const ctx = await boot({ budgetBytes: 10_000, precacheRoutes: ['/privacy'] });
 
     await visit(ctx, '/community', 100);
@@ -1001,8 +998,7 @@ describe('service worker cache budget and eviction', () => {
     expect(await ctx.caches.match('/community')).toBeUndefined();
     expect(await ctx.caches.match('/api/rates?pair=usd')).toBeUndefined();
     expect(await ctx.caches.match('/')).toBeUndefined();
-    // The offline shell, the build's static assets and the device preference do.
-    expect(await ctx.caches.match('/offline')).toBeTruthy();
+    // The build's static assets and the device preference do.
     // A public route shell was prerendered without a session and survives too
     // (#395): it carries no account data, and a signed-out device still needs
     // it to deep-link offline.
@@ -1061,10 +1057,10 @@ describe('service worker navigation deadline (#447)', () => {
     expect(await response.text()).toBe('stale-shell');
   });
 
-  it('gives a cold navigation the offline fallback after the deadline, then keeps a late answer for the next visit', async () => {
+  it('answers a cold navigation with a plain 503 after the deadline, then keeps a late answer for the next visit', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    // An empty shell, which is the one shape `/offline` still answers (#490): no
-    // ancestor document is on the device, so there is nothing to prefix-serve.
+    // An empty shell: no ancestor document is on the device, so there is nothing
+    // to prefix-serve and no page to paint (#490).
     await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     ctx.sandbox.fetch = vi.fn(
       () =>
@@ -1085,9 +1081,11 @@ describe('service worker navigation deadline (#447)', () => {
     const event = fetchEvent(request('/community'));
     ctx.dispatch('fetch', event);
 
-    // The deadline cut the cold load: the page sees the offline fallback, not
-    // the browser's own multi-minute hang.
-    expect(await event.response.then((r) => r.text())).toBe('ok');
+    // The deadline cut the cold load: the browser shows its own offline error,
+    // not a multi-minute hang.
+    const cut = await event.response;
+    expect(cut.status).toBe(503);
+    expect(await cut.text()).toBe('Offline');
 
     // The cut fetch keeps running as the lifetime extension and still writes.
     await Promise.all(event.waitUntilCalls);
@@ -1110,8 +1108,10 @@ describe('service worker navigation deadline (#447)', () => {
     ctx.dispatch('fetch', event);
 
     // `/admin` bypasses the cache entirely (ADR-0031), but a slow network must
-    // still not hang the document: /offline arrives at the deadline.
-    await expect(event.response.then((r) => r.text())).resolves.toBe('ok');
+    // still not hang the document: the 503 arrives at the deadline.
+    const response = await event.response;
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe('Offline');
   });
 
   it('caches the auth document shell like any other public page (#447)', async () => {
@@ -1129,7 +1129,7 @@ describe('service worker navigation deadline (#447)', () => {
     expect(await first.text()).toBe('login-shell');
     expect(await ctx.caches.match('https://site.example/auth/login')).toBeTruthy();
 
-    // Radio off: the reload paints the cached form instead of the offline page.
+    // Radio off: the reload paints the cached form instead of a blank page.
     ctx.sandbox.fetch = vi.fn(async () => {
       throw new Error('offline');
     });
@@ -1398,14 +1398,15 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
   it('separates the deadline door from the network one', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    // No ancestor shell, so the deadline still reaches `/offline` and its own
-    // door rather than a prefix serve (#490).
+    // No ancestor shell, so the deadline reports its own door rather than a
+    // prefix serve (#490).
     await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     const beacons = intercept(ctx, () => new Promise(() => undefined));
 
     const event = fetchEvent(request('/rates'));
     ctx.dispatch('fetch', event);
-    expect(await event.response.then((r) => r.text())).toBe('ok');
+    const response = await event.response;
+    expect(response.status).toBe(503);
 
     expect(beacons()).toHaveLength(1);
     expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
@@ -1417,7 +1418,8 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
     const event = fetchEvent(request('/admin'));
     ctx.dispatch('fetch', event);
-    expect(await event.response.then((r) => r.text())).toBe('ok');
+    const response = await event.response;
+    expect(response.status).toBe(503);
 
     expect(beacons()).toHaveLength(1);
     expect(JSON.parse(beacons()[0].init.body).door).toBe('online-only-deadline');
@@ -1436,7 +1438,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
     expect(beacons()).toHaveLength(0);
   });
 
-  it('answers the offline page without waiting on the beacon', async () => {
+  it('answers the prefix serve without waiting on the beacon', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     let beaconStarted = false;
     ctx.sandbox.fetch = vi.fn(async (url) => {
@@ -1488,7 +1490,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
 
     const missed = fetchEvent(request('/community/lead'));
     ctx.dispatch('fetch', missed);
-    expect(await missed.response.then((r) => r.text())).toBe('ok');
+    expect((await missed.response).status).toBe(503);
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     const store = await ctx.caches.open('royaraqamia-offline-report');
@@ -1530,13 +1532,13 @@ describe('service worker offline-serve telemetry (#474)', () => {
     for (const path of ['/community/lead', '/admin']) {
       const event = fetchEvent(request(path));
       ctx.dispatch('fetch', event);
-      expect(await event.response.then((r) => r.text())).toBe('ok');
+      await event.response;
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     const store = await ctx.caches.open('royaraqamia-offline-report');
     const pending = await (await store.match('/__sw_offline_report__')).json();
-    // A prefix serve is its own door since #490; `/admin` stays on the
+    // A prefix serve is its own door since #490; `/admin` answers with the
     // online-only one, and both are kept while the radio is off.
     expect(Object.keys(pending.doors).sort()).toEqual(['navigation-prefix', 'online-only-offline']);
   });
@@ -1549,7 +1551,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
       new Response(
         JSON.stringify({
           version: 1,
-          doors: { 'no-fallback': { hits: 0, misses: 0, failures: 1 } },
+          doors: { 'navigation-offline': { hits: 0, misses: 0, failures: 1 } },
         })
       )
     );
@@ -1579,7 +1581,7 @@ describe('service worker prefix fallback (#490)', () => {
     return event;
   }
 
-  /** What the app will read after hydration to draw the offline card. */
+  /** The marker the app used to read to draw the offline card; nothing writes it. */
   async function markerOf(ctx) {
     const meta = await ctx.caches.open('royaraqamia-cache-meta');
     const entry = await meta.match('/__sw_prefix_serve__');
@@ -1601,13 +1603,10 @@ describe('service worker prefix fallback (#490)', () => {
     const event = fetchEvent(request('/quran/7'));
     ctx.dispatch('fetch', event);
 
-    // The URL stays the requested one; the parent's document is what answers.
+    // The URL stays the requested one; the parent's document is what answers,
+    // and nothing is recorded for the app to react to.
     expect(await event.response.then((r) => r.text())).toBe('quran-shell');
-    expect(await markerOf(ctx)).toEqual({
-      version: 1,
-      requested: '/quran/7',
-      served: '/quran',
-    });
+    expect(await markerOf(ctx)).toBeUndefined();
   });
 
   it('walks up to the homepage when the segment has no document of its own', async () => {
@@ -1621,29 +1620,27 @@ describe('service worker prefix fallback (#490)', () => {
     ctx.dispatch('fetch', event);
 
     expect(await event.response.then((r) => r.text())).toBe('ok');
-    expect(await markerOf(ctx)).toEqual({ version: 1, requested: '/u/someone', served: '/' });
+    expect(await markerOf(ctx)).toBeUndefined();
   });
 
-  it('keeps /offline for an empty cache and marks nothing', async () => {
+  it('answers a plain 503 when no ancestor shell is on the device', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    const cache = await ctx.caches.open(DATA_CACHE);
-    await cache.put('https://site.example/offline', new Response('offline-shell'));
     // The first-install shape: the install precached the shell, but nothing this
     // navigation could borrow — not even the homepage.
-    await cache.delete('https://site.example/');
+    await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     noNetwork(ctx);
 
     const event = fetchEvent(request('/community/lead'));
     ctx.dispatch('fetch', event);
 
-    expect(await event.response.then((r) => r.text())).toBe('offline-shell');
+    const response = await event.response;
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe('Offline');
     expect(await markerOf(ctx)).toBeUndefined();
   });
 
-  it('keeps /offline for the never-cache admin surface', async () => {
+  it('answers a plain 503 for the never-cache admin surface', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    const cache = await ctx.caches.open(DATA_CACHE);
-    await cache.put('https://site.example/offline', new Response('offline-shell'));
     // Never-cache paths bypass Cache Storage entirely (ADR-0031); a prefix serve
     // would put a public page where an admin guard is the whole point.
     ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
@@ -1651,27 +1648,9 @@ describe('service worker prefix fallback (#490)', () => {
     const event = fetchEvent(request('/admin/rates'));
     ctx.dispatch('fetch', event);
 
-    expect(await event.response.then((r) => r.text())).toBe('offline-shell');
-    expect(await markerOf(ctx)).toBeUndefined();
-  });
-
-  it('clears the marker once a later navigation answers its own URL', async () => {
-    const ctx = await boot({ navigationTimeoutMs: 20 });
-    const cache = await ctx.caches.open(DATA_CACHE);
-    await cache.put('https://site.example/quran', new Response('quran-shell'));
-    noNetwork(ctx);
-
-    const missed = fetchEvent(request('/quran/7'));
-    ctx.dispatch('fetch', missed);
-    await missed.response;
-    expect(await markerOf(ctx)).toBeTruthy();
-
-    // The same deep link, now cached: the worker answered it itself, so the app
-    // must not draw a card for a document that is the real one.
-    await cache.put('https://site.example/quran/7', new Response('surah-shell'));
-    const exact = fetchEvent(request('/quran/7'));
-    ctx.dispatch('fetch', exact);
-    expect(await exact.response.then((r) => r.text())).toBe('surah-shell');
+    const response = await event.response;
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe('Offline');
     expect(await markerOf(ctx)).toBeUndefined();
   });
 });
@@ -1835,13 +1814,12 @@ describe('service worker route-shell refresh (#489)', () => {
     const ctx = installOnly({ precacheRoutes: ['/privacy', '/terms'] });
     await Promise.all(ctx.dispatch('install').waitUntilCalls);
 
-    // The install is bounded by what it must have to boot: the two documents,
-    // the manifest and the four icons. Not the build's list, which arrives from
+    // The install is bounded by what it must have to boot: the homepage, the
+    // manifest and the four icons. Not the build's list, which arrives from
     // `activate`.
     expect(ctx.state.fetchCalls.map((call) => call.url).sort()).toEqual(
       [
         '/',
-        '/offline',
         '/manifest.json',
         '/icons/icon-192x192.png',
         '/icons/icon-512x512.png',

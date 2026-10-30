@@ -100,3 +100,11 @@ still holds for the remote half — one implementation of Community, News, rates
 pages, `/admin` and MCP — and its "why not bundle the web assets" reasoning now answers a narrower
 question: a static export cannot represent the server-rendered surfaces, which is why only the owned
 ones are bundled and the rest stay here.
+
+## Amendment (2026-10-30): no retry-by-tap card
+
+The "failed first frame" consequence above still recovers once on reconnect, but the page it lands on
+no longer offers a retry. `capacitor-web/unavailable.html` is blank (ADR-0067's 2026-10-30
+amendment): the one-shot `online` reload is the whole recovery path, and a site still down after it
+shows an empty screen. The anti-loop guarantee is unchanged and easier to hold, since there is no
+tap-driven navigation left on that page.

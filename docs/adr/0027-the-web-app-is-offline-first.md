@@ -85,3 +85,11 @@ whose pulls fail in the same catch — follow with the per-product pill work in 
 gains its read state and its queued state in one decision rather than two. The tiering is held by
 the pill's unit test: a failed pull with a clean write side renders the read line, and a queued or
 failed write suppresses it.
+
+## Amendment (2026-10-30): the rule stands, the document behind it does not
+
+The "where the action is attempted" rule above is unchanged � a pull attempt is a sync event of the
+open page, so its failure belongs in that page's sync surface. The parenthetical it cites is now out of
+date: there is no `/offline` document to answer a document request, by ADR-0031's 2026-10-30
+amendment. A document request the worker cannot answer from the device is a prefix-served parent shell
+or a plain 503, and neither is where a failed pull is reported.
