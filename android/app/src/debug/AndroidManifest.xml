@@ -5,5 +5,30 @@
   refuses. The release manifest keeps cleartext off.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:usesCleartextTraffic="true" />
+
+    <application android:usesCleartextTraffic="true">
+
+        <!--
+          The workbench (#647, #501): a second launcher entry that signs in and
+          draws the plan card from `/api/me/usage` in the app's own Compose UI.
+
+          It is declared here and nowhere else, so a release APK has neither the
+          activity nor the debug-only `BuildConfig` values it reads. Its own label
+          keeps it distinguishable from the real app in the launcher while the two
+          sides of the app are still one APK (ADR-0089, phase 0).
+        -->
+        <activity
+            android:name=".debug.WorkbenchActivity"
+            android:exported="true"
+            android:label="@string/title_activity_workbench"
+            android:theme="@style/AppTheme.NoActionBarLaunch">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+    </application>
 </manifest>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug only: the strings the workbench activity (#647) needs, kept out of the
+     release APK's resources along with the activity itself. -->
+<resources>
+    <string name="title_activity_workbench">royaraqamia (workbench)</string>
+</resources>

@@ -65,17 +65,24 @@ because a buildscript classpath is resolved before that file is applied.
 the tokens generate — colour, type, spacing and shape, in the two faces the APK already bundles.
 `npm run tokens:generate` writes `ThemeColors.kt` alongside `DesignTokens.kt`, so a colour the theme
 can name is a colour the tokens have. The release build is minified for the same reason the theme
-exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)); the first Compose screen is still
-Phase 2's.
+exists ([ADR-0094](../adr/0094-the-release-build-is-minified.md)). The plan card
+(`plans/PlanCard.kt`) draws `GET /api/me/usage` — counters in the digits face, labels in the UI
+face, the site's own copy — and `src/debug` holds the workbench activity that shows it, reachable
+only in a debug build and reading a project URL from this machine's `android/local.properties`. A
+release APK contains neither (`scripts/__tests__/native-workbench.test.mjs`). It is a card, not a
+screen: `account-server` is four routes and the inventory does not record a surface as native until
+all of it is. Phase 2's first real screen is still owed, with the rest of its acceptance criteria.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
 the same moment, and ends the session only when the server _refuses_ the token — a refresh that never
 reached an answer keeps it, because a tunnel is not a sign-out. `ApiClient` sends that bearer to an
 owned route, allows one refresh and one retry, and decodes through the contract; `HttpTransport` is
-the one place a socket exists, with its timeouts. Still owed: the password grant, the provider return
-on `royar://auth`, the identity partition a sign-out performs (ADR-0070), and the Keystore path itself
-— it cannot run in a unit test, so it is verified on a device.
+the one place a socket exists, with its timeouts. `SupabasePasswordGrant` is the password half of
+sign-in, and `AppGraph` is the composition root that wires storage, session, client and repository
+together. Still owed: the provider return on `royar://auth`, the identity partition a sign-out
+performs (ADR-0070), and the Keystore path itself — it cannot run in a unit test, so it is verified
+on a device.
 
 **Retires:** nothing. This phase is additive.
 
