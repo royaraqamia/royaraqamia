@@ -71,5 +71,16 @@ export const NoteUpdateSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, { message: 'لا يوجد تغيير لحفظه' });
 
+/**
+ * A delete, which carries nothing but the write time its replay was queued
+ * with: the server compares it with the stored stamp so a delete older than
+ * the note it names is dropped instead of applied (ADR-0029). The body is
+ * optional, because a client that never queued one deletes with no time at all.
+ */
+export const NoteDeleteSchema = z.object({
+  updatedAt: z.string().optional(),
+});
+
 export type NoteWriteInput = z.infer<typeof NoteWriteSchema>;
 export type NoteUpdateInput = z.infer<typeof NoteUpdateSchema>;
+export type NoteDeleteInput = z.infer<typeof NoteDeleteSchema>;
