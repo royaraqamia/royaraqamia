@@ -1,0 +1,12 @@
+{
+  "name": "a-plan-outside-the-contract",
+  "body": {
+    "success": true,
+    "state": {
+      "plan": "gold",
+      "unlimited": false,
+      "expiresAt": null,
+      "counters": []
+    }
+  }
+}

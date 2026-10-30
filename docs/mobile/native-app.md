@@ -167,6 +167,10 @@ honest is:
 - any change to offline semantics updates the spec and fixtures first;
 - a screen that exists in one client and not the other is a listed gap, not a discovery.
 
+Each of the four is a check rather than a habit, and [two-clients.md](two-clients.md) is the page that
+states them: which command holds each one, what a pull request has to run, and the gaps they do not
+cover yet.
+
 ## Risks, and what is done about them
 
 | Risk                                | Consequence                                                                        | Mitigation                                                                                        |

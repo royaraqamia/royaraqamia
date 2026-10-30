@@ -14,6 +14,8 @@ CHANGELOG.md
 package.json
 backend/config/generated/app-version.ts
 docs/specs/surfaces.md
+# Written by `scripts/check-screens.mjs`; `npm run check:screens` compares bytes.
+docs/mobile/screens.md
 # Generated from `shared/tokens/tokens.json` by `scripts/generate-tokens.mjs`;
 # `npm run check:tokens` compares bytes, so Prettier must not rewrite them.
 app/tokens.css

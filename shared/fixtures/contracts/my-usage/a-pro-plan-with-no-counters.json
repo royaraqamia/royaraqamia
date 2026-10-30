@@ -1,0 +1,12 @@
+{
+  "name": "a-pro-plan-with-no-counters",
+  "body": {
+    "success": true,
+    "state": {
+      "plan": "pro",
+      "unlimited": true,
+      "expiresAt": "2026-12-01T00:00:00.000Z",
+      "counters": []
+    }
+  }
+}

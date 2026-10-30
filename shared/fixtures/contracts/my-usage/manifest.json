@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "contract": "MyUsageResponseSchema",
+  "module": "shared/contracts/plans.ts",
+  "kotlin": "android/app/src/main/kotlin/com/royaraqamia/app/contracts/generated/PlansContracts.kt",
+  "notes": "One response body per case, read by both clients' suites: shared/fixtures/__tests__/contract-fixtures.test.ts parses it with the Zod schema, and android/app/src/test/kotlin/com/royaraqamia/app/contracts/ContractFixturesTest.kt decodes it with the generated Kotlin type. A case is a line here and a file beside this one: deleting the file fails both suites because both read this manifest, and deleting the line fails both because both refuse a file the manifest does not list. Expectation is part of the fixture because the two clients must agree on which bodies are readable, not just on the readable ones.",
+  "cases": [
+    { "name": "a-free-plan-with-one-counter", "expect": "valid" },
+    { "name": "a-pro-plan-with-no-counters", "expect": "valid" },
+    { "name": "a-field-the-contract-does-not-know", "expect": "valid" },
+    { "name": "a-plan-outside-the-contract", "expect": "invalid" },
+    { "name": "a-state-that-is-missing", "expect": "invalid", "names": "state" }
+  ]
+}
