@@ -1,0 +1,22 @@
+{
+  "surface": "home",
+  "component": "shell-tab-bar",
+  "web": {
+    "file": "frontend/ui/navbar/bottom-tab-bar-copy.ts",
+    "export": "BOTTOM_TAB_BAR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/TabBarCopy.kt",
+    "object": "TabBarCopy"
+  },
+  "notes": {
+    "source": "The app chrome’s tab bar, in both clients (#647). The three destinations are the site’s own primary routes (`frontend/ui/navbar/route-kind.ts`), so their labels are the site’s labels rather than a second naming of the same screens. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component (`frontend/ui/navbar/BottomTabBar.tsx`) does not render — the site is the design the app is measured against."
+  },
+  "strings": {
+    "navLabel": "التَّنقُّل السُّفليّ",
+    "homeLabel": "الرَّئيسيَّة",
+    "communityLabel": "المجتمع",
+    "accountLabel": "حسابي"
+  }
+}
