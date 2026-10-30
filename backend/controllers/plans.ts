@@ -2,7 +2,11 @@ import { createUsageService } from '@/backend/config/plans';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { LocalUsageReportSchema, MyUsageResponseSchema } from '@/shared/contracts/plans';
+import {
+  LocalUsageReportSchema,
+  MyPlanResponseSchema,
+  MyUsageResponseSchema,
+} from '@/shared/contracts/plans';
 
 /**
  * The signed-in user's own counted actions: plan, each counter against its cap,
@@ -66,12 +70,16 @@ export async function reportLocalUsage(body: unknown): Promise<HttpResult> {
 /**
  * The account's plan page data: the current allowance and the activation
  * history, including the amount and method the operator recorded.
+ *
+ * Parsed rather than spread: the app decodes this body through a generated type,
+ * so a service that drifts from the contract fails here instead of on a device
+ * (ADR-0098).
  */
 export async function getMyPlan(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async (identity) => {
       const plan = await createUsageService().myPlan(identity.userId);
-      return jsonResult(200, { success: true, ...plan });
+      return jsonResult(200, MyPlanResponseSchema.parse({ success: true, ...plan }));
     },
     { whenFailed: { success: false, error: 'تعذّر تحميل بيانات الاشتراك.' } }
   );

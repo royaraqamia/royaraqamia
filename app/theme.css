@@ -38,6 +38,10 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* The card corner the account surfaces use. It existed here only as the
+     utility `rounded-2xl`, which Tailwind filled with its own 1rem default, so
+     the app had no token to match and drew 8dp (ADR-0098). */
+  --radius-2xl: calc(var(--radius) + 8px);
 
   /* Digits in read-only text use Aref Ruqaa's Latin numerals. The dedicated
      `Aref Ruqaa Digits` face is unicode-range-limited to U+0030-0039, so it

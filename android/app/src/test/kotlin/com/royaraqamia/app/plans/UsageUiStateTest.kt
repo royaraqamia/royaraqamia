@@ -10,11 +10,12 @@ import org.junit.Test
  *
  * The branch that matters is the one that is not an error: a missing session is a
  * sign-in prompt, not a failure, because a guest can act on it and cannot act on a
- * 500. Every other failure shares the site's one message and one retry.
+ * 500. Every other failure is the same state, and the card draws the site's one
+ * sentence and one retry for it.
  */
 class UsageUiStateTest {
     private val model =
-        UsageScreenModel(plan = "free", unlimited = false, expiresAt = null, counters = emptyList())
+        UsageScreenModel(plan = "free", unlimited = false, expiresAt = null, rows = emptyList())
 
     @Test
     fun `a read becomes the counters`() {
@@ -32,7 +33,7 @@ class UsageUiStateTest {
     @Test
     fun `an unreachable server is a retry`() {
         assertEquals(
-            UsageUiState.Failed(UsageCopy.FAILED),
+            UsageUiState.Failed,
             UsageUiState.from(ApiResult.Failure(ApiError.Network("no radio"))),
         )
     }
@@ -49,7 +50,7 @@ class UsageUiStateTest {
         for (error in failures) {
             assertEquals(
                 "a member acts the same way on $error",
-                UsageUiState.Failed(UsageCopy.FAILED),
+                UsageUiState.Failed,
                 UsageUiState.from(ApiResult.Failure(error)),
             )
         }

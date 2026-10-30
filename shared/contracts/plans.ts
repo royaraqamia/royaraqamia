@@ -251,6 +251,39 @@ export const MyUsageResponseSchema = z.object({
 
 export type MyUsageResponse = z.infer<typeof MyUsageResponseSchema>;
 
+/**
+ * One manual grant, as the body `GET /api/me/plan` carries it. The controller
+ * validates what it emits, so the app decodes the plan page through generated
+ * types instead of a hand-written mirror of the state (ADR-0098).
+ */
+export const PlanActivationPayloadSchema = z.object({
+  id: z.string().uuid(),
+  plan: z.enum(PLAN_IDS),
+  amountCents: z.number().int().nonnegative(),
+  currency: z.string(),
+  method: PlanActivationMethodSchema,
+  note: z.string().nullable(),
+  activatedAt: z.string(),
+  expiresAt: z.string(),
+});
+
+/**
+ * The body `GET /api/me/plan` returns: the current allowance, each owned-item cap
+ * against what the account holds, and every grant behind it.
+ *
+ * The plan page and the app's plan card both read this one route, so neither
+ * client decides which rows the surface has - the difference that let the app
+ * show counters without the caps (ADR-0098).
+ */
+export const MyPlanResponseSchema = z.object({
+  success: z.literal(true),
+  state: UsageStatePayloadSchema,
+  limits: OwnedItemStatesPayloadSchema,
+  activations: z.array(PlanActivationPayloadSchema),
+});
+
+export type MyPlanResponse = z.infer<typeof MyPlanResponseSchema>;
+
 export const UsageOutcomePayloadSchema = z.object({
   allowed: z.boolean(),
   duplicate: z.boolean(),
