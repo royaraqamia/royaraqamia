@@ -42,6 +42,24 @@ treating it as an external navigation, and the traversal back to the previous en
 restore of a URL that did not change. Without the marker Next would read a pop onto an entry it does
 not recognize as a reload (`handlePopState` in `next/dist/client/components/app-router.js`).
 
+## A link that dismisses its own overlay navigates after the entry goes
+
+Two writes to the history in one gesture, and their order decides whether either lands. A row in the
+`خدماتنا` sheet (or a guest prompt's sign-in button) closes the sheet and navigates: the close
+schedules the guard's traversal for the next task, the router's push has not committed by then, and
+the traversal lands on top of it and cancels it. Measured: the sheet closed and the URL never moved,
+on every entry, at every width.
+
+So the push waits instead of the pop. `whenGuardDropped()` (`overlay-back.ts`) resolves once the entry
+that close left behind is gone — the pop's own `popstate`, rather than a timer — and the navigation
+follows it. The order matters twice over: pushing first would leave the guard entry stranded behind
+the new page, and Back would then step onto a copy of the page it came from.
+
+`useDismissThenNavigate` (`frontend/ui/shared/dismiss-then-navigate.tsx`) is the one seam: the sheet's
+rows use it, and `SignInCta` grows a `dismiss` prop so every guest prompt closes the same way. A
+modified click (a new tab, a download) is not prevented. The wait has a 500 ms ceiling, so a link that
+is somehow still waiting cannot lose its navigation to a pop that never comes.
+
 ## Considered options
 
 - **Native asks the page before walking.** `MainActivity` would emit the Capacitor `backButton` event
@@ -72,3 +90,6 @@ not recognize as a reload (`handlePopState` in `next/dist/client/components/app-
 - **Picker sheets claim the press too.** `Sheet` backs the navbar services menu and the mobile pickers;
   a press closes them instead of leaving the page. Popovers, dropdown menus and selects are Radix
   popper panels and are untouched — they close on Escape and outside tap, and are not what Back is for.
+- **A selection inside an overlay leaves one clean history entry.** `e2e/services-menu-order.spec.ts`
+  taps a row, lands on the route and walks back to the page the sheet was opened over, which is the
+  same assertion the ordering above needs.

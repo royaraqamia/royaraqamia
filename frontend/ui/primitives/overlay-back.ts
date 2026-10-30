@@ -47,6 +47,16 @@ let ignoreNextPop = false;
 /** Drop timer for a guard entry left behind by the last overlay closing. */
 let dropTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Callers waiting for that drop, so they can navigate into a clean history. */
+const dropWaiters = new Set<() => void>();
+
+/**
+ * How long a navigation waits for the drop before giving up on it. The pop
+ * cannot be waited on forever: another overlay may still be open, or the entry
+ * may already be gone because the route changed under it.
+ */
+const DROP_WAIT_MS = 500;
+
 /** Sync timer, for a press whose overlay may or may not have closed. */
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -99,14 +109,61 @@ function dropGuard(): void {
     dropTimer = null;
     if (layers.length > 0) {
       sync();
+      settleDrop();
       return;
     }
     // A route change already moved past the entry; popping now would undo it.
-    if (window.location.href !== url) return;
-    if (readGuard() === null) return;
+    if (window.location.href !== url) {
+      settleDrop();
+      return;
+    }
+    if (readGuard() === null) {
+      settleDrop();
+      return;
+    }
     ignoreNextPop = true;
     window.history.back();
   }, 0);
+}
+
+/**
+ * Releases the waiters below: the guard entry is gone, or staying.
+ *
+ * A link that dismisses its overlay and navigates is two writes to the history in
+ * one gesture, and the order decides whether either lands. The close schedules
+ * `dropGuard`'s traversal for the next task; the router's push has not committed
+ * by then, so the traversal cancels it — the overlay closes and the page never
+ * changes. {@link whenGuardDropped} is what such a link waits on, so the pop
+ * happens first and the push lands in a history with the entry already gone.
+ */
+function settleDrop(): void {
+  for (const resolve of dropWaiters) resolve();
+  dropWaiters.clear();
+}
+
+/**
+ * Resolves once the entry a just-closed overlay left behind is gone.
+ *
+ * Call it in the click handler, before the close has been rendered: the entry is
+ * still there at that moment, which is what makes the wait meaningful. With no
+ * overlay entry on the history it resolves immediately, so it is also safe on a
+ * link that is nowhere near an overlay.
+ */
+export function whenGuardDropped(): Promise<void> {
+  if (typeof window === 'undefined' || readGuard() === null) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      dropWaiters.delete(finish);
+      resolve();
+    };
+
+    dropWaiters.add(finish);
+    setTimeout(finish, DROP_WAIT_MS);
+  });
 }
 
 function scheduleSync(): void {
@@ -125,6 +182,7 @@ function scheduleSync(): void {
 function handlePopState(): void {
   if (ignoreNextPop) {
     ignoreNextPop = false;
+    settleDrop();
     return;
   }
   if (readGuard() !== null) return;
@@ -209,6 +267,7 @@ export function resetOverlayBackForTests(): void {
   if (syncTimer !== null) clearTimeout(syncTimer);
   dropTimer = null;
   syncTimer = null;
+  settleDrop();
   if (typeof window !== 'undefined') {
     listening = false;
     window.removeEventListener('popstate', handlePopState);

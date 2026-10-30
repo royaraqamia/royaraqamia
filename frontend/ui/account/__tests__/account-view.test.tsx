@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
   session: {
@@ -17,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/frontend/state/session-provider', () => ({
   useSession: () => mocks.session,
 }));
+
+// The guest gate's CTA dismisses the prompt through the app router.
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 vi.mock('@/frontend/shared/constants', () => ({
   getWhatsAppUrl: () => 'https://wa.me/963968478904',
@@ -110,9 +114,14 @@ describe('AccountView', () => {
     fireEvent.click(screen.getByRole('button', { name: /التَّطبيقات المتَّصلة بالـ MCP/ }));
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toHaveAttribute(
-      'href',
-      '/auth/login?redirect=%2Faccount%2Fconnected-apps'
+    const cta = screen.getByRole('link', { name: /تسجيل الدُّخول/ });
+    expect(cta).toHaveAttribute('href', '/auth/login?redirect=%2Faccount%2Fconnected-apps');
+
+    // The prompt dismisses and the sign-in page is pushed. Done the other way
+    // round the push lost to the history entry the dismissal released.
+    fireEvent.click(cta);
+    await waitFor(() =>
+      expect(router.push).toHaveBeenCalledWith('/auth/login?redirect=%2Faccount%2Fconnected-apps')
     );
   });
 

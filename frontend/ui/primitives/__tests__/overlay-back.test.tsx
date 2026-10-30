@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resetOverlayBackForTests, useOverlayBack } from '../overlay-back';
+import { resetOverlayBackForTests, useOverlayBack, whenGuardDropped } from '../overlay-back';
 
 /**
  * The Android shell answers the back press by walking the WebView's history, so
@@ -128,5 +128,41 @@ describe('useOverlayBack', () => {
     });
 
     expect(onOpenChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('whenGuardDropped', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+  });
+
+  afterEach(() => {
+    resetOverlayBackForTests();
+  });
+
+  it('resolves at once when no overlay entry is on the history', async () => {
+    await expect(whenGuardDropped()).resolves.toBeUndefined();
+  });
+
+  /**
+   * The bug this exists for: a link that closes its overlay and navigates in the
+   * same click lost the navigation, because the close's traversal landed on the
+   * router's uncommitted push. The navigation waits for the entry to go instead.
+   */
+  it('holds a navigation until the entry the close left behind is gone', async () => {
+    const { rerender } = renderHook(
+      ({ open }: { open: boolean }) => useOverlayBack({ open, onOpenChange: () => undefined }),
+      { initialProps: { open: true } }
+    );
+
+    expect(guard()).toBe(1);
+
+    const navigated = vi.fn();
+    void whenGuardDropped().then(navigated);
+
+    rerender({ open: false });
+    await waitFor(() => expect(guard()).toBeUndefined());
+    await waitFor(() => expect(navigated).toHaveBeenCalledTimes(1));
+    expect(window.location.pathname).toBe('/');
   });
 });

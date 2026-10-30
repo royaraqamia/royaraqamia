@@ -243,7 +243,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                     <p className="text-sm font-bold text-foreground">
                       سجِّل الدُّخول لمتابعة إشعاراتك
                     </p>
-                    <SignInCta href={loginHref} onClick={() => setIsOpen(false)} className="mt-4" />
+                    <SignInCta href={loginHref} dismiss={() => setIsOpen(false)} className="mt-4" />
                   </div>
                 ) : isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

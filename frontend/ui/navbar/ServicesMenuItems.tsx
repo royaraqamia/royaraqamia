@@ -7,6 +7,7 @@ import { cn } from '@/frontend/shared/cn';
 
 import type { NavLink } from './NavDropdown';
 import { useServicesOrder } from './use-services-order';
+import { useDismissThenNavigate } from '../shared/dismiss-then-navigate';
 
 interface ServicesMenuItemsProps {
   subItems?: NavLink[];
@@ -31,6 +32,7 @@ const DISABLED_ROW_CLASSES =
 export function ServicesMenuItems({ subItems, onSelect, handleHashClick }: ServicesMenuItemsProps) {
   const { orderedItems, listRef, draggingHref, status, getRowProps, getHandleProps } =
     useServicesOrder(subItems ?? []);
+  const navigate = useDismissThenNavigate(onSelect);
 
   return (
     <>
@@ -63,8 +65,8 @@ export function ServicesMenuItems({ subItems, onSelect, handleHashClick }: Servi
                 href={sub.href}
                 className={ROW_CLASSES}
                 role="menuitem"
-                onClick={() => {
-                  onSelect();
+                onClick={(event) => {
+                  navigate(event, sub.href);
                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }}
               >
