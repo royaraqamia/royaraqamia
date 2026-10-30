@@ -77,6 +77,20 @@ project URL from this machine's `android/local.properties`; a release APK contai
 four routes and the inventory does not record a surface as native until all of it is. Phase 2's first
 real screen is still owed, with the rest of its acceptance criteria.
 
+**Wired today (#647, the shell).** `shell/ShellActivity` is the launcher: the splash theme hands over
+to a Compose frame drawn from the tokens, RTL at the root, with the app's own tab bar
+(`shell/ShellTabBar.kt` — the site's three primary routes, its labels through
+`shared/copy/shell-tab-bar.json` and its glyphs through `shared/icons/icons.json`, listed as a pair in
+`docs/mobile/parity.json`). The route model is the site's own grammar (`shell/Routes.kt`,
+`shell/DeepLink.kt`, `shell/ShellBackStack.kt`) and is unit-tested rather than asserted, including the
+back rule ADR-0082 states: only home closes the app. A destination whose surface is still the
+document hands the route over (`shell/WebSurface.kt`) and the shell stays underneath it, so back from
+a web surface lands on the app's own frame — [ADR-0105](../adr/0105-the-shell-launches-and-the-document-is-a-destination.md)
+records that interim and the criterion it leaves to #662. `shell/NativeSurfaces.kt` is the empty set
+that decides which routes are drawn instead of handed over; a surface's port is what puts a route in
+it. Still owed from this slice: the top bar and the `خدماتنا` menu, the Aref Ruqaa assertion on a
+number the shell draws, and the cold-start budget measured on a mid-range device.
+
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
 the same moment, and ends the session only when the server _refuses_ the token — a refresh that never

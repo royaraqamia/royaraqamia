@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { House, Users, UserRound, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { BOTTOM_TAB_BAR_COPY } from './bottom-tab-bar-copy';
 import { isPrimaryRoute } from './route-kind';
 
 interface BottomTab {
@@ -17,19 +18,19 @@ interface BottomTab {
 const TABS: BottomTab[] = [
   {
     href: '/',
-    label: 'الرَّئيسيَّة',
+    label: BOTTOM_TAB_BAR_COPY.homeLabel,
     icon: House,
     isActive: (pathname) => pathname === '/',
   },
   {
     href: '/community',
-    label: 'المجتمع',
+    label: BOTTOM_TAB_BAR_COPY.communityLabel,
     icon: Users,
     isActive: (pathname) => pathname === '/community' || pathname.startsWith('/community/'),
   },
   {
     href: '/account',
-    label: 'حسابي',
+    label: BOTTOM_TAB_BAR_COPY.accountLabel,
     icon: UserRound,
     isActive: (pathname) => pathname.startsWith('/account'),
   },
@@ -53,7 +54,7 @@ export function BottomTabBar() {
   return (
     <nav
       data-bottom-tabbar
-      aria-label="التَّنقُّل السُّفليّ"
+      aria-label={BOTTOM_TAB_BAR_COPY.navLabel}
       className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-full lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
     >
       <ul className="mx-auto flex max-w-md items-stretch lg:max-w-none">

@@ -25,6 +25,29 @@
         { "name": "SignedOut", "copy": "signInTitle" },
         { "name": "Failed", "copy": "failed" }
       ]
+    },
+    {
+      "id": "shell-tab-bar",
+      "surface": "home",
+      "issue": "#647",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/navbar/BottomTabBar.tsx",
+        "copyModule": "frontend/ui/navbar/bottom-tab-bar-copy.ts",
+        "copyExport": "BOTTOM_TAB_BAR_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellTabBar.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellTab.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/TabBarCopy.kt",
+        "copyObject": "TabBarCopy"
+      },
+      "copySource": "shared/copy/shell-tab-bar.json",
+      "states": [
+        { "name": "Home", "copy": "homeLabel" },
+        { "name": "Community", "copy": "communityLabel" },
+        { "name": "Account", "copy": "accountLabel" }
+      ]
     }
   ]
 }

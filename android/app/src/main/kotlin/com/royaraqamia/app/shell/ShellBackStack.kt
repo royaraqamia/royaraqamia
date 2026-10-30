@@ -49,6 +49,16 @@ class ShellBackStack(start: String = Routes.HOME) {
         entries[entries.lastIndex] = target
     }
 
+    /**
+     * Start again at [target]: a link that arrived while the app was already
+     * running replaces the stack, because the route it names is a new entry point
+     * rather than somewhere the user walked to.
+     */
+    fun reset(target: String) {
+        entries.clear()
+        entries.add(target)
+    }
+
     /** `true` when the back gesture was consumed and the app stays open. */
     fun back(): Boolean {
         if (entries.size > 1) {

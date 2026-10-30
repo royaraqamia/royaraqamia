@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   constantName,
   generate,
+  packageOf,
   placeholders,
   renderNative,
   renderWeb,
@@ -21,7 +22,10 @@ const source = {
   surface: 'plan',
   component: 'plan-card',
   web: { file: 'web/copy.ts', export: 'PLAN_CARD_COPY' },
-  native: { file: 'android/Copy.kt', object: 'PlanCardCopy' },
+  native: {
+    file: 'android/app/src/main/kotlin/com/royaraqamia/app/plans/Copy.kt',
+    object: 'PlanCardCopy',
+  },
   strings: {
     planFree: 'a',
     signInTitle: 'b',
@@ -61,12 +65,25 @@ describe('the two outputs', () => {
     const native = renderNative(source);
 
     expect(web.file).toBe('web/copy.ts');
-    expect(native.file).toBe('android/Copy.kt');
+    expect(native.file).toBe('android/app/src/main/kotlin/com/royaraqamia/app/plans/Copy.kt');
     for (const [key, value] of Object.entries(source.strings)) {
       expect(web.contents).toContain(`${key}: '${value}'`);
       expect(native.contents).toContain(`const val ${constantName(key)} = "${value}"`);
       expect(placeholders(value)).toEqual(placeholders(value));
     }
+  });
+
+  it('put the app object in the package the file lives in', () => {
+    // Two surfaces now generate copy, in two packages: a hard-coded `plans`
+    // would have emitted the shell's tab bar into the plan card's package.
+    expect(packageOf('android/app/src/main/kotlin/com/royaraqamia/app/plans/Copy.kt')).toBe(
+      'com.royaraqamia.app.plans'
+    );
+    expect(packageOf('android/app/src/main/kotlin/com/royaraqamia/app/shell/Copy.kt')).toBe(
+      'com.royaraqamia.app.shell'
+    );
+    expect(renderNative(source).contents).toContain('package com.royaraqamia.app.plans');
+    expect(() => packageOf('android/Copy.kt')).toThrow();
   });
 
   it('name each other as the source of the strings', () => {

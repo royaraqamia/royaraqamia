@@ -245,6 +245,21 @@ describe('a pair that drifted', () => {
     });
     expect(errors.join('\n')).toContain('lists Star, which no ported component draws');
   });
+
+  it('does not read the icon type as a glyph', () => {
+    // The site's tab bar imports `type LucideIcon` for its own prop, which draws
+    // nothing; only the three glyphs beside it are design (#647).
+    const errors = run({
+      extraFiles: {
+        'web/plan-view.tsx':
+          "import { Lock, type LucideIcon } from 'lucide-react';\n" +
+          "import { PLAN_CARD_COPY } from './plan-card-copy';\n" +
+          'const a = PLAN_CARD_COPY.loadingLabel, b = PLAN_CARD_COPY.title, c = PLAN_CARD_COPY.signInTitle, d = PLAN_CARD_COPY.failed;',
+        'android/PlanCard.kt': 'Icon(LucideVectors.Lock)',
+      },
+    });
+    expect(errors.join('\n')).not.toContain('LucideIcon');
+  });
 });
 
 describe('reading a Kotlin state file', () => {
