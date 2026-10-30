@@ -25,13 +25,18 @@ object RoyFonts {
     /**
      * Aref Ruqaa, the face read-only numbers take (`--font-digits`).
      *
-     * `res/font/aref_ruqaa_digits.ttf` is a digit-only subset, so this family draws
-     * the ASCII numerals and a box for anything else. Apply it through
-     * [RoyTypeScale.digits] to a run that is only numerals, never to a whole
-     * sentence: the Arabic around a number stays in [ui], which is the point of the
-     * subset.
+     * `res/font/aref_ruqaa_digits.ttf` is a digit-only subset, so this family is
+     * the subset *and* the UI face behind it: a count arrives as `1,200`, and the
+     * comma is not in the subset at all. The stylesheet gets the same result from
+     * `unicode-range: U+30-39`, which lets the comma fall through to `--font-sans`;
+     * Compose has no `unicode-range`, so the fallback is the family's second font
+     * and the platform's own font resolution does the rest.
+     *
+     * Apply it through [RoyTypeScale.digits] to a run that is only numerals and
+     * their separators, never to a whole sentence: the Arabic around a number stays
+     * in [ui], which is the point of the subset.
      */
-    val digits = FontFamily(Font(R.font.aref_ruqaa_digits))
+    val digits = FontFamily(Font(R.font.aref_ruqaa_digits), Font(R.font.ibm_plex_sans_arabic_regular))
 }
 
 /**

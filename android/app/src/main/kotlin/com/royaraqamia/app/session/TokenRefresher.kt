@@ -5,8 +5,6 @@ import com.royaraqamia.app.net.HttpTransport
 import com.royaraqamia.app.net.Transport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.IOException
 
@@ -35,15 +33,6 @@ fun interface TokenRefresher {
     suspend fun refresh(refreshToken: String): RefreshOutcome
 }
 
-@Serializable
-private data class RefreshRequest(@SerialName("refresh_token") val refreshToken: String)
-
-@Serializable
-private data class RefreshResponse(
-    @SerialName("access_token") val accessToken: String,
-    @SerialName("refresh_token") val refreshToken: String,
-)
-
 /**
  * The GoTrue refresh call (#501), through the app's one HTTP client.
  *
@@ -68,7 +57,7 @@ class SupabaseTokenRefresher(
                 method = "POST",
                 url = "${authUrl.trimEnd('/')}/token?grant_type=refresh_token",
                 headers = mapOf("apikey" to apiKey, "Content-Type" to "application/json"),
-                body = ContractCodec.json.encodeToString(RefreshRequest(refreshToken)),
+                body = ContractCodec.json.encodeToString(GoTrueRefreshRequest(refreshToken)),
             )
         } catch (error: IOException) {
             return@withContext RefreshOutcome.Unreachable(error.message ?: "unreachable")
@@ -82,8 +71,8 @@ class SupabaseTokenRefresher(
         }
 
         try {
-            val parsed = ContractCodec.json.decodeFromString<RefreshResponse>(response.body)
-            RefreshOutcome.Renewed(TokenPair(parsed.accessToken, parsed.refreshToken))
+            val parsed = ContractCodec.json.decodeFromString<GoTrueSession>(response.body)
+            RefreshOutcome.Renewed(parsed.asPair())
         } catch (_: Exception) {
             RefreshOutcome.Unreachable("auth answered a body this client cannot read")
         }
