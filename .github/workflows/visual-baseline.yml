@@ -1,0 +1,75 @@
+name: 'Visual Baseline'
+
+# `npm run check:tokens` proves the committed stylesheet and the app's theme are
+# the token generator's own output. This proves the browser resolves that output
+# to the values the design records: every generated custom property, and one real
+# surface wearing it (ADR-0096, #666).
+#
+# It needs a production build — Playwright's `webServer` performs it because
+# GitHub sets CI — so it runs on the files that can move a rendered token rather
+# than on every pull request.
+#
+# NOTE: a path-filtered workflow reports no check when nothing matches, so this
+# must not be made a required status check on `main`.
+
+on:
+  pull_request:
+    paths:
+      - 'shared/tokens/**'
+      - 'app/tokens.css'
+      - 'app/theme.css'
+      - 'app/global.css'
+      - 'app/quran/**'
+      - 'frontend/ui/quran/**'
+      - 'frontend/shared/fonts.ts'
+      - 'e2e/visual-baseline.spec.ts'
+      - 'e2e/visual-baseline.json'
+      - 'playwright.config.ts'
+      - '.github/workflows/visual-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: The tokens resolve as recorded
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # The spec records its own viewport, so one project is enough; it is named
+      # so a future project cannot run the same baseline at a second size.
+      - name: Compare against the committed baseline
+        run: npx playwright test e2e/visual-baseline.spec.ts --project=existing-tests
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-baseline-failure
+          path: |
+            node_modules/.playwright/test-results/
+            node_modules/.playwright/report/
+          retention-days: 7

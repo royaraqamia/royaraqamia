@@ -57,6 +57,10 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
   the `E2E: Worker Swap` workflow, on pull requests that touch the worker, the update watcher or
   `generate-icons.mjs`. Note that `CI=true` also makes `prebuild` write
   `backend/config/generated/app-version.ts`; restore it (`git checkout -- backend/config/generated`) before committing.
+- `npx playwright test e2e/visual-baseline.spec.ts` — what the generated tokens resolve to in a
+  browser, against `e2e/visual-baseline.json` (ADR-0096). `npm run visual:baseline` re-records it
+  after an intended change; the `Visual Baseline` workflow runs it on pull requests that touch the
+  tokens, the stylesheets that consume them or the sura index.
 
 ## Load testing
 

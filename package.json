@@ -25,6 +25,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "npx playwright test",
+  "visual:baseline": "cross-env VISUAL_BASELINE=update npx playwright test e2e/visual-baseline.spec.ts --project=existing-tests",
     "load-test": "node scripts/load-test.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "fonts:subset": "node scripts/subset-fonts.mjs",
