@@ -21,7 +21,12 @@ import {
   toIsoDate,
 } from '../news/lib.mjs';
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
-import { narrowCandidates, preparePersonalDigests } from '../news/personal-digests.mjs';
+import {
+  narrowCandidates,
+  preparePersonalDigests,
+  readerCandidates,
+} from '../news/personal-digests.mjs';
+import { collectPrivateCandidates } from '../news/fetch-candidates.mjs';
 import { publishDigest } from '../news/publish-digest.mjs';
 import { publishPersonalDigest } from '../news/publish-personal-digest.mjs';
 
@@ -521,6 +526,109 @@ describe('approved sources', () => {
 
     expect(toApprovedSource({ ...base[0], category: 'sport' })).toBeNull();
     expect(toApprovedSource({ ...base[0], url: 'javascript:alert(1)' })).toBeNull();
+  });
+});
+
+describe('private sources', () => {
+  const SOURCE = {
+    id: 'private-1',
+    userId: 'user-1',
+    name: 'مدونة',
+    url: 'https://example.com/rss',
+    kind: 'feed',
+    category: 'tech',
+    region: 'world',
+    tier: 2,
+    freshHours: null,
+    failureCount: 0,
+  };
+  const NOW = Date.parse('2026-10-23T12:00:00Z');
+
+  it('fetches a feed two readers hold once, and gives each its own items', async () => {
+    const fetchImpl = vi.fn(async () => RSS);
+
+    const { items, health } = await collectPrivateCandidates({
+      sources: [SOURCE, { ...SOURCE, id: 'private-2', userId: 'user-2' }],
+      fetchImpl,
+      now: NOW,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(items.map((item) => item.userId)).toEqual(['user-1', 'user-2']);
+    expect(items.map((item) => item.sourceId)).toEqual(['private-1', 'private-2']);
+    expect(health).toEqual([
+      { id: 'private-1', ok: true, error: null },
+      { id: 'private-2', ok: true, error: null },
+    ]);
+  });
+
+  it('reports a failure against every reader who holds the feed', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error('HTTP 403');
+    });
+
+    const { items, health } = await collectPrivateCandidates({
+      sources: [SOURCE, { ...SOURCE, id: 'private-2', userId: 'user-2' }],
+      fetchImpl,
+      now: NOW,
+    });
+
+    expect(items).toEqual([]);
+    expect(health).toEqual([
+      { id: 'private-1', ok: false, error: 'HTTP 403' },
+      { id: 'private-2', ok: false, error: 'HTTP 403' },
+    ]);
+  });
+
+  it('reads a Telegram channel through its preview', async () => {
+    const fetchImpl = vi.fn(
+      async () => `<html><body><div class="tgme_widget_message" data-post="ch/1">
+        <div class="tgme_widget_message_text">خبر</div>
+        <time datetime="2026-10-23T06:00:00+00:00"></time></div></body></html>`
+    );
+
+    const { items } = await collectPrivateCandidates({
+      sources: [{ ...SOURCE, kind: 'telegram', url: 'https://t.me/s/ch' }],
+      fetchImpl,
+      now: NOW,
+    });
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe('https://t.me/ch/1');
+  });
+});
+
+describe('a reader’s candidate list', () => {
+  const sharedItems = [
+    { id: 'a:1', url: 'https://a.example/1', sourceId: 'a' },
+    { id: 'b:1', url: 'https://b.example/1', sourceId: 'b' },
+  ];
+  const privateItems = [
+    { id: 'p:1', url: 'https://p.example/1', sourceId: 'p', userId: 'user-1' },
+    // The same story as a catalogue item, republished on a private feed.
+    { id: 'p:2', url: 'https://a.example/1', sourceId: 'p', userId: 'user-1' },
+  ];
+
+  it('adds only this reader’s private items, after their selection', () => {
+    expect(
+      readerCandidates({
+        shared: sharedItems,
+        privateItems,
+        userId: 'user-1',
+        sourceIds: ['a'],
+      }).map((item) => item.id)
+    ).toEqual(['a:1', 'p:1']);
+  });
+
+  it('never hands another reader’s private items to this one', () => {
+    expect(
+      readerCandidates({
+        shared: sharedItems,
+        privateItems,
+        userId: 'user-2',
+        sourceIds: [],
+      }).map((item) => item.id)
+    ).toEqual(['a:1', 'b:1']);
   });
 });
 

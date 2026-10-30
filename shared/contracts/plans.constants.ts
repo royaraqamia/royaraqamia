@@ -140,6 +140,7 @@ export const VISITOR_ITEM_CAPS: Record<OwnedItemKey, number> = {
 export const PLAN_QUOTAS = {
   newsCards: 'news.story.cards',
   newsSources: 'news.sources',
+  newsPrivateSources: 'news.private.sources',
 } as const;
 
 export type PlanQuotaKey = (typeof PLAN_QUOTAS)[keyof typeof PLAN_QUOTAS];

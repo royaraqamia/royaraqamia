@@ -39,10 +39,14 @@ type RequestSelectRow = Pick<
   | 'created_at'
   | 'reviewed_at'
   | 'source_id'
+  | 'user_source_id'
 >;
 
 const REQUEST_COLUMNS =
-  'id, url, name, status, kind, resolved_url, failure, failure_detail, attempts, resolved_at, category, region, tier, note, created_at, reviewed_at, source_id';
+  'id, url, name, status, kind, resolved_url, failure, failure_detail, attempts, resolved_at, category, region, tier, note, created_at, reviewed_at, source_id, user_source_id';
+
+/** The three states that mean "the system or an Admin still owes this reader an answer". */
+const OPEN_REQUEST_STATUSES = ['resolving', 'ready', 'needs_review'] as const;
 
 /**
  * PostgREST reports a violation only as text (`duplicate key value violates
@@ -80,6 +84,7 @@ function mapRequest(row: RequestSelectRow): NewsSourceRequest {
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at,
     sourceId: row.source_id,
+    userSourceId: row.user_source_id,
   };
 }
 
@@ -87,23 +92,24 @@ export function createNewsSourceRequestsRepository(
   supabase: SupabaseClient<Database>
 ): NewsSourceRequestsRepository {
   return {
-    async countPending(userId: string): Promise<number> {
+    async countOpen(userId: string): Promise<number> {
       const { count, error } = await supabase
         .from('news_source_requests')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('status', 'pending');
+        .in('status', OPEN_REQUEST_STATUSES);
 
       if (error) dbError(error);
       return count ?? 0;
     },
 
-    async findPendingIdByUrl(url: string): Promise<string | null> {
+    async findOpenIdByUrl(userId: string, url: string): Promise<string | null> {
       const { data, error } = await supabase
         .from('news_source_requests')
         .select('id')
+        .eq('user_id', userId)
         .eq('url', url)
-        .eq('status', 'pending')
+        .in('status', OPEN_REQUEST_STATUSES)
         .maybeSingle();
 
       if (error) dbError(error);
@@ -185,6 +191,7 @@ export function createNewsSourceRequestsRepository(
         p_note: input.note,
         p_reviewed_by: input.reviewedBy,
         p_kind: input.kind,
+        p_destination: input.destination,
       });
 
       if (error) throw error;

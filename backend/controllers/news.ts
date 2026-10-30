@@ -1,6 +1,7 @@
 import {
   createNewsCatalogueFor,
   createNewsPreferencesServiceFor,
+  createNewsPrivateSourcesServiceFor,
   createNewsSourceRequestsServiceFor,
 } from '@/backend/config/news';
 import { createUsageService } from '@/backend/config/plans';
@@ -98,6 +99,42 @@ export async function getMyNewsSourceRequests(): Promise<HttpResult> {
       return jsonResult(200, { success: true, requests });
     },
     { mapError: messageError(500, 'تعذّر تحميل طلباتك.') }
+  );
+}
+
+/**
+ * The feeds this reader added (ADR-0106): their own list, with the health the
+ * digest fetch reported, and the plan's ceiling.
+ *
+ * The ceiling travels with the list because it is the one place a reader has to
+ * see "1 من 1" before they try to add a second.
+ */
+export async function getMyNewsPrivateSources(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const summary = await createNewsPrivateSourcesServiceFor(supabase).list(userId);
+      return jsonResult(200, { success: true, ...summary });
+    },
+    { mapError: messageError(500, 'تعذّر تحميل مصادرك.') }
+  );
+}
+
+/** Removes one of the reader's own sources; the row is theirs by policy. */
+export async function deleteMyNewsPrivateSource(id: string, headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      if (!id) return jsonResult(404, { success: false, error: 'هذا المصدر غير موجود.' });
+
+      await createNewsPrivateSourcesServiceFor(supabase).remove(userId, id);
+      return jsonResult(200, { success: true });
+    },
+    {
+      mapError: (error) => serviceErrorResponse(error, 'Failed to remove a private news source'),
+    }
   );
 }
 

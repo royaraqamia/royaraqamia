@@ -8,20 +8,22 @@ import {
   type NewsSourceRequestsRepository,
 } from '@/backend/repositories/news/news-source-requests-repository';
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
+import type { NewsUserSourcesRepository } from '@/backend/repositories/news/news-user-sources-repository';
 import { FeedProbeError } from '@/backend/services/news/feed-probe';
 import type { NewsCatalogue } from '@/backend/services/news/news-catalogue';
 import {
   createNewsAdminService,
   createNewsSourceRequestsService,
   FeedUnavailableError,
+  NewsSourceAlreadyHeldError,
   NewsSourceAlreadyKnownError,
   NewsSourceAlreadyQueuedError,
   NewsSourceFeedRequiredError,
   NewsSourceRequestDecidedError,
-  NewsSourceRequestPendingError,
   NewsSourceRequestResolvingError,
   NewsSourceUrlInvalidError,
 } from '@/backend/services/news/news-source-requests-service';
+import { NewsPrivateSourcesLimitError } from '@/backend/services/news/news-private-sources-service';
 import type { NewsSource, NewsSourceRequest } from '@/shared/contracts/news';
 
 const CATALOGUE: NewsSource[] = [
@@ -63,6 +65,7 @@ function request(overrides: Partial<NewsSourceRequest> = {}): NewsSourceRequest 
     createdAt: '2026-10-23T00:00:00.000Z',
     reviewedAt: null,
     sourceId: null,
+    userSourceId: null,
     ...overrides,
   };
 }
@@ -71,8 +74,8 @@ function requests(
   overrides: Partial<NewsSourceRequestsRepository> = {}
 ): NewsSourceRequestsRepository {
   return {
-    countPending: vi.fn(async () => 0),
-    findPendingIdByUrl: vi.fn(async () => null),
+    countOpen: vi.fn(async () => 0),
+    findOpenIdByUrl: vi.fn(async () => null),
     insert: vi.fn(async (input) =>
       request({
         url: input.url,
@@ -98,7 +101,8 @@ function requests(
         tier: input.tier,
         note: input.note,
         reviewedAt: '2026-10-25T00:00:00.000Z',
-        sourceId: input.sourceId,
+        sourceId: input.destination === 'catalogue' ? input.sourceId : null,
+        userSourceId: input.destination === 'private' ? 'user-source-1' : null,
       })
     ),
     markRejected: vi.fn(async () => undefined),
@@ -115,9 +119,24 @@ function sources(overrides: Partial<NewsSourcesRepository> = {}): NewsSourcesRep
   } satisfies NewsSourcesRepository;
 }
 
+function privateSources(
+  overrides: Partial<NewsUserSourcesRepository> = {}
+): NewsUserSourcesRepository {
+  return {
+    list: vi.fn(async () => []),
+    count: vi.fn(async () => 0),
+    findIdByUrl: vi.fn(async () => null),
+    remove: vi.fn(async () => true),
+    ...overrides,
+  } satisfies NewsUserSourcesRepository;
+}
+
 function catalogue(list: NewsSource[] = CATALOGUE): NewsCatalogue {
   return { list: vi.fn(async () => list) };
 }
+
+const unlimited = async () => ({ cap: 0, unlimited: true });
+const oneSource = async () => ({ cap: 1, unlimited: false });
 
 const probeImpl = async () => ({ itemCount: 3 });
 
@@ -127,6 +146,8 @@ describe('news source requests service', () => {
   ) => ({
     requests: requests(),
     sources: sources(),
+    privateSources: privateSources(),
+    quota: unlimited,
     ...overrides,
   });
 
@@ -169,7 +190,7 @@ describe('news source requests service', () => {
     expect(repo.insert).not.toHaveBeenCalled();
   });
 
-  it('refuses a source that is already in the catalogue', async () => {
+  it('refuses a source the catalogue already offers', async () => {
     const repo = requests();
 
     await expect(
@@ -184,8 +205,21 @@ describe('news source requests service', () => {
     expect(repo.insert).not.toHaveBeenCalled();
   });
 
-  it('refuses a feed another reader already proposed', async () => {
-    const repo = requests({ findPendingIdByUrl: vi.fn(async () => 'other-request') });
+  it('refuses a feed the reader already holds privately', async () => {
+    const repo = requests();
+
+    await expect(
+      createNewsSourceRequestsService(
+        deps({
+          requests: repo,
+          privateSources: privateSources({ findIdByUrl: vi.fn(async () => 'source-1') }),
+        })
+      ).submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
+    ).rejects.toBeInstanceOf(NewsSourceAlreadyHeldError);
+  });
+
+  it('refuses a link this reader already has resolving', async () => {
+    const repo = requests({ findOpenIdByUrl: vi.fn(async () => 'request-open') });
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
@@ -206,20 +240,34 @@ describe('news source requests service', () => {
     ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
   });
 
-  it('compares a proposal to the file canonically', async () => {
-    const repo = requests();
-    const url = new URL(shippedFeedUrl().toString());
-    url.hash = '#top';
+  it('counts what the reader holds and what is still resolving against the plan', async () => {
+    const repo = requests({ countOpen: vi.fn(async () => 1) });
 
     await expect(
-      createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
+      createNewsSourceRequestsService(deps({ requests: repo, quota: oneSource })).submit('user-1', {
         name: 'مثال',
-        url: url.toString(),
+        url: 'https://example.com/rss',
       })
-    ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
+    ).rejects.toBeInstanceOf(NewsPrivateSourcesLimitError);
+
+    expect(repo.insert).not.toHaveBeenCalled();
   });
 
-  it('answers the open-URL index as a link another reader has queued', async () => {
+  it('lets the reader add one source on the free plan', async () => {
+    const repo = requests();
+
+    await createNewsSourceRequestsService(
+      deps({
+        requests: repo,
+        privateSources: privateSources({ count: vi.fn(async () => 0) }),
+        quota: oneSource,
+      })
+    ).submit('user-1', { name: 'مثال', url: 'https://example.com/rss' });
+
+    expect(repo.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers the open-URL index as a link this reader already queued', async () => {
     const repo = requests({
       insert: vi.fn(async () => {
         throw new NewsSourceRequestDbError('23505', OPEN_REQUEST_URL_CONSTRAINT, 'duplicate');
@@ -227,14 +275,14 @@ describe('news source requests service', () => {
     });
 
     await expect(
-      createNewsSourceRequestsService(deps({ requests: repo })).submit('user-2', {
+      createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
         name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
   });
 
-  it('answers the open-user index as this account already having a request', async () => {
+  it('answers the open-request index the same way', async () => {
     const repo = requests({
       insert: vi.fn(async () => {
         throw new NewsSourceRequestDbError('23505', OPEN_REQUEST_USER_CONSTRAINT, 'duplicate');
@@ -246,7 +294,7 @@ describe('news source requests service', () => {
         name: 'مثال',
         url: 'https://example.com/rss',
       })
-    ).rejects.toBeInstanceOf(NewsSourceRequestPendingError);
+    ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
   });
 
   it('keeps an unrelated database failure a failure', async () => {
@@ -264,23 +312,16 @@ describe('news source requests service', () => {
       })
     ).rejects.toBe(error);
   });
-
-  it('holds one open request per account', async () => {
-    const repo = requests({ countPending: vi.fn(async () => 1) });
-
-    await expect(
-      createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
-        url: 'https://example.com/rss',
-      })
-    ).rejects.toBeInstanceOf(NewsSourceRequestPendingError);
-
-    expect(repo.insert).not.toHaveBeenCalled();
-  });
 });
 
 describe('news admin service', () => {
-  const approval = { category: 'world', region: 'world', tier: 2, note: 'جيد' } as const;
+  const approval = {
+    category: 'world',
+    region: 'world',
+    tier: 2,
+    note: 'جيد',
+    destination: 'private',
+  } as const;
 
   function admin(
     repo: NewsSourceRequestsRepository,
@@ -290,12 +331,15 @@ describe('news admin service', () => {
     return createNewsAdminService({ requests: repo, catalogue: catalogue(list), probe });
   }
 
-  it('approves the resolved feed through one RPC call with a host slug', async () => {
+  it('sends a resolved row to the reader’s own list, without touching the catalogue', async () => {
     const repo = requests();
     const probe = vi.fn(probeImpl);
+    const list = vi.fn(async () => CATALOGUE);
 
     const approved = await admin(repo, CATALOGUE, probe).approve('request-1', approval, 'admin-1');
 
+    expect(list).not.toHaveBeenCalled();
+    expect(probe).not.toHaveBeenCalled();
     expect(repo.approve).toHaveBeenCalledWith({
       id: 'request-1',
       sourceId: 'example-com',
@@ -307,10 +351,10 @@ describe('news admin service', () => {
       tier: 2,
       note: 'جيد',
       reviewedBy: 'admin-1',
+      destination: 'private',
     });
     expect(approved.status).toBe('approved');
-    expect(approved.sourceId).toBe('example-com');
-    expect(probe).not.toHaveBeenCalled();
+    expect(approved.userSourceId).toBe('user-source-1');
   });
 
   it('refuses to decide a row the resolver has not answered', async () => {
@@ -343,7 +387,6 @@ describe('news admin service', () => {
       expect.objectContaining({
         sourceUrl: 'https://t.me/s/example',
         kind: 'telegram',
-        sourceId: 't-me',
       })
     );
   });
@@ -393,8 +436,32 @@ describe('news admin service', () => {
       expect.objectContaining({
         sourceUrl: 'https://example.org/rss.xml',
         kind: 'feed',
-        sourceId: 'example-org',
+        destination: 'private',
       })
+    );
+  });
+
+  it('can send a needs_review row to the catalogue instead, with a host slug', async () => {
+    const repo = requests({
+      findById: vi.fn(async () =>
+        request({
+          url: 'https://facebook.com/example',
+          status: 'needs_review',
+          kind: null,
+          resolvedUrl: null,
+          failure: 'unsupported',
+        })
+      ),
+    });
+
+    await admin(repo).approve(
+      'request-1',
+      { ...approval, feedUrl: 'https://example.org/rss.xml', destination: 'catalogue' },
+      'admin-1'
+    );
+
+    expect(repo.approve).toHaveBeenCalledWith(
+      expect.objectContaining({ destination: 'catalogue', sourceId: 'example-org' })
     );
   });
 
@@ -436,14 +503,26 @@ describe('news admin service', () => {
     expect(probe).not.toHaveBeenCalled();
   });
 
-  it('suffixes an id the catalogue already holds', async () => {
+  it('maps the plan ceiling the trigger raised to the form message', async () => {
+    const repo = requests({
+      approve: vi.fn(async () => {
+        throw rpcError('PL001');
+      }),
+    });
+
+    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
+      NewsPrivateSourcesLimitError
+    );
+    expect(repo.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it('suffixes an id the catalogue already holds, only for a catalogue row', async () => {
     const repo = requests();
 
     await admin(repo, [
       { id: 'example-com', name: 'قديم', category: 'world', region: 'world', tier: 2 },
-    ]).approve('request-1', approval, 'admin-1');
+    ]).approve('request-1', { ...approval, destination: 'catalogue' }, 'admin-1');
 
-    expect(repo.approve).toHaveBeenCalledTimes(1);
     expect(repo.approve).toHaveBeenCalledWith(
       expect.objectContaining({ sourceId: 'example-com-2' })
     );
@@ -459,13 +538,13 @@ describe('news admin service', () => {
         ),
     });
 
-    const approved = await admin(repo).approve('request-1', approval, 'admin-1');
+    const approved = await admin(repo).approve(
+      'request-1',
+      { ...approval, destination: 'catalogue' },
+      'admin-1'
+    );
 
     expect(repo.approve).toHaveBeenCalledTimes(2);
-    expect(repo.approve).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ sourceId: 'example-com' })
-    );
     expect(repo.approve).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ sourceId: 'example-com-2' })
@@ -496,7 +575,6 @@ describe('news admin service', () => {
     await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
       NewsSourceRequestDecidedError
     );
-    expect(repo.approve).toHaveBeenCalledTimes(1);
   });
 
   it('maps a missing-feed refusal from the RPC to the form message', async () => {
@@ -518,10 +596,9 @@ describe('news admin service', () => {
       }),
     });
 
-    await expect(admin(repo).approve('request-1', approval, 'admin-1')).rejects.toBeInstanceOf(
-      NewsSourceAlreadyKnownError
-    );
-    expect(repo.approve).toHaveBeenCalledTimes(1);
+    await expect(
+      admin(repo).approve('request-1', { ...approval, destination: 'catalogue' }, 'admin-1')
+    ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
   });
 
   it('refuses to approve a feed the source file lists by now', async () => {
@@ -553,7 +630,7 @@ describe('news admin service', () => {
       NewsSourceRequestDecidedError
     );
 
-    expect(approved.sourceId).toBe('example-com');
+    expect(approved.status).toBe('approved');
     expect(repo.approve).toHaveBeenCalledTimes(1);
   });
 

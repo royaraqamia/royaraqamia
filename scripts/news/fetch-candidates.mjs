@@ -37,6 +37,7 @@ import {
 
 const MAX_ITEMS_PER_SOURCE = 4;
 const MAX_TOTAL_ITEMS = 90;
+const MAX_PRIVATE_ITEMS = 60;
 const FRESH_HOURS = 48;
 const DEDUPE_TITLE_SIMILARITY = 0.75;
 const MIN_CANDIDATES = 8;
@@ -44,6 +45,8 @@ const FETCH_TIMEOUT_MS = 20_000;
 const FETCH_CONCURRENCY = 4;
 const FETCH_BATCH_GAP_MS = 400;
 const RECENT_DAYS = 4;
+/** How many consecutive failures the fetch tolerates before it calls a source broken. */
+const MAX_PRIVATE_FAILURES = 3;
 
 function parseArgs(argv) {
   const options = {
@@ -139,6 +142,187 @@ async function loadRecentlyPublishedUrls(env = process.env) {
     // Deduplication is a nicety; a failed read must not cost the day's digest.
     return new Set();
   }
+}
+
+/**
+ * The readers' own sources (`news_user_sources`, ADR-0106), read with the
+ * service role.
+ *
+ * A missing configuration or a failed read is not an error, for the same reason
+ * the catalogue read is not: a private source is worth having, never worth the
+ * day's digest. A malformed row is dropped rather than thrown on.
+ */
+async function loadPrivateSources(env = process.env) {
+  const url = env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return [];
+
+  const endpoint =
+    `${url}/rest/v1/news_user_sources` +
+    `?select=id,user_id,name,url,kind,category,region,tier,fresh_hours,failure_count` +
+    `&status=eq.ready&order=created_at.asc`;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { apikey: key, authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) return [];
+    const rows = await response.json();
+    return (Array.isArray(rows) ? rows : [])
+      .map((row) => {
+        const shaped = toApprovedSource(row);
+        const userId = String(row?.user_id ?? '');
+        if (!shaped || !userId) return null;
+        return { ...shaped, userId, failureCount: Number(row?.failure_count ?? 0) };
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * One fetch per feed, one set of items per owner.
+ *
+ * Two readers may hold the same feed in their own lists; fetching it twice would
+ * be rude to the host and pointless for the digest. The URL is fetched once and
+ * its items are handed to every owner with that owner's own source id and name,
+ * so each personal digest narrows to something that is genuinely theirs.
+ *
+ * Exported for the test: what one private fetch produces, and what it reports
+ * back about the source's health.
+ */
+export async function collectPrivateCandidates({
+  sources,
+  now = Date.now(),
+  fetchImpl = fetchText,
+}) {
+  const byUrl = new Map();
+  for (const source of sources) {
+    const entry = byUrl.get(source.url) ?? { source, owners: [] };
+    entry.owners.push(source);
+    byUrl.set(source.url, entry);
+  }
+
+  const items = [];
+  const health = [];
+  let fetched = 0;
+
+  // Four at a time, like the shared fetch: a burst of parallel requests from one
+  // IP is what a 403 looks like, and a reader's own feed deserves the same
+  // manners as the catalogue's.
+  const entries = [...byUrl.values()];
+  for (let index = 0; index < entries.length; index += FETCH_CONCURRENCY) {
+    const batch = entries.slice(index, index + FETCH_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async ({ source, owners }) => {
+        try {
+          const body = await fetchImpl(source.url);
+          return {
+            source,
+            owners,
+            parsed: source.kind === 'telegram' ? parseTelegramPreview(body) : parseFeed(body),
+          };
+        } catch (error) {
+          return { source, owners, error: error instanceof Error ? error.message : String(error) };
+        }
+      })
+    );
+
+    for (const { source, owners, parsed, error } of results) {
+      if (error !== undefined) {
+        for (const owner of owners) health.push({ id: owner.id, ok: false, error });
+        continue;
+      }
+
+      const fresh = (parsed ?? [])
+        .filter((item) => item.url && item.title && isPublishableUrl(item.url))
+        .filter((item) => isFresh(item.publishedAt, source.freshHours ?? FRESH_HOURS, now))
+        .sort(
+          (a, b) => new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime()
+        )
+        .slice(0, MAX_ITEMS_PER_SOURCE);
+
+      fetched += fresh.length;
+
+      for (const owner of owners) {
+        health.push({ id: owner.id, ok: true, error: null });
+        for (const item of fresh) {
+          if (items.length >= MAX_PRIVATE_ITEMS) break;
+          items.push({
+            id: `${owner.id}:${items.length + 1}`,
+            title: item.title,
+            url: item.url,
+            publishedAt: item.publishedAt,
+            excerpt: excerpt(item.excerpt, 320),
+            sourceId: owner.id,
+            sourceName: owner.name,
+            category: owner.category,
+            region: owner.region,
+            tier: owner.tier,
+            // Which reader this belongs to. The shared digest never sees these.
+            userId: owner.userId,
+          });
+        }
+      }
+    }
+  }
+
+  return { items, health, fetched };
+}
+
+/**
+ * Writes the fetch's verdict back to each private source.
+ *
+ * Three consecutive failures make a source `broken`: the fetch stops asking, and
+ * the account page tells its owner. One success resets the count, because a host
+ * that was down for a morning is not a bad address.
+ */
+export async function reportPrivateSourceHealth(
+  health,
+  byId,
+  { env = process.env, now = new Date() } = {}
+) {
+  const url = env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key || health.length === 0) return 0;
+
+  let written = 0;
+  for (const row of health) {
+    const source = byId.get(row.id);
+    if (!source) continue;
+
+    const failureCount = row.ok ? 0 : Math.min(MAX_PRIVATE_FAILURES, source.failureCount + 1);
+    const patch = {
+      failure_count: failureCount,
+      status: failureCount >= MAX_PRIVATE_FAILURES ? 'broken' : 'ready',
+      last_error: row.ok ? null : String(row.error ?? '').slice(0, 500),
+      last_checked_at: now.toISOString(),
+    };
+
+    try {
+      const response = await fetch(
+        `${url}/rest/v1/news_user_sources?id=eq.${encodeURIComponent(row.id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: key,
+            authorization: `Bearer ${key}`,
+            'content-type': 'application/json',
+            prefer: 'return=minimal',
+          },
+          body: JSON.stringify(patch),
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        }
+      );
+      if (response.ok) written += 1;
+    } catch {
+      // A health write is bookkeeping; the digest does not depend on it.
+    }
+  }
+
+  return written;
 }
 
 /**
@@ -266,6 +450,13 @@ async function main() {
   const recentlyPublished = await loadRecentlyPublishedUrls();
   const { items, failures, fetched } = await collectCandidates({ sources, recentlyPublished });
 
+  // The readers' own feeds, kept out of the shared list on purpose: they are
+  // only ever read by the personal digest of the reader who added them.
+  const privateSources = await loadPrivateSources();
+  const privateById = new Map(privateSources.map((source) => [source.id, source]));
+  const privateResult = await collectPrivateCandidates({ sources: privateSources });
+  const healthWritten = await reportPrivateSourceHealth(privateResult.health, privateById);
+
   // A manual run may publish for another day; the prompt's date must be the one
   // the validator will check, not necessarily the day the fetch happens.
   const digestDate = options.date || damascusDate();
@@ -275,6 +466,8 @@ async function main() {
     sourceCount: sources.length,
     itemCount: items.length,
     items,
+    privateItemCount: privateResult.items.length,
+    privateItems: privateResult.items,
   };
 
   await mkdir(dirname(options.out), { recursive: true });
@@ -284,6 +477,11 @@ async function main() {
   if (approved.length > 0) {
     console.log(
       `  ${sources.length - fileSources.length} approved source(s) merged from the database`
+    );
+  }
+  if (privateSources.length > 0) {
+    console.log(
+      `  ${privateSources.length} private source(s), ${privateResult.items.length} item(s), ${healthWritten} health write(s)`
     );
   }
   for (const failure of failures) console.log(`  skipped ${failure.source}: ${failure.error}`);
