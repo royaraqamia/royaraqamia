@@ -118,6 +118,7 @@ describe('stamping the manifest', () => {
     sha256: 'cd'.repeat(32),
     sizeBytes: 10_700_000,
     minSupportedVersionCode: 20000,
+    rollout: 100,
     notes: '',
     releasedAt: '2026-10-14',
   };
@@ -143,6 +144,46 @@ describe('stamping the manifest', () => {
 
     expect(manifest.notes).toBe('');
     expect(manifest.apkUrl).toBe(previous.apkUrl);
+  });
+
+  it('publishes to everyone unless a rollout is asked for', () => {
+    // A released update is a full release by default. A staged one is explicit,
+    // so a forgotten flag cannot silently hold the release back at 10%.
+    expect(stamped().rollout).toBe(100);
+  });
+
+  it('carries a staged rollout as a percentage', () => {
+    const staged = stampManifest({
+      previous,
+      versionCode: 20001,
+      versionName: '1.0.1',
+      apkUrl: previous.apkUrl,
+      sha256: GOOD_SHA,
+      sizeBytes: 10_800_000,
+      releasedAt: '2026-10-20',
+      minSupportedVersionCode: 20000,
+      rollout: 10,
+    });
+
+    expect(staged.rollout).toBe(10);
+  });
+
+  it('refuses a rollout that is not a percentage', () => {
+    for (const rollout of [-1, 101, 10.5, Number.NaN]) {
+      expect(() =>
+        stampManifest({
+          previous,
+          versionCode: 20001,
+          versionName: '1.0.1',
+          apkUrl: previous.apkUrl,
+          sha256: GOOD_SHA,
+          sizeBytes: 10_800_000,
+          releasedAt: '2026-10-20',
+          minSupportedVersionCode: 20000,
+          rollout,
+        })
+      ).toThrow(/rollout/);
+    }
   });
 
   it('takes the release date as an input, never from the previous manifest', () => {

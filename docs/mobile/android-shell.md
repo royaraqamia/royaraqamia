@@ -915,7 +915,8 @@ holds its own offer back while that is pending.
 
 **What is in place.** `ShellUpdate` reads `/android/latest.json` (published from
 `public/android/latest.json`) and compares its `versionCode` with `BuildConfig.VERSION_CODE`, which comes
-from `android/shell-version.properties` rather than from `package.json`. `ShellUpdatePrompt` asks the
+from `android/shell-version.properties` rather than from `package.json`; the manifest's optional
+`rollout` stages that comparison, and `minSupportedVersionCode` is the floor. `ShellUpdatePrompt` asks the
 user natively when a newer APK exists — an `AlertDialog`, at most every six hours and on a fresh launch —
 and the site stays quiet meanwhile, because `MainActivity` appends `RoyaraqamiaShell/<code>` to the
 WebView's user agent and the page compares that with the same manifest.
@@ -939,6 +940,20 @@ therefore offered the web row, and its APK link — followed _inside_ the WebVie
 as text instead of downloading it, which is what the emulator's `1.93.0+shell.20001` build did. Such a build
 is not stranded: the native prompt does not depend on the page seeing it, and that is how it reaches a build
 that announces itself.
+
+**A floor, and a staged rollout (#503).** The manifest's `minSupportedVersionCode` is also enforced by
+the running server: an owned `/api/*` request from a shell below it is answered `426` with
+`{ "code": "app_update_required", "minimumVersionCode": … }`, and the page hands that number to the
+native card through the `RoyShellUpdate` WebView interface. `/api/version` and `/api/app-perf` stay
+open, and a browser sends no counter, so the web is never gated. Raising the floor is what retires an
+old shell; until then it keeps working.
+
+`public/android/latest.json` may also carry `rollout`, a percentage from 0 to 100 (default 100). The
+app buckets a device deterministically by `Android ID + versionCode`, so a staged release reaches the
+same cohort on every check and a later release is a fresh cohort. The page does not claim a partial
+release, because it cannot know the device's bucket; the native prompt does. A device below the floor
+ignores the percentage — its update is not optional. `npm run android:publish -- --rollout 10` stages
+one; the weekly train publishes at 100.
 
 **Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
 under the app's own internal files directory, hashing as it writes, and renames it into place only when

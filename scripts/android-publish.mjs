@@ -80,6 +80,7 @@ export const MANIFEST_KEYS = [
   'sha256',
   'sizeBytes',
   'minSupportedVersionCode',
+  'rollout',
   'notes',
   'releasedAt',
 ];
@@ -181,6 +182,7 @@ export function stampManifest({
   notes,
   releasedAt,
   minSupportedVersionCode,
+  rollout = 100,
 }) {
   if (!/^https:\/\/\S+$/.test(apkUrl ?? '')) {
     throw new Error(`apkUrl must be an https URL, got ${JSON.stringify(apkUrl)}`);
@@ -193,6 +195,9 @@ export function stampManifest({
   }
   if (!Number.isInteger(versionCode) || versionCode <= 0) {
     throw new Error(`versionCode must be a positive integer, got ${JSON.stringify(versionCode)}`);
+  }
+  if (!Number.isInteger(rollout) || rollout < 0 || rollout > 100) {
+    throw new Error(`rollout must be an integer from 0 to 100, got ${JSON.stringify(rollout)}`);
   }
 
   if (!isManifestDate(releasedAt)) {
@@ -223,6 +228,7 @@ export function stampManifest({
     sha256,
     sizeBytes,
     minSupportedVersionCode,
+    rollout,
     notes: notes ?? previous?.notes ?? '',
     releasedAt,
   };
@@ -517,6 +523,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   const apkUrl = valueOf('--url') ?? apkUrlFor(versionName);
   const min =
     valueOf('--min') === undefined ? previous.minSupportedVersionCode : Number(valueOf('--min'));
+  const rollout = valueOf('--rollout') === undefined ? 100 : Number(valueOf('--rollout'));
   const manifest = stampManifest({
     previous,
     versionCode: badging.versionCode,
@@ -531,6 +538,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
       releasedAt: valueOf('--released-at'),
     }),
     minSupportedVersionCode: min,
+    rollout,
   });
 
   const asset = shellAssetName(manifest.versionName);
@@ -546,6 +554,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     sha256: manifest.sha256,
     sizeBytes: manifest.sizeBytes,
     minSupportedVersionCode: manifest.minSupportedVersionCode,
+    rollout: manifest.rollout,
     notes: manifest.notes,
     releasedAt: manifest.releasedAt,
     signedBy: trusted[0],
@@ -562,6 +571,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     log(`version        ${manifest.versionName} (versionCode ${manifest.versionCode})`);
     log(`sha256         ${manifest.sha256}`);
     log(`size           ${manifest.sizeBytes} bytes (${megabytes} MB)`);
+    log(`rollout        ${manifest.rollout}%`);
     log(`release        ${tag} — "${releaseTitle}"`);
     log(`published URL  ${manifest.apkUrl}`);
     log(`released       ${manifest.releasedAt}`);

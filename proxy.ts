@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { withAppUpdateGate } from '@/backend/middleware/app-update';
 import { updateSession } from '@/backend/middleware/session';
 import { withVisitorCookie } from '@/backend/middleware/visitor-cookie';
 import { COUNTRY_COOKIE_NAME, COUNTRY_ISO_PATTERN } from '@/frontend/ui/shared/country-cookie';
@@ -42,6 +43,11 @@ function withCountryCookie(request: NextRequest, response: NextResponse): NextRe
 }
 
 export async function proxy(request: NextRequest) {
+  // Before the session: an app below the supported floor must not spend a
+  // Supabase call on an answer the server will refuse anyway (#503).
+  const updateRequired = withAppUpdateGate(request);
+  if (updateRequired) return updateRequired;
+
   const response = await updateSession(request);
   return withVisitorCookie(request, withCountryCookie(request, response));
 }

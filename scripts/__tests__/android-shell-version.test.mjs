@@ -140,6 +140,22 @@ describe('what counts as a shell change', () => {
     expect(isShellPath('capacitor.config.ts')).toBe(true);
   });
 
+  it('covers Kotlin, Compose, the generated theme and the generated contracts', () => {
+    // `versionCode` carries every screen since ADR-0088, so an app-only screen
+    // change is as much a release as a Gradle or manifest change (#503).
+    expect(
+      isShellPath('android/app/src/main/kotlin/com/royaraqamia/app/theme/ThemeColors.kt')
+    ).toBe(true);
+    expect(
+      isShellPath(
+        'android/app/src/main/kotlin/com/royaraqamia/app/contracts/generated/PlansContracts.kt'
+      )
+    ).toBe(true);
+    expect(isShellPath('android/app/src/main/java/com/royaraqamia/app/ShellUpdate.java')).toBe(
+      true
+    );
+  });
+
   it('does not cover the web app', () => {
     expect(isShellPath('frontend/ui/shared/update-prompt.tsx')).toBe(false);
     expect(isShellPath('public/android/latest.json')).toBe(false);
@@ -221,6 +237,9 @@ describe('the published manifest', () => {
     expect(manifest.apkUrl).toMatch(/^https:\/\//);
     expect(typeof manifest.minSupportedVersionCode).toBe('number');
     expect(Number.isInteger(manifest.minSupportedVersionCode)).toBe(true);
+    expect(Number.isInteger(manifest.rollout)).toBe(true);
+    expect(manifest.rollout).toBeGreaterThanOrEqual(0);
+    expect(manifest.rollout).toBeLessThanOrEqual(100);
   });
 
   it('never names an APK newer than the shell in the tree', () => {

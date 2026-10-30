@@ -3,6 +3,7 @@ package com.royaraqamia.app;
 import android.app.Activity;
 import android.app.Dialog;
 import android.graphics.Typeface;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -72,6 +73,8 @@ final class ShellUpdatePrompt {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final String manifestUrl;
     private ShellUpdate.Status status;
+    /** A floor the server stated in a 426, merged into every manifest read. */
+    private int requiredFloor;
     private long lastCheckedAt;
     private boolean asking;
     /** Set while the install waits on the "install unknown apps" setting. */
@@ -128,13 +131,17 @@ final class ShellUpdatePrompt {
         lastCheckedAt = now;
 
         final int installedCode = BuildConfig.VERSION_CODE;
+        final String deviceSeed = deviceSeed();
         io.execute(() -> {
             try {
-                ShellUpdate.Status checked = ShellUpdate.check(manifestUrl, installedCode);
+                ShellUpdate.Status checked = ShellUpdate.check(manifestUrl, installedCode, deviceSeed);
                 Log.i(TAG, "checked " + manifestUrl + ": installed=" + checked.installedCode
-                        + " latest=" + checked.latestCode + " pending=" + checked.updatePending());
+                        + " latest=" + checked.latestCode + " rollout=" + checked.rollout
+                        + " pending=" + checked.updatePending());
                 onUiThread(() -> {
-                    status = checked;
+                    status = requiredFloor > 0
+                            ? checked.withMinimumSupportedCode(requiredFloor)
+                            : checked;
                     maybeAsk();
                 });
             } catch (Exception error) {
@@ -142,6 +149,44 @@ final class ShellUpdatePrompt {
                 Log.w(TAG, "check failed for " + manifestUrl + ": " + error);
             }
         });
+    }
+
+    /**
+     * The page saw a typed `426` on an owned API (#503) and handed the floor over
+     * through `RoyShellUpdate.required()`. This is the native half of that route:
+     * merge the floor now, so the card is the blocking one even if the manifest
+     * check has not landed or still names an older floor, then check for the APK
+     * that can actually be installed.
+     *
+     * Called on a WebView bridge thread, so everything that touches a view goes
+     * through {@link #onUiThread}.
+     */
+    void requireUpdate(int minimumVersionCode) {
+        if (minimumVersionCode <= 0 || destroyed) return;
+        onUiThread(() -> {
+            requiredFloor = Math.max(requiredFloor, minimumVersionCode);
+            if (status != null && requiredFloor > status.installedCode) {
+                status = status.withMinimumSupportedCode(requiredFloor);
+                maybeAsk();
+            }
+            maybeCheck(true);
+        });
+    }
+
+    /**
+     * The stable per-device seed a staged rollout is bucketed by. The Android ID
+     * survives app updates on the same signing key, and `null` (or a platform that
+     * refuses to read it) still buckets deterministically rather than opting out.
+     */
+    private String deviceSeed() {
+        try {
+            String id = Settings.Secure.getString(
+                    activity.getContentResolver(), Settings.Secure.ANDROID_ID);
+            return id == null ? "" : id;
+        } catch (Exception error) {
+            Log.w(TAG, "cannot read the device id for the rollout bucket: " + error);
+            return "";
+        }
     }
 
     /**
@@ -188,7 +233,8 @@ final class ShellUpdatePrompt {
     }
 
     private void maybeAsk() {
-        if (destroyed || asking || status == null || !status.updatePending()) return;
+        if (destroyed || asking || status == null) return;
+        if (!status.updatePending() && !status.unsupported()) return;
         if (!ShellUpdate.isAllowedUpdateUrl(status.apkUrl, BuildConfig.DEBUG)) {
             Log.w(TAG, "an update is published without a usable apkUrl: " + status.apkUrl);
             return;

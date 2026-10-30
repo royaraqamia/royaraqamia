@@ -4,8 +4,12 @@
  * body carried no message. Surfaced through `err.message`, so both are Arabic
  * and neither leaks a browser string or a status code (#402).
  */
+import { APP_UPDATE_REQUIRED_STATUS } from '@/shared/app-update';
+import { requestAppUpdate } from '@/frontend/shared/shell-update';
+
 const NETWORK_ERROR_MESSAGE = 'تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.';
 const REQUEST_ERROR_MESSAGE = 'تعذّر إتمام الطلب. أعد المحاولة.';
+const UPDATE_REQUIRED_MESSAGE = 'يلزم تحديث التَّطبيق للمتابعة.';
 
 export class ApiError extends Error {
   constructor(
@@ -90,6 +94,17 @@ export async function requestWithMeta<T>(
   }
 
   const data = await res.json().catch(() => ({}));
+
+  if (res.status === APP_UPDATE_REQUIRED_STATUS) {
+    const minimumVersionCode =
+      typeof data === 'object' && data !== null && typeof data.minimumVersionCode === 'number'
+        ? data.minimumVersionCode
+        : 0;
+    // The server's refusal is only half the message: the update card lives in
+    // the native shell, so the page hands the floor over before it throws.
+    requestAppUpdate(minimumVersionCode);
+    throw new ApiError(serverMessage(data) ?? UPDATE_REQUIRED_MESSAGE, res.status);
+  }
 
   if (!res.ok || data?.success === false) {
     const message = serverMessage(data) ?? REQUEST_ERROR_MESSAGE;

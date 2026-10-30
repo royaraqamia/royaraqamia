@@ -106,3 +106,35 @@ ship inside the APK, so a `versionCode` now carries their UI too: a bundled rout
 new build is installed (ADR-0044's in-place path, #503's channel), while a web deploy still reaches
 the remote surfaces as before. The user-agent token and the "an old shell keeps the web prompt"
 property are unchanged — that is still how the site knows which build it is talking to.
+
+## Amendment (2026-10-30): every screen, a floor and a staged rollout (#503)
+
+The 2026-10-28 amendment made the counter carry the bundled surfaces. With
+[ADR-0089](0089-the-android-app-is-native.md) that is now the whole app: a copy fix, a list fix and a
+rate table all reach a device only through an APK. The counter's trigger is therefore not "the shell
+changed" but "the app changed" — every Kotlin/Compose source, the generated theme and the generated
+contract types included — and a pull request that changes one of them is a release without a bump
+(the weekly train writes the bump; the pull request carries the Arabic note).
+
+Three things make that safe to operate:
+
+- **A supported floor enforced by the server.** `public/android/latest.json`'s
+  `minSupportedVersionCode` is read by the running server, and an owned `/api/*` request from a shell
+  below it is answered `426` with a typed body (`code: "app_update_required"`,
+  `minimumVersionCode`). `/api/version` and `/api/app-perf` stay open so a build that is failing can
+  say so. The page hands the floor to the native card through `RoyShellUpdate.required()`; the card
+  is the same blocking one a manifest floor already produces, not a crash or a blank screen. A browser
+  never sends a counter, so the web is never refused.
+- **A staged rollout.** The manifest may carry `rollout`, an integer percentage from 0 to 100,
+  defaulting to 100. The app buckets a device by `Android ID + versionCode` with plain FNV-1a
+  arithmetic, so the same device gets the same answer for a release and a later release is a fresh
+  cohort. The page cannot know the device's bucket, so it does not claim a partial release at all
+  (the native prompt is the only channel that does). A floor is absolute and ignores the percentage:
+  below it, the update is not optional.
+- **The trade in the copy.** The dialog now says that an app update carries interface fixes and that
+  a web deploy no longer reaches the app, so a user is told why the update is not just a browser
+  refresh.
+
+The frozen old shell keeps working until the floor moves past it; raising the floor is a deliberate
+publish, and that is what retires it. The web and the app still share one contract and one token file,
+and neither is a release of the other.

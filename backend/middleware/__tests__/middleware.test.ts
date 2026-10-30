@@ -67,6 +67,12 @@ vi.mock('next/server', () => ({
         cookies: { set: cookieSetMock },
       };
     }),
+    json: vi.fn((body: unknown, init?: { status?: number; headers?: Record<string, string> }) => ({
+      body,
+      headers: new Headers(init?.headers),
+      status: init?.status ?? 200,
+      cookies: { set: cookieSetMock },
+    })),
   },
   NextRequest: vi.fn(),
 }));
@@ -120,6 +126,21 @@ describe('proxy', () => {
 
     expect(mockGetSession).not.toHaveBeenCalled();
     expect(mockGetUser).not.toHaveBeenCalled();
+  });
+
+  it('answers a below-floor shell with 426 before any session work', async () => {
+    mockRequest.headers = new Headers({
+      'user-agent': 'Mozilla/5.0 RoyaraqamiaShell/1.0.0+19999',
+    });
+    mockNextUrl.pathname = '/api/me';
+    mockRequest.url = 'https://royaraqamia.com/api/me';
+
+    const { proxy } = await import('@/proxy');
+    const result = await proxy(mockRequest as never);
+
+    expect(result.status).toBe(426);
+    expect(result.body).toMatchObject({ code: 'app_update_required' });
+    expect(mockGetSession).not.toHaveBeenCalled();
   });
 
   it('persists the IP-derived country in a cookie for the contact forms', async () => {

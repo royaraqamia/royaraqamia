@@ -23,7 +23,7 @@
       theirs — so this stays a reading aid rather than decoration.
     -->
     <string name="shell_update_title">تحديث التَّطبيق</string>
-    <string name="shell_update_message">يتوفَّر إصدار جديد من التَّطبيق. تنزيله الآن؟</string>
+    <string name="shell_update_message">يتوفَّر إصدار جديد من التَّطبيق. أصبح تحديث التَّطبيق يحمل إصلاحات الواجهة، ولم يعد نشر الموقع يصل إلى التَّطبيق. تنزيله الآن؟</string>
     <string name="shell_update_install">تنزيل وتثبيت</string>
     <string name="shell_update_later">لاحقًا</string>
     <string name="shell_update_required_title">تحديث مطلوب</string>

@@ -108,6 +108,120 @@ public class ShellUpdateTest {
     }
 
     @Test
+    public void aStagedRolloutIncludesTheSameDeviceEveryTime() throws JSONException {
+        // The cohort is a function of the device and the release, never the clock:
+        // a device that is in stays in across launches and checks.
+        String json = "{\"versionCode\": 20002, \"rollout\": 100}";
+
+        ShellUpdate.Status first = ShellUpdate.parse(json, 20000, "device-42");
+        ShellUpdate.Status second = ShellUpdate.parse(json, 20000, "device-42");
+
+        assertTrue(first.rolloutEligible);
+        assertEquals(first.rolloutEligible, second.rolloutEligible);
+        assertEquals(first.rollout, 100);
+        assertTrue(first.updatePending());
+    }
+
+    @Test
+    public void aZeroRolloutOffersNothing() throws JSONException {
+        // The release is published, but staged to nobody: a bad build can sit in
+        // the manifest without reaching a single device.
+        ShellUpdate.Status status = ShellUpdate.parse(
+            "{\"versionCode\": 20002, \"rollout\": 0}",
+            20000,
+            "device-42"
+        );
+
+        assertFalse(status.rolloutEligible);
+        assertFalse(status.updatePending());
+        assertFalse(status.unsupported());
+    }
+
+    @Test
+    public void aRolloutBucketIsStableAndInRange() {
+        for (String seed : new String[] {"", "device-1", "device-2", "a-long-android-id"}) {
+            int bucket = ShellUpdate.rolloutBucket(seed, 20002);
+
+            assertEquals(bucket, ShellUpdate.rolloutBucket(seed, 20002));
+            assertTrue(bucket >= 0);
+            assertTrue(bucket < 100);
+        }
+        // A new release is a fresh cohort rather than the same devices forever.
+        boolean moved = false;
+        for (int version = 20003; version < 20010; version++) {
+            if (ShellUpdate.rolloutBucket("device-1", 20002)
+                    != ShellUpdate.rolloutBucket("device-1", version)) {
+                moved = true;
+                break;
+            }
+        }
+        assertTrue(moved);
+    }
+
+    @Test
+    public void aDeviceInTheBucketIsOfferedTheReleaseAndOneOutsideIsNot() {
+        int bucket = ShellUpdate.rolloutBucket("device-7", 20002);
+
+        assertTrue(ShellUpdate.isRolledOut("device-7", 20002, bucket + 1));
+        if (bucket > 0) {
+            assertFalse(ShellUpdate.isRolledOut("device-7", 20002, bucket));
+        }
+        assertFalse(ShellUpdate.isRolledOut("device-7", 20002, 0));
+        assertTrue(ShellUpdate.isRolledOut("device-7", 20002, 100));
+    }
+
+    @Test
+    public void aMissingOrBrokenRolloutIsAFullRelease() throws JSONException {
+        ShellUpdate.Status missing = ShellUpdate.parse("{\"versionCode\": 20002}", 20000, "d");
+        ShellUpdate.Status broken = ShellUpdate.parse(
+            "{\"versionCode\": 20002, \"rollout\": \"ten\"}",
+            20000,
+            "d"
+        );
+        ShellUpdate.Status tooHigh = ShellUpdate.parse(
+            "{\"versionCode\": 20002, \"rollout\": 500}",
+            20000,
+            "d"
+        );
+
+        assertEquals(100, missing.rollout);
+        assertEquals(100, broken.rollout);
+        assertEquals(100, tooHigh.rollout);
+        assertTrue(missing.updatePending());
+    }
+
+    @Test
+    public void theFloorIsAbsoluteEvenWhenTheRolloutExcludesTheDevice() throws JSONException {
+        // A supported floor is not a staged offer: a device below it cannot decline,
+        // which is exactly the card a 426 must land on (#503).
+        ShellUpdate.Status status = ShellUpdate.parse(
+            "{\"versionCode\": 20002, \"minSupportedVersionCode\": 20001, \"rollout\": 0}",
+            20000,
+            "device-42"
+        );
+
+        assertFalse(status.updatePending());
+        assertTrue(status.unsupported());
+    }
+
+    @Test
+    public void aServerFloorCanBeMergedIntoAManifestThatLagsIt() throws JSONException {
+        ShellUpdate.Status status = ShellUpdate.parse(
+            "{\"versionCode\": 20000, \"minSupportedVersionCode\": 20000}",
+            20000,
+            "device-42"
+        );
+
+        ShellUpdate.Status merged = status.withMinimumSupportedCode(20005);
+
+        assertEquals(20000, status.minSupportedCode);
+        assertEquals(20005, merged.minSupportedCode);
+        assertFalse(status.unsupported());
+        assertTrue(merged.unsupported());
+        assertFalse(merged.updatePending());
+    }
+
+    @Test
     public void idleReportsNothingOnEitherAxis() {
         ShellUpdate.Status status = ShellUpdate.idle(7);
 
