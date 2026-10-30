@@ -6,7 +6,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -30,10 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
+import com.royaraqamia.app.ui.vectors.LucideVectors
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyShape
 
@@ -228,7 +225,11 @@ private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
                         .background(RoyColors.muted.copy(alpha = 0.6f)),
                 contentAlignment = Alignment.Center,
             ) {
-                LockGlyph()
+                Icon(
+                    imageVector = LucideVectors.Lock,
+                    contentDescription = null,
+                    modifier = Modifier.size(Recipes.Glyph.md),
+                )
             }
             Text(
                 text = PlanCardCopy.SIGN_IN_TITLE,
@@ -268,43 +269,17 @@ private fun Failed(onRetry: () -> Unit, modifier: Modifier = Modifier) {
                 textAlign = TextAlign.Center,
             )
             OutlinedButton(onClick = onRetry, shape = RoyShape.pill) {
-                Text(text = PlanCardCopy.RETRY, style = type.small)
+                Icon(
+                    imageVector = LucideVectors.RotateCw,
+                    contentDescription = null,
+                    modifier = Modifier.size(Recipes.Glyph.sm),
+                )
+                Text(
+                    text = PlanCardCopy.RETRY,
+                    style = type.small,
+                    modifier = Modifier.padding(start = spacing.elementGapSm / 2f),
+                )
             }
         }
-    }
-}
-
-/**
- * The site's `Lock` icon, drawn rather than imported.
- *
- * The app carries no icon library (material3's Compose stack is the only UI
- * dependency, `build.gradle`), and the site's three icons here are decorative
- * (`aria-hidden`), so the two that carry meaning - the padlock on the guest
- * prompt - is drawn as a path instead of adding a megabyte of glyphs for it.
- */
-@Composable
-private fun LockGlyph() {
-    val color = MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(modifier = Modifier.size(24.dp)) {
-        val stroke = 1.8.dp.toPx()
-        val bodyWidth = size.width * 0.52f
-        val bodyHeight = size.height * 0.38f
-        val bodyTop = size.height * 0.46f
-        drawRoundRect(
-            color = color,
-            topLeft = Offset((size.width - bodyWidth) / 2f, bodyTop),
-            size = Size(bodyWidth, bodyHeight),
-            cornerRadius = CornerRadius(size.width * 0.08f),
-            style = Stroke(width = stroke),
-        )
-        drawArc(
-            color = color,
-            startAngle = 180f,
-            sweepAngle = 180f,
-            useCenter = false,
-            topLeft = Offset(size.width * 0.32f, size.height * 0.24f),
-            size = Size(size.width * 0.36f, size.height * 0.34f),
-            style = Stroke(width = stroke),
-        )
     }
 }
