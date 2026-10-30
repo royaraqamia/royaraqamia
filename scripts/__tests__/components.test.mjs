@@ -42,6 +42,35 @@ const recipes = {
       border: { color: 'border', alpha: 0.4, width: '1px' },
       pulse: { from: 1, to: 0.5, durationMs: 2000 },
     },
+    badge: {
+      radius: 'pill',
+      border: { width: '1px' },
+      type: { step: 'xs', weight: 700, tracking: '-0.025em' },
+      sizes: {
+        default: {
+          height: '1.5rem',
+          paddingX: '0.625rem',
+          paddingY: '0.125rem',
+          step: 'xs',
+          gap: '0.375rem',
+        },
+        sm: {
+          height: '1.25rem',
+          paddingX: '0.5rem',
+          paddingY: '0rem',
+          step: 'xs',
+          fontSize: '0.625rem',
+          gap: '0.25rem',
+        },
+      },
+      tones: {
+        success: {
+          surface: { color: 'success', alpha: 0.1 },
+          border: { color: 'success', alpha: 0.3 },
+          content: { color: 'success' },
+        },
+      },
+    },
     row: {
       gap: '0.375rem',
       label: { step: 'xs', color: 'muted-foreground' },
@@ -92,6 +121,11 @@ describe('the two outputs', () => {
     // Neither client invents a radius.
     expect(css).toContain('border-radius: var(--radius-2xl)');
     expect(kotlin).toContain('RoyShape.card');
+    // The badge's pill, sizes and tones are one source too.
+    expect(css).toContain('.roy-badge--default');
+    expect(css).toContain('padding: 2px 10px');
+    expect(kotlin).toContain('fun default(type: RoyTypeScale): Size =');
+    expect(kotlin).toContain('RoyShape.pill');
   });
 
   it('refuse a name the token source does not have', () => {

@@ -118,9 +118,7 @@ export function PlanView() {
     <div className="space-y-4">
       <section aria-label={PLAN_CARD_COPY.cardLabel} className="roy-card">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-bold text-foreground sm:text-base">
-            {PLAN_CARD_COPY.cardTitle}
-          </p>
+          <p className="text-fluid-small font-bold text-foreground">{PLAN_CARD_COPY.cardTitle}</p>
           <Badge variant={state.unlimited || state.plan === 'pro' ? 'success' : 'secondary'}>
             {state.unlimited ? PLAN_CARD_COPY.unlimited : PLAN_LABELS[state.plan]}
           </Badge>
