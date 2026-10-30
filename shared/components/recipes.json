@@ -98,6 +98,21 @@
         "blur": "4px",
         "color": { "raw": "#000000", "alpha": 0.05 }
       }
+    },
+    "cta": {
+      "description": "The site's primary action pill: a gradient, a white-label border and a purple bloom.",
+      "radius": "pill",
+      "height": "3.25rem",
+      "paddingX": "1.5rem",
+      "minWidth": "11rem",
+      "gradient": {
+        "direction": "to right",
+        "stops": ["#9333EA", "#7C3AED", "#4F46E5"]
+      },
+      "content": { "raw": "#FFFFFF" },
+      "border": { "raw": "#FFFFFF", "alpha": 0.2, "width": "1px" },
+      "shadow": { "offsetY": "10px", "blur": "30px", "color": { "raw": "#9333EA", "alpha": 0.5 } },
+      "type": { "step": "body", "weight": 700 }
     }
   }
 }

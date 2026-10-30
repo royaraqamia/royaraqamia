@@ -111,4 +111,19 @@ object Recipes {
         val shadowColor: Color get() = Color.Black.copy(alpha = 0.05f)
     }
 
+    /** The site's primary action: a gradient pill with the site's own bloom. */
+    object Cta {
+        val radius: Shape get() = RoyShape.pill
+        val height: Dp = 52f.dp
+        val paddingX: Dp = 24f.dp
+        val minWidth: Dp = 176f.dp
+        val stops: List<Color> = listOf(Color(0xFF9333EA), Color(0xFF7C3AED), Color(0xFF4F46E5))
+        val content: Color get() = Color(0xFFFFFFFF)
+        val border: BorderStroke get() = BorderStroke(1f.dp, Color(0x33FFFFFF))
+        val bloom: Color get() = Color(0x809333EA)
+        val bloomY: Dp = 10f.dp
+        val bloomBlur: Dp = 30f.dp
+        fun text(scale: RoyTypeScale): TextStyle = scale.body.copy(fontWeight = FontWeight(700))
+    }
+
 }
