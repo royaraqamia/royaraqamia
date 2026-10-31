@@ -1,0 +1,26 @@
+{
+  "surface": "auth",
+  "component": "sign-in",
+  "web": {
+    "file": "app/auth/login/sign-in-copy.ts",
+    "export": "SIGN_IN_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/auth/SignInCopy.kt",
+    "object": "SignInCopy"
+  },
+  "notes": {
+    "source": "The sign-in card's words, in both clients (#770). The site's form (`app/auth/login/page.tsx`) is the reference: it is where these labels were first written, and moving them here is what stops the app retyping them (ADR-0098).",
+    "placeholders": "None: a sign-in label carries no value. A future one interpolates with `{name}` like every other copy source.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the login page does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "تسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "submit": "تسجيل الدخول",
+    "busy": "جاري تسجيل الدخول...",
+    "refused": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    "unreachable": "لم يتم الوصول إلى الخادم. تحقق من اتصالك ثم حاول مرة أخرى."
+  }
+}

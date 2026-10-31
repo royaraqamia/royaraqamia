@@ -3,6 +3,29 @@
   "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
+      "id": "sign-in",
+      "issue": "#770",
+      "web": {
+        "route": "app/auth/login/page.tsx",
+        "component": "app/auth/login/page.tsx",
+        "copyModule": "app/auth/login/sign-in-copy.ts",
+        "copyExport": "SIGN_IN_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/auth/SignInCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/auth/SignInUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/auth/SignInCopy.kt",
+        "copyObject": "SignInCopy"
+      },
+      "copySource": "shared/copy/sign-in.json",
+      "states": [
+        { "name": "Idle", "copy": "submit" },
+        { "name": "Busy", "copy": "busy" },
+        { "name": "Refused", "copy": "refused" },
+        { "name": "Unreachable", "copy": "unreachable" }
+      ]
+    },
+    {
       "id": "plan-card",
       "surface": "account-server",
       "issue": "#647",

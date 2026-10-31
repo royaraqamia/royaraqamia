@@ -14,6 +14,12 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.royaraqamia.app.AppGraph
+import com.royaraqamia.app.BuildConfig
+import com.royaraqamia.app.auth.SignInCard
+import com.royaraqamia.app.auth.SignInUiState
+import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
 /**
@@ -38,6 +44,18 @@ class ShellActivity : ComponentActivity() {
     /** Where the user is, and where back goes from there. */
     private lateinit var stack: ShellBackStack
 
+    /**
+     * The app's composition root (#770): the session, the client and the store,
+     * built once and restored on launch. Before this, only the debug workbench
+     * ever held one, so the running app had no session at all.
+     */
+    private lateinit var graph: AppGraph
+
+    /** Whether the restored session answered, which decides what the frame holds. */
+    private var signedIn by mutableStateOf(false)
+
+    private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch theme declares the platform splash items; this is what reads
         // them below API 31, and it has to run before `super.onCreate`, which is
@@ -49,6 +67,7 @@ class ShellActivity : ComponentActivity() {
 
         stack = ShellBackStack(DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME)
         current = stack.route
+        graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
 
         setContent {
             RoyaraqamiaTheme {
@@ -59,7 +78,14 @@ class ShellActivity : ComponentActivity() {
                         currentRoute = current,
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
-                    )
+                    ) {
+                        if (!signedIn) {
+                            SignInCard(
+                                state = authState,
+                                onSignIn = { email, password -> signIn(email, password) },
+                            )
+                        }
+                    }
                 }
                 LaunchedEffect(Unit) {
                     // One drawn frame first: the splash lifts onto the app's own
@@ -67,6 +93,7 @@ class ShellActivity : ComponentActivity() {
                     // the hand-over would replace the frame before it was seen, and
                     // the splash would lift onto the document instead.
                     withFrameNanos { }
+                    signedIn = graph.start()
                     handOver()
                 }
             }
@@ -112,6 +139,22 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
+     * One sign-in attempt (#770): the state the card draws while it is in flight,
+     * then whatever the server answered. A success is the only outcome that
+     * unlocks the frame, so a refusal leaves the form where it was.
+     */
+    private fun signIn(email: String, password: String) {
+        if (authState is SignInUiState.Busy) return
+        authState = SignInUiState.Busy
+        lifecycleScope.launch {
+            val outcome = graph.signIn(email, password)
+            authState = SignInUiState.of(outcome)
+            signedIn = graph.signedIn
+            if (signedIn) handOver()
+        }
+    }
+
+    /**
      * Opens the current destination in the document when the shell cannot draw it.
      *
      * The shell stays underneath, which is what makes back from a web surface land
@@ -120,6 +163,7 @@ class ShellActivity : ComponentActivity() {
      * area is the screen.
      */
     private fun handOver() {
+        if (!signedIn) return
         if (NativeSurfaces.isNative(stack.route)) return
         WebSurface.open(this, stack.current)
     }
