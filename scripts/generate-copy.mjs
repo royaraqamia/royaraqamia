@@ -26,6 +26,7 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { format, resolveConfig } from 'prettier';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -200,7 +201,21 @@ export async function generate(root = ROOT) {
   for (const { file, source } of await sources(root)) {
     errors.push(...validate(source, file));
     for (const rendered of [renderWeb(source, file), renderNative(source, file)]) {
-      files.set(rendered.file, rendered.contents);
+      // The site's module is TypeScript, so it is Prettier's to lay out: `check:copy`
+      // compares these bytes against a fresh render, and `format:check` compares the
+      // same file against Prettier. Emitting the layout here is what keeps the two
+      // from disagreeing — a long label used to wrap in Prettier and not in the
+      // emitter, which left `main` failing `format:check` for a generated file.
+      // The config is read by path rather than assumed: the API does not load it.
+      files.set(
+        rendered.file,
+        rendered.file.endsWith('.ts')
+          ? await format(rendered.contents, {
+              ...((await resolveConfig(path.join(root, rendered.file))) ?? {}),
+              filepath: path.join(root, rendered.file),
+            })
+          : rendered.contents
+      );
     }
   }
   if (errors.length > 0) {
