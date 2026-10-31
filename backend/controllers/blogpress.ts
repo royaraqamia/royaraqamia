@@ -187,9 +187,16 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
 export async function publishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { posts } = createBlogpressPostsModule(supabase);
+      const { posts, repository } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
-      await plan.cap(userId, OWNED_ITEMS.communityPublished);
+
+      // An already-published post holds its slot, so re-publishing it (a
+      // double-click, a retry after a timeout, an older client) takes no new one
+      // and must not meet the cap. The RPC counts only the rows that are not
+      // already published; this pre-check mirrors that (#642).
+      const published = await repository.countPostsInStatus([id], userId, 'published');
+      if (published === 0) await plan.cap(userId, OWNED_ITEMS.communityPublished);
+
       const { slug } = await posts.publishPost(id, userId);
 
       return jsonResult(
@@ -345,9 +352,14 @@ export async function saveAndPublishPost(
         return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
 
-      const { posts } = createBlogpressPostsModule(supabase);
+      const { posts, repository } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
-      await plan.cap(userId, OWNED_ITEMS.communityPublished);
+
+      // Same as `publishPost`: saving an already-published post again takes no
+      // new published slot, so only a draft or scheduled row is measured (#642).
+      const published = await repository.countPostsInStatus([id], userId, 'published');
+      if (published === 0) await plan.cap(userId, OWNED_ITEMS.communityPublished);
+
       const { slug } = await posts.saveAndPublishPost(id, userId, validated.data);
 
       return jsonResult(
