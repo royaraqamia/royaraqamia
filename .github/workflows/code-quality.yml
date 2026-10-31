@@ -59,6 +59,11 @@ jobs:
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 
+      # The Quran search index is a build artifact of the vendored text: it must
+      # match a fresh build of it, and stay inside the budget the page load pays.
+      - name: Quran Search Index Is Current
+        run: npm run check:quran-search
+
       - name: Surface Matrix
         run: npm run check:surfaces
 
