@@ -28,7 +28,7 @@ class SupabaseTokenRefresherTest {
             RecordingTransport {
                 HttpResponse(
                     200,
-                    """{"access_token":"access-2","refresh_token":"refresh-2","expires_in":3600}""",
+                    """{"access_token":"access-2","refresh_token":"refresh-2","expires_in":3600,"user":{"id":"user-1"}}""",
                 )
             }
 

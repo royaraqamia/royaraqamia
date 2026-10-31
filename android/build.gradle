@@ -26,6 +26,15 @@ buildscript {
         // and AGP pair, so moving it is a build change to prove, not a version
         // bump to take.
         classpath 'androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.4.1'
+        // Room's compiler runs as a KSP processor (#768). The plugin is a
+        // buildscript classpath for the same reason the Kotlin one is; its
+        // version is the Kotlin version plus KSP's own suffix, so it is pinned
+        // here beside the Kotlin plugin it has to match rather than in
+        // `variables.gradle`, which is applied after this block is resolved.
+        // Named by its own coordinates rather than the `gradle.plugin` marker:
+        // the marker resolves from the plugin portal, which this network does
+        // not reach, while the implementation artifact is on Maven Central.
+        classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.20-2.0.4"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

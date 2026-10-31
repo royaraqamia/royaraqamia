@@ -29,13 +29,13 @@ class SupabasePasswordGrantTest {
             RecordingTransport {
                 HttpResponse(
                     200,
-                    """{"access_token":"access-1","refresh_token":"refresh-1","expires_in":3600}""",
+                    """{"access_token":"access-1","refresh_token":"refresh-1","expires_in":3600,"user":{"id":"user-1"}}""",
                 )
             }
 
         val outcome = SupabasePasswordGrant(authUrl, "anon-key", transport).signIn("a@b.test", "s3cret")
 
-        assertEquals(SignInOutcome.SignedIn(TokenPair("access-1", "refresh-1")), outcome)
+        assertEquals(SignInOutcome.SignedIn(TokenPair("access-1", "refresh-1", "user-1")), outcome)
 
         val request = transport.requests.single()
         assertEquals("POST", request.method)

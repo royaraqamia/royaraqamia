@@ -58,6 +58,15 @@ export const CONTRACTS = [
     file: 'McpConnectedAppsContracts.kt',
     schemas: ['McpConnectedAppListResultSchema', 'McpConnectedAppActionResultSchema'],
   },
+  // `GET /habitflow/api/sync` joined with the store (#768): the app paints
+  // HabitFlow from rows it holds, so the body it holds them from is a contract
+  // the generator has to emit. It is the web pull's route, tombstones included
+  // (ADR-0029), not the narrower display endpoints.
+  {
+    module: 'shared/contracts/habitflow',
+    file: 'HabitflowContracts.kt',
+    schemas: ['HabitSyncResponseSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

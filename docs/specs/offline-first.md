@@ -364,7 +364,10 @@ reading because of a chunk they never asked for (#332).
   `client_id`, LWW merge).
 - Sign-out keeps the account namespace on disk. There is no in-app "Remove this device's copy"
   control any more — the device page that offered it is withdrawn (ADR-0084) — so clearing site
-  data is the only way to drop it.
+  data is the only way to drop it. The app does the same (#768): its store is one database per
+  identity, and the identity it last resolved is remembered so the first frame opens the right
+  partition instead of waiting for a session check
+  ([ADR-0107](../adr/0107-the-habit-store-is-one-database-per-identity.md)).
 - Token refresh is deferred until reconnection.
 
 ## Storage & telemetry
@@ -372,7 +375,10 @@ reading because of a chunk they never asked for (#332).
 - `navigator.storage.persist()` is requested after a real save gesture **or** install, not install
   alone; a denial is honoured and means the store is evictable.
 - Public cache capped (~150 MB) with LRU eviction; **Owned data and the Outbox are never evicted**.
-- Android: Java `SharedPreferences` holds the FCM token; nothing else moves native.
+- Android: Java `SharedPreferences` holds the FCM token and the identity this device last
+  resolved; its rows moved off the document with the native store (#768), which keeps one SQLite
+  database per identity and remembers the partition so the first frame can open it before any
+  network answer ([ADR-0107](../adr/0107-the-habit-store-is-one-database-per-identity.md)).
 - Analytics/errors are best-effort, bounded and droppable; they share none of the Outbox guarantees.
 - **Every miss is counted by door** (ADR-0074, #474, and its 2026-10-30 amendment): the worker
   labels each one (`navigation-deadline`, `navigation-offline`, `navigation-prefix`,

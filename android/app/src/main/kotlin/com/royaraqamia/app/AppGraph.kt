@@ -10,6 +10,11 @@ import com.royaraqamia.app.session.SharedPreferencesStorage
 import com.royaraqamia.app.session.SignInOutcome
 import com.royaraqamia.app.session.SupabasePasswordGrant
 import com.royaraqamia.app.session.SupabaseTokenRefresher
+import com.royaraqamia.app.store.IdentityScopedStore
+import com.royaraqamia.app.store.PreferencesIdentityStorage
+import com.royaraqamia.app.store.habitflow.HabitDatabase
+import com.royaraqamia.app.store.habitflow.HabitStores
+import com.royaraqamia.app.store.habitflow.HabitflowRepository
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -22,12 +27,15 @@ import com.royaraqamia.app.session.SupabaseTokenRefresher
  * justify it.
  *
  * What it builds is the whole read path — Keystore-backed refresh storage, the
- * session on top of it, the one HTTP client, and the repository a screen asks —
- * so a screen never learns a URL, a key or how a token is kept.
+ * session on top of it, the one HTTP client, the Local Store, and the
+ * repository a screen asks — so a screen never learns a URL, a key, a file name
+ * or how a token is kept.
  */
 class AppGraph private constructor(
     val session: Session,
     val usage: UsageRepository,
+    val habitflow: HabitflowRepository,
+    private val databases: IdentityScopedStore<HabitStores>,
     private val grant: SupabasePasswordGrant,
 ) {
     /** Whether a request can be sent right now, without waiting on a refresh. */
@@ -47,8 +55,16 @@ class AppGraph private constructor(
         return outcome
     }
 
+    /**
+     * Ends the session and closes the store it was reading (#768).
+     *
+     * The close is not optional here: the next identity's first read opens its
+     * own database, and a connection left open under the previous account is the
+     * one way a row could be painted for the wrong person.
+     */
     suspend fun signOut() {
         session.signOut()
+        databases.close()
     }
 
     companion object {
@@ -61,12 +77,29 @@ class AppGraph private constructor(
          */
         fun create(context: Context, siteUrl: String, authUrl: String, anonKey: String): AppGraph {
             val store = EncryptedTokenStore(SharedPreferencesStorage(context), KeystoreTokenCipher())
-            val session = Session(store, SupabaseTokenRefresher(authUrl, anonKey))
+            val session =
+                Session(
+                    store = store,
+                    refresher = SupabaseTokenRefresher(authUrl, anonKey),
+                    identities = PreferencesIdentityStorage(context),
+                )
             val client = ApiClient(siteUrl, session)
+
+            // One database per identity, opened on first use and closed when the
+            // identity changes (ADR-0027, #768). The name is the web's, so a
+            // device dump reads the same on both clients.
+            val databases = IdentityScopedStore { identity -> HabitStores.open(context, identity) }
 
             return AppGraph(
                 session = session,
                 usage = UsageRepository(client),
+                habitflow =
+                    HabitflowRepository(
+                        databases = databases,
+                        identity = { session.storeIdentity },
+                        client = client,
+                    ),
+                databases = databases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
         }

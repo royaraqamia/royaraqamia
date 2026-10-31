@@ -1,10 +1,19 @@
 package com.royaraqamia.app.session
 
+import com.royaraqamia.app.store.Identity
+import com.royaraqamia.app.store.IdentityStorage
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** A pair as the auth server minted it. */
-data class TokenPair(val accessToken: String, val refreshToken: String)
+/**
+ * A pair as the auth server minted it, and the account it belongs to.
+ *
+ * `userId` travels with the pair because a sign-in and a refresh are the two
+ * moments the app learns whose rows are on this device (#768), and the identity
+ * a store opens under comes from the answer that just arrived rather than from a
+ * claim the client would have to parse.
+ */
+data class TokenPair(val accessToken: String, val refreshToken: String, val userId: String)
 
 /**
  * The signed-in state (#501): an access token in memory, a refresh token sealed
@@ -32,10 +41,17 @@ data class TokenPair(val accessToken: String, val refreshToken: String)
  *
  * The session holds no cookie jar and reads no cookie: every request carries the
  * token it was given (ADR-0089).
+ *
+ * **It also answers "whose rows are these"** (#768): the identity a Local Store
+ * opens under, remembered on disk so a launch with the radio off opens the right
+ * store before any refresh can answer. That remembered value is what
+ * [storeIdentity] returns, and a sign-out forgets it while leaving the rows on
+ * disk (ADR-0027).
  */
 class Session(
     private val store: TokenStore,
     private val refresher: TokenRefresher,
+    private val identities: IdentityStorage,
 ) {
     /** What a request sends, and the generation it was sent under. */
     data class Attempt(val accessToken: String, val generation: Int)
@@ -48,9 +64,30 @@ class Session(
     @Volatile
     private var generation: Int = 0
 
+    @Volatile
+    private var identity: Identity? = null
+
+    /**
+     * Read once, at construction, so the paint path costs no disk access: a cold
+     * launch's first frame asks [storeIdentity], not a preferences file.
+     */
+    @Volatile
+    private var remembered: Identity? = identities.read()
+
     /** Whether a request can be sent right now, without waiting for a refresh. */
     val signedIn: Boolean
         get() = accessToken != null
+
+    /**
+     * Whose rows this device holds: the account the current pair belongs to, or
+     * the one last resolved before this process started.
+     *
+     * A guest is the honest answer when neither is known — the same namespace a
+     * first launch writes into (ADR-0027). No lookup, no lock and no network, so
+     * a first frame can call it.
+     */
+    val storeIdentity: Identity
+        get() = identity ?: remembered ?: Identity.Guest
 
     /** The token to send, tagged with the generation a 401 will be judged against. */
     fun attempt(): Attempt? = accessToken?.let { Attempt(it, generation) }
@@ -98,8 +135,9 @@ class Session(
 
     /**
      * Drops the session. The rows the account owns stay on the device, unlinked
-     * from an identity rather than deleted (ADR-0070); this call is about the
-     * token, not the data.
+     * from an identity rather than deleted (ADR-0027); this call is about the
+     * token, not the data. The pointer to the namespace goes with it, so a guest
+     * session cannot paint the previous account's rows (#768).
      */
     suspend fun signOut() {
         mutex.withLock { signOutLocked() }
@@ -108,12 +146,19 @@ class Session(
     private fun adopt(pair: TokenPair) {
         accessToken = pair.accessToken
         store.write(pair.refreshToken)
+        val adopted = Identity.of(pair.userId)
+        identity = adopted
+        remembered = adopted
+        identities.write(adopted)
         generation += 1
     }
 
     private fun signOutLocked() {
         accessToken = null
+        identity = null
+        remembered = null
         store.clear()
+        identities.clear()
         generation += 1
     }
 }

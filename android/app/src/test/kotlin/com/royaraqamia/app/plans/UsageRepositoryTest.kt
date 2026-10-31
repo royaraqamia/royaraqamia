@@ -10,6 +10,7 @@ import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenPair
 import com.royaraqamia.app.session.TokenRefresher
+import com.royaraqamia.app.store.MemoryIdentityStorage
 import com.royaraqamia.app.support.RecordingTransport
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -48,8 +49,8 @@ class UsageRepositoryTest {
     private fun repository(transport: Transport): UsageRepository {
         val session =
             runBlocking {
-                Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused })
-                    .also { it.signIn(TokenPair("access-1", "refresh-1")) }
+                Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage())
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
             }
         return UsageRepository(ApiClient("https://app.test", session, transport))
     }

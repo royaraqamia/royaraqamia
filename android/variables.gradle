@@ -47,4 +47,15 @@ ext {
     // version here keeps the app's own code on one line instead of on whatever
     // the Compose classpath happens to bring.
     kotlinxCoroutinesVersion = '1.10.2'
+    // HabitFlow's Local Store (#768). Room rather than the framework's
+    // `SQLiteOpenHelper`: the schema is the migration, the exported schema is what
+    // makes a missing migration a build failure, and a DAO is testable without a
+    // device. `2.8.x` is the line that carries the KSP compiler and KMP artifacts.
+    roomVersion = '2.8.5'
+    // The store's DAO tests run on the JVM, not on an emulator (#768): a device
+    // is where a screen is checked, and what a DAO does with a row is not
+    // something to learn there. Robolectric supplies the Android runtime the
+    // database needs.
+    robolectricVersion = '4.17'
+    androidxTestCoreVersion = '1.7.0'
 }

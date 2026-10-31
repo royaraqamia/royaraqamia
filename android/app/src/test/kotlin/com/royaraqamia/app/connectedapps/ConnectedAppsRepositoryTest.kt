@@ -9,6 +9,7 @@ import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenPair
 import com.royaraqamia.app.session.TokenRefresher
+import com.royaraqamia.app.store.MemoryIdentityStorage
 import com.royaraqamia.app.support.RecordingTransport
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -39,8 +40,8 @@ class ConnectedAppsRepositoryTest {
     private fun repository(transport: RecordingTransport): ConnectedAppsRepository {
         val session =
             runBlocking {
-                Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused })
-                    .also { it.signIn(TokenPair("access-1", "refresh-1")) }
+                Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage())
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
             }
         return ConnectedAppsRepository(ApiClient("https://app.test", session, transport))
     }
@@ -73,7 +74,7 @@ class ConnectedAppsRepositoryTest {
 
     @Test
     fun `no session is a sign-in, not a failure`() {
-        val repository = ConnectedAppsRepository(ApiClient("https://app.test", runBlocking { Session(MemoryTokenStore("r"), TokenRefresher { RefreshOutcome.Refused }) }))
+        val repository = ConnectedAppsRepository(ApiClient("https://app.test", runBlocking { Session(MemoryTokenStore("r"), TokenRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage()) }))
 
         val result = runBlocking { repository.list() }
 
