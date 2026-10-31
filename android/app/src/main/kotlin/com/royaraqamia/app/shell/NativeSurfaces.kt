@@ -15,7 +15,7 @@ package com.royaraqamia.app.shell
  * area (`ShellFrame`).
  */
 object NativeSurfaces {
-    private val routes: Set<String> = emptySet()
+    private val routes: Set<String> = setOf("/habitflow")
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))

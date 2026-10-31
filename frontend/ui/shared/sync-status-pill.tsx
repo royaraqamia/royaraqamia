@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, CloudOff, RefreshCw } from 'lucide-react';
+import { TriangleAlert, CloudOff, RefreshCw } from 'lucide-react';
+import { SYNC_PILL_COPY } from './sync-status-pill-copy';
 
 /** The minimal sync shape any product's pill needs. */
 export interface SyncPillStatus {
@@ -40,12 +41,12 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         type="button"
         onClick={retry}
         title={failureDetail || undefined}
-        aria-label={failureDetail ? `فشل مزامنة ${failed}. آخر خطأ: ${failureDetail}` : undefined}
+        aria-label={failureDetail ? SYNC_PILL_COPY.retryFailed : undefined}
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-red-300/70 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs sm:text-sm font-bold shadow-sm transition-safe hover:bg-red-100 dark:hover:bg-red-950/70 active:scale-[0.97] cursor-pointer"
       >
-        <AlertTriangle className="w-4 h-4" />
-        <span>فشل مزامنة {failed} — إعادة المحاولة</span>
+        <TriangleAlert className="w-4 h-4" />
+        <span>{SYNC_PILL_COPY.failed.replace('{count}', String(failed))}</span>
       </button>
     );
   }
@@ -58,10 +59,10 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-300/80 dark:border-zinc-700/80 bg-zinc-100/80 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
         <CloudOff className="w-4 h-4" />
-        <span>
-          غير متَّصل
-          {pending > 0 && ` — ${pending} بانتظار المزامنة`}
-        </span>
+        <span>{SYNC_PILL_COPY.offline}</span>
+        {pending > 0 && (
+          <span>{SYNC_PILL_COPY.offlinePending.replace('{count}', String(pending))}</span>
+        )}
       </span>
     );
   }
@@ -75,12 +76,12 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         type="button"
         onClick={retryRefresh}
         title={refreshError}
-        aria-label={`تعذّر تحديث البيانات من الخادم. آخر خطأ: ${refreshError}`}
+        aria-label={SYNC_PILL_COPY.refreshFailed}
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-amber-300/70 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-sm transition-safe hover:bg-amber-100 dark:hover:bg-amber-950/70 active:scale-[0.97] cursor-pointer"
       >
         <RefreshCw className="w-4 h-4" />
-        <span>تعذّر التحديث — إعادة المحاولة</span>
+        <span>{SYNC_PILL_COPY.refreshFailed}</span>
       </button>
     );
   }
@@ -93,7 +94,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
         <RefreshCw className="w-4 h-4 animate-spin" />
-        <span>جاري المزامنة…</span>
+        <span>{SYNC_PILL_COPY.syncing}</span>
       </span>
     );
   }
@@ -105,7 +106,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-amber-300/70 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-sm"
       >
-        <span>بانتظار المزامنة ({pending})</span>
+        <span>{SYNC_PILL_COPY.pending.replace('{count}', String(pending))}</span>
       </span>
     );
   }

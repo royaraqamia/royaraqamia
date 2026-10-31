@@ -1,0 +1,23 @@
+{
+  "surface": "habitflow",
+  "component": "sync-status-pill",
+  "web": { "file": "frontend/ui/shared/sync-status-pill-copy.ts", "export": "SYNC_PILL_COPY" },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/sync/SyncPillCopy.kt",
+    "object": "SyncPillCopy"
+  },
+  "notes": {
+    "source": "The sync pill's words, in both clients (#649). The site's pill is the reference: it is where the app's needs-connection vocabulary comes from, and porting it is cheaper than inventing a second one beside it.",
+    "placeholders": "`{count}` is a number the client substitutes; the site renders it inside the sentence so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the pill does not render or a state the app declares and does not draw."
+  },
+  "strings": {
+    "offline": "غير متصل",
+    "offlinePending": "{count} بانتظار المزامنة",
+    "refreshFailed": "تعذر التحديث — تحقق من الاتصال",
+    "syncing": "جاري المزامنة...",
+    "failed": "فشل المزامنة ({count}) — إعادة المحاولة",
+    "pending": "بانتظار المزامنة ({count})",
+    "retryFailed": "إعادة محاولة المزامنة"
+  }
+}

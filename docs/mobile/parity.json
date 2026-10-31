@@ -3,6 +3,51 @@
   "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
+      "id": "habit-list",
+      "surface": "habitflow",
+      "issue": "#649",
+      "web": {
+        "route": "app/habitflow/(app)/page.tsx",
+        "component": "frontend/ui/habitflow/components/habitflow-list-shell.tsx",
+        "copyModule": "frontend/ui/habitflow/components/habitflow-copy.ts",
+        "copyExport": "HABITFLOW_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowCopy.kt",
+        "copyObject": "HabitflowCopy"
+      },
+      "copySource": "shared/copy/habitflow.json",
+      "states": [
+        { "name": "Painted", "copy": "listTitle" },
+        { "name": "Empty", "copy": "emptyTitle" }
+      ]
+    },
+    {
+      "id": "sync-status-pill",
+      "surface": "habitflow",
+      "issue": "#649",
+      "web": {
+        "route": "app/habitflow/(app)/page.tsx",
+        "component": "frontend/ui/shared/sync-status-pill.tsx",
+        "copyModule": "frontend/ui/shared/sync-status-pill-copy.ts",
+        "copyExport": "SYNC_PILL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/sync/SyncPill.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/sync/SyncPillState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/sync/SyncPillCopy.kt",
+        "copyObject": "SyncPillCopy"
+      },
+      "copySource": "shared/copy/sync-status-pill.json",
+      "states": [
+        { "name": "Offline", "copy": "offline" },
+        { "name": "RefreshFailed", "copy": "refreshFailed" },
+        { "name": "Syncing", "copy": "syncing" }
+      ]
+    },
+    {
       "id": "sign-in",
       "issue": "#770",
       "web": {

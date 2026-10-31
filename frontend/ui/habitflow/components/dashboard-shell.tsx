@@ -14,7 +14,6 @@ import {
   Upload,
   Calendar as CalendarIcon,
   Database,
-  ListChecks,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
@@ -32,6 +31,7 @@ import { SyncStatusPill } from '@/frontend/ui/habitflow/components/sync-status-p
 import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
+import { HabitflowListShell } from './habitflow-list-shell';
 
 const DAY_FORMS: PluralForms = { one: 'يوم', two: 'يومين', few: 'أيام', other: 'يوم' };
 
@@ -266,62 +266,24 @@ export function DashboardShell({
               className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6"
               aria-label="قائمة العادات"
             >
-              <div className="flex items-center justify-between gap-4 pb-2 border-b border-transparent">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-                    قائمة العادات
-                  </h2>
-                  {habits.length > 0 && (
-                    <span className="inline-flex items-center justify-center px-3 py-0.5 text-xs font-bold rounded-full bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 border border-zinc-300/50 dark:border-zinc-700/50">
-                      {habits.length}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <HabitflowListShell count={habits.length} />
 
-              {habits.length === 0 ? (
-                <m.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={
-                    shouldReduce ? undefined : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
-                  }
-                  className="relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-zinc-300/70 bg-linear-to-b from-zinc-50/80 to-transparent px-6 py-14 text-center dark:border-zinc-800 dark:from-zinc-900/50"
-                >
-                  <div className="relative mb-5">
-                    <div
-                      className="absolute -inset-3 rounded-full bg-primary/15 blur-2xl"
-                      aria-hidden="true"
-                    />
-                    <div className="relative flex size-16 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white text-primary shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                      <ListChecks className="size-7" aria-hidden="true" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-                    لا توجد عادات بعد
-                  </h3>
-                  <p className="mt-2 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                    لم تُسجَّل أي عادة في هذا اليوم بعد. ستظهر عاداتك هنا لتتابع تقدُّمك يوماً بيوم.
-                  </p>
-                </m.div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {habits.map((habit) => (
-                    <HabitCard
-                      key={habit.id}
-                      habit={habit}
-                      logs={logs}
-                      activeDate={activeDate}
-                      onToggle={handleToggleLog}
-                      onSkip={handleSkipHabit}
-                      onNote={setNoteHabitId}
-                      onEdit={openEditModal}
-                      togglingHabitId={togglingHabitId}
-                      pending={pendingHabitIds.has(habit.id)}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-col gap-4">
+                {habits.map((habit) => (
+                  <HabitCard
+                    key={habit.id}
+                    habit={habit}
+                    logs={logs}
+                    activeDate={activeDate}
+                    onToggle={handleToggleLog}
+                    onSkip={handleSkipHabit}
+                    onNote={setNoteHabitId}
+                    onEdit={openEditModal}
+                    togglingHabitId={togglingHabitId}
+                    pending={pendingHabitIds.has(habit.id)}
+                  />
+                ))}
+              </div>
             </section>
 
             {/* Calendar Grid Column */}
