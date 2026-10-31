@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { identity } from '@/backend/config/identity';
 import {
   loadNewsBoard,
+  NewsBoardReadError,
   parseNewsQuery,
   parseNewsView,
   type NewsViewer,
@@ -36,9 +37,10 @@ import type { NewsBoard } from '@/shared/contracts/news';
  * allows today gets an empty board with `limit` set instead of rows. A search is
  * not an open — it is the retained month, and it costs nothing.
  *
- * A board that fails to read is still an empty board here (`loadNewsBoard` says
- * so rather than throwing), so the page can tell "no digest yet" from "we could
- * not ask" only by whether the request resolved at all.
+ * A board that fails to read answers 503 with `no-store` and no board payload.
+ * That is what lets the page tell "no digest yet" from "we could not ask": the
+ * client's failure path names the failure and leaves the saved snapshot alone,
+ * where an empty 200 would have replaced it (#620).
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -56,11 +58,22 @@ export async function GET(request: NextRequest) {
   if (rateLimited) return toNextResponse(rateLimited);
 
   const viewer = await resolveViewer();
-  const board = await loadNewsBoard(
-    { q: query.q, category: query.category, date: query.date, view },
-    view,
-    viewer
-  );
+  let board: NewsBoard;
+  try {
+    board = await loadNewsBoard(
+      { q: query.q, category: query.category, date: query.date, view },
+      view,
+      viewer
+    );
+  } catch (error) {
+    if (error instanceof NewsBoardReadError) {
+      return NextResponse.json<{ success: false; error: string }>(
+        { success: false, error: error.message },
+        { status: 503, headers: NO_STORE }
+      );
+    }
+    throw error;
+  }
 
   // The page is always served; only the number of story cards follows the plan
   // (ADR-0093). A visitor sees one, Free five, Pro fifty.
