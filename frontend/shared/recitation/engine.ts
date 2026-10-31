@@ -10,6 +10,7 @@ import {
 } from '@/frontend/api/quran/audio';
 import { logRecitationFailure } from './log';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
+import { keepSurahPage } from '@/frontend/shared/local-store/text';
 import type { QuranAudioEdition, QuranAudioFile } from '@/shared/contracts/quran-audio';
 import {
   createRecitationMediaSession,
@@ -400,6 +401,10 @@ export class RecitationEngine implements RecitationPlayer {
         allowMetered: false,
         onProgress: (progress) => onProgress({ done: progress.done, total: progress.total }),
       });
+      // The page travels with the Recitation (#320): a surah that can be heard
+      // offline can be opened offline. It is not awaited and cannot fail the
+      // keep — the bytes are the part the reader watched download.
+      void keepSurahPage(surah);
       const saved =
         result.stored > 0 || result.reused > 0
           ? 'complete'
