@@ -57,7 +57,7 @@ describe('the sura index', () => {
 
 describe('the sura search box', () => {
   const type = (value: string) =>
-    fireEvent.change(screen.getByRole('textbox', { name: 'ابحث عن سُورة' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'ابحث في القرآن' }), {
       target: { value },
     });
 

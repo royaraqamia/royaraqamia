@@ -1,80 +1,24 @@
-'use client';
-
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
 
 import { revelationLabel } from './format';
 import type { SurahSummary } from '@/shared/contracts/quran';
 
 /**
- * The reader may type a name with the marks or without them, and with any of
- * the hamza spellings the same sound takes — so the comparison drops the marks
- * and folds the letters that only differ in how they are written.
- */
-function normalise(value: string): string {
-  return value
-    .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/ؤ/g, 'و')
-    .replace(/ئ/g, 'ي')
-    .trim();
-}
-
-/**
- * The 114 suras, narrowed by name as the reader types.
+ * The 114 suras as a grid, in the order of the text.
  *
- * The filter runs over the list the page already rendered, so it costs no
- * request and works offline like the text it filters. Searching the ayat
- * themselves is a separate concern (P4) and is not part of this.
+ * A presenter: the list it is handed is already the list to draw. The field that
+ * narrows it belongs to `QuranSearch`, which also filters the Ayat — one box that
+ * answers both questions rather than two that each answer half of one (P4).
+ *
+ * Each card is a plain link, so the index still works with no JavaScript at all;
+ * only the narrowing needs the client.
  */
 export function SurahIndexList({ surahs }: { surahs: readonly SurahSummary[] }) {
-  const [query, setQuery] = useState('');
-  const needle = normalise(query);
-
-  const visible = useMemo(
-    () => (needle ? surahs.filter((surah) => normalise(surah.name).includes(needle)) : surahs),
-    [needle, surahs]
-  );
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
-          aria-hidden="true"
-        />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="ابحث عن سُورة"
-          aria-label="ابحث عن سُورة"
-          autoComplete="off"
-          className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-        />
-
-        {query ? (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            className="absolute inset-e-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
-            aria-label="إلغاء البحث"
-          >
-            <X className="size-3" />
-          </button>
-        ) : null}
-      </div>
-
-      <p className="sr-only" role="status">
-        {needle ? `${visible.length} سورة مطابقة` : ''}
-      </p>
-
-      {visible.length > 0 ? (
+      {surahs.length > 0 ? (
         <nav aria-label="فهرس السُّوَر" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((surah) => (
+          {surahs.map((surah) => (
             <Link
               key={surah.n}
               href={`/quran/${surah.n}`}

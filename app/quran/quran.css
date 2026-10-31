@@ -176,3 +176,30 @@
 .ayah-tafsir-credit a {
   text-decoration: underline;
 }
+
+/* The Ayah the URL points at (P4): a search hit, a Bookmark, or «أكمل القراءة».
+   Drawn after the playing-Ayah rule on purpose — a landing place is the reader's
+   own choice, and it outlasts the Ayah being recited through it. */
+[data-ayah-target] {
+  border-radius: 0.5rem;
+  background-color: hsl(var(--primary) / 0.06);
+  box-shadow: inset 0 0 0 2px hsl(var(--primary) / 0.45);
+}
+
+/* The matched words inside a search hit. `mark` carries a UA background, so the
+   colour is stated rather than inherited. */
+.ayah-search-mark {
+  border-radius: 0.2em;
+  background-color: hsl(var(--primary) / 0.2);
+  color: inherit;
+  padding-inline: 0.08em;
+}
+
+.quran-search-retry {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  cursor: pointer;
+}

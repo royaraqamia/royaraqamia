@@ -3,6 +3,7 @@ import { Bookmark } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranReadingClient } from './quran-reading-client';
+import { AyahAnchorHighlight } from './ayah-highlight';
 import { AyahTafsir, QuranTafsirProvider } from './ayah-tafsir';
 import { revelationLabel } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
@@ -70,6 +71,7 @@ export function SurahReader({ surah, summary, audio, tafsir }: SurahReaderProps)
       </header>
 
       <QuranReadingClient surah={summary.n} bismillah={surah.bismillah} audio={audio}>
+        <AyahAnchorHighlight />
         <QuranTafsirProvider tafsir={tafsir}>
           {surah.ayahs.map((ayah, position) => {
             const number = position + 1;
