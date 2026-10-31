@@ -258,6 +258,10 @@ export function ScanPage() {
   /** The one place a decoded code becomes a result: camera and loop both stop. */
   function accept(code: DetectedCode) {
     if (!mayScan()) {
+      // A refusal is not a pause: leaving the loop stopped but the stream live
+      // mid-`scanning` keeps the camera on behind a preview that will never read
+      // another frame. Close it exactly as a hit does, then say why.
+      stopCamera();
       setLimitReached(true);
       return;
     }

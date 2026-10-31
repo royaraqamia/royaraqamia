@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DetectedCode } from '@/frontend/ui/scan/scan-worker';
+import { GUEST_IDENTITY } from '@/frontend/shared/local-store/identity';
+import { recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 
 const { detect, imageDataFromFile, verifyCertificate } = vi.hoisted(() => ({
   detect: vi.fn(),
@@ -187,5 +189,140 @@ describe('ScanPage camera denial', () => {
     const alert = await askForTheCamera();
     expect(alert).toHaveTextContent('إذن الكاميرا');
     expect(alert).not.toHaveTextContent('اسمح للموقع');
+  });
+});
+
+/**
+ * A spent allowance must close the camera, not strand it.
+ *
+ * The preview is a live `MediaStream`: refusing a Scan while leaving the loop
+ * stopped mid-`scanning` keeps the camera (and the phone's camera indicator) on
+ * behind a frame that will never decode again. The camera here is a fake whose
+ * every track records its own `stop()`, so "no live track" is asserted on the
+ * one call that makes a track dead.
+ */
+describe('ScanPage with the scan allowance spent', () => {
+  const restores: Array<() => void> = [];
+
+  /** A read-only DOM value jsdom reports as zero, pinned for the loop's sake. */
+  function pin(target: object, key: string, value: unknown) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    Object.defineProperty(target, key, { configurable: true, get: () => value });
+    restores.push(() => {
+      if (descriptor) Object.defineProperty(target, key, descriptor);
+      else delete (target as Record<string, unknown>)[key];
+    });
+  }
+
+  beforeEach(() => {
+    // One guest Scan is the whole daily allowance, so recording one spends it.
+    recordLocalUsage(GUEST_IDENTITY, 'scanner.scan');
+
+    // jsdom's frame clock is never driven, so the scan loop would not tick.
+    const frame = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => window.setTimeout(() => callback(performance.now()), 0));
+    const cancelFrame = vi
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation((handle) => window.clearTimeout(handle));
+    restores.push(() => {
+      frame.mockRestore();
+      cancelFrame.mockRestore();
+    });
+
+    // jsdom never plays a video and reports no frame size, so `tick()` would
+    // find nothing to hand the decoder. `readyState` lives on HTMLMediaElement,
+    // the frame size on HTMLVideoElement.
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined as never);
+    restores.push(() => play.mockRestore());
+    pin(HTMLMediaElement.prototype, 'readyState', 4);
+    pin(HTMLVideoElement.prototype, 'videoWidth', 1280);
+    pin(HTMLVideoElement.prototype, 'videoHeight', 720);
+
+    // jsdom has no 2D canvas, so a frame read is null and the loop would never
+    // reach the decoder. The pixels are irrelevant: `detect` is faked.
+    const context = {
+      drawImage: () => {},
+      getImageData: () => ({ data: new Uint8ClampedArray(4), width: 1, height: 1 }),
+      setTransform: () => {},
+      clearRect: () => {},
+      strokeRect: () => {},
+    } as unknown as CanvasRenderingContext2D;
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
+    restores.push(() => getContext.mockRestore());
+
+    detect.mockResolvedValue([code('https://example.com/a')]);
+  });
+
+  afterEach(() => {
+    for (const restore of restores.splice(0)) restore();
+  });
+
+  /** A camera whose stream carries one video track that can be told to stop. */
+  function openCamera() {
+    const track = { stop: vi.fn(), getCapabilities: () => ({}) };
+    const stream = { getTracks: () => [track], getVideoTracks: () => [track] };
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const previous = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia },
+      configurable: true,
+    });
+    restores.push(() => {
+      if (previous) Object.defineProperty(navigator, 'mediaDevices', previous);
+      else delete (navigator as unknown as Record<string, unknown>).mediaDevices;
+    });
+    return { track, getUserMedia };
+  }
+
+  function video(): HTMLVideoElement {
+    const element = document.querySelector('video');
+    if (!element) throw new Error('the preview is not mounted');
+    return element;
+  }
+
+  async function startScanning() {
+    fireEvent.click(screen.getByRole('button', { name: 'تشغيل الكاميرا' }));
+    await waitFor(() => expect(screen.getByText('وجِّه الرَّمز داخل الإطار…')).toBeInTheDocument());
+  }
+
+  it('stops the stream and returns to the idle frame when a Scan is refused', async () => {
+    const { track, getUserMedia } = openCamera();
+    render(<ScanPage />);
+
+    await startScanning();
+    await waitFor(() => expect(track.stop).toHaveBeenCalled());
+
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+    expect(video().srcObject).toBeNull();
+    expect(screen.queryByText('وجِّه الرَّمز داخل الإطار…')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تشغيل الكاميرا' })).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('حصَّتك');
+  });
+
+  it('refuses again and closes the camera again when the visitor retries', async () => {
+    const { track } = openCamera();
+    render(<ScanPage />);
+
+    await startScanning();
+    await waitFor(() => expect(track.stop).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'تشغيل الكاميرا' }));
+    await waitFor(() => expect(track.stop).toHaveBeenCalledTimes(2));
+
+    expect(video().srcObject).toBeNull();
+    expect(screen.queryByText('وجِّه الرَّمز داخل الإطار…')).not.toBeInTheDocument();
+  });
+
+  it('still shows the Scan Result when a permitted Scan reads a code', async () => {
+    window.localStorage.clear();
+    const { track } = openCamera();
+    render(<ScanPage />);
+
+    await startScanning();
+    await waitFor(() => expect(screen.getByText('example.com')).toBeInTheDocument());
+
+    expect(track.stop).toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
