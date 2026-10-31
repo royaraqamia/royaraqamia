@@ -26,6 +26,7 @@ import {
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import type { Category, RecurringExpense } from '@/shared/contracts/spendtrack';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
+import { localMonth } from '@/frontend/shared/spendtrack/local-date';
 
 export function RecurringExpenses({
   categories: serverCategories,
@@ -41,7 +42,7 @@ export function RecurringExpenses({
   const store = context?.store ?? null;
   const categories = store ? context!.categories : serverCategories;
   const rows = store ? context!.recurring : initialRecurring;
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = localMonth();
 
   async function handleDelete(item: RecurringExpense) {
     if (store) {

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import type { Category, Expense } from '@/shared/contracts/spendtrack';
 import { getCurrencyName, getCurrencySymbol, EXPENSE_CURRENCIES } from '@/shared/currency';
+import { localDate } from '@/frontend/shared/spendtrack/local-date';
 
 const expenseSchema = z.object({
   amount: z
@@ -57,6 +58,23 @@ const expenseSchema = z.object({
 const INHERIT_CURRENCY_VALUE = '__inherit';
 
 type ExpenseFormValues = z.input<typeof expenseSchema>;
+
+/**
+ * An empty create form, dated with the device's own calendar day. Called on
+ * every open and close rather than kept as a mount-time object: the dashboard is
+ * a long-lived offline surface, so a form opened after local midnight must not
+ * keep the day the page loaded on.
+ */
+function emptyExpenseForm(): ExpenseFormValues {
+  return {
+    amount: '',
+    category_id: '',
+    date: localDate(),
+    description: '',
+    currency: '',
+    splits: [],
+  };
+}
 
 export const CreateExpenseDialog = memo(function CreateExpenseDialog({
   categories,
@@ -83,14 +101,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     mode: 'onBlur',
-    defaultValues: {
-      amount: '',
-      category_id: '',
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      currency: '',
-      splits: [],
-    },
+    defaultValues: emptyExpenseForm(),
   });
 
   async function onSubmit(data: ExpenseFormValues) {
@@ -103,7 +114,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
     });
     if (ok) {
       setIsOpen(false);
-      reset();
+      reset(emptyExpenseForm());
     }
   }
 
@@ -112,7 +123,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
       open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
-        if (!open) reset();
+        reset(emptyExpenseForm());
       }}
     >
       {!hideTrigger && (
@@ -140,7 +151,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
             onSubmit={handleSubmit(onSubmit)}
             onCancel={() => {
               setIsOpen(false);
-              reset();
+              reset(emptyExpenseForm());
             }}
             register={register}
             control={control}
