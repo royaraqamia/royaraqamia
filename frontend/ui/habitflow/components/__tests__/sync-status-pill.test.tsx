@@ -1,7 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SyncStatusPill } from '@/frontend/ui/habitflow/components/sync-status-pill';
+import { SYNC_PILL_COPY } from '@/frontend/ui/shared/sync-status-pill-copy';
 import type { HabitSyncState } from '@/frontend/state/habitflow/use-habit-sync';
+
+/**
+ * The pill's words come from `shared/copy/sync-status-pill.json`, the source both
+ * clients draw (ADR-0098), so the assertions read the generated module rather than
+ * spelling the strings again. They did spell them, and went stale the moment the
+ * copy was rewritten — the retyped label failing an exact-text match is the hazard
+ * the generated source exists to remove.
+ */
+
+const withCount = (template: string, count: number) => template.replace('{count}', String(count));
 
 function state(overrides: Partial<HabitSyncState> = {}): HabitSyncState {
   return {
@@ -29,29 +40,29 @@ describe('SyncStatusPill', () => {
 
   it('persists the offline state even with nothing queued', () => {
     render(<SyncStatusPill status={state({ online: false })} />);
-    expect(screen.getByText(/غير متَّصل/)).toBeInTheDocument();
+    expect(screen.getByText(SYNC_PILL_COPY.offline)).toBeInTheDocument();
   });
 
   it('shows the pending count while offline', () => {
     render(<SyncStatusPill status={state({ online: false, pending: 3 })} />);
-    expect(screen.getByText(/3 بانتظار المزامنة/)).toBeInTheDocument();
+    expect(screen.getByText(withCount(SYNC_PILL_COPY.offlinePending, 3))).toBeInTheDocument();
   });
 
   it('shows a retry action on permanent failure and calls it', () => {
     const retry = vi.fn();
     render(<SyncStatusPill status={state({ failed: 2, retry })} />);
 
-    const button = screen.getByRole('button', { name: /إعادة المحاولة/ });
+    const button = screen.getByRole('button', { name: withCount(SYNC_PILL_COPY.failed, 2) });
     button.click();
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
   it('shows syncing and pending states', () => {
     const { rerender } = render(<SyncStatusPill status={state({ syncing: true })} />);
-    expect(screen.getByText('جاري المزامنة…')).toBeInTheDocument();
+    expect(screen.getByText(SYNC_PILL_COPY.syncing)).toBeInTheDocument();
 
     rerender(<SyncStatusPill status={state({ pending: 5 })} />);
-    expect(screen.getByText(/بانتظار المزامنة \(5\)/)).toBeInTheDocument();
+    expect(screen.getByText(withCount(SYNC_PILL_COPY.pending, 5))).toBeInTheDocument();
   });
 
   // #369: a pull that failed is not a failed write — nothing is queued, and the
@@ -64,7 +75,7 @@ describe('SyncStatusPill', () => {
       <SyncStatusPill status={state({ refreshError: 'sync responded 500', retry, retryRefresh })} />
     );
 
-    const button = screen.getByRole('button', { name: /تعذّر تحديث البيانات/ });
+    const button = screen.getByRole('button', { name: SYNC_PILL_COPY.refreshFailed });
     expect(button).toHaveAttribute('title', 'sync responded 500');
     button.click();
     expect(retryRefresh).toHaveBeenCalledTimes(1);
@@ -74,8 +85,8 @@ describe('SyncStatusPill', () => {
   it('never lets a failed refresh outrank a failed write', () => {
     render(<SyncStatusPill status={state({ failed: 2, refreshError: 'sync responded 500' })} />);
 
-    expect(screen.getByText(/فشل مزامنة 2/)).toBeInTheDocument();
-    expect(screen.queryByText(/تعذّر التحديث/)).not.toBeInTheDocument();
+    expect(screen.getByText(withCount(SYNC_PILL_COPY.failed, 2))).toBeInTheDocument();
+    expect(screen.queryByText(SYNC_PILL_COPY.refreshFailed)).not.toBeInTheDocument();
   });
 
   it('does not name a refresh failure it cannot retry', () => {
@@ -93,7 +104,7 @@ describe('SyncStatusPill', () => {
       <SyncStatusPill status={state({ online: false, refreshError: 'sync responded 500' })} />
     );
 
-    expect(screen.getByText(/غير متَّصل/)).toBeInTheDocument();
-    expect(screen.queryByText(/تعذّر التحديث/)).not.toBeInTheDocument();
+    expect(screen.getByText(SYNC_PILL_COPY.offline)).toBeInTheDocument();
+    expect(screen.queryByText(SYNC_PILL_COPY.refreshFailed)).not.toBeInTheDocument();
   });
 });

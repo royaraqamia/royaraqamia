@@ -8,11 +8,13 @@ import { fileURLToPath } from 'node:url';
  * a rendered frame cannot show.
  *
  * 1. **The workbench is not in the release APK.** It signs in and reads a real
- *    route, and it reads a project URL and key that belong to one machine, so a
- *    build that ships must contain neither the activity nor the values. That is
- *    true today because the activity is declared only in `src/debug` and the
- *    fields are declared only in the `debug` build type — and it stays true
- *    because this test fails if either moves.
+ *    route, so a build that ships must not contain the activity. That is true
+ *    today because it is declared only in `src/debug` — and it stays true because
+ *    this test fails if it moves. The values it signs in with are no longer
+ *    debug-only (#770): the project's URL and publishable key are committed public
+ *    configuration (`android/supabase.properties`) that every build type carries,
+ *    so what this suite guards now is that no project URL is spelled into source
+ *    instead.
  * 2. **The card's copy is the site's, and neither client spells it.** Arabic writes
  *    a letter's marks in more than one order; two spellings render the same and
  *    compare unequal, so a retyped label drifts silently until an exact-text test
@@ -58,16 +60,22 @@ describe('the workbench is a debug build', () => {
     }
   });
 
-  it('is the only reader of the debug-only project values', () => {
-    const mainSources = filesUnder(join(ANDROID, 'main'));
-    for (const path of mainSources) {
-      expect(readFileSync(path, 'utf8')).not.toContain('BuildConfig.SUPABASE');
-    }
+  it('reads the committed public config, and never spells a project URL', () => {
+    // #770 made the app sign in, so the project's URL and publishable key are a
+    // default-config field every build type carries — committed in
+    // `android/supabase.properties`, public by design (RLS is what protects a row),
+    // with `local.properties` overriding them per machine.
+    expect(buildGradle).toMatch(/buildConfigField "String", "SUPABASE_URL"/);
+    expect(buildGradle).toMatch(/buildConfigField "String", "SUPABASE_ANON_KEY"/);
+    expect(buildGradle).toContain('supabase.properties');
+    expect(buildGradle).toMatch(/localProperties\.getProperty\(key, supabaseProperties/);
 
-    // The fields exist for the debug build type, so a release build has no
-    // `BuildConfig.SUPABASE_URL` to read even if a screen tried to.
-    expect(buildGradle).toContain('debugSupabaseUrl');
-    expect(buildGradle).toMatch(/debug \{[\s\S]*?SUPABASE_URL[\s\S]*?\}/);
+    // What must still never happen is a project URL spelled into source: the value
+    // is configuration, and a hard-coded one is a build that cannot be pointed at
+    // another project.
+    for (const path of filesUnder(join(ANDROID, 'main'))) {
+      expect(readFileSync(path, 'utf8')).not.toMatch(/https:\/\/[a-z0-9]+\.supabase\.co/);
+    }
   });
 });
 
