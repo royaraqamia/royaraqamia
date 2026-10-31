@@ -123,7 +123,9 @@ export function renderWeb(source, where = `${SOURCE_DIR}/${source.component}.jso
     `export const ${name} = {`,
   ];
   for (const [key, value] of Object.entries(source.strings)) {
-    lines.push(`  ${key}: '${value.replace(/'/g, "\\'")}',`);
+    // Backslash first: escaping quotes ahead of it would let a value ending in
+    // `\` swallow the closing quote of the generated string literal.
+    lines.push(`  ${key}: '${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}',`);
   }
   lines.push('} as const;', '', `export type ${exportTypeName(name)} = typeof ${name};`, '');
   return { file, contents: lines.join('\n') };

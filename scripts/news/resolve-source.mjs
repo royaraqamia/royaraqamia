@@ -402,12 +402,14 @@ export function looksLikeFeed(text) {
 }
 
 function decodeAttribute(value) {
+  // `&amp;` last: unescaping it first would turn `&amp;lt;` into `&lt;` and then
+  // into `<`, decoding one level more than the document actually had.
   return value
-    .replace(/&amp;/gi, '&')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
     .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&');
 }
 
 /**

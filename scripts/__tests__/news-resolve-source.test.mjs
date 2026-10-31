@@ -212,6 +212,17 @@ describe('finding a feed', () => {
     ).toEqual(['https://example.com/atom']);
   });
 
+  it('unescapes an advertised href once, not twice', () => {
+    // `&amp;lt;` in the markup is the text `&lt;`, not `<`: decoding the
+    // ampersand first would decode the entity it had just produced as well.
+    expect(
+      findAdvertisedFeeds(
+        '<link rel="alternate" type="application/rss+xml" href="/feed?x=&amp;lt;&amp;amp;y">',
+        'https://example.com/news'
+      )
+    ).toEqual(['https://example.com/feed?x=&lt;&amp;y']);
+  });
+
   it('ignores a link that is not a feed type or not a public target', () => {
     expect(
       findAdvertisedFeeds(

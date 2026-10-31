@@ -27,7 +27,6 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = join(ROOT, 'docs', 'mobile', 'parity.json');
 const MATRIX = join(ROOT, 'perf', 'surfaces.json');
-const COPY_DIR = join(ROOT, 'shared', 'copy');
 const ICONS = join(ROOT, 'shared', 'icons', 'icons.json');
 const VECTORS = 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vectors/LucideVectors.kt';
 
