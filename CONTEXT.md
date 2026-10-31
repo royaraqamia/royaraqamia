@@ -275,8 +275,9 @@ The person whose recorded voice a Recitation is.
 _Avoid_: Reader, shaykh, artist, performer
 
 **Recitation**:
-One Surah as recorded by one Reciter, in a single uninterrupted track — the unit a reader plays,
-and the only asset fetched from outside our own origin.
+One Surah as recorded by one Reciter, vendored as published: one file per Ayah, so the Surah is a
+queue and the Ayah is what is played (ADR-0062). It is the only asset fetched from outside our own
+origin.
 _Avoid_: Audio, track, mp3, tilawa, sound file
 
 **Reading position**:
