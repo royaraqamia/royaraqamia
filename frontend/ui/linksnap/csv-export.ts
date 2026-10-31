@@ -1,4 +1,5 @@
 import type { AnalyticsExportRow } from '@/shared/contracts/linksnap';
+import { escapeCsvText } from '@/shared/csv';
 
 export function buildCsv(rows: AnalyticsExportRow[]): string {
   const header = ['Clicked At', 'Referrer', 'Country', 'Device', 'OS', 'Browser'];
@@ -6,24 +7,18 @@ export function buildCsv(rows: AnalyticsExportRow[]): string {
   rows.forEach((row) => {
     lines.push(
       [
-        escapeCell(row.clickedAt),
-        escapeCell(row.referrer),
-        escapeCell(row.ipCountry),
-        escapeCell(row.device),
-        escapeCell(row.os),
-        escapeCell(row.browser),
+        escapeCsvText(row.clickedAt),
+        // Anyone can choose the `Referer` header that the redirect records, so
+        // this cell reaches a spreadsheet with an attacker's content in it.
+        escapeCsvText(row.referrer),
+        escapeCsvText(row.ipCountry),
+        escapeCsvText(row.device),
+        escapeCsvText(row.os),
+        escapeCsvText(row.browser),
       ].join(',')
     );
   });
   return lines.join('\n');
-}
-
-function escapeCell(value: null | string): string {
-  if (value === null) return '';
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }
 
 export function downloadCsv(filename: string, content: string): void {
