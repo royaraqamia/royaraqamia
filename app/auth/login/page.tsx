@@ -116,10 +116,7 @@ function LoginForm() {
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
         {offline ? (
-          <NeedsConnection
-            variant="inline"
-            message={SIGN_IN_COPY.unreachable}
-          />
+          <NeedsConnection variant="inline" message={SIGN_IN_COPY.unreachable} />
         ) : (
           message && (
             <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs select-none">
@@ -187,12 +184,7 @@ function LoginForm() {
           <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>
         </Button>
 
-        {googleOffline && (
-          <NeedsConnection
-            variant="inline"
-            message={SIGN_IN_COPY.unreachable}
-          />
-        )}
+        {googleOffline && <NeedsConnection variant="inline" message={SIGN_IN_COPY.unreachable} />}
 
         {googleError && (
           <p className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
