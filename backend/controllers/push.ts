@@ -17,6 +17,7 @@ import {
 } from '@/shared/contracts/push';
 import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { damascusDateKey } from '@/shared/time';
 
 const SUBSCRIBE_RATE_LIMIT = 20;
 const SUBSCRIBE_RATE_WINDOW_MS = 3600_000;
@@ -97,10 +98,6 @@ export async function unsubscribePush(body: unknown, headers: Headers): Promise<
   } catch {
     return jsonResult(500, { success: false, error: 'فشل إلغاء الاشتراك' });
   }
-}
-
-function utcDateKey(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 /**
@@ -222,6 +219,10 @@ export async function wakeDevices(body: unknown, headers: Headers): Promise<Http
  * Webhook for DB-side producers (pg_net → habit reminders). The DB POSTs the
  * affected user ids; this verifies the shared bearer token, guards against
  * pg_net retries with a per-user per-day dedupe, then fans out the push.
+ *
+ * "Once a day" is a Damascus day, the day the reminder selection fires on: on
+ * the UTC day the key would flip at 03:00 local, handing a user a second
+ * reminder in one day — or collapsing two days into one.
  */
 export async function webhookPush(body: unknown, headers: Headers): Promise<HttpResult> {
   try {
@@ -249,7 +250,7 @@ export async function webhookPush(body: unknown, headers: Headers): Promise<Http
     // stretch past the function duration limit at scale.
     await mapWithConcurrency(uniqueIds, 10, async (userId) => {
       const allowed = await checkRateLimit(
-        `push:habit:${userId}:${utcDateKey()}`,
+        `push:habit:${userId}:${damascusDateKey()}`,
         1,
         WEBHOOK_RATE_WINDOW_MS
       );

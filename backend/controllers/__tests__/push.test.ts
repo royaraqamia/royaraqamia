@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
@@ -546,6 +546,95 @@ describe('push controller', () => {
       const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
 
       expect(result.status).toBe(500);
+    });
+
+    describe('the dedupe window follows the Damascus day', () => {
+      // A stand-in for Upstash: the first claim of a key wins, later ones are
+      // refused, so the assertions can talk about "notified once" instead of
+      // about the shape of the key.
+      function claimingStore(): void {
+        const claimed = new Set<string>();
+        mockCheckRateLimit.mockImplementation(async (key: string) => {
+          if (claimed.has(key)) return false;
+          claimed.add(key);
+          return true;
+        });
+      }
+
+      beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-10-30T12:00:00Z'));
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('notifies once for two runs on the same Damascus day', async () => {
+        claimingStore();
+        const { webhookPush } = await importControllers();
+
+        // 00:30 and 02:30 in Damascus, both on 31 October.
+        vi.setSystemTime(new Date('2026-10-30T21:30:00Z'));
+        const first = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+        vi.setSystemTime(new Date('2026-10-30T23:30:00Z'));
+        const second = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+
+        expect(first).toEqual(
+          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
+        );
+        expect(second).toEqual(
+          expect.objectContaining({ status: 202, body: { success: true, notified: 0 } })
+        );
+        expect(mockSendToUsers).toHaveBeenCalledTimes(1);
+      });
+
+      it('notifies twice when the runs straddle Damascus midnight', async () => {
+        claimingStore();
+        const { webhookPush } = await importControllers();
+
+        // 23:59 on 30 October, then 00:01 on 31 October in Damascus — one UTC
+        // day, two Damascus days, so the second reminder must go out.
+        vi.setSystemTime(new Date('2026-10-30T20:59:00Z'));
+        const first = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+        vi.setSystemTime(new Date('2026-10-30T21:01:00Z'));
+        const second = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+
+        expect(first).toEqual(
+          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
+        );
+        expect(second).toEqual(
+          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
+        );
+        expect(mockSendToUsers).toHaveBeenCalledTimes(2);
+      });
+
+      it('keys the dedupe on the Damascus day, not the UTC day', async () => {
+        claimingStore();
+        const { webhookPush } = await importControllers();
+
+        // 00:30 in Damascus on 31 October, still 30 October in UTC.
+        vi.setSystemTime(new Date('2026-10-30T21:30:00Z'));
+        await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+
+        expect(mockCheckRateLimit).toHaveBeenCalledWith(
+          `push:habit:${uuid}:2026-10-31`,
+          1,
+          24 * 60 * 60 * 1000
+        );
+      });
+
+      it('still collapses a repeated user id inside one payload', async () => {
+        claimingStore();
+        const { webhookPush } = await importControllers();
+
+        const result = await webhookPush({ user_ids: [uuid, uuid, uuid2] }, bearerHeaders());
+
+        expect(result).toEqual(
+          expect.objectContaining({ status: 202, body: { success: true, notified: 2 } })
+        );
+        expect(mockSendToUsers).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });
