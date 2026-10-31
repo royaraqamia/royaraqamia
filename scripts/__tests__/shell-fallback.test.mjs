@@ -34,11 +34,26 @@ function inlineScript(source) {
   return close < 0 ? '' : source.slice(body + 1, close);
 }
 
+/**
+ * The document's markup with its one inline script cut out by offsets, the same
+ * way `inlineScript` takes the script: a regexp that tries to match `<script>`
+ * end tags is the thing CodeQL flags, and this page has exactly one script.
+ */
+function withoutInlineScript(source) {
+  const open = source.toLowerCase().indexOf('<script');
+  if (open < 0) return source;
+  const body = source.indexOf('>', open);
+  if (body < 0) return source;
+  const close = source.toLowerCase().indexOf('</script', body + 1);
+  if (close < 0) return source;
+  const end = source.indexOf('>', close);
+  return source.slice(0, open) + source.slice(end < 0 ? close : end + 1);
+}
+
 const pageScript = inlineScript(html);
 /** What a reader of the document sees: the body without its script. */
 const body = html.slice(html.indexOf('<body'), html.lastIndexOf('</body>'));
-const bodyText = body
-  .replace(/<script[\s\S]*?<\/script>/gi, '')
+const bodyText = withoutInlineScript(body)
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();

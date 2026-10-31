@@ -94,6 +94,14 @@ describe('the two outputs', () => {
       'shared/copy/plan-card.json'
     );
   });
+
+  it('escape a backslash as well as a quote, so the literal re-reads as the string', () => {
+    // `validate` refuses both in a committed source, but `renderWeb` is exported
+    // and a quote escaped ahead of the backslash it follows would let a value
+    // ending in `\` swallow the literal's closing quote.
+    const risky = { ...source, strings: { a: "it's \\ fine" } };
+    expect(renderWeb(risky).contents).toContain(String.raw`  a: 'it\'s \\ fine',`);
+  });
 });
 
 describe('the committed outputs', () => {

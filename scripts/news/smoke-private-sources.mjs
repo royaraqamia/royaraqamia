@@ -19,6 +19,8 @@
  * is a skip), 1 when an assertion failed. The failing check is named.
  */
 
+import { randomBytes } from 'node:crypto';
+
 const PROJECT_URL = (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '')
   .trim()
   .replace(/\/+$/, '');
@@ -26,7 +28,11 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 
 const TIMEOUT_MS = 20_000;
-const random = () => Math.random().toString(36).slice(2, 10);
+/**
+ * Eight random hex characters. The password below is a credential — even a
+ * disposable one — so it comes from the CSPRNG rather than `Math.random()`.
+ */
+const random = () => randomBytes(8).toString('hex').slice(0, 8);
 
 function headers(token, extra = {}) {
   return {
