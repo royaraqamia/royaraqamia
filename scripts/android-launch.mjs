@@ -13,13 +13,15 @@
  * which is the point: the splash and that frame are one colour now, so what is
  * timed is the frame a person sees.
  *
- * A cold run is `am force-stop` first, so the process really is dead. A warm run
- * sends the app home and brings it back with the process alive; what the platform
- * then reports is either `WARM` (activity recreated — the budget's own case, which
- * a device with "Don't keep activities" enabled in developer options produces) or
- * `HOT` (the activity resumed from the background, which is the floor rather than
- * the case). The script prints which it saw and never pretends a `COLD` run was a
- * `WARM` one.
+ * A cold run is `am start -S`, which stops the process as part of the start: a
+ * separate `am force-stop` first is not enough on Android 13, where starting the
+ * launcher with its task still at the front answers "brought to the front", prints
+ * no `TotalTime` and is not a launch at all. A warm run sends the app home and
+ * brings it back with the process alive; what the platform then reports is either
+ * `WARM` (activity recreated — the budget's own case, which a device with "Don't
+ * keep activities" enabled in developer options produces) or `HOT` (the activity
+ * resumed from the background, which is the floor rather than the case). The
+ * script prints which it saw and never pretends a `COLD` run was a `WARM` one.
  *
  * Usage:
  *   npm run android:launch                     # 3 runs, default device
@@ -48,10 +50,14 @@ export const LAUNCH_ACTIVITY = '.shell.ShellActivity';
 export const BUDGET = { cold: 400, warm: 300 };
 /** How many runs the median is taken over by default. */
 export const RUNS = 3;
-/** Time for the process to actually die after `am force-stop`. */
-export const COLD_SETTLE_MS = 1000;
-/** Time for the app to reach the background after the HOME key. */
-export const WARM_SETTLE_MS = 400;
+/** How long the app is given to leave the foreground after the HOME key. */
+export const HOME_TIMEOUT_MS = 3000;
+/** How often that is checked, while it is still in front. */
+export const HOME_POLL_MS = 150;
+/** How long the home transition is given after it lands: the task is modal for a moment. */
+export const HOME_SETTLE_MS = 700;
+/** How long `am force-stop` is given to actually remove the process. */
+export const PROCESS_DEATH_TIMEOUT_MS = 3000;
 
 /**
  * The options, from argv.
@@ -154,21 +160,41 @@ function adb(adbPath, device, args) {
   return `${result.stdout ?? ''}${result.stderr ?? ''}`;
 }
 
+/**
+ * A device-side command whose exit status is an answer, not a failure.
+ *
+ * `pidof` exits 1 when nothing matches, which is exactly the "the process is
+ * gone" this script is waiting for.
+ */
+function shell(adbPath, device, args) {
+  const prefix = device ? ['-s', device] : [];
+  const result = spawnSync(adbPath, [...prefix, 'shell', ...args], { encoding: 'utf8' });
+  if (result.error) throw result.error;
+  return `${result.stdout ?? ''}${result.stderr ?? ''}`;
+}
+
 /** A synchronous pause: the runs are sequential, and nothing else needs the loop. */
 function sleep(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+/**
+ * The `am start` arguments, with or without the stop-before-start.
+ *
+ * A cold run is a real stop: `am force-stop`, the process waited out, then the
+ * launcher started from the home screen. `am start -S` looks equivalent and is
+ * not — on Android 13 it raced and reported a `WARM` launch, which would have
+ * been recorded as a cold number. A start while the activity is still resumed is
+ * a no-op (`LaunchState: UNKNOWN`, no `TotalTime`), so both paths wait for the
+ * home screen before starting.
+ */
+export function startArgs() {
+  return ['shell', 'am', 'start', '-W', '-n', `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`];
+}
+
 /** One launch, with the reading the platform printed. */
 function launch(adbPath, device) {
-  const stdout = adb(adbPath, device, [
-    'shell',
-    'am',
-    'start',
-    '-W',
-    '-n',
-    `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`,
-  ]);
+  const stdout = adb(adbPath, device, startArgs());
   const reading = parseAmStart(stdout);
   if (reading.totalTime === null) {
     throw new Error(`am start printed no TotalTime:\n${stdout.trim()}`);
@@ -178,7 +204,8 @@ function launch(adbPath, device) {
 
 function coldRun(adbPath, device) {
   adb(adbPath, device, ['shell', 'am', 'force-stop', PACKAGE_ID]);
-  sleep(COLD_SETTLE_MS);
+  waitUntilDead(adbPath, device);
+  background(adbPath, device);
   const reading = launch(adbPath, device);
   if (reading.state !== 'COLD') {
     throw new Error(
@@ -190,13 +217,56 @@ function coldRun(adbPath, device) {
 }
 
 function warmRun(adbPath, device) {
-  adb(adbPath, device, ['shell', 'input', 'keyevent', 'KEYCODE_HOME']);
-  sleep(WARM_SETTLE_MS);
+  background(adbPath, device);
   const reading = launch(adbPath, device);
   if (reading.state === 'COLD') {
     throw new Error('a warm run came back COLD: the process died between runs');
   }
   return reading;
+}
+
+/** The process really is gone, not merely asked to stop. */
+function waitUntilDead(adbPath, device) {
+  const deadline = Date.now() + PROCESS_DEATH_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const pid = shell(adbPath, device, ['pidof', PACKAGE_ID]).trim();
+    if (pid === '') return;
+    sleep(HOME_POLL_MS);
+  }
+  throw new Error(
+    `${PACKAGE_ID} was still running ${PROCESS_DEATH_TIMEOUT_MS} ms after force-stop`
+  );
+}
+
+/**
+ * Whether our activity is the one the platform resumed.
+ *
+ * A start while it is resumed is a no-op — the platform answers `LaunchState:
+ * UNKNOWN` with no `TotalTime` — so the warm run waits for the HOME key to land
+ * rather than trusting a fixed sleep.
+ */
+function isForeground(adbPath, device) {
+  const resumed = adb(adbPath, device, [
+    'shell',
+    'dumpsys activity activities | grep ResumedActivity',
+  ]);
+  return resumed.includes(`${PACKAGE_ID}/`);
+}
+
+function background(adbPath, device) {
+  adb(adbPath, device, ['shell', 'input', 'keyevent', 'KEYCODE_HOME']);
+  const deadline = Date.now() + HOME_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    sleep(HOME_POLL_MS);
+    if (!isForeground(adbPath, device)) {
+      // The task is still modal for a moment after the launcher is resumed: a
+      // start inside that window answers UNKNOWN with no TotalTime, which is not
+      // a measurement.
+      sleep(HOME_SETTLE_MS);
+      return;
+    }
+  }
+  throw new Error('the app did not leave the foreground after the HOME key');
 }
 
 function report(cold, warm, { budget }) {
