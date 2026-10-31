@@ -389,7 +389,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
         onClick={() => void onDelete(notification.id)}
         aria-label="حذف الإشعار"
         className={cn(
-          'absolute top-3 inset-inline-end-3 rounded-lg p-1.5 text-muted-foreground/70 transition-safe duration-150',
+          'absolute top-3 end-3 rounded-lg p-1.5 text-muted-foreground/70 transition-safe duration-150',
           'hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive',
           'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
         )}
