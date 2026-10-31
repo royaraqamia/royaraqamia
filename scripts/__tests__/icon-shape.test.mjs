@@ -210,7 +210,7 @@ describe('the logo is one shape on every surface', () => {
         drifts.push('AppTheme.NoActionBarLaunch: parent must be Theme.SplashScreen');
       }
       for (const item of [
-        '<item name="windowSplashScreenBackground">#0f172a</item>',
+        '<item name="windowSplashScreenBackground">@color/roy_background</item>',
         '<item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>',
         '<item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>',
       ]) {
