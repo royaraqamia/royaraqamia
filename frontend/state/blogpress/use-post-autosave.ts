@@ -15,6 +15,19 @@ export type PostPersist = (fields: {
   meta_desc: string;
 }) => Promise<boolean>;
 
+type PostFields = Parameters<PostPersist>[0];
+
+/** Whether a write's snapshot still matches what the editor currently holds. */
+function fieldsEqual(a: PostFields, b: PostFields): boolean {
+  return (
+    a.slug === b.slug &&
+    a.content === b.content &&
+    a.cover_image === b.cover_image &&
+    a.meta_title === b.meta_title &&
+    a.meta_desc === b.meta_desc
+  );
+}
+
 export function usePostAutosave(post: Post, persist?: PostPersist) {
   const [content, setContent] = useState(post.content ?? '');
   const [slug, setSlug] = useState(post.slug);
@@ -34,22 +47,31 @@ export function usePostAutosave(post: Post, persist?: PostPersist) {
   const isSavingRef = useRef(false);
   const persistRef = useRef(persist);
   persistRef.current = persist;
+  // A save that lands while the editor holds newer text asks for one more
+  // flush once it settles; this holds that queued timer (and lets unmount drop it).
+  const reflushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveAllFieldsRef = useRef<() => Promise<void>>(async () => {});
 
+  // One sync for every draft field, so a write compares its snapshot against the
+  // latest committed render rather than a mixture of them.
   useEffect(() => {
     contentRef.current = content;
-  }, [content]);
-  useEffect(() => {
     slugRef.current = slug;
-  }, [slug]);
-  useEffect(() => {
     coverImageRef.current = coverImage;
-  }, [coverImage]);
-  useEffect(() => {
     metaTitleRef.current = metaTitle;
-  }, [metaTitle]);
-  useEffect(() => {
     metaDescRef.current = metaDesc;
-  }, [metaDesc]);
+  }, [content, slug, coverImage, metaTitle, metaDesc]);
+
+  const readFields = useCallback(
+    (): PostFields => ({
+      slug: slugRef.current,
+      content: contentRef.current,
+      cover_image: coverImageRef.current,
+      meta_title: metaTitleRef.current,
+      meta_desc: metaDescRef.current,
+    }),
+    []
+  );
 
   // A ref that tracks whether the user edited anything since mount, so the
   // debounce never fires a redundant save on initial load.
@@ -67,29 +89,28 @@ export function usePostAutosave(post: Post, persist?: PostPersist) {
     if (!isDirtyRef.current || isSavingRef.current) return;
     isSavingRef.current = true;
     setIsSaving(true);
-    const fields = {
-      slug: slugRef.current,
-      content: contentRef.current,
-      cover_image: coverImageRef.current,
-      meta_title: metaTitleRef.current,
-      meta_desc: metaDescRef.current,
-    };
+    // The snapshot this write is responsible for. Anything typed from here on
+    // is not covered by its success, however the write resolves.
+    const written = readFields();
+    let saved = false;
     try {
       // Local-first: when the editor hands us a Local Store writer, the write
       // lands in IndexedDB and an Outbox intent carries it to the server.
       if (persistRef.current) {
-        const saved = await persistRef.current(fields);
-        if (saved) {
-          isDirtyRef.current = false;
-          setIsDirty(false);
-          setLastSaved(new Date());
-        }
+        saved = await persistRef.current(written);
       } else {
-        const result = await updatePost(post.id, fields);
-        if (result?.message === 'تمَّ حفظ المنشور') {
+        const result = await updatePost(post.id, written);
+        saved = result?.message === 'تمَّ حفظ المنشور';
+      }
+      if (saved) {
+        setLastSaved(new Date());
+        // Only the fields that actually reached storage may be marked clean: an
+        // edit typed while the write was in flight is still unsaved, and its own
+        // debounce either already fired against `isSavingRef` or is about to see
+        // the ref cleared.
+        if (fieldsEqual(written, readFields())) {
           isDirtyRef.current = false;
           setIsDirty(false);
-          setLastSaved(new Date());
         }
       }
     } catch {
@@ -97,8 +118,29 @@ export function usePostAutosave(post: Post, persist?: PostPersist) {
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
+      // A successful write that did not cover the current fields leaves the hook
+      // dirty with no timer of its own: flush once, once this save has settled.
+      // A failed write is left to the next edit or explicit save, as before.
+      if (saved && isDirtyRef.current && reflushTimerRef.current === null) {
+        reflushTimerRef.current = setTimeout(() => {
+          reflushTimerRef.current = null;
+          void saveAllFieldsRef.current();
+        }, 0);
+      }
     }
-  }, [post.id]);
+  }, [post.id, readFields]);
+
+  saveAllFieldsRef.current = saveAllFields;
+
+  useEffect(
+    () => () => {
+      if (reflushTimerRef.current !== null) {
+        clearTimeout(reflushTimerRef.current);
+        reflushTimerRef.current = null;
+      }
+    },
+    []
+  );
 
   const markSaved = useCallback(() => {
     isDirtyRef.current = false;
