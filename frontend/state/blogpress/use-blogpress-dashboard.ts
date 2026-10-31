@@ -19,6 +19,7 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { markContent } from '@/frontend/shared/perf-marks';
 import type { Post } from '@/shared/contracts/blogpress';
@@ -38,6 +39,10 @@ const SYNC_HINT_TABLES = ['posts'] as const;
 interface DashboardSyncState extends SyncStatus {
   online: boolean;
   retry: () => void;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 export interface BlogpressDashboardState {
@@ -103,6 +108,14 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
   const [status, setStatus] = useState<SyncStatus>(IDLE);
   const [online, setOnline] = useState(isOnline);
   const engineRef = useRef<BlogpressSyncEngine | null>(null);
+  // `refresh` below repaints from the store; the pull's own failure is tracked
+  // separately so the two cannot be confused.
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
   const ready = readyFor === identity;
 
   useEffect(() => {
@@ -126,6 +139,10 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Another identity, another history: the previous writer's failed pull is
+    // not this one's.
+    clearRefresh();
 
     let cancelled = false;
     let opened: BlogpressLocalStore | null = null;
@@ -164,7 +181,7 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
       cancelled = true;
       opened?.close();
     };
-  }, [identity, isGuest, readIntoState]);
+  }, [identity, isGuest, readIntoState, clearRefresh]);
 
   useEffect(() => {
     if (!store || isGuest) return;
@@ -178,12 +195,12 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
 
     const pull = async () => {
       if (!isOnline()) return;
-      try {
+      // A rejection is recorded rather than logged and dropped, so the pill can
+      // say the list may be behind the account (#369).
+      await runRefresh(async () => {
         await pullBlogpressData(store);
         await readIntoState(store);
-      } catch (error) {
-        logger.warn('BlogPress pull failed', { error: String(error) });
-      }
+      }, 'BlogPress pull failed');
     };
 
     const runSync = async () => {
@@ -224,7 +241,7 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
       engine.dispose();
       engineRef.current = null;
     };
-  }, [store, authorId, isGuest, readIntoState]);
+  }, [store, authorId, isGuest, readIntoState, runRefresh]);
 
   const retry = useCallback(() => {
     void engineRef.current?.retry();
@@ -243,7 +260,13 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
   return {
     ready: ready || snapshot !== null,
     posts: ready ? posts : (snapshot?.posts ?? []),
-    sync: { ...status, online, retry },
+    sync: {
+      ...status,
+      online,
+      retry,
+      refreshError,
+      retryRefresh,
+    },
     refresh,
   };
 }

@@ -6,8 +6,8 @@ import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
-import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 /**
@@ -27,6 +27,10 @@ export interface HabitSyncState extends SyncStatus {
   /** `${habitId}#${date}` keys of habit-log changes not yet on the server. */
   pendingLogKeys: ReadonlySet<string>;
   retry: () => void;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 const IDLE: SyncStatus = {
@@ -59,6 +63,12 @@ export function useHabitSync(
   const engineRef = useRef<HabitSyncEngine | null>(null);
   const refreshRef = useRef(onRemoteChange);
   refreshRef.current = onRemoteChange;
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   // Connection state drives the always-visible pill; it is independent of the
   // account gate so a guest still sees whether the device is offline.
@@ -104,6 +114,7 @@ export function useHabitSync(
     if (!store || !isSignedIn) {
       engineRef.current = null;
       setStatus(IDLE);
+      clearRefresh();
       return;
     }
 
@@ -116,14 +127,14 @@ export function useHabitSync(
 
     const pull = async () => {
       if (!isOnline()) return;
-      try {
-        // The same pull the background tier runs (ADR-0060): this hook owns
-        // *when*, `pullHabitData` owns *how*.
+      // The same pull the background tier runs (ADR-0060): this hook owns
+      // *when*, `pullHabitData` owns *how*. A rejection is recorded rather than
+      // logged and dropped, so the pill can say the read may be behind the
+      // account (#369).
+      await runRefresh(async () => {
         await pullHabitData(store);
         refreshRef.current();
-      } catch (error) {
-        logger.warn('HabitFlow pull failed', { error: String(error) });
-      }
+      }, 'HabitFlow pull failed');
     };
 
     const runSync = async () => {
@@ -164,7 +175,7 @@ export function useHabitSync(
       engine.dispose();
       engineRef.current = null;
     };
-  }, [store, isSignedIn]);
+  }, [store, isSignedIn, clearRefresh, runRefresh]);
 
   const { pendingHabitIds, pendingLogKeys } = useMemo(() => {
     const habitIds = new Set<string>();
@@ -187,5 +198,14 @@ export function useHabitSync(
     void engineRef.current?.retry();
   }, []);
 
-  return { ...status, online, entries, pendingHabitIds, pendingLogKeys, retry };
+  return {
+    ...status,
+    online,
+    entries,
+    pendingHabitIds,
+    pendingLogKeys,
+    retry,
+    refreshError,
+    retryRefresh,
+  };
 }

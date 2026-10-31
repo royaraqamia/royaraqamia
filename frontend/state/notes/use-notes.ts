@@ -14,6 +14,7 @@ import {
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { markContent } from '@/frontend/shared/perf-marks';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
@@ -39,6 +40,10 @@ export interface NotesStoreState {
   lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 const EMPTY_STATUS: SyncStatus = {
@@ -74,6 +79,12 @@ export function useNotes(): NotesStoreState {
 
   const storeRef = useRef<NotesLocalStore | null>(null);
   const engineRef = useRef<NotesSyncEngine | null>(null);
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   const { identity, isLoading } = useLocalIdentity();
   const isSignedIn = identity !== GUEST_IDENTITY;
@@ -95,13 +106,11 @@ export function useNotes(): NotesStoreState {
   const pullServer = useCallback(
     async (target: NotesLocalStore) => {
       if (!isSignedIn) return;
-      try {
-        await pullNotesData(target);
-      } catch (error) {
-        logger.error('Failed to reconcile notes with the server', { error: String(error) });
-      }
+      // A rejection is recorded instead of logged and dropped, so the pill can
+      // say the read may be behind the account (#369).
+      await runRefresh(() => pullNotesData(target), 'Failed to reconcile notes with the server');
     },
-    [isSignedIn]
+    [isSignedIn, runRefresh]
   );
 
   /** Pulls from the server and repaints from the store. */
@@ -114,6 +123,11 @@ export function useNotes(): NotesStoreState {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Another identity, another history: the previous reader's failed pull is
+    // not this one's.
+    clearRefresh();
+
     let cancelled = false;
     let opened: NotesLocalStore | null = null;
     let engine: NotesSyncEngine | null = null;
@@ -246,7 +260,9 @@ export function useNotes(): NotesStoreState {
       lastFailedType: status.lastFailedType,
       retry,
       refresh,
+      refreshError,
+      retryRefresh,
     }),
-    [ready, online, isSignedIn, store, notes, status, retry, refresh]
+    [ready, online, isSignedIn, store, notes, status, retry, refresh, refreshError, retryRefresh]
   );
 }

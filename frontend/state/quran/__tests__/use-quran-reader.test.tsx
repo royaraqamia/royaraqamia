@@ -157,6 +157,40 @@ describe('useQuranReader', () => {
     await waitFor(() => expect(sentTypes).toContain('bookmark.set'));
   });
 
+  /**
+   * #369: the reader used to log a failed pull and go on painting, so a stale
+   * place looked like a fresh one. The failure now reaches the pill's state, the
+   * rows already on the device are untouched, and the retry re-runs the pull
+   * rather than the Outbox.
+   */
+  it('surfaces a failed pull and retries it, leaving the device rows alone', async () => {
+    sessionUser = { id: 'u-1' };
+    vi.mocked(pullQuranSync).mockRejectedValue(new Error('sync responded 500'));
+
+    const { result } = renderHook(() => useQuranReader());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+
+    await waitFor(() => expect(result.current.refreshError).toBe('sync responded 500'));
+    expect(result.current.failed).toBe(0);
+
+    // The next pull works: the error clears and the record lands.
+    vi.mocked(pullQuranSync).mockResolvedValue({
+      position: { surah: 36, ayah: 1, updatedAt: '2026-10-31T08:00:00.000Z' },
+      bookmarks: [],
+      cursor: '2026-10-31T08:00:00.000Z',
+    });
+    const before = vi.mocked(pullQuranSync).mock.calls.length;
+    await act(async () => {
+      result.current.retryRefresh();
+    });
+
+    await waitFor(() => expect(vi.mocked(pullQuranSync).mock.calls.length).toBe(before + 1));
+    await waitFor(() => expect(result.current.refreshError).toBeNull());
+    await waitFor(() =>
+      expect(result.current.readingPosition).toMatchObject({ surah: 36, ayah: 1 })
+    );
+  });
+
   it('pulls when a hint says another device wrote', async () => {
     sessionUser = { id: 'u-1' };
     const { result } = renderHook(() => useQuranReader());
