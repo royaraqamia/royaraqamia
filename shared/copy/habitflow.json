@@ -1,7 +1,10 @@
 {
   "surface": "habitflow",
   "component": "habit-list",
-  "web": { "file": "frontend/ui/habitflow/components/habitflow-copy.ts", "export": "HABITFLOW_COPY" },
+  "web": {
+    "file": "frontend/ui/habitflow/components/habitflow-copy.ts",
+    "export": "HABITFLOW_COPY"
+  },
   "native": {
     "file": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowCopy.kt",
     "object": "HabitflowCopy"
