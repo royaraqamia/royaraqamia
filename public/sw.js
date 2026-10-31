@@ -590,6 +590,19 @@ const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
  */
 const AUDIO_CACHE = 'quran-audio-v1';
 
+/**
+ * The Quran's kept pages (#320), written by the page
+ * (`frontend/shared/local-store/text.ts`). Playing a surah keeps its Recitation
+ * (ADR-0083); the page rides along so a surah that can be heard offline can be
+ * opened offline — the install precaches none of the 114 documents, because
+ * they are 17 MiB and the route cap would have to rise from 32 to ~146
+ * (ADR-0071). This worker answers a navigation to a kept page from it, refreshes
+ * a kept copy when the network answers, and — like the audio bucket — must not
+ * let activation delete it. The name is asserted against that module by
+ * `frontend/shared/local-store/__tests__/text.test.ts`.
+ */
+const KEPT_PAGES_CACHE = 'quran-text-v1';
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
@@ -608,7 +621,8 @@ self.addEventListener('activate', (event) => {
             key !== PUSH_PREF_CACHE &&
             key !== CACHE_META_NAME &&
             key !== OFFLINE_REPORT_STORE &&
-            key !== AUDIO_CACHE
+            key !== AUDIO_CACHE &&
+            key !== KEPT_PAGES_CACHE
           ) {
             return caches.delete(key);
           }
@@ -1078,6 +1092,7 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
         const write = (async () => {
           await store(CACHE, key, response.clone());
           await rememberImageFallback(new URL(request.url), response.clone());
+          await refreshKeptPage(request, response.clone());
         })().catch((error) => {
           // A bookkeeping failure must not turn a good response into an error.
           console.log('[sw] cache write failed', String(error));
@@ -1168,10 +1183,43 @@ async function nearestCachedShell(pathname) {
  */
 async function serveNearestShell(request, door) {
   const pathname = new URL(request.url).pathname;
+  // A page the reader kept for offline reading (#320) is the page they asked
+  // for, not a substitute for it: it answers under its own URL, so it is not a
+  // prefix serve and nothing is reported for it.
+  const kept = await keptPage(pathname);
+  if (kept) return kept;
   const shell = await nearestCachedShell(pathname);
   if (!shell) return offlineMiss(door);
   void reportOfflineServe('navigation-prefix');
   return shell;
+}
+
+/** The kept copy of one page, keyed by pathname, or null. */
+async function keptPage(pathname) {
+  try {
+    const cache = await caches.open(KEPT_PAGES_CACHE);
+    return (await cache.match(pathname)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Keeps a reader's offline copy current from the navigation that just reached
+ * the network, so a kept page follows a release instead of pinning the build it
+ * was kept from — and without the page fetching itself a second time.
+ */
+async function refreshKeptPage(request, response) {
+  if (!isNavigationRequest(request)) return;
+  try {
+    const pathname = new URL(request.url).pathname;
+    const cache = await caches.open(KEPT_PAGES_CACHE);
+    if (!(await cache.match(pathname))) return;
+    await cache.put(pathname, response);
+  } catch (error) {
+    // Bookkeeping: a kept copy that could not be refreshed is still a copy.
+    console.log('[sw] kept page refresh failed', String(error));
+  }
 }
 
 /**

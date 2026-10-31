@@ -1655,6 +1655,120 @@ describe('service worker prefix fallback (#490)', () => {
   });
 });
 
+describe('service worker kept pages (#320)', () => {
+  const KEPT = 'quran-text-v1';
+
+  function request(path, mode = 'navigate') {
+    return {
+      method: 'GET',
+      mode,
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  function document(body) {
+    return new Response(body, {
+      status: 200,
+      headers: { 'cache-control': 'public, max-age=60' },
+    });
+  }
+
+  function noNetwork(ctx) {
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+  }
+
+  async function reportedDoors(ctx) {
+    const store = await ctx.caches.open('royaraqamia-offline-report');
+    const pending = await store.match('/__sw_offline_report__');
+    return pending ? (await pending.json()).doors : {};
+  }
+
+  it('answers a navigation to a kept page with its own copy, not the parent shell', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const data = await ctx.caches.open(DATA_CACHE);
+    await data.put('https://site.example/quran', new Response('quran-shell'));
+    const kept = await ctx.caches.open(KEPT);
+    await kept.put('/quran/18', new Response('kept-al-kahf'));
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/quran/18'));
+    ctx.dispatch('fetch', event);
+
+    // The reader kept this surah by playing it: the page is on the device, so the
+    // URL renders the page rather than the index it would otherwise fall back to.
+    expect(await event.response.then((r) => r.text())).toBe('kept-al-kahf');
+    // A kept page is the page that was asked for, so it is not a prefix serve and
+    // nothing is counted for it.
+    expect(await reportedDoors(ctx)).toEqual({});
+  });
+
+  it('still falls back to the parent shell when the page was not kept', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const data = await ctx.caches.open(DATA_CACHE);
+    await data.put('https://site.example/quran', new Response('quran-shell'));
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/quran/18'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((r) => r.text())).toBe('quran-shell');
+  });
+
+  it('refreshes the kept copy from the navigation that reaches the network', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 50 });
+    const kept = await ctx.caches.open(KEPT);
+    await kept.put('/quran/18', new Response('kept-from-an-older-build'));
+    ctx.sandbox.fetch = vi.fn(async () => document('kept-from-this-build'));
+
+    const event = fetchEvent(request('/quran/18'));
+    ctx.dispatch('fetch', event);
+    await event.response;
+    await Promise.all(event.waitUntilCalls);
+
+    // A kept page follows a release instead of pinning the build it was kept from.
+    const refreshed = await (await ctx.caches.open(KEPT)).match('/quran/18');
+    expect(await refreshed.text()).toBe('kept-from-this-build');
+  });
+
+  it('does not start keeping pages the reader never kept', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 50 });
+    ctx.sandbox.fetch = vi.fn(async () => document('visited-once'));
+
+    const event = fetchEvent(request('/quran/18'));
+    ctx.dispatch('fetch', event);
+    await event.response;
+    await Promise.all(event.waitUntilCalls);
+
+    // Visiting is the worker's copy in the data cache, not a kept one: the install
+    // precaches none of the 114 documents (ADR-0071) and neither does this.
+    const kept = await ctx.caches.open(KEPT);
+    expect([...(await kept.keys())]).toEqual([]);
+  });
+
+  it('survives activation, like the recitation it rode in with', async () => {
+    const storage = new Map();
+    const first = await boot({ storage });
+    await (await first.caches.open(KEPT)).put('/quran/18', new Response('kept-al-kahf'));
+
+    // A release swaps the worker; activation deletes every cache it does not name.
+    const next = await boot({ storage, cacheVersion: BUILD_B });
+    const kept = await next.caches.open(KEPT);
+    expect(await (await kept.match('/quran/18')).text()).toBe('kept-al-kahf');
+  });
+});
+
 describe('service worker cache identity (#488)', () => {
   function request(path, mode = 'navigate') {
     return {
