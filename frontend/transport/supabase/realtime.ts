@@ -15,10 +15,18 @@ export interface PostgresChangesOptions {
 }
 
 export function subscribeToPostgresChanges(options: PostgresChangesOptions): () => void {
+  // The client arrives asynchronously (a dynamic import), so an unsubscribe can
+  // land before there is anything to tear down. The flag is what makes it
+  // authoritative either way: the `.then` below must not join a channel nobody
+  // will ever remove, which would keep firing the old handlers — for a signed-out
+  // identity, at the cost of a Realtime topic per leak.
+  let cancelled = false;
   let cleanup: (() => void) | null = null;
 
   createClient()
     .then((supabase) => {
+      if (cancelled) return;
+
       const channel = supabase
         .channel(options.channel)
         .on(
@@ -62,6 +70,8 @@ export function subscribeToPostgresChanges(options: PostgresChangesOptions): () 
     });
 
   return () => {
+    if (cancelled) return;
+    cancelled = true;
     cleanup?.();
   };
 }
