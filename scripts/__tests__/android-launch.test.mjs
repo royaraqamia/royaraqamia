@@ -8,6 +8,7 @@ import {
   PACKAGE_ID,
   parseAmStart,
   parseArgs,
+  startArgs,
   withinBudget,
 } from '../android-launch.mjs';
 
@@ -57,6 +58,28 @@ describe('reading the options', () => {
     expect(() => parseArgs(['--runs', '0'])).toThrow(/1 to 20/);
     expect(() => parseArgs(['--runs', 'three'])).toThrow(/1 to 20/);
     expect(() => parseArgs(['--nope'])).toThrow(/unknown option/);
+  });
+});
+
+describe('launching', () => {
+  it('starts the launcher without a stop flag, because a stop inside the start raced', () => {
+    // Android 13 answered `am start -S` with a WARM launch on a device that had
+    // the process dead a moment earlier: the stop and the start do not wait for
+    // each other. The cold path force-stops and waits instead.
+    expect(startArgs()).toEqual([
+      'shell',
+      'am',
+      'start',
+      '-W',
+      '-n',
+      `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`,
+    ]);
+  });
+
+  it('force-stops and waits for the process to be gone before a cold run', () => {
+    const source = readFileSync('scripts/android-launch.mjs', 'utf8');
+    expect(source).toMatch(/function coldRun[\s\S]*?force-stop[\s\S]*?waitUntilDead/);
+    expect(source).not.toContain("'-S'");
   });
 });
 
