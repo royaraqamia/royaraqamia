@@ -99,3 +99,80 @@
   fill: url(#ayah-mark-gradient);
   stroke: url(#ayah-mark-gradient);
 }
+
+/* The Tafsir, in the slot the card already kept for it (ADR-0057). The toggle is
+   quiet: it is a study affordance, not the reading surface. The body is set in the
+   UI face rather than the Uthmani one — it is modern explanatory prose, and the
+   display face would fight it word by word. */
+.ayah-tafsir {
+  margin-block-start: 0.75rem;
+}
+
+.ayah-tafsir-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding-block: 0.25rem;
+  padding-inline: 0.75rem;
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 9999px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.ayah-tafsir-toggle:hover,
+.ayah-tafsir-toggle[aria-expanded='true'] {
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.ayah-tafsir-toggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.ayah-tafsir-panel {
+  margin-block-start: 0.5rem;
+  padding-block: 0.75rem;
+  padding-inline: 0.875rem;
+  border-inline-start: 2px solid hsl(var(--primary) / 0.35);
+  border-radius: 0.5rem;
+  background-color: hsl(var(--muted) / 0.35);
+  font-size: 0.9375rem;
+  line-height: 2;
+  color: hsl(var(--foreground));
+}
+
+.ayah-tafsir-text {
+  margin: 0;
+}
+
+.ayah-tafsir-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.ayah-tafsir-retry {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ayah-tafsir-credit {
+  margin-block-start: 0.5rem;
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.ayah-tafsir-credit a {
+  text-decoration: underline;
+}

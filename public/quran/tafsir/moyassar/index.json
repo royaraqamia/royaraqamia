@@ -1,0 +1,19 @@
+{
+  "editions": [
+    {
+      "id": "moyassar",
+      "name": "التفسير الميسر",
+      "author": null,
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "source": "https://tafsir.net",
+      "corpus": "https://mcp.tafsir.net/mcp",
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف",
+      "suras": 114,
+      "ayat": 6236,
+      "covered": 6236,
+      "bytes": 2832371,
+      "complete": true
+    }
+  ]
+}

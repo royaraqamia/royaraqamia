@@ -1,0 +1,928 @@
+{
+  "edition": "moyassar",
+  "holder": "Tafsir Center for Quranic Studies",
+  "holderAr": "مركز تفسير للدراسات القرآنية",
+  "licence": "CC BY 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "source": "https://tafsir.net",
+  "corpus": "https://mcp.tafsir.net/mcp",
+  "suras": 114,
+  "ayat": 6236,
+  "covered": 6236,
+  "bytes": 2832371,
+  "complete": true,
+  "surahs": [
+    {
+      "surah": 1,
+      "bytes": 4266,
+      "sha256": "b133829e5962f871dc669cebaf606013d8637d5d27e3956083455a65b5b065ee",
+      "covered": 7,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 2,
+      "bytes": 166791,
+      "sha256": "33a4f11d6cdaa6a7b96862039d5e5fc9c44ea76b2005c42868323b8afa5decdb",
+      "covered": 286,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 3,
+      "bytes": 95754,
+      "sha256": "88f6b206715dd77a1e42b6f3457776a8aa872be4f91e3214484fc0212d0fef43",
+      "covered": 200,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 4,
+      "bytes": 94128,
+      "sha256": "4127d809173a57c651d5284d3d3bd0fdaba9cd3b3f1d82d7b8ab4fd5d1aaba6f",
+      "covered": 176,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 5,
+      "bytes": 71715,
+      "sha256": "4dab7d68746ab476612e1b9fa352d8dc0dbe404bab8d6a47cbce9eabe59ac28d",
+      "covered": 120,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 6,
+      "bytes": 86006,
+      "sha256": "14d19c00b2257e507a4f7d4e384ba461d7fa26e503a34385e9cb4fc5f7c351af",
+      "covered": 165,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 7,
+      "bytes": 95792,
+      "sha256": "1a8de4cd675511e39a3aa72954dde968f912c441d690aacbeece43eee0a79570",
+      "covered": 206,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 8,
+      "bytes": 36060,
+      "sha256": "b1894843230357656749c8a8e2379a98034b2bb84acff185b8e7ab216760342b",
+      "covered": 75,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 9,
+      "bytes": 66202,
+      "sha256": "e3d98287ed7030f03bc7c219a363b69d6ea4f9eb01051d3ccf49d106d8f251eb",
+      "covered": 129,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 10,
+      "bytes": 50099,
+      "sha256": "beb5c9fa9ea018fd7b6c7e8926ea54b515b1e6360d5ecbe930205deee6d21dd3",
+      "covered": 109,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 11,
+      "bytes": 52547,
+      "sha256": "1017b3a3cf124218403251a90faa43c4a62fc895ee0076371f1052e23a52fee7",
+      "covered": 123,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 12,
+      "bytes": 43848,
+      "sha256": "65e2dd581a0870685912faf99b555b037f8644f7d3bf4b7f9a2c50a7a71155e0",
+      "covered": 111,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 13,
+      "bytes": 22399,
+      "sha256": "5e571359cc21c848e92b095b668209a9148d4c8128befaf4e8dabbe68a06e949",
+      "covered": 43,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 14,
+      "bytes": 23731,
+      "sha256": "b3ba5e358bf39f61255665f6e7432d5306bf9f34cd5b69c4ccb502ac30b3ac29",
+      "covered": 52,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 15,
+      "bytes": 33292,
+      "sha256": "f943e5b1dfe8d2ded3ce8eca3d888a0add5194c899d419009027213021377d2d",
+      "covered": 99,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 16,
+      "bytes": 57244,
+      "sha256": "57020c51bee5860ffead8295864cf202ebd54d6f3a69d52c8eb4952aa78531a3",
+      "covered": 128,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 17,
+      "bytes": 45619,
+      "sha256": "352f9313f11f2f710e7ea504f908d5bb6ffd9bbf7fdeb1237cbbb235bb90d391",
+      "covered": 111,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 18,
+      "bytes": 42980,
+      "sha256": "2a8510ab2e1dcb8e5a77ba9155dcb36f6994548091f320f42d03c08da5f8db96",
+      "covered": 110,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 19,
+      "bytes": 27234,
+      "sha256": "e8dbd6cd13dead886d4cc8296fa7b2a0b23f1647322d8d232d202a25e49eece7",
+      "covered": 98,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 20,
+      "bytes": 45959,
+      "sha256": "8fc2f605c098a2b430178dcd33cd3bc943cbeef77ba03069dfc33231453aa174",
+      "covered": 135,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 21,
+      "bytes": 38699,
+      "sha256": "4aa3bb2cd187bb6f28a88f829c2b94fe43416c006ae192ea932c6123701544d9",
+      "covered": 112,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 22,
+      "bytes": 47322,
+      "sha256": "3537a7d5fa63fecd4aafa4a5da648552a3da6d0bcf1a350d2bc75ade98aa249c",
+      "covered": 78,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 23,
+      "bytes": 32076,
+      "sha256": "762cab095afd30de034b5344bfa393cbb6c22ba165a327e95682efb43d0fa442",
+      "covered": 118,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 24,
+      "bytes": 33854,
+      "sha256": "36116b77905ada3739f9e2c0400cfd628b486fc9d23e762eef437777c8e878be",
+      "covered": 64,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 25,
+      "bytes": 35450,
+      "sha256": "8a7066a52efe6e9faf366388e80f698b5355e8f895941365f9d6d29256e2fc3a",
+      "covered": 77,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 26,
+      "bytes": 90741,
+      "sha256": "3f1fa3d8d5b75c64c5d9b512f8c2f25b6ed223a91479a03cdb7fec3b6ad2fbef",
+      "covered": 227,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 27,
+      "bytes": 45674,
+      "sha256": "c6f4024da8a993a965378852109b22d65bc0f5f36d5f0cec03d3c2589f622ece",
+      "covered": 93,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 28,
+      "bytes": 35903,
+      "sha256": "5d7ab181639d93cbee91ab9d0aee7641f78aeaea7d891ca1ebcce160746c2922",
+      "covered": 88,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 29,
+      "bytes": 29649,
+      "sha256": "144541f0174be1a02facebfd769f0cfa9e3cf901facf3affc52ead0f7306f596",
+      "covered": 69,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 30,
+      "bytes": 26811,
+      "sha256": "04e32ae1bafad88f5bcf49a34eb50cfc50e1efeb09051f316a3e09af515f8af1",
+      "covered": 60,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 31,
+      "bytes": 14187,
+      "sha256": "7d706283d1c81c220bdd068a07544990b8a07a7550587dc80d429af162a4e51a",
+      "covered": 34,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 32,
+      "bytes": 11807,
+      "sha256": "c3e9173bb349521e9b62efb72e43d05e2edfc7978bf566d696137ef0b699f99b",
+      "covered": 30,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 33,
+      "bytes": 40238,
+      "sha256": "d4be683ddb89c676f2ff7c84144a61a59d7bc058b6324aa5bd0dafc217ff6fd5",
+      "covered": 73,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 34,
+      "bytes": 24792,
+      "sha256": "1b98f13c8c28ec7f24f63668bf1096a90da8bcd8dc920fb6a59c3eb37186a003",
+      "covered": 54,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 35,
+      "bytes": 26619,
+      "sha256": "a9c9d24d00a84c931f42b180009995e4e74e86c6da93556b04f18df3e8c06a7a",
+      "covered": 45,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 36,
+      "bytes": 26809,
+      "sha256": "61a95ccced8926f9f28c1e9225f677fc86a888241423085179acae03e1172b41",
+      "covered": 83,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 37,
+      "bytes": 52302,
+      "sha256": "887f37eaa0942ec8036ebc1dc1464a9e864f43883414ee0128e241d9cb490a1e",
+      "covered": 182,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 38,
+      "bytes": 30874,
+      "sha256": "8a680e07b9545d1d8ddfe53024eb466739bc450f42632ef49d3d936661081efe",
+      "covered": 88,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 39,
+      "bytes": 36647,
+      "sha256": "9983d6c88b5d7fc543df4c9eb07c2ce9ac3675929def7bf54f33ab267e246ad6",
+      "covered": 75,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 40,
+      "bytes": 37851,
+      "sha256": "f80642a39ee57a5472928a43e21e645925a67a1c49fa3fb52058bc08622e7b83",
+      "covered": 85,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 41,
+      "bytes": 25769,
+      "sha256": "61a6169804da0642b2e51532e315c4fddeda0b52e79cc0e99240253a80df49d3",
+      "covered": 54,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 42,
+      "bytes": 26244,
+      "sha256": "65711b9c2ced19553b96831c97ed0d1a012ddc17bee36c9ad05530f0a58b6a9b",
+      "covered": 53,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 43,
+      "bytes": 35028,
+      "sha256": "dd61dd3a089c6f67f36823043b05f8d56519a9045d7d56885f2ac8c1a608ed56",
+      "covered": 89,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 44,
+      "bytes": 27295,
+      "sha256": "4af51b872fd70a517238abd2a0712ed5c04acbe21bfafeef3aef8717a51177c7",
+      "covered": 59,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 45,
+      "bytes": 14753,
+      "sha256": "3ff3d58dbd6fd3f4dab34f13d1ad969f4f4a1b59b6e7cb3bcf7bf9143a325cb6",
+      "covered": 37,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 46,
+      "bytes": 15500,
+      "sha256": "8d1744d047cb851b667da5b20727b99271ca6561ca5be9742fcdf3bec5d07c8a",
+      "covered": 35,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 47,
+      "bytes": 19965,
+      "sha256": "b54ff77f46e399c40d7640a2abfeaf113dd6d5c1ccf372346e7a0915441fe596",
+      "covered": 38,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 48,
+      "bytes": 20530,
+      "sha256": "40f6d756e34c4f64930b414c4090fbb2d0266f733290fba6a80a0e2799cbb996",
+      "covered": 29,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 49,
+      "bytes": 9017,
+      "sha256": "754ca4f7f4d1073075d126e672e7a50d9c1396f2a428564e4110c29519396042",
+      "covered": 18,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 50,
+      "bytes": 14905,
+      "sha256": "f423ea4a618990fdbb0666592f92e74e117bf8e1d5e231dda53accfb42a54522",
+      "covered": 45,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 51,
+      "bytes": 20454,
+      "sha256": "df0a40f86822003c959ba09bd4ae0ef88cbe432d499be1dcd53ed2f02e8e7508",
+      "covered": 60,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 52,
+      "bytes": 19698,
+      "sha256": "cddd6ed37e6a8e8a48cd741cde0301b9b6e459cfb47d469ad86b8355178092f5",
+      "covered": 49,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 53,
+      "bytes": 32929,
+      "sha256": "9c04ff7839c444f641a5767e77eae335a7cc65fc8429fffa86de71f46402a6a0",
+      "covered": 62,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 54,
+      "bytes": 16230,
+      "sha256": "4e91a6ef61862c0dedcf74668b80b5f973283e592f1894f0055ba7597baafefc",
+      "covered": 55,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 55,
+      "bytes": 16871,
+      "sha256": "d0224e763e5020a7c04bbc19a2192e04d611d531bcf2211e238903c7dc5a1bab",
+      "covered": 78,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 56,
+      "bytes": 30131,
+      "sha256": "3709ba79346784186a9b093b05171dec5b04634cf26a152b8bbcb32bab3a578d",
+      "covered": 96,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 57,
+      "bytes": 14459,
+      "sha256": "c57749b33f888a752f92f0bf7f3682e3bd74562ae3ca8c4629e29a8bfdea831e",
+      "covered": 29,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 58,
+      "bytes": 12429,
+      "sha256": "2adf0865da37eba83e68e81073b8da83c2324717ad5f32e5b9e72c0d46731f0b",
+      "covered": 22,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 59,
+      "bytes": 12587,
+      "sha256": "3aa9e0233cfdeeaa4776d72586b813c88510009cb22d23673584331c5fb5cd4f",
+      "covered": 24,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 60,
+      "bytes": 8601,
+      "sha256": "39486c4af40d8c7d9423e0b82ae921e7536321f6cd3aeab3843c5521d1dbd500",
+      "covered": 13,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 61,
+      "bytes": 6309,
+      "sha256": "939d2cbbe5f224ee918d4c939413b402ecb6a5178905517c41f9e70cf2c51133",
+      "covered": 14,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 62,
+      "bytes": 5628,
+      "sha256": "5bedefc0ac54ea6b5fcd716c8c127c166fdce7bec43ab3b71326bcffbe7f3ed8",
+      "covered": 11,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 63,
+      "bytes": 5699,
+      "sha256": "589ba4186f5f7a0e8e51d25acdc22e0723e578da70429efeb314d1a884479bc6",
+      "covered": 11,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 64,
+      "bytes": 7278,
+      "sha256": "e60ad6f7119232d6f4928e394f5cc70e3c8f5f1ee31a940bd1e64b17d66a944f",
+      "covered": 18,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 65,
+      "bytes": 9370,
+      "sha256": "c36620eaae59b2beb563b0aec6206452ad36aaa02fc49befebce12a940f12732",
+      "covered": 12,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 66,
+      "bytes": 6843,
+      "sha256": "e53ede348a1e955693c131c957bbb38d52ff7a05602d83298bcb1255680dfceb",
+      "covered": 12,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 67,
+      "bytes": 13398,
+      "sha256": "e09e41e14c4cce46916e6486bd2f594b2491e353d9b2eb54873400b27ee11070",
+      "covered": 30,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 68,
+      "bytes": 33628,
+      "sha256": "72e8f7d7363f3b385c6def0c166905f0071a3216f4d8f5fa9f29ae38c45efa53",
+      "covered": 52,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 69,
+      "bytes": 28907,
+      "sha256": "19985d45c774cbeae7f9e6d77c950acdec22f735e7b9e7dbb67200d074c1f898",
+      "covered": 52,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 70,
+      "bytes": 29119,
+      "sha256": "0fecaa2576648b8d4b751d03d7b9567a8ade088f4602594e3f621c1a196ccd60",
+      "covered": 44,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 71,
+      "bytes": 28583,
+      "sha256": "25a8ae1aa135699a134f1cf76162fada96f51f35749e67faa61e1c5d8341412d",
+      "covered": 28,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 72,
+      "bytes": 14155,
+      "sha256": "33aed5147021112b5d8b4eebb23ac9c204359ce5ecf0f02e7671f41588c7e18b",
+      "covered": 28,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 73,
+      "bytes": 8262,
+      "sha256": "ce029103b37a6e240023dd9f44216d5cd02dfd231ed1aaca78e051c01e07f640",
+      "covered": 20,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 74,
+      "bytes": 37766,
+      "sha256": "7f52c0b557c167ebe46ff8b6636f55c89637bf447fd83e5bc89798c300c2cf33",
+      "covered": 56,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 75,
+      "bytes": 17843,
+      "sha256": "b77d25ad16917e2e0b322aa5c2af69f089f6f51cc1901d45dcba3a337a0eede1",
+      "covered": 40,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 76,
+      "bytes": 17918,
+      "sha256": "6bd08fe2d1f4f2f32ceb947481953273da6dcfbec1969512a97af17af44eb26e",
+      "covered": 31,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 77,
+      "bytes": 26450,
+      "sha256": "ba6431ecb05eddc0d2355e657ffc2705778d6089958274e71eaa79fc5dab1e09",
+      "covered": 50,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 78,
+      "bytes": 15378,
+      "sha256": "abb573fdc9f8eb4eec19913788d737e08610c7f36a40c2bf9caaf9f9c282ea16",
+      "covered": 40,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 79,
+      "bytes": 23224,
+      "sha256": "5b10a5b4b822149d519772c37c48575b04883d1a5dc603a1613eb59a76801ea4",
+      "covered": 46,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 80,
+      "bytes": 21369,
+      "sha256": "693117a48c4dc380b279d81e97f31c8c03be8e33e0b13cecb71c297bb2aa6440",
+      "covered": 42,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 81,
+      "bytes": 23609,
+      "sha256": "e4395292530d34cadd18a0075848829e3a18968765a672d771be1ee3d7135055",
+      "covered": 29,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 82,
+      "bytes": 7540,
+      "sha256": "11a9aacbdde203dbc3d18413f02a57130e6fc7c615edc55bc8437cdf6fd04ff4",
+      "covered": 19,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 83,
+      "bytes": 24430,
+      "sha256": "1489714390ad09d74887f1a05478be14079a06b8e5efc7aa55985e484bdaa9a3",
+      "covered": 36,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 84,
+      "bytes": 14316,
+      "sha256": "75619f8be4de1125509ead9f2936e9d6f9ccfdfa01c6abfabd284119ddba6d3e",
+      "covered": 25,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 85,
+      "bytes": 17941,
+      "sha256": "09e43b3dbfb2af7b567e983867f324f8db9a0687c8c36205bfda0652f93f94c5",
+      "covered": 22,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 86,
+      "bytes": 7432,
+      "sha256": "3891af6bbd8bbfddb268ea46847bee43f6542a0241795324656cd432411f14c0",
+      "covered": 17,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 87,
+      "bytes": 6837,
+      "sha256": "cc865cf4f3387c6a874c68d90225d52fe7d661d14d888d200a3bdea9d2c8d421",
+      "covered": 19,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 88,
+      "bytes": 10888,
+      "sha256": "db82fabe2ac1af362fa0c987236e997a80604200a1e3d6542a7fce7d1a0eea62",
+      "covered": 26,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 89,
+      "bytes": 10897,
+      "sha256": "36b70ecbf1e1a3241e606e55aa00febbad2bf4cc2028a17e422a1c345a33e2d0",
+      "covered": 30,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 90,
+      "bytes": 5321,
+      "sha256": "e120fb08776c68cb7d8aa590bea6924b93c5bf75404791ff686668832c728529",
+      "covered": 20,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 91,
+      "bytes": 11384,
+      "sha256": "d518c385b26d0978bde8206a3f89ddaff58ca824793ceae22123b8a0726538b2",
+      "covered": 15,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 92,
+      "bytes": 7111,
+      "sha256": "bb5c483cc32da876b3d903321787d7501a844c31c6ee669aafb353b069c20ae9",
+      "covered": 21,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 93,
+      "bytes": 4143,
+      "sha256": "2b76d5bb2629f0d40be422d8cdb8d30a523ed544adf81c99b211f545f60373c6",
+      "covered": 11,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 94,
+      "bytes": 2235,
+      "sha256": "3184a54635e7e4e6bf62bf8af56f3e19249ba8f7c52959b61ee3e2c665d24d04",
+      "covered": 8,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 95,
+      "bytes": 4655,
+      "sha256": "294c9a67b77f1cb7aaf6862501b33e9dcce10de991aeb9ea05dd955f945421ae",
+      "covered": 8,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 96,
+      "bytes": 16466,
+      "sha256": "4d187b6527b2c416365d065674f843ca6e211f6e0d3270a82e7972dcbcfd2d1b",
+      "covered": 19,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 97,
+      "bytes": 1072,
+      "sha256": "5fa7209c5686502008538753d5f47c19af33ace4e72ee2a7ccb78427589e9b6a",
+      "covered": 5,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 98,
+      "bytes": 2678,
+      "sha256": "7fa51de3744fa6fccf328805f195ef86694512aef003bdfa62002c14f79e82bd",
+      "covered": 8,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 99,
+      "bytes": 2155,
+      "sha256": "40f4f27d10a2a4e507ba9efcad3569df202eb09113e1700493381a60b0ecd4da",
+      "covered": 8,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 100,
+      "bytes": 2091,
+      "sha256": "656727d6441b772c0b89fd9776ae11f26eb0aa7bb426b2c7d7e71bb8d6f050a4",
+      "covered": 11,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 101,
+      "bytes": 1796,
+      "sha256": "0caa35c5db83c54d31b182f9cb4fe9fd13f3bd135d476ca731e65c05ce8789b5",
+      "covered": 11,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 102,
+      "bytes": 2510,
+      "sha256": "4ee0b08a6f6c52e26262b4561d4e9c421b03489146986dbdbf896ae0533b2870",
+      "covered": 8,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 103,
+      "bytes": 1090,
+      "sha256": "fa8face7791a8ebcff96ff4fc0c240555325a887106d654916df060203339821",
+      "covered": 3,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 104,
+      "bytes": 1646,
+      "sha256": "7e7ce283d7abe67d23341cfaba54fbf3973ad24b1dd074b78d5c2193ac868791",
+      "covered": 9,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 105,
+      "bytes": 1140,
+      "sha256": "f7c381d068c114c76b26e9dbd01f8527dfc60f0794b91ebf02892ce0da9de3a8",
+      "covered": 5,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 106,
+      "bytes": 1287,
+      "sha256": "ff43906df6ac41964f601cbc427c65186cf916516ea76b81214fa064d1903d52",
+      "covered": 4,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 107,
+      "bytes": 1567,
+      "sha256": "caebb47eac7ec929f434cb0ee6d8b0ecba8d726f24aad5abc70ecf4c41559c2b",
+      "covered": 7,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 108,
+      "bytes": 895,
+      "sha256": "738d3428a5ecfef0e8904cee0be50d96597c961bf700511be3f2d09b59785b0c",
+      "covered": 3,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 109,
+      "bytes": 1310,
+      "sha256": "14cfb78cdf33f14a7f3cc14a2e9fc0d7b5e8361f0cfe3a46dd197650d1c1d0e7",
+      "covered": 6,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 110,
+      "bytes": 915,
+      "sha256": "11ec03b034eda5451d3ddd29aa1cbabf8ae8f370161ffa5275bdd35e6a9699d9",
+      "covered": 3,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 111,
+      "bytes": 1371,
+      "sha256": "dfd57898e3783165cfdf949b83a0d53815803aa88f277b7b2fcac7856c5f46cf",
+      "covered": 5,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 112,
+      "bytes": 1050,
+      "sha256": "3caa371d89db3da4f385db8f422882d28cd80405e14417b40c56fc645af22d82",
+      "covered": 4,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 113,
+      "bytes": 1055,
+      "sha256": "dfaa00b4277d3cf22064cbe8742363a699630d2fa8b2502bf910573350dc0047",
+      "covered": 5,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    },
+    {
+      "surah": 114,
+      "bytes": 1045,
+      "sha256": "32680c1b0b2b4deb86cade5901f39c7c78eafceb839e6a8dfa265519d9e2a97d",
+      "covered": 6,
+      "missing": 0,
+      "attribution": "التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف"
+    }
+  ]
+}

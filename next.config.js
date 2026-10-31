@@ -229,6 +229,14 @@ const nextConfig = {
         source: '/manifest.json',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
+      // The vendored Tafsir (#320): every URL the reader asks for carries
+      // `?v=<sha256 first 8>` of the file it names, so a re-vendor is a new key in
+      // every cache rather than a stale body, and the bytes never change under a
+      // given version.
+      {
+        source: '/quran/tafsir/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
       // Keep it there only — a second definition here produced conflicting
       // Cache-Control values.

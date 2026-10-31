@@ -5,7 +5,9 @@
 > **Amended by [ADR 0064](0064-the-quran-is-set-in-the-kfgqpc-uthmani-hafs-face.md)**, which changes
 > the reader's display face from Amiri Quran to KFGQPC Uthmani Hafs.
 > **Amended by [ADR 0065](0065-the-quran-pages-carry-no-colophon.md)**, which removes the colophon
-> from the Quran pages.
+> from the Quran pages — and, on 2026-10-31, records that the Tafsir's credit travels with the Tafsir.
+> **Amended below (2026-10-31)** with the channel the Tafsir is vendored through and what "verbatim"
+> means for it.
 
 The reader is offline-first (ADR-0027), and the Quran's text is the one dataset in the product
 family that is fixed, public and small: the Uthmani text of Hafs ʿan ʿAsim is 1.27 MiB raw and
@@ -81,3 +83,29 @@ One Tafsir is vendored, keyed by slug, so a second is a data addition rather tha
   both gated on a written permission and neither is on the path to a first release.
 - A text or layout correction is a commit and a cache-name bump, not an admin action. That is the
   deliberate no: there is no admin surface for this product.
+
+## Amendment: the Tafsir is vendored from the centre's own published corpus (2026-10-31)
+
+P3 ships **الميسر**. This ADR named the rights holder and the licence; it did not name the channel the
+text arrives through, and that gap was the first thing to settle before any code.
+
+- **The channel is Tafsir Center's own published corpus**, reached through the endpoint behind its
+  public MCP server (`mcp.tafsir.net`), which exposes `fetch_tafsir` over the 28 editions the centre
+  compiles and publishes each edition's credit in a registry resource. That is the centre's own
+  surface over its own corpus — not a repackaging of it, which is the thing this ADR's rule refuses.
+- **`verbatim` means what it says.** `scripts/vendor-quran-tafsir.mjs` stores the Ayah's `text_raw`
+  exactly as served: no shortening, no reformatting, no markup, no fill-in. An Ayah the edition does
+  not cover is stored as `null` and the reader says so, rather than borrowing a neighbour's
+  commentary. A row longer than the endpoint's window arrives in parts, which are joined once — a
+  read reconstructed, never rewritten.
+- **The credit is the source's, not ours.** Each file carries the attribution the registry publishes
+  for the edition (`التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف`), and the surface renders it
+  with the body it licenses, alongside the centre's name, a link and the licence. ADR 0065's
+  amendment records why that is the one visible credit and the Tanzil notice is not.
+- **One file per sura, committed**, like the text: `public/quran/tafsir/<slug>/<surah3>.json`, a
+  `manifest.json` with a sha256 and a size per sura, an `index.json` naming the edition and its
+  grant, and a `NOTICE.txt`. The reader fetches one sura's file the first time a tafsir is opened on
+  it, under `?v=<sha256 first 8>`, and the worker caches it like any other same-origin asset.
+- **The residual doubt stays recorded.** The edition's own publisher is the King Fahd Complex, whose
+  terms page was unreachable; this still rests on Tafsir Center's CC BY 4.0 grant over the editions it
+  compiles, which is the basis this ADR already relied on.

@@ -3,8 +3,10 @@ import { Bookmark } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranReadingClient } from './quran-reading-client';
+import { AyahTafsir, QuranTafsirProvider } from './ayah-tafsir';
 import { revelationLabel } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
+import type { SurahTafsirRef } from '@/shared/contracts/quran-tafsir';
 
 interface SurahReaderProps {
   surah: Surah;
@@ -15,6 +17,8 @@ interface SurahReaderProps {
   summary: SurahSummary;
   /** Null when this sura has no vendored Recitation (ADR-0062). */
   audio: { ayahCount: number } | null;
+  /** Null when no tafsir is vendored for this sura (ADR-0057). */
+  tafsir: SurahTafsirRef | null;
 }
 
 /**
@@ -27,13 +31,13 @@ interface SurahReaderProps {
  * (`app/quran/quran.css`), and the mark beside it is the control that saves it —
  * the number itself only names the Ayah.
  *
- * The card is the seam for the next phase: Tafsir will sit in the reserved slot
- * below each ayah's text, without rearranging the reading surface.
+ * The card is the seam the Tafsir fills: its body sits in the slot below each
+ * Ayah's text, without rearranging the reading surface.
  *
  * Deliberately verse-by-verse rather than a Mushaf page: page and line breaks are
  * a separate view of the same text (P5), not the base rendering.
  */
-export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
+export function SurahReader({ surah, summary, audio, tafsir }: SurahReaderProps) {
   return (
     <div
       className={cn(
@@ -66,51 +70,54 @@ export function SurahReader({ surah, summary, audio }: SurahReaderProps) {
       </header>
 
       <QuranReadingClient surah={summary.n} bismillah={surah.bismillah} audio={audio}>
-        {surah.ayahs.map((ayah, position) => {
-          const number = position + 1;
-          // The number and the mark close the Ayah, so they stay on the line the
-          // text ends on: the last word travels with them rather than leaving
-          // them alone on a line of their own.
-          const lastSpace = ayah.lastIndexOf(' ');
-          const head = lastSpace === -1 ? '' : ayah.slice(0, lastSpace + 1);
-          const lastWord = lastSpace === -1 ? ayah : ayah.slice(lastSpace + 1);
+        <QuranTafsirProvider tafsir={tafsir}>
+          {surah.ayahs.map((ayah, position) => {
+            const number = position + 1;
+            // The number and the mark close the Ayah, so they stay on the line the
+            // text ends on: the last word travels with them rather than leaving
+            // them alone on a line of their own.
+            const lastSpace = ayah.lastIndexOf(' ');
+            const head = lastSpace === -1 ? '' : ayah.slice(0, lastSpace + 1);
+            const lastWord = lastSpace === -1 ? ayah : ayah.slice(lastSpace + 1);
 
-          return (
-            <article
-              key={number}
-              data-ayah-card={number}
-              className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
-            >
-              <p
-                id={`ayah-${number}`}
-                data-ayah={number}
-                className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+            return (
+              <article
+                key={number}
+                data-ayah-card={number}
+                className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
               >
-                {head}
-                <span className="ayah-tail">
-                  {lastWord}
-                  <span className="ayah-marker" data-ayah-marker={number}>
-                    <span className="ayah-marker-number">{number}</span>
+                <p
+                  id={`ayah-${number}`}
+                  data-ayah={number}
+                  className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+                >
+                  {head}
+                  <span className="ayah-tail">
+                    {lastWord}
+                    <span className="ayah-marker" data-ayah-marker={number}>
+                      <span className="ayah-marker-number">{number}</span>
+                    </span>
+                    <button
+                      type="button"
+                      data-bookmark-ayah={number}
+                      aria-pressed="false"
+                      disabled
+                      aria-label={`علامة على الآية ${number}`}
+                      title="إضافة علامة أو إزالتها"
+                      className="ayah-mark"
+                    >
+                      <Bookmark aria-hidden="true" />
+                    </button>
                   </span>
-                  <button
-                    type="button"
-                    data-bookmark-ayah={number}
-                    aria-pressed="false"
-                    disabled
-                    aria-label={`علامة على الآية ${number}`}
-                    title="إضافة علامة أو إزالتها"
-                    className="ayah-mark"
-                  >
-                    <Bookmark aria-hidden="true" />
-                  </button>
-                </span>
-              </p>
+                </p>
 
-              {/* The Tafsir slot is reserved now, so the next phase only fills it. */}
-              <div data-tafsir-slot={number} />
-            </article>
-          );
-        })}
+                <div data-tafsir-slot={number}>
+                  <AyahTafsir ayah={number} />
+                </div>
+              </article>
+            );
+          })}
+        </QuranTafsirProvider>
       </QuranReadingClient>
     </div>
   );

@@ -75,7 +75,7 @@ let engine: RecitationEngine;
 function renderReader() {
   return render(
     <QuranPlayerProvider engine={engine}>
-      <SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} />
+      <SurahReader surah={surah} summary={summary} audio={{ ayahCount: 2 }} tafsir={null} />
     </QuranPlayerProvider>
   );
 }
