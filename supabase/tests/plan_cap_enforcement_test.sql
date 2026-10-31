@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(41);
+select plan(52);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -649,6 +649,109 @@ select throws_ok(
   'PL001',
   null,
   'a visitor cannot create a second live anonymous link'
+);
+
+-- ---------------------------------------------------------------------------
+-- A visitor with no cookie is counted by the salted address (#701)
+-- ---------------------------------------------------------------------------
+
+-- The first counted request of a new browser arrives before the middleware's
+-- response cookie is stored, so the route passes the salted address and no
+-- cookie. It used to be refused as an invalid subject (`22023`), which the
+-- route answered as a 500 instead of counting the request.
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, null, 'ip-only-hash'
+  ) ->> 'allowed')::boolean,
+  true,
+  'an IP-only visitor records one counted event'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, null, 'ip-only-hash'
+  ) ->> 'allowed')::boolean,
+  false,
+  'a second IP-only request is refused by the visitor cap'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, null, 'ip-only-hash'
+  ) -> 'counter' ->> 'remaining')::integer,
+  0,
+  'the refusal reports the visitor counter as spent rather than raising'
+);
+
+select is(
+  (
+    select count(*)::integer
+      from public.usage_events e
+     where e.ip_hash = 'ip-only-hash'
+       and e.user_id is null
+       and e.visitor_key is null
+  ),
+  1,
+  'the IP-only event keeps the salted hash and no cookie'
+);
+
+select throws_ok(
+  $$select public.record_usage('downloader.job.create', null, null, null)$$,
+  '22023',
+  null,
+  'a subject with neither a user, a cookie nor an address is refused'
+);
+
+select throws_ok(
+  $$select public.record_usage('downloader.job.create', null, '  ', '  ')$$,
+  '22023',
+  null,
+  'a blank cookie and a blank address are no subject at all'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, 'cookie-only-visitor', null
+  ) ->> 'allowed')::boolean,
+  true,
+  'a cookie-only visitor still counts'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', '00000000-0000-0000-0000-00000000ca06', null, null
+  ) ->> 'allowed')::boolean,
+  true,
+  'a signed-in caller still counts against their own allowance'
+);
+
+-- The dedupe lookup is the half the row records, so a cookie-less replay is
+-- the same surah read twice rather than a second counted read.
+select is(
+  (public.record_usage(
+    'quran.surah.read', null, null, 'ip-only-dedupe-hash', null, 'surah-day-1'
+  ) ->> 'duplicate')::boolean,
+  false,
+  'an IP-only subject records the first read of a surah day'
+);
+
+select is(
+  (public.record_usage(
+    'quran.surah.read', null, null, 'ip-only-dedupe-hash', null, 'surah-day-1'
+  ) ->> 'duplicate')::boolean,
+  true,
+  'an IP-only subject dedupes its own replay'
+);
+
+select is(
+  (
+    select count(*)::integer
+      from public.usage_events e
+     where e.ip_hash = 'ip-only-dedupe-hash'
+  ),
+  1,
+  'the deduped replay writes no second event'
 );
 
 -- ---------------------------------------------------------------------------

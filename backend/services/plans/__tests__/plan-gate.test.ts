@@ -92,6 +92,36 @@ describe('PlanGate', () => {
     ).rejects.toThrow('A counted action needs a signed-in user or a visitor.');
   });
 
+  it('counts a visitor that has no cookie yet by the salted address alone', async () => {
+    const { repository, gate } = makeGate();
+
+    await gate.count(
+      { userId: null, visitorKey: null, ip: '203.0.113.7' },
+      'downloader.job.create',
+      async () => 'ok'
+    );
+
+    const [input] = vi.mocked(repository.record).mock.calls[0] ?? [];
+    expect(input?.userId).toBeNull();
+    expect(input?.visitorKey).toBeNull();
+    expect(input?.ipHash).toBe(hashAnonymousSubject('203.0.113.7'));
+  });
+
+  it('answers a spent IP-only allowance with the visitor limit, not a server error', async () => {
+    const { gate } = makeGate({
+      record: vi.fn(async () => ({
+        allowed: false,
+        duplicate: false,
+        eventId: null,
+        state: { ...downloadCounter, cap: 1, used: 1, remaining: 0 },
+      })),
+    });
+
+    await expect(
+      gate.count({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', async () => 'never')
+    ).rejects.toMatchObject({ statusCode: 402, code: 'visitor_limit' });
+  });
+
   it('releases the count when the work behind it throws', async () => {
     const { repository, gate } = makeGate();
     const failure = new Error('busy');

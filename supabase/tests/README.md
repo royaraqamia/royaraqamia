@@ -51,6 +51,10 @@ test here.
 - `publish_post`, `unpublish_post`, `set_post_featured` and `bulk_publish_posts` move the
   server-owned columns for the owning author, refuse another account's post, and a batch
   that publishes an already published row takes no new slot.
+- A visitor with no cookie is counted by their salted address alone (#701): the first
+  request records one event, the second is refused by the visitor cap rather than raising
+  `22023`, the row carries the hash and no cookie, an IP-only replay dedupes, and a subject
+  with neither a user, a cookie nor an address is still refused.
 - A re-publish keeps the post's original `published_at` — the feed orders by it, so a fresh
   date would float an old post back to the top — while a draft stamped into published gets
   one, and a mixed bulk batch stamps only the drafts (#552).
@@ -114,7 +118,9 @@ certificate and `users` write assertions do not.
 
 `plan_cap_enforcement_test.sql` was written the same way (2026-10-23, no Docker on the
 writing machine), so treat its first run the same: the SQL it exercises is deployed by the
-drift workflow on merge, but the assertions themselves are unrehearsed.
+drift workflow on merge, but the assertions themselves are unrehearsed. Its #701 block is the
+exception: the migration and those assertions ran against the linked project inside a
+rolled-back transaction, so only the pgTAP harness around them is unrehearsed.
 
 `habit_reminders_damascus_test.sql` (#604) is in the same position, with one difference: its
 helper boundaries, its selection body and every fixture's statement shape were run against the
