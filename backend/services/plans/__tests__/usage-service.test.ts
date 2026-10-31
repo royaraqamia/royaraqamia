@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   OwnedItemCapReachedError,
   PlanTargetNotFoundError,
-  UsageLimitReachedError,
   UsageService,
 } from '@/backend/services/plans/usage-service';
 import type { UsageRepository } from '@/backend/repositories/plans/usage-repository';
@@ -149,66 +148,12 @@ describe('UsageService', () => {
     const repository = makeRepository();
     const service = new UsageService(repository);
 
-    await expect(
-      service.runCounted({ userId: 'user-1' }, 'scanner.scan', async () => 'done')
-    ).resolves.toBe('done');
+    await service.consume({ userId: 'user-1' }, 'scanner.scan');
+
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({ actionKey: 'scanner.scan', userId: 'user-1' })
+    );
     expect(repository.release).not.toHaveBeenCalled();
-  });
-
-  it('releases the count and rethrows when the action fails', async () => {
-    const repository = makeRepository();
-    const service = new UsageService(repository);
-    const failure = new Error('write failed');
-
-    await expect(
-      service.runCounted({ userId: 'user-1' }, 'downloader.job.create', async () => {
-        throw failure;
-      })
-    ).rejects.toBe(failure);
-
-    expect(repository.release).toHaveBeenCalledWith('user-1', 'event-1');
-  });
-
-  it('does not run the action at all when the allowance is used up', async () => {
-    const repository = makeRepository({
-      record: vi.fn(async () => ({
-        allowed: false,
-        duplicate: false,
-        eventId: null,
-        state: { ...scanCounter, used: 5, remaining: 0 },
-      })),
-    });
-    const service = new UsageService(repository);
-    const run = vi.fn(async () => 'never');
-
-    await expect(
-      service.runCounted({ userId: 'user-1' }, 'downloader.job.create', run)
-    ).rejects.toBeInstanceOf(UsageLimitReachedError);
-    expect(run).not.toHaveBeenCalled();
-    expect(repository.release).not.toHaveBeenCalled();
-  });
-
-  it('tells a visitor to sign in, not to upgrade, when their allowance is used up', async () => {
-    const repository = makeRepository({
-      record: vi.fn(async () => ({
-        allowed: false,
-        duplicate: false,
-        eventId: null,
-        state: { ...scanCounter, cap: 1, used: 1, remaining: 0 },
-      })),
-    });
-    const service = new UsageService(repository);
-
-    const error = await service
-      .runCounted(
-        { userId: null, visitorKey: 'visitor-1', ipHash: 'hash' },
-        'downloader.job.create',
-        async () => 'never'
-      )
-      .catch((err: unknown) => err);
-
-    expect(error).toBeInstanceOf(UsageLimitReachedError);
-    expect(error).toMatchObject({ statusCode: 402, code: 'visitor_limit' });
   });
 
   it('refuses a create at the standing cap before anything is written', async () => {

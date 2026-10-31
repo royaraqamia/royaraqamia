@@ -151,7 +151,9 @@ export class CobaltMediaProvider implements MediaProvider {
     }
 
     if (response.status >= 400 && response.status < 500) {
-      throw new MediaProviderError(UNSUPPORTED_MESSAGE);
+      // The host refused this link, not its own work: the visitor's fault, so
+      // it must not count against the Platform's breaker.
+      throw new MediaProviderError(UNSUPPORTED_MESSAGE, true);
     }
     if (!response.ok) {
       throw new TransientDispatchError();

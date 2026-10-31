@@ -54,9 +54,17 @@ export interface MediaProvider {
   inspect(input: MediaInspectInput): Promise<ProbeResult>;
 }
 
-/** A failure the provider can explain to the visitor; anything else is unknown. */
+/**
+ * A failure the provider can explain to the visitor; anything else is unknown.
+ * `visitorFault` marks the failures the visitor's own link caused (a 4xx
+ * `unsupported` refusal), which must not count against the Platform's health —
+ * one person could otherwise open every visitor's breaker with bad links.
+ */
 export class MediaProviderError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly visitorFault = false
+  ) {
     super(message);
     this.name = 'MediaProviderError';
   }
