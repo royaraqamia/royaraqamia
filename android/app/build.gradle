@@ -11,6 +11,10 @@ apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 // which runs the `:baselineprofile` module on the emulator below and saves what the
 // launch compiled into this module's sources.
 apply plugin: 'androidx.baselineprofile'
+// Room's compiler (#768): the store's entities, DAO and database are written by
+// hand, and what makes them a schema is the processor. KSP rather than KAPT,
+// which the Kotlin plugin no longer carries a path for.
+apply plugin: 'com.google.devtools.ksp'
 
 // Both of these come from the shell's own counter file (android/shell-version.properties,
 // ADR-0043), and neither has anything to do with package.json:
@@ -130,6 +134,29 @@ android {
         buildConfig true
         compose true
     }
+    testOptions {
+        unitTests {
+            // The store's DAO tests run on the JVM under Robolectric (#768),
+            // which needs the module's resources and manifest to build an
+            // Android runtime for them.
+            includeAndroidResources = true
+            // Robolectric's SDK 36 runtime reaches `jdk.internal.access` for the
+            // shared-memory handle it sets up, which JDK 17+ hides unless the
+            // module is opened. Without this every test in the class fails in
+            // `setUpApplicationState`, before a line of the test runs.
+            all { test ->
+                test.jvmArgs '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED'
+            }
+        }
+    }
+}
+
+// The exported schema is committed (#768): Room writes the shape of version N to
+// disk, so the migration from N-1 is reviewed beside the shape it migrates from,
+// and a version bumped with no migration is visible in the diff rather than
+// crashing on a device whose rows the destruction fallback took.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 baselineProfile {
@@ -189,6 +216,18 @@ dependencies {
     implementation "androidx.activity:activity-compose:$androidxActivityVersion"
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.json:json:$jsonVersion"
+    // The Local Store (#768): one database per identity, and the DAO that writes
+    // a pull into it. `room-ktx` is what makes a `suspend` DAO a background
+    // query rather than a main-thread one.
+    implementation "androidx.room:room-runtime:$roomVersion"
+    implementation "androidx.room:room-ktx:$roomVersion"
+    ksp "androidx.room:room-compiler:$roomVersion"
+    // The DAO's tests are JVM tests (#768), so Robolectric is the runtime that
+    // makes a real SQLite file out of them; `room-testing` is what lets a
+    // migration be opened at its previous version.
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "androidx.room:room-testing:$roomVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

@@ -1,5 +1,6 @@
 package com.royaraqamia.app.session
 
+import com.royaraqamia.app.store.MemoryIdentityStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -39,10 +40,10 @@ class SessionTest {
     @Test
     fun `a stored refresh token signs in after a restart`() = runBlocking {
         val store = MemoryTokenStore("refresh-1")
-        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2")) }
+        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2", "user-1")) }
 
         // A new process: nothing in memory, the sealed token on disk.
-        val session = Session(store, refresher)
+        val session = Session(store, refresher, MemoryIdentityStorage())
 
         assertTrue(session.start())
         assertTrue(session.signedIn)
@@ -52,8 +53,8 @@ class SessionTest {
 
     @Test
     fun `no stored token is a first run, not a failure`() = runBlocking {
-        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2")) }
-        val session = Session(MemoryTokenStore(), refresher)
+        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2", "user-1")) }
+        val session = Session(MemoryTokenStore(), refresher, MemoryIdentityStorage())
 
         assertFalse(session.start())
         assertFalse(session.signedIn)
@@ -63,9 +64,9 @@ class SessionTest {
     @Test
     fun `concurrent callers spend one refresh token`() = runBlocking {
         val store = MemoryTokenStore("refresh-1")
-        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2")) }
-        val session = Session(store, refresher)
-        session.signIn(TokenPair("stale", "refresh-1"))
+        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-1", "refresh-2", "user-1")) }
+        val session = Session(store, refresher, MemoryIdentityStorage())
+        session.signIn(TokenPair("stale", "refresh-1", "user-1"))
 
         // Eight requests went out under the same generation and were all answered
         // 401; each asks to renew against the generation it saw.
@@ -82,7 +83,7 @@ class SessionTest {
     fun `a refused refresh signs out and is never retried`() = runBlocking {
         val store = MemoryTokenStore("refresh-1")
         val refresher = CountingRefresher { RefreshOutcome.Refused }
-        val session = Session(store, refresher)
+        val session = Session(store, refresher, MemoryIdentityStorage())
 
         assertFalse(session.start())
         assertFalse(session.signedIn)
@@ -97,8 +98,8 @@ class SessionTest {
     fun `an unanswered refresh keeps the session`() = runBlocking {
         val store = MemoryTokenStore("refresh-1")
         val refresher = CountingRefresher { RefreshOutcome.Unreachable("no radio") }
-        val session = Session(store, refresher)
-        session.signIn(TokenPair("access-1", "refresh-1"))
+        val session = Session(store, refresher, MemoryIdentityStorage())
+        session.signIn(TokenPair("access-1", "refresh-1", "user-1"))
 
         val seen = checkNotNull(session.attempt()).generation
         assertFalse(session.renew(seen))
@@ -113,8 +114,8 @@ class SessionTest {
     fun `signing out drops the token and the access token`() = runBlocking {
         val store = MemoryTokenStore()
         val refresher = CountingRefresher { RefreshOutcome.Refused }
-        val session = Session(store, refresher)
-        session.signIn(TokenPair("access-1", "refresh-1"))
+        val session = Session(store, refresher, MemoryIdentityStorage())
+        session.signIn(TokenPair("access-1", "refresh-1", "user-1"))
 
         session.signOut()
 

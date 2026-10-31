@@ -118,6 +118,24 @@ on a device.
 
 **Retires:** nothing. This phase is additive.
 
+**Wired today (#768).** HabitFlow's Local Store is the app's own: one database per identity
+(`habitflow__guest.db`, `habitflow__user%3A<id>.db` — the web's partition with the file's
+extension), Room entities for habits and logs, and a pull that writes the
+`GET /habitflow/api/sync` snapshot in one transaction
+([ADR-0107](../adr/0107-the-habit-store-is-one-database-per-identity.md)). The identity is
+remembered on disk and read at construction, so a cold launch with the radio off opens the right
+store and paints instead of waiting for a refresh: `HabitflowRepository.rows()` answers from the
+database alone, and `pull()` is the only writer. `HabitSyncResponseSchema` joined
+`scripts/generate-contracts.mjs`'s `CONTRACTS`, because the read models in
+`shared/contracts/habitflow.ts` were TypeScript interfaces the app could not decode. The
+partition is asserted by one fixture read by both suites
+(`shared/fixtures/local-store/identity.json`: the web's `identity.ts` and the app's `Identity`),
+the DAO's tests run on the JVM against real SQLite files under Robolectric, and the exported
+schema is committed so a version bumped with no migration is a review finding rather than a
+device's lost rows. Still owed here: the screen (#649), the outbox and pending-aware merge
+(#650), and a sign-in that Claims a guest's rows — the guest store exists and is empty until the
+app can write.
+
 ## Phase 1 — the HabitFlow slice
 
 The smallest complete vertical: screen, session, API, Room, outbox, drain.

@@ -69,6 +69,14 @@ web's alone — the app holds no writes until the product screens land (phase 3 
 [native-app.md](native-app.md)), so there is nothing on the app's side for a write fixture to assert.
 The fixture file is the place it will go, and this paragraph is the reminder that it is owed.
 
+The partition is a fixture too (#768): `shared/fixtures/local-store/identity.json` states which
+namespace a device's rows live in — `guest` or `user:<id>` — and both suites read it, the web's
+`shared/fixtures/__tests__/local-store-identity.test.ts` through
+`frontend/shared/local-store/identity.ts` and the app's `IdentityFixtureTest` through
+`com.royaraqamia.app.store.Identity`. It exists because a partition one client names and the other
+does not is not a drift anyone would see as an error: it is a device whose rows the other client
+cannot find.
+
 ## 4. A screen in one client is a listed gap
 
 `docs/mobile/screens.json` has one row per surface in `perf/surfaces.json`: either the Kotlin screen

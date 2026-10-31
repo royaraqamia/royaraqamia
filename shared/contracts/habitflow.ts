@@ -38,6 +38,56 @@ export interface HabitLog extends OfflineFields {
   user_id?: string;
 }
 
+/**
+ * One Habit as the sync route sends it (#768), read by the app's store.
+ *
+ * The read model above is a TypeScript interface, which the Kotlin generator
+ * cannot see: a body the site accepts and the app cannot decode is a blank
+ * screen, so the shape the app reads is a schema. It carries the Outbox fields
+ * because the route is tombstone-inclusive (ADR-0029) - a row deleted on another
+ * device arrives as a tombstone, not as an absence.
+ */
+export const HabitSyncRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  frequency: z.enum(['daily', 'weekly']),
+  createdAt: z.string(),
+  archived: z.boolean(),
+  target: z.number().int().nullable().optional(),
+  targetPeriod: z.enum(['week', 'month']).nullable().optional(),
+  reminderTime: z.string().nullable().optional(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/** One HabitLog as the sync route sends it (#768), tombstones included. */
+export const HabitLogSyncRowSchema = z.object({
+  id: z.string(),
+  habitId: z.string(),
+  date: z.string(),
+  completed: z.boolean(),
+  completedAt: z.string().nullable(),
+  kind: z.enum(['complete', 'skip', 'miss']).optional(),
+  note: z.string().nullable().optional(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/**
+ * `GET /habitflow/api/sync` (#768): the whole owned snapshot, which is what the
+ * web's pull reads too (`frontend/api/habitflow/habit-api.ts`). The app takes the
+ * same route rather than the narrower display pair, so a delete made on another
+ * device reaches the store instead of being invisible to it (ADR-0029).
+ */
+export const HabitSyncResponseSchema = z.object({
+  habits: z.array(HabitSyncRowSchema),
+  logs: z.array(HabitLogSyncRowSchema),
+  mode: z.enum(['supabase', 'local']),
+});
+export type HabitSyncResponse = z.infer<typeof HabitSyncResponseSchema>;
+
 /** Write payload for the Outbox — carries the idempotency + LWW fields. */
 export const HabitWriteSchema = z.object({
   clientId: z.string().uuid(),
