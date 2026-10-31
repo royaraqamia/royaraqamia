@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { loadQuranIndex, loadSurah, loadSurahNumbers } from '@/backend/loaders/quran';
 import { loadSurahAudio } from '@/backend/loaders/quran-audio';
+import { loadQuranPages } from '@/backend/loaders/quran-pages';
 import { loadSurahTafsirRef } from '@/backend/loaders/quran-tafsir';
 import { SurahReader } from '@/frontend/ui/quran/surah-reader';
+import { marksForSurah } from '@/shared/contracts/quran-pages';
 import type { SurahSummary } from '@/shared/contracts/quran';
 
 // One static page per sura, generated at build time from the vendored text.
@@ -36,11 +38,12 @@ export async function generateMetadata(props: {
 export default async function SurahPage(props: { params: Promise<{ surah: string }> }) {
   const { surah: param } = await props.params;
   const number = Number(param);
-  const [surah, index, audio, tafsir] = await Promise.all([
+  const [surah, index, audio, tafsir, pages] = await Promise.all([
     loadSurah(number),
     loadQuranIndex(),
     loadSurahAudio(number),
     loadSurahTafsirRef(number),
+    loadQuranPages(),
   ]);
 
   if (!surah) notFound();
@@ -48,7 +51,15 @@ export default async function SurahPage(props: { params: Promise<{ surah: string
   const summary = index.surahs.find((candidate) => candidate.n === number);
   if (!summary) notFound();
 
-  return <SurahReader surah={surah} summary={summary} audio={audio} tafsir={tafsir} />;
+  return (
+    <SurahReader
+      surah={surah}
+      summary={summary}
+      audio={audio}
+      tafsir={tafsir}
+      marks={pages ? marksForSurah(pages, number) : undefined}
+    />
+  );
 }
 
 async function summaryFor(number: number): Promise<SurahSummary | null> {

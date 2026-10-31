@@ -203,3 +203,117 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* A boundary of the printed Mushaf, drawn above the Ayah that opens it (P5). It
+   is a label rather than a break: the text still reflows, so the rule is a hairline
+   and the words stay quiet — the page number is the one a reader looks for. */
+.ayah-boundary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block: 1.75rem 0.5rem;
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.ayah-boundary::before {
+  content: '';
+  flex: 1 1 2rem;
+  block-size: 1px;
+  background-color: hsl(var(--border) / 0.7);
+}
+
+.ayah-boundary-page {
+  order: -1;
+  padding-block: 0.15rem;
+  padding-inline: 0.6rem;
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 9999px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+
+.ayah-boundary-number {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* A sajdah changes what a reader does, so it is the one mark that is not quiet. */
+.ayah-boundary-sajda {
+  padding-block: 0.15rem;
+  padding-inline: 0.6rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-weight: 700;
+}
+
+/* «انتقل إلى صفحة» on the index (P5): the printed page number a reader already
+   knows, answered with the Ayah that opens it. */
+.page-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-radius: 1rem;
+  background-color: hsl(var(--card) / 0.6);
+}
+
+.page-jump-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+}
+
+.page-jump-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-jump-field {
+  inline-size: 7.5rem;
+  padding-block: 0.35rem;
+  padding-inline: 0.6rem;
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-radius: 0.6rem;
+  background-color: hsl(var(--background) / 0.8);
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.page-jump-field:focus-visible {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.page-jump-submit {
+  padding-block: 0.35rem;
+  padding-inline: 0.9rem;
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 0.6rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.page-jump-submit:hover {
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.page-jump-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: hsl(var(--destructive));
+}

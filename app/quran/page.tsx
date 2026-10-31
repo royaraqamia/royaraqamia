@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { loadQuranIndex } from '@/backend/loaders/quran';
+import { loadQuranPages } from '@/backend/loaders/quran-pages';
 import { loadQuranSearchRef } from '@/backend/loaders/quran-search';
+import { pageStarts } from '@/shared/contracts/quran-pages';
 import { QuranIndexPage } from '@/frontend/ui/quran/quran-index';
 
 // The text is vendored, so there is no server surface here: every sura is
@@ -24,6 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default async function QuranPage() {
-  const [index, search] = await Promise.all([loadQuranIndex(), loadQuranSearchRef()]);
-  return <QuranIndexPage index={index} search={search} />;
+  const [index, search, pages] = await Promise.all([
+    loadQuranIndex(),
+    loadQuranSearchRef(),
+    loadQuranPages(),
+  ]);
+
+  return <QuranIndexPage index={index} search={search} pages={pages ? pageStarts(pages) : []} />;
 }
