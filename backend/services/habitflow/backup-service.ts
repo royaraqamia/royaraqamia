@@ -1,4 +1,5 @@
 import { HabitRepository, Habit, HabitLog, HabitRestoreSchema } from '@/shared/contracts/habitflow';
+import { damascusDateKey } from '@/shared/time';
 import { AppError } from '@/backend/shared/errors';
 
 export interface HabitBackupPayload {
@@ -43,25 +44,26 @@ function csvEscape(value: string | number | boolean | null | undefined): string 
 export class HabitBackupService {
   constructor(private repository: HabitRepository) {}
 
-  async exportBackup(): Promise<HabitBackupPayload> {
+  /**
+   * The export window ends on the Damascus day, not the UTC one (ADR-0093).
+   * `now` is injectable so the boundary can be pinned: between local midnight
+   * and 03:00 a UTC window ends on yesterday and drops the reader's latest logs.
+   */
+  async exportBackup(now: Date = new Date()): Promise<HabitBackupPayload> {
     const habits = await this.repository.getHabits();
-    const today = new Date();
-    const endDate = today.toISOString().split('T')[0] ?? today.toISOString().slice(0, 10);
-    const logs = await this.repository.getLogs('2020-01-01', endDate);
+    const logs = await this.repository.getLogs('2020-01-01', damascusDateKey(now));
 
     return {
       version: '1.0',
-      exportedAt: new Date().toISOString(),
+      exportedAt: now.toISOString(),
       habits,
       logs,
     };
   }
 
-  async exportCsv(): Promise<string> {
+  async exportCsv(now: Date = new Date()): Promise<string> {
     const habits = await this.repository.getHabits();
-    const today = new Date();
-    const endDate = today.toISOString().split('T')[0] ?? today.toISOString().slice(0, 10);
-    const logs = await this.repository.getLogs('2020-01-01', endDate);
+    const logs = await this.repository.getLogs('2020-01-01', damascusDateKey(now));
 
     const rows: string[] = [];
     rows.push('# Habits');

@@ -4,7 +4,7 @@ import {
   calculateAggregateStats,
   get30DayCalendarGrid,
 } from '@/frontend/shared/habitflow/habit-stats';
-import { getTodayString } from './use-dashboard-data';
+import { damascusDateKey } from '@/shared/time';
 
 export interface DashboardCalendar {
   activeDate: string;
@@ -17,7 +17,7 @@ export interface DashboardCalendar {
 }
 
 export function useDashboardCalendar(habits: Habit[], logs: HabitLog[]): DashboardCalendar {
-  const [activeDate, setActiveDate] = useState<string>(getTodayString);
+  const [activeDate, setActiveDate] = useState<string>(damascusDateKey);
 
   const activeStats: AggregateStats = calculateAggregateStats(habits, logs, activeDate);
   const calendarGrid = get30DayCalendarGrid(activeDate);
@@ -47,6 +47,6 @@ export function useDashboardCalendar(habits: Habit[], logs: HabitLog[]): Dashboa
     calendarGrid,
     handleDateShift,
     getReadableActiveDate,
-    todayDate: getTodayString(),
+    todayDate: damascusDateKey(),
   };
 }
