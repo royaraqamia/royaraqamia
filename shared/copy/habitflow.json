@@ -1,0 +1,18 @@
+{
+  "surface": "habitflow",
+  "component": "habit-list",
+  "web": { "file": "frontend/ui/habitflow/components/habitflow-copy.ts", "export": "HABITFLOW_COPY" },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowCopy.kt",
+    "object": "HabitflowCopy"
+  },
+  "notes": {
+    "source": "The HabitFlow list's words, in both clients (#649). The site's dashboard is the reference: the heading and the empty state are what the app's list draws, and they move here so neither client spells them.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dashboard does not render."
+  },
+  "strings": {
+    "listTitle": "العادات",
+    "emptyTitle": "لا توجد عادات بعد",
+    "emptyBody": "لم تُسجَّل أي عادة في هذا اليوم. سجّل عادتك الأولى ثم ابدأ البناء عليها يومًا بعد يوم."
+  }
+}

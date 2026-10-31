@@ -19,6 +19,7 @@ import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
+import com.royaraqamia.app.habitflow.HabitflowScreen
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
@@ -79,6 +80,9 @@ class ShellActivity : ComponentActivity() {
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {
+                        if (NativeSurfaces.isNative(current)) {
+                            HabitflowScreen(repository = graph.habitflow)
+                        }
                         if (!signedIn) {
                             SignInCard(
                                 state = authState,
