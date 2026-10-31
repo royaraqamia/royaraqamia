@@ -73,8 +73,76 @@ describe('parseCsv', () => {
     expect(parseCsv(content)).toHaveLength(2);
   });
 
+  it('tolerates lone CR line endings', () => {
+    const content = '2026-08-01,5,طعام,قهوة\r2026-08-02,7,طعام,خبز';
+    expect(parseCsv(content)).toEqual([
+      { date: '2026-08-01', amount: 5, category: 'طعام', description: 'قهوة' },
+      { date: '2026-08-02', amount: 7, category: 'طعام', description: 'خبز' },
+    ]);
+  });
+
+  it('keeps a quoted newline inside one cell instead of splitting the row', () => {
+    const content = '2026-08-01,10,خدمات,"فاتورة الإنترنت\nالشهر الماضي"';
+    expect(parseCsv(content)).toEqual([
+      {
+        date: '2026-08-01',
+        amount: 10,
+        category: 'خدمات',
+        description: 'فاتورة الإنترنت\nالشهر الماضي',
+      },
+    ]);
+  });
+
+  it('reads a CRLF inside quotes as one line break, not a row break', () => {
+    const content = '2026-08-01,10,خدمات,"line one\r\nline two"\r\n2026-08-02,7,طعام,خبز';
+    expect(parseCsv(content)).toEqual([
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+      { date: '2026-08-02', amount: 7, category: 'طعام', description: 'خبز' },
+    ]);
+  });
+
+  it('trims only unquoted cells', () => {
+    const content = '  2026-08-01  ,  5  ,  طعام  ,"  قهوة  "';
+    expect(parseCsv(content)).toEqual([
+      { date: '2026-08-01', amount: 5, category: 'طعام', description: '  قهوة  ' },
+    ]);
+  });
+
   it('drops blank lines', () => {
     expect(parseCsv('2026-08-01,5,طعام,قهوة\n\n')).toHaveLength(1);
+    expect(parseCsv('2026-08-01,5,طعام,قهوة\r\n\r\n2026-08-02,7,طعام,خبز\r\n')).toHaveLength(2);
+  });
+
+  it('parses a quoted description with a newline end to end', () => {
+    const csv = buildCsv([
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+    ]);
+    expect(parseCsv(stripCsvHeader(csv))).toEqual([
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+    ]);
+  });
+
+  it('round-trips a description holding a comma, a quote and a newline', () => {
+    const rows: SpendExportRow[] = [
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+      {
+        date: '2026-08-02',
+        amount: 12.5,
+        category: 'طعام',
+        description: 'فاتورة، "الإنترنت"\nسطر ثانٍ',
+      },
+      { date: '2026-08-03', amount: 3, category: 'مواصلات', description: null },
+    ];
+    expect(parseCsv(stripCsvHeader(buildCsv(rows)))).toEqual([
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+      {
+        date: '2026-08-02',
+        amount: 12.5,
+        category: 'طعام',
+        description: 'فاتورة، "الإنترنت"\nسطر ثانٍ',
+      },
+      { date: '2026-08-03', amount: 3, category: 'مواصلات', description: '' },
+    ]);
   });
 });
 
@@ -92,6 +160,15 @@ describe('hasCsvHeaderLine / stripCsvHeader', () => {
   it('leaves headerless content unchanged', () => {
     const content = '2026-08-01,5,طعام,قهوة';
     expect(stripCsvHeader(content)).toBe(content);
+  });
+
+  it('strips the header without cutting into a quoted newline', () => {
+    const content =
+      'date,amount,category,description\r\n2026-08-01,10,خدمات,"line one\r\nline two"\r\n2026-08-02,7,طعام,خبز\r\n';
+    expect(parseCsv(stripCsvHeader(content))).toEqual([
+      { date: '2026-08-01', amount: 10, category: 'خدمات', description: 'line one\nline two' },
+      { date: '2026-08-02', amount: 7, category: 'طعام', description: 'خبز' },
+    ]);
   });
 });
 

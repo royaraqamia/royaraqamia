@@ -27,37 +27,76 @@ export function buildCsv(rows: SpendExportRow[]): string {
   return lines.join('\n');
 }
 
-function splitLines(content: string): string[] {
-  return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-}
+type CsvRecord = {
+  cells: string[];
+  /** Index just past the record's terminator, so the raw text can be sliced away. */
+  end: number;
+};
 
-function splitLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = '';
+/**
+ * One pass over the whole file, because a quoted cell may hold the line breaks
+ * `buildCsv` writes into a multi-line description. A newline only ends a record
+ * outside quotes; CRLF, CR and LF are all terminators, and inside a quoted cell
+ * they collapse to `\n` so an imported description does not carry a stray `\r`.
+ *
+ * Only an unquoted cell is trimmed — spaces inside `"  padding  "` are the
+ * user's.
+ */
+function parseCsvRecords(content: string): CsvRecord[] {
+  const records: CsvRecord[] = [];
+  let cells: string[] = [];
+  let cell = '';
   let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  let cellQuoted = false;
+
+  const endCell = () => {
+    cells.push(cellQuoted ? cell : cell.trim());
+    cell = '';
+    cellQuoted = false;
+  };
+
+  const endRecord = (end: number) => {
+    endCell();
+    records.push({ cells, end });
+    cells = [];
+  };
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
     if (char === '"') {
-      if (quoted && line[i + 1] === '"') {
-        current += '"';
+      if (quoted && content[i + 1] === '"') {
+        cell += '"';
         i++;
       } else {
         quoted = !quoted;
+        if (quoted) cellQuoted = true;
+      }
+    } else if (char === '\r' || char === '\n') {
+      const crlf = char === '\r' && content[i + 1] === '\n';
+      if (quoted) {
+        cell += '\n';
+        if (crlf) i++;
+      } else {
+        if (crlf) i++;
+        endRecord(i + 1);
       }
     } else if (char === ',' && !quoted) {
-      cells.push(current);
-      current = '';
+      endCell();
     } else {
-      current += char;
+      cell += char;
     }
   }
-  cells.push(current);
-  return cells.map((cell) => cell.trim());
+
+  if (cells.length > 0 || cell !== '' || cellQuoted) {
+    endRecord(content.length);
+  }
+
+  return records;
 }
 
 export function parseCsv(content: string): SpendImportRow[] {
-  const cellsPerLine = splitLines(content).map(splitLine);
-  return cellsPerLine
+  return parseCsvRecords(content)
+    .map((record) => record.cells)
     .filter((cells) => cells.some((cell) => cell.length > 0))
     .map((cells) => ({
       date: cells[0] ?? '',
@@ -67,20 +106,25 @@ export function parseCsv(content: string): SpendImportRow[] {
     }));
 }
 
-export function hasCsvHeaderLine(content: string): boolean {
-  const first = splitLines(content)[0];
-  if (!first) return false;
-  const cells = splitLine(first);
+function isHeaderRecord(record: CsvRecord | undefined): boolean {
+  if (!record) return false;
   return (
-    cells.length === SPEND_CSV_HEADERS.length &&
-    cells.every(
+    record.cells.length === SPEND_CSV_HEADERS.length &&
+    record.cells.every(
       (cell, index) => /^[a-zA-Z]+$/.test(cell) && cell.toLowerCase() === SPEND_CSV_HEADERS[index]!
     )
   );
 }
 
+export function hasCsvHeaderLine(content: string): boolean {
+  return isHeaderRecord(parseCsvRecords(content)[0]);
+}
+
+/** Drops the first record — never a line inside a quoted cell — when it is the header. */
 export function stripCsvHeader(content: string): string {
-  return hasCsvHeaderLine(content) ? splitLines(content).slice(1).join('\n') : content;
+  const first = parseCsvRecords(content)[0];
+  if (!first || !isHeaderRecord(first)) return content;
+  return content.slice(first.end);
 }
 
 const DEFAULT_CATEGORY_COLORS = [
