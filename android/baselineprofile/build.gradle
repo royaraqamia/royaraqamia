@@ -1,0 +1,78 @@
+// The shell's own baseline profile (#762).
+//
+// A release APK already ships `assets/dexopt/baseline.prof` — but only what the
+// Compose libraries' AARs carry. Every class of this app's own is therefore
+// interpreted until it happens to be compiled, and the launch measured on an
+// RMX3195 spent ~62 ms on exactly that difference: `status=verify` 552 ms against
+// `status=speed-profile` 490 ms for the same build.
+//
+// This module is the generator, not a test module in the ordinary sense: it has
+// no assertions and its output is a profile. `npm run android:profile` runs
+// `:app:generateBaselineProfile`, which boots the emulator declared in the app
+// module, drives one launch of the shell, and saves the profile the app packs
+// into its APK.
+//
+// It runs on an emulator rather than a phone on purpose: a profile is a property
+// of the code path, not of the hardware, and a managed device is reproducible on
+// any machine. The APK is then measured on the device, which is `android:launch`'s
+// job.
+plugins {
+    id 'com.android.test'
+    id 'org.jetbrains.kotlin.android'
+    id 'androidx.baselineprofile'
+}
+
+android {
+    namespace = 'com.royaraqamia.app.baselineprofile'
+    compileSdk = rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        minSdk = rootProject.ext.minSdkVersion
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    // The app under test is `:app`, not a copy: the profile has to describe the
+    // real launch. The app module is built for this by the plugin's own
+    // non-minified, profileable variant.
+    targetProjectPath = ':app'
+    experimentalProperties['android.experimental.self-instrumenting'] = true
+
+    // The app's Java target comes from `capacitor.build.gradle`; this module has no
+    // such file, so it says 21 itself and the two compilers agree.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    // The emulator the profile is generated on (#762). It is declared here, on the
+    // module that generates, and the image is one this machine already has, so
+    // generation does not wait on a download. The app declares no device: its
+    // plugin only adds the task that boots this one and collects the output.
+    testOptions {
+        managedDevices {
+            devices {
+                pixel5Api35(com.android.build.api.dsl.ManagedVirtualDevice) {
+                    device = 'Pixel 5'
+                    apiLevel = 35
+                    systemImageSource = 'google'
+                }
+            }
+        }
+    }
+}
+
+baselineProfile {
+    managedDevices += 'pixel5Api35'
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
+
+dependencies {
+    implementation "androidx.benchmark:benchmark-macro-junit4:${rootProject.ext.benchmarkVersion}"
+    implementation "androidx.test.ext:junit:${rootProject.ext.androidxJunitVersion}"
+    implementation "androidx.test.uiautomator:uiautomator:${rootProject.ext.uiautomatorVersion}"
+}

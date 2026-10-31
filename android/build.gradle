@@ -18,6 +18,14 @@ buildscript {
         // Compose's compiler plugin ships with Kotlin now, and its version has to
         // be the Kotlin one (ADR-0089, #647).
         classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.20'
+        // The generator of the shell's own baseline profile (#762). It is a
+        // buildscript classpath for the same reason the Kotlin plugin is: the
+        // module that applies it only exists once this is resolved. Pinned at
+        // 1.4.1: 1.5.0 fails `:app:compileNonMinifiedReleaseKotlin` with a
+        // `scriptSources` input that points at `provider(?)` under this Kotlin
+        // and AGP pair, so moving it is a build change to prove, not a version
+        // bump to take.
+        classpath 'androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.4.1'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
