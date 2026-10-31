@@ -107,14 +107,15 @@ against its surface's target and exits non-zero on a miss, and
 
 The splash is the launch theme — one `AppTheme.NoActionBarLaunch` in
 `android/app/src/main/res/values/styles.xml` declaring three items: `windowSplashScreenBackground`
-(`#0f172a`, the colour the WebView paints, so the handover shows no colour change),
-`windowSplashScreenAnimatedIcon` (`@drawable/splash_icon`) and `postSplashScreenTheme`. Android 12+
+(`@color/roy_background`, the generated token the app's own first Compose frame paints, so the
+splash lifts onto that frame with no colour change), `windowSplashScreenAnimatedIcon`
+(`@drawable/splash_icon`) and `postSplashScreenTheme`. Android 12+
 draws that natively; `androidx.core:core-splashscreen` draws the same theme below it, which is why
-`MainActivity` calls `installSplashScreen()` before `super.onCreate`. Neither family leaves a
-duration of ours to keep in step with the WebView — this shell loads a remote URL, so a fixed
-duration had no relationship to when the page was ready. What the dismissal reveals, though, is no
-longer the WebView's empty frame: the app's first frame carries the launch skeleton (below), and that
-is the frame the platform dismisses on.
+the launcher, `ShellActivity`, calls `installSplashScreen()` before `super.onCreate`. Neither family
+leaves a duration of ours to keep in step with a page — a fixed duration had no relationship to when
+the app's own frame was ready. What the dismissal reveals is that frame. The document a destination
+is handed over to keeps its own skeleton (below), and that is a later, separate transition
+([ADR-0105](../adr/0105-the-shell-launches-and-the-document-is-a-destination.md)).
 
 `@drawable/splash_icon` is **generated from the launcher artwork** at `SPLASH_ICON_DP` (288dp)
 rather than being the launcher icon itself, and that difference is the one number worth knowing.
@@ -210,7 +211,7 @@ the 88dp `خدماتنا` pill at 116–203px on the 320px frame — centred to 
 bell at the left, at every width. The AVD's 33px display cutout sits above the bar, so the first card's
 top edge lands at 113px rather than 104px on the narrowest frame; nothing in the layout depends on it.
 
-What the four launches showed:
+What the four launches showed (taken with the document as the launcher, before #647):
 
 | Launch                                                     | Screen                                                                                                                                         |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -222,8 +223,8 @@ never lifted (above), and a `ConcurrentModificationException` on the first commi
 `WebViewListener` inside the bridge's own iteration over its listener list.
 
 `scripts/__tests__/launch-skeleton.test.mjs` holds the load-bearing pieces: the colour equality with
-the splash, the proportions above, the absence of a keep-on-screen condition, the commit release with
-its `about:` guard and deferred listener removal, and the ceiling.
+the document's own window, the proportions above, the absence of a keep-on-screen condition, the
+commit release with its `about:` guard and deferred listener removal, and the ceiling.
 
 ### What the document costs, under the skeleton
 

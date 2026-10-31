@@ -102,6 +102,31 @@ describe('the launcher', () => {
     expect(launcher).toContain('withFrameNanos');
   });
 
+  it('paints the splash in the colour the first frame paints', () => {
+    // #752: the platform splash lifts onto the shell's own frame, so the two are
+    // one colour. Neither spells it: the launch theme reads the generated
+    // `roy_background`, and that resource is the token `ShellFrame` paints.
+    const styles = readFileSync(join(APP, 'res', 'values', 'styles.xml'), 'utf8');
+    const launch = /<style name="AppTheme\.NoActionBarLaunch"[^>]*>([\s\S]*?)<\/style>/.exec(
+      styles
+    );
+    expect(launch, 'values/styles.xml: no AppTheme.NoActionBarLaunch theme').not.toBeNull();
+    expect(launch[1]).toContain(
+      '<item name="windowSplashScreenBackground">@color/roy_background</item>'
+    );
+
+    const colors = readFileSync(join(APP, 'res', 'values', 'colors.xml'), 'utf8');
+    const resource = /<color name="roy_background">#([0-9A-F]{8})<\/color>/.exec(colors);
+    expect(resource, 'values/colors.xml: no roy_background').not.toBeNull();
+
+    const tokens = readFileSync(join(SHELL, '..', 'theme', 'DesignTokens.kt'), 'utf8');
+    const frame = /const val background: Long = 0x([0-9A-F]{8})/.exec(tokens);
+    expect(frame, 'DesignTokens.kt: no Colors.background').not.toBeNull();
+
+    expect(resource[1]).toBe(frame[1]);
+    expect(shell('ShellFrame.kt')).toContain('MaterialTheme.colorScheme.background');
+  });
+
   it('keeps the document behind one named call', () => {
     const files = [
       'ShellActivity.kt',

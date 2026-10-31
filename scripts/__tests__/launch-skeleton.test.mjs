@@ -4,9 +4,9 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * The launch skeleton (#498, ADR-0061) — the surface between the splash and the
- * document, held to the four things that make it a handover rather than a second
- * screen: it paints the splash's own colour, it carries the site's chrome
+ * The launch skeleton (#498, ADR-0061) — the surface between the document window
+ * and the document, held to the four things that make it a handover rather than a
+ * second screen: it paints the window's own colour, it carries the site's chrome
  * proportions, it leaves when the document commits, and it leaves on its own when
  * the document does not.
  *
@@ -41,10 +41,13 @@ const tagFor = (xml, id) => {
 describe('the launch skeleton', () => {
   const layout = read('layout', 'shell_skeleton.xml');
 
-  it('paints the colour the splash and the WebView already paint', () => {
-    // #498's acceptance is "no colour flash (#0f172a throughout)". The splash's
-    // colour is a literal in `styles.xml` (the icon test pins it there), so the
-    // skeleton names a colour resource and this is what keeps the two equal.
+  it("paints the document window's own colour", () => {
+    // #498's acceptance is "no colour flash" while the document loads: the window
+    // behind it and the skeleton are one colour, so the skeleton reads as the page
+    // arriving rather than as an empty surface. The splash is no longer part of
+    // that sequence — it belongs to the launcher and paints the app's own
+    // background (#752) — so what stays pinned is the skeleton against the window
+    // it covers.
     expect(tagFor(layout, 'shell_skeleton')).toContain(
       'android:background="@color/roy_launch_background"'
     );
@@ -53,14 +56,12 @@ describe('the launch skeleton', () => {
     const launch = /<color name="roy_launch_background">#([0-9A-Fa-f]{6,8})<\/color>/.exec(colors);
     expect(launch, 'values/colors.xml: no roy_launch_background').not.toBeNull();
 
-    const styles = read('values', 'styles.xml');
-    const splash = /<item name="windowSplashScreenBackground">#([0-9A-Fa-f]{6})<\/item>/.exec(
-      styles
-    );
-    expect(splash, 'values/styles.xml: no windowSplashScreenBackground').not.toBeNull();
+    const capacitor = readFileSync(join(ROOT, 'capacitor.config.ts'), 'utf8');
+    const window = /backgroundColor:\s*'#([0-9A-Fa-f]{6})'/.exec(capacitor)?.[1];
+    expect(window, 'capacitor.config.ts: no backgroundColor').toBeDefined();
 
     // 8-digit `#AARRGGBB` here, `#RRGGBB` there: compare the RGB half.
-    expect(launch[1].slice(-6).toLowerCase()).toBe(splash[1].toLowerCase());
+    expect(launch[1].slice(-6).toLowerCase()).toBe(window.toLowerCase());
   });
 
   it("carries the site's chrome proportions", () => {

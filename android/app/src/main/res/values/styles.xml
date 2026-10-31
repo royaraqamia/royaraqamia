@@ -80,9 +80,10 @@
 
     <!--
       The launch theme is the whole splash: one theme, read by the platform on
-      Android 12+ and by `androidx.core:core-splashscreen` below it (which
-      `MainActivity` installs), so every Android version draws the same splash from
-      the same three items and no splash-specific drawable or bitmap exists.
+      Android 12+ and by `androidx.core:core-splashscreen` below it (which the
+      launcher, `ShellActivity`, installs), so every Android version draws the same
+      splash from the same three items and no splash-specific drawable or bitmap
+      exists.
 
       `windowSplashScreenAnimatedIcon` is `@drawable/splash_icon` — generated from
       the same artwork as the launcher icon, with its disc at
@@ -92,16 +93,18 @@
       lands on the launcher icon's 64% rather than on the artwork's own share; the
       numbers are in `docs/mobile/android-shell.md`.
 
-      The background is the shell's own `#0f172a`, which is what the WebView paints,
-      so the splash hands over to the loading page without a colour change.
+      The background is `@color/roy_background`, the generated token the shell's
+      first Compose frame paints (`ShellFrame`), so the splash lifts straight onto
+      the app's own frame with no colour change between the two. It is deliberately
+      not `@color/roy_launch_background`: that is the document's surface, which a
+      destination is handed over to after the frame (#647, ADR-0105).
       `postSplashScreenTheme` is the theme the activity switches to once the splash
       is dismissed. Nothing is held here: the platform dismisses the splash on the
-      app's first drawn frame, and that frame is the launch skeleton
-      (`res/layout/shell_skeleton.xml`, #498) — no duration is declared, so there is
-      no clock to keep in step with the WebView.
+      app's first drawn frame — the shell's own — and no duration is declared, so
+      there is no clock to keep in step with the document.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#0f172a</item>
+        <item name="windowSplashScreenBackground">@color/roy_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>

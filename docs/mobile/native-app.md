@@ -81,7 +81,9 @@ real screen is still owed, with the rest of its acceptance criteria.
 to a Compose frame drawn from the tokens, RTL at the root, with the app's own tab bar
 (`shell/ShellTabBar.kt` — the site's three primary routes, its labels through
 `shared/copy/shell-tab-bar.json` and its glyphs through `shared/icons/icons.json`, listed as a pair in
-`docs/mobile/parity.json`). The route model is the site's own grammar (`shell/Routes.kt`,
+`docs/mobile/parity.json`). The splash's background is the generated `roy_background` — the token
+`ShellFrame` paints — so the platform splash lifts onto that frame with no colour change. The route
+model is the site's own grammar (`shell/Routes.kt`,
 `shell/DeepLink.kt`, `shell/ShellBackStack.kt`) and is unit-tested rather than asserted, including the
 back rule ADR-0082 states: only home closes the app. A destination whose surface is still the
 document hands the route over (`shell/WebSurface.kt`) and the shell stays underneath it, so back from
@@ -95,8 +97,9 @@ pill, `shell/ShellServices.kt` the sheet and its sixteen rows — the site's ord
 `shared/copy/shell-services.json`, the site's glyphs through `vectors:generate`, and a parity row whose
 states are the trigger and the rows. The menu's table moved out of `frontend/ui/app-shell/constants.ts`
 into `frontend/ui/navbar/services-link.ts` in the same change, because the generated copy is now its
-only source of words. Still owed from this slice: the cold-start budget measured on a mid-range device,
-and the two chrome gaps [two-clients.md](two-clients.md) lists.
+only source of words. Still owed from this slice: the cold and warm starts measured on a mid-range
+device (`npm run android:launch`, [#752](https://github.com/royaraqamia/royaraqamia/issues/752)), the
+320 dp run, and the two chrome gaps [two-clients.md](two-clients.md) lists.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
