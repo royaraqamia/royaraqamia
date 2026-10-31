@@ -124,10 +124,16 @@ select,
     font-weight: var(--type-body-weight);
   }
 
+  /* Interactive chrome keeps the UI face whatever it sits in — a link or a
+     button inside a display face is still chrome. `span` is deliberately not
+     here: it is a generic inline wrapper, so a rule on it does not restyle
+     chrome, it silently resets the face of every wrapped run of text. It did
+     exactly that to the Quran reader, whose last word travels in a `span` with
+     the ayah number (`.ayah-tail`) and so left the Uthmani face for the UI sans
+     on every ayah of every sura. A span inherits; nothing to declare. */
   button,
   a[href],
-  .Button,
-  span {
+  .Button {
     font-family: var(--font-sans);
   }
 
