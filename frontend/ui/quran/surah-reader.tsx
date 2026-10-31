@@ -1,12 +1,15 @@
+import { Fragment } from 'react';
 import { Bookmark } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranReadingClient } from './quran-reading-client';
 import { AyahAnchorHighlight } from './ayah-highlight';
+import { AyahBoundary } from './ayah-boundary';
 import { AyahTafsir, QuranTafsirProvider } from './ayah-tafsir';
 import { revelationLabel } from './format';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
+import type { QuranAyahMarks } from '@/shared/contracts/quran-pages';
 import type { SurahTafsirRef } from '@/shared/contracts/quran-tafsir';
 
 interface SurahReaderProps {
@@ -20,6 +23,12 @@ interface SurahReaderProps {
   audio: { ayahCount: number } | null;
   /** Null when no tafsir is vendored for this sura (ADR-0057). */
   tafsir: SurahTafsirRef | null;
+  /**
+   * The printed Mushaf's boundaries, keyed by the Ayah that opens each (P5). Empty
+   * when this build has no vendored boundaries, in which case the reader draws the
+   * text it has always drawn.
+   */
+  marks?: Readonly<Record<number, QuranAyahMarks>>;
 }
 
 /**
@@ -38,7 +47,7 @@ interface SurahReaderProps {
  * Deliberately verse-by-verse rather than a Mushaf page: page and line breaks are
  * a separate view of the same text (P5), not the base rendering.
  */
-export function SurahReader({ surah, summary, audio, tafsir }: SurahReaderProps) {
+export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReaderProps) {
   return (
     <div
       className={cn(
@@ -82,41 +91,45 @@ export function SurahReader({ surah, summary, audio, tafsir }: SurahReaderProps)
             const head = lastSpace === -1 ? '' : ayah.slice(0, lastSpace + 1);
             const lastWord = lastSpace === -1 ? ayah : ayah.slice(lastSpace + 1);
 
-            return (
-              <article
-                key={number}
-                data-ayah-card={number}
-                className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
-              >
-                <p
-                  id={`ayah-${number}`}
-                  data-ayah={number}
-                  className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
-                >
-                  {head}
-                  <span className="ayah-tail">
-                    {lastWord}
-                    <span className="ayah-marker" data-ayah-marker={number}>
-                      <span className="ayah-marker-number">{number}</span>
-                    </span>
-                    <button
-                      type="button"
-                      data-bookmark-ayah={number}
-                      aria-pressed="false"
-                      disabled
-                      aria-label={`علامة على الآية ${number}`}
-                      title="إضافة علامة أو إزالتها"
-                      className="ayah-mark"
-                    >
-                      <Bookmark aria-hidden="true" />
-                    </button>
-                  </span>
-                </p>
+            const mark = marks?.[number];
 
-                <div data-tafsir-slot={number}>
-                  <AyahTafsir ayah={number} />
-                </div>
-              </article>
+            return (
+              <Fragment key={number}>
+                {mark ? <AyahBoundary marks={mark} /> : null}
+                <article
+                  data-ayah-card={number}
+                  className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
+                >
+                  <p
+                    id={`ayah-${number}`}
+                    data-ayah={number}
+                    className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+                  >
+                    {head}
+                    <span className="ayah-tail">
+                      {lastWord}
+                      <span className="ayah-marker" data-ayah-marker={number}>
+                        <span className="ayah-marker-number">{number}</span>
+                      </span>
+                      <button
+                        type="button"
+                        data-bookmark-ayah={number}
+                        aria-pressed="false"
+                        disabled
+                        aria-label={`علامة على الآية ${number}`}
+                        title="إضافة علامة أو إزالتها"
+                        className="ayah-mark"
+                      >
+                        <Bookmark aria-hidden="true" />
+                      </button>
+                    </span>
+                  </p>
+
+                  <div data-tafsir-slot={number}>
+                    <AyahTafsir ayah={number} />
+                  </div>
+                </article>
+              </Fragment>
             );
           })}
         </QuranTafsirProvider>
