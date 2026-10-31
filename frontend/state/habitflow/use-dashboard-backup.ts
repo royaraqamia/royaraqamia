@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { damascusDateKey } from '@/shared/time';
 import { buildBackupCsv, buildBackupPayload } from '@/frontend/shared/habitflow/backup';
 import { logger } from '@/frontend/shared/logger';
 
@@ -34,22 +35,28 @@ export function useDashboardBackup(
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
 
-  const collect = async (): Promise<{ habits: Habit[]; logs: HabitLog[] }> => {
+  /**
+   * Reads the whole range in the calendar day the dashboard counts in — the
+   * Damascus day (ADR-0093), never the UTC one (#683). East of UTC the two
+   * disagree for three hours after local midnight, and the UTC read silently
+   * dropped every log the reader had just made. The same day names the file.
+   */
+  const collect = async (): Promise<{ habits: Habit[]; logs: HabitLog[]; today: string }> => {
     if (!store) throw new Error('Local Store is not ready');
     const habits = await store.getHabits();
-    const endDate = new Date().toISOString().slice(0, 10);
-    const logs = await store.getLogs('2020-01-01', endDate);
-    return { habits, logs };
+    const today = damascusDateKey();
+    const logs = await store.getLogs('2020-01-01', today);
+    return { habits, logs, today };
   };
 
   const handleDownloadBackup = async () => {
     try {
-      const { habits, logs } = await collect();
+      const { habits, logs, today } = await collect();
       const payload = buildBackupPayload(habits, logs);
       saveBlob(
         JSON.stringify(payload, null, 2),
         'application/json',
-        `habitflow_backup_${new Date().toISOString().slice(0, 10)}.json`
+        `habitflow_backup_${today}.json`
       );
     } catch (e) {
       logger.error('Failed to download backup', { error: String(e) });
@@ -59,11 +66,11 @@ export function useDashboardBackup(
 
   const handleDownloadCsv = async () => {
     try {
-      const { habits, logs } = await collect();
+      const { habits, logs, today } = await collect();
       saveBlob(
         `\uFEFF${buildBackupCsv(habits, logs)}`,
         'text/csv;charset=utf-8;',
-        `habitflow_export_${new Date().toISOString().slice(0, 10)}.csv`
+        `habitflow_export_${today}.csv`
       );
       toast.success('تم تصدير العادات والسجلات بنجاح');
     } catch (e) {
