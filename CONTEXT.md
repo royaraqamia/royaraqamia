@@ -302,6 +302,13 @@ The Quran Reader's alternate rendering of the text as it appears on a printed pa
 page and line breaks of the Madani Mushaf. A view over the same text, not a second copy of it.
 _Avoid_: Page mode, print layout, book view, مصحف
 
+**Search**:
+Finding Ayat by a phrase a reader types, in the Quran Reader. It is the same field that narrows the
+Surah list by name, because a reader typing a word means one of the two and should not have to know
+which. The comparison is a folded copy of the text, derived in the browser; the bytes shipped are the
+text itself (ADR-0107).
+_Avoid_: Find, lookup, index, filter (for the Ayat)
+
 ### Offline
 
 **Offline-first**:
