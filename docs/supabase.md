@@ -135,9 +135,12 @@ not a review. See ADR 0040 (the check) and ADR 0041 (the apply).
 ## Operations
 
 - **Advisors:** Run `supabase_get_advisors` (security + performance) after schema changes
-- **Deliberate advisor findings:** `unindexed_foreign_keys` names the `user_id` columns on `training_applications`, `consultation_bookings`, `project_requests` and `retainers`. They carry no index on purpose — nothing reads them yet (ADR-0005), and an index only pays for reads. `training_applications` dedupes on its own `user_id`, so if that ever becomes slow, index all four together rather than only the newest two. Likewise `rate_sync_runs.snapshot_id`
-  carries no index: the table is written once per sync and read by status and recency, never by
-  snapshot. `idx_rate_sync_runs_started_at` is the one deliberate `unused_index`: the health read
+- **Deliberate advisor findings:** `unindexed_foreign_keys` names the `user_id` columns on `training_applications`, `consultation_bookings`, `project_requests` and `retainers`. They carry no index on purpose — nothing reads them yet (ADR-0005), and an index only pays for reads. `training_applications` dedupes on its own `user_id`, so if that ever becomes slow, index all four together rather than only the newest two. `rate_sync_runs.snapshot_id`
+  was listed here for the same reason — written once per sync, read by status and recency, never by
+  snapshot — and 20261031180000 indexed it with the rest of the list (#738): a parent-side scan is a
+  scan whether or not a read orders by the column. No read filters on it and nothing deletes a
+  snapshot today, so it is write-only cost; drop it if that ever matters more than covering the whole
+  advisor list. `idx_rate_sync_runs_started_at` is the one deliberate `unused_index`: the health read
   (`getLastSuccessfulRun`) filters on `status` and orders by `finished_at`, which
   `idx_rate_sync_runs_status_finished` now serves, but `started_at` is still selected and mapped into
   `RateSyncRun`, and dropping the index alone is a destructive statement the apply gate keeps behind
