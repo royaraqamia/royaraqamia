@@ -150,6 +150,39 @@ object LucideVectors {
         }.build()
     }
 
+    /** `circle-alert`, the site's own drawing. */
+    val CircleAlert: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "circle-alert",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M12 8L12 12"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M12 16L12.01 16"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `coins`, the site's own drawing. */
     val Coins: ImageVector by lazy {
         ImageVector.Builder(
@@ -182,6 +215,25 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M10 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `loader-circle`, the site's own drawing. */
+    val LoaderCircle: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "loader-circle",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M21 12a9 9 0 1 1-6.219-8.56"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

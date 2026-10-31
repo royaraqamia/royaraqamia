@@ -3,13 +3,14 @@
 import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CircleAlert, Loader2 } from 'lucide-react';
+import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { login, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+import { SIGN_IN_COPY } from './sign-in-copy';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
@@ -67,7 +68,7 @@ function LoginForm() {
   }
 
   return (
-    <AuthCard title="تسجيل الدُّخول">
+    <AuthCard title={SIGN_IN_COPY.title}>
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
@@ -77,7 +78,7 @@ function LoginForm() {
               htmlFor="login-email"
               className="block text-xs sm:text-sm font-medium text-foreground/90 transition-colors cursor-pointer select-none"
             >
-              البريد الإلكتروني
+              {SIGN_IN_COPY.email}
             </label>
             <Input
               id="login-email"
@@ -96,7 +97,7 @@ function LoginForm() {
               htmlFor="login-password"
               className="block text-xs sm:text-sm font-medium text-foreground/90 transition-colors cursor-pointer select-none"
             >
-              كلمة المرور
+              {SIGN_IN_COPY.password}
             </label>
             <PasswordInput
               id="login-password"
@@ -117,7 +118,7 @@ function LoginForm() {
         {offline ? (
           <NeedsConnection
             variant="inline"
-            message="لم يصل طلب تسجيل الدُّخول إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            message={SIGN_IN_COPY.unreachable}
           />
         ) : (
           message && (
@@ -128,7 +129,7 @@ function LoginForm() {
                 role="alert"
                 className="text-xs sm:text-sm font-medium leading-relaxed"
               >
-                {message}
+                {message ?? SIGN_IN_COPY.refused}
               </p>
             </div>
           )
@@ -137,11 +138,11 @@ function LoginForm() {
         <HeroCtaButton type="submit" disabled={isPending} className="w-full">
           {isPending ? (
             <>
-              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
-              <span>جاري الدُّخول...</span>
+              <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>{SIGN_IN_COPY.busy}</span>
             </>
           ) : (
-            'تسجيل الدُّخول'
+            SIGN_IN_COPY.submit
           )}
         </HeroCtaButton>
       </form>
@@ -189,7 +190,7 @@ function LoginForm() {
         {googleOffline && (
           <NeedsConnection
             variant="inline"
-            message="لم نتمكَّن من الوصول إلى Google. تحقَّق من اتِّصالك ثم أعد المحاولة."
+            message={SIGN_IN_COPY.unreachable}
           />
         )}
 

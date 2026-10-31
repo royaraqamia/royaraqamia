@@ -62,6 +62,23 @@ if (localPropertiesFile.exists()) {
 def debugSupabaseUrl = localProperties.getProperty('supabase.url', '')
 def debugSupabaseAnonKey = localProperties.getProperty('supabase.anonKey', '')
 
+// The app's backend config (#770): the site's origin, the project's auth base and
+// its publishable key. Committed in `android/supabase.properties` because all three
+// are public - the key ships in the web bundle and RLS is what protects a row - and
+// because a value only a CI secret can supply makes a locally built release one that
+// cannot sign in. `android/local.properties` still overrides them per machine.
+def supabasePropertiesFile = rootProject.file('supabase.properties')
+def supabaseProperties = new Properties()
+if (supabasePropertiesFile.exists()) {
+    supabasePropertiesFile.withInputStream { supabaseProperties.load(it) }
+}
+def cfg = { String key, String fallback ->
+    localProperties.getProperty(key, supabaseProperties.getProperty(key, fallback))
+}
+def siteUrl = cfg('siteUrl', 'https://royaraqamia.com')
+def supabaseUrl = cfg('supabase.url', '')
+def supabaseAuthUrl = cfg('supabase.authUrl', '')
+def supabaseAnonKey = cfg('supabase.anonKey', '')
 // The Firebase client config is *committed* (ADR-0050): it holds the project id and the
 // Android API key, which every APK ships anyway, and its absence is what let a released
 // shell reach users with no Firebase app — where `@capacitor/push-notifications` throws
@@ -90,6 +107,11 @@ android {
         // Read by `MainActivity` before the bridge is built: a build with no Firebase
         // config must not offer the page a push plugin it cannot serve (ADR-0050).
         buildConfigField "boolean", "FIREBASE_CONFIGURED", hasGoogleServices.toString()
+        // What the app talks to (#770). Public values; see `android/supabase.properties`.
+        buildConfigField "String", "SITE_URL", "\"${siteUrl}\""
+        buildConfigField "String", "SUPABASE_URL", "\"${supabaseUrl}\""
+        buildConfigField "String", "SUPABASE_AUTH_URL", "\"${supabaseAuthUrl}\""
+        buildConfigField "String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey}\""
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -111,8 +133,6 @@ android {
             // Read by the debug-only workbench (`WorkbenchActivity`). Empty when
             // `android/local.properties` has no `supabase.url`/`supabase.anonKey`, and
             // the workbench then says so instead of starting a half-configured app.
-            buildConfigField "String", "SUPABASE_URL", "\"${debugSupabaseUrl}\""
-            buildConfigField "String", "SUPABASE_ANON_KEY", "\"${debugSupabaseAnonKey}\""
         }
         release {
             // Compose costs about 5.4 MiB of dex before a single screen exists, and
