@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "normalizer": 1,
+  "path": "/quran/search/index.json",
+  "notice": "public/quran/meta/NOTICE.txt",
+  "source": "Tanzil Project (https://tanzil.net)",
+  "licence": "Creative Commons Attribution 3.0",
+  "ayahs": 6236,
+  "bytes": 1337979,
+  "gzipBytes": 263387,
+  "sha256": "11887ed9d3ae62dc6b0ed81c60adadb47f2217a11b554c8c62ec3d7dddfe8315"
+}

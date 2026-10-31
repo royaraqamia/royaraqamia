@@ -48,6 +48,8 @@
     "vectors:generate": "node scripts/generate-vectors.mjs",
     "check:vectors": "node scripts/generate-vectors.mjs --check",
     "check:precache": "node scripts/check-precache.mjs",
+    "quran-search:build": "node scripts/build-quran-search-index.mjs",
+    "check:quran-search": "node scripts/build-quran-search-index.mjs --check",
     "check:migrations": "node scripts/check-migration-drift.mjs",
     "check:migrations:safety": "node scripts/check-migration-safety.mjs",
     "check:migrations:grants": "node scripts/check-migration-grants.mjs",
