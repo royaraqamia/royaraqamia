@@ -67,13 +67,12 @@
     -->
     <color name="roy_scrim">#B3000000</color>
     <!--
-      The surface the splash, the WebView and the skeleton all paint, so the cold
-      start has one colour from the launcher to the document. Deliberately not the
-      site's background: the page is #121216, while the window behind it
-      (capacitor.config.ts's backgroundColor and the status bar) is #0f172a, and
-      the skeleton follows the window, which is what the splash hands over to. The
-      launch theme restates the value in styles.xml because the icon test pins it
-      there.
+      The surface the document and its launch skeleton paint (#498). Deliberately
+      not the site's background: the document's window (capacitor.config.ts's
+      backgroundColor and the status bar) is #0f172a, and the skeleton follows the
+      window. The launcher's splash does not paint this one: it paints the
+      generated `roy_background`, which is what the app's own first frame paints,
+      so the splash lifts onto that frame without a colour change (#752).
     -->
     <color name="roy_launch_background">#FF0F172A</color>
     <!--
