@@ -295,14 +295,14 @@ describe('DownloaderService.dispatch', () => {
     expect(job.status).toBe('running');
   });
 
-  it('records a provider-declared failure as a failed job rather than throwing', async () => {
+  it('records a provider-declared failure as a failed job and reports the outcome', async () => {
     const { repository, service } = makeService(
       {},
       new FakeProvider(new MediaProviderError('هذا الرَّابط غير مدعوم.'))
     );
     const created = await service.create(INPUT);
 
-    await service.dispatch(created.id, INPUT);
+    await expect(service.dispatch(created.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
@@ -314,11 +314,18 @@ describe('DownloaderService.dispatch', () => {
     const { service } = makeService({}, new FakeProvider(new Error('boom')));
     const created = await service.create(INPUT);
 
-    await service.dispatch(created.id, INPUT);
+    await expect(service.dispatch(created.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
     expect(job.error).not.toContain('boom');
+  });
+
+  it('reports a dispatched job so the caller keeps the count', async () => {
+    const { service } = makeService();
+    const created = await service.create(INPUT);
+
+    await expect(service.dispatch(created.id, INPUT)).resolves.toEqual({ status: 'dispatched' });
   });
 
   it('still fails a raced job at dispatch when the cap fills after create', async () => {
@@ -334,7 +341,7 @@ describe('DownloaderService.dispatch', () => {
     const second = await service.create(INPUT);
 
     await settings.save({ ...DEFAULT_DOWNLOAD_SETTINGS, maxConcurrentJobs: 1 });
-    await service.dispatch(second.id, INPUT);
+    await expect(service.dispatch(second.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     expect(provider.calls).toHaveLength(1);
     const job = await service.get(second.id);
@@ -365,7 +372,7 @@ describe('DownloaderService.dispatch setup failures', () => {
     const { repository, service, provider } = makeService({ settings });
     const created = await service.create(INPUT);
 
-    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+    await expect(service.dispatch(created.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
@@ -389,7 +396,7 @@ describe('DownloaderService.dispatch setup failures', () => {
     const service = new DownloaderService(repository, provider);
     const created = await service.create(INPUT);
 
-    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+    await expect(service.dispatch(created.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
@@ -408,7 +415,7 @@ describe('DownloaderService.dispatch setup failures', () => {
     const service = new DownloaderService(repository, provider);
     const created = await service.create(INPUT);
 
-    await expect(service.dispatch(created.id, INPUT)).resolves.toBeUndefined();
+    await expect(service.dispatch(created.id, INPUT)).resolves.toMatchObject({ status: 'failed' });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
@@ -633,6 +640,45 @@ describe('DownloaderService platform circuit breaker', () => {
     expect(state?.openUntil).not.toBeNull();
     expect(trips).toHaveLength(1);
     expect(trips[0]).toMatchObject({ platform: 'youtube', failures: 3 });
+  });
+
+  it('counts a dispatch failure against the Platform and opens the breaker at the threshold', async () => {
+    // The host is unreachable after its own retries, so no callback ever
+    // arrives: the dispatch itself has to be the health signal.
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const trips: BreakerTrip[] = [];
+    const provider = new FakeProvider(
+      new MediaProviderError('الخدمة غير متاحة مؤقتًا. حاول مجددًا بعد لحظات.')
+    );
+    const { service } = makeService(
+      { platforms, breaker: policy, onBreakerTrip: (trip) => trips.push(trip) },
+      provider
+    );
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const created = await service.create(YOUTUBE_INPUT);
+      await expect(service.dispatch(created.id, YOUTUBE_INPUT)).resolves.toMatchObject({
+        status: 'failed',
+      });
+    }
+
+    expect(trips).toHaveLength(1);
+    expect(trips[0]).toMatchObject({ platform: 'youtube', failures: 3 });
+    expect(platforms.states.get('youtube')?.openUntil).not.toBeNull();
+    await expect(service.create(YOUTUBE_INPUT)).rejects.toMatchObject({ reason: 'breaker' });
+  });
+
+  it('does not count a visitor-fault dispatch refusal against the Platform', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const provider = new FakeProvider(new MediaProviderError('هذا الرَّابط غير مدعوم.', true));
+    const { service } = makeService({ platforms, breaker: policy }, provider);
+
+    const created = await service.create(YOUTUBE_INPUT);
+    await expect(service.dispatch(created.id, YOUTUBE_INPUT)).resolves.toMatchObject({
+      status: 'failed',
+    });
+
+    expect(platforms.states.size).toBe(0);
   });
 
   it('resets the counter and closes the breaker when a job succeeds', async () => {

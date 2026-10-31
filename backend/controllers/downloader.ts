@@ -5,6 +5,7 @@ import {
   CreateDownloadJobSchema,
   DownloadCallbackSchema,
   InspectDownloadLinkSchema,
+  type DownloadJob,
   type DownloadRequest,
   type ProbeResult,
 } from '@/shared/contracts/downloader';
@@ -33,6 +34,7 @@ import {
   PlatformUnavailableError,
   PLATFORM_BREAKER_MESSAGE,
   PLATFORM_DISABLED_MESSAGE,
+  type DispatchOutcome,
 } from '@/backend/services/downloader/downloader-service';
 
 const DownloadJobIdSchema = z.string().uuid();
@@ -42,7 +44,9 @@ const DownloadJobIdSchema = z.string().uuid();
  * booking, but a Download spends real provider CPU, so the create path is
  * gated: Turnstile (fail-closed, ADR-0019) and a fail-closed per-IP limit before
  * the job is accepted, then dispatched to the Media Provider after the response.
- * The global concurrency cap lives in the service.
+ * A dispatch that never reaches the provider gives the visitor's download back,
+ * because a job that never ran is not a spend (ADR-0093). The global concurrency
+ * cap lives in the service.
  */
 export async function createDownloadJob(
   body: unknown,
@@ -78,18 +82,33 @@ export async function createDownloadJob(
     // not give the download back (ADR-0093). Signed-in callers count against
     // their own allowance; a visitor against the cookie and the salted address.
     const { user } = await getOptionalUser();
-    const job = await createPlanGate().count(
+    // Nothing below the create answers the visitor, so the count is held as a
+    // reservation instead of being wrapped around the work: the dispatch runs
+    // after the 202, and a Download the provider never took is not a spend.
+    const reservation = await createPlanGate().reserve(
       { userId: user?.id ?? null, ip, visitorKey },
-      USAGE_COUNTERS.downloads,
-      () => service.create(request)
+      USAGE_COUNTERS.downloads
     );
 
+    let job: DownloadJob;
+    try {
+      job = await service.create(request);
+    } catch (error) {
+      await reservation.release();
+      throw error;
+    }
+
     runAfter(async () => {
-      try {
-        await service.dispatch(job.id, request);
-      } catch (error) {
-        Sentry.captureException(error);
-      }
+      // `dispatch` reports a failure rather than throwing, but a throw from it
+      // (a bookkeeping failure it could not swallow) still refunds.
+      const outcome = await service
+        .dispatch(job.id, request)
+        .catch((error: unknown): DispatchOutcome => ({ status: 'failed', error }));
+
+      if (outcome.status === 'dispatched') return;
+
+      await reservation.release();
+      Sentry.captureException(outcome.error);
     });
 
     return jsonResult(202, { success: true, job });

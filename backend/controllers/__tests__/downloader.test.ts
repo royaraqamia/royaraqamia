@@ -6,15 +6,25 @@ const mockRecordResult = vi.fn();
 const mockVerifyTurnstile = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockRunAfter = vi.fn();
+const mockCaptureException = vi.fn();
 const mockCaptureMessage = vi.fn();
-const mockMeter = vi.fn();
+const mockReserve = vi.fn();
+const mockRelease = vi.fn();
+
+/** The dispatch the controller scheduled, so a test can run it to completion. */
+let scheduled: (() => Promise<void>) | null = null;
+
+async function runScheduled(): Promise<void> {
+  if (!scheduled) throw new Error('no work was scheduled after the response');
+  await scheduled();
+}
 
 vi.mock('@sentry/nextjs', () => ({
-  captureException: vi.fn(),
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
   captureMessage: (...args: unknown[]) => mockCaptureMessage(...args),
 }));
 vi.mock('@/backend/config/after', () => ({
-  runAfter: (fn: () => unknown) => mockRunAfter(fn),
+  runAfter: (fn: () => Promise<void>) => mockRunAfter(fn),
 }));
 vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: (config: unknown) => mockCheckRateLimitApi(config),
@@ -31,14 +41,15 @@ vi.mock('@/backend/config/downloader', () => ({
   createDownloaderTurnstileVerifier: () => (token: string) => mockVerifyTurnstile(token),
 }));
 
-// The gate double is configurable through `mockMeter`, so a test can make the
+// The gate double is configurable through `mockReserve`, so a test can make the
 // count refuse (a 402) while every other test passes straight through.
 vi.mock('@/backend/config/plans', () => ({
   createPlanGate: () => ({
-    count: (subject: unknown, action: string, run: () => Promise<unknown>) =>
-      mockMeter(subject, action, run),
-    claim: async () => 'event-1',
-    release: async () => {},
+    reserve: async (subject: unknown, action: string) => {
+      await mockReserve(subject, action);
+      return { eventId: 'event-1', release: mockRelease };
+    },
+    count: async () => {},
     cap: async () => {},
     caps: async () => ({ plan: 'free', unlimited: false, caps: {}, counters: {} }),
     report: async () => ({ recorded: 0, alreadyRecorded: 0, refused: 0 }),
@@ -79,13 +90,16 @@ const READY_CALLBACK = {
 describe('downloader controller createDownloadJob', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    scheduled = null;
+    mockRunAfter.mockImplementation((fn: () => Promise<void>) => {
+      scheduled = fn;
+    });
     mockVerifyTurnstile.mockResolvedValue(true);
     mockCheckRateLimitApi.mockResolvedValue(null);
     mockCreate.mockResolvedValue({ id: JOB_ID, status: 'queued' });
-    mockDispatch.mockResolvedValue(undefined);
-    mockMeter.mockImplementation(
-      async (_subject: unknown, _action: string, run: () => Promise<unknown>) => run()
-    );
+    mockDispatch.mockResolvedValue({ status: 'dispatched' });
+    mockReserve.mockResolvedValue(undefined);
+    mockRelease.mockResolvedValue(undefined);
   });
 
   it('rejects when Turnstile fails, before creating a job', async () => {
@@ -134,10 +148,16 @@ describe('downloader controller createDownloadJob', () => {
     expect(result).toMatchObject({ status: 202 });
     expect(mockCreate).toHaveBeenCalledWith({ url: VALID_BODY.url, format: VALID_BODY.format });
     expect(mockRunAfter).toHaveBeenCalledTimes(1);
+    // A visitor with no cookie is counted by the salted address, which the gate
+    // hashes; the controller hands it the raw subject.
+    expect(mockReserve).toHaveBeenCalledWith(
+      { userId: null, ip: IP, visitorKey: null },
+      'downloader.job.create'
+    );
   });
 
   it('answers 402 with the plan refusal code when the allowance is spent', async () => {
-    mockMeter.mockRejectedValue(new UsageLimitReachedError(downloadCounter, false));
+    mockReserve.mockRejectedValue(new UsageLimitReachedError(downloadCounter, false));
 
     const result = await createDownloadJob(VALID_BODY, IP);
 
@@ -159,6 +179,29 @@ describe('downloader controller createDownloadJob', () => {
       body: { success: false, error: expect.stringContaining('مزدحمة') },
     });
     expect(mockRunAfter).not.toHaveBeenCalled();
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the visitor their download back when the dispatch never reaches the provider', async () => {
+    const failure = new Error('host unreachable');
+    mockDispatch.mockResolvedValue({ status: 'failed', error: failure });
+
+    await createDownloadJob(VALID_BODY, IP);
+    await runScheduled();
+
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+    expect(mockCaptureException).toHaveBeenCalledWith(failure);
+  });
+
+  it('keeps the spent download when the provider accepts the job', async () => {
+    mockDispatch.mockResolvedValue({ status: 'dispatched' });
+
+    const result = await createDownloadJob(VALID_BODY, IP);
+    await runScheduled();
+
+    expect(result).toMatchObject({ status: 202 });
+    expect(mockRelease).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 });
 
