@@ -25,3 +25,17 @@ discovered later from a missing notice.
   is restored, it belongs on both surfaces, not in a comment.
 - The source data stays in `public/quran/meta/index.json` and the audio manifests; only the visible
   surface is gone.
+
+## Amendment: the credit travels with the licensed content (2026-10-31)
+
+P3 ships the Tafsir (ADR 0057), whose CC BY 4.0 grant asks for attribution. The owner's instruction
+was about the Quran **pages**, not about licensed content as such: the credit was removed from the
+surface that shows the text, and it is now rendered with the Tafsir body it licenses — the edition's
+own attribution as the source publishes it, the holder's name and a link, and the licence. It sits in
+the panel, not in a footer, so it travels with the words it covers.
+
+That leaves the two obligations this ADR recorded in two different states, deliberately: the Tanzil
+notice for the Quran text is still unmet on the reading surface, and the Tafsir's obligation is met
+on the surface that shows the Tafsir. `public/quran/tafsir/moyassar/NOTICE.txt` carries both names and
+the licence for a reader of the data rather than the page, and
+`scripts/__tests__/quran-tafsir-assets.test.mjs` fails if the credit leaves either place.

@@ -1,0 +1,8 @@
+التفسير: التفسير الميسر
+المصدر: مركز تفسير للدراسات القرآنية — https://tafsir.net
+الإسناد كما ينشره المصدر: التفسير الميسر، مجمع الملك فهد لطباعة المصحف الشريف
+الرخصة: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+Corpus: https://mcp.tafsir.net/mcp (Tafsir Center for Quranic Studies, CC BY 4.0).
+Vendored verbatim: no shortening, no reformatting, no markup added.
+An Ayah this edition does not cover is stored as null, never borrowed.

@@ -91,7 +91,7 @@ describe('the sura search box', () => {
 
 describe('the sura reader', () => {
   it('renders every ayah with an addressable id', () => {
-    render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    render(<SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />);
 
     // The closing number is its own node, so the Ayah is read off its paragraph.
     expect(document.getElementById('ayah-1')).toHaveTextContent('آية أولى');
@@ -99,14 +99,14 @@ describe('the sura reader', () => {
   });
 
   it('gives every ayah its own card', () => {
-    render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    render(<SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />);
 
     expect(document.querySelectorAll('[data-ayah-card]')).toHaveLength(2);
     expect(document.querySelectorAll('[data-tafsir-slot]')).toHaveLength(2);
   });
 
   it('closes the ayah with its number, and marks it from beside the number', () => {
-    render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    render(<SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />);
 
     const first = document.getElementById('ayah-1')!;
     const tail = first.lastElementChild as HTMLElement;
@@ -123,20 +123,33 @@ describe('the sura reader', () => {
   });
 
   it('shows the basmalah only when the sura has one', () => {
-    const { unmount } = render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    const { unmount } = render(
+      <SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />
+    );
     expect(screen.getByText('بسملة الاختبار')).toBeInTheDocument();
     unmount();
 
-    render(<SurahReader surah={surah({ bismillah: null })} summary={summary()} audio={null} />);
+    render(
+      <SurahReader
+        surah={surah({ bismillah: null })}
+        summary={summary()}
+        audio={null}
+        tafsir={null}
+      />
+    );
     expect(screen.queryByText('بسملة الاختبار')).not.toBeInTheDocument();
   });
 
   it('offers the recitation only where one is vendored', () => {
-    const { unmount } = render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    const { unmount } = render(
+      <SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />
+    );
     expect(screen.queryByRole('button', { name: 'استمع للسُّورة' })).not.toBeInTheDocument();
     unmount();
 
-    render(<SurahReader surah={surah()} summary={summary()} audio={{ ayahCount: 2 }} />);
+    render(
+      <SurahReader surah={surah()} summary={summary()} audio={{ ayahCount: 2 }} tafsir={null} />
+    );
     // One float, and nothing else: play is the whole recitation control.
     const player = screen.getByRole('region', { name: 'تلاوة السُّورة' });
     expect(within(player).getByRole('button', { name: 'استمع للسُّورة' })).toBeInTheDocument();
@@ -144,7 +157,7 @@ describe('the sura reader', () => {
   });
 
   it('names the sura and states where it was revealed', () => {
-    render(<SurahReader surah={surah()} summary={summary()} audio={null} />);
+    render(<SurahReader surah={surah()} summary={summary()} audio={null} tafsir={null} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('سورة الاختبار');
     expect(document.querySelector('header')).toHaveTextContent('مدنيَّة · 2 آيات');
   });

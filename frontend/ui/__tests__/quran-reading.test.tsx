@@ -96,7 +96,7 @@ async function whenReady(control: HTMLElement): Promise<ControllableObserver> {
 }
 
 function renderSurah() {
-  return render(<SurahReader surah={surah} summary={summary} audio={null} />);
+  return render(<SurahReader surah={surah} summary={summary} audio={null} tafsir={null} />);
 }
 
 beforeEach(() => {

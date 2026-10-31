@@ -291,10 +291,10 @@ position, which moves on its own as they read and is overwritten every time.
 _Avoid_: Favourite, mark, flag, saved verse, starred
 
 **Tafsir**:
-A scholarly explanation of the text, read beside an Ayah. The Quran Reader offers one —
-التفسير المختصر — and a Tafsir is deliberately not a Translation: the site serves the text in
-Arabic only.
-_Sold as_: التفسير المختصر
+A scholarly explanation of the text, read beside an Ayah. One edition ships — التفسير الميسر, keyed
+by slug so a second is a data addition rather than a redesign — and it is deliberately not a
+Translation: the site serves the text in Arabic only.
+_Sold as_: التفسير الميسر
 _Avoid_: Commentary, exegesis, translation, footnote, explanation
 
 **Mushaf View**:
