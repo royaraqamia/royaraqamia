@@ -203,6 +203,20 @@ describe('NotificationsView rows', () => {
     expect(mocks.markAsRead).not.toHaveBeenCalled();
   });
 
+  it('anchors the delete control at the row inline end, inside the pe-8 gutter', () => {
+    state.notifications = [notification('n1', 'post_published', { metadata: { slug: 'hello' } })];
+    state.unreadCount = 1;
+
+    render(<NotificationsView />);
+
+    // `end-3` is the logical-inset utility Tailwind generates. The physical spelling
+    // `inset-inline-end-3` emits no CSS at all, leaving `top-3` as the only anchor, so the
+    // control fell back to the row's inline start and sat on the notification text.
+    const del = screen.getByRole('button', { name: 'حذف الإشعار' });
+    expect(del).toHaveClass('absolute', 'top-3', 'end-3');
+    expect(del.className).not.toContain('inset-inline-');
+  });
+
   it('marks every row read from the header', () => {
     state.notifications = [notification('n1', 'post_published')];
     state.unreadCount = 1;
