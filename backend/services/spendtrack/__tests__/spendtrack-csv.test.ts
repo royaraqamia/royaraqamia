@@ -26,6 +26,30 @@ describe('buildCsv', () => {
     const csv = buildCsv(rows);
     expect(csv).toContain('"فاتورة، ""الإنترنت"""');
   });
+
+  it.each(['=1+1', '+1', '-1', '@SUM(A1)', '\tx', '\rx'])(
+    'neutralises a user-authored category or description that leads with %j',
+    (lead) => {
+      const csv = buildCsv([
+        {
+          date: '2026-08-01',
+          amount: 10,
+          category: `${lead}category`,
+          description: `${lead}note`,
+        },
+      ]);
+      const dataLine = csv.split('\n')[1] ?? '';
+      expect(dataLine).toContain(`'${lead}category`);
+      expect(dataLine).toContain(`'${lead}note`);
+    }
+  );
+
+  it('leaves the date and amount columns format-controlled', () => {
+    const csv = buildCsv([
+      { date: '2026-08-01', amount: -12.5, category: 'طعام', description: null },
+    ]);
+    expect(csv.split('\n')[1]).toBe('2026-08-01,-12.5,طعام,');
+  });
 });
 
 describe('parseCsv', () => {

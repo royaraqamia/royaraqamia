@@ -1,4 +1,5 @@
 import type { SpendImportRow } from '@/shared/contracts/spendtrack';
+import { escapeCsvLiteral, escapeCsvText } from '@/shared/csv';
 
 export const SPEND_CSV_HEADERS = ['date', 'amount', 'category', 'description'] as const;
 
@@ -9,23 +10,17 @@ export type SpendExportRow = {
   description: string | null;
 };
 
-function escapeCell(value: string | null | number): string {
-  const text = value == null ? '' : String(value);
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
 export function buildCsv(rows: SpendExportRow[]): string {
   const lines = [SPEND_CSV_HEADERS.join(',')];
   for (const row of rows) {
     lines.push(
       [
-        escapeCell(row.date),
-        escapeCell(row.amount),
-        escapeCell(row.category),
-        escapeCell(row.description),
+        // Date and amount stay format-controlled so the file still imports as
+        // data; the user-authored fields get the formula-lead guard.
+        escapeCsvLiteral(row.date),
+        escapeCsvLiteral(row.amount),
+        escapeCsvText(row.category),
+        escapeCsvText(row.description),
       ].join(',')
     );
   }
