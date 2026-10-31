@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { damascusDateKey } from '@/shared/time';
 import { toLatinDigits } from './text';
 
 /**
@@ -491,12 +492,7 @@ export function sanitizeNewsQuery(value: string): string {
 
 /** The Damascus day a timestamp falls in, as `YYYY-MM-DD`. */
 export function damascusDate(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Damascus',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
+  return damascusDateKey(now);
 }
 
 /** A digest date for display, read in UTC because the column is a plain date. */
