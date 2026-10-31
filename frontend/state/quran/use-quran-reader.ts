@@ -9,6 +9,7 @@ import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { isIndexedDbSupported } from '@/frontend/shared/local-store/idb';
 import { GUEST_IDENTITY, identityUserId } from '@/frontend/shared/local-store/identity';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import {
   halveList,
@@ -62,6 +63,10 @@ export interface QuranReaderState {
   lastError: string | null;
   lastFailedType: string | null;
   retry: () => void;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 const EMPTY_STATUS: SyncStatus = {
@@ -122,6 +127,12 @@ export function useQuranReader(): QuranReaderState {
 
   const storeRef = useRef<QuranLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   const readIntoState = useCallback(async (store: QuranLocalStore) => {
     const [position, marks] = await Promise.all([
@@ -140,18 +151,19 @@ export function useQuranReader(): QuranReaderState {
    * advances its cursor past records it actually applied (#313).
    *
    * Every wake-up path runs this — open, reconnect, focus and a Realtime hint —
-   * so there is one reconciliation to reason about (ADR-0060).
+   * so there is one reconciliation to reason about (ADR-0060). A failure is
+   * recorded rather than logged and dropped: the pill says the read may be
+   * behind the account, and offers the retry (#369).
    */
   const pullServer = useCallback(
     async (target: QuranLocalStore) => {
       if (!isSignedIn) return;
-      try {
-        await pullQuranData(target);
-      } catch (error) {
-        logger.error('Failed to reconcile the reader with the server', { error: String(error) });
-      }
+      await runRefresh(
+        () => pullQuranData(target),
+        'Failed to reconcile the reader with the server'
+      );
     },
-    [isSignedIn]
+    [isSignedIn, runRefresh]
   );
 
   /** Pulls from the server and repaints from the store. */
@@ -164,6 +176,10 @@ export function useQuranReader(): QuranReaderState {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !isIndexedDbSupported()) return;
+
+    // A different identity has its own rows and its own failures; the previous
+    // reader's failed pull is not this one's.
+    clearRefresh();
 
     let cancelled = false;
     let opened: QuranLocalStore | null = null;
@@ -383,6 +399,8 @@ export function useQuranReader(): QuranReaderState {
       lastError: status.lastError,
       lastFailedType: status.lastFailedType,
       retry,
+      refreshError,
+      retryRefresh,
     }),
     [
       ready,
@@ -395,6 +413,8 @@ export function useQuranReader(): QuranReaderState {
       removeBookmark,
       status,
       retry,
+      refreshError,
+      retryRefresh,
     ]
   );
 }

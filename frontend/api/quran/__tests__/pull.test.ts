@@ -57,4 +57,29 @@ describe('pullQuranData', () => {
       store.close();
     }
   });
+
+  /**
+   * #369: a pull that fails must reject — the surface records it now instead of
+   * swallowing it — and it must leave the cursor where it was. A cursor advanced
+   * past rows nobody applied would make the loss permanent, because the next pull
+   * would never ask for them again.
+   */
+  it('rejects, and leaves the cursor untouched, when the server fails', async () => {
+    const store = await QuranLocalStore.open(IDENTITY);
+    try {
+      const before = await store.getSyncCursor();
+      vi.mocked(pullQuranSync).mockRejectedValue(new Error('sync responded 500'));
+
+      await expect(pullQuranData(store)).rejects.toThrow('sync responded 500');
+      expect(await store.getSyncCursor()).toBe(before);
+      expect(await store.getReadingPosition()).toBeNull();
+
+      // The retry asks for the same window, so the rows are still reachable.
+      vi.mocked(pullQuranSync).mockResolvedValue(SNAPSHOT);
+      await pullQuranData(store);
+      expect(vi.mocked(pullQuranSync).mock.calls.at(-1)).toEqual([null]);
+    } finally {
+      store.close();
+    }
+  });
 });

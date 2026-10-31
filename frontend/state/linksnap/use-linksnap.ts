@@ -14,6 +14,7 @@ import { LinksnapSyncEngine } from '@/frontend/api/linksnap/sync-engine';
 import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import {
   GUEST_IDENTITY,
   identityUserId,
@@ -51,6 +52,10 @@ export interface LinksnapStoreState {
   lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
   createLink: (input: LinkCreateInput) => Promise<ShortenedLink>;
   updateLink: (clientId: string, input: LinkUpdateInput) => Promise<ShortenedLink>;
   deleteLink: (clientId: string) => Promise<void>;
@@ -116,6 +121,14 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
 
   const storeRef = useRef<LinksnapLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
+  // `refresh` below is this surface's "repaint from the store"; the pull's own
+  // failure is tracked separately so the two cannot be confused.
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   const isSignedIn = identity !== GUEST_IDENTITY;
   const ready = readyFor === identity;
@@ -131,6 +144,11 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Another identity, another history: the previous reader's failed pull is
+    // not this one's.
+    clearRefresh();
+
     let cancelled = false;
     let opened: LinksnapLocalStore | null = null;
     let engine: SyncEngine | null = null;
@@ -207,15 +225,16 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
       return;
     }
     try {
-      await pullLinksnapData(store);
-    } catch (error) {
-      logger.error('Failed to refresh LinkSnap links from the server', {
-        error: String(error),
-      });
+      // A rejection is recorded rather than logged and dropped, so the pill can
+      // say the list may be behind the account (#369).
+      await runRefresh(
+        () => pullLinksnapData(store),
+        'Failed to refresh LinkSnap links from the server'
+      );
     } finally {
       if (storeRef.current === store) setLoading(false);
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, runRefresh]);
 
   useEffect(() => {
     if (!ready) return;
@@ -333,6 +352,8 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
       lastFailedType: status.lastFailedType,
       retry,
       refresh,
+      refreshError,
+      retryRefresh,
       createLink,
       updateLink,
       deleteLink,
@@ -349,6 +370,8 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
       status,
       retry,
       refresh,
+      refreshError,
+      retryRefresh,
       createLink,
       updateLink,
       deleteLink,

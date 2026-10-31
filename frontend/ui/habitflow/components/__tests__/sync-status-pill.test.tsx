@@ -15,6 +15,8 @@ function state(overrides: Partial<HabitSyncState> = {}): HabitSyncState {
     pendingHabitIds: new Set(),
     pendingLogKeys: new Set(),
     retry: vi.fn(),
+    refreshError: null,
+    retryRefresh: vi.fn(),
     ...overrides,
   };
 }
@@ -50,5 +52,48 @@ describe('SyncStatusPill', () => {
 
     rerender(<SyncStatusPill status={state({ pending: 5 })} />);
     expect(screen.getByText(/بانتظار المزامنة \(5\)/)).toBeInTheDocument();
+  });
+
+  // #369: a pull that failed is not a failed write — nothing is queued, and the
+  // rows on screen may just be older than the account's. It says so, and its
+  // retry re-runs the pull rather than the Outbox.
+  it('names a failed refresh and retries the pull, not the queue', () => {
+    const retry = vi.fn();
+    const retryRefresh = vi.fn();
+    render(
+      <SyncStatusPill status={state({ refreshError: 'sync responded 500', retry, retryRefresh })} />
+    );
+
+    const button = screen.getByRole('button', { name: /تعذّر تحديث البيانات/ });
+    expect(button).toHaveAttribute('title', 'sync responded 500');
+    button.click();
+    expect(retryRefresh).toHaveBeenCalledTimes(1);
+    expect(retry).not.toHaveBeenCalled();
+  });
+
+  it('never lets a failed refresh outrank a failed write', () => {
+    render(<SyncStatusPill status={state({ failed: 2, refreshError: 'sync responded 500' })} />);
+
+    expect(screen.getByText(/فشل مزامنة 2/)).toBeInTheDocument();
+    expect(screen.queryByText(/تعذّر التحديث/)).not.toBeInTheDocument();
+  });
+
+  it('does not name a refresh failure it cannot retry', () => {
+    const { container } = render(
+      <SyncStatusPill
+        status={state({ refreshError: 'sync responded 500', retryRefresh: undefined })}
+      />
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows offline rather than a refresh failure: the connection is the cause', () => {
+    render(
+      <SyncStatusPill status={state({ online: false, refreshError: 'sync responded 500' })} />
+    );
+
+    expect(screen.getByText(/غير متَّصل/)).toBeInTheDocument();
+    expect(screen.queryByText(/تعذّر التحديث/)).not.toBeInTheDocument();
   });
 });

@@ -14,6 +14,7 @@ import {
 } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 
 /**
@@ -28,6 +29,10 @@ export interface BlogpressSyncState extends SyncStatus {
   /** Whether the browser currently reports a connection (drives the pill/gate). */
   online: boolean;
   retry: () => void;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 export interface BlogpressStoreState {
@@ -79,6 +84,12 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
   const [status, setStatus] = useState<SyncStatus>(IDLE);
   const [online, setOnline] = useState(isOnline);
   const engineRef = useRef<BlogpressSyncEngine | null>(null);
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   useEffect(() => {
     const sync = () => setOnline(isOnline());
@@ -93,6 +104,10 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Another identity, another history: the previous writer's failed pull is
+    // not this one's.
+    clearRefresh();
 
     let cancelled = false;
     let opened: BlogpressLocalStore | null = null;
@@ -128,7 +143,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
       cancelled = true;
       opened?.close();
     };
-  }, [identity, post]);
+  }, [identity, post, clearRefresh]);
 
   useEffect(() => {
     if (!store) return;
@@ -142,14 +157,14 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
 
     const pull = async () => {
       if (!isOnline()) return;
-      try {
-        // The same pull the background tier runs (ADR-0060): this hook owns
-        // *when*, `pullBlogpressData` owns *how*.
+      // The same pull the background tier runs (ADR-0060): this hook owns
+      // *when*, `pullBlogpressData` owns *how*. A rejection is recorded rather
+      // than logged and dropped, so the pill can say the draft may be behind the
+      // account (#369).
+      await runRefresh(async () => {
         await pullBlogpressData(store);
         setDraft(await store.getDraft(post.id));
-      } catch (error) {
-        logger.warn('BlogPress pull failed', { error: String(error) });
-      }
+      }, 'BlogPress pull failed');
     };
 
     const runSync = async () => {
@@ -198,11 +213,22 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
       engine.dispose();
       engineRef.current = null;
     };
-  }, [store, post.id, userId]);
+  }, [store, post.id, userId, runRefresh]);
 
   const retry = () => {
     void engineRef.current?.retry();
   };
 
-  return { store, ready, draft, sync: { ...status, online, retry } };
+  return {
+    store,
+    ready,
+    draft,
+    sync: {
+      ...status,
+      online,
+      retry,
+      refreshError,
+      retryRefresh,
+    },
+  };
 }

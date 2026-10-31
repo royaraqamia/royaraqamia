@@ -20,6 +20,7 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { markContent } from '@/frontend/shared/perf-marks';
 
@@ -62,6 +63,10 @@ export interface SpendtrackStoreState {
   lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
+  /** Why the last pull from the account failed (#369), painted by the pill. */
+  refreshError: string | null;
+  /** Runs that pull again. */
+  retryRefresh: () => void;
 }
 
 const EMPTY_STATUS: SyncStatus = {
@@ -120,6 +125,12 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
 
   const storeRef = useRef<SpendtrackLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
+  const {
+    error: refreshError,
+    run: runRefresh,
+    retry: retryRefresh,
+    clear: clearRefresh,
+  } = useRefreshState();
 
   const identity = identityFromUser(seed.user);
   const isSignedIn = identity !== GUEST_IDENTITY;
@@ -153,17 +164,16 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
   const pullServer = useCallback(
     async (target: SpendtrackLocalStore) => {
       if (!isSignedIn) return;
-      try {
-        // The same pull the background tier runs (ADR-0060): this hook owns
-        // *when*, `pullSpendtrackData` owns *how*.
-        await pullSpendtrackData(target);
-      } catch (error) {
-        logger.error('Failed to reconcile SpendTrack data with the server', {
-          error: String(error),
-        });
-      }
+      // The same pull the background tier runs (ADR-0060): this hook owns
+      // *when*, `pullSpendtrackData` owns *how*. A failure is recorded rather
+      // than logged and dropped, so the pill can say the read may be behind the
+      // account (#369).
+      await runRefresh(
+        () => pullSpendtrackData(target),
+        'Failed to reconcile SpendTrack data with the server'
+      );
     },
-    [isSignedIn]
+    [isSignedIn, runRefresh]
   );
 
   /** Pulls from the server and repaints from the store. */
@@ -176,6 +186,11 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Another identity, another history: the previous reader's failed pull is
+    // not this one's.
+    clearRefresh();
+
     let cancelled = false;
     let opened: SpendtrackLocalStore | null = null;
     let engine: SyncEngine | null = null;
@@ -373,7 +388,21 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
       lastFailedType: status.lastFailedType,
       retry,
       refresh,
+      refreshError,
+      retryRefresh,
     }),
-    [ready, snapshot, online, isSignedIn, store, rendered, status, retry, refresh]
+    [
+      ready,
+      snapshot,
+      online,
+      isSignedIn,
+      store,
+      rendered,
+      status,
+      retry,
+      refresh,
+      refreshError,
+      retryRefresh,
+    ]
   );
 }

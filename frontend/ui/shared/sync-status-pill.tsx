@@ -12,6 +12,15 @@ export interface SyncPillStatus {
   /** Last permanent failure, surfaced as the retry button's tooltip. */
   lastError?: string | null;
   lastFailedType?: string | null;
+  /**
+   * Why the last pull from the server failed (#369). A failed *refresh* is not a
+   * failed write: nothing is queued, nothing is lost, and the rows on screen may
+   * simply be older than the account's. It gets its own state so the copy can say
+   * which of the two happened.
+   */
+  refreshError?: string | null;
+  /** Re-runs the pull that failed — supplied by the hook that made the request. */
+  retryRefresh?: () => void;
 }
 
 /**
@@ -22,6 +31,7 @@ export interface SyncPillStatus {
  */
 export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
   const { syncing, pending, failed, online, retry, lastError, lastFailedType } = status;
+  const { refreshError, retryRefresh } = status;
   const failureDetail = [lastFailedType, lastError].filter(Boolean).join(' — ');
 
   if (failed > 0) {
@@ -53,6 +63,25 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
           {pending > 0 && ` — ${pending} بانتظار المزامنة`}
         </span>
       </span>
+    );
+  }
+
+  // A pull that failed outranks "syncing" and "pending": those describe work
+  // leaving this device, and this describes work that never arrived. A queued
+  // write still outranks both, and is handled above.
+  if (refreshError && retryRefresh) {
+    return (
+      <button
+        type="button"
+        onClick={retryRefresh}
+        title={refreshError}
+        aria-label={`تعذّر تحديث البيانات من الخادم. آخر خطأ: ${refreshError}`}
+        aria-live="polite"
+        className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-amber-300/70 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-sm transition-safe hover:bg-amber-100 dark:hover:bg-amber-950/70 active:scale-[0.97] cursor-pointer"
+      >
+        <RefreshCw className="w-4 h-4" />
+        <span>تعذّر التحديث — إعادة المحاولة</span>
+      </button>
     );
   }
 
