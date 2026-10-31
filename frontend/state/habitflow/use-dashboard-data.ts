@@ -58,11 +58,6 @@ async function claimGuestData(userStore: HabitLocalStore): Promise<void> {
   }
 }
 
-export function getTodayString(): string {
-  const tzOffset = new Date().getTimezoneOffset() * 60000;
-  return new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
-}
-
 export interface DashboardSeed {
   habits: Habit[];
   logs: HabitLog[];

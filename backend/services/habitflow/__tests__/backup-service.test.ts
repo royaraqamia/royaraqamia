@@ -63,6 +63,42 @@ describe('HabitBackupService.exportBackup', () => {
   });
 });
 
+describe('HabitBackupService export window', () => {
+  /**
+   * #683: the window ends on the Damascus calendar day (ADR-0093). At 00:30 in
+   * Damascus the UTC date is still the previous day, so a UTC window dropped
+   * the log the reader had just written.
+   */
+  const justAfterLocalMidnight = new Date('2026-10-30T21:30:00Z');
+  const todaysLog: HabitLog = { ...logFixture, date: '2026-10-31' };
+
+  it('ends the backup window on the Damascus day, not the UTC day', async () => {
+    // The premise: the UTC date is still the 30th while Damascus is on the 31st.
+    expect(justAfterLocalMidnight.toISOString().slice(0, 10)).toBe('2026-10-30');
+
+    const repository = makeRepository();
+    (repository.getLogs as ReturnType<typeof vi.fn>).mockResolvedValue([todaysLog]);
+
+    const service = new HabitBackupService(repository);
+    const backup = await service.exportBackup(justAfterLocalMidnight);
+
+    expect(repository.getLogs).toHaveBeenCalledWith('2020-01-01', '2026-10-31');
+    expect(backup.logs).toEqual([todaysLog]);
+    expect(backup.exportedAt).toBe(justAfterLocalMidnight.toISOString());
+  });
+
+  it('ends the CSV window on the Damascus day too', async () => {
+    const repository = makeRepository();
+    (repository.getLogs as ReturnType<typeof vi.fn>).mockResolvedValue([todaysLog]);
+
+    const service = new HabitBackupService(repository);
+    const csv = await service.exportCsv(justAfterLocalMidnight);
+
+    expect(repository.getLogs).toHaveBeenCalledWith('2020-01-01', '2026-10-31');
+    expect(csv).toContain(`${logFixture.habitId},2026-10-31,true`);
+  });
+});
+
 describe('HabitBackupService.exportCsv', () => {
   it('renders habits and logs as a two-section CSV with escaped values', async () => {
     const repository = makeRepository();
