@@ -24,16 +24,26 @@ vi.mock('next/server', () => ({
   },
 }));
 
-vi.mock('@/backend/loaders/news', () => ({
-  loadNewsBoard: (params: unknown, view: string, viewer?: unknown) =>
-    mockLoadNewsBoard(params, view, viewer),
-  parseNewsQuery: (params: Record<string, string | undefined>) => ({
-    q: params.q,
-    category: params.category,
-    date: params.date,
-  }),
-  parseNewsView: (params: { view?: string }) => (params.view === 'public' ? 'public' : 'mine'),
-}));
+vi.mock('@/backend/loaders/news', () => {
+  class NewsBoardReadError extends Error {
+    constructor(readonly scope: 'shared' | 'personal') {
+      super('تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.');
+      this.name = 'NewsBoardReadError';
+    }
+  }
+
+  return {
+    NewsBoardReadError,
+    loadNewsBoard: (params: unknown, view: string, viewer?: unknown) =>
+      mockLoadNewsBoard(params, view, viewer),
+    parseNewsQuery: (params: Record<string, string | undefined>) => ({
+      q: params.q,
+      category: params.category,
+      date: params.date,
+    }),
+    parseNewsView: (params: { view?: string }) => (params.view === 'public' ? 'public' : 'mine'),
+  };
+});
 
 vi.mock('@/backend/config/identity', () => ({
   identity: { resolveOptional: async () => ({ user: null, client: null }) },
@@ -66,6 +76,7 @@ vi.mock('@/backend/transport/http-result', () => ({
 }));
 
 import { GET as boardGET } from '@/app/api/news/board/route';
+import { NewsBoardReadError } from '@/backend/loaders/news';
 import type { NewsBoard, NewsStory } from '@/shared/contracts/news';
 
 interface RouteResponse {
@@ -242,6 +253,28 @@ describe('GET /api/news/board', () => {
 
     expect(board.search?.hits).toHaveLength(1);
     expect(board.cards).toEqual({ cap: 1, total: 2, shown: 1, visitor: true });
+  });
+
+  it('answers a failed read with 503, no-store and no board payload', async () => {
+    mockLoadNewsBoard.mockRejectedValue(new NewsBoardReadError('shared'));
+
+    const res = (await boardGET(request())) as unknown as RouteResponse;
+
+    expect(res.status).toBe(503);
+    expect(res.headers['Cache-Control']).toBe('no-store');
+    expect(res.data).toEqual({
+      success: false,
+      error: 'تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.',
+    });
+    expect(res.data).not.toHaveProperty('board');
+  });
+
+  it('does not cap or cache a failed read', async () => {
+    mockLoadNewsBoard.mockRejectedValue(new NewsBoardReadError('personal'));
+
+    await boardGET(request());
+
+    expect(mockResolveNewsCardCap).not.toHaveBeenCalled();
   });
 
   it('returns 429 with the limiter’s message when the per-IP limit is exhausted', async () => {

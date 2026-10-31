@@ -93,8 +93,11 @@ export function NewsBoard() {
         setPersonal(data.board.personal);
         setCards(data.board.cards ?? null);
         // A personalised answer is `no-store`: it is not a public row, so it is
-        // not recorded (the redaction rule, enforced at the response).
-        setRecordable(keepable ? next : null);
+        // not recorded (the redaction rule, enforced at the response). A 200
+        // with no digest and no search is not recordable either: it would erase
+        // the last good offline copy on the next visit (#620).
+        const hasRows = data.board.day !== null || data.board.search !== null;
+        setRecordable(keepable && hasRows ? next : null);
         setLoading(false);
       })
       .catch((error: unknown) => {

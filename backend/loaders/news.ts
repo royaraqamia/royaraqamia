@@ -10,6 +10,7 @@ import {
 } from '@/backend/config/news';
 import { getPublicSupabase } from '@/backend/config/supabase';
 import type { Database } from '@/backend/models/database.types';
+import { AppError, describeError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
 import {
   newsQuerySchema,
@@ -30,9 +31,11 @@ import {
  * than an `unstable_cache` one: caching would fight the Realtime refresh the
  * page relies on to show a digest the moment the workflow publishes it.
  *
- * A failure returns the empty board and is logged, because the page's job is to
- * say "no digest yet" rather than to 500 when the database is unreachable. The
- * one thing it must not do is invent content.
+ * A failure is thrown as {@link NewsBoardReadError} rather than answered as an
+ * empty board, because the client records only what it actually read: an empty
+ * board that a transient failure produced must not replace the last good
+ * offline copy. The route turns the error into a 503, which lands in the
+ * client's failure path instead of the "no digest yet" one.
  */
 
 export type NewsSearchParams = Record<string, string | string[] | undefined>;
@@ -66,15 +69,16 @@ export function parseNewsQuery(params: NewsSearchParams): NewsQuery {
   return parsed.data;
 }
 
-const EMPTY_BOARD: NewsBoard = {
-  day: null,
-  dates: [],
-  search: null,
-  hasAnyDigest: false,
-  preferences: null,
-  personal: null,
-  cards: null,
-};
+/**
+ * A board read that failed, so the route can answer 503 instead of painting an
+ * empty digest over the reader's saved one (#620).
+ */
+export class NewsBoardReadError extends AppError {
+  constructor(readonly scope: 'shared' | 'personal') {
+    super('تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.', 503, 'news_board_read_failed');
+    this.name = 'NewsBoardReadError';
+  }
+}
 
 interface Reader {
   userId: string;
@@ -123,62 +127,71 @@ async function loadSharedBoard(
   return service.getBoard(query, { sourceIds });
 }
 
+/** One board read, logged and rethrown as the typed failure the route answers. */
+async function readBoard<T>(scope: 'shared' | 'personal', read: () => Promise<T>): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    logger.error('Failed to load the news board', { scope, error: describeError(error) });
+    throw new NewsBoardReadError(scope);
+  }
+}
+
 export async function loadNewsBoard(
   params: NewsSearchParams = {},
   view: NewsView = 'mine',
   viewer?: NewsViewer | null
 ): Promise<NewsBoard> {
   const query = parseNewsQuery(params);
-  try {
-    const reader = await readReader(viewer);
-    const shared = await loadSharedBoard(query, reader?.preferences.sourceIds ?? null);
+  const reader = await readReader(viewer);
+  const shared = await readBoard('shared', () =>
+    loadSharedBoard(query, reader?.preferences.sourceIds ?? null)
+  );
 
-    if (!reader) {
-      return { ...shared, personal: null };
-    }
+  if (!reader) {
+    return { ...shared, personal: null };
+  }
 
-    if (!reader.preferences.personalEnabled) {
-      return {
-        ...shared,
-        personal: { enabled: false, available: false, active: false },
-      };
-    }
-
-    const personalService = createNewsPersonalDigestServiceFor(reader.client);
-    // A search is the retained month as published, so it never answers with a
-    // personal digest; the personal read is skipped rather than filtered.
-    const personalDay = shared.search ? null : await personalService.get(reader.userId, query);
-    // Without an explicit day, `getLatest` may return a digest older than the
-    // shared one (the nightly run skipped this reader, or generation failed).
-    // Showing that as today's briefing would present stale news, so the latest
-    // personal digest only counts when it is for the day the board shows. An
-    // explicit `?date=` is already pinned by `getByDate`; with no shared digest
-    // at all there is nothing to compare against and the latest may be shown.
-    const personalMatchesDay =
-      personalDay !== null &&
-      (query.date !== undefined ||
-        shared.day === null ||
-        personalDay.digest.date === shared.day.digest.date);
-    const active = personalMatchesDay && view !== 'public';
-
-    const personal: NewsPersonalView = {
-      enabled: true,
-      available: personalMatchesDay,
-      active,
-    };
-
+  if (!reader.preferences.personalEnabled) {
     return {
       ...shared,
-      day: active ? personalDay : shared.day,
-      // The personal digest was built from the reader's own sources, so the
-      // read-time filter (and its fallback notice) has nothing left to do.
-      preferences: active ? null : shared.preferences,
-      personal,
+      personal: { enabled: false, available: false, active: false },
     };
-  } catch (error) {
-    logger.error('Failed to load the news board', { error: String(error) });
-    return EMPTY_BOARD;
   }
+
+  const personalService = createNewsPersonalDigestServiceFor(reader.client);
+  // A search is the retained month as published, so it never answers with a
+  // personal digest; the personal read is skipped rather than filtered.
+  const personalDay = shared.search
+    ? null
+    : await readBoard('personal', () => personalService.get(reader.userId, query));
+  // Without an explicit day, `getLatest` may return a digest older than the
+  // shared one (the nightly run skipped this reader, or generation failed).
+  // Showing that as today's briefing would present stale news, so the latest
+  // personal digest only counts when it is for the day the board shows. An
+  // explicit `?date=` is already pinned by `getByDate`; with no shared digest
+  // at all there is nothing to compare against and the latest may be shown.
+  const personalMatchesDay =
+    personalDay !== null &&
+    (query.date !== undefined ||
+      shared.day === null ||
+      personalDay.digest.date === shared.day.digest.date);
+  const active = personalMatchesDay && view !== 'public';
+
+  const personal: NewsPersonalView = {
+    enabled: true,
+    available: personalMatchesDay,
+    active,
+  };
+
+  return {
+    ...shared,
+    day: active ? personalDay : shared.day,
+    // The personal digest was built from the reader's own sources, so the
+    // read-time filter (and its fallback notice) has nothing left to do.
+    preferences: active ? null : shared.preferences,
+    personal,
+  };
 }
 
 /**

@@ -27,7 +27,7 @@ vi.mock('@/backend/config/news', () => ({
   }),
 }));
 
-import { loadNewsBoard, loadNewsSearch } from '@/backend/loaders/news';
+import { loadNewsBoard, loadNewsSearch, NewsBoardReadError } from '@/backend/loaders/news';
 import type {
   NewsBoard,
   NewsDay,
@@ -171,6 +171,39 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(shared.day);
     expect(result.personal).toEqual({ enabled: true, available: true, active: false });
+  });
+});
+
+/**
+ * A failed read must surface as a failure, not as the empty board (#620): the
+ * client records an empty answer and would erase the last good offline copy.
+ */
+describe('loadNewsBoard failures', () => {
+  it('throws a typed failure when the shared board cannot be read', async () => {
+    mockGetBoard.mockRejectedValue(new Error('database down'));
+
+    const result = loadNewsBoard({}, 'mine');
+
+    await expect(result).rejects.toBeInstanceOf(NewsBoardReadError);
+    await expect(result).rejects.toMatchObject({ statusCode: 503, scope: 'shared' });
+  });
+
+  it('throws a typed failure when the personal digest cannot be read', async () => {
+    mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockPersonalGet.mockRejectedValue(new Error('database down'));
+
+    const result = loadNewsBoard({}, 'mine');
+
+    await expect(result).rejects.toBeInstanceOf(NewsBoardReadError);
+    await expect(result).rejects.toMatchObject({ statusCode: 503, scope: 'personal' });
+  });
+
+  it('serves the shared digest when only the preferences read fails', async () => {
+    const shared = board({ day: day('2026-10-26', 'shared-26') });
+    mockGetBoard.mockResolvedValue(shared);
+    mockPreferencesGet.mockRejectedValue(new Error('database down'));
+
+    await expect(loadNewsBoard({}, 'mine')).resolves.toEqual({ ...shared, personal: null });
   });
 });
 

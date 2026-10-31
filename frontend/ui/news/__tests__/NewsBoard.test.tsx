@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { NewsBoard as NewsBoardData } from '@/shared/contracts/news';
-import { clearAllSnapshots, listSnapshotKeys } from '@/frontend/shared/local-store/snapshot';
+import {
+  clearAllSnapshots,
+  listSnapshotKeys,
+  readPublicSnapshot,
+  writePublicSnapshot,
+} from '@/frontend/shared/local-store/snapshot';
+import { toNewsDigestSnapshot, type NewsDigestSnapshot } from '@/frontend/ui/news/news-snapshot';
 
 const { push, replace } = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 
@@ -61,6 +67,24 @@ function response(cacheControl: string, body: unknown = { board: BOARD }) {
     },
     json: async () => body,
   } as unknown as Response;
+}
+
+function failedResponse(status: number, body: unknown) {
+  return {
+    ok: false,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'cache-control' ? 'no-store' : null),
+    },
+    json: async () => body,
+  } as unknown as Response;
+}
+
+/** A digest this device saw before the failed read, written by the store itself. */
+function storeDigest(): NewsDigestSnapshot {
+  const stored = toNewsDigestSnapshot(BOARD, '2026-10-25T07:00:00.000Z');
+  writePublicSnapshot('/news', stored);
+  return stored;
 }
 
 const fetchMock = vi.fn();
@@ -224,5 +248,50 @@ describe('NewsBoard snapshots', () => {
     expect(search.disabled).toBe(true);
     const chips = screen.getAllByRole('button');
     expect(chips.some((chip) => (chip as HTMLButtonElement).disabled)).toBe(true);
+  });
+
+  it('leaves the stored digest in place when the server cannot read the board', async () => {
+    const stored = storeDigest();
+    fetchMock.mockResolvedValue(
+      failedResponse(503, {
+        success: false,
+        error: 'تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.',
+      })
+    );
+
+    render(<NewsBoard />);
+
+    expect(screen.getByText('خبر اليوم')).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'إعادة المحاولة' }).length).toBeGreaterThan(0);
+    await waitFor(() => expect(readPublicSnapshot<NewsDigestSnapshot>('/news')).toEqual(stored));
+  });
+
+  it('does not record a 200 that carries neither a digest nor a search', async () => {
+    fetchMock.mockResolvedValue(
+      response('public, max-age=0, must-revalidate', {
+        board: { ...BOARD, day: null, search: null, dates: [], hasAnyDigest: false },
+      })
+    );
+
+    render(<NewsBoard />);
+
+    await expect(screen.findByText('لا يوجد مُلخَّص لهذا اليوم')).resolves.toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(listSnapshotKeys()).toEqual([]);
+  });
+
+  it('does not clear an existing digest when a 200 carries neither a digest nor a search', async () => {
+    const stored = storeDigest();
+    fetchMock.mockResolvedValue(
+      response('public, max-age=0, must-revalidate', {
+        board: { ...BOARD, day: null, search: null, dates: [], hasAnyDigest: true },
+      })
+    );
+
+    render(<NewsBoard />);
+
+    await expect(screen.findByText('لا يوجد مُلخَّص لهذا اليوم')).resolves.toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(readPublicSnapshot<NewsDigestSnapshot>('/news')).toEqual(stored);
   });
 });
