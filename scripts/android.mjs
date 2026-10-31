@@ -42,6 +42,20 @@ const TASKS = {
   // The shell's JVM unit tests (ADR-0043): no device, no emulator — the update
   // decision is arithmetic and parsing, and it is worth checking without adb.
   test: { gradle: ['testDebugUnitTest'], artifact: null, label: 'JVM unit tests' },
+  // The shell's own baseline profile (#762). Generation runs on the managed
+  // emulator, not on the attached phone: the emulator is the same for everyone,
+  // and a profile describes a code path rather than a device. The three tasks are
+  // what `:app:generateBaselineProfile` runs when no phone is plugged in — the
+  // test, the pull from the device, and the copy into the app's sources.
+  profile: {
+    gradle: [
+      ':baselineprofile:pixel5Api35NonMinifiedReleaseAndroidTest',
+      ':baselineprofile:collectNonMinifiedReleaseBaselineProfile',
+      ':app:copyReleaseBaselineProfileIntoSrc',
+    ],
+    artifact: 'app/src/release/generated/baselineProfiles/baseline-prof.txt',
+    label: 'baseline profile (generated on the managed emulator)',
+  },
 };
 
 const task = TASKS[process.argv[2]];

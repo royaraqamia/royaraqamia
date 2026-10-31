@@ -7,6 +7,10 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 // The app's UI toolkit from ADR-0089 onward. It is wired now, with the theme,
 // so that the first screen lands as a screen rather than as a dependency change.
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+// The shell's own baseline profile (#762): the plugin adds `generateBaselineProfile`,
+// which runs the `:baselineprofile` module on the emulator below and saves what the
+// launch compiled into this module's sources.
+apply plugin: 'androidx.baselineprofile'
 
 // Both of these come from the shell's own counter file (android/shell-version.properties,
 // ADR-0043), and neither has anything to do with package.json:
@@ -128,6 +132,12 @@ android {
     }
 }
 
+baselineProfile {
+    // Committed, so the profile is reviewed like the code it describes and CI can
+    // see it change.
+    saveInSrc = true
+}
+
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
@@ -145,6 +155,9 @@ kotlin {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // The generator of the shell's own baseline profile (#762): this is how the
+    // app's plugin knows which module produces the profile it packs.
+    baselineProfile project(':baselineprofile')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"

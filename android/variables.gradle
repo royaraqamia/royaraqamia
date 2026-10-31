@@ -36,6 +36,12 @@ ext {
     // lives beside the Kotlin plugin in `build.gradle`, because a buildscript
     // classpath is resolved before this file is applied.
     composeBomVersion = '2025.12.01'
+    // The shell's own baseline profile (#762): macrobenchmark generates it, the
+    // uiautomator it drives the emulator with, and both are pinned here with the
+    // other Android test dependencies. The generator plugin's own version is in
+    // `build.gradle`, because a buildscript classpath is resolved first.
+    benchmarkVersion = '1.4.1'
+    uiautomatorVersion = '2.3.0'
     // Coroutines, for the session and every call a screen makes off the main
     // thread (#501). Compose already resolves them transitively; naming the
     // version here keeps the app's own code on one line instead of on whatever
