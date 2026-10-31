@@ -23,4 +23,8 @@ app/tokens.css
 # `npm run check:components` compares bytes, so Prettier must not rewrite it.
 app/components.css
 android/app/src/main/res/values/colors.xml
+# Written by Room's schema export (`room.schemaLocation`) on an Android build. It is
+# committed so a migration-less version bump is reviewed, not reformatted: formatting it
+# by hand fails the format check again the next time the app exports (#773).
+android/app/schemas/
 /capacitor-web/spike/

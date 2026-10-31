@@ -10,13 +10,13 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const SIGN_IN_COPY = {
-  title: 'تسجيل الدخول',
+  title: 'تسجيل الدُّخول',
   email: 'البريد الإلكتروني',
   password: 'كلمة المرور',
-  submit: 'تسجيل الدخول',
-  busy: 'جاري تسجيل الدخول...',
+  submit: 'تسجيل الدُّخول',
+  busy: 'جاري الدُّخول...',
   refused: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
-  unreachable: 'لم يتم الوصول إلى الخادم. تحقق من اتصالك ثم حاول مرة أخرى.',
+  unreachable: 'لم يصل طلب تسجيل الدُّخول إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة.',
 } as const;
 
 export type SignInCopyStrings = typeof SIGN_IN_COPY;
