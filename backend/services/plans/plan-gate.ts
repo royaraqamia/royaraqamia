@@ -33,6 +33,17 @@ export function hashAnonymousSubject(ip: string): string {
 }
 
 /**
+ * A counted action already written to the ledger, held open by the caller
+ * because the work it pays for finishes after the response. It carries the
+ * subject it was counted against, so a visitor's anonymous event is released
+ * exactly like a member's and the caller never re-supplies who was counted.
+ */
+export interface Reservation {
+  readonly eventId: string | null;
+  release(): Promise<void>;
+}
+
+/**
  * The one door every counted or capped write goes through.
  *
  * It exists so a controller says what the action is and what to run, and never
@@ -50,28 +61,39 @@ export class PlanGate {
     run: () => Promise<T>,
     options: { dedupeKey?: string | null } = {}
   ): Promise<T> {
-    return this.usage.runCounted(this.subject(subject), actionKey, run, options);
+    const reservation = await this.reserve(subject, actionKey, options);
+
+    try {
+      return await run();
+    } catch (error) {
+      await reservation.release();
+      throw error;
+    }
   }
 
   /**
-   * Count one action without wrapping any work (an open the request already
-   * answered). Returns the event id, which a later failure can release.
+   * Count one action and hold it for work that outlives the request — a
+   * Download is dispatched after the response, so it cannot be wrapped by
+   * `count` in one closure. Releasing gives the count back; a reservation left
+   * alone is a spend (ADR-0093).
    */
-  claim(
+  async reserve(
     subject: PlanSubject,
     actionKey: UsageCounterKey,
     options: { dedupeKey?: string | null } = {}
-  ): Promise<string | null> {
-    return this.usage.consume(this.subject(subject), actionKey, options);
+  ): Promise<Reservation> {
+    const counted = this.subject(subject);
+    const eventId = await this.usage.consume(counted, actionKey, options);
+
+    return {
+      eventId,
+      release: () => this.usage.release(counted.userId, eventId),
+    };
   }
 
   /** Refuse a create that would pass a standing cap. */
   async cap(userId: string, item: OwnedItemKey, incoming = 1): Promise<void> {
     await this.usage.assertOwnedItemCap(userId, item, incoming);
-  }
-
-  release(userId: string | null, eventId: string | null): Promise<void> {
-    return this.usage.release(userId, eventId);
   }
 
   /** The allowances to cache on the client, resolved for the account's plan. */

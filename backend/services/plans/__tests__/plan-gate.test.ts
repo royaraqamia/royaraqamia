@@ -67,6 +67,7 @@ describe('PlanGate', () => {
         visitorKey: null,
       })
     );
+    expect(repository.release).not.toHaveBeenCalled();
   });
 
   it('counts a visitor against the cookie and the salted address, never the address', async () => {
@@ -116,10 +117,12 @@ describe('PlanGate', () => {
         state: { ...downloadCounter, cap: 1, used: 1, remaining: 0 },
       })),
     });
+    const run = vi.fn(async () => 'never');
 
     await expect(
-      gate.count({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', async () => 'never')
+      gate.count({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', run)
     ).rejects.toMatchObject({ statusCode: 402, code: 'visitor_limit' });
+    expect(run).not.toHaveBeenCalled();
   });
 
   it('releases the count when the work behind it throws', async () => {
@@ -135,16 +138,34 @@ describe('PlanGate', () => {
     expect(repository.release).toHaveBeenCalledWith('user-1', 'event-1');
   });
 
-  it('claims one action without wrapping any work', async () => {
+  it('reserves one action without wrapping any work', async () => {
     const { repository, gate } = makeGate();
 
-    await expect(
-      gate.claim({ userId: 'user-1' }, 'scanner.scan', { dedupeKey: 'scan:2026-10-29' })
-    ).resolves.toBe('event-1');
+    const reservation = await gate.reserve({ userId: 'user-1' }, 'scanner.scan', {
+      dedupeKey: 'scan:2026-10-29',
+    });
 
+    expect(reservation.eventId).toBe('event-1');
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({ dedupeKey: 'scan:2026-10-29' })
     );
+
+    await expect(reservation.release()).resolves.toBeUndefined();
+    expect(repository.release).toHaveBeenCalledWith('user-1', 'event-1');
+  });
+
+  it('releases a visitor reservation under the anonymous subject it counted', async () => {
+    const { repository, gate } = makeGate();
+
+    const reservation = await gate.reserve(
+      { userId: null, visitorKey: 'visitor-1', ip: '203.0.113.7' },
+      'downloader.job.create'
+    );
+    await reservation.release();
+
+    // The handle remembers it was anonymous, so the caller never re-supplies
+    // who was counted.
+    expect(repository.release).toHaveBeenCalledWith(null, 'event-1');
   });
 
   it('checks the standing cap through the service', async () => {

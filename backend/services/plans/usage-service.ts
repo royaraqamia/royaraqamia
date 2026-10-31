@@ -170,23 +170,6 @@ export class UsageService {
     return outcome.eventId;
   }
 
-  /** Count the action, run the work, and release the count if the work failed. */
-  async runCounted<T>(
-    subject: CounterSubject,
-    actionKey: UsageCounterKey,
-    run: () => Promise<T>,
-    options: { dedupeKey?: string | null } = {}
-  ): Promise<T> {
-    const eventId = await this.consume(subject, actionKey, options);
-
-    try {
-      return await run();
-    } catch (error) {
-      await this.release(subject.userId, eventId);
-      throw error;
-    }
-  }
-
   /** Give a count back. Never throws: the caller's real error is the one to show. */
   async release(userId: string | null, eventId: string | null): Promise<void> {
     if (!eventId) return;

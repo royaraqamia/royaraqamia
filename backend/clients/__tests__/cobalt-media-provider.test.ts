@@ -64,7 +64,12 @@ describe('CobaltMediaProvider.dispatch', () => {
       fetchImpl,
     });
 
-    await expect(provider.dispatch(INPUT)).rejects.toThrow('غير مدعوم');
+    const error = await provider.dispatch(INPUT).catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(MediaProviderError);
+    expect(error).toMatchObject({
+      message: expect.stringContaining('غير مدعوم'),
+      visitorFault: true,
+    });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
@@ -109,7 +114,11 @@ describe('CobaltMediaProvider.dispatch', () => {
       fetchImpl,
     });
 
-    await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
+    const error = await provider.dispatch(INPUT).catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(MediaProviderError);
+    // The host's own outage, not the visitor's link: it counts against the
+    // Platform's breaker.
+    expect(error).toMatchObject({ visitorFault: false });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 

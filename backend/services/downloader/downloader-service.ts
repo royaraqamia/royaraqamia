@@ -21,6 +21,7 @@ import {
 import { isUrlBlocked } from '@/backend/services/downloader/blocklist';
 import { platformForUrl } from '@/backend/services/downloader/platform-catalog';
 import { AppError } from '@/backend/shared/errors';
+import { logger } from '@/backend/shared/logger';
 
 const BUSY_MESSAGE = 'الخدمة مزدحمة حاليًّا. حاول مجددًا بعد قليل.';
 const SIZE_MESSAGE = 'حجم الملف يتجاوز الحدّ المسموح.';
@@ -83,6 +84,15 @@ export interface BreakerTrip {
   openUntil: string;
 }
 
+/**
+ * What `dispatch` did with the job. The provider accepting it is `dispatched`;
+ * a job that never reached the provider — a setup failure, the concurrency
+ * backstop, or a provider refusal — is `failed` and already terminal. The
+ * caller gives the reservation back on a failure: a Download the provider never
+ * took is not a spend (ADR-0093).
+ */
+export type DispatchOutcome = { status: 'dispatched' } | { status: 'failed'; error: unknown };
+
 export interface DownloaderServiceDeps {
   now?: () => Date;
   /** The signed callback route the Media Provider reports to. */
@@ -114,7 +124,8 @@ export interface DownloaderServiceDeps {
  * two creates that race. A known Platform is refused at `create` when the
  * allowlist disables it or its circuit breaker is open, a blocked link is refused
  * before any work, and provider failures are counted per Platform so a repeatedly
- * failing extractor opens that breaker (ADR-0020) — but a visitor's own bad link
+ * failing extractor opens that breaker (ADR-0020) — a refused dispatch and a
+ * failed callback both feed that counter, but a visitor's own bad link
  * (`duration`, `size`, `unsupported`) never counts against the Platform.
  */
 export class DownloaderService {
@@ -179,23 +190,27 @@ export class DownloaderService {
     }
   }
 
-  async dispatch(id: string, request: DownloadRequest): Promise<void> {
-    // Setup is inside the try on purpose. It runs off the response path, so a
-    // throw here has no caller left to answer and would strand the row in
-    // `queued` — where nothing but the retention delete would ever clear it.
+  async dispatch(id: string, request: DownloadRequest): Promise<DispatchOutcome> {
+    // Setup is inside the try on purpose. It runs off the response path, so an
+    // uncaught throw here has no caller left to answer and would strand the row
+    // in `queued` — where nothing but the retention delete would ever clear it.
     // Every failure ends the job `failed` instead.
+    let settings: DownloadSettings;
     try {
-      const settings = await this.effectiveSettings();
+      settings = await this.effectiveSettings();
       // The backstop for two creates that both cleared `assertCapacity` before
-      // either row counted: the race is rare, so the row it catches is already
-      // charged and ends `failed` (a reservation handle is a separate change).
+      // either row counted: the race is rare, and the row it catches never
+      // reached the provider, so the caller refunds it like any other failure.
       if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
-        await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
-        return;
+        throw new DownloadBusyError();
       }
 
       await this.repository.updateStatus(id, { status: 'running' });
+    } catch (error) {
+      return this.failDispatch(id, error);
+    }
 
+    try {
       await this.provider.dispatch({
         jobId: id,
         url: request.url,
@@ -205,10 +220,41 @@ export class DownloaderService {
         maxSizeBytes: maxDownloadBytes(request.format, settings),
         linkTtlSeconds: settings.linkTtlSeconds,
       });
+      return { status: 'dispatched' };
     } catch (error) {
-      const reason = error instanceof MediaProviderError ? error.message : GENERIC_FAILURE;
-      await this.repository.updateStatus(id, { status: 'failed', error: reason });
+      const outcome = await this.failDispatch(id, error);
+      // A host that is unreachable after its own retries, or answering 5xx, is
+      // a Platform outage even though no callback will ever arrive for it; a
+      // visitor's unsupported link is not (ADR-0020).
+      if (!(error instanceof MediaProviderError && error.visitorFault)) {
+        await this.recordPlatformFailure(request.url);
+      }
+      return outcome;
     }
+  }
+
+  /**
+   * End the job `failed` with the reason the visitor can be shown, and hand the
+   * original error back so the caller can report it and refund the count. A
+   * bookkeeping failure here must not hide the failure that caused it, and the
+   * outcome still reports `failed` because the download never ran.
+   */
+  private async failDispatch(id: string, error: unknown): Promise<DispatchOutcome> {
+    const reason =
+      error instanceof MediaProviderError || error instanceof AppError
+        ? error.message
+        : GENERIC_FAILURE;
+
+    try {
+      await this.repository.updateStatus(id, { status: 'failed', error: reason });
+    } catch (bookkeepingError) {
+      logger.warn('Failed to mark a Download Job failed', {
+        jobId: id,
+        error: String(bookkeepingError),
+      });
+    }
+
+    return { status: 'failed', error };
   }
 
   async recordResult(callback: DownloadCallback): Promise<void> {
