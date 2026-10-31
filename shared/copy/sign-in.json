@@ -15,12 +15,12 @@
     "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the login page does not render or a state the app declares but does not draw."
   },
   "strings": {
-    "title": "تسجيل الدخول",
+    "title": "تسجيل الدُّخول",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "submit": "تسجيل الدخول",
-    "busy": "جاري تسجيل الدخول...",
+    "submit": "تسجيل الدُّخول",
+    "busy": "جاري الدُّخول...",
     "refused": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-    "unreachable": "لم يتم الوصول إلى الخادم. تحقق من اتصالك ثم حاول مرة أخرى."
+    "unreachable": "لم يصل طلب تسجيل الدُّخول إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
   }
 }

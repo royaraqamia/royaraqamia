@@ -12,11 +12,11 @@ package com.royaraqamia.app.auth
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object SignInCopy {
-    const val TITLE = "تسجيل الدخول"
+    const val TITLE = "تسجيل الدُّخول"
     const val EMAIL = "البريد الإلكتروني"
     const val PASSWORD = "كلمة المرور"
-    const val SUBMIT = "تسجيل الدخول"
-    const val BUSY = "جاري تسجيل الدخول..."
+    const val SUBMIT = "تسجيل الدُّخول"
+    const val BUSY = "جاري الدُّخول..."
     const val REFUSED = "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-    const val UNREACHABLE = "لم يتم الوصول إلى الخادم. تحقق من اتصالك ثم حاول مرة أخرى."
+    const val UNREACHABLE = "لم يصل طلب تسجيل الدُّخول إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
 }
