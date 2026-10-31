@@ -1,0 +1,24 @@
+{
+  "$comment": "The Local Store's partition, written once and asserted by both clients: the web's `frontend/shared/local-store/identity.ts` and the app's `com.royaraqamia.app.store.Identity`. A partition that only one client names the same way is a device whose rows the other one cannot find. Spec: docs/specs/offline-first.md (#identity--auth).",
+  "product": "habitflow",
+  "cases": [
+    {
+      "name": "a device nobody signed in on",
+      "userId": null,
+      "identity": "guest",
+      "store": "habitflow__guest"
+    },
+    {
+      "name": "an account",
+      "userId": "9f1c1b7e-2a4d-4c2f-9a3b-7d6e5f4a3b21",
+      "identity": "user:9f1c1b7e-2a4d-4c2f-9a3b-7d6e5f4a3b21",
+      "store": "habitflow__user:9f1c1b7e-2a4d-4c2f-9a3b-7d6e5f4a3b21"
+    },
+    {
+      "name": "an empty id is not an account",
+      "userId": "",
+      "identity": "guest",
+      "store": "habitflow__guest"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenPair
 import com.royaraqamia.app.session.TokenRefresher
+import com.royaraqamia.app.store.MemoryIdentityStorage
 import com.royaraqamia.app.support.RecordingTransport
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -59,8 +60,8 @@ class ApiClientTest {
 
     private fun signedIn(refresher: TokenRefresher, accessToken: String = "access-1"): Session =
         runBlocking {
-            Session(MemoryTokenStore("refresh-1"), refresher).also {
-                it.signIn(TokenPair(accessToken, "refresh-1"))
+            Session(MemoryTokenStore("refresh-1"), refresher, MemoryIdentityStorage()).also {
+                it.signIn(TokenPair(accessToken, "refresh-1", "user-1"))
             }
         }
 
@@ -82,7 +83,7 @@ class ApiClientTest {
 
     @Test
     fun `a 401 refreshes once and retries with the new token`() {
-        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-2", "refresh-2")) }
+        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-2", "refresh-2", "user-1")) }
         val transport =
             RecordingTransport { request ->
                 if (request.bearer == "Bearer access-2") HttpResponse(200, usageBody)
@@ -100,7 +101,7 @@ class ApiClientTest {
 
     @Test
     fun `a second 401 is a sign-in, not a loop`() {
-        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-2", "refresh-2")) }
+        val refresher = CountingRefresher { RefreshOutcome.Renewed(TokenPair("access-2", "refresh-2", "user-1")) }
         val transport = RecordingTransport { HttpResponse(401, "") }
         val client = ApiClient(baseUrl, signedIn(refresher), transport)
 
@@ -114,7 +115,7 @@ class ApiClientTest {
     @Test
     fun `a request with no token is never sent`() {
         val transport = RecordingTransport { HttpResponse(200, usageBody) }
-        val session = Session(MemoryTokenStore(), CountingRefresher { RefreshOutcome.Refused })
+        val session = Session(MemoryTokenStore(), CountingRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage())
         val client = ApiClient(baseUrl, session, transport)
 
         val result = runBlocking { client.get<MyUsageResponse>("/api/me/usage") }
