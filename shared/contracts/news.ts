@@ -450,9 +450,25 @@ export const newsSearchQuerySchema = z.object({
 
 export type NewsSearchQuery = z.infer<typeof newsSearchQuerySchema>;
 
+/**
+ * One row the search combobox paints, and nothing more.
+ *
+ * The suggestion read answers anonymous callers, so it carries only the fields
+ * the row renders. A story's body and its source link stay behind the board's
+ * search, where the plan's Card allowance applies (ADR-0093); `NewsSearchHit`
+ * remains the board's shape.
+ */
+export interface NewsSearchSuggestion {
+  id: string;
+  headline: string;
+  category: NewsCategory;
+  sourceName: string;
+  digestDate: string;
+}
+
 /** The retained-month stories matching one term, for the search combobox. */
 export interface NewsSearchSuggestions {
-  hits: NewsSearchHit[];
+  hits: NewsSearchSuggestion[];
 }
 
 export const newsQuerySchema = z.object({

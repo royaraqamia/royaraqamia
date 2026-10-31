@@ -7,6 +7,8 @@ const RATE_LIMIT_MESSAGE = 'تم تجاوز حدّ الطلب: البحث في �
 const mockLoadNewsSearch = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockGetClientIp = vi.fn((_request: NextRequest) => IP);
+const mockResolveOptional = vi.fn();
+const mockResolveNewsCardCap = vi.fn(async (_userId: string | null): Promise<number> => 5);
 const mockPolicy = vi.fn((ip: string) => ({
   key: `news-search:${ip}`,
   limit: 60,
@@ -25,7 +27,15 @@ vi.mock('next/server', () => ({
 }));
 
 vi.mock('@/backend/loaders/news', () => ({
-  loadNewsSearch: (query: string) => mockLoadNewsSearch(query),
+  loadNewsSearch: (query: string, cap: number) => mockLoadNewsSearch(query, cap),
+}));
+
+vi.mock('@/backend/config/identity', () => ({
+  identity: { resolveOptional: () => mockResolveOptional() },
+}));
+
+vi.mock('@/backend/services/news/card-limit', () => ({
+  resolveNewsCardCap: (userId: string | null) => mockResolveNewsCardCap(userId),
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
@@ -48,8 +58,13 @@ vi.mock('@/backend/transport/http-result', () => ({
 }));
 
 import { GET as searchGET } from '@/app/api/news/search/route';
+import type { NewsSearchSuggestion } from '@/shared/contracts/news';
 
-type RouteResponse = { status: number; data: unknown };
+interface RouteResponse {
+  status: number;
+  data: unknown;
+  headers: Record<string, string>;
+}
 
 function request(params: Record<string, string> = {}): NextRequest {
   return {
@@ -62,10 +77,20 @@ function body(res: RouteResponse): Record<string, unknown> {
   return res.data as Record<string, unknown>;
 }
 
+const SUGGESTION: NewsSearchSuggestion = {
+  id: 'story-1',
+  headline: 'اتفاق جديد في الشرق',
+  category: 'politics',
+  sourceName: 'مصدر تجريبي',
+  digestDate: '2026-10-24',
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockCheckRateLimitApi.mockResolvedValue(null);
-  mockLoadNewsSearch.mockResolvedValue({ hits: [] });
+  mockLoadNewsSearch.mockResolvedValue({ hits: [SUGGESTION] });
+  mockResolveOptional.mockResolvedValue({ user: null, client: null });
+  mockResolveNewsCardCap.mockResolvedValue(5);
 });
 
 describe('GET /api/news/search', () => {
@@ -83,13 +108,13 @@ describe('GET /api/news/search', () => {
 
     await searchGET(request({ q: query }));
 
-    expect(mockLoadNewsSearch).toHaveBeenCalledWith(query);
+    expect(mockLoadNewsSearch).toHaveBeenCalledWith(query, 5);
   });
 
   it('trims and sanitises the query before it reaches the loader', async () => {
     await searchGET(request({ q: '  %اتفاق,  الآن  ' }));
 
-    expect(mockLoadNewsSearch).toHaveBeenCalledWith('اتفاق الآن');
+    expect(mockLoadNewsSearch).toHaveBeenCalledWith('اتفاق الآن', 5);
   });
 
   it('answers an empty result for a missing, blank or punctuation-only query without any I/O', async () => {
@@ -104,6 +129,58 @@ describe('GET /api/news/search', () => {
 
     expect(mockLoadNewsSearch).not.toHaveBeenCalled();
     expect(mockCheckRateLimitApi).not.toHaveBeenCalled();
+    expect(mockResolveNewsCardCap).not.toHaveBeenCalled();
+  });
+
+  it('asks the visitor allowance for an anonymous caller', async () => {
+    mockResolveNewsCardCap.mockResolvedValue(1);
+
+    await searchGET(request({ q: 'اتفاق' }));
+
+    expect(mockResolveNewsCardCap).toHaveBeenCalledWith(null);
+    expect(mockLoadNewsSearch).toHaveBeenCalledWith('اتفاق', 1);
+  });
+
+  it("caps a signed-in reader's hits with their plan's allowance", async () => {
+    mockResolveOptional.mockResolvedValue({
+      user: { id: 'user-1' },
+      client: {},
+    });
+    mockResolveNewsCardCap.mockResolvedValue(50);
+
+    await searchGET(request({ q: 'اتفاق' }));
+
+    expect(mockResolveNewsCardCap).toHaveBeenCalledWith('user-1');
+    expect(mockLoadNewsSearch).toHaveBeenCalledWith('اتفاق', 50);
+  });
+
+  it('reads a failing session as anonymous rather than failing the search', async () => {
+    mockResolveOptional.mockRejectedValue(new Error('no session'));
+
+    const res = (await searchGET(request({ q: 'اتفاق' }))) as unknown as RouteResponse;
+
+    expect(res.status).toBe(200);
+    expect(mockResolveNewsCardCap).toHaveBeenCalledWith(null);
+  });
+
+  it('answers only the fields the combobox paints, never a story body or its link', async () => {
+    const res = (await searchGET(request({ q: 'اتفاق' }))) as unknown as RouteResponse;
+    const hits = body(res).hits as Array<Record<string, unknown>>;
+
+    expect(hits[0]).toEqual(SUGGESTION);
+    expect(Object.keys(hits[0] ?? {}).sort()).toEqual([
+      'category',
+      'digestDate',
+      'headline',
+      'id',
+      'sourceName',
+    ]);
+  });
+
+  it('keeps the answer no-store', async () => {
+    const res = (await searchGET(request({ q: 'اتفاق' }))) as unknown as RouteResponse;
+
+    expect(res.headers['Cache-Control']).toBe('no-store');
   });
 
   it('returns 429 with an Arabic message when the per-IP limit is exhausted', async () => {
