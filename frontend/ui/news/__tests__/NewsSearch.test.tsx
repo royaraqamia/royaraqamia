@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { NewsSearch } from '../NewsSearch';
-import type { NewsSearchSuggestions } from '@/shared/contracts/news';
+import {
+  NEWS_CATEGORY_LABELS,
+  formatDigestDayShort,
+  type NewsSearchSuggestion,
+  type NewsSearchSuggestions,
+} from '@/shared/contracts/news';
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 
@@ -10,35 +15,25 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/news',
 }));
 
-const hit = {
+const hit: NewsSearchSuggestion = {
   id: 's-1',
-  position: 1,
-  category: 'politics' as const,
-  region: 'world' as const,
+  category: 'politics',
   headline: 'اتفاق جديد في الشرق',
-  summary: 'ملخّص الخبر',
-  whyItMatters: null,
-  sourceId: 'example',
   sourceName: 'مصدر تجريبي',
-  sourceUrl: 'https://example.com/story',
-  sourcePublishedAt: null,
   digestDate: '2026-10-24',
 };
 
 const suggestions: NewsSearchSuggestions = { hits: [hit] };
 
 const fetchMock = vi.fn();
-const openMock = vi.fn();
 
 describe('NewsSearch', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     push.mockReset();
-    openMock.mockReset();
     fetchMock.mockReset();
     fetchMock.mockResolvedValue({ ok: true, json: async () => suggestions });
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubGlobal('open', openMock);
   });
 
   afterEach(() => {
@@ -66,18 +61,27 @@ describe('NewsSearch', () => {
     expect(screen.getByText('اتفاق جديد في الشرق')).toBeInTheDocument();
   });
 
-  it('opens the original article in a new tab when a suggestion is chosen', async () => {
+  it('paints each suggestion with its category, source and day', async () => {
+    render(<NewsSearch query="" category={null} />);
+
+    await typeQuery('اتفاق');
+
+    const meta = `${NEWS_CATEGORY_LABELS.politics} · ${hit.sourceName} · ${formatDigestDayShort(
+      hit.digestDate
+    )}`;
+    expect(screen.getByText(meta)).toBeInTheDocument();
+  });
+
+  it('commits a chosen suggestion by its headline, leaving the card to the board', async () => {
     render(<NewsSearch query="" category={null} />);
 
     await typeQuery('اتفاق');
     fireEvent.click(screen.getByText('اتفاق جديد في الشرق'));
 
-    expect(openMock).toHaveBeenCalledWith(
-      'https://example.com/story',
-      '_blank',
-      'noopener,noreferrer'
+    expect(push).toHaveBeenCalledWith(
+      `/news?${new URLSearchParams({ q: 'اتفاق جديد في الشرق' }).toString()}`,
+      { scroll: false }
     );
-    expect(push).not.toHaveBeenCalled();
   });
 
   it('commits the query on Enter and keeps the category chip', async () => {

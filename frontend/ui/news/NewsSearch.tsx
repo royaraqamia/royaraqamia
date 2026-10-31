@@ -13,8 +13,9 @@ import { request } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORY_LABELS,
   formatDigestDayShort,
+  sanitizeNewsQuery,
   type NewsCategory,
-  type NewsSearchHit,
+  type NewsSearchSuggestion,
   type NewsSearchSuggestions,
 } from '@/shared/contracts/news';
 
@@ -38,10 +39,11 @@ interface NewsSearchProps {
  * debounced against `/api/news/search` and never touch the URL, and the page
  * only filters once a term is committed (Enter or the "view all" row).
  *
- * A suggestion is a story, and a story has no page of its own — the reader's
- * destination is the publication, which is where the card's own source link
- * goes too. Committing a term drops the selected day, because the search spans
- * every retained day (`NewsFilters`).
+ * A suggestion is a preview of a story, and a story has no page of its own: it
+ * carries no body and no source link, so choosing one commits its headline and
+ * the board answers with the story's card — where the plan's Card allowance
+ * applies, exactly as it does to every other card. Committing a term drops the
+ * selected day, because the search spans every retained day (`NewsFilters`).
  */
 export function NewsSearch({ query, category, disabled = false }: NewsSearchProps) {
   const router = useRouter();
@@ -49,7 +51,7 @@ export function NewsSearch({ query, category, disabled = false }: NewsSearchProp
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(query);
-  const [hits, setHits] = useState<NewsSearchHit[]>([]);
+  const [hits, setHits] = useState<NewsSearchSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ReadFailure | null>(null);
@@ -154,11 +156,10 @@ export function NewsSearch({ query, category, disabled = false }: NewsSearchProp
     (row: number) => {
       setOpen(false);
       const hit = hits[row];
-      if (hit) {
-        window.open(hit.sourceUrl, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      commitQuery(value.trim());
+      // A suggestion carries no source link, so it is committed rather than
+      // opened off-site: the board answers with that story's card (and the
+      // plan's allowance decides how many cards it may paint).
+      commitQuery(hit ? sanitizeNewsQuery(hit.headline) : value.trim());
     },
     [hits, commitQuery, value]
   );

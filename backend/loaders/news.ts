@@ -16,6 +16,8 @@ import {
   type NewsBoard,
   type NewsPersonalView,
   type NewsQuery,
+  type NewsSearchHit,
+  type NewsSearchSuggestion,
   type NewsSearchSuggestions,
   type NewsSourcePreferences,
 } from '@/shared/contracts/news';
@@ -186,9 +188,25 @@ export async function loadNewsBoard(
  * path. A read failure is thrown rather than answered as "no results", so the
  * combobox can name the failure instead of implying the month is empty
  * (ADR-0031).
+ *
+ * `cap` is the reader's Card allowance, the same one the board applies: a
+ * suggestion is a story card like any other, so an uncapped list would be a
+ * one-request way around the limit (ADR-0093). Each row is also cut down to
+ * the fields the combobox renders — its body and source link are only served
+ * by the board's search.
  */
-export async function loadNewsSearch(term: string): Promise<NewsSearchSuggestions> {
+export async function loadNewsSearch(term: string, cap: number): Promise<NewsSearchSuggestions> {
   const service = createNewsServiceFor(getPublicSupabase());
   const hits = await service.searchSuggestions(term);
-  return { hits };
+  return { hits: hits.slice(0, cap).map(toSuggestion) };
+}
+
+function toSuggestion(hit: NewsSearchHit): NewsSearchSuggestion {
+  return {
+    id: hit.id,
+    headline: hit.headline,
+    category: hit.category,
+    sourceName: hit.sourceName,
+    digestDate: hit.digestDate,
+  };
 }

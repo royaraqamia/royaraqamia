@@ -4,6 +4,7 @@ const mockResolveOptional = vi.fn();
 const mockPreferencesGet = vi.fn();
 const mockGetBoard = vi.fn();
 const mockPersonalGet = vi.fn();
+const mockSearchSuggestions = vi.fn();
 
 vi.mock('@/backend/config/identity', () => ({
   identity: { resolveOptional: () => mockResolveOptional() },
@@ -16,6 +17,7 @@ vi.mock('@/backend/config/supabase', () => ({
 vi.mock('@/backend/config/news', () => ({
   createNewsServiceFor: () => ({
     getBoard: (...args: unknown[]) => mockGetBoard(...args),
+    searchSuggestions: (...args: unknown[]) => mockSearchSuggestions(...args),
   }),
   createNewsPreferencesServiceFor: () => ({
     get: (...args: unknown[]) => mockPreferencesGet(...args),
@@ -25,11 +27,12 @@ vi.mock('@/backend/config/news', () => ({
   }),
 }));
 
-import { loadNewsBoard } from '@/backend/loaders/news';
+import { loadNewsBoard, loadNewsSearch } from '@/backend/loaders/news';
 import type {
   NewsBoard,
   NewsDay,
   NewsPreferencesEffect,
+  NewsSearchHit,
   NewsSourcePreferences,
 } from '@/shared/contracts/news';
 
@@ -84,6 +87,7 @@ beforeEach(() => {
   mockResolveOptional.mockResolvedValue(session());
   mockPreferencesGet.mockResolvedValue(READER_PREFERENCES);
   mockPersonalGet.mockResolvedValue(null);
+  mockSearchSuggestions.mockResolvedValue([]);
 });
 
 /**
@@ -167,5 +171,56 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(shared.day);
     expect(result.personal).toEqual({ enabled: true, available: true, active: false });
+  });
+});
+
+function storyHit(index: number): NewsSearchHit {
+  return {
+    id: `story-${index}`,
+    position: index,
+    category: 'tech',
+    region: 'world',
+    headline: `خبر ${index}`,
+    summary: 'ملخص الخبر.',
+    whyItMatters: 'لماذا يهم.',
+    sourceId: 'example',
+    sourceName: 'Example',
+    sourceUrl: `https://example.com/${index}`,
+    sourcePublishedAt: null,
+    digestDate: '2026-10-24',
+  };
+}
+
+/**
+ * The suggestion read answers anonymous callers, so it pays the same Card
+ * allowance as the board (#704) and carries only what the combobox paints.
+ */
+describe('loadNewsSearch', () => {
+  it('cuts the hits to the allowance it was given', async () => {
+    mockSearchSuggestions.mockResolvedValue([1, 2, 3].map(storyHit));
+
+    const result = await loadNewsSearch('خبر', 1);
+
+    expect(result.hits).toHaveLength(1);
+  });
+
+  it('returns the fields the combobox paints and nothing else', async () => {
+    mockSearchSuggestions.mockResolvedValue([storyHit(1)]);
+
+    const [hit] = (await loadNewsSearch('خبر', 50)).hits;
+
+    expect(hit).toEqual({
+      id: 'story-1',
+      headline: 'خبر 1',
+      category: 'tech',
+      sourceName: 'Example',
+      digestDate: '2026-10-24',
+    });
+  });
+
+  it('keeps every hit when the allowance is wider than the list', async () => {
+    mockSearchSuggestions.mockResolvedValue([1, 2, 3].map(storyHit));
+
+    expect((await loadNewsSearch('خبر', 50)).hits).toHaveLength(3);
   });
 });
