@@ -299,8 +299,17 @@ _Avoid_: Commentary, exegesis, translation, footnote, explanation
 
 **Mushaf View**:
 The Quran Reader's alternate rendering of the text as it appears on a printed page, preserving the
-page and line breaks of the Madani Mushaf. A view over the same text, not a second copy of it.
+page and line breaks of the Madani Mushaf. A view over the same text, not a second copy of it. The
+_markers_ ship — where each page, juz, hizb and sajda falls — while the page-per-screen rendering
+waits on the layout's licence answer (ADR-0108).
 _Avoid_: Page mode, print layout, book view, مصحف
+
+**Page**:
+One of the Madani Mushaf's 604 leaves, named by the number a reader may already know. The Quran
+Reader marks where a page opens and can jump to it; it does not yet set a page per screen, and a Page
+is not what a reader browses by — that is a Surah.
+_Sold as_: صفحة
+_Avoid_: Spread, sheet, screen, view
 
 **Search**:
 Finding Ayat by a phrase a reader types, in the Quran Reader. It is the same field that narrows the
