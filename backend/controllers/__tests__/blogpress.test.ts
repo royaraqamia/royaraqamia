@@ -8,6 +8,7 @@ const planMocks = vi.hoisted(() => ({
 }));
 const mockPosts = {
   publishPost: vi.fn(),
+  saveAndPublishPost: vi.fn(),
   createAndPublishPost: vi.fn(),
   bulkActionPosts: vi.fn(),
   restorePost: vi.fn(),
@@ -59,6 +60,7 @@ import {
   listBlogTags,
   publishPost,
   restorePost,
+  saveAndPublishPost,
   unpublishPost,
   updatePost,
 } from '@/backend/controllers/blogpress';
@@ -83,6 +85,7 @@ describe('blogpress controller', () => {
     mockRepository.countPostsInStatus.mockResolvedValue(0);
     mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
+    mockPosts.saveAndPublishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
     mockPosts.bulkActionPosts.mockResolvedValue({ affected: 0, slugs: [] });
     mockRepository.resolveBulkPublishTargets.mockResolvedValue({
@@ -470,5 +473,77 @@ describe('blogpress bulk publish', () => {
     expect(result).toEqual(expect.objectContaining({ status: 400 }));
     expect(mockRepository.resolveBulkPublishTargets).not.toHaveBeenCalled();
     expect(mockPosts.bulkActionPosts).not.toHaveBeenCalled();
+  });
+});
+
+describe('blogpress publish at the published cap', () => {
+  const body = { slug: 'hello', content: 'محتوى' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUser.mockResolvedValue({
+      user: { id: 'u-1', email: 'author@b.com' },
+      supabase: {},
+    });
+    planMocks.cap.mockResolvedValue(undefined);
+    mockRepository.countPostsInStatus.mockResolvedValue(0);
+    mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
+    mockPosts.saveAndPublishPost.mockResolvedValue({ slug: 'hello' });
+  });
+
+  it('re-publishes an already-published post without taking a new slot', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(1);
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityPublished, 10, 10)
+    );
+
+    const result = await publishPost('p-1');
+
+    expect(mockRepository.countPostsInStatus).toHaveBeenCalledWith(['p-1'], 'u-1', 'published');
+    expect(planMocks.cap).not.toHaveBeenCalled();
+    expect(mockPosts.publishPost).toHaveBeenCalledWith('p-1', 'u-1');
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+  });
+
+  it('still refuses a draft at the published cap and publishes nothing', async () => {
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityPublished, 10, 10)
+    );
+
+    const result = await publishPost('p-1');
+
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published');
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockPosts.publishPost).not.toHaveBeenCalled();
+  });
+
+  it('save-and-publishes an already-published post without taking a new slot', async () => {
+    mockRepository.countPostsInStatus.mockResolvedValue(1);
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityPublished, 10, 10)
+    );
+
+    const result = await saveAndPublishPost('p-1', body);
+
+    expect(mockRepository.countPostsInStatus).toHaveBeenCalledWith(['p-1'], 'u-1', 'published');
+    expect(planMocks.cap).not.toHaveBeenCalled();
+    expect(mockPosts.saveAndPublishPost).toHaveBeenCalledWith(
+      'p-1',
+      'u-1',
+      expect.objectContaining({ slug: 'hello' })
+    );
+    expect(result).toMatchObject({ status: 200, body: { success: true, slug: 'hello' } });
+  });
+
+  it('still refuses save-and-publish of a draft at the cap and writes nothing', async () => {
+    planMocks.cap.mockRejectedValue(
+      new OwnedItemCapReachedError(OWNED_ITEMS.communityPublished, 10, 10)
+    );
+
+    const result = await saveAndPublishPost('p-1', body);
+
+    expect(planMocks.cap).toHaveBeenCalledWith('u-1', 'community_published');
+    expect(result).toMatchObject({ status: 402, body: { code: 'owned_item_cap' } });
+    expect(mockPosts.saveAndPublishPost).not.toHaveBeenCalled();
   });
 });
