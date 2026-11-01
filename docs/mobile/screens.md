@@ -22,7 +22,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran-surah` | `/quran/[surah]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account-owned` | `/account`<br>`/account/links`<br>`/account/posts`<br>`/account/submissions` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
-| `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news`<br>`/account/services` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account-changelog` | `/account/changelog` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

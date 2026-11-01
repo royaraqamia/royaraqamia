@@ -68,13 +68,17 @@ export function TopNav({
         </Link>
       </div>
 
-      {/* خدماتنا — centred in the bar and identical from phone to desktop */}
-      <NavDropdown
-        link={servicesLink}
-        isActive={isServicesActive}
-        handleHashClick={handleHashClick}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-      />
+      {/* خدماتنا — centred in the bar and identical from phone to desktop. A
+          member who hid every row gets no trigger: a menu that opens nothing is
+          worse than no menu (ADR-0112). */}
+      {(servicesLink.subItems ?? []).length > 0 && (
+        <NavDropdown
+          link={servicesLink}
+          isActive={isServicesActive}
+          handleHashClick={handleHashClick}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
+      )}
 
       {/* Primary Actions & Controls Container */}
       <div className="flex items-center shrink-0">

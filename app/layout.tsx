@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
+import { HiddenServicesProvider } from '../frontend/state/hidden-services-provider';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
@@ -169,26 +170,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DirectionProvider dir={DIRECTION}>
             <QuranPlayerProvider>
               <SessionProvider>
-                <UIProvider>
-                  <NotificationProvider>
-                    <SpeedInsights />
-                    <Analytics />
-                    <PWAProvider>
-                      <RouteChangeFocus />
-                      <AppPerfObserver />
-                      {/* App chrome is route-aware: primary routes keep the top
+                <HiddenServicesProvider>
+                  <UIProvider>
+                    <NotificationProvider>
+                      <SpeedInsights />
+                      <Analytics />
+                      <PWAProvider>
+                        <RouteChangeFocus />
+                        <AppPerfObserver />
+                        {/* App chrome is route-aware: primary routes keep the top
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}
-                      <NavHistoryTracker />
-                      <SecondaryHeader />
-                      {children}
-                      <BottomTabBar />
-                      <GlobalPlayer />
-                      <UpdatePrompt />
-                    </PWAProvider>
-                    <RoyaToaster />
-                  </NotificationProvider>
-                </UIProvider>
+                        <NavHistoryTracker />
+                        <SecondaryHeader />
+                        {children}
+                        <BottomTabBar />
+                        <GlobalPlayer />
+                        <UpdatePrompt />
+                      </PWAProvider>
+                      <RoyaToaster />
+                    </NotificationProvider>
+                  </UIProvider>
+                </HiddenServicesProvider>
               </SessionProvider>
             </QuranPlayerProvider>
           </DirectionProvider>

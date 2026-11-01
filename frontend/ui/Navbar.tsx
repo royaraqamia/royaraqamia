@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { TopNav } from './navbar/TopNav';
-import { SERVICES_LINK } from './navbar/services-link';
+import { useVisibleServices } from './navbar/use-visible-services';
 import { isPrimaryRoute } from './navbar/route-kind';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 
@@ -40,6 +40,8 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === '/';
+  // The rows this member hid, so the trigger and the menu agree (ADR-0112).
+  const { link: servicesLink } = useVisibleServices();
 
   useEffect(() => {
     return () => {
@@ -116,8 +118,7 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
     ) ?? false;
 
   const isServicesActive =
-    isLinkActive(SERVICES_LINK.href) || isSubItemActive(SERVICES_LINK.subItems);
-
+    isLinkActive(servicesLink.href) || isSubItemActive(servicesLink.subItems);
   // Glassmorphism & elevation generator.
   // Perf note: the two persistent states (scrolled / menu-open) sit above
   // continuously-scrolling content, so they use near-opaque fills instead of
@@ -171,7 +172,7 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
             }`}
           >
             <TopNav
-              servicesLink={SERVICES_LINK}
+              servicesLink={servicesLink}
               isServicesActive={isServicesActive}
               handleHashClick={handleHashClick}
               logo="/logo.webp"

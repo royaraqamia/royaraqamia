@@ -154,7 +154,13 @@
     },
     {
       "id": "account-server",
-      "routes": ["/account/plan", "/account/connected-apps", "/account/faq", "/account/news"],
+      "routes": [
+        "/account/plan",
+        "/account/connected-apps",
+        "/account/faq",
+        "/account/news",
+        "/account/services"
+      ],
       "owner": "server",
       "read": "needs-connection",
       "write": "none",

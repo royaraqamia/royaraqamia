@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic';
 import { scrollToSectionWithRetry } from '@/frontend/shared/scroll';
 import { tolerateChunkFailure } from '../shared/lazy-chunk';
 
-import { SERVICES_LINK } from './services-link';
+import { useVisibleServices } from './use-visible-services';
 
 const loadServicesSheet = () => import('./ServicesSheet');
 
@@ -63,7 +63,9 @@ export function ServicesMenu({ trigger }: ServicesMenuProps) {
   const hasPrefetched = useRef(false);
   const triggerId = useId();
   const contentId = `${triggerId}-sheet`;
-  const link = SERVICES_LINK;
+  // The hero's CTA opens the same rows the navbar does, minus the hidden ones
+  // (ADR-0112). Hooks run before the empty return below.
+  const { link, isEmpty } = useVisibleServices();
 
   const prefetchSheet = useCallback(() => {
     if (hasPrefetched.current) return;
@@ -80,6 +82,9 @@ export function ServicesMenu({ trigger }: ServicesMenuProps) {
     e.preventDefault();
     scrollToSectionWithRetry(hash.replace(/^\//, '').replace('#', ''));
   };
+
+  // Every row is hidden: there is nothing to open, so the CTA goes with them.
+  if (isEmpty) return null;
 
   const triggerElement = isValidElement(trigger) ? (trigger as ReactElement<TriggerProps>) : null;
 
