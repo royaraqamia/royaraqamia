@@ -46,8 +46,17 @@ class ConnectedAppsRepository(private val client: ApiClient) {
         }
 
     /** Cuts one grant loose; the client is refused on its next request, server-side. */
-    suspend fun disconnect(clientId: String): ApiResult<Unit> =
-        when (val result = client.delete<McpConnectedAppActionResult>(clientPath(clientId))) {
+    suspend fun disconnect(clientId: String): ApiResult<Unit> = revoke(clientPath(clientId))
+
+    /**
+     * Cuts every grant at once: the collection's own `DELETE`, which is what the
+     * page's "disconnect all" calls. Not a loop of single revokes — the server's
+     * answer is the one that says the account has none left.
+     */
+    suspend fun disconnectAll(): ApiResult<Unit> = revoke(LIST_PATH)
+
+    private suspend fun revoke(path: String): ApiResult<Unit> =
+        when (val result = client.delete<McpConnectedAppActionResult>(path)) {
             is ApiResult.Success ->
                 if (result.value.success) {
                     ApiResult.Success(Unit)
@@ -61,37 +70,5 @@ class ConnectedAppsRepository(private val client: ApiClient) {
         const val LIST_PATH = "/api/me/mcp/connected-apps"
 
         fun clientPath(clientId: String): String = "$LIST_PATH/$clientId"
-    }
-}
-
-/**
- * What the connected-apps card can show (#657, ADR-0098): the four states the site
- * draws — the skeleton, the guest's way in, the failure with its retry, and the
- * list (empty or not).
- */
-sealed interface ConnectedAppsUiState {
-    data object Loading : ConnectedAppsUiState
-
-    data object SignedOut : ConnectedAppsUiState
-
-    data object Failed : ConnectedAppsUiState
-
-    data class Ready(val apps: List<ConnectedApp>) : ConnectedAppsUiState {
-        val isEmpty: Boolean
-            get() = apps.isEmpty()
-    }
-
-    companion object {
-        fun from(result: ApiResult<List<ConnectedApp>>): ConnectedAppsUiState =
-            when (result) {
-                is ApiResult.Success -> Ready(result.value)
-                is ApiResult.Failure ->
-                    when (result.error) {
-                        ApiError.NotSignedIn -> SignedOut
-                        is ApiError.Network,
-                        is ApiError.Server,
-                        is ApiError.InvalidContract -> Failed
-                    }
-            }
     }
 }

@@ -4,18 +4,49 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plug, Plus, RefreshCw, Unplug } from 'lucide-react';
 
+import { MCP_CONNECTED_APPS_COPY } from './mcp-connected-apps-copy';
+
 import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
 import {
   disconnectAllMcpConnectedApps,
   disconnectMcpConnectedApp,
   getMcpConnectedApps,
 } from '@/frontend/api/mcp-connected-apps';
-import { calculateTimeAgo, formatHijriDate } from '@/frontend/shared/format';
+import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import { useSession } from '@/frontend/state/session-provider';
+
+/**
+ * "Last used" in this surface's own words (ADR-0104): the formatter answers a
+ * unit and a count, and the sentence is the generated copy's, so the app renders
+ * the same one from the same source.
+ */
+export function timeAgoLabel(dateStr: string): string {
+  const parts = timeAgoParts(dateStr);
+
+  switch (parts.unit) {
+    case 'now':
+      return MCP_CONNECTED_APPS_COPY.agoNow;
+    case 'minutes':
+      return MCP_CONNECTED_APPS_COPY.agoMinutes.replace('{count}', String(parts.count));
+    case 'hours':
+      return MCP_CONNECTED_APPS_COPY.agoHours.replace('{count}', String(parts.count));
+    case 'days':
+      return MCP_CONNECTED_APPS_COPY.agoDays.replace('{count}', String(parts.count));
+    case 'weeks':
+      return MCP_CONNECTED_APPS_COPY.agoWeeks.replace('{count}', String(parts.count));
+    case 'date':
+      return formatHijriDate(dateStr);
+  }
+}
+
+/** The name a row shows: the client's own, or the generic one for a nameless client. */
+export function connectedAppName(connectedApp: McpConnectedApp): string {
+  return connectedApp.clientName ?? MCP_CONNECTED_APPS_COPY.appName;
+}
 
 /**
  * The MCP clients connected to the signed-in account.
@@ -71,7 +102,7 @@ export function McpConnectedAppsView() {
     setTarget(null);
 
     if (!result.success) {
-      setActionError(result.error ?? 'تعذّر فصل التَّطبيق.');
+      setActionError(result.error ?? MCP_CONNECTED_APPS_COPY.disconnectFailed);
       return;
     }
 
@@ -80,29 +111,35 @@ export function McpConnectedAppsView() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2.5" aria-busy="true" aria-label="جاري التَّحميل...">
+      <div
+        className="space-y-2.5"
+        aria-busy="true"
+        aria-label={MCP_CONNECTED_APPS_COPY.loadingLabel}
+      >
         <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
         <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
       </div>
     );
   }
 
-  if (!user) return <SignInCta href="/auth/login?redirect=/account/connected-apps" />;
+  if (!user)
+    return (
+      <SignInCta href="/auth/login?redirect=/account/connected-apps">
+        {MCP_CONNECTED_APPS_COPY.signIn}
+      </SignInCta>
+    );
 
   if (loadFailed) {
     if (loadOffline) {
       return (
-        <NeedsConnection
-          message="تعذّر تحميل التَّطبيقات المتَّصلة: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
-          onRetry={() => void load()}
-        />
+        <NeedsConnection message={MCP_CONNECTED_APPS_COPY.offline} onRetry={() => void load()} />
       );
     }
 
     return (
       <div className="space-y-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
         <p className="text-sm font-bold text-destructive sm:text-base">
-          تعذّر تحميل التَّطبيقات المتَّصلة.
+          {MCP_CONNECTED_APPS_COPY.failed}
         </p>
         <button
           type="button"
@@ -110,7 +147,7 @@ export function McpConnectedAppsView() {
           className="mx-auto inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <RefreshCw aria-hidden="true" className="h-4 w-4" />
-          <span>إعادة المحاولة</span>
+          <span>{MCP_CONNECTED_APPS_COPY.retry}</span>
         </button>
       </div>
     );
@@ -118,7 +155,11 @@ export function McpConnectedAppsView() {
 
   if (connectedApps === null) {
     return (
-      <div className="space-y-2.5" aria-busy="true" aria-label="جاري التَّحميل...">
+      <div
+        className="space-y-2.5"
+        aria-busy="true"
+        aria-label={MCP_CONNECTED_APPS_COPY.loadingLabel}
+      >
         <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
         <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
       </div>
@@ -150,17 +191,22 @@ export function McpConnectedAppsView() {
                   <Plug aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
                   <div className="min-w-0 space-y-1">
                     <p className="truncate text-sm font-bold text-foreground sm:text-base">
-                      {connectedApp.clientName ?? 'تطبيق MCP'}
+                      {connectedAppName(connectedApp)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       <span>
-                        آخر استخدام:{' '}
+                        {MCP_CONNECTED_APPS_COPY.lastUsed}{' '}
                         {connectedApp.lastUsedAt
-                          ? calculateTimeAgo(connectedApp.lastUsedAt)
-                          : 'لم يُستخدم بعد'}
+                          ? timeAgoLabel(connectedApp.lastUsedAt)
+                          : MCP_CONNECTED_APPS_COPY.neverUsed}
                       </span>
                       <span aria-hidden="true"> · </span>
-                      <span>متَّصل منذ {formatHijriDate(connectedApp.connectedAt)}</span>
+                      <span>
+                        {MCP_CONNECTED_APPS_COPY.connectedSince.replace(
+                          '{date}',
+                          formatHijriDate(connectedApp.connectedAt)
+                        )}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -168,11 +214,14 @@ export function McpConnectedAppsView() {
                 <button
                   type="button"
                   onClick={() => setTarget(connectedApp)}
-                  aria-label={`فصل ${connectedApp.clientName ?? 'تطبيق MCP'}`}
+                  aria-label={MCP_CONNECTED_APPS_COPY.disconnectAria.replace(
+                    '{name}',
+                    connectedAppName(connectedApp)
+                  )}
                   className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 sm:text-sm"
                 >
                   <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
-                  <span>فصل</span>
+                  <span>{MCP_CONNECTED_APPS_COPY.disconnect}</span>
                 </button>
               </li>
             ))}
@@ -184,7 +233,7 @@ export function McpConnectedAppsView() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
           >
             <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
-            <span>فصل كل التَّطبيقات</span>
+            <span>{MCP_CONNECTED_APPS_COPY.disconnectAll}</span>
           </button>
         </>
       ) : (
@@ -194,10 +243,10 @@ export function McpConnectedAppsView() {
           </div>
           <div className="space-y-1">
             <p className="text-base font-bold text-foreground sm:text-lg">
-              لا توجد تطبيقات متَّصلة
+              {MCP_CONNECTED_APPS_COPY.emptyTitle}
             </p>
             <p className="text-xs text-muted-foreground sm:text-sm">
-              اربط وكيل برمجة — Claude Code أو OpenCode أو Codex — لتصل أدواته إلى بياناتك.
+              {MCP_CONNECTED_APPS_COPY.emptyBody}
             </p>
           </div>
         </div>
@@ -208,21 +257,30 @@ export function McpConnectedAppsView() {
         className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-sm font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <Plus aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-        <span>ربط تطبيق جديد</span>
+        <span>{MCP_CONNECTED_APPS_COPY.connectNew}</span>
       </Link>
 
       <ConfirmDialog
         open={target !== null}
-        title={target === 'all' ? 'فصل كل التَّطبيقات' : 'فصل التَّطبيق'}
+        title={
+          target === 'all'
+            ? MCP_CONNECTED_APPS_COPY.confirmDisconnectAllTitle
+            : MCP_CONNECTED_APPS_COPY.confirmDisconnectTitle
+        }
         message={
           target === 'all'
-            ? 'هل تريد فصل جميع التَّطبيقات المتَّصلة؟ ستحتاج إلى إعادة ربط أيِّ تطبيق تريد استخدامه من جديد، وبقاؤك مسجَّلًا في الموقع لن يتأثَّر.'
-            : `هل تريد فصل «${
-                target?.clientName ?? 'تطبيق MCP'
-              }»؟ لن يستطيع الوصول إلى بياناتك بعد الآن، وبقاؤك مسجَّلًا في الموقع لن يتأثَّر.`
+            ? MCP_CONNECTED_APPS_COPY.confirmDisconnectAllMessage
+            : MCP_CONNECTED_APPS_COPY.confirmDisconnectMessage.replace(
+                '{name}',
+                target ? connectedAppName(target) : MCP_CONNECTED_APPS_COPY.appName
+              )
         }
-        confirmLabel={target === 'all' ? 'فصل الكل' : 'فصل'}
-        cancelLabel="إلغاء"
+        confirmLabel={
+          target === 'all'
+            ? MCP_CONNECTED_APPS_COPY.confirmDisconnectAll
+            : MCP_CONNECTED_APPS_COPY.confirmDisconnect
+        }
+        cancelLabel={MCP_CONNECTED_APPS_COPY.cancel}
         onConfirm={() => void confirmDisconnect()}
         onCancel={() => {
           if (!isDisconnecting) setTarget(null);

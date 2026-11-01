@@ -1,0 +1,47 @@
+{
+  "surface": "account-server",
+  "component": "account-connected-apps",
+  "web": {
+    "file": "frontend/ui/account/mcp-connected-apps-copy.ts",
+    "export": "MCP_CONNECTED_APPS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsCopy.kt",
+    "object": "ConnectedAppsCopy"
+  },
+  "notes": {
+    "source": "The connected-apps card's words, in both clients (#657). The site's view (`frontend/ui/account/mcp-connected-apps-view.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "placeholders": "`{name}` is the client's own name, or the generic `appName` when the server sent none; `{date}` is a Hijri day; `{count}` is the number a relative time is made of. Each client substitutes it itself, so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "loadingLabel": "جاري التَّحميل...",
+    "signIn": "تسجيل الدُّخول",
+    "failed": "تعذّر تحميل التَّطبيقات المتَّصلة.",
+    "offline": "تعذّر تحميل التَّطبيقات المتَّصلة: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة.",
+    "retry": "إعادة المحاولة",
+    "appName": "تطبيق MCP",
+    "lastUsed": "آخر استخدام:",
+    "neverUsed": "لم يُستخدم بعد",
+    "connectedSince": "متَّصل منذ {date}",
+    "disconnect": "فصل",
+    "disconnectAria": "فصل {name}",
+    "disconnectAll": "فصل كل التَّطبيقات",
+    "emptyTitle": "لا توجد تطبيقات متَّصلة",
+    "emptyBody": "اربط وكيل برمجة — Claude Code أو OpenCode أو Codex — لتصل أدواته إلى بياناتك.",
+    "connectNew": "ربط تطبيق جديد",
+    "confirmDisconnectTitle": "فصل التَّطبيق",
+    "confirmDisconnectAllTitle": "فصل كل التَّطبيقات",
+    "confirmDisconnectMessage": "هل تريد فصل «{name}»؟ لن يستطيع الوصول إلى بياناتك بعد الآن، وبقاؤك مسجَّلًا في الموقع لن يتأثَّر.",
+    "confirmDisconnectAllMessage": "هل تريد فصل جميع التَّطبيقات المتَّصلة؟ ستحتاج إلى إعادة ربط أيِّ تطبيق تريد استخدامه من جديد، وبقاؤك مسجَّلًا في الموقع لن يتأثَّر.",
+    "confirmDisconnect": "فصل",
+    "confirmDisconnectAll": "فصل الكل",
+    "cancel": "إلغاء",
+    "disconnectFailed": "تعذّر فصل التَّطبيق.",
+    "agoNow": "منذ لحظات",
+    "agoMinutes": "منذ {count} دقيقة",
+    "agoHours": "منذ {count} ساعة",
+    "agoDays": "منذ {count} يوم",
+    "agoWeeks": "منذ {count} أسبوع"
+  }
+}
