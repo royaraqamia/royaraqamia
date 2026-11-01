@@ -50,88 +50,6 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
--- Row-visibility helpers
--- ------------------------------------------------------------
-
--- Anything the caller must still see in the list: a pending request they have
--- to answer, a thread they are in, and a refused direct request (so the sender
--- reads «رُفض» instead of the thread silently vanishing).
-create or replace function private.chat_has_conversation_access(
-  p_conversation_id uuid,
-  p_user_id uuid
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = 'public'
-as $$
-  select exists (
-    select 1
-      from public.chat_participants p
-     where p.conversation_id = p_conversation_id
-       and p.user_id = p_user_id
-       and p.status in ('requested', 'invited', 'active', 'declined')
-  );
-$$;
-
--- A member who is in the thread: accepted the invite, still active. Message
--- and attachment reads use this, so a pending request reads no messages.
-create or replace function private.chat_is_participant(
-  p_conversation_id uuid,
-  p_user_id uuid
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = 'public'
-as $$
-  select exists (
-    select 1
-      from public.chat_participants p
-      join public.chat_conversations c on c.id = p.conversation_id
-     where p.conversation_id = p_conversation_id
-       and p.user_id = p_user_id
-       and p.status = 'active'
-       and c.status = 'active'
-  );
-$$;
-
-revoke all on function private.chat_has_conversation_access(uuid, uuid)
-  from public, anon, authenticated;
-revoke all on function private.chat_is_participant(uuid, uuid)
-  from public, anon, authenticated;
-
--- Posting needs the membership test *and* no block on either side. The block
--- half has to run here: a policy evaluates `chat_blocks` with the caller's own
--- RLS, so the caller can never see the row in which they are the blocked one,
--- and the check would silently do nothing.
-create or replace function private.chat_can_write(
-  p_conversation_id uuid,
-  p_user_id uuid
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = 'public'
-as $$
-  select private.chat_is_participant(p_conversation_id, p_user_id)
-     and not exists (
-       select 1
-         from public.chat_participants peer
-         join public.chat_blocks b
-           on b.blocker_id = peer.user_id
-          and b.blocked_id = p_user_id
-        where peer.conversation_id = p_conversation_id
-          and peer.user_id <> p_user_id
-     );
-$$;
-
-revoke all on function private.chat_can_write(uuid, uuid) from public, anon, authenticated;
-
--- ------------------------------------------------------------
 -- Conversations
 -- ------------------------------------------------------------
 
@@ -448,6 +366,92 @@ create table if not exists public.chat_reports (
 create index if not exists idx_chat_reports_open
   on public.chat_reports (created_at desc)
   where status = 'open';
+
+-- ------------------------------------------------------------
+-- Row-visibility helpers
+-- ------------------------------------------------------------
+
+-- These read the tables above, so they come after them: a `language sql` body is
+-- checked when the function is created, and a migration has to replay on an
+-- empty database (a preview branch does exactly that).
+
+-- Anything the caller must still see in the list: a pending request they have
+-- to answer, a thread they are in, and a refused direct request (so the sender
+-- reads «رُفض» instead of the thread silently vanishing).
+create or replace function private.chat_has_conversation_access(
+  p_conversation_id uuid,
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = 'public'
+as $$
+  select exists (
+    select 1
+      from public.chat_participants p
+     where p.conversation_id = p_conversation_id
+       and p.user_id = p_user_id
+       and p.status in ('requested', 'invited', 'active', 'declined')
+  );
+$$;
+
+-- A member who is in the thread: accepted the invite, still active. Message
+-- and attachment reads use this, so a pending request reads no messages.
+create or replace function private.chat_is_participant(
+  p_conversation_id uuid,
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = 'public'
+as $$
+  select exists (
+    select 1
+      from public.chat_participants p
+      join public.chat_conversations c on c.id = p.conversation_id
+     where p.conversation_id = p_conversation_id
+       and p.user_id = p_user_id
+       and p.status = 'active'
+       and c.status = 'active'
+  );
+$$;
+
+revoke all on function private.chat_has_conversation_access(uuid, uuid)
+  from public, anon, authenticated;
+revoke all on function private.chat_is_participant(uuid, uuid)
+  from public, anon, authenticated;
+
+-- Posting needs the membership test *and* no block on either side. The block
+-- half has to run here: a policy evaluates `chat_blocks` with the caller's own
+-- RLS, so the caller can never see the row in which they are the blocked one,
+-- and the check would silently do nothing.
+create or replace function private.chat_can_write(
+  p_conversation_id uuid,
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = 'public'
+as $$
+  select private.chat_is_participant(p_conversation_id, p_user_id)
+     and not exists (
+       select 1
+         from public.chat_participants peer
+         join public.chat_blocks b
+           on b.blocker_id = peer.user_id
+          and b.blocked_id = p_user_id
+        where peer.conversation_id = p_conversation_id
+          and peer.user_id <> p_user_id
+     );
+$$;
+
+revoke all on function private.chat_can_write(uuid, uuid) from public, anon, authenticated;
 
 -- ------------------------------------------------------------
 -- Row level security
