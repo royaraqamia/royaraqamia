@@ -29,6 +29,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
 | `account-faq` | `/account/faq` | _web only_ | The FAQ's content is shared by both clients first; the screen lands in #799. |
 | `account-news` | `/account/news` | _web only_ | The news preferences read and write the news contract; the screens land in #799. |
+| `account-services` | `/account/services` | _web only_ | The switches are a server preference read on the client; the screen lands with the rest of the account area (#799). |
 | `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

@@ -17,6 +17,7 @@ import {
   Lock,
   Sparkles,
   Newspaper,
+  EyeOff,
 } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -134,6 +135,13 @@ export function AccountView() {
           href="/account/connected-apps"
           icon={Plug}
           label="التَّطبيقات المتَّصلة بالـ MCP"
+          onRequireAuth={setPromptHref}
+        />
+
+        <AccountRow
+          href="/account/services"
+          icon={EyeOff}
+          label="الخدمات الظَّاهرة"
           onRequireAuth={setPromptHref}
         />
 

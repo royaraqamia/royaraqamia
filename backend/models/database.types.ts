@@ -773,6 +773,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      hidden_services: {
+        Row: {
+          hidden_at: string;
+          service_key: string;
+          user_id: string;
+        };
+        Insert: {
+          hidden_at?: string;
+          service_key: string;
+          user_id: string;
+        };
+        Update: {
+          hidden_at?: string;
+          service_key?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       mcp_oauth_auth_codes: {
         Row: {
           challenge_method: string;

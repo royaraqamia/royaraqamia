@@ -76,6 +76,15 @@ export const CONTRACTS = [
       'HabitLogWriteSchema',
     ],
   },
+  // The shell filters its `خدماتنا` sheet by what the member hid (#796, ADR-0112).
+  // Only the read crosses to Kotlin: the write belongs to the settings page,
+  // which the app opens as the document, so an unused write type would be a
+  // surface the app never speaks.
+  {
+    module: 'shared/contracts/hidden-services',
+    file: 'HiddenServicesContracts.kt',
+    schemas: ['HiddenServicesResultSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

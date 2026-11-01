@@ -116,6 +116,15 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the feed is a per-identity client read, so there is nothing to serve offline; the slot belongs to `/verify`',
   },
+  // The hidden-services page is the same shape one step smaller: its document is
+  // a title and sixteen empty switches until the account's set arrives, so a
+  // precached copy buys an offline visitor nothing the ancestor shell does not
+  // already give them, and it costs `/verify` its slot. Cached at runtime instead.
+  {
+    route: '/account/services',
+    reason:
+      'the switches and the set are a client read, so a precached shell would paint sixteen unknown switches; the slot belongs to `/verify`',
+  },
 ];
 
 /**

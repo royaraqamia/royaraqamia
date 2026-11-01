@@ -219,6 +219,17 @@
       "issue": "#493"
     },
     {
+      "id": "account-services",
+      "routes": ["/account/services"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "bundled",
+      "specs": [],
+      "ungated": "A data-free shell: the switches and the set come from a client read of `/api/me/hidden-services`, so with the radio off the page reports the missing connection. It is not in the precache list — the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document at runtime after the first visit."
+    },
+    {
       "id": "account-news",
       "routes": ["/account/news"],
       "owner": "server",

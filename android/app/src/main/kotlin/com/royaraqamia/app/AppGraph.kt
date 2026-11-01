@@ -5,6 +5,7 @@ import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.UsageRepository
+import com.royaraqamia.app.preferences.HiddenServicesRepository
 import com.royaraqamia.app.session.EncryptedTokenStore
 import com.royaraqamia.app.session.KeystoreTokenCipher
 import com.royaraqamia.app.session.Session
@@ -38,6 +39,7 @@ class AppGraph private constructor(
     val session: Session,
     val usage: UsageRepository,
     val connectedApps: ConnectedAppsRepository,
+    val hiddenServices: HiddenServicesRepository,
     val habitflow: HabitflowRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val grant: SupabasePasswordGrant,
@@ -105,6 +107,7 @@ class AppGraph private constructor(
                 session = session,
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
+                hiddenServices = HiddenServicesRepository(client),
                 habitflow =
                     HabitflowRepository(
                         databases = databases,

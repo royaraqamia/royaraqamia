@@ -578,6 +578,14 @@ not the bell's panel ([ADR-0097](adr/0097-notifications-are-a-page-with-two-tabs
 _Sold as_: الإشعارات
 _Avoid_: Notification panel, notification drawer, bell menu, inbox
 
+**Hidden service**:
+A `خدماتنا` row a member turned off on `/account/services`, so the navbar menu, the hero's
+sheet and the home row stop advertising it. Presentation only: the route still answers, and no
+row's data is deleted or excluded from a count
+([ADR-0112](adr/0112-a-hidden-service-is-an-account-preference.md)).
+_Sold as_: الخدمات الظاهرة
+_Avoid_: Disabled service, removed service, favourite services, pinned services
+
 **Bundled surface**:
 A product surface whose document ships inside the Android APK and is served by the shell from
 `https://localhost/`. Its staleness is the APK's `versionCode`, never a cache header. The surfaces

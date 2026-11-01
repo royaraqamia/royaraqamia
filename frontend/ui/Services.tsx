@@ -10,6 +10,7 @@ import { ServiceCard, type ServiceCardModel } from './services/ServiceCard';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import type { NavLink } from './navbar/NavDropdown';
 import { SERVICES_LINK } from './navbar/services-link';
+import { useHiddenServices } from '@/frontend/state/hidden-services-provider';
 
 /**
  * Presentation-only copy for each entry of the `خدماتنا` menu. Titles, icons and
@@ -96,10 +97,19 @@ function toServiceCard(item: NavLink): ServiceCardModel {
   };
 }
 
+/**
+ * The home row of `خدماتنا`: the same rows as the menu, minus the ones this
+ * member hid (ADR-0112). Hiding every row takes the section — heading, pattern
+ * and anchors included — rather than leaving a heading over an empty track.
+ */
 const services = (SERVICES_LINK.subItems ?? []).map(toServiceCard);
 
 export function Services() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(360);
+  const { hidden } = useHiddenServices();
+  const visible = services.filter((service) => !hidden.has(service.href));
+
+  if (visible.length === 0) return null;
 
   return (
     <section
@@ -135,7 +145,7 @@ export function Services() {
           className="horizontal-scroll services-scroll-track scrollbar-none pt-4 pb-6"
         >
           <ul role="list" className="flex gap-6 sm:gap-8 w-max">
-            {services.map((service) => (
+            {visible.map((service) => (
               <li key={service.href} className="w-[18rem] sm:w-[20rem] shrink-0 snap-start flex">
                 <ServiceCard service={service} />
               </li>

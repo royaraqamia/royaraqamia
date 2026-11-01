@@ -19,6 +19,7 @@ import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
@@ -58,6 +59,13 @@ class ShellActivity : ComponentActivity() {
     /** Whether the restored session answered, which decides what the frame holds. */
     private var signedIn by mutableStateOf(false)
 
+    /**
+     * The services this member hid from `خدماتنا`, read once the session answers
+     * (ADR-0112). Empty is the whole menu, which is also what a failed read
+     * answers: a network blip must not make the app look like it lost its rows.
+     */
+    private var hiddenRoutes by mutableStateOf<Set<String>>(emptySet())
+
     private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
 
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
@@ -91,6 +99,7 @@ class ShellActivity : ComponentActivity() {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ShellFrame(
                         currentRoute = current,
+                        hiddenRoutes = hiddenRoutes,
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {
@@ -133,7 +142,16 @@ class ShellActivity : ComponentActivity() {
                     // (#650): the queue is on disk, so a process that was killed
                     // with writes pending drains as soon as the session answers.
                     // After `handOver`, so a long queue cannot delay the frame.
-                    if (signedIn) graph.drainOutbox()
+                    if (signedIn) {
+                        // The menu is drawn before the queue drains, so it is
+                        // right on the first open rather than after a sync.
+                        hiddenRoutes =
+                            when (val hidden = graph.hiddenServices.list()) {
+                                is ApiResult.Success -> hidden.value
+                                is ApiResult.Failure -> emptySet()
+                            }
+                        graph.drainOutbox()
+                    }
                 }
             }
         }

@@ -135,6 +135,20 @@ export function avatarUploadRateLimitPolicy(userId: string): RateLimitPolicy {
   };
 }
 
+/**
+ * The hidden-services page saves the whole set on every toggle, so a member who
+ * flips sixteen switches spends sixteen writes — bounded per account, generously
+ * enough for that page and not for a loop that calls it instead.
+ */
+export function hiddenServicesRateLimitPolicy(userId: string): RateLimitPolicy {
+  return {
+    key: `hidden-services:${userId}`,
+    limit: 30,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تعديل الخدمات الظَّاهرة محدود بـ 30 مرّة في الدقيقة.',
+  };
+}
+
 export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `link-unlock:${ip}`,

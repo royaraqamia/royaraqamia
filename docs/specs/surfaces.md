@@ -28,6 +28,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-plan` | `/account/plan` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-connected-apps` | `/account/connected-apps` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-faq` | `/account/faq` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account-services` | `/account/services` | server | needs-connection | none | swr | bundled | _ungated_ |  |  |
 | `account-news` | `/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-changelog` | `/account/changelog` | static | swr | none | swr | remote | _ungated_ |  | #663 |
 | `notifications` | `/notifications` | server | needs-connection | none | swr | remote | _ungated_ |  |  |

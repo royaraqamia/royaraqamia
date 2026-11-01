@@ -100,6 +100,11 @@
       "reason": "The news preferences read and write the news contract; the screens land in #799."
     },
     {
+      "surface": "account-services",
+      "native": null,
+      "reason": "The switches are a server preference read on the client; the screen lands with the rest of the account area (#799)."
+    },
+    {
       "surface": "account-changelog",
       "native": null,
       "reason": "The app's release notes as a screen, from the weekly train's own list, land in #799."

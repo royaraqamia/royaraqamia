@@ -37,18 +37,24 @@ fun ShellFrame(
     onSelect: (ShellTab) -> Unit,
     onOpenRoute: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** The routes this member hid; the sheet draws the rest (ADR-0112). */
+    hiddenRoutes: Set<String> = emptySet(),
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     var servicesOpen by remember { mutableStateOf(false) }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar(onOpenServices = { servicesOpen = true })
+            ShellTopBar(
+                onOpenServices = { servicesOpen = true },
+                showServices = ServicesEntry.visibleRows(hiddenRoutes).isNotEmpty(),
+            )
             Box(Modifier.weight(1f).fillMaxWidth(), content = content)
             ShellTabBar(currentRoute = currentRoute, onSelect = onSelect)
         }
         ServicesSheet(
             open = servicesOpen,
+            hiddenRoutes = hiddenRoutes,
             onDismiss = { servicesOpen = false },
             onSelect = { route ->
                 servicesOpen = false
