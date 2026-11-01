@@ -16,11 +16,22 @@ test('a guest writes, searches, reloads and undoes a note', async ({ page }) => 
   // sits in the same corner and intercepts the pointer.
   await page.locator('#btn-new-note').dispatchEvent('click');
   await expect(page.locator('#composer-note-body')).toBeVisible();
+
+  // The empty surface says what it is for. Tiptap only decorates the block with
+  // `data-placeholder` and leaves the words to the stylesheet, so the assertion
+  // is the painted `::before` — the attribute alone renders nothing.
+  const hint = await page.evaluate(() => {
+    const block = document.querySelector('#composer-note-body [data-placeholder]');
+    return block ? getComputedStyle(block, '::before').content : null;
+  });
+  expect(hint).toContain('اكتب ملاحظتك هنا…');
+
   await page.locator('#composer-note-body').click();
 
   // A note is its body (ADR-0110): the first line is the name the list shows,
   // so it is the line this test searches and deletes by.
   await page.keyboard.type('ملاحظة اختبار');
+  await expect(page.locator('#composer-note-body [data-placeholder]')).toHaveCount(0);
   await page.keyboard.press('Enter');
   await page.keyboard.type('محتوى يُحفظ تلقائيًّا.');
   await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
