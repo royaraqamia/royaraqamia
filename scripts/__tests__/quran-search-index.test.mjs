@@ -4,17 +4,11 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-import {
-  BUDGET_GZIP_BYTES,
-  BUDGET_RAW_BYTES,
-  build,
-  readCorpus,
-} from '../build-quran-search-index.mjs';
+import { BUDGET_GZIP_BYTES, BUDGET_RAW_BYTES, build } from '../build-quran-search-index.mjs';
 import {
   QURAN_SEARCH_MIN_QUERY,
   findAyahs,
   markQuranMatch,
-  normalizeArabic,
   normalizeLoose,
   surahAyahOf,
 } from '@/shared/contracts/quran-search';
@@ -44,12 +38,6 @@ const index = readJson('meta/index.json');
 const corpus = index.surahs.flatMap(
   (surah) => readJson(`surah/${String(surah.n).padStart(3, '0')}.json`).ayahs
 );
-
-/** The real asset, folded once, the way the browser folds it. */
-const folded = {
-  exact: asset.ayahs.map((ayah) => normalizeArabic(ayah)),
-  loose: asset.ayahs.map((ayah) => normalizeLoose(ayah)),
-};
 
 /** The (surah, ayah) a hit lands on, as the reader will see it. */
 function places(query, limit = 50) {
