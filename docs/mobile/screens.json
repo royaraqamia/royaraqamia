@@ -3,6 +3,11 @@
   "notes": "One row per surface in perf/surfaces.json: either the Kotlin screen that draws it, or the reason the app does not have one. docs/mobile/screens.md is generated from this file by npm run check:screens, which fails on a surface with no row and on a *Screen.kt with no row. The rules: docs/mobile/two-clients.md (#665).",
   "screens": [
     {
+      "surface": "chats",
+      "native": null,
+      "reason": "The app opens the web thread in the shell for now; the native port is the change ADR-0113 names as its last stage, and it lands with a parity.json row."
+    },
+    {
       "surface": "home",
       "native": null,
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
