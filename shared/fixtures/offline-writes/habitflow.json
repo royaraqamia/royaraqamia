@@ -1,0 +1,320 @@
+{
+  "$comment": "HabitFlow's Outbox, written once and run by both clients: the web's `frontend/shared/local-store/sync-engine.ts` and the app's `com.royaraqamia.app.store.habitflow.OutboxDrainer`. Every rule the two engines could silently disagree about is a case here — replay order, backoff, what a permanent failure does, what an accepted write does, which write a replay becomes, and who wins a conflict. Spec: docs/specs/offline-first.md (#architecture, #data-contract). Gates: the Vitest suite and the app's JVM suite; a semantic change here fails both (#650).",
+  "product": "habitflow",
+  "rules": {
+    "order": "seq ascending. A pending intent that is not due stops the run, so a later write can never overtake an earlier one.",
+    "backoff": "after n attempts: ceiling = min(300000, 2000 * 2^(n-1)); nextAttemptAt = now + floor(random * ceiling). Full jitter, no floor.",
+    "transient": "unreachable, offline, 401, 408, 409, 425, 429 and 5xx: attempts+1, backed off, the run stops.",
+    "permanent": "any other 4xx: the intent is kept as `failed`, the run continues with the next one. Never dropped, never retried on its own.",
+    "drained": "an intent is removed only after the server accepted it. Nothing else removes one.",
+    "idempotency": "a create carries the local row's own id as `clientId`, and the server upserts on (user_id, client_id); a log is keyed on (habitId, date). A replay therefore lands on the row it already made.",
+    "conflict": "last write wins on updatedAt and the server must be strictly newer to replace the local copy; a row with a queued intent is left alone by a pull.",
+    "identity": "the queue is rows in the identity's own database, so an intent is drained by the identity that queued it and by no other. A sign-out closes the store and keeps the rows."
+  },
+  "cases": {
+    "backoff": [
+      { "attempts": 0, "random": 0.5, "delayMs": 1000 },
+      { "attempts": 1, "random": 0, "delayMs": 0 },
+      { "attempts": 1, "random": 0.5, "delayMs": 1000 },
+      { "attempts": 2, "random": 0.25, "delayMs": 1000 },
+      { "attempts": 3, "random": 0.125, "delayMs": 1000 },
+      { "attempts": 10, "random": 0.5, "delayMs": 150000 },
+      { "attempts": 20, "random": 0.75, "delayMs": 225000 }
+    ],
+    "due": [
+      {
+        "name": "a due intent",
+        "entry": { "status": "pending", "nextAttemptAt": 0 },
+        "now": 0,
+        "due": true
+      },
+      {
+        "name": "a backed-off intent before its time",
+        "entry": { "status": "pending", "nextAttemptAt": 1000 },
+        "now": 999,
+        "due": false
+      },
+      {
+        "name": "a backed-off intent exactly at its time",
+        "entry": { "status": "pending", "nextAttemptAt": 1000 },
+        "now": 1000,
+        "due": true
+      },
+      {
+        "name": "a failed intent is never due on its own",
+        "entry": { "status": "failed", "nextAttemptAt": 0 },
+        "now": 1000,
+        "due": false
+      }
+    ],
+    "drain": [
+      {
+        "name": "everything the server accepts is removed, in order",
+        "online": true,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          },
+          {
+            "seq": 2,
+            "type": "log.toggle",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          },
+          {
+            "seq": 3,
+            "type": "habit.delete",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          }
+        ],
+        "outcomes": { "1": "accepted", "2": "accepted", "3": "accepted" },
+        "expect": {
+          "sent": [1, 2, 3],
+          "removed": [1, 2, 3],
+          "kept": []
+        }
+      },
+      {
+        "name": "a transient failure backs off and stops the run",
+        "online": true,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          },
+          {
+            "seq": 2,
+            "type": "log.toggle",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          },
+          {
+            "seq": 3,
+            "type": "habit.delete",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          }
+        ],
+        "outcomes": { "1": "accepted", "2": "transient", "3": "accepted" },
+        "expect": {
+          "sent": [1, 2],
+          "removed": [1],
+          "kept": [
+            { "seq": 2, "status": "pending", "attempts": 1, "nextAttemptAt": 2000 },
+            { "seq": 3, "status": "pending", "attempts": 0, "nextAttemptAt": 0 }
+          ]
+        }
+      },
+      {
+        "name": "a permanent failure is kept as failed and the run continues",
+        "online": true,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          },
+          { "seq": 2, "type": "log.toggle", "status": "pending", "attempts": 0, "nextAttemptAt": 0 }
+        ],
+        "outcomes": { "1": "permanent", "2": "accepted" },
+        "expect": {
+          "sent": [1, 2],
+          "removed": [2],
+          "kept": [{ "seq": 1, "status": "failed", "attempts": 0, "nextAttemptAt": 0 }]
+        }
+      },
+      {
+        "name": "a backed-off intent is a barrier no later write overtakes",
+        "online": true,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "pending",
+            "attempts": 1,
+            "nextAttemptAt": 2000
+          },
+          { "seq": 2, "type": "log.toggle", "status": "pending", "attempts": 0, "nextAttemptAt": 0 }
+        ],
+        "outcomes": { "1": "accepted", "2": "accepted" },
+        "expect": {
+          "sent": [],
+          "removed": [],
+          "kept": [
+            { "seq": 1, "status": "pending", "attempts": 1, "nextAttemptAt": 2000 },
+            { "seq": 2, "status": "pending", "attempts": 0, "nextAttemptAt": 0 }
+          ]
+        }
+      },
+      {
+        "name": "a failed intent is skipped, not a barrier",
+        "online": true,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "failed",
+            "attempts": 1,
+            "nextAttemptAt": 0
+          },
+          { "seq": 2, "type": "log.toggle", "status": "pending", "attempts": 0, "nextAttemptAt": 0 }
+        ],
+        "outcomes": { "1": "accepted", "2": "accepted" },
+        "expect": {
+          "sent": [2],
+          "removed": [2],
+          "kept": [{ "seq": 1, "status": "failed", "attempts": 1, "nextAttemptAt": 0 }]
+        }
+      },
+      {
+        "name": "with the radio off nothing is sent and nothing changes",
+        "online": false,
+        "now": 1000,
+        "random": 0.5,
+        "entries": [
+          {
+            "seq": 1,
+            "type": "habit.create",
+            "status": "pending",
+            "attempts": 0,
+            "nextAttemptAt": 0
+          }
+        ],
+        "outcomes": { "1": "accepted" },
+        "expect": {
+          "sent": [],
+          "removed": [],
+          "kept": [{ "seq": 1, "status": "pending", "attempts": 0, "nextAttemptAt": 0 }]
+        }
+      }
+    ],
+    "conflict": [
+      {
+        "name": "a server row newer than the local one wins",
+        "local": { "updatedAt": "2026-01-01T00:00:00.000Z" },
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": false,
+        "keep": "server"
+      },
+      {
+        "name": "a local row newer than the server's stays",
+        "local": { "updatedAt": "2026-01-03T00:00:00.000Z" },
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": false,
+        "keep": "local"
+      },
+      {
+        "name": "an equal timestamp keeps the local copy: the server must be strictly newer",
+        "local": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": false,
+        "keep": "local"
+      },
+      {
+        "name": "a row the device has never seen is the server's",
+        "local": null,
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": false,
+        "keep": "server"
+      },
+      {
+        "name": "a row with a queued intent is never overwritten by a pull",
+        "local": { "updatedAt": "2026-01-01T00:00:00.000Z" },
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": true,
+        "keep": "local"
+      },
+      {
+        "name": "a local row with no timestamp loses to the server's",
+        "local": { "updatedAt": null },
+        "server": { "updatedAt": "2026-01-02T00:00:00.000Z" },
+        "pending": false,
+        "keep": "server"
+      }
+    ],
+    "requests": [
+      {
+        "name": "a habit create is a POST keyed on the local id",
+        "type": "habit.create",
+        "payload": {
+          "clientId": "018f5c8e-7a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "name": "Read Quran",
+          "frequency": "daily",
+          "target": null,
+          "targetPeriod": null,
+          "reminderTime": "07:30",
+          "updatedAt": "2026-01-01T06:00:00.000Z"
+        },
+        "request": {
+          "method": "POST",
+          "path": "/habitflow/api/habits"
+        }
+      },
+      {
+        "name": "a habit edit is a PUT of the same shape",
+        "type": "habit.update",
+        "payload": {
+          "id": "018f5c8e-7a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "name": "Read Quran daily",
+          "updatedAt": "2026-01-01T07:00:00.000Z"
+        },
+        "request": {
+          "method": "PUT",
+          "path": "/habitflow/api/habits"
+        }
+      },
+      {
+        "name": "a habit delete is a DELETE carrying the write time",
+        "type": "habit.delete",
+        "payload": {
+          "id": "018f5c8e-7a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "updatedAt": "2026-01-01T08:00:00.000Z"
+        },
+        "request": {
+          "method": "DELETE",
+          "path": "/habitflow/api/habits?id=018f5c8e-7a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "body": { "updatedAt": "2026-01-01T08:00:00.000Z" }
+        }
+      },
+      {
+        "name": "a log toggle is a POST keyed on the habit and the day",
+        "type": "log.toggle",
+        "payload": {
+          "clientId": "018f5c8e-8b3c-4d4e-af50-6b7c8d9e0f11",
+          "habitId": "018f5c8e-7a2b-4c3d-9e4f-5a6b7c8d9e0f",
+          "date": "2026-01-01",
+          "completed": true,
+          "updatedAt": "2026-01-01T09:00:00.000Z"
+        },
+        "request": {
+          "method": "POST",
+          "path": "/habitflow/api/logs"
+        }
+      }
+    ]
+  }
+}
