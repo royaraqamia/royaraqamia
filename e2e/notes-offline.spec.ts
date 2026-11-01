@@ -19,7 +19,7 @@ test.skip(!ENABLED, 'requires NOTES_OFFLINE_E2E=1 (live Supabase + auth)');
 
 interface SyncedNote {
   id: string;
-  title: string;
+  body: string;
 }
 
 test('an offline note reaches the server after reconnect', async ({ browser, baseURL }) => {
@@ -31,7 +31,9 @@ test('an offline note reaches the server after reconnect', async ({ browser, bas
   });
   await signIn(context, baseURL!);
 
-  const title = `E2E-${Date.now()}`;
+  // A note is its body (ADR-0110): the name the list shows is its first line,
+  // so the marker the sync is polled for is written as that line.
+  const marker = `E2E-${Date.now()}`;
   const page = await context.newPage();
   await gotoUnderWorkerControl(page, `${baseURL}/notes`);
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
@@ -39,35 +41,36 @@ test('an offline note reaches the server after reconnect', async ({ browser, bas
   // Warm the editor chunk while still online: the FAB's composer creates the
   // note, and the note it creates opens in the editor.
   await page.locator('#btn-new-note').dispatchEvent('click');
-  await page.locator('#composer-note-title').fill(title);
+  await page.locator('#composer-note-body').click();
+  await page.keyboard.type(marker);
   await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
-  await expect(page.locator('#note-title')).toHaveValue(title);
+  await expect(page.locator('#note-body')).toContainText(marker);
 
   // Radio off: the write must land in the Local Store and render from there.
   await context.setOffline(true);
-  await page.locator('.ProseMirror').click();
+  await page.locator('#note-body').click();
   await page.keyboard.type('سطر كُتب بلا اتِّصال.');
   await expect(page.locator('#note-body')).toBeVisible();
 
   // Radio back on: the `online` trigger flushes the Outbox.
   await context.setOffline(false);
 
-  await expect
-    .poll(
-      async () => {
-        const res = await context.request.fetch(`${baseURL}/notes/api/sync`);
-        if (!res.ok()) return [];
-        const body = (await res.json()) as { notes?: SyncedNote[] };
-        return (body.notes ?? []).map((note) => note.title);
-      },
-      { timeout: 30_000 }
-    )
-    .toContain(title);
+  const syncedBodies = async (): Promise<string> => {
+    const response = await context.request.fetch(`${baseURL}/notes/api/sync`);
+    if (!response.ok()) return '';
+    const payload = (await response.json()) as { notes?: SyncedNote[] };
+    return (payload.notes ?? []).map((note) => note.body).join('\n');
+  };
+
+  // Both writes reach the server: the create made before the radio went off, and
+  // the line typed while it was.
+  await expect.poll(syncedBodies, { timeout: 30_000 }).toContain(marker);
+  await expect.poll(syncedBodies, { timeout: 30_000 }).toContain('بلا اتِّصال');
 
   // Clean up so the suite is idempotent.
   const res = await context.request.fetch(`${baseURL}/notes/api/sync`);
   const body = (await res.json()) as { notes?: SyncedNote[] };
-  const created = (body.notes ?? []).find((note) => note.title === title);
+  const created = (body.notes ?? []).find((note) => note.body.includes(marker));
   if (created) {
     await context.request.fetch(`${baseURL}/notes/api/notes/${created.id}`, {
       method: 'DELETE',

@@ -140,7 +140,7 @@ export function PostComposerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent className="max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
+      <DialogContent className="dialog-phone-full max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
         <DialogHeader>
           <DialogTitle className="text-center">
             {isEdit ? 'تعديل المنشور' : 'منشور جديد'}
@@ -163,6 +163,7 @@ export function PostComposerDialog({
               />
             </div>
             <p
+              data-slot="composer-meta"
               aria-live="polite"
               className={
                 charCount > BODY_MAX

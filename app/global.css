@@ -1273,6 +1273,40 @@ select,
   }
 }
 
+/* ========================================
+   THE ON-SCREEN KEYBOARD
+   ======================================== */
+
+/* A phone dialog gives the keyboard its room (ADR-0109).
+
+   `frontend/ui/shared/keyboard-inset.ts` publishes, while a dialog holds the
+   focus: `data-keyboard="open"` on `<html>`, and `--roy-keyboard-cover` — the
+   strip a browser hides inside the visual viewport instead of shrinking the
+   layout one. Chrome and the Android shell honour `interactive-widget:
+   resizes-content`, so `100dvh` already ends at the keyboard and the cover stays
+   `0`; Safari does not, so a full-bleed surface takes it off the top here rather
+   than being drawn under the keyboard.
+
+   The footer is what goes first: the writer is looking at the field and the
+   tools above it, and a two-row action bar is the most expensive thing on the
+   surface that is not the text. It returns with the keyboard's dismissal. */
+@media (max-width: 639.98px) {
+  html[data-keyboard='open'] [data-slot='dialog-actions'] {
+    display: none;
+  }
+
+  html[data-keyboard='open'] .dialog-phone-full {
+    height: calc(100dvh - var(--roy-keyboard-cover, 0px));
+    max-height: calc(100dvh - var(--roy-keyboard-cover, 0px));
+  }
+
+  /* A word count, a character count, an autosave note: a reading line under the
+     field, which the keyboard is worth more than while typing. */
+  html[data-keyboard='open'] [data-slot='composer-meta'] {
+    display: none;
+  }
+}
+
 /* Touch action utilities for gesture handling */
 .touch-action-manipulation {
   touch-action: manipulation;

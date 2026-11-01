@@ -21,8 +21,7 @@ function open(identity = GUEST_IDENTITY) {
 function serverNote(overrides: Partial<Note> & { id: string }): Note {
   return {
     clientId: overrides.id,
-    title: 'من الخادم',
-    body: '',
+    body: 'من الخادم',
     createdAt: '2026-10-01T00:00:00.000Z',
     updatedAt: '2026-10-01T00:00:00.000Z',
     deletedAt: null,
@@ -46,18 +45,17 @@ describe('NotesLocalStore', () => {
     store.close();
   });
 
-  it('trims the title and caps the body on the way in', async () => {
+  it('keeps the body as written on the way in', async () => {
     const store = await open();
-    const note = await store.createNote({ title: '  عنوان  ', body: 'نصّ' });
-    expect(note.title).toBe('عنوان');
-    expect(note.body).toBe('نصّ');
+    const note = await store.createNote({ body: 'نصّ الملاحظة' });
+    expect(note.body).toBe('نصّ الملاحظة');
     store.close();
   });
 
   it('edits in place, newest edit first, and queues an update', async () => {
     const store = await open(userIdentity('u-1'));
-    const first = await store.createNote({ title: 'أولى' });
-    const second = await store.createNote({ title: 'ثانية' });
+    const first = await store.createNote({ body: 'أولى' });
+    const second = await store.createNote({ body: 'ثانية' });
 
     const updated = await store.updateNote(first.id, { body: 'جديد' });
     expect(updated?.id).toBe(first.id);
@@ -70,7 +68,7 @@ describe('NotesLocalStore', () => {
 
   it('tombstones a deleted note, hides it, and an undo restores it', async () => {
     const store = await open();
-    const note = await store.createNote({ title: 'قابلة للحذف' });
+    const note = await store.createNote({ body: 'قابلة للحذف' });
 
     await store.deleteNote(note.id);
     expect(await store.getNotes()).toHaveLength(0);
@@ -87,41 +85,41 @@ describe('NotesLocalStore', () => {
     const store = await open(userIdentity('u-1'));
     const older = serverNote({
       id: '11111111-1111-7111-8111-111111111111',
-      title: 'قديمة',
+      body: 'قديمة',
       updatedAt: '2026-10-01T00:00:00.000Z',
     });
 
     await store.applySyncSnapshot({ notes: [older], cursor: '2026-10-02T00:00:00.000Z' });
-    expect((await store.getNotes())[0]?.title).toBe('قديمة');
+    expect((await store.getNotes())[0]?.body).toBe('قديمة');
     expect(await store.getSyncCursor()).toBe('2026-10-02T00:00:00.000Z');
 
     // An older server copy does not overwrite the newer local one.
-    const newerLocal = await store.createNote({ title: 'محلّية' });
+    const newerLocal = await store.createNote({ body: 'محلّية' });
     await store.applySyncSnapshot({
-      notes: [{ ...older, clientId: newerLocal.id, id: newerLocal.id, title: 'أقدم' }],
+      notes: [{ ...older, clientId: newerLocal.id, id: newerLocal.id, body: 'أقدم' }],
       cursor: '2026-10-03T00:00:00.000Z',
     });
     const kept = await store.getNote(newerLocal.id);
-    expect(kept?.title).toBe('محلّية');
+    expect(kept?.body).toBe('محلّية');
     store.close();
   });
 
   it('leaves a row with a queued intent alone and does not advance the cursor past it', async () => {
     const store = await open();
-    const pending = await store.createNote({ title: 'بانتظار المزامنة' });
+    const pending = await store.createNote({ body: 'بانتظار المزامنة' });
 
     await store.applySyncSnapshot({
       notes: [
         serverNote({
           id: pending.id,
-          title: 'نسخة الخادم',
+          body: 'نسخة الخادم',
           updatedAt: '2026-09-01T00:00:00.000Z',
         }),
       ],
       cursor: '2026-10-02T00:00:00.000Z',
     });
 
-    expect((await store.getNote(pending.id))?.title).toBe('بانتظار المزامنة');
+    expect((await store.getNote(pending.id))?.body).toBe('بانتظار المزامنة');
     // The pending row is re-fetched by the next page, so the cursor stays put.
     expect(await store.getSyncCursor()).toBeNull();
     store.close();
@@ -129,7 +127,7 @@ describe('NotesLocalStore', () => {
 
   it('claims a guest note and its intents into the account and empties the guest', async () => {
     const guest = await open();
-    const guestNote = await guest.createNote({ title: 'من الزَّائر' });
+    const guestNote = await guest.createNote({ body: 'من الزَّائر' });
 
     const account = await open(userIdentity('u-1'));
     await account.claimFrom(guest);
