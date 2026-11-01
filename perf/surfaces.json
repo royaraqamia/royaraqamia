@@ -263,6 +263,17 @@
       "ungated": "The feed is per-identity and read on the client (`/api/notifications`), so with the radio off the panel reports the missing connection. There is no snapshot to render: read and delete are writes the server owns, and the page caches nothing between visits. The worker caches the document at runtime, not in the precache list — that slot stays with `/verify` (DYNAMIC_BY_DESIGN)."
     },
     {
+      "id": "chats",
+      "routes": ["/chats/[id]"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "remote",
+      "specs": [],
+      "ungated": "A conversation is per-identity and read on the client (`/api/chats/…`), so with the radio off the thread reports the missing connection. There is no snapshot to render on purpose: messages are other members' writes, and a cached copy would outlive the membership RLS that scopes them (ADR-0113). The worker caches the document at runtime, not in the precache list (DYNAMIC_BY_DESIGN)."
+    },
+    {
       "id": "community",
       "routes": ["/community"],
       "owner": "server",
