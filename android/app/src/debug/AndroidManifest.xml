@@ -30,5 +30,17 @@
 
         </activity>
 
+        <!--
+          The Outbox drill (#650): the debug-only half of
+          `npm run android:outbox-drill`. It is exported because the script starts
+          it with adb, has no launcher entry because it is not a screen a person
+          opens, and does not exist in a release APK because this manifest is not
+          merged into one.
+        -->
+        <activity
+            android:name=".debug.OutboxDrillActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.NoActionBarLaunch" />
+
     </application>
 </manifest>

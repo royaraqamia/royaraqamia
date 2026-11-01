@@ -64,10 +64,14 @@ the directory: deleting the file fails both (the line names a body that is not t
 the line fails both (the file is one the manifest does not list). Adding a contract means adding its
 directory and one suite on each side; the protocol is the same.
 
-**A listed gap:** the fixtures cover what a client _reads_. The outbox a client _writes_ is still the
-web's alone — the app holds no writes until the product screens land (phase 3 of
-[native-app.md](native-app.md)), so there is nothing on the app's side for a write fixture to assert.
-The fixture file is the place it will go, and this paragraph is the reminder that it is owed.
+The write half is a fixture too (#650): `shared/fixtures/offline-writes/habitflow.json`
+states the rules a replay has to keep — order, backoff, permanent versus transient,
+what "drained" means, the request each intent becomes, and the conflict winner — and
+both suites read it: `shared/fixtures/__tests__/offline-writes.test.ts` drives the
+web's `SyncEngine` and transport, `OutboxFixturesTest.kt` drives the app's
+`OutboxDrainer`, `OutboxRules` and `HabitWriteTransport`. A semantic change is a
+change to this file first, in the same pull request, or one engine moves and the
+other does not.
 
 The partition is a fixture too (#768): `shared/fixtures/local-store/identity.json` states which
 namespace a device's rows live in — `guest` or `user:<id>` — and both suites read it, the web's
@@ -136,7 +140,6 @@ narrower route to read.
   screenshot diff of the same component rendered by both clients (Paparazzi on the
   JVM against a Playwright capture at a pinned viewport/DPR, failing on the element
   that moved rather than a pixel count).
-- **The outbox's write semantics in the app** — see the gap in rule 3.
 - **Where the app's chrome is not yet the site's chrome.** Two gaps are deliberate and listed, not
   discovered: the services menu shows the site's shipped order and not the per-device drag order the
   sheet keeps in `localStorage` (`rr:services-order:v1`), and the top bar has no notification bell until

@@ -67,3 +67,71 @@ enum class HabitSyncResponseMode {
     @SerialName("supabase") SUPABASE,
     @SerialName("local") LOCAL,
 }
+
+@Serializable
+data class HabitWrite(
+    val clientId: String,
+    val name: String,
+    val frequency: HabitWriteFrequency? = null,
+    val target: Long? = null,
+    val targetPeriod: HabitWriteTargetPeriod? = null,
+    val reminderTime: String? = null,
+    val updatedAt: String? = null,
+)
+
+@Serializable
+enum class HabitWriteFrequency {
+    @SerialName("daily") DAILY,
+    @SerialName("weekly") WEEKLY,
+}
+
+@Serializable
+enum class HabitWriteTargetPeriod {
+    @SerialName("week") WEEK,
+    @SerialName("month") MONTH,
+}
+
+@Serializable
+data class HabitUpdate(
+    val clientId: String? = null,
+    val name: String? = null,
+    val frequency: HabitUpdateFrequency? = null,
+    val target: Long? = null,
+    val targetPeriod: HabitUpdateTargetPeriod? = null,
+    val reminderTime: String? = null,
+    val updatedAt: String? = null,
+    val id: String,
+    val archived: Boolean? = null,
+    val deletedAt: String? = null,
+)
+
+@Serializable
+enum class HabitUpdateFrequency {
+    @SerialName("daily") DAILY,
+    @SerialName("weekly") WEEKLY,
+}
+
+@Serializable
+enum class HabitUpdateTargetPeriod {
+    @SerialName("week") WEEK,
+    @SerialName("month") MONTH,
+}
+
+@Serializable
+data class HabitLogWrite(
+    val clientId: String,
+    val habitId: String,
+    val date: String,
+    val completed: Boolean,
+    val kind: HabitLogWriteKind? = null,
+    val note: String? = null,
+    val updatedAt: String? = null,
+)
+
+@Serializable
+enum class HabitLogWriteKind {
+    @SerialName("complete") COMPLETE,
+    @SerialName("skip") SKIP,
+    @SerialName("miss") MISS,
+    @SerialName("none") NONE,
+}

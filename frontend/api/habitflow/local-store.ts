@@ -16,6 +16,7 @@ import {
 import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
 import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import { conflictWinner } from '@/frontend/shared/local-store/conflict';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import {
@@ -598,23 +599,23 @@ export class HabitLocalStore implements HabitRepository {
     const writes: Array<[string, unknown]> = [];
 
     for (const server of habits) {
-      if (pendingHabitIds.has(server.id)) continue;
-      const local = localHabitById.get(server.id);
-      if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
-        writes.push([HABITS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
+      const local = localHabitById.get(server.id) ?? null;
+      if (conflictWinner({ local, server, pending: pendingHabitIds.has(server.id) }) !== 'server') {
+        continue;
       }
+      writes.push([HABITS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
     }
 
     for (const server of logs) {
       const key = `${server.habitId}#${server.date}`;
-      if (pendingLogKeys.has(key)) continue;
-      const local = localLogByKey.get(key);
-      if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
-        writes.push([
-          LOGS_STORE,
-          { ...mergedLog(local, server), deletedAt: server.deletedAt ?? null },
-        ]);
+      const local = localLogByKey.get(key) ?? null;
+      if (conflictWinner({ local, server, pending: pendingLogKeys.has(key) }) !== 'server') {
+        continue;
       }
+      writes.push([
+        LOGS_STORE,
+        { ...mergedLog(local ?? undefined, server), deletedAt: server.deletedAt ?? null },
+      ]);
     }
 
     if (writes.length > 0) await this.commit(writes);

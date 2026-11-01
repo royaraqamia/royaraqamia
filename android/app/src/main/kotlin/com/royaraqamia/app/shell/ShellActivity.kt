@@ -20,6 +20,7 @@ import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
 import com.royaraqamia.app.habitflow.HabitflowScreen
+import com.royaraqamia.app.net.Connectivity
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
@@ -57,6 +58,9 @@ class ShellActivity : ComponentActivity() {
 
     private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
 
+    /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
+    private var networkWatch: java.io.Closeable? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch theme declares the platform splash items; this is what reads
         // them below API 31, and it has to run before `super.onCreate`, which is
@@ -69,6 +73,14 @@ class ShellActivity : ComponentActivity() {
         stack = ShellBackStack(DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME)
         current = stack.route
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
+
+        // A queued write is delivered because the radio came back, not because
+        // the user opened the screen that made it (#650). The launch path drains
+        // in `graph.start()`; this is the reconnect while the app is open.
+        networkWatch =
+            Connectivity.watch(this) {
+                lifecycleScope.launch { graph.drainOutbox() }
+            }
 
         setContent {
             RoyaraqamiaTheme {
@@ -99,6 +111,11 @@ class ShellActivity : ComponentActivity() {
                     withFrameNanos { }
                     signedIn = graph.start()
                     handOver()
+                    // The launch half of "a queued write survives the process"
+                    // (#650): the queue is on disk, so a process that was killed
+                    // with writes pending drains as soon as the session answers.
+                    // After `handOver`, so a long queue cannot delay the frame.
+                    if (signedIn) graph.drainOutbox()
                 }
             }
         }
@@ -119,8 +136,7 @@ class ShellActivity : ComponentActivity() {
         )
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
+    override fun onNewIntent(intent: Intent) {        super.onNewIntent(intent)
         // `setIntent` keeps `getIntent()` in step, the way the WebView shell does:
         // a configuration change recreates the activity from this intent.
         setIntent(intent)
@@ -128,6 +144,16 @@ class ShellActivity : ComponentActivity() {
         stack.reset(target)
         current = stack.route
         handOver()
+    }
+
+    /**
+     * Releases the network watcher: a callback that outlives the activity would
+     * keep the composition root, and with it a database connection, alive.
+     */
+    override fun onDestroy() {
+        networkWatch?.close()
+        networkWatch = null
+        super.onDestroy()
     }
 
     /**

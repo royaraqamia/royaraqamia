@@ -132,9 +132,28 @@ partition is asserted by one fixture read by both suites
 (`shared/fixtures/local-store/identity.json`: the web's `identity.ts` and the app's `Identity`),
 the DAO's tests run on the JVM against real SQLite files under Robolectric, and the exported
 schema is committed so a version bumped with no migration is a review finding rather than a
-device's lost rows. Still owed here: the screen (#649), the outbox and pending-aware merge
-(#650), and a sign-in that Claims a guest's rows — the guest store exists and is empty until the
-app can write.
+device's lost rows. The screen followed in #649 and the outbox with the
+pending-aware merge in #650. Still owed here: a sign-in that Claims a guest's rows
+— the guest store exists and is empty until a guest can write.
+
+**Wired today (#650).** HabitFlow writes: a tap commits the log **and** its replay
+intent in one transaction (`HabitDao.commitLog`), so the row is durable before any
+request is made. The Outbox is a table in that identity's own database, replayed by
+`OutboxDrainer` to the endpoints the web's outbox already drains to
+(`frontend/api/habitflow/sync-transport.ts`), so the server keeps one
+implementation ([ADR-0109](../adr/0109-a-queued-write-is-a-row-and-an-intent-in-one-transaction.md)).
+The rules two engines could silently disagree about — replay order, backoff, the
+permanent/transient split, what "drained" means, which request each intent becomes,
+and who wins a conflict — are `shared/fixtures/offline-writes/habitflow.json`, run
+by the web suite and by the app's `OutboxFixturesTest`. The pull is pending-aware, so
+a queued write is not clobbered by a snapshot, and the sync pill grew the site's
+pending and failed states — the failed one a retry. `npm run android:outbox-drill`
+is the device proof: sign in, cut the radio, queue a write, force-stop the process,
+restore the radio, and read the row back from the server inside the five-second
+budget. Still owed here: the add form and the delete affordance (the store, the
+transport and the fixtures cover create, update, toggle and delete; the screen
+exposes the toggle), delivery with the app closed (#651), and a guest claim on
+sign-in.
 
 ## Phase 1 — the HabitFlow slice
 

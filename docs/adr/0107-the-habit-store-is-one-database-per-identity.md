@@ -50,17 +50,17 @@ schema diff that shipped the loss is the only place it could have been caught.
 
 ## What this does not decide
 
-- **Pending writes.** The app holds none until #650. When it does, the pull has
-  to skip a row a queued intent still owns instead of overwriting it — the web's
-  merge is pending-aware (ADR-0029), and a blind upsert would silently discard a
-  write that had not been delivered.
+- **Pending writes.** Decided by [ADR-0109](0109-a-queued-write-is-a-row-and-an-intent-in-one-transaction.md)
+  (#650): the queue is rows in this database, a write and its intent commit in one
+  transaction, and the pull skips a row a queued intent still owns. The web's
+  merge is pending-aware (ADR-0029) and so is this one.
 - **The guest namespace's content.** HabitFlow requires a session for its sync
   route, so the guest database exists and is empty. The partition is one shape
   for both because a namespace that only exists once you sign in is the kind of
   gap a "guest create" produces later.
 - **A Claim on sign-in.** When a guest can write, its rows move into the account
   namespace deduped by `client_id` (ADR-0056's rule for the Quran reader), and
-  that is #650's work beside the outbox.
+  that is still owed beside the outbox.
 
 ## Consequences
 
