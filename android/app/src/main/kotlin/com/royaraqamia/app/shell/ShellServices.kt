@@ -138,6 +138,18 @@ sealed interface ServicesEntry {
                 Notes,
                 McpGuide,
             )
+
+        /**
+         * The rows a member still sees (ADR-0112).
+         *
+         * Filtering, not a state: the catalog stays the sixteen rows the parity
+         * row pairs with the site, and what a member hid is a fact about the
+         * account rather than a variant of the menu. A route the account holds
+         * that the catalog no longer has matches nothing here, which is the right
+         * answer — there is no row to hide.
+         */
+        fun visibleRows(hidden: Set<String>): List<ServicesEntry> =
+            rows.filterNot { it.route in hidden }
     }
 }
 
@@ -184,7 +196,12 @@ fun ServicesTrigger(onOpen: () -> Unit, modifier: Modifier = Modifier) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServicesSheet(open: Boolean, onDismiss: () -> Unit, onSelect: (String) -> Unit) {
+fun ServicesSheet(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+    hiddenRoutes: Set<String> = emptySet(),
+) {
     if (!open) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = LocalRoySpacing.current
@@ -197,7 +214,7 @@ fun ServicesSheet(open: Boolean, onDismiss: () -> Unit, onSelect: (String) -> Un
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = spacing.containerPadding, vertical = 12.dp),
             )
-            ServicesEntry.rows.forEach { entry ->
+            ServicesEntry.visibleRows(hiddenRoutes).forEach { entry ->
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()

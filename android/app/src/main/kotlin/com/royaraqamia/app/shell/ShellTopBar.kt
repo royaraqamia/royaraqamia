@@ -40,7 +40,12 @@ private val MarkSize = 32.dp
  * is a control that lies. It lands with the notifications surface (#659).
  */
 @Composable
-fun ShellTopBar(onOpenServices: () -> Unit, modifier: Modifier = Modifier) {
+fun ShellTopBar(
+    onOpenServices: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** False when every row is hidden: a trigger that opens nothing is worse than none. */
+    showServices: Boolean = true,
+) {
     val spacing = LocalRoySpacing.current
 
     Row(
@@ -57,7 +62,7 @@ fun ShellTopBar(onOpenServices: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.size(MarkSize).clip(RoundedCornerShape(percent = 50)),
         )
         Spacer(Modifier.weight(1f))
-        ServicesTrigger(onOpen = onOpenServices)
+        if (showServices) ServicesTrigger(onOpen = onOpenServices)
         Spacer(Modifier.weight(1f))
         // Balances the mark so the pill stays centred in the bar, as it is on the
         // site (the trigger is absolutely centred there).
