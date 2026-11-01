@@ -1,0 +1,21 @@
+{
+  "surface": "home",
+  "component": "notification-bell",
+  "web": {
+    "file": "frontend/ui/shared/notification-bell-copy.ts",
+    "export": "NOTIFICATION_BELL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/NotificationBellCopy.kt",
+    "object": "NotificationBellCopy"
+  },
+  "notes": {
+    "source": "The top bar's notification control, in both clients (#659): what it is called, and what it is called when it has something to say. The site composed the second string inline in a template literal; the app draws the same control, so both read one source (ADR-0098) - a bell that cannot say how many are unread is a control that lies, and one that says it in different words on each client is two controls.",
+    "placeholders": "`{count}` is the unread count, which each client substitutes itself.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `frontend/ui/shared/notification-bell.tsx` does not render."
+  },
+  "strings": {
+    "label": "الإشعارات",
+    "unread": "الإشعارات ({count} غير مقروء)"
+  }
+}

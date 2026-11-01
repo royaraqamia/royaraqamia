@@ -66,6 +66,13 @@ export const CONTRACTS = [
   // The write bodies joined with the Outbox (#650): an intent's payload is a
   // generated type, so a field the server stops accepting is a compile error in
   // the app rather than a queued write that can never drain.
+  // The bell's number (#659): the top bar draws an unread count, so the shape it
+  // draws it from is a generated type rather than a field name retyped in Kotlin.
+  {
+    module: 'shared/contracts/notifications',
+    file: 'NotificationsContracts.kt',
+    schemas: ['UnreadNotificationCountSchema'],
+  },
   {
     module: 'shared/contracts/habitflow',
     file: 'HabitflowContracts.kt',

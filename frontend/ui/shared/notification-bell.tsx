@@ -8,6 +8,8 @@ import { Bell } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 
+import { NOTIFICATION_BELL_COPY } from './notification-bell-copy';
+
 /**
  * The shell's notification control: a link to `/notifications`, never a panel.
  *
@@ -25,7 +27,11 @@ export const NotificationBell = memo(function NotificationBell() {
   return (
     <Link
       href="/notifications"
-      aria-label={`الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروء)` : ''}`}
+      aria-label={
+        unreadCount > 0
+          ? NOTIFICATION_BELL_COPY.unread.replace('{count}', String(unreadCount))
+          : NOTIFICATION_BELL_COPY.label
+      }
       aria-current={isCurrent ? 'page' : undefined}
       className={cn(
         'relative group flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-xs transition-safe duration-200 ease-out',

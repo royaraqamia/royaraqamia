@@ -4,6 +4,7 @@ import android.content.Context
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
+import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
 import com.royaraqamia.app.shell.PreferencesServicesOrderStore
@@ -42,6 +43,8 @@ class AppGraph private constructor(
     val usage: UsageRepository,
     val connectedApps: ConnectedAppsRepository,
     val hiddenServices: HiddenServicesRepository,
+    /** The bell's number (#659), from the route the site's bell reads. */
+    val notifications: NotificationsRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -123,6 +126,7 @@ class AppGraph private constructor(
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
                 hiddenServices = HiddenServicesRepository(client),
+                notifications = NotificationsRepository(client),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
