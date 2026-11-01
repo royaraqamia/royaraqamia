@@ -1,6 +1,6 @@
 package com.royaraqamia.app.sync
 
-import com.royaraqamia.app.store.habitflow.DrainReport
+import com.royaraqamia.app.store.outbox.DrainReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

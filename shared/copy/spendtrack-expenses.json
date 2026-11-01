@@ -1,0 +1,30 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-expenses",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-expenses-copy.ts",
+    "export": "SPENDTRACK_EXPENSES_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpensesCopy.kt",
+    "object": "SpendtrackExpensesCopy"
+  },
+  "notes": {
+    "source": "The expense list's words, in both clients (#653). The site's list is the reference: its empty states, the row's fallback for a missing description, and the delete dialog are what the app draws, so neither client spells them.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the list does not render."
+  },
+  "strings": {
+    "listLabel": "قائمة المصاريف",
+    "emptyTitle": "لا توجد مصاريف بعد",
+    "emptyBody": "ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف",
+    "emptyFilteredTitle": "لا توجد نتائج تُطابق الفلترة",
+    "emptyFilteredBody": "حاول تغيير نطاق الفلترة",
+    "noDescription": "بدون وصف",
+    "loading": "جاري التَّحميل...",
+    "loadMore": "تحميل المزيد",
+    "deleteTitle": "حذف المصروف",
+    "deleteBody": "هل أنت متأكِّد من حذف هذا المصروف؟ لا يمكن التَّراجع عن هذا الإجراء.",
+    "deleteAction": "حذف",
+    "deleting": "جاري الحذف..."
+  }
+}

@@ -10,7 +10,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
-import { Pencil, Trash2, Tags, Loader2 } from 'lucide-react';
+import { Pencil, Trash, Tags, LoaderCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import { Label } from '@/frontend/ui/primitives/label';
 import type { Category } from '@/shared/contracts/spendtrack';
+import { SPENDTRACK_CATEGORIES_COPY } from './spendtrack-categories-copy';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),
@@ -46,28 +47,30 @@ export const CategoryList = memo(function CategoryList({
       <div
         className="flex flex-col items-center gap-4 py-12 text-center"
         role="status"
-        aria-label="لا توجد تصنيفات مخصصة"
+        aria-label={SPENDTRACK_CATEGORIES_COPY.emptyTitle}
       >
         <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/80">
           <Tags className="size-6 text-muted-foreground" aria-hidden="true" />
         </div>
         <div className="space-y-1">
-          <p className="text-muted-foreground text-lg font-medium">لا توجد تصنيفات مخصصة</p>
-          <p className="text-sm text-muted-foreground">
-            يمكنك إنشاء تصنيفات مخصصة لتناسب احتياجاتك
+          <p className="text-muted-foreground text-lg font-medium">
+            {SPENDTRACK_CATEGORIES_COPY.emptyTitle}
           </p>
+          <p className="text-sm text-muted-foreground">{SPENDTRACK_CATEGORIES_COPY.emptyBody}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2" role="list" aria-label="قائمة التصنيفات">
+    <div className="space-y-2" role="list" aria-label={SPENDTRACK_CATEGORIES_COPY.listLabel}>
       {list.map((category) => (
         <div
           key={category.id}
           role="listitem"
-          aria-label={`${category.name}${category.user_id === null ? '، افتراضي' : ''}`}
+          aria-label={`${category.name}${
+            category.user_id === null ? `، ${SPENDTRACK_CATEGORIES_COPY.defaultBadge}` : ''
+          }`}
           className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-safe duration-300 hover:shadow-elevated hover:bg-card card-lift"
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -78,7 +81,7 @@ export const CategoryList = memo(function CategoryList({
             <span className="font-medium text-sm truncate">{category.name}</span>
             {category.user_id === null && (
               <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                افتراضي
+                {SPENDTRACK_CATEGORIES_COPY.defaultBadge}
               </span>
             )}
           </div>
@@ -146,7 +149,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
         <Button
           variant="ghost"
           size="icon"
-          aria-label="تعديل التصنيف"
+          aria-label={SPENDTRACK_CATEGORIES_COPY.editTitle}
           className="touch-target btn-press focus-ring"
         >
           <Pencil className="size-4" />
@@ -154,12 +157,12 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
       </DialogTrigger>
       <DialogContent className="bg-card border-border shadow-elevated">
         <DialogHeader>
-          <DialogTitle>تعديل التصنيف</DialogTitle>
+          <DialogTitle>{SPENDTRACK_CATEGORIES_COPY.editTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">
-              الاسم{' '}
+              {SPENDTRACK_CATEGORIES_COPY.nameLabel}{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
@@ -179,7 +182,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
           </div>
           <div className="space-y-2">
             <Label htmlFor="colorHex" className="text-sm font-medium">
-              اللون{' '}
+              {SPENDTRACK_CATEGORIES_COPY.colorLabel}{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
@@ -213,11 +216,11 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
             <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
               {pending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin shrink-0" />
-                  <span>جاري الحفظ...</span>
+                  <LoaderCircle className="size-4 animate-spin shrink-0" />
+                  <span>{SPENDTRACK_CATEGORIES_COPY.saving}</span>
                 </>
               ) : (
-                'حفظ'
+                SPENDTRACK_CATEGORIES_COPY.save
               )}
             </HeroCtaButton>
           </DialogActions>
@@ -267,20 +270,18 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
         variant="ghost"
         size="icon"
         type="button"
-        aria-label="حذف التصنيف"
+        aria-label={SPENDTRACK_CATEGORIES_COPY.deleteTitle}
         className="touch-target btn-press focus-ring"
         onClick={() => setConfirmOpen(true)}
       >
-        <Trash2 className="size-4 text-destructive" />
+        <Trash className="size-4 text-destructive" />
       </Button>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>حذف التصنيف</DialogTitle>
+            <DialogTitle>{SPENDTRACK_CATEGORIES_COPY.deleteTitle}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            هل أنت متأكد من حذف هذا التصنيف؟ لا يمكن التراجع عن هذا الإجراء.
-          </p>
+          <p className="text-sm text-muted-foreground">{SPENDTRACK_CATEGORIES_COPY.deleteBody}</p>
           <DialogActions onCancel={() => setConfirmOpen(false)}>
             <form onSubmit={handleDelete} className="w-full sm:w-auto">
               <HeroCtaButton
@@ -291,11 +292,11 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
               >
                 {pending ? (
                   <>
-                    <Loader2 className="size-4 animate-spin shrink-0" />
-                    <span>جاري الحذف...</span>
+                    <LoaderCircle className="size-4 animate-spin shrink-0" />
+                    <span>{SPENDTRACK_CATEGORIES_COPY.deleting}</span>
                   </>
                 ) : (
-                  'حذف'
+                  SPENDTRACK_CATEGORIES_COPY.deleteAction
                 )}
               </HeroCtaButton>
             </form>

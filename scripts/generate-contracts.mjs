@@ -92,6 +92,24 @@ export const CONTRACTS = [
     file: 'HiddenServicesContracts.kt',
     schemas: ['HiddenServicesResultSchema'],
   },
+  // SpendTrack (#653): the snapshot the app's store merges, and the bodies its
+  // Outbox replays. The read is `/spendtrack/api/sync` — the same route the web's
+  // pull reads, tombstones included (ADR-0029) — and the writes are the endpoints
+  // `frontend/api/spendtrack/sync-transport.ts` already drains to, so the app
+  // cannot queue a body the site has stopped accepting.
+  {
+    module: 'shared/contracts/spendtrack',
+    file: 'SpendtrackContracts.kt',
+    schemas: [
+      'SpendtrackSyncSnapshotSchema',
+      'SpendtrackExpenseWriteSchema',
+      'SpendtrackExpenseUpdateSchema',
+      'SpendtrackCategoryWriteSchema',
+      'SpendtrackCategoryUpdateSchema',
+      'SpendtrackDeleteSchema',
+      'SpendtrackCurrencySchema',
+    ],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

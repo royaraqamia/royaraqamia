@@ -23,8 +23,7 @@
     },
     {
       "surface": "spendtrack",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackScreen.kt"
     },
     {
       "surface": "linksnap",

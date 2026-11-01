@@ -3,19 +3,27 @@ package com.royaraqamia.app.shell
 /**
  * The routes the shell draws itself, and the ones it hands over (#647).
  *
- * `/habitflow` arrived with the list screen (#649) and `/account/plan` with the
- * account area (#657); every other destination is still the document — home and
- * community are #658, the rest of the account pages #657. A destination arrives
- * here when a `*Screen.kt` exists for it, which is also the pull request that adds
- * its row to `docs/mobile/screens.json`; the two facts are the same fact, so they
- * are kept in one place.
+ * `/habitflow` arrived with the list screen (#649), `/account/plan` with the
+ * account area (#657), and SpendTrack's two routes with its screen (#653); every
+ * other destination is still the document — home and community are #658, the
+ * rest of the account pages #657. A destination arrives here when a `*Screen.kt`
+ * exists for it, which is also the pull request that adds its row to
+ * `docs/mobile/screens.json`; the two facts are the same fact, so they are kept
+ * in one place.
  *
  * It is a set rather than a flag because the shell's own frame is unchanged either
  * way: what differs is whether a route opens the document or fills the content
  * area (`ShellFrame`).
  */
 object NativeSurfaces {
-    private val routes: Set<String> = setOf("/habitflow", "/account/plan", "/account/connected-apps")
+    private val routes: Set<String> =
+        setOf(
+            "/habitflow",
+            "/spendtrack",
+            "/spendtrack/categories",
+            "/account/plan",
+            "/account/connected-apps",
+        )
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))

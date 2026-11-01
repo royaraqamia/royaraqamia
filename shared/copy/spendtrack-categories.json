@@ -1,0 +1,31 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-categories",
+  "web": {
+    "file": "app/spendtrack/(app)/categories/spendtrack-categories-copy.ts",
+    "export": "SPENDTRACK_CATEGORIES_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesCopy.kt",
+    "object": "SpendtrackCategoriesCopy"
+  },
+  "notes": {
+    "source": "The category list's words, in both clients (#653): the empty state, the default badge, and the edit and delete dialogs. The form labels live here too because both of the site's category dialogs say them, and a label in two copy sources is a label that can drift from itself.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the list does not render."
+  },
+  "strings": {
+    "listLabel": "قائمة التصنيفات",
+    "emptyTitle": "لا توجد تصنيفات مخصصة",
+    "emptyBody": "يمكنك إنشاء تصنيفات مخصصة لتناسب احتياجاتك",
+    "defaultBadge": "افتراضي",
+    "editTitle": "تعديل التصنيف",
+    "nameLabel": "الاسم",
+    "colorLabel": "اللون",
+    "save": "حفظ",
+    "saving": "جاري الحفظ...",
+    "deleteTitle": "حذف التصنيف",
+    "deleteBody": "هل أنت متأكد من حذف هذا التصنيف؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteAction": "حذف",
+    "deleting": "جاري الحذف..."
+  }
+}

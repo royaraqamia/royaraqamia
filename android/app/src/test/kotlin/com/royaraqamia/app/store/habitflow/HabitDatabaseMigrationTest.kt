@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.store.IdentityScopedStore
+import com.royaraqamia.app.store.outbox.OutboxIntentRow
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray

@@ -1,4 +1,4 @@
-package com.royaraqamia.app.store.habitflow
+package com.royaraqamia.app.store.outbox
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

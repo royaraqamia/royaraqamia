@@ -3,6 +3,7 @@
 import { DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { formatMoney } from '@/shared/currency';
+import { SPENDTRACK_TOTAL_COPY } from './spendtrack-total-copy';
 
 function formatRangeDate(date: string): string {
   return new Intl.DateTimeFormat('ar-SA', {
@@ -28,10 +29,15 @@ export function TotalSpendCard({
   return (
     <Card
       className="group/card card-lift"
-      aria-label={`إجمالي الإنفاق: ${formatMoney(total, currency)}`}
+      aria-label={SPENDTRACK_TOTAL_COPY.totalLabel.replace(
+        '{amount}',
+        formatMoney(total, currency)
+      )}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {SPENDTRACK_TOTAL_COPY.totalTitle}
+        </CardTitle>
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
           <DollarSign className="size-4 text-primary" />
         </div>

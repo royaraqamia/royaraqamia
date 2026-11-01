@@ -41,4 +41,18 @@ object PlanDates {
             .getOrElse { return iso }
         return pattern.format(HijrahDate.from(local)) + ERA
     }
+
+    /**
+     * A calendar day (`2026-01-01`) as the same sentence.
+     *
+     * An expense is dated, not timestamped, and SpendTrack's rows carry that day:
+     * the site formats it with the same `Intl` call over `parseISO(date)`
+     * (`expense-list.tsx`), so the day is read as a local date rather than an
+     * instant at UTC midnight — which in a zone behind UTC would print the day
+     * before.
+     */
+    fun labelDay(day: String): String {
+        val local = runCatching { java.time.LocalDate.parse(day) }.getOrElse { return day }
+        return pattern.format(HijrahDate.from(local)) + ERA
+    }
 }
