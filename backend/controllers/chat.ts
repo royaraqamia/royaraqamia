@@ -243,6 +243,36 @@ export async function respondToChat(
   );
 }
 
+/** The requester takes a pending request back; it closes for both sides. */
+export async function withdrawChat(id: string, headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      await createSupabaseChatService(supabase).withdraw(userId, id);
+      return jsonResult(200, { success: true }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّر إلغاء الطلب') }
+  );
+}
+
+/** Ask again on a closed thread: the same conversation goes back to waiting. */
+export async function requestChat(id: string, headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      await createSupabaseChatService(supabase).reopen(userId, id);
+      return jsonResult(200, { success: true }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّر إرسال الطلب') }
+  );
+}
+
 export async function leaveChat(id: string, headers: Headers): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {

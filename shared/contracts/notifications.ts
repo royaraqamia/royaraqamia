@@ -12,7 +12,8 @@ export type NotificationType =
   | 'training_application'
   | 'consultation_booking'
   | 'project_request'
-  | 'retainer_request';
+  | 'retainer_request'
+  | 'chat_request';
 
 /**
  * The unread count behind the shell's notification control (#659).

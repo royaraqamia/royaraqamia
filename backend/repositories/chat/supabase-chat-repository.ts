@@ -323,6 +323,23 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
       return String(data);
     },
 
+    async withdrawRequest(conversationId) {
+      const { error } = await supabase.rpc('withdraw_chat_request', {
+        p_conversation_id: conversationId,
+      });
+
+      if (error) throw repositoryFailure('chat.withdrawRequest', error);
+    },
+
+    async requestThread(conversationId) {
+      const { data, error } = await supabase.rpc('request_chat_conversation', {
+        p_conversation_id: conversationId,
+      });
+
+      if (error) throw repositoryFailure('chat.requestThread', error);
+      return data === true;
+    },
+
     async blockUser(blockerId, blockedId) {
       const { error } = await supabase
         .from('chat_blocks')

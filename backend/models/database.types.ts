@@ -2791,6 +2791,10 @@ export type Database = {
         Args: { p_application_id: string; p_status: string };
         Returns: string;
       };
+      request_chat_conversation: {
+        Args: { p_conversation_id: string };
+        Returns: boolean;
+      };
       reschedule_consultation_booking: {
         Args: {
           p_booking_id: string;
@@ -2993,6 +2997,10 @@ export type Database = {
           updated_at: string;
           user_id: string | null;
         }[];
+      };
+      withdraw_chat_request: {
+        Args: { p_conversation_id: string };
+        Returns: undefined;
       };
     };
     Enums: {

@@ -50,6 +50,10 @@ export function notificationTarget(
       const slug = segment(metadata.slug);
       return slug ? `/community/${slug}` : null;
     }
+    case 'chat_request': {
+      const conversationId = segment(metadata.conversationId);
+      return conversationId ? `/chats/${conversationId}` : null;
+    }
     default:
       return FIXED_TARGETS[notification.type] ?? null;
   }
