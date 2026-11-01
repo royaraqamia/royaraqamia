@@ -27,7 +27,7 @@ test('a page number lands on its first Ayah, and the boundaries are marked', asy
 
   // The printed page number a reader already knows, answered from the index.
   await page.goto('/quran');
-  await page.getByRole('spinbutton', { name: 'انتقل إلى صفحة' }).fill('604');
+  await page.getByRole('textbox', { name: 'انتقل إلى صفحة' }).fill('604');
   await page.getByRole('button', { name: 'انتقال' }).click();
 
   await expect(page).toHaveURL(/\/quran\/112#ayah-1$/);
@@ -36,7 +36,7 @@ test('a page number lands on its first Ayah, and the boundaries are marked', asy
 
   // A page the Mushaf does not have is refused rather than guessed at.
   await page.goto('/quran');
-  await page.getByRole('spinbutton', { name: 'انتقل إلى صفحة' }).fill('605');
+  await page.getByRole('textbox', { name: 'انتقل إلى صفحة' }).fill('605');
   await page.getByRole('button', { name: 'انتقال' }).click();
   // By id rather than role: Next's route announcer is an `alert` too.
   await expect(page.locator('#quran-page-error')).toContainText('الصفحة من 1 إلى 604');

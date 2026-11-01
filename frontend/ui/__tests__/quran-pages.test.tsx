@@ -84,7 +84,7 @@ describe('the page jump', () => {
   });
 
   const type = (value: string) =>
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'انتقل إلى صفحة' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'انتقل إلى صفحة' }), {
       target: { value },
     });
   const press = () => fireEvent.click(screen.getByRole('button', { name: 'انتقال' }));
@@ -94,6 +94,26 @@ describe('the page jump', () => {
     type('3');
     press();
     expect(push).toHaveBeenCalledWith('/quran/2#ayah-6');
+  });
+
+  it('reads the Arabic-Indic digits an Arabic keyboard types', () => {
+    render(<PageJump pages={pages} />);
+    type('٣');
+    press();
+    expect(push).toHaveBeenCalledWith('/quran/2#ayah-6');
+  });
+
+  it('reads the Persian digits an Arabic keyboard types', () => {
+    render(<PageJump pages={pages} />);
+    type('۳');
+    press();
+    expect(push).toHaveBeenCalledWith('/quran/2#ayah-6');
+  });
+
+  it('asks a phone for the number pad without discarding what is typed', () => {
+    render(<PageJump pages={pages} />);
+    const field = screen.getByRole('textbox', { name: 'انتقل إلى صفحة' });
+    expect(field).toHaveAttribute('inputmode', 'numeric');
   });
 
   it('refuses a number the Mushaf does not have', () => {
