@@ -91,8 +91,14 @@ half-succeeded cannot look complete — and `AppGraph` wires the repository the 
 the plan card. The screen arrived in the same slice: `connectedapps/ConnectedAppsScreen.kt` is
 `/account/connected-apps` — the page's title from the same copy source, the card under it, a revoke
 that keeps the server's own refusal without re-reading, and a successful one that re-reads the list
-rather than dropping the row. Still owed for the account area: the account screen, the owned posts
-list, the FAQ, the news preferences and the changelog.
+rather than dropping the row. The account area's remaining pages are each owned by the ticket that
+draws the component they are made of: the account screen itself (profile and sign-out) is
+[#798](https://github.com/royaraqamia/royaraqamia/issues/798), the FAQ, the news preferences and the
+changelog are [#799](https://github.com/royaraqamia/royaraqamia/issues/799), the owned posts list is
+the community feed's post card ([#658](https://github.com/royaraqamia/royaraqamia/issues/658)), the
+short links are LinkSnap ([#654](https://github.com/royaraqamia/royaraqamia/issues/654)) and the
+submissions page is the request and booking forms
+([#659](https://github.com/royaraqamia/royaraqamia/issues/659)).
 
 The account area's pages are one row each in `perf/surfaces.json` — `account`, `account-plan`,
 `account-connected-apps`, `account-faq`, `account-news`, `account-links`, `account-posts`,
