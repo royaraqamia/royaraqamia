@@ -62,10 +62,19 @@ export const CONTRACTS = [
   // HabitFlow from rows it holds, so the body it holds them from is a contract
   // the generator has to emit. It is the web pull's route, tombstones included
   // (ADR-0029), not the narrower display endpoints.
+  //
+  // The write bodies joined with the Outbox (#650): an intent's payload is a
+  // generated type, so a field the server stops accepting is a compile error in
+  // the app rather than a queued write that can never drain.
   {
     module: 'shared/contracts/habitflow',
     file: 'HabitflowContracts.kt',
-    schemas: ['HabitSyncResponseSchema'],
+    schemas: [
+      'HabitSyncResponseSchema',
+      'HabitWriteSchema',
+      'HabitUpdateSchema',
+      'HabitLogWriteSchema',
+    ],
   },
 ];
 
