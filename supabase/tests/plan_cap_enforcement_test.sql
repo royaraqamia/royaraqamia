@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(52);
+select plan(60);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -752,6 +752,91 @@ select is(
   ),
   1,
   'the deduped replay writes no second event'
+);
+
+-- ---------------------------------------------------------------------------
+-- A member's event is not a visitor's (#779)
+-- ---------------------------------------------------------------------------
+
+-- `record_usage` records the salted address on a member's event too, and the
+-- visitor rule matched on the address alone, so a download made while signed in
+-- spent the signed-out allowance of the same connection: sign in, download,
+-- sign out, and the visitor was already out. ADR-0093 counts a member by
+-- `user_id` alone.
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', '00000000-0000-0000-0000-00000000ca07', null,
+    'member-address-hash'
+  ) ->> 'allowed')::boolean,
+  true,
+  'a member records a counted action from an address a visitor also uses'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, null, 'member-address-hash'
+  ) ->> 'allowed')::boolean,
+  true,
+  'the member event leaves the address-only visitor allowance untouched'
+);
+
+select is(
+  (
+    select count(*)::integer
+      from public.usage_events e
+     where e.ip_hash = 'member-address-hash'
+  ),
+  2,
+  'the member row keeps its address, and the visitor row is a second event'
+);
+
+-- The same defect on the other half of the dedupe rule: a member's `dedupe_key`
+-- made a visitor's identical action read as a replay and cost nothing, and the
+-- address-keyed unique index refused the visitor's own row outright.
+select is(
+  (public.record_usage(
+    'quran.surah.read', '00000000-0000-0000-0000-00000000ca07', null,
+    'member-dedupe-hash', null, 'surah-shared-day'
+  ) ->> 'allowed')::boolean,
+  true,
+  'a member records a surah read from an address'
+);
+
+select is(
+  (public.record_usage(
+    'quran.surah.read', null, null, 'member-dedupe-hash', null,
+    'surah-shared-day'
+  ) ->> 'duplicate')::boolean,
+  false,
+  'a member dedupe key does not make a visitor''s surah day a replay'
+);
+
+-- And the replay guard a local scan uses: the event id belongs to the member.
+select is(
+  (public.record_usage(
+    'scanner.scan', '00000000-0000-0000-0000-00000000ca07', null,
+    'member-event-hash', '00000000-0000-0000-0000-00000000cb01'
+  ) ->> 'allowed')::boolean,
+  true,
+  'a member records a locally counted scan from an address'
+);
+
+select is(
+  (public.record_usage(
+    'scanner.scan', null, null, 'member-event-hash',
+    '00000000-0000-0000-0000-00000000cb01'
+  ) ->> 'duplicate')::boolean,
+  false,
+  'a member event id does not make a visitor scan a replay'
+);
+
+select is(
+  (public.record_usage(
+    'downloader.job.create', null, null, 'member-address-hash'
+  ) ->> 'allowed')::boolean,
+  false,
+  'the address-only visitor is refused by its own event, not the member row'
 );
 
 -- ---------------------------------------------------------------------------
