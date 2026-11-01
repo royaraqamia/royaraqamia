@@ -937,18 +937,21 @@ export type Database = {
       };
       news_source_preferences: {
         Row: {
+          last_personal_digest_at: string | null;
           personal_enabled: boolean;
           source_ids: string[];
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          last_personal_digest_at?: string | null;
           personal_enabled?: boolean;
           source_ids?: string[];
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          last_personal_digest_at?: string | null;
           personal_enabled?: boolean;
           source_ids?: string[];
           updated_at?: string;

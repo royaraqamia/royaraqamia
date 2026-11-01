@@ -153,6 +153,12 @@ jobs:
       # ones this job already fetched — nothing is fetched again — and each
       # reader's digest is validated by the same gate, with the size window
       # moved down to 3-12 because their selection is narrower.
+      #
+      # This step also rotates the queue: it is the only writer of
+      # `news_source_preferences.last_personal_digest_at`, and it stamps every
+      # reader it prepares or skips, so tomorrow's run starts after today's 20
+      # (#619). A failure further down the loop has already moved its reader to
+      # the back, which is why nothing below stamps anything.
       - name: Prepare personal digests
         if: ${{ !inputs.dry_run }}
         run: node scripts/news/personal-digests.mjs --candidates .news/candidates.json --out .news/personal

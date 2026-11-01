@@ -22,6 +22,8 @@ import {
 } from '../news/lib.mjs';
 import { arabicShare, extractJson, validateDigest } from '../news/validate-digest.mjs';
 import {
+  loadReaders,
+  markServed,
   narrowCandidates,
   preparePersonalDigests,
   readerCandidates,
@@ -647,6 +649,7 @@ describe('personal digests', () => {
 
   it('skips a reader with no selection, and one whose sources are too thin', async () => {
     const out = join(await mkdtemp(join(tmpdir(), 'news-personal-')), 'run');
+    const served = [];
     const manifest = await preparePersonalDigests({
       readers: [
         { userId: 'u-empty', sourceIds: [] },
@@ -656,11 +659,61 @@ describe('personal digests', () => {
       candidates: candidateSet,
       out,
       log: () => {},
+      onServed: async (userId) => served.push(userId),
     });
 
     expect(manifest.users.map((user) => user.userId)).toEqual(['u-ok']);
     expect(manifest.skipped.map((skip) => skip.userId)).toEqual(['u-empty', 'u-thin']);
     expect(await readFile(join(out, 'u-ok', 'prompt.txt'), 'utf8')).toContain('personal');
+
+    // A skip rotates too: leaving a skipped reader at the head would starve
+    // everyone behind them, which is the bug this queue exists to fix.
+    expect(served).toEqual(['u-empty', 'u-thin', 'u-ok']);
+  });
+
+  it('reaches all 25 readers across two runs of 20, never serving one twice', async () => {
+    // A stand-in for the PostgREST order (`last_personal_digest_at nulls first,
+    // updated_at asc`) — the ordering itself is asserted against the request
+    // URL below; this is what it means for a queue.
+    const table = Array.from({ length: 25 }, (_, index) => ({
+      userId: `u-${index + 1}`,
+      sourceIds: ['a'],
+      updatedAt: `2026-10-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
+      servedAt: null,
+    }));
+
+    const queued = () =>
+      [...table].sort((a, b) => {
+        if (a.servedAt === null && b.servedAt !== null) return -1;
+        if (a.servedAt !== null && b.servedAt === null) return 1;
+        return a.updatedAt.localeCompare(b.updatedAt);
+      });
+
+    const served = [];
+    const run = async (day) => {
+      const out = join(await mkdtemp(join(tmpdir(), 'news-personal-')), 'run');
+      await preparePersonalDigests({
+        readers: queued()
+          .slice(0, 20)
+          .map((row) => ({ userId: row.userId, sourceIds: row.sourceIds })),
+        candidates: candidateSet,
+        out,
+        log: () => {},
+        onServed: async (userId) => {
+          table.find((row) => row.userId === userId).servedAt = `2026-11-${day}T00:00:00.000Z`;
+          served.push(userId);
+        },
+      });
+    };
+
+    await run('01');
+    await run('02');
+
+    expect(served).toHaveLength(40);
+    expect(new Set(served).size).toBe(25);
+    // The second run opens with the five nobody had reached, not with the
+    // twenty it already served.
+    expect(served.slice(20, 25)).toEqual(['u-21', 'u-22', 'u-23', 'u-24', 'u-25']);
   });
 
   it('accepts a three-story personal digest, which the shared rule rejects', () => {
@@ -679,6 +732,55 @@ describe('personal digests', () => {
       validateDigest({ digest, candidates: candidates(), date: '2026-10-23', minStories: 3 })
         .problems
     ).toEqual([]);
+  });
+});
+
+describe('the personal digest queue', () => {
+  const config = { url: 'https://project.supabase.co', key: 'service-role' };
+  const userId = '11111111-1111-4111-8111-111111111111';
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('asks for never-served readers first, then the oldest served one', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', async (url) => {
+      calls.push(String(url));
+      return { ok: true, json: async () => [] };
+    });
+
+    await loadReaders(config, 20);
+
+    expect(calls).toHaveLength(1);
+    const [url] = calls;
+    expect(url).toContain('select=user_id,source_ids,updated_at,last_personal_digest_at');
+    expect(url).toContain('order=last_personal_digest_at.asc.nullsfirst,updated_at.asc');
+    expect(url).toContain('limit=20');
+    expect(url).toContain('personal_enabled=is.true');
+  });
+
+  it('stamps the served marker on the one reader it handled', async () => {
+    const calls = [];
+    vi.stubGlobal('fetch', async (url, init) => {
+      calls.push({ url: String(url), init });
+      return { ok: true };
+    });
+
+    await markServed(config, userId, new Date('2026-11-01T03:00:00Z'));
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init.method).toBe('PATCH');
+    expect(calls[0].url).toContain(`news_source_preferences?user_id=eq.${userId}`);
+    expect(JSON.parse(calls[0].init.body)).toEqual({
+      last_personal_digest_at: '2026-11-01T03:00:00.000Z',
+    });
+  });
+
+  it('reports a refused stamp instead of pretending it was written', async () => {
+    vi.stubGlobal('fetch', async () => ({ ok: false, status: 403 }));
+
+    await expect(markServed(config, userId)).rejects.toThrow('HTTP 403');
   });
 });
 
