@@ -145,6 +145,14 @@ fun SpendtrackScreen(
             route = route,
             pill = pill,
             currency = currency,
+            onCsvImport =
+                CsvImportSlot(
+                    repository = repository,
+                    // The rows a successful import creates are the server's; the
+                    // pull that follows is how this device learns about them,
+                    // exactly as it learns about another device's writes.
+                    onImported = { scope.launch { sync() } },
+                ),
             onSelectCurrency = { code ->
                 // A request, not a queued write: a currency that arrived a day
                 // late would relabel every figure on the screen.
@@ -354,6 +362,12 @@ fun SpendtrackScreen(
     }
 }
 
+/** The import control the header offers: the store it writes through and what to do after. */
+private data class CsvImportSlot(
+    val repository: SpendtrackRepository,
+    val onImported: () -> Unit,
+)
+
 /** Which recurring form is open: a new schedule, or an existing one. */
 private sealed interface SpendtrackRecurringTarget {
     data object New : SpendtrackRecurringTarget
@@ -378,6 +392,7 @@ private fun SpendtrackHeader(
     onAdd: () -> Unit,
     onOpenCategories: () -> Unit,
     onSelectCurrency: (String) -> Unit,
+    onCsvImport: CsvImportSlot?,
 ) {
     val categoriesRoute = route == CATEGORIES_ROUTE
 
@@ -418,6 +433,7 @@ private fun SpendtrackHeader(
                     onSelect = onSelectCurrency,
                     modifier = Modifier.weight(1f),
                 )
+                onCsvImport?.let { SpendtrackCsvImport(repository = it.repository, onImported = it.onImported) }
             }
         }
 

@@ -112,6 +112,7 @@ export const CONTRACTS = [
       'SpendtrackBudgetDeleteSchema',
       'SpendtrackRecurringWriteSchema',
       'SpendtrackRecurringUpdateSchema',
+      'SpendtrackImportResultSchema',
     ],
   },
 ];

@@ -197,6 +197,22 @@ export const SpendtrackRecurringWriteSchema = z.object({
   updatedAt: z.string(),
 });
 
+/** One row a CSV import could not take, with the reason. */
+export const SpendtrackImportErrorSchema = z.object({
+  row: z.number().int(),
+  message: z.string(),
+});
+
+/**
+ * `POST /spendtrack/api/import` (#653): what an import took, what it skipped,
+ * and why — the same answer the site's dialog reads its toast from.
+ */
+export const SpendtrackImportResultSchema = z.object({
+  imported: z.number().int(),
+  skipped: z.number().int(),
+  errors: z.array(SpendtrackImportErrorSchema),
+});
+
 /** A change to an owned recurring expense. */
 export const SpendtrackRecurringUpdateSchema = z.object({
   id: z.string(),

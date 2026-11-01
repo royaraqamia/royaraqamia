@@ -5,6 +5,7 @@ import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.SpendtrackBudgetWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackCurrency
+import com.royaraqamia.app.contracts.generated.SpendtrackImportResult
 import com.royaraqamia.app.contracts.generated.SpendtrackRecurringUpdate
 import com.royaraqamia.app.contracts.generated.SpendtrackRecurringWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackExpenseWriteSplitsItem
@@ -29,6 +30,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -119,6 +121,40 @@ class SpendtrackRepository(
             is ApiResult.Failure -> answer
         }
     }
+
+    /**
+     * Imports a CSV (#653).
+     *
+     * Not an Outbox intent: the import is one request the site makes and reports
+     * the answer of, and a queued one would have to answer a user who is no
+     * longer there. The rows it creates come back through the next pull — the
+     * server writes them, and the store learns about them the way it learns
+     * about any other device's writes.
+     */
+    suspend fun importCsv(content: String): ApiResult<SpendtrackImportResult> =
+        withContext(Dispatchers.IO) {
+            val body = buildJsonObject { put("content", content) }.toString()
+            when (val answer = client.send("POST", IMPORT_PATH, body)) {
+                is ApiResult.Success -> {
+                    val decoded =
+                        runCatching {
+                            SpendtrackPayloads.withNulls
+                                .decodeFromString<SpendtrackImportResult>(answer.value)
+                        }
+                    if (decoded.isSuccess) {
+                        ApiResult.Success(decoded.getOrThrow())
+                    } else {
+                        ApiResult.Failure(
+                            ApiError.InvalidContract(
+                                "import",
+                                decoded.exceptionOrNull()?.message ?: "unreadable body",
+                            )
+                        )
+                    }
+                }
+                is ApiResult.Failure -> answer
+            }
+        }
 
     /** The day a new expense is dated, in the device's own zone. */
     fun today(): String = clock.today()
@@ -720,6 +756,9 @@ class SpendtrackRepository(
 
         /** The account's display currency. */
         const val CURRENCY_PATH = "/spendtrack/api/settings/currency"
+
+        /** The CSV import. */
+        const val IMPORT_PATH = "/spendtrack/api/import"
 
         /** Where the incremental cursor lives beside the rows. */
         const val KEY_CURSOR = "syncCursor"

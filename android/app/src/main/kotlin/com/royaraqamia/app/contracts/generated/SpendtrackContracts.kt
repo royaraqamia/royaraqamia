@@ -190,3 +190,16 @@ data class SpendtrackRecurringUpdate(
     val updatedAt: String,
     val deletedAt: String?,
 )
+
+@Serializable
+data class SpendtrackImportResult(
+    val imported: Long,
+    val skipped: Long,
+    val errors: List<SpendtrackImportResultErrorsItem>,
+)
+
+@Serializable
+data class SpendtrackImportResultErrorsItem(
+    val row: Long,
+    val message: String,
+)

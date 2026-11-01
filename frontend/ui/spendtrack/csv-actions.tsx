@@ -13,7 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { Loader2, Upload, UploadCloud, FileText } from 'lucide-react';
+import { LoaderCircle, Upload, CloudUpload, FileText } from 'lucide-react';
+import { SPENDTRACK_CSV_COPY } from './spendtrack-csv-copy';
 import { importExpensesCsv } from '@/frontend/api/spendtrack';
 
 export function CsvActions() {
@@ -37,19 +38,21 @@ export function CsvActions() {
 
   async function handleImport() {
     if (!fileContent.trim()) {
-      toast.error('اختر ملف CSV أولًا');
+      toast.error(SPENDTRACK_CSV_COPY.chooseFirst);
       return;
     }
     setImporting(true);
     const result = await importExpensesCsv(fileContent);
     setImporting(false);
     if ('error' in result) {
-      toast.error(result.error);
+      toast.error(result.error || SPENDTRACK_CSV_COPY.failed);
       return;
     }
-    toast.success(`تم استيراد ${result.imported} مصروف`, {
+    toast.success(SPENDTRACK_CSV_COPY.imported.replace('{count}', String(result.imported)), {
       description:
-        result.errors.length > 0 ? `تم تخطّي ${result.skipped} صفًا غير صالح` : undefined,
+        result.errors.length > 0
+          ? SPENDTRACK_CSV_COPY.skipped.replace('{count}', String(result.skipped))
+          : undefined,
     });
     setImportOpen(false);
     setFileContent('');
@@ -67,17 +70,17 @@ export function CsvActions() {
         className="h-10 px-3.5 gap-2 text-xs sm:text-sm font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
       >
         <Upload className="size-4" />
-        استيراد
+        {SPENDTRACK_CSV_COPY.action}
       </Button>
 
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent className="sm:max-w-lg rounded-2xl border-border/80 bg-background p-6 shadow-2xl">
           <DialogHeader className="space-y-2 text-start">
             <DialogTitle className="text-lg font-bold text-foreground">
-              استيراد المصاريف
+              {SPENDTRACK_CSV_COPY.title}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              ارفع ملف CSV بالأعمدة:
+              {SPENDTRACK_CSV_COPY.columnsHint}
               <span
                 dir="ltr"
                 className="inline-block font-mono text-xs bg-muted/60 px-1.5 py-0.5 rounded ms-1"
@@ -85,7 +88,7 @@ export function CsvActions() {
                 date, amount, category, description
               </span>
               <br />
-              الصفوف السليمة تُضاف، وتُتجاهل الصفوف غير الصالحة، وتُنشأ التصنيفات الجديدة تلقائيًا.
+              {SPENDTRACK_CSV_COPY.rules}
             </DialogDescription>
           </DialogHeader>
 
@@ -100,9 +103,9 @@ export function CsvActions() {
               className="sr-only"
               onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
             />
-            <UploadCloud className="size-6 text-muted-foreground transition-colors group-hover:text-primary" />
+            <CloudUpload className="size-6 text-muted-foreground transition-colors group-hover:text-primary" />
             <span className="text-sm font-medium text-muted-foreground">
-              {fileName ?? 'اختر ملف CSV للاستيراد'}
+              {fileName ?? SPENDTRACK_CSV_COPY.pickFile}
             </span>
             {fileName && (
               <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
@@ -128,11 +131,11 @@ export function CsvActions() {
             >
               {importing ? (
                 <>
-                  <Loader2 className="size-4 animate-spin shrink-0" />
-                  <span>جاري الاستيراد...</span>
+                  <LoaderCircle className="size-4 animate-spin shrink-0" />
+                  <span>{SPENDTRACK_CSV_COPY.importing}</span>
                 </>
               ) : (
-                'استيراد'
+                SPENDTRACK_CSV_COPY.action
               )}
             </HeroCtaButton>
           </DialogActions>
