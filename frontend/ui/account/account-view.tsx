@@ -32,6 +32,7 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
+import { BlockedMembers } from '@/frontend/ui/account/blocked-members';
 import { ShellChangelogRow } from '@/frontend/ui/account/changelog-view';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
 
@@ -226,6 +227,12 @@ export function AccountView() {
           </button>
         )}
       </nav>
+
+      {user && (
+        <div className="mt-6">
+          <BlockedMembers />
+        </div>
+      )}
 
       <ConfirmDialog
         open={isLogoutDialogOpen}

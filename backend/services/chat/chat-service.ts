@@ -16,6 +16,7 @@ import {
   type ChatPeer,
   type ChatParticipant,
   type ChatParticipantStatus,
+  type ChatPreview,
   type ChatThread,
 } from '@/shared/contracts/chat';
 
@@ -37,6 +38,7 @@ export class ChatError extends Error {
 export interface ChatServiceDeps {
   users: {
     getById(id: string): Promise<PublicUser | null>;
+    getByUsername(username: string): Promise<PublicUser | null>;
     getMany(ids: string[]): Promise<PublicUser[]>;
     search(query: string, limit: number): Promise<PublicUser[]>;
   };
@@ -414,6 +416,25 @@ export class ChatService {
       const peer = toPeer(byId.get(id));
       return peer ? [peer] : [];
     });
+  }
+
+  /**
+   * The pre-chat screen's one read: the member a handle names, and the thread
+   * this pair already has. Nothing is created here — the request is a separate,
+   * deliberate click (`startDirect`).
+   */
+  async preview(userId: string, username: string): Promise<ChatPreview> {
+    const handle = username.trim().replace(/^@+/, '').toLowerCase();
+    if (!handle) throw new ChatError(400, 'معرِّف العضو مطلوب');
+
+    const user = await this.deps.users.getByUsername(handle);
+    if (!user || !user.verified) throw new ChatError(404, 'العضو غير موجود');
+    if (user.id === userId) throw new ChatError(400, 'لا يمكنك بدء محادثة مع نفسك');
+
+    const peer = toPeer(user);
+    if (!peer) throw new ChatError(404, 'العضو غير موجود');
+
+    return { peer, conversationId: await this.findDirectThread(userId, user.id) };
   }
 
   /**

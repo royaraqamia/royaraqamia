@@ -66,6 +66,9 @@ function makeRepository(
   const deps: ChatServiceDeps = {
     users: {
       getById: vi.fn(async (id: string) => (id === peerId ? peerUser : null)),
+      getByUsername: vi.fn(async (username: string) =>
+        username === peerUser.username ? peerUser : null
+      ),
       getMany: vi.fn(async () => [peerUser]),
       search: vi.fn(async () => [peerUser]),
     },
@@ -134,6 +137,7 @@ describe('ChatService.startDirect', () => {
           getById: vi.fn(async (id: string) =>
             id === me ? { ...peerUser, id: me, username: 'ahmad', name: 'أحمد' } : peerUser
           ),
+          getByUsername: vi.fn(async () => peerUser),
           getMany: vi.fn(async () => [peerUser]),
           search: vi.fn(async () => [peerUser]),
         },
@@ -308,6 +312,45 @@ describe('ChatService.listBlocked', () => {
     await expect(service.listBlocked(me)).resolves.toEqual([
       { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
     ]);
+  });
+});
+
+describe('ChatService.preview', () => {
+  it('answers the member and the thread the pair already has', async () => {
+    const { repository, service } = makeRepository({
+      findThreadIdByDirectKey: vi.fn(async () => 'c-1'),
+    });
+
+    await expect(service.preview(me, '@sara')).resolves.toEqual({
+      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      conversationId: 'c-1',
+    });
+    expect(repository.createConversation).not.toHaveBeenCalled();
+  });
+
+  it('answers no thread when the pair has never talked', async () => {
+    const { service } = makeRepository();
+
+    await expect(service.preview(me, 'sara')).resolves.toEqual({
+      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      conversationId: null,
+    });
+  });
+
+  it('refuses a handle the directory does not have', async () => {
+    const { service } = makeRepository(
+      {},
+      {
+        users: {
+          getById: vi.fn(async () => null),
+          getByUsername: vi.fn(async () => null),
+          getMany: vi.fn(async () => []),
+          search: vi.fn(async () => []),
+        },
+      }
+    );
+
+    await expect(service.preview(me, 'nobody')).rejects.toMatchObject({ status: 404 });
   });
 });
 
