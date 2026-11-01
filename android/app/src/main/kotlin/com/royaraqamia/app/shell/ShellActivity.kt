@@ -19,6 +19,7 @@ import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
+import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
@@ -100,6 +101,16 @@ class ShellActivity : ComponentActivity() {
                                     repository = graph.usage,
                                     signedIn = signedIn,
                                     onSignIn = { signedIn = false },
+                                )
+                            "/account/connected-apps" ->
+                                ConnectedAppsScreen(
+                                    repository = graph.connectedApps,
+                                    signedIn = signedIn,
+                                    onSignIn = { signedIn = false },
+                                    // The page's "connect a new client" opens the MCP
+                                    // guide, which the app has no screen for yet: it
+                                    // is a route the shell hands to the document.
+                                    onConnectNew = { openRoute("/mcp/guide") },
                                 )
                         }
                         if (!signedIn) {

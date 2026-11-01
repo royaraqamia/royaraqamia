@@ -13,6 +13,7 @@ import {
   getMcpConnectedApps,
 } from '@/frontend/api/mcp-connected-apps';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
@@ -60,8 +61,25 @@ export function connectedAppName(connectedApp: McpConnectedApp): string {
  * a logout", and a guest is pointed at sign-in in place. The read runs on the
  * never-cache `/api/me` prefix, which is what keeps an offline visit honest:
  * the shared needs-connection state instead of the list's stale look-alike.
+ *
+ * The page's heading lives here rather than in `page.tsx` so the app's screen can
+ * draw the same sentence from the same generated copy (ADR-0098).
  */
 export function McpConnectedAppsView() {
+  return (
+    <div className="space-y-6">
+      <header className="mb-10 text-center">
+        <SectionTitle as="h1">
+          <SectionTitleHighlight>{MCP_CONNECTED_APPS_COPY.pageTitle}</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+
+      <ConnectedAppsBody />
+    </div>
+  );
+}
+
+function ConnectedAppsBody() {
   const { user, isLoading } = useSession();
   const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);

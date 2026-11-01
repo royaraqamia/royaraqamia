@@ -87,8 +87,7 @@
     },
     {
       "surface": "account-connected-apps",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; the connected-apps screen lands in #657."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt"
     },
     {
       "surface": "account-faq",
