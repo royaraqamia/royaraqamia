@@ -33,9 +33,11 @@
  * `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`). Exit codes:
  * 0 inside budget, 1 over it or the device could not be measured, 2 adb missing.
  *
- * A mid-range device is the budget's own wording: an emulator reports a different
- * number, and it is a floor rather than the figure the doc asks for. Say which
- * device the run used wherever the result is recorded.
+ * The budget is witnessed on the reference phone `docs/mobile/native-app.md` names
+ * (`RMX3195`); the managed emulators (API 30 and 35) are where this runs when the
+ * phone is not attached, and an emulator reports a number that is a comparison
+ * rather than the figure a phase exit is signed off on. Say which device the run
+ * used wherever the result is recorded.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -63,7 +65,7 @@ export const PROCESS_DEATH_TIMEOUT_MS = 3000;
  * The options, from argv.
  *
  * `--runs` is bounded because each run costs the settle windows; `--no-budget`
- * turns a miss into a printed warning for a device that is not mid-range.
+ * turns a miss into a printed warning, for a run on an emulator.
  */
 export function parseArgs(argv) {
   const options = { device: null, runs: RUNS, budget: true, help: false };
