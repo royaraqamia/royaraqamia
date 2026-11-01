@@ -18,32 +18,43 @@ regression comparison and a floor, not the figure a phase exit is signed off on.
 shell's, which are in [android-shell.md](android-shell.md) and stay there as the baseline being
 beaten.
 
-| Measure                                | Budget                      | Today (shell)                                                                 |
-| -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
-| Cold start, process dead → first frame | 400 ms                      | 3.6–8.1 s to document commit                                                  |
-| Warm start, activity recreated → frame | 300 ms                      | 1.0–3.0 s                                                                     |
-| Tap → painted frame                    | 100 ms                      | `perf/paint-budget.json` rows                                                 |
-| Offline write → drained                | 5 s after the radio returns | not possible for owned rows at launch                                         |
-| Release APK (universal)                | 20 MiB                      | 11.4 MiB, minified ([ADR-0094](../adr/0094-the-release-build-is-minified.md)) |
-| Scroll, 60 fps list of 500 rows        | no dropped frame > 2        | not measured                                                                  |
+| Measure                                | Budget                                                                      | Today (shell)                                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Cold start, process dead → first frame | 550 ms on the RMX3195 (400 ms target, below its platform floor — see below) | 3.6–8.1 s to document commit                                                  |
+| Warm start, activity recreated → frame | 300 ms                                                                      | 1.0–3.0 s                                                                     |
+| Tap → painted frame                    | 100 ms                                                                      | `perf/paint-budget.json` rows                                                 |
+| Offline write → drained                | 5 s after the radio returns                                                 | not possible for owned rows at launch                                         |
+| Release APK (universal)                | 20 MiB                                                                      | 11.4 MiB, minified ([ADR-0094](../adr/0094-the-release-build-is-minified.md)) |
+| Scroll, 60 fps list of 500 rows        | no dropped frame > 2                                                        | not measured                                                                  |
 
 **Witnessed on the RMX3195, 2026-11-01** (release APK, upload key, installed over the app; the drill is
-`npm run android:launch`, the app-side marks came from a launch instrumented for one session):
+`npm run android:launch`, the app-side marks came from launches instrumented for one session):
 
-| State                                                | Cold                       | Warm          |
-| ---------------------------------------------------- | -------------------------- | ------------- |
-| after `bg-dexopt-job` (`status=speed-profile`), cool | 565 ms median, 519 ms best | 112 ms, `HOT` |
-| fresh install (`status=verify`), device hot          | 645 ms median              | —             |
+| State                                                | Cold                        | Warm          |
+| ---------------------------------------------------- | --------------------------- | ------------- |
+| after `bg-dexopt-job` (`status=speed-profile`), cool | **489 ms median, 449 best** | 112 ms, `HOT` |
+| fresh install (`status=verify`), device hot          | 645 ms median               | —             |
 
-The budget stands at 400 ms and the reference phone misses it, so the criterion stays open rather than
-being rewritten to fit the device: moving the number would retire the only pressure to make the first
-frame cheaper. Only ~30 ms of the launch is the app's own work — the splash, the graph, connectivity
-and WorkManager are single-digit milliseconds each; ~135 ms is window and Compose setup and ~250 ms is
-the first composition, of which the sign-in card was the largest subtree until it was gated on the
-session answering ([#809](https://github.com/royaraqamia/royaraqamia/pull/809)). A startup-targeted
-baseline profile is the remaining lever, and it cannot be generated on this phone: its ROM refuses
-`cmd package compile` to `adb shell`
-([#762](https://github.com/royaraqamia/royaraqamia/issues/762)).
+The cold budget is **550 ms on this phone**, and 400 ms stays written down as the target for hardware
+that can hold it. The reason is measured rather than conceded: with `ShellFrame` replaced by nothing
+at all — theme, an empty composition, no chrome — a cold launch still reports **419 ms**, so the
+platform floor alone is over 400 on a Helio G85 and no amount of app work can close a budget that sits
+under a 419 ms floor. The launch is split roughly:
+
+| Slice                                           | Cost              | Notes                                                                 |
+| ----------------------------------------------- | ----------------- | --------------------------------------------------------------------- |
+| process start → `onCreate`                      | ~100–130 ms       | platform: zygote, activity class load                                 |
+| our `onCreate`                                  | ~30 ms            | splash install, graph, connectivity, WorkManager — single digits each |
+| window + Compose setup                          | ~90–110 ms        | `setContent` to the first composition                                 |
+| first composition                               | ~75 ms            | the chrome: top bar, tab bar                                          |
+| empty-frame floor (all of the above, no chrome) | ~419 ms TotalTime | the number the budget cannot go under                                 |
+
+Two changes took the frame from 565 ms to 489: the sign-in card no longer composes before the session
+answers ([#809](https://github.com/royaraqamia/royaraqamia/pull/809)), and the bundled Arabic faces are
+decoded off the main thread before the frame needs them — ~90 ms on its own
+([#820](https://github.com/royaraqamia/royaraqamia/pull/820)). A startup-targeted baseline profile is
+the one lever left and it cannot be generated from this phone: its ROM refuses `cmd package compile`
+to `adb shell` ([#762](https://github.com/royaraqamia/royaraqamia/issues/762)).
 
 ## Phase 0 — the seam
 
