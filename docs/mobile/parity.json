@@ -20,8 +20,14 @@
       },
       "copySource": "shared/copy/habitflow.json",
       "states": [
-        { "name": "Painted", "copy": "listTitle" },
-        { "name": "Empty", "copy": "emptyTitle" }
+        {
+          "name": "Painted",
+          "copy": "listTitle"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
       ]
     },
     {
@@ -42,11 +48,26 @@
       },
       "copySource": "shared/copy/sync-status-pill.json",
       "states": [
-        { "name": "Offline", "copy": "offline" },
-        { "name": "RefreshFailed", "copy": "refreshFailed" },
-        { "name": "Syncing", "copy": "syncing" },
-        { "name": "Pending", "copy": "pending" },
-        { "name": "Failed", "copy": "failed" }
+        {
+          "name": "Offline",
+          "copy": "offline"
+        },
+        {
+          "name": "RefreshFailed",
+          "copy": "refreshFailed"
+        },
+        {
+          "name": "Syncing",
+          "copy": "syncing"
+        },
+        {
+          "name": "Pending",
+          "copy": "pending"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        }
       ]
     },
     {
@@ -66,10 +87,22 @@
       },
       "copySource": "shared/copy/sign-in.json",
       "states": [
-        { "name": "Idle", "copy": "submit" },
-        { "name": "Busy", "copy": "busy" },
-        { "name": "Refused", "copy": "refused" },
-        { "name": "Unreachable", "copy": "unreachable" }
+        {
+          "name": "Idle",
+          "copy": "submit"
+        },
+        {
+          "name": "Busy",
+          "copy": "busy"
+        },
+        {
+          "name": "Refused",
+          "copy": "refused"
+        },
+        {
+          "name": "Unreachable",
+          "copy": "unreachable"
+        }
       ]
     },
     {
@@ -281,7 +314,12 @@
         "copyObject": "ServicesOrderCopy"
       },
       "copySource": "shared/copy/shell-services-order.json",
-      "states": [{ "name": "Moved", "copy": "moved" }]
+      "states": [
+        {
+          "name": "Moved",
+          "copy": "moved"
+        }
+      ]
     },
     {
       "id": "notification-bell",
@@ -301,8 +339,150 @@
       },
       "copySource": "shared/copy/notification-bell.json",
       "states": [
-        { "name": "Idle", "copy": "label" },
-        { "name": "Unread", "copy": "unread" }
+        {
+          "name": "Idle",
+          "copy": "label"
+        },
+        {
+          "name": "Unread",
+          "copy": "unread"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-total",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/total-spend-card.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-total-copy.ts",
+        "copyExport": "SPENDTRACK_TOTAL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackTotalCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackTotalUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackTotalCopy.kt",
+        "copyObject": "SpendtrackTotalCopy"
+      },
+      "copySource": "shared/copy/spendtrack-total.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "totalTitle"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-expenses",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/expense-list.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-expenses-copy.ts",
+        "copyExport": "SPENDTRACK_EXPENSES_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseList.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpensesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpensesCopy.kt",
+        "copyObject": "SpendtrackExpensesCopy"
+      },
+      "copySource": "shared/copy/spendtrack-expenses.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "listLabel"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-expense-dialog",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/expense-dialog.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-expense-dialog-copy.ts",
+        "copyExport": "SPENDTRACK_EXPENSE_DIALOG_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseDialog.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseFormUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseDialogCopy.kt",
+        "copyObject": "SpendtrackExpenseDialogCopy"
+      },
+      "copySource": "shared/copy/spendtrack-expense-dialog.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "addAction"
+        },
+        {
+          "name": "Busy",
+          "copy": "saving"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-categories",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/categories/page.tsx",
+        "component": "app/spendtrack/(app)/categories/category-list.tsx",
+        "copyModule": "app/spendtrack/(app)/categories/spendtrack-categories-copy.ts",
+        "copyExport": "SPENDTRACK_CATEGORIES_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryList.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesCopy.kt",
+        "copyObject": "SpendtrackCategoriesCopy"
+      },
+      "copySource": "shared/copy/spendtrack-categories.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "listLabel"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-category-create",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/categories/page.tsx",
+        "component": "app/spendtrack/(app)/categories/create-category-dialog.tsx",
+        "copyModule": "app/spendtrack/(app)/categories/spendtrack-category-create-copy.ts",
+        "copyExport": "SPENDTRACK_CATEGORY_CREATE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryList.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryFormUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryCreateCopy.kt",
+        "copyObject": "SpendtrackCategoryCreateCopy"
+      },
+      "copySource": "shared/copy/spendtrack-category-create.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "addAction"
+        },
+        {
+          "name": "Busy",
+          "copy": "creating"
+        }
       ]
     }
   ]

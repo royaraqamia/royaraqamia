@@ -19,7 +19,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/frontend/ui/primitives/dialog';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, LoaderCircle } from 'lucide-react';
+import { SPENDTRACK_CATEGORIES_COPY } from './spendtrack-categories-copy';
+import { SPENDTRACK_CATEGORY_CREATE_COPY } from './spendtrack-category-create-copy';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),
@@ -100,24 +102,24 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
       <DialogTrigger asChild>
         <Button className="transition-safe duration-200 btn-press touch-target focus-ring">
           <Plus className="ms-1 size-4" />
-          إضافة تصنيف
+          {SPENDTRACK_CATEGORY_CREATE_COPY.addAction}
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-card border-border shadow-elevated">
         <DialogHeader>
-          <DialogTitle>إنشاء تصنيف</DialogTitle>
+          <DialogTitle>{SPENDTRACK_CATEGORY_CREATE_COPY.createTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">
-              الاسم{' '}
+              {SPENDTRACK_CATEGORIES_COPY.nameLabel}{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
             </Label>
             <Input
               id="name"
-              placeholder="مثال: بقالة"
+              placeholder={SPENDTRACK_CATEGORY_CREATE_COPY.namePlaceholder}
               className="bg-muted border-border focus-ring"
               {...register('name')}
               aria-invalid={errors.name ? true : undefined}
@@ -131,7 +133,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="colorHex" className="text-sm font-medium">
-              اللون{' '}
+              {SPENDTRACK_CATEGORIES_COPY.colorLabel}{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
@@ -170,11 +172,11 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
             <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
               {pending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin shrink-0" />
-                  <span>جاري الإنشاء...</span>
+                  <LoaderCircle className="size-4 animate-spin shrink-0" />
+                  <span>{SPENDTRACK_CATEGORY_CREATE_COPY.creating}</span>
                 </>
               ) : (
-                'إنشاء'
+                SPENDTRACK_CATEGORY_CREATE_COPY.createAction
               )}
             </HeroCtaButton>
           </DialogActions>

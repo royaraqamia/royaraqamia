@@ -308,6 +308,21 @@ Order follows the surface matrix's `Owner = local-store` rows, and the reference
 the web component it replaces — read it, port the behaviour, not the markup. The audio player is
 already native (ADR-0086): this phase gives it a Compose controller and deletes the plugin shim.
 
+**Wired today (#653).** SpendTrack's expenses and categories, in the app: one database per identity
+(`spendtrack__guest.db`, `spendtrack__user%3A<id>.db`), the `GET /spendtrack/api/sync` snapshot
+merged pending-aware into it, and an Outbox whose intents replay to the endpoints
+`frontend/api/spendtrack/sync-transport.ts` already drains to. The store, the drain and the
+backoff are HabitFlow's (`com.royaraqamia.app.store.outbox`), not a second engine: a product now
+contributes a table, a payload and a transport, and the delivery rules stay in one place. The
+queued write is delivered by the launch drain, the reconnection drain and the worker, all of which
+go through `AppGraph.drainOutbox` — which is what makes "one queue per product" safe to add.
+
+The screen is a pair with the site, five times over (`docs/mobile/parity.json`): the total card, the
+expense list, the expense form, the category list and the category create dialog. What the site
+draws and this slice does not is named in that pull request rather than implied by a missing
+button: the split editor (the app shows a split marker and re-sends the splits untouched), the
+budget card, the recurring list, CSV import and export, and the charts.
+
 **Exit criteria.** Every owned row in `docs/specs/surfaces.md` has a native screen and an offline
 write path, each with a drill or a UI test; the outbox fixtures still pass.
 

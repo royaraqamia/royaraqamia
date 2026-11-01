@@ -1,0 +1,23 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-category-create",
+  "web": {
+    "file": "app/spendtrack/(app)/categories/spendtrack-category-create-copy.ts",
+    "export": "SPENDTRACK_CATEGORY_CREATE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryCreateCopy.kt",
+    "object": "SpendtrackCategoryCreateCopy"
+  },
+  "notes": {
+    "source": "The create-category dialog's words, in both clients (#653). The two form labels are deliberately not here: `shared/copy/spendtrack-categories.json` holds them, because the site's edit dialog says the same two words and one string in two sources is one string that can drift.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dialog does not render."
+  },
+  "strings": {
+    "addAction": "إضافة تصنيف",
+    "createTitle": "إنشاء تصنيف",
+    "createAction": "إنشاء",
+    "creating": "جاري الإنشاء...",
+    "namePlaceholder": "مثال: بقالة"
+  }
+}

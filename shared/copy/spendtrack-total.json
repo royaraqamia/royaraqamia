@@ -1,0 +1,21 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-total",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-total-copy.ts",
+    "export": "SPENDTRACK_TOTAL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackTotalCopy.kt",
+    "object": "SpendtrackTotalCopy"
+  },
+  "notes": {
+    "source": "The total card's words, in both clients (#653). The site's card is the reference: the heading and the sentence its accessible name uses are what the app draws around the same figure, so neither client spells them.",
+    "placeholders": "`{amount}` is the formatted figure the client substitutes, so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the card does not render."
+  },
+  "strings": {
+    "totalTitle": "إجمالي الإنفاق",
+    "totalLabel": "إجمالي الإنفاق: {amount}"
+  }
+}

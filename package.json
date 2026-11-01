@@ -42,6 +42,8 @@
     "tokens:generate": "node scripts/generate-tokens.mjs",
     "copy:generate": "node scripts/generate-copy.mjs",
     "check:copy": "node scripts/generate-copy.mjs --check",
+    "currency:generate": "node scripts/generate-currency.mjs",
+    "check:currency": "node scripts/generate-currency.mjs --check",
     "check:parity": "node scripts/check-parity.mjs",
     "components:generate": "node scripts/generate-components.mjs",
     "check:components": "node scripts/generate-components.mjs --check",

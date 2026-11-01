@@ -11,11 +11,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/frontend/ui/primitives/dialog';
-import { Trash2, Loader2, Receipt, AlertCircle, PieChart } from 'lucide-react';
+import { Trash, LoaderCircle, Receipt, CircleAlert, ChartPie } from 'lucide-react';
 import { EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
 import { parseISO } from 'date-fns';
+import { SPENDTRACK_EXPENSES_COPY } from './spendtrack-expenses-copy';
 
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 import { formatMoney } from '@/shared/currency';
@@ -56,16 +57,27 @@ export function ExpenseList({
     return (
       <EmptyState
         icon={Receipt}
-        title={hasFilters ? 'لا توجد نتائج تُطابق الفلترة' : 'لا توجد مصاريف بعد'}
+        title={
+          hasFilters
+            ? SPENDTRACK_EXPENSES_COPY.emptyFilteredTitle
+            : SPENDTRACK_EXPENSES_COPY.emptyTitle
+        }
         description={
-          hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف'
+          hasFilters
+            ? SPENDTRACK_EXPENSES_COPY.emptyFilteredBody
+            : SPENDTRACK_EXPENSES_COPY.emptyBody
         }
       />
     );
   }
 
   return (
-    <div className="w-full space-y-2.5" role="list" aria-label="قائمة المصاريف" aria-live="polite">
+    <div
+      className="w-full space-y-2.5"
+      role="list"
+      aria-label={SPENDTRACK_EXPENSES_COPY.listLabel}
+      aria-live="polite"
+    >
       {expenses.map((expense) => (
         <ExpenseRow
           key={expense.id}
@@ -82,8 +94,10 @@ export function ExpenseList({
             disabled={loading}
             className="group relative inline-flex items-center justify-center h-10 px-6 text-xs font-medium tracking-wide transition-safe duration-300 ease-out border rounded-full border-border/70 bg-background/80 hover:bg-accent hover:text-accent-foreground hover:border-border hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
           >
-            {loading ? <Loader2 className="ms-2 size-3.5 animate-spin text-primary" /> : null}
-            <span>{loading ? 'جاري التَّحميل...' : 'تحميل المزيد'}</span>
+            {loading ? <LoaderCircle className="ms-2 size-3.5 animate-spin text-primary" /> : null}
+            <span>
+              {loading ? SPENDTRACK_EXPENSES_COPY.loading : SPENDTRACK_EXPENSES_COPY.loadMore}
+            </span>
           </Button>
         </div>
       )}
@@ -110,10 +124,8 @@ function ExpenseRow({
     numberingSystem: 'latn',
   }).format(parseISO(expense.date));
   const effectiveCurrency = expense.currency ?? currency;
-  const rowLabel = `${expense.description || 'بدون وصف'}، ${formatMoney(
-    expense.amount,
-    effectiveCurrency
-  )}، ${formattedDate}`;
+  const description = expense.description || SPENDTRACK_EXPENSES_COPY.noDescription;
+  const rowLabel = `${description}، ${formatMoney(expense.amount, effectiveCurrency)}، ${formattedDate}`;
 
   return (
     <div
@@ -137,7 +149,7 @@ function ExpenseRow({
 
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="font-bold text-sm text-foreground tracking-tight truncate group-hover/row:text-primary transition-colors duration-200">
-            {expense.description || 'بدون وصف'}
+            {description}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80 font-normal truncate">
             {expense.categories?.name && (
@@ -151,7 +163,7 @@ function ExpenseRow({
 
           {expense.splits && expense.splits.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-              <PieChart className="size-3 shrink-0 text-info" aria-hidden="true" />
+              <ChartPie className="size-3 shrink-0 text-info" aria-hidden="true" />
               {expense.splits.map((split) => {
                 const splitCategory = categories.find((cat) => cat.id === split.category_id);
                 return (
@@ -191,19 +203,21 @@ function ExpenseRow({
             variant="ghost"
             size="icon"
             type="button"
-            aria-label="حذف المصروف"
+            aria-label={SPENDTRACK_EXPENSES_COPY.deleteTitle}
             className="size-8 rounded-lg opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 focus-visible:opacity-100 transition-safe duration-200 text-muted-foreground/80 hover:text-destructive hover:bg-destructive/10 active:scale-90 focus-visible:ring-2 focus-visible:ring-destructive/30"
             onClick={() => setConfirmDeleteOpen(true)}
           >
-            <Trash2 className="size-3.5" />
+            <Trash className="size-3.5" />
           </Button>
 
           <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
             <DialogContent className="sm:max-w-md rounded-2xl border-border/80 bg-background p-6 shadow-2xl">
               <DialogHeader className="space-y-2 text-start">
-                <DialogTitle className="text-lg font-bold text-foreground">حذف المصروف</DialogTitle>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  {SPENDTRACK_EXPENSES_COPY.deleteTitle}
+                </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                  هل أنت متأكِّد من حذف هذا المصروف؟ لا يمكن التَّراجع عن هذا الإجراء.
+                  {SPENDTRACK_EXPENSES_COPY.deleteBody}
                 </DialogDescription>
               </DialogHeader>
 
@@ -212,7 +226,7 @@ function ExpenseRow({
                   className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20"
                   role="alert"
                 >
-                  <AlertCircle className="size-4 shrink-0" />
+                  <CircleAlert className="size-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
@@ -227,11 +241,11 @@ function ExpenseRow({
                   >
                     {pending ? (
                       <>
-                        <Loader2 className="size-4 animate-spin shrink-0" />
-                        <span>جاري الحذف...</span>
+                        <LoaderCircle className="size-4 animate-spin shrink-0" />
+                        <span>{SPENDTRACK_EXPENSES_COPY.deleting}</span>
                       </>
                     ) : (
-                      'حذف'
+                      SPENDTRACK_EXPENSES_COPY.deleteAction
                     )}
                   </HeroCtaButton>
                 </form>

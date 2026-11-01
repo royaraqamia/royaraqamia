@@ -1,3 +1,172 @@
+import { z } from 'zod';
+
+/**
+ * The sync route's read model, as a schema (#653).
+ *
+ * The interfaces below are TypeScript, which the Kotlin generator cannot see: a
+ * body the site accepts and the app cannot decode is a screen that paints
+ * nothing. The app reads the same route the web's pull reads
+ * (`/spendtrack/api/sync`, `frontend/api/spendtrack/local-store.ts`), so the
+ * shape it decodes is written down here and regenerated into Kotlin.
+ *
+ * Every row carries the Outbox fields (ADR-0029) because the route is
+ * tombstone-inclusive: a delete made on another device arrives as a tombstone,
+ * and a pull that dropped it would re-create the row.
+ */
+export const SpendtrackCategorySchema = z.object({
+  id: z.string(),
+  user_id: z.string().nullable(),
+  name: z.string(),
+  colorHex: z.string(),
+  created_at: z.string(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/** One split as the snapshot carries it: part of an expense, drawn by the web only today. */
+export const SpendtrackExpenseSplitSchema = z.object({
+  id: z.string(),
+  expense_id: z.string(),
+  category_id: z.string(),
+  amount: z.number(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/** One expense as the snapshot carries it, with the category it was filed under. */
+export const SpendtrackExpenseSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  category_id: z.string(),
+  amount: z.number(),
+  description: z.string().nullable(),
+  date: z.string(),
+  created_at: z.string(),
+  currency: z.string().nullable().optional(),
+  categories: z
+    .object({
+      name: z.string(),
+      colorHex: z.string(),
+    })
+    .nullable()
+    .optional(),
+  splits: z.array(SpendtrackExpenseSplitSchema).nullable().optional(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/** One month's budget, owned or category-scoped. */
+export const SpendtrackBudgetSchema = z.object({
+  id: z.string(),
+  month: z.string(),
+  amount: z.number(),
+  category_id: z.string().nullable(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/** One recurring expense as the snapshot carries it. */
+export const SpendtrackRecurringSchema = z.object({
+  id: z.string(),
+  amount: z.number(),
+  category_id: z.string(),
+  description: z.string().nullable(),
+  day_of_month: z.number().int(),
+  start_month: z.string(),
+  active: z.boolean(),
+  clientId: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  deletedAt: z.string().nullable().optional(),
+});
+
+/**
+ * `GET /spendtrack/api/sync` (#653): the owned set, tombstones included, plus
+ * the cursor the next page passes as `since`.
+ */
+export const SpendtrackSyncSnapshotSchema = z.object({
+  categories: z.array(SpendtrackCategorySchema),
+  expenses: z.array(SpendtrackExpenseSchema),
+  budgets: z.array(SpendtrackBudgetSchema),
+  recurring: z.array(SpendtrackRecurringSchema),
+  cursor: z.string().nullable(),
+});
+
+/**
+ * What a queued write sends (#653).
+ *
+ * The web's outbox builds these bodies by hand
+ * (`frontend/api/spendtrack/local-store.ts`); the app builds them from a
+ * generated type, so a field the server stops accepting is a compile error in
+ * the app rather than a queued write that can never drain.
+ */
+
+/** One split as a write carries it: part of an expense, drawn by the web only today. */
+export const SpendtrackSplitWriteSchema = z.object({
+  category_id: z.string(),
+  amount: z.number(),
+  clientId: z.string().nullable().optional(),
+});
+
+/** A queued expense create: the row's body, with the splits it carries. */
+export const SpendtrackExpenseWriteSchema = z.object({
+  clientId: z.string(),
+  amount: z.number(),
+  category_id: z.string(),
+  date: z.string(),
+  description: z.string().nullable(),
+  currency: z.string().nullable(),
+  splits: z.array(SpendtrackSplitWriteSchema),
+  updatedAt: z.string(),
+});
+
+/** A change to an owned expense: the write above, its id, and any tombstone decision. */
+export const SpendtrackExpenseUpdateSchema = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  amount: z.number(),
+  category_id: z.string(),
+  date: z.string(),
+  description: z.string().nullable(),
+  currency: z.string().nullable(),
+  splits: z.array(SpendtrackSplitWriteSchema),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
+});
+
+/** A new category: the id travels as `clientId`, which is what makes a replay an upsert. */
+export const SpendtrackCategoryWriteSchema = z.object({
+  clientId: z.string(),
+  name: z.string(),
+  color_hex: z.string(),
+  updatedAt: z.string(),
+});
+
+/** A change to an owned category. */
+export const SpendtrackCategoryUpdateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color_hex: z.string(),
+  updatedAt: z.string(),
+});
+
+/** A queued delete: the row's id and the instant the delete was decided. */
+export const SpendtrackDeleteSchema = z.object({
+  id: z.string(),
+  updatedAt: z.string(),
+});
+
+/**
+ * `GET /spendtrack/api/settings/currency` (#653): the account's display currency,
+ * which is what turns a stored amount into the figure the site writes.
+ */
+export const SpendtrackCurrencySchema = z.object({
+  currency: z.string(),
+});
+
 /** Outbox/LWW fields shared by offline-owned rows (ADR-0029, ticket #162). */
 type OfflineFields = {
   clientId?: string | null;

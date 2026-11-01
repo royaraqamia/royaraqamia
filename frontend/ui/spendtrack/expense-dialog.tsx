@@ -23,17 +23,18 @@ import {
 import {
   Plus,
   Pencil,
-  Loader2,
+  LoaderCircle,
   DollarSign,
   Tag,
   Calendar,
   FileText,
-  AlertCircle,
+  CircleAlert,
   Coins,
 } from 'lucide-react';
 import type { Category, Expense } from '@/shared/contracts/spendtrack';
 import { getCurrencyName, getCurrencySymbol, EXPENSE_CURRENCIES } from '@/shared/currency';
 import { localDate } from '@/frontend/shared/spendtrack/local-date';
+import { SPENDTRACK_EXPENSE_DIALOG_COPY } from './spendtrack-expense-dialog-copy';
 
 const expenseSchema = z.object({
   amount: z
@@ -130,13 +131,13 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
         <DialogTrigger asChild>
           <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
             <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
-            <span>إضافة مصروف</span>
+            <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.addAction}</span>
           </Button>
         </DialogTrigger>
       )}
       {showFab && (
         <DialogTrigger asChild>
-          <FabButton label="إضافة مصروف جديد">
+          <FabButton label={SPENDTRACK_EXPENSE_DIALOG_COPY.addAria}>
             <Plus className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
           </FabButton>
         </DialogTrigger>
@@ -146,7 +147,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
           hideClose
           className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6"
         >
-          <DialogTitle className="sr-only">إضافة مصروف</DialogTitle>
+          <DialogTitle className="sr-only">{SPENDTRACK_EXPENSE_DIALOG_COPY.addAction}</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
             onCancel={() => {
@@ -159,7 +160,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
             categories={categories}
             pending={pending}
             serverError={serverError}
-            submitLabel="إضافة مصروف"
+            submitLabel={SPENDTRACK_EXPENSE_DIALOG_COPY.addAction}
             currency={currency}
           />
         </DialogContent>
@@ -221,7 +222,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="تعديل المصروف"
+          aria-label={SPENDTRACK_EXPENSE_DIALOG_COPY.editTitle}
           className="group relative inline-flex size-9 items-center justify-center rounded-xl text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 cursor-pointer"
         >
           <Pencil className="size-4 transition-transform duration-200 group-hover:scale-110" />
@@ -232,7 +233,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
           hideClose
           className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6"
         >
-          <DialogTitle className="sr-only">تعديل المصروف</DialogTitle>
+          <DialogTitle className="sr-only">{SPENDTRACK_EXPENSE_DIALOG_COPY.editTitle}</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
             onCancel={() => {
@@ -245,7 +246,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
             categories={categories}
             pending={pending}
             serverError={serverError}
-            submitLabel="حفظ التَّعديلات"
+            submitLabel={SPENDTRACK_EXPENSE_DIALOG_COPY.save}
             currency={currency}
           />
         </DialogContent>
@@ -300,7 +301,9 @@ function ExpenseForm({
             className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <DollarSign className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-            <span>المبلغ ({getCurrencySymbol(effectiveCurrency)})</span>
+            <span>
+              {SPENDTRACK_EXPENSE_DIALOG_COPY.amountLabel} ({getCurrencySymbol(effectiveCurrency)})
+            </span>
             <span className="text-rose-500 font-bold" aria-hidden="true">
               *
             </span>
@@ -330,7 +333,7 @@ function ExpenseForm({
             className="text-xs font-medium text-rose-500 dark:text-rose-400 flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200"
             role="alert"
           >
-            <AlertCircle className="size-3.5 shrink-0" />
+            <CircleAlert className="size-3.5 shrink-0" />
             <span>{errors.amount.message}</span>
           </p>
         )}
@@ -343,7 +346,7 @@ function ExpenseForm({
           className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
         >
           <Tag className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-          <span>التَّصنيف</span>
+          <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.categoryLabel}</span>
           <span className="text-rose-500 font-bold" aria-hidden="true">
             *
           </span>
@@ -357,7 +360,7 @@ function ExpenseForm({
                 className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none aria-invalid:border-rose-500"
                 aria-describedby={errors.category_id ? 'category-error' : undefined}
               >
-                <SelectValue placeholder="اختر تصنيف" />
+                <SelectValue placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.categoryPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl p-1 max-h-60">
                 {categories.map((cat) => (
@@ -385,7 +388,7 @@ function ExpenseForm({
             className="text-xs font-medium text-rose-500 dark:text-rose-400 flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200"
             role="alert"
           >
-            <AlertCircle className="size-3.5 shrink-0" />
+            <CircleAlert className="size-3.5 shrink-0" />
             <span>{errors.category_id.message}</span>
           </p>
         )}
@@ -395,7 +398,7 @@ function ExpenseForm({
       <div className="space-y-2">
         <Label className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
           <Calendar className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-          <span>التَّاريخ</span>
+          <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.dateLabel}</span>
           <span className="text-rose-500 font-bold" aria-hidden="true">
             *
           </span>
@@ -407,7 +410,7 @@ function ExpenseForm({
             <DatePicker
               value={field.value}
               onChange={field.onChange}
-              placeholder="اختر التَّاريخ"
+              placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.datePlaceholder}
               className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none"
               aria-invalid={errors.date ? true : undefined}
               aria-describedby={errors.date ? 'date-error' : undefined}
@@ -420,7 +423,7 @@ function ExpenseForm({
             className="text-xs font-medium text-rose-500 dark:text-rose-400 flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200"
             role="alert"
           >
-            <AlertCircle className="size-3.5 shrink-0" />
+            <CircleAlert className="size-3.5 shrink-0" />
             <span>{errors.date.message}</span>
           </p>
         )}
@@ -434,15 +437,15 @@ function ExpenseForm({
             className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <FileText className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-            <span>الوصف</span>
+            <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.descriptionLabel}</span>
           </Label>
           <span className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
-            (اختياري)
+            {SPENDTRACK_EXPENSE_DIALOG_COPY.optional}
           </span>
         </div>
         <Input
           id="description"
-          placeholder="مثال: غداء في المطعم"
+          placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.descriptionPlaceholder}
           className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
           {...register('description')}
         />
@@ -456,10 +459,10 @@ function ExpenseForm({
             className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <Coins className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-            <span>العملة</span>
+            <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.currencyLabel}</span>
           </Label>
           <span className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
-            (اختياري)
+            {SPENDTRACK_EXPENSE_DIALOG_COPY.optional}
           </span>
         </div>
         <Controller
@@ -473,7 +476,7 @@ function ExpenseForm({
               value={field.value || INHERIT_CURRENCY_VALUE}
             >
               <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
-                <SelectValue placeholder="العملة الأساسية" />
+                <SelectValue placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.currencyPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl p-1 max-h-60">
                 <SelectItem
@@ -481,7 +484,11 @@ function ExpenseForm({
                   className="rounded-lg py-2 px-3 text-sm font-medium cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:bg-neutral-100 dark:focus:bg-neutral-800"
                 >
                   <span>
-                    العملة الأساسية ({getCurrencySymbol(currency)}) — {getCurrencyName(currency)}
+                    {SPENDTRACK_EXPENSE_DIALOG_COPY.currencyInherit.replace(
+                      '{symbol}',
+                      getCurrencySymbol(currency)
+                    )}{' '}
+                    — {getCurrencyName(currency)}
                   </span>
                 </SelectItem>
                 {EXPENSE_CURRENCIES.map((item) => (
@@ -500,7 +507,7 @@ function ExpenseForm({
           )}
         />
         <p className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
-          تُستخدم عملة حسابك الأساسية عند عدم التحديد
+          {SPENDTRACK_EXPENSE_DIALOG_COPY.currencyHint}
         </p>
       </div>
 
@@ -509,8 +516,9 @@ function ExpenseForm({
         <div
           className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3.5 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-2.5 animate-in fade-in duration-200"
           role="alert"
+          aria-label={SPENDTRACK_EXPENSE_DIALOG_COPY.errorLabel}
         >
-          <AlertCircle className="size-4 shrink-0 text-rose-500" />
+          <CircleAlert className="size-4 shrink-0 text-rose-500" />
           <span>{serverError || errors.root?.message}</span>
         </div>
       )}
@@ -520,8 +528,8 @@ function ExpenseForm({
         <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
           {pending ? (
             <>
-              <Loader2 className="size-4 animate-spin shrink-0" />
-              <span>جاري الحفظ...</span>
+              <LoaderCircle className="size-4 animate-spin shrink-0" />
+              <span>{SPENDTRACK_EXPENSE_DIALOG_COPY.saving}</span>
             </>
           ) : (
             <span>{submitLabel}</span>
