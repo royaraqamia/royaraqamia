@@ -47,7 +47,7 @@ export function TotalSpendCard({
           {formatMoney(total, currency)}
         </p>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          {formatRangeDate(start)} إلى {formatRangeDate(end)}
+          {formatRangeDate(start)} {SPENDTRACK_TOTAL_COPY.rangeSeparator} {formatRangeDate(end)}
         </p>
       </CardContent>
     </Card>

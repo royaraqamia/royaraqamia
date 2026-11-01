@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -37,6 +38,8 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 fun SpendtrackTotalCard(
     total: Double,
     currency: String?,
+    start: String,
+    end: String,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
@@ -78,7 +81,12 @@ fun SpendtrackTotalCard(
                 color = RoyColors.foreground,
             )
             Text(
-                text = label,
+                text =
+                    PlanDates.labelDay(start) +
+                        " " +
+                        SpendtrackTotalCopy.RANGE_SEPARATOR +
+                        " " +
+                        PlanDates.labelDay(end),
                 style = type.xs,
                 color = Recipes.Row.labelColor,
             )

@@ -136,6 +136,15 @@ fun SpendtrackScreen(
         SpendtrackHeader(
             route = route,
             pill = pill,
+            currency = currency,
+            onSelectCurrency = { code ->
+                // A request, not a queued write: a currency that arrived a day
+                // late would relabel every figure on the screen.
+                scope.launch {
+                    repository.setAccountCurrency(code)
+                    sync()
+                }
+            },
             onRetry = {
                 scope.launch {
                     repository.retryFailed()
@@ -177,7 +186,12 @@ fun SpendtrackScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SpendtrackTotalCard(total = spent, currency = currency)
+                    SpendtrackTotalCard(
+                        total = spent,
+                        currency = currency,
+                        start = monthStart(),
+                        end = monthEnd(),
+                    )
                     SpendtrackBudgetCard(
                         state = budget,
                         spent = spent,
@@ -327,9 +341,11 @@ private sealed interface SpendtrackCategoryFormTarget {
 private fun SpendtrackHeader(
     route: String,
     pill: SyncPillState?,
+    currency: String?,
     onRetry: () -> Unit,
     onAdd: () -> Unit,
     onOpenCategories: () -> Unit,
+    onSelectCurrency: (String) -> Unit,
 ) {
     val categoriesRoute = route == CATEGORIES_ROUTE
 
@@ -357,8 +373,19 @@ private fun SpendtrackHeader(
         }
 
         if (!categoriesRoute) {
-            TextButton(onClick = onOpenCategories) {
-                Text(SpendtrackCategoriesCopy.LIST_LABEL)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onOpenCategories) {
+                    Text(SpendtrackCategoriesCopy.LIST_LABEL)
+                }
+                SpendtrackCurrencyPicker(
+                    currency = currency,
+                    onSelect = onSelectCurrency,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
@@ -375,6 +402,16 @@ internal fun currentMonth(): String {
         calendar.get(java.util.Calendar.YEAR),
         calendar.get(java.util.Calendar.MONTH) + 1,
     )
+}
+
+/** The first day of the month the screen is about: `yyyy-MM-01`. */
+internal fun monthStart(month: String = currentMonth()): String = "$month-01"
+
+/** The month's last day, which is what the site's total card names. */
+internal fun monthEnd(month: String = currentMonth()): String {
+    val calendar = java.util.Calendar.getInstance()
+    val last = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+    return String.format(java.util.Locale.ROOT, "%s-%02d", month, last)
 }
 
 /**

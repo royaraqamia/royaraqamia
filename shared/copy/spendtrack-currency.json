@@ -1,0 +1,21 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-currency",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-currency-copy.ts",
+    "export": "SPENDTRACK_CURRENCY_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCurrencyCopy.kt",
+    "object": "SpendtrackCurrencyCopy"
+  },
+  "notes": {
+    "source": "The account-currency control's words, in both clients (#653). The site shows the symbol and the currency's name; the app shows the same pair, so the control reads the same on both sides of the seam.",
+    "placeholders": "`{name}` is the currency's name, which the generated table supplies in both clients.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the control does not render."
+  },
+  "strings": {
+    "label": "العملة",
+    "current": "العملة الحاليَّة: {name}"
+  }
+}
