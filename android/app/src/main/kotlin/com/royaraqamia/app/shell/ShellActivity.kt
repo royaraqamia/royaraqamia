@@ -20,8 +20,10 @@ import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
+import com.royaraqamia.app.plans.PlanScreen
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
@@ -101,8 +103,24 @@ class ShellActivity : ComponentActivity() {
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {
-                        if (NativeSurfaces.isNative(current)) {
-                            HabitflowScreen(repository = graph.habitflow)
+                        when (Routes.normalize(current)) {
+                            "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
+                            "/account/plan" ->
+                                PlanScreen(
+                                    repository = graph.usage,
+                                    signedIn = signedIn,
+                                    onSignIn = { signedIn = false },
+                                )
+                            "/account/connected-apps" ->
+                                ConnectedAppsScreen(
+                                    repository = graph.connectedApps,
+                                    signedIn = signedIn,
+                                    onSignIn = { signedIn = false },
+                                    // The page's "connect a new client" opens the MCP
+                                    // guide, which the app has no screen for yet: it
+                                    // is a route the shell hands to the document.
+                                    onConnectNew = { openRoute("/mcp/guide") },
+                                )
                         }
                         if (!signedIn) {
                             SignInCard(

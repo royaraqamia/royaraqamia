@@ -142,8 +142,8 @@
       "ungated": "No paint budget measures this row yet (#558). The document is a prerendered shell and the only state is the day's count, which is device-local: no server read, no outbox."
     },
     {
-      "id": "account-owned",
-      "routes": ["/account", "/account/links", "/account/posts", "/account/submissions"],
+      "id": "account",
+      "routes": ["/account"],
       "owner": "local-store",
       "read": "store",
       "write": "outbox",
@@ -153,14 +153,85 @@
       "issue": "#493"
     },
     {
-      "id": "account-server",
-      "routes": [
-        "/account/plan",
-        "/account/connected-apps",
-        "/account/faq",
-        "/account/news",
-        "/account/services"
-      ],
+      "id": "account-links",
+      "routes": ["/account/links"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-posts",
+      "routes": ["/account/posts"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-submissions",
+      "routes": ["/account/submissions"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-plan",
+      "routes": ["/account/plan"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-connected-apps",
+      "routes": ["/account/connected-apps"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-faq",
+      "routes": ["/account/faq"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "precached",
+      "bundle": "bundled",
+      "specs": [],
+      "issue": "#493"
+    },
+    {
+      "id": "account-services",
+      "routes": ["/account/services"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "bundle": "bundled",
+      "specs": [],
+      "ungated": "A data-free shell: the switches and the set come from a client read of `/api/me/hidden-services`, so with the radio off the page reports the missing connection. It is not in the precache list — the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document at runtime after the first visit."
+    },
+    {
+      "id": "account-news",
+      "routes": ["/account/news"],
       "owner": "server",
       "read": "needs-connection",
       "write": "none",

@@ -10,6 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const MCP_CONNECTED_APPS_COPY = {
+  pageTitle: 'التَّطبيقات المتَّصلة بالـ MCP',
   loadingLabel: 'جاري التَّحميل...',
   signIn: 'تسجيل الدُّخول',
   failed: 'تعذّر تحميل التَّطبيقات المتَّصلة.',
