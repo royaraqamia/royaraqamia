@@ -10,6 +10,12 @@
 # release is usually a build failure or a missing release note, and a retry every
 # hour is a red run every hour, not a fix. One alert issue, opened once, updated
 # while the backlog stands, and closed by the run that finds the train level again.
+#
+# A switch that cannot read the train is the one failure it cannot report on its
+# own, so it reports that instead of reporting nothing: the alert step runs on
+# `always()` and opens a second issue when the reading step failed. Four daily
+# runs went red and silent between 2026-10-29 and 2026-11-01 because a prose line
+# reached `$GITHUB_OUTPUT`; a red run in Actions is only loud if someone looks.
 
 name: 'Release Health'
 
@@ -41,13 +47,19 @@ jobs:
           fetch-tags: true
 
       # The threshold lives beside the rule it belongs to:
-      # scripts/android-release.mjs (`STALE_DAYS`).
+      # scripts/android-release.mjs (`STALE_DAYS`). That script treats `--health` as a
+      # machine mode: its stdout is exactly the `key=value` pairs appended below, and
+      # anything it says in words goes to stderr, where GitHub does not parse it.
       - name: Read the train's backlog
         id: train
         run: node scripts/android-release.mjs --health >> "$GITHUB_OUTPUT"
 
       - name: Open, update or close the alert
+        # `always()`: a reading step that failed has no outputs, and skipping this
+        # step is how the switch goes quiet instead of saying it is blind.
+        if: always()
         env:
+          TRAIN_OK: ${{ steps.train.outcome == 'success' }}
           STALLED: ${{ steps.train.outputs.stalled }}
           RELEASE: ${{ steps.train.outputs.release }}
           NEXT: ${{ steps.train.outputs.next }}
@@ -59,10 +71,14 @@ jobs:
             const repo = context.repo.repo;
             const ALERT_LABEL = 'release:alert';
             const ALERT_TITLE = 'Android release is overdue on main';
+            const BLIND_TITLE = 'Release health cannot read the train';
             const stalled = process.env.STALLED === 'true';
+            const blind = process.env.TRAIN_OK !== 'true';
             const commitsUrl = context.serverUrl + '/' + owner + '/' + repo + '/commits/main';
             const runsUrl =
               context.serverUrl + '/' + owner + '/' + repo + '/actions/workflows/android-release.yml';
+            const runUrl =
+              context.serverUrl + '/' + owner + '/' + repo + '/actions/runs/' + context.runId;
 
             const open = await github.paginate(github.rest.issues.listForRepo, {
               owner,
@@ -71,7 +87,75 @@ jobs:
               labels: ALERT_LABEL,
               per_page: 100,
             });
-            const existing = open.find((issue) => !issue.pull_request && issue.title === ALERT_TITLE);
+            const issues = open.filter((issue) => !issue.pull_request);
+            const existing = issues.find((issue) => issue.title === ALERT_TITLE);
+            const blindExisting = issues.find((issue) => issue.title === BLIND_TITLE);
+
+            const ensureLabel = async () => {
+              try {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: ALERT_LABEL,
+                  color: 'b60205',
+                  description: 'The Android release train is overdue on main',
+                });
+              } catch (err) {
+                if (err.status !== 422) throw err;
+              }
+            };
+
+            const upsert = async (issue, title, body) => {
+              if (issue) {
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, body });
+                core.info('Updated alert #' + issue.number + '.');
+                return;
+              }
+              await ensureLabel();
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: [ALERT_LABEL],
+              });
+              core.info('Opened alert #' + created.data.number + '.');
+            };
+
+            if (blind) {
+              await upsert(
+                blindExisting,
+                BLIND_TITLE,
+                [
+                  'The release health check could not read the train, so nothing is watching whether native changes have an APK behind them.',
+                  '',
+                  'The reading step failed; the run it failed in is linked below. Every scheduled run',
+                  'fails the same way until the cause is fixed, and while it does, an overdue release',
+                  'goes unreported.',
+                  '',
+                  '- [The run that broke](' + runUrl + ')',
+                  '',
+                  '_Maintained by `.github/workflows/release-health.yml` (ADR-0090)._',
+                ].join('\n')
+              );
+              return;
+            }
+
+            if (blindExisting) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: blindExisting.number,
+                body: 'Restored: the release health check reads the train again — [the run that did](' + runUrl + ').',
+              });
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: blindExisting.number,
+                state: 'closed',
+              });
+              core.info('Closed alert #' + blindExisting.number + '.');
+            }
 
             if (!stalled) {
               if (existing) {
@@ -110,28 +194,4 @@ jobs:
               '_Maintained by `.github/workflows/release-health.yml` (ADR-0090)._',
             ].join('\n');
 
-            if (existing) {
-              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
-              core.info('Updated release alert #' + existing.number + '.');
-              return;
-            }
-
-            try {
-              await github.rest.issues.createLabel({
-                owner,
-                repo,
-                name: ALERT_LABEL,
-                color: 'b60205',
-                description: 'The Android release train is overdue on main',
-              });
-            } catch (err) {
-              if (err.status !== 422) throw err;
-            }
-            const created = await github.rest.issues.create({
-              owner,
-              repo,
-              title: ALERT_TITLE,
-              body,
-              labels: [ALERT_LABEL],
-            });
-            core.info('Opened release alert #' + created.data.number + '.');
+            await upsert(existing, ALERT_TITLE, body);

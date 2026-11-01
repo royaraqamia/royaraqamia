@@ -14,6 +14,20 @@ export type NotificationType =
   | 'project_request'
   | 'retainer_request';
 
+/**
+ * The unread count behind the shell's notification control (#659).
+ *
+ * `/api/notifications/unread-count` answers `{ count }` with `Cache-Control: no-store`,
+ * and a guest is answered zero rather than 401 - the bell is chrome, so the answer
+ * it draws has to exist for everyone. Both clients read this one shape: the
+ * aria-label and the badge say the same number or neither is right.
+ */
+export const UnreadNotificationCountSchema = z.object({
+  count: z.coerce.number().int().nonnegative(),
+});
+
+export type UnreadNotificationCount = z.infer<typeof UnreadNotificationCountSchema>;
+
 export interface Notification {
   id: string;
   user_id: string;

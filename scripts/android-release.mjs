@@ -413,9 +413,40 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * What the dead-man's switch reads (`.github/workflows/release-health.yml`), kept
+ * pure so its other half holds without a checkout: the sentence a person reads
+ * and the `key=value` pairs the workflow parses are two different streams.
+ *
+ * The workflow appends stdout to `$GITHUB_OUTPUT`, so one prose line there is an
+ * `Invalid format` annotation and a step that never ran the alert at all — which
+ * is how four daily runs reported nothing between 2026-10-29 and 2026-11-01.
+ * `prose` goes to stderr; only `outputs` may reach stdout.
+ */
+export function healthReport({ plan, maxAgeDays = STALE_DAYS }) {
+  const stalled = Boolean(plan.release) && plan.oldestChangeAgeDays > maxAgeDays;
+  const prose = stalled
+    ? `a shell release is due and its oldest change is ${plan.oldestChangeAgeDays} day(s) old`
+    : plan.release
+      ? `a shell release is due (${plan.next}) but not yet overdue`
+      : `the train is level: ${plan.reason}`;
+  return {
+    prose,
+    outputs: {
+      stalled: String(stalled),
+      release: String(Boolean(plan.release)),
+      next: plan.next ?? '',
+      age_days: plan.oldestChangeAgeDays ?? 0,
+    },
+  };
+}
+
 export function main(argv = process.argv.slice(2), log = console.log) {
   const json = argv.includes('--json');
-  const note = json ? (...parts) => console.error(...parts) : log;
+  // `--health` is a machine mode too: its stdout is a `$GITHUB_OUTPUT` payload,
+  // so a caller cannot be asked to remember a flag that keeps it parseable.
+  const machine = json || argv.includes('--health');
+  const note = machine ? (...parts) => console.error(...parts) : log;
   const minAgeDays = argv.includes('--min-age-days')
     ? Number(valueOf(argv, '--min-age-days'))
     : MIN_AGE_DAYS;
@@ -470,19 +501,9 @@ export function main(argv = process.argv.slice(2), log = console.log) {
     const maxAgeDays = argv.includes('--max-age-days')
       ? Number(valueOf(argv, '--max-age-days'))
       : STALE_DAYS;
-    const plan = planFromRepo({ force: true });
-    const stalled = Boolean(plan.release) && plan.oldestChangeAgeDays > maxAgeDays;
-    note(
-      stalled
-        ? `a shell release is due and its oldest change is ${plan.oldestChangeAgeDays} day(s) old`
-        : plan.release
-          ? `a shell release is due (${plan.next}) but not yet overdue`
-          : `the train is level: ${plan.reason}`
-    );
-    log(`stalled=${String(stalled)}`);
-    log(`release=${String(Boolean(plan.release))}`);
-    log(`next=${plan.next ?? ''}`);
-    log(`age_days=${plan.oldestChangeAgeDays ?? 0}`);
+    const { prose, outputs } = healthReport({ plan: planFromRepo({ force: true }), maxAgeDays });
+    note(prose);
+    for (const [key, value] of Object.entries(outputs)) log(`${key}=${value}`);
     return 0;
   }
 
