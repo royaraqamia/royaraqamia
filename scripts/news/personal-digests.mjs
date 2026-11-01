@@ -17,6 +17,21 @@
  * A reader with no selection and no private source, or with fewer than
  * MIN_CANDIDATES usable stories, is skipped and named in the summary: publishing
  * a nearly empty digest would be worse than leaving them on the shared one.
+ *
+ * Rotation (#619): the queue is `last_personal_digest_at nulls first, updated_at
+ * asc`, so a reader who has never been served is always ahead of one who has.
+ * `updated_at` alone could not do it — it moves only when the reader edits their
+ * selection, so with more readers than `--limit` the same oldest rows were
+ * picked every night and everyone else was never reached.
+ *
+ * This script is the **only** writer of that marker, and it stamps every reader
+ * it touches — prepared or skipped — as soon as it is handled. Stamping at
+ * preparation time rather than after publishing is deliberate: a reader whose
+ * model run or publish fails later in the workflow has already moved to the
+ * back, so one permanently failing reader cannot hold the head of the queue
+ * forever; they are retried on a later night. A stamp that cannot be written is
+ * logged and does not fail the run, because the prompts are already prepared and
+ * losing the night's digests would cost more than repeating one reader.
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -29,6 +44,8 @@ const TARGET_STORIES = 8;
 const MAX_STORIES = 12;
 const DEFAULT_LIMIT = 20;
 const FETCH_TIMEOUT_MS = 20_000;
+/** Set by `markServed`, read by `loadReaders`; never exposed to the client. */
+const SERVED_MARKER = 'last_personal_digest_at';
 
 function parseArgs(argv) {
   const options = {
@@ -59,11 +76,15 @@ function readConfig(env = process.env) {
 }
 
 /**
- * Readers who opted in, least recently touched first, so a busy week still
- * reaches everyone instead of spending every run on the same first twenty.
+ * Readers who opted in, never-served first, then least recently served — with
+ * `updated_at` only breaking ties between readers served in the same run, so a
+ * busy week still reaches everyone instead of spending every run on the same
+ * first twenty.
+ *
+ * Exported for the test: the ordering is the fix, and it lives in this URL.
  */
-async function loadReaders(config, limit) {
-  const endpoint = `${config.url}/rest/v1/news_source_preferences?select=user_id,source_ids,updated_at&personal_enabled=is.true&order=updated_at.asc&limit=${limit}`;
+export async function loadReaders(config, limit) {
+  const endpoint = `${config.url}/rest/v1/news_source_preferences?select=user_id,source_ids,updated_at,${SERVED_MARKER}&personal_enabled=is.true&order=${SERVED_MARKER}.asc.nullsfirst,updated_at.asc&limit=${limit}`;
 
   const response = await fetch(endpoint, {
     headers: { apikey: config.key, authorization: `Bearer ${config.key}` },
@@ -78,6 +99,32 @@ async function loadReaders(config, limit) {
     userId: String(row.user_id ?? ''),
     sourceIds: Array.isArray(row.source_ids) ? row.source_ids.map(String) : [],
   }));
+}
+
+/**
+ * Stamps one reader as served, moving them to the back of the rotation.
+ *
+ * Operational bookkeeping: the digest does not depend on it, so a failed write
+ * is the caller's to log rather than a reason to lose the run.
+ */
+export async function markServed(config, userId, now = new Date()) {
+  const response = await fetch(
+    `${config.url}/rest/v1/news_source_preferences?user_id=eq.${encodeURIComponent(userId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        apikey: config.key,
+        authorization: `Bearer ${config.key}`,
+        'content-type': 'application/json',
+        prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ [SERVED_MARKER]: now.toISOString() }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`marking ${userId} served failed: HTTP ${response.status}`);
+  }
 }
 
 /**
@@ -117,12 +164,24 @@ export async function preparePersonalDigests({
   out,
   limit = DEFAULT_LIMIT,
   log = console.log,
+  onServed = async () => {},
 }) {
   const users = [];
   const skipped = [];
   const privateItems = Array.isArray(candidates.privateItems) ? candidates.privateItems : [];
 
   for (const reader of readers.slice(0, limit)) {
+    try {
+      await prepareOne(reader);
+    } finally {
+      // Every reader this run touched moves to the back of the rotation, whether
+      // it was prepared, skipped, or threw: the next run reaches the readers this
+      // one did not, and the head of the queue cannot be held forever (#619).
+      await onServed(reader.userId);
+    }
+  }
+
+  async function prepareOne(reader) {
     const mine = privateItems.filter((item) => item.userId === reader.userId);
 
     if (reader.sourceIds.length === 0 && mine.length === 0) {
@@ -130,7 +189,7 @@ export async function preparePersonalDigests({
       // of it. A reader with a private source is the exception: nothing else
       // would ever show it.
       skipped.push({ userId: reader.userId, reason: 'no selection' });
-      continue;
+      return;
     }
 
     const items = readerCandidates({
@@ -141,7 +200,7 @@ export async function preparePersonalDigests({
     });
     if (items.length < MIN_CANDIDATES) {
       skipped.push({ userId: reader.userId, reason: `only ${items.length} candidate(s)` });
-      continue;
+      return;
     }
 
     const narrowed = { ...candidates, items };
@@ -179,6 +238,10 @@ export async function preparePersonalDigests({
   return manifest;
 }
 
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const candidates = JSON.parse(await readFile(options.candidates, 'utf8'));
@@ -193,6 +256,16 @@ async function main() {
     candidates,
     out: resolve(options.out),
     limit: options.limit,
+    // The stamp is bookkeeping; a failed write is named and the run continues,
+    // because the prompts are already on disk and losing the night's digests
+    // would cost more than repeating one reader tomorrow.
+    onServed: async (userId) => {
+      try {
+        await markServed(config, userId);
+      } catch (error) {
+        console.log(`  could not mark ${userId} served: ${errorMessage(error)}`);
+      }
+    },
   });
 }
 
@@ -201,7 +274,7 @@ const invokedDirectly =
 
 if (invokedDirectly) {
   main().catch((error) => {
-    console.error(`personal-digests failed: ${error instanceof Error ? error.message : error}`);
+    console.error(`personal-digests failed: ${errorMessage(error)}`);
     process.exitCode = 1;
   });
 }
