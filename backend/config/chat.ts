@@ -22,6 +22,7 @@ export function createSupabaseChatService(
   return new ChatService(createSupabaseChatRepository(supabase), {
     users: {
       getById: (id) => users.getById(id),
+      getByUsername: (username) => users.getByUsername(username),
       getMany: (ids) => users.getMany(ids),
       search: (query, limit) => users.search(query, limit),
     },

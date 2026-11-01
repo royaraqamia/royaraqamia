@@ -264,7 +264,7 @@
     },
     {
       "id": "chats",
-      "routes": ["/chats/[id]"],
+      "routes": ["/chats/[id]", "/chats/new"],
       "owner": "server",
       "read": "needs-connection",
       "write": "none",

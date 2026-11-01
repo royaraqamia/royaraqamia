@@ -10,6 +10,7 @@ import { searchChatMembers } from '@/frontend/api/chats';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
 /**
@@ -21,9 +22,14 @@ import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat'
  */
 export function ChatsPanel() {
   const router = useRouter();
-  const { threads, isLoading, respond, start } = useChatThreads(true);
+  const { threads, isLoading, respond } = useChatThreads(true);
   const [picking, setPicking] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [answering, setAnswering] = useState<{
+    thread: ChatConversationSummary;
+    choice: 'accept' | 'decline';
+  } | null>(null);
+  const [isAnswering, setIsAnswering] = useState(false);
 
   const pending = threads.filter(
     (thread) => thread.myStatus === 'requested' || thread.myStatus === 'invited'
@@ -33,16 +39,19 @@ export function ChatsPanel() {
   );
 
   async function answer(id: string, choice: 'accept' | 'decline') {
+    setIsAnswering(true);
     setFailure(await respond(id, choice));
+    setIsAnswering(false);
+    setAnswering(null);
   }
 
-  async function openWith(peer: ChatPeer) {
-    const conversationId = await start(peer.id);
-    if (!conversationId) {
-      setFailure('تعذّر بدء المحادثة');
-      return;
-    }
-    router.push(`/chats/${conversationId}`);
+  /**
+   * The picker opens the member's empty chat screen; nothing is created here,
+   * so browsing the directory never sends a request on the member's behalf.
+   */
+  function openWith(peer: ChatPeer) {
+    setPicking(false);
+    router.push(`/chats/new?to=${encodeURIComponent(peer.username)}`);
   }
 
   if (isLoading) {
@@ -96,7 +105,7 @@ export function ChatsPanel() {
               <div className="mt-3 flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => void answer(thread.id, 'accept')}
+                  onClick={() => setAnswering({ thread, choice: 'accept' })}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90"
                 >
                   <Check size={14} />
@@ -104,7 +113,7 @@ export function ChatsPanel() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void answer(thread.id, 'decline')}
+                  onClick={() => setAnswering({ thread, choice: 'decline' })}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe hover:bg-accent"
                 >
                   <X size={14} />
@@ -114,6 +123,24 @@ export function ChatsPanel() {
             </div>
           ))}
         </section>
+      )}
+
+      {answering && (
+        <ConfirmDialog
+          open
+          title={answering.choice === 'accept' ? 'قبول المحادثة' : 'رفض المحادثة'}
+          message={
+            answering.choice === 'accept'
+              ? `ستتمكّن أنت و${answering.thread.title} من إرسال الرسائل بعد القبول.`
+              : 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.'
+          }
+          confirmLabel={answering.choice === 'accept' ? 'قبول' : 'رفض'}
+          cancelLabel="إلغاء"
+          isConfirming={isAnswering}
+          variant={answering.choice === 'accept' ? 'default' : 'danger'}
+          onCancel={() => setAnswering(null)}
+          onConfirm={() => void answer(answering.thread.id, answering.choice)}
+        />
       )}
 
       {open.length > 0 ? (
@@ -195,7 +222,7 @@ function MemberPicker({
   onPick,
   onClose,
 }: {
-  onPick: (peer: ChatPeer) => Promise<void>;
+  onPick: (peer: ChatPeer) => void;
   onClose: () => void;
 }) {
   const [term, setTerm] = useState('');
@@ -252,7 +279,7 @@ function MemberPicker({
             <li key={peer.id}>
               <button
                 type="button"
-                onClick={() => void onPick(peer)}
+                onClick={() => onPick(peer)}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start transition-safe',
                   'hover:bg-accent focus-visible:bg-accent focus-visible:outline-none'

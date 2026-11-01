@@ -70,6 +70,15 @@ export interface ChatMessage {
 }
 
 /**
+ * The pre-chat screen: the member a handle names, and the thread that already
+ * exists with them (`null` when this pair has never talked).
+ */
+export interface ChatPreview {
+  peer: ChatPeer;
+  conversationId: string | null;
+}
+
+/**
  * One row of the Chats tab. `title` is the sentence the list draws — a group's
  * name, the counterpart's name, or the assistant's — resolved on the server so
  * the site and the app never word it differently (ADR-0098).

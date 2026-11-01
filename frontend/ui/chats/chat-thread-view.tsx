@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, MoreVertical, Pencil, Send, Trash2 } from 'lucide-react';
 
@@ -9,24 +9,79 @@ import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, leaveChat, reportChat } from '@/frontend/api/chats';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
+import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { Button } from '@/frontend/ui/primitives/button';
+import { ReportChatDialog } from './report-chat-dialog';
 import { canEditChatMessage, type ChatMessage, type ChatThread } from '@/shared/contracts/chat';
+
+/**
+ * What the bottom of the screen offers, derived from the thread's own state:
+ *
+ * - `answer`   they asked, I have not answered yet → accept / reject
+ * - `waiting`  I asked, they have not answered → withdraw
+ * - `blocked`  I blocked them → lift the block
+ * - `closed`   refused or withdrawn → ask again on the same thread
+ * - `write`    an active member of an active thread → composer
+ * - `inactive` anything else → one sentence saying why
+ */
+type ThreadState = 'answer' | 'waiting' | 'blocked' | 'closed' | 'write' | 'inactive';
+
+function stateOf(thread: ChatThread): ThreadState {
+  const mine = thread.me?.status ?? null;
+  const closed = thread.status === 'declined' || thread.status === 'archived';
+
+  if (closed) return 'closed';
+  if (thread.status === 'requested') {
+    return mine === 'requested' || mine === 'invited' ? 'answer' : 'waiting';
+  }
+  if (thread.blockedByMe) return 'blocked';
+  if (thread.canWrite) return 'write';
+  return 'inactive';
+}
+
+/** The counterpart in a direct thread, for the header and the actions. */
+function counterpartOf(thread: ChatThread) {
+  const meId = thread.me?.userId ?? null;
+  return thread.participants.find((participant) => participant.userId !== meId)?.peer ?? null;
+}
 
 /**
  * `/chats/[id]`: one thread, drawn from the same contract the tab's rows come
  * from, so a member reads the same title and the same last line in both places.
  */
 export function ChatThreadView({ conversationId }: { conversationId: string }) {
-  const { thread, messages, isLoading, isSending, error, hasOlder, loadOlder, send, edit, remove } =
-    useChatThread(conversationId);
+  const {
+    thread,
+    messages,
+    isLoading,
+    isSending,
+    error,
+    hasOlder,
+    loadOlder,
+    send,
+    edit,
+    remove,
+    respond,
+    withdraw,
+    request,
+    unblock,
+  } = useChatThread(conversationId);
   const { user } = useSession();
   const [draft, setDraft] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [messages.length]);
+
+  const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
 
   if (isLoading) {
     return (
@@ -51,8 +106,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     );
   }
 
-  const waiting = thread.status === 'requested';
-  const writable = thread.canWrite && !waiting;
+  const counterpart = counterpartOf(thread);
 
   async function handleSend() {
     const line = draft.trim();
@@ -60,39 +114,67 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     if (await send(line)) setDraft('');
   }
 
-  async function handleReport() {
-    setMenuOpen(false);
-    const reason = window.prompt('سبب الإبلاغ');
-    if (!reason) return;
-    const result = await reportChat(conversationId, reason, thread?.counterpart?.id ?? null);
-    setNotice(result.success ? 'تم إرسال الإبلاغ' : (result.error ?? 'تعذّر إرسال الإبلاغ'));
+  /** Runs a dialog's action, keeping the dialog open with its spinner. */
+  async function run(action: () => Promise<string | null>, close: boolean) {
+    setBusy(true);
+    const failure = await action();
+    setBusy(false);
+    setNotice(failure);
+    if (close) setConfirm(null);
   }
 
-  async function handleBlock() {
-    setMenuOpen(false);
-    if (!thread?.counterpart) return;
-    if (!window.confirm(`حظر ${thread.title}؟`)) return;
-    const result = await blockChatUser(thread.counterpart.id);
-    setNotice(result.success ? 'تم الحظر' : (result.error ?? 'تعذّر الحظر'));
-  }
-
-  async function handleLeave() {
-    setMenuOpen(false);
-    if (!window.confirm('مغادرة هذه المحادثة؟')) return;
-    const result = await leaveChat(conversationId);
-    if (result.success) window.location.assign('/notifications?tab=chats');
-    else setNotice(result.error ?? 'تعذّرت المغادرة');
-  }
+  const dialogs: Record<Confirm['kind'], { title: string; message: string; label: string }> = {
+    accept: {
+      title: 'قبول المحادثة',
+      message: `ستتمكّن أنت و${thread.title} من إرسال الرسائل بعد القبول.`,
+      label: 'قبول',
+    },
+    decline: {
+      title: 'رفض المحادثة',
+      message: 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.',
+      label: 'رفض',
+    },
+    withdraw: {
+      title: 'إلغاء الطلب',
+      message: 'سيختفي الطلب من عند الطرفين، ويمكنك إرساله من جديد لاحقاً.',
+      label: 'إلغاء الطلب',
+    },
+    block: {
+      title: `حظر ${thread.title}`,
+      message: 'لن تستطيع أنت ولا هذا العضو إرسال رسائل بينكما، ويمكنك إلغاء الحظر لاحقاً.',
+      label: 'حظر',
+    },
+    leave: {
+      title: 'مغادرة المحادثة',
+      message: 'لن تصلك رسائل هذه المحادثة بعد المغادرة.',
+      label: 'مغادرة',
+    },
+    deleteMessage: {
+      title: 'حذف الرسالة',
+      message: 'ستُحذف الرسالة من عند الطرفين، وتبقى آثارها في المحادثة.',
+      label: 'حذف',
+    },
+  };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
       <ThreadHeader
         thread={thread}
+        counterpart={counterpart}
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen((open) => !open)}
-        onReport={() => void handleReport()}
-        onBlock={() => void handleBlock()}
-        onLeave={() => void handleLeave()}
+        onReport={() => {
+          setMenuOpen(false);
+          setReporting(true);
+        }}
+        onBlock={() => {
+          setMenuOpen(false);
+          setConfirm({ kind: 'block' });
+        }}
+        onLeave={() => {
+          setMenuOpen(false);
+          setConfirm({ kind: 'leave' });
+        }}
       />
 
       {(notice || error) && (
@@ -116,70 +198,127 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         )}
 
         {messages.length === 0 ? (
-          <p className="m-auto text-xs text-muted-foreground/70">
-            {waiting ? 'بانتظار موافقة الطَّرف الآخر' : 'ابدأ المحادثة برسالة'}
-          </p>
+          <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
         ) : (
-          messages.map((message) => (
-            <MessageRow
-              key={message.id}
-              message={message}
-              mine={Boolean(user && message.senderId === user.id)}
-              onEdit={edit}
-              onDelete={remove}
-            />
+          messages.map((message, index) => (
+            <div key={message.id} className="flex w-full flex-col gap-2">
+              {isNewDay(messages[index - 1], message) && <DaySeparator at={message.createdAt} />}
+              <MessageRow
+                message={message}
+                mine={Boolean(user && message.senderId === user.id)}
+                onEdit={edit}
+                onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
+              />
+            </div>
           ))
         )}
         <div ref={bottomRef} />
       </div>
 
-      {writable ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSend();
+      <ThreadFooter
+        thread={thread}
+        state={state}
+        counterpart={counterpart}
+        draft={draft}
+        isSending={isSending}
+        onDraft={setDraft}
+        onSend={() => void handleSend()}
+        onAccept={() => setConfirm({ kind: 'accept' })}
+        onDecline={() => setConfirm({ kind: 'decline' })}
+        onWithdraw={() => setConfirm({ kind: 'withdraw' })}
+        onRequest={() => void run(request, false)}
+        onUnblock={() => counterpart && void run(() => unblock(counterpart.id), false)}
+      />
+
+      {confirm && (
+        <ConfirmDialog
+          open
+          title={dialogs[confirm.kind].title}
+          message={dialogs[confirm.kind].message}
+          confirmLabel={dialogs[confirm.kind].label}
+          cancelLabel="إلغاء"
+          isConfirming={busy}
+          variant={
+            confirm.kind === 'block' ||
+            confirm.kind === 'leave' ||
+            confirm.kind === 'decline' ||
+            confirm.kind === 'withdraw' ||
+            confirm.kind === 'deleteMessage'
+              ? 'danger'
+              : 'default'
+          }
+          onCancel={() => {
+            setConfirm(null);
+            setNotice(null);
           }}
-          className="flex items-end gap-2 border-t border-border/40 p-3"
-        >
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                void handleSend();
-              }
-            }}
-            rows={1}
-            maxLength={4000}
-            placeholder="اكتب رسالة..."
-            aria-label="نص الرسالة"
-            className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
-          <button
-            type="submit"
-            disabled={isSending || draft.trim().length === 0}
-            aria-label="إرسال"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
-          >
-            <Send size={16} />
-          </button>
-        </form>
-      ) : (
-        <p className="border-t border-border/40 px-4 py-3 text-xs font-medium text-muted-foreground">
-          {thread.status === 'declined'
-            ? 'رُفضت هذه المحادثة، فلا يمكن إرسال رسائل فيها.'
-            : waiting
-              ? 'لا يمكن إرسال رسائل قبل موافقة الطَّرف الآخر.'
-              : 'أنت لست عضواً فعّالاً في هذه المحادثة.'}
-        </p>
+          onConfirm={() => {
+            if (confirm.kind === 'accept') void run(() => respond('accept'), true);
+            else if (confirm.kind === 'decline') void run(() => respond('decline'), true);
+            else if (confirm.kind === 'withdraw') void run(withdraw, true);
+            else if (confirm.kind === 'deleteMessage') {
+              const id = confirm.messageId;
+              void run(async () => ((await remove(id)) ? null : 'تعذّر حذف الرسالة'), true);
+            } else if (confirm.kind === 'block') {
+              void run(async () => {
+                if (!counterpart) return null;
+                try {
+                  await blockChatUser(counterpart.id);
+                  return null;
+                } catch (error) {
+                  return error instanceof Error && error.message ? error.message : 'تعذّر الحظر';
+                }
+              }, true);
+            } else if (confirm.kind === 'leave') {
+              void run(async () => {
+                try {
+                  const result = await leaveChat(conversationId);
+                  if (result.success) window.location.assign('/notifications?tab=chats');
+                  return result.error ?? null;
+                } catch (error) {
+                  return error instanceof Error && error.message
+                    ? error.message
+                    : 'تعذّرت المغادرة';
+                }
+              }, true);
+            }
+          }}
+        />
       )}
+
+      <ReportChatDialog
+        open={reporting}
+        isSubmitting={busy}
+        onCancel={() => setReporting(false)}
+        onReport={(reason) => {
+          setBusy(true);
+          void (async () => {
+            try {
+              const result = await reportChat(conversationId, reason, counterpart?.id ?? null);
+              setNotice(result.success ? 'تم إرسال الإبلاغ' : (result.error ?? 'تعذّر الإبلاغ'));
+            } catch (error) {
+              setNotice(error instanceof Error && error.message ? error.message : 'تعذّر الإبلاغ');
+            } finally {
+              setBusy(false);
+              setReporting(false);
+            }
+          })();
+        }}
+      />
     </div>
   );
 }
 
+type Confirm =
+  | { kind: 'accept' }
+  | { kind: 'decline' }
+  | { kind: 'withdraw' }
+  | { kind: 'block' }
+  | { kind: 'leave' }
+  | { kind: 'deleteMessage'; messageId: string };
+
 function ThreadHeader({
   thread,
+  counterpart,
   menuOpen,
   onToggleMenu,
   onReport,
@@ -187,6 +326,7 @@ function ThreadHeader({
   onLeave,
 }: {
   thread: ChatThread;
+  counterpart: ReturnType<typeof counterpartOf>;
   menuOpen: boolean;
   onToggleMenu: () => void;
   onReport: () => void;
@@ -194,7 +334,7 @@ function ThreadHeader({
   onLeave: () => void;
 }) {
   return (
-    <div className="relative flex items-center gap-3 border-b border-border/40 px-3 py-3">
+    <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
       <Link
         href="/notifications?tab=chats"
         aria-label="العودة إلى المحادثات"
@@ -203,53 +343,271 @@ function ThreadHeader({
         <ArrowRight size={18} />
       </Link>
 
+      {counterpart && (
+        <MemberAvatar
+          name={counterpart.name ?? counterpart.username}
+          avatarUrl={counterpart.avatarUrl}
+          size="sm"
+          ring={false}
+        />
+      )}
+
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        <p className="truncate text-xs text-muted-foreground/70">
-          {thread.kind === 'direct' && thread.counterpart
-            ? `@${thread.counterpart.username}`
+        <p className="truncate text-xs text-muted-foreground/70" dir="ltr">
+          {thread.kind === 'direct' && counterpart
+            ? `@${counterpart.username}`
             : `${thread.participants.length} أعضاء`}
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleMenu}
-        aria-label="خيارات المحادثة"
-        aria-expanded={menuOpen}
-        className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
-      >
-        <MoreVertical size={18} />
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={onToggleMenu}
+          aria-label="خيارات المحادثة"
+          aria-expanded={menuOpen}
+          className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
+        >
+          <MoreVertical size={18} />
+        </button>
 
-      {menuOpen && (
-        <div className="absolute end-3 top-12 z-10 w-44 overflow-hidden rounded-xl border border-border/70 bg-popover shadow-lg">
-          <button
-            type="button"
-            onClick={onReport}
-            className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
-          >
-            إبلاغ عن المحادثة
-          </button>
-          {thread.counterpart && (
+        {menuOpen && (
+          <div className="absolute end-0 top-10 z-20 w-44 overflow-hidden rounded-xl border border-border/70 bg-popover shadow-lg">
             <button
               type="button"
-              onClick={onBlock}
+              onClick={onReport}
+              className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
+            >
+              إبلاغ عن المحادثة
+            </button>
+            {counterpart && (
+              <Link
+                href="/account#blocked"
+                className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
+              >
+                الأعضاء المحظورون
+              </Link>
+            )}
+            {counterpart && (
+              <button
+                type="button"
+                onClick={onBlock}
+                className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
+              >
+                حظر @{counterpart.username}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onLeave}
               className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
             >
-              حظر @{thread.counterpart.username}
+              مغادرة المحادثة
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onLeave}
-            className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
-          >
-            مغادرة المحادثة
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** The empty thread: who this is, and what can happen next. */
+function ThreadIntro({
+  thread,
+  counterpart,
+  state,
+}: {
+  thread: ChatThread;
+  counterpart: ReturnType<typeof counterpartOf>;
+  state: ThreadState;
+}) {
+  const note =
+    state === 'answer'
+      ? `${thread.title} يريد بدء محادثة معك.`
+      : state === 'waiting'
+        ? 'بانتظار موافقة الطرف الآخر على طلبك.'
+        : state === 'closed'
+          ? thread.status === 'declined'
+            ? 'رُفضت هذه المحادثة.'
+            : 'أُغلقت هذه المحادثة.'
+          : state === 'blocked'
+            ? 'حظرت هذا العضو، فلا يمكنكما تبادل الرسائل.'
+            : null;
+
+  return (
+    <div className="m-auto flex max-w-sm flex-col items-center gap-3 px-4 text-center">
+      {counterpart && (
+        <MemberAvatar
+          name={counterpart.name ?? counterpart.username}
+          avatarUrl={counterpart.avatarUrl}
+          size="lg"
+          ring={false}
+        />
+      )}
+      <p className="text-sm font-bold text-foreground">{thread.title}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground/80">
+        {note ?? 'لا رسائل بعد. ابدأ المحادثة برسالة.'}
+      </p>
+    </div>
+  );
+}
+
+function ThreadFooter({
+  thread,
+  state,
+  counterpart,
+  draft,
+  isSending,
+  onDraft,
+  onSend,
+  onAccept,
+  onDecline,
+  onWithdraw,
+  onRequest,
+  onUnblock,
+}: {
+  thread: ChatThread;
+  state: ThreadState;
+  counterpart: ReturnType<typeof counterpartOf>;
+  draft: string;
+  isSending: boolean;
+  onDraft: (value: string) => void;
+  onSend: () => void;
+  onAccept: () => void;
+  onDecline: () => void;
+  onWithdraw: () => void;
+  onRequest: () => void;
+  onUnblock: () => void;
+}) {
+  if (state === 'write') {
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSend();
+        }}
+        className="flex items-end gap-2 border-t border-border/40 p-3"
+      >
+        <textarea
+          value={draft}
+          onChange={(event) => onDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              onSend();
+            }
+          }}
+          rows={1}
+          maxLength={4000}
+          placeholder="اكتب رسالة..."
+          aria-label="نص الرسالة"
+          className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+        />
+        <Button
+          type="submit"
+          variant="hero"
+          size="icon-sm"
+          aria-label="إرسال"
+          disabled={isSending || draft.trim().length === 0}
+        >
+          <Send size={16} />
+        </Button>
+      </form>
+    );
+  }
+
+  if (state === 'answer') {
+    return (
+      <div className="space-y-2 border-t border-border/40 p-3">
+        <p className="text-center text-xs text-muted-foreground">
+          {thread.title} يريد بدء محادثة معك.
+        </p>
+        <div className="flex items-center justify-center gap-2">
+          <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
+            قبول
+          </HeroCtaButton>
+          <Button type="button" variant="outline" onClick={onDecline} className="h-11 px-6">
+            رفض
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === 'waiting') {
+    return (
+      <div className="space-y-2 border-t border-border/40 p-3">
+        <p className="text-center text-xs text-muted-foreground">
+          بانتظار موافقة {thread.title} على طلبك.
+        </p>
+        <div className="flex justify-center">
+          <Button type="button" variant="outline" onClick={onWithdraw} className="h-11 px-6">
+            إلغاء الطلب
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === 'blocked') {
+    return (
+      <div className="space-y-2 border-t border-border/40 p-3">
+        <p className="text-center text-xs text-muted-foreground">
+          حظرت هذا العضو. أزل الحظر لتتمكّنا من تبادل الرسائل.
+        </p>
+        <div className="flex justify-center">
+          <Button type="button" variant="outline" onClick={onUnblock} className="h-11 px-6">
+            إلغاء الحظر
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === 'closed' && thread.kind === 'direct' && counterpart) {
+    return (
+      <div className="space-y-2 border-t border-border/40 p-3">
+        <p className="text-center text-xs text-muted-foreground">
+          {thread.status === 'declined' ? 'رُفضت هذه المحادثة.' : 'أُغلقت هذه المحادثة.'}
+        </p>
+        <div className="flex justify-center">
+          <HeroCtaButton type="button" onClick={onRequest} className="h-11 px-6 text-sm">
+            إرسال طلب جديد
+          </HeroCtaButton>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+      {thread.status === 'declined'
+        ? 'رُفضت هذه المحادثة، فلا يمكن إرسال رسائل فيها.'
+        : 'أنت لست عضواً فعّالاً في هذه المحادثة.'}
+    </p>
+  );
+}
+
+const DAY_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+function dayKey(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+function isNewDay(previous: ChatMessage | undefined, message: ChatMessage): boolean {
+  return !previous || dayKey(previous.createdAt) !== dayKey(message.createdAt);
+}
+
+function DaySeparator({ at }: { at: string }) {
+  return (
+    <p className="mx-auto my-1 rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground/80">
+      {DAY_FORMAT.format(new Date(at))}
+    </p>
   );
 }
 
@@ -262,7 +620,7 @@ function MessageRow({
   message: ChatMessage;
   mine: boolean;
   onEdit: (id: string, body: string) => Promise<boolean>;
-  onDelete: (id: string) => Promise<boolean>;
+  onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body ?? '');
@@ -280,8 +638,10 @@ function MessageRow({
 
       <div
         className={cn(
-          'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed',
-          mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground dark:bg-muted/70'
+          'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-xs',
+          mine
+            ? 'rounded-br-md bg-primary text-primary-foreground'
+            : 'rounded-bl-md bg-muted text-foreground dark:bg-muted/70'
         )}
       >
         {deleted ? (
@@ -347,9 +707,7 @@ function MessageRow({
             )}
             <button
               type="button"
-              onClick={async () => {
-                if (window.confirm('حذف هذه الرسالة؟')) await onDelete(message.id);
-              }}
+              onClick={() => onDelete(message.id)}
               aria-label="حذف الرسالة"
               className="rounded p-0.5 transition-safe hover:text-destructive"
             >

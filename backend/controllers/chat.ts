@@ -13,6 +13,7 @@ import {
   type ChatConversationSummary,
   type ChatMessage,
   type ChatMessagePage,
+  type ChatPreview,
   type ChatThread,
 } from '@/shared/contracts/chat';
 
@@ -403,5 +404,20 @@ export async function searchChatMembers(query: string | null): Promise<HttpResul
       return jsonResult(200, { success: true, members }, { headers: NO_STORE });
     },
     { mapError: chatFailure('تعذّر البحث عن الأعضاء') }
+  );
+}
+
+/** The pre-chat screen: the member a handle names, and the thread already open. */
+export async function previewChat(to: string | null): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const preview = await createSupabaseChatService(supabase).preview(userId, to ?? '');
+      return jsonResult(
+        200,
+        { success: true, ...preview } satisfies { success: true } & ChatPreview,
+        { headers: NO_STORE }
+      );
+    },
+    { mapError: chatFailure('تعذّر تحميل بيانات العضو') }
   );
 }
