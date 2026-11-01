@@ -12,6 +12,8 @@
  *
  *   - `frontend/ui/shared/__tests__/phone-utils.test.ts` and
  *     `country-phone-input.test.tsx` feed Arabic-Indic digits in on purpose;
+ *   - `frontend/ui/__tests__/quran-pages.test.tsx` types them into the page
+ *     jump to prove the control reads them;
  *   - `shared/contracts/__tests__/text.test.ts` and this script's own test use
  *     them as fixtures;
  *   - `docs/conventions.md` (it shows the forbidden shape as an example) and
@@ -40,6 +42,7 @@ export const EXCLUDED = [
   'docs/conventions.md',
   'frontend/ui/shared/__tests__/phone-utils.test.ts',
   'frontend/ui/shared/__tests__/country-phone-input.test.tsx',
+  'frontend/ui/__tests__/quran-pages.test.tsx',
   'shared/contracts/__tests__/text.test.ts',
   'scripts/__tests__/digits.test.mjs',
 ];
