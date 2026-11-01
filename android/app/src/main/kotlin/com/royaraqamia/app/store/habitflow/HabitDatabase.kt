@@ -3,26 +3,29 @@ package com.royaraqamia.app.store.habitflow
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.store.localStoreName
 
 /**
- * HabitFlow's Local Store (#768): the rows the list paints from, before any
- * network answer arrives.
+ * HabitFlow's Local Store (#768, #650): the rows the list paints from, and the
+ * queue of writes the device has not delivered yet.
  *
  * One database per identity, named the way the web names its IndexedDB database
  * (ADR-0027): `<product>__<identity>`. The partition is the filename, so there
  * is no `user_id` column to filter on and nothing to get wrong in a query — a
  * store opened for one account cannot return another account's row, because the
- * rows are not in it.
- *
- * The Outbox table is not here yet: nothing in the app writes until #650, and a
- * table with no writer is a schema version to migrate for no reason.
+ * rows are not in it. The Outbox lives in the same file, which is what makes a
+ * queued write belong to the identity that made it: an intent is drained by the
+ * identity that queued it, and a sign-out closes the connection without touching
+ * the rows (ADR-0027, `shared/fixtures/offline-writes/habitflow.json`).
  *
  * **Migrations are forward-only and additive** (ADR-0027's rule for the web,
  * [ADR 0107] for the app): `version` moves by one per change, every change ships
@@ -34,8 +37,8 @@ import com.royaraqamia.app.store.localStoreName
  * [ADR 0107]: ../../../../../../../docs/adr/0107-the-habit-store-is-one-database-per-identity.md
  */
 @Database(
-    entities = [HabitRow::class, HabitLogRow::class],
-    version = 1,
+    entities = [HabitRow::class, HabitLogRow::class, OutboxIntentRow::class],
+    version = 2,
     exportSchema = true,
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -57,6 +60,30 @@ abstract class HabitDatabase : RoomDatabase() {
         fun fileName(identity: Identity): String =
             "${localStoreName(PRODUCT, identity).replace(":", "%3A")}.db"
 
+        /**
+         * The Outbox joined the file (#650), so a device that already holds rows
+         * keeps them: `1.json` is the shape those rows were written in, and this
+         * is the same database plus one empty table. The SQL is exactly the shape
+         * Room exports into `2.json`, which is what the build compares a device's
+         * migrated file against.
+         */
+        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `outbox` (" +
+                        "`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`id` TEXT NOT NULL, " +
+                        "`entity` TEXT NOT NULL, " +
+                        "`type` TEXT NOT NULL, " +
+                        "`payload` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "`attempts` INTEGER NOT NULL, " +
+                        "`status` TEXT NOT NULL, " +
+                        "`lastError` TEXT, " +
+                        "`nextAttemptAt` INTEGER NOT NULL)"
+                )
+            }
+        }
     }
 }
 
@@ -120,6 +147,24 @@ interface HabitDao {
     @Query("SELECT * FROM habit_logs WHERE deletedAt IS NULL ORDER BY date ASC, id ASC")
     suspend fun logs(): List<HabitLogRow>
 
+    /** Today's logs, which is the only day the list's toggle reads. */
+    @Query("SELECT * FROM habit_logs WHERE date = :date AND deletedAt IS NULL")
+    suspend fun logsOn(date: String): List<HabitLogRow>
+
+    /** Every stored habit, tombstones included: the merge's local side. */
+    @Query("SELECT * FROM habits")
+    suspend fun allHabits(): List<HabitRow>
+
+    /** Every stored log, tombstones included: the merge's local side. */
+    @Query("SELECT * FROM habit_logs")
+    suspend fun allLogs(): List<HabitLogRow>
+
+    @Query("SELECT * FROM habits WHERE id = :id")
+    suspend fun habit(id: String): HabitRow?
+
+    @Query("SELECT * FROM habit_logs WHERE habitId = :habitId AND date = :date")
+    suspend fun log(habitId: String, date: String): HabitLogRow?
+
     @Query("SELECT COUNT(*) FROM habits")
     suspend fun count(): Int
 
@@ -137,6 +182,12 @@ interface HabitDao {
     @Upsert
     suspend fun upsertLogs(rows: List<HabitLogRow>)
 
+    @Upsert
+    suspend fun upsertHabit(row: HabitRow)
+
+    @Upsert
+    suspend fun upsertLog(row: HabitLogRow)
+
     /**
      * One pull, one transaction: a process killed halfway through writes either
      * the whole snapshot or none of it, so the next launch paints a list and
@@ -147,4 +198,56 @@ interface HabitDao {
         upsertHabits(habits)
         upsertLogs(logs)
     }
+
+    /**
+     * A write and its replay intent, committed together (#650): an intent can
+     * never describe a row that is not on disk, and a row can never be written
+     * without the intent that will send it. Either both persist or neither does,
+     * which is what "durable before it is acknowledged" means.
+     */
+    @Transaction
+    suspend fun commitHabit(habit: HabitRow, intent: OutboxIntentRow) {
+        upsertHabit(habit)
+        insertIntent(intent)
+    }
+
+    @Transaction
+    suspend fun commitLog(log: HabitLogRow, intent: OutboxIntentRow) {
+        upsertLog(log)
+        insertIntent(intent)
+    }
+
+    // --- Outbox ---------------------------------------------------------------
+
+    /** Every intent, in strict replay order: the order the writes were made. */
+    @Query("SELECT * FROM outbox ORDER BY seq ASC")
+    suspend fun outbox(): List<OutboxIntentRow>
+
+    @Query("SELECT COUNT(*) FROM outbox WHERE status = :status")
+    suspend fun countIntents(status: String): Int
+
+    @Insert
+    suspend fun insertIntent(intent: OutboxIntentRow): Long
+
+    @Query("DELETE FROM outbox WHERE seq = :seq")
+    suspend fun deleteIntent(seq: Long)
+
+    @Query(
+        "UPDATE outbox SET attempts = :attempts, status = :status, " +
+            "lastError = :lastError, nextAttemptAt = :nextAttemptAt WHERE seq = :seq"
+    )
+    suspend fun patchIntent(
+        seq: Long,
+        attempts: Int,
+        status: String,
+        lastError: String?,
+        nextAttemptAt: Long,
+    )
+
+    /** A manual retry: every permanently failed intent is due again. */
+    @Query(
+        "UPDATE outbox SET status = 'pending', attempts = 0, lastError = NULL, " +
+            "nextAttemptAt = 0 WHERE status = 'failed'"
+    )
+    suspend fun retryFailedIntents()
 }

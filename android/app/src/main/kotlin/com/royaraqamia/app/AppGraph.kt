@@ -2,6 +2,7 @@ package com.royaraqamia.app
 
 import android.content.Context
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.session.EncryptedTokenStore
 import com.royaraqamia.app.session.KeystoreTokenCipher
@@ -15,6 +16,7 @@ import com.royaraqamia.app.store.PreferencesIdentityStorage
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
+import com.royaraqamia.app.store.habitflow.DrainReport
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -45,8 +47,15 @@ class AppGraph private constructor(
     /**
      * The launch path: a stored refresh token is a session that survived the
      * process, so this is what makes "reopen and still signed in" true.
+     *
+     * It is deliberately *only* the session. Draining the Outbox on this path is
+     * the caller's next step (`drainOutbox`), so a queue left by a long offline
+     * stretch cannot delay the first frame that says who is signed in (#650).
      */
     suspend fun start(): Boolean = session.start()
+
+    /** One drain of the HabitFlow queue, for a launch or a radio that came back (#650). */
+    suspend fun drainOutbox(): DrainReport = habitflow.drain()
 
     /** Signs in with a password grant, and holds the pair it mints. */
     suspend fun signIn(email: String, password: String): SignInOutcome {
@@ -98,6 +107,12 @@ class AppGraph private constructor(
                         databases = databases,
                         identity = { session.storeIdentity },
                         client = client,
+                        // A guest's queue waits for a sign-in rather than being
+                        // sent as nobody (ADR-0027), and a drain with the radio
+                        // off is a drain that spends an attempt learning what the
+                        // platform already knows (#650).
+                        signedIn = { session.signedIn },
+                        online = { Connectivity.isOnline(context) },
                     ),
                 databases = databases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
