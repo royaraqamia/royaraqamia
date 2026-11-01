@@ -12,7 +12,6 @@ const TOP_NAV = '[data-app-navbar]';
 const BOTTOM_BAR = '[data-bottom-tabbar]';
 const BACK_HEADER = '[data-secondary-header]';
 const NAVBAR_SPACER = '[data-navbar-spacer]';
-const ACCOUNT_FOOTER = '[data-account-footer]';
 const SITE_FOOTER = 'footer[data-flat-footer]';
 
 /**
@@ -289,33 +288,38 @@ test.describe('the floating control never covers page content', () => {
 });
 
 /**
- * The version line is the installed app's own number, so it appears only where
- * the app is being set up — `/account` itself, not the pages behind it — and only
- * inside the shell, the one client whose user agent names a version (ADR-0046).
+ * The version line belongs to the update check that reads it, so it appears in
+ * that row — `/account` itself, where the row is drawn — and only inside the
+ * shell, the one client whose user agent names a version (ADR-0046).
  */
 test.describe('the installed app’s version', () => {
+  const versionRow = (page: Page) => page.getByRole('button', { name: /التَّحقُّق من وجود تحديث/ });
+
   test.describe('inside the shell', () => {
     test.use({ userAgent: SHELL_UA });
 
-    test('names the app on the account area’s front page', async ({ page }) => {
+    test('names the app under the update check on the account area’s front page', async ({
+      page,
+    }) => {
       await page.goto('/account');
 
       // The name alone: the counter is what the update check compares, not what
       // a user is reading.
-      await expect(page.locator(ACCOUNT_FOOTER)).toHaveText('1.0.7');
+      await expect(versionRow(page)).toContainText('الإصدار 1.0.7');
+      await expect(page.getByText('20007')).toHaveCount(0);
     });
 
     test('stays off the pages behind the front one', async ({ page }) => {
       await page.goto('/account/faq');
 
-      await expect(page.locator(ACCOUNT_FOOTER)).toHaveCount(0);
+      await expect(versionRow(page)).toHaveCount(0);
     });
   });
 
   test('a browser shows no version at all', async ({ page }) => {
     await page.goto('/account');
 
-    await expect(page.locator(ACCOUNT_FOOTER)).toHaveCount(0);
+    await expect(page.getByText('الإصدار 1.0.7')).toHaveCount(0);
   });
 });
 

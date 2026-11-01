@@ -8,6 +8,7 @@ import { isNativeApp } from '@/frontend/shared/native-shell';
 import {
   fetchShellManifest,
   shellVersionFromUserAgent,
+  shellVersionNameFromUserAgent,
   toShellUpdateState,
   type ShellManifest,
 } from '@/frontend/shared/shell-update';
@@ -38,7 +39,9 @@ const CHECK_MESSAGES: Record<CheckStatus, string> = {
  * meet. In a browser it expands into what each install is: the PWA (through the
  * browser's own prompt) and the Android APK (through the manifest the shell
  * publishes). Inside the shell neither applies — there is nothing to install —
- * so the same row becomes an on-demand check against that manifest.
+ * so the same row becomes an on-demand check against that manifest, and it names
+ * the installed version beside it: the number belongs with the check that reads
+ * it, not at the foot of the page (ADR-0046).
  *
  * The shell is recognised from its user agent first. `isNativeApp()` reads the
  * bridge, which the page does not always receive on an older WebView
@@ -48,6 +51,7 @@ const CHECK_MESSAGES: Record<CheckStatus, string> = {
 export function InstallSection() {
   const { canInstall, isInstalled, promptInstall } = usePWAContext();
   const [mode, setMode] = useState<ShellMode>('pending');
+  const [shellVersion, setShellVersion] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [manifest, setManifest] = useState<ShellManifest | null>(null);
   const [status, setStatus] = useState<CheckStatus>('idle');
@@ -55,8 +59,9 @@ export function InstallSection() {
   const statusId = useId();
 
   useEffect(() => {
-    const inShell = shellVersionFromUserAgent(navigator.userAgent) !== null || isNativeApp();
-    setMode(inShell ? 'app' : 'web');
+    const installed = shellVersionFromUserAgent(navigator.userAgent);
+    setMode(installed !== null || isNativeApp() ? 'app' : 'web');
+    setShellVersion(shellVersionNameFromUserAgent(navigator.userAgent));
   }, []);
 
   // The APK's URL is read from beside the site, so the row always points at the
@@ -102,7 +107,16 @@ export function InstallSection() {
         >
           <span className="flex items-center gap-2.5">
             <RefreshCw className="w-4 h-4 shrink-0 text-primary" />
-            <span>{status === 'checking' ? 'جاري التَّحقُّق…' : 'التَّحقُّق من وجود تحديث'}</span>
+            <span className="min-w-0">
+              <span className="block truncate">
+                {status === 'checking' ? 'جاري التَّحقُّق…' : 'التَّحقُّق من وجود تحديث'}
+              </span>
+              {shellVersion && (
+                <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
+                  الإصدار {shellVersion}
+                </span>
+              )}
+            </span>
           </span>
         </button>
         <p
