@@ -1,0 +1,28 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-category-chart",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-category-chart-copy.ts",
+    "export": "SPENDTRACK_CATEGORY_CHART_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryChartCopy.kt",
+    "object": "SpendtrackCategoryChartCopy"
+  },
+  "notes": {
+    "source": "The category chart's words, in both clients (#653): its empty state, the total it names under the ring, and the share each slice carries.",
+    "placeholders": "`{percentage}` is the share the slice holds, formatted by the client.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the chart does not render."
+  },
+  "strings": {
+    "noDataTitle": "لا توجد بيانات",
+    "noDataBody": "أضِف مصاريف لرؤية توزيع الإنفاق حسب التَّصنيف",
+    "title": "رسم بياني يُوضِّح توزيع الإنفاق حسب التَّصنيف",
+    "hint": "اضغط على أيِّ تصنيف للتَّصفية والمقارنة",
+    "selectedHint": "تمَّ تحديد {selected} من أصل {total} تصنيفات",
+    "amountLabel": "المبلغ",
+    "totalLabel": "الإجمالي",
+    "shareOfTotal": "{percentage}% من الإجمالي",
+    "legendLabel": "التَّصنيفات"
+  }
+}

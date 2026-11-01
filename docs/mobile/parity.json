@@ -564,6 +564,86 @@
           "copy": "label"
         }
       ]
+    },
+    {
+      "id": "spendtrack-insights",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/insights-strip.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-insights-copy.ts",
+        "copyExport": "SPENDTRACK_INSIGHTS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackInsightsStrip.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackInsightsUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackInsightsCopy.kt",
+        "copyObject": "SpendtrackInsightsCopy"
+      },
+      "copySource": "shared/copy/spendtrack-insights.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "avgLabel"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-category-chart",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/category-pie-chart.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-category-chart-copy.ts",
+        "copyExport": "SPENDTRACK_CATEGORY_CHART_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryChart.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryChartUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryChartCopy.kt",
+        "copyObject": "SpendtrackCategoryChartCopy"
+      },
+      "copySource": "shared/copy/spendtrack-category-chart.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "totalLabel"
+        },
+        {
+          "name": "Empty",
+          "copy": "noDataTitle"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-daily-chart",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/daily-bar-chart.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-daily-chart-copy.ts",
+        "copyExport": "SPENDTRACK_DAILY_CHART_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackDailyChart.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackDailyChartUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackDailyChartCopy.kt",
+        "copyObject": "SpendtrackDailyChartCopy"
+      },
+      "copySource": "shared/copy/spendtrack-daily-chart.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "dateAxis"
+        },
+        {
+          "name": "Empty",
+          "copy": "noDataTitle"
+        }
+      ]
     }
   ]
 }

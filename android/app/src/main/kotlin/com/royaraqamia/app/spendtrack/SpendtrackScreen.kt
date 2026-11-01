@@ -182,6 +182,22 @@ fun SpendtrackScreen(
                 header()
                 val rows = (expenses as? SpendtrackExpensesUiState.Painted)?.rows.orEmpty()
                 val spent = monthTotal(rows)
+                val window = monthStart() to monthEnd()
+                val insights =
+                    SpendtrackStats.insights(rows, categoryRows, window.first, window.second)
+                val categoryChart =
+                    SpendtrackCategoryChartUiState.of(
+                        SpendtrackStats.categoryBreakdown(
+                            rows,
+                            categoryRows,
+                            window.first,
+                            window.second,
+                        )
+                    )
+                val dailyChart =
+                    SpendtrackDailyChartUiState.of(
+                        SpendtrackStats.dailyTotals(rows, window.first, window.second)
+                    )
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -205,6 +221,9 @@ fun SpendtrackScreen(
                             true
                         },
                     )
+                    SpendtrackInsightsStrip(insights = insights, currency = currency)
+                    SpendtrackCategoryChart(state = categoryChart, currency = currency)
+                    SpendtrackDailyChart(state = dailyChart, currency = currency)
                     SpendtrackRecurringCard(
                         state = recurring,
                         categories = categoryRows,
