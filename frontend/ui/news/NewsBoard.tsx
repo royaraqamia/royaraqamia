@@ -20,6 +20,7 @@ import {
   trimNewsSnapshot,
   type NewsDigestSnapshot,
 } from '@/frontend/ui/news/news-snapshot';
+import { newsHref, newsViewFrom, type NewsView } from '@/frontend/ui/news/news-url';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 import {
@@ -175,6 +176,7 @@ export function NewsBoard() {
     }),
     [searchParams]
   );
+  const digestView = useMemo(() => newsViewFrom(searchParams.get('view')), [searchParams]);
 
   if (!view) {
     return (
@@ -211,12 +213,13 @@ export function NewsBoard() {
         </div>
       ) : null}
 
-      <NewsSearch query={query.q} category={query.category} disabled={readOnly} />
+      <NewsSearch query={query.q} category={query.category} view={digestView} disabled={readOnly} />
 
       <NewsFilters
         date={query.date}
         category={query.category}
         query={query.q}
+        view={digestView}
         dates={view.dates}
         categories={view.categories}
         isSearching={view.search !== null}
@@ -232,7 +235,7 @@ export function NewsBoard() {
                 مُلخَّصك الخاص
               </span>
               <Link
-                href={otherViewHref(query)}
+                href={otherViewHref(query, 'public')}
                 className="font-bold text-primary underline-offset-4 hover:underline"
               >
                 عرض المُلخَّص العام
@@ -240,7 +243,7 @@ export function NewsBoard() {
             </>
           ) : (
             <Link
-              href={otherViewHref(query)}
+              href={otherViewHref(query, 'mine')}
               className="font-bold text-primary underline-offset-4 hover:underline"
             >
               لديك مُلخَّص خاص لهذا اليوم — اعرضه
@@ -340,13 +343,11 @@ export function NewsBoard() {
 }
 
 /** The same page, asked for the other digest. */
-function otherViewHref(query: { q: string; date: string | null; category: string | null }): string {
-  const next = new URLSearchParams();
-  if (query.q) next.set('q', query.q);
-  if (query.date) next.set('date', query.date);
-  if (query.category) next.set('category', query.category);
-  next.set('view', 'public');
-  return `/news?${next.toString()}`;
+function otherViewHref(
+  query: { q: string; date: string | null; category: NewsCategory | null },
+  view: NewsView
+): string {
+  return newsHref('/news', { ...query, view });
 }
 
 /**

@@ -5,6 +5,7 @@ import { useTransition } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
 import { NEWS_CATEGORY_ICONS } from './news-format';
+import { newsHref, type NewsView } from './news-url';
 import {
   NEWS_CATEGORY_LABELS,
   formatDigestDayShort,
@@ -17,6 +18,8 @@ interface NewsFiltersProps {
   category: NewsCategory | null;
   /** The committed search term, kept across a chip or day change. */
   query: string;
+  /** The digest on screen, kept across a chip or day change: filtering is not a view change. */
+  view: NewsView;
   /** Every retained day, newest first, for the archive strip. */
   dates: string[];
   /** The categories the selected day actually contains, so no chip filters to nothing. */
@@ -44,6 +47,7 @@ export function NewsFilters({
   date,
   category,
   query,
+  view,
   dates,
   categories,
   isSearching,
@@ -55,16 +59,17 @@ export function NewsFilters({
 
   const navigate = (next: { category?: NewsCategory | null; date?: string | null }) => {
     if (disabled) return;
-    const params = new URLSearchParams();
     const nextCategory = next.category === undefined ? category : next.category;
     const nextDate = next.date === undefined ? date : next.date;
 
-    if (query) params.set('q', query);
-    if (nextCategory) params.set('category', nextCategory);
     // A search spans every retained day, so it supersedes the selected one.
-    if (nextDate && !query) params.set('date', nextDate);
+    const href = newsHref(pathname, {
+      q: query,
+      category: nextCategory,
+      date: query ? null : nextDate,
+      view,
+    });
 
-    const href = params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
     startTransition(() => {
       router.replace(href, { scroll: false });
     });

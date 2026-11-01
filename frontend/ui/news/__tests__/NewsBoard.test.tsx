@@ -303,6 +303,72 @@ describe('NewsBoard snapshots', () => {
 });
 
 /**
+ * The digest toggle is a target, not a guess (#639).
+ *
+ * `otherViewHref` used to write `view=public` whatever the page was showing,
+ * so «لديك مُلخَّص خاص لهذا اليوم — اعرضه» from the shared view navigated back to
+ * the shared view. The link now names the digest it leads to and carries the
+ * filters across.
+ */
+describe('NewsBoard digest toggle', () => {
+  const query = { q: 'اتفاق', date: '2026-10-26', category: 'tech' };
+
+  function searchWith(view: string): string {
+    return new URLSearchParams({ ...query, view }).toString();
+  }
+
+  it('links from the shared view to the personal digest, keeping the filters', async () => {
+    navigation.search = searchWith('public');
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: {
+          ...BOARD,
+          personal: { enabled: true, available: true, active: false },
+        },
+      })
+    );
+
+    render(<NewsBoard />);
+
+    const link = await screen.findByRole('link', { name: /لديك مُلخَّص خاص لهذا اليوم/ });
+    const href = link.getAttribute('href') ?? '';
+    const params = new URLSearchParams(href.slice(href.indexOf('?') + 1));
+
+    expect(params.get('view')).not.toBe('public');
+    expect(params.get('q')).toBe(query.q);
+    expect(params.get('date')).toBe(query.date);
+    expect(params.get('category')).toBe(query.category);
+  });
+
+  it('links from the personal digest to the shared view, keeping the filters', async () => {
+    navigation.search = new URLSearchParams({
+      q: query.q,
+      date: query.date,
+      category: query.category,
+    }).toString();
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: {
+          ...BOARD,
+          personal: { enabled: true, available: true, active: true },
+        },
+      })
+    );
+
+    render(<NewsBoard />);
+
+    const link = await screen.findByRole('link', { name: 'عرض المُلخَّص العام' });
+    const href = link.getAttribute('href') ?? '';
+    const params = new URLSearchParams(href.slice(href.indexOf('?') + 1));
+
+    expect(params.get('view')).toBe('public');
+    expect(params.get('q')).toBe(query.q);
+    expect(params.get('date')).toBe(query.date);
+    expect(params.get('category')).toBe(query.category);
+  });
+});
+
+/**
  * A board belongs to the URL that asked for it (#640).
  *
  * The read effect depended on the URL but the board it produced did not, so a
