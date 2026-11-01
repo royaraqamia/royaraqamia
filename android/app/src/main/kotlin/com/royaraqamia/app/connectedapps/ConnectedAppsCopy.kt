@@ -12,6 +12,7 @@ package com.royaraqamia.app.connectedapps
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ConnectedAppsCopy {
+    const val PAGE_TITLE = "التَّطبيقات المتَّصلة بالـ MCP"
     const val LOADING_LABEL = "جاري التَّحميل..."
     const val SIGN_IN = "تسجيل الدُّخول"
     const val FAILED = "تعذّر تحميل التَّطبيقات المتَّصلة."

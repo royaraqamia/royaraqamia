@@ -21,15 +21,15 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `notes` | `/notes` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `account` | `/account` | _web only_ | The app opens the web surface in the shell; the account screen lands in #657. |
+| `account` | `/account` | _web only_ | The page itself is the profile card and the sign-out, and lands in #798. |
 | `account-links` | `/account/links` | _web only_ | The owned links list is LinkSnap's dashboard, so it arrives with the app's LinkSnap screen (#654). |
-| `account-posts` | `/account/posts` | _web only_ | The app opens the web surface in the shell; the owned posts list lands in #657. |
+| `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
-| `account-connected-apps` | `/account/connected-apps` | _web only_ | The app opens the web surface in the shell; the connected-apps screen lands in #657. |
-| `account-faq` | `/account/faq` | _web only_ | The FAQ is public content; its screen lands with the account area in #657. |
-| `account-news` | `/account/news` | _web only_ | The news preferences are a form over the news contract, and land with the account area in #657. |
-| `account-changelog` | `/account/changelog` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
+| `account-faq` | `/account/faq` | _web only_ | The FAQ's content is shared by both clients first; the screen lands in #799. |
+| `account-news` | `/account/news` | _web only_ | The news preferences read and write the news contract; the screens land in #799. |
+| `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community-post` | `/community/[slug]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

@@ -64,7 +64,7 @@
     {
       "surface": "account",
       "native": null,
-      "reason": "The app opens the web surface in the shell; the account screen lands in #657."
+      "reason": "The page itself is the profile card and the sign-out, and lands in #798."
     },
     {
       "surface": "account-links",
@@ -74,7 +74,7 @@
     {
       "surface": "account-posts",
       "native": null,
-      "reason": "The app opens the web surface in the shell; the owned posts list lands in #657."
+      "reason": "The list draws BlogPress's post card, so it arrives with the community feed in the app (#658)."
     },
     {
       "surface": "account-submissions",
@@ -87,23 +87,22 @@
     },
     {
       "surface": "account-connected-apps",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; the connected-apps screen lands in #657."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt"
     },
     {
       "surface": "account-faq",
       "native": null,
-      "reason": "The FAQ is public content; its screen lands with the account area in #657."
+      "reason": "The FAQ's content is shared by both clients first; the screen lands in #799."
     },
     {
       "surface": "account-news",
       "native": null,
-      "reason": "The news preferences are a form over the news contract, and land with the account area in #657."
+      "reason": "The news preferences read and write the news contract; the screens land in #799."
     },
     {
       "surface": "account-changelog",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "The app's release notes as a screen, from the weekly train's own list, land in #799."
     },
     {
       "surface": "notifications",

@@ -88,8 +88,17 @@ sentence over the shared `timeAgoParts` rather than a second copy of the thresho
 ([ADR-0104](../adr/0104-a-shared-formatter-returns-parts-not-sentences.md)). A revoke is a request,
 never a local filter — the card re-reads the list from the server, so a revocation that
 half-succeeded cannot look complete — and `AppGraph` wires the repository the workbench draws beside
-the plan card. Still owed: its `*Screen.kt`, with the account screen, the owned posts list, the FAQ,
-the news preferences and the changelog.
+the plan card. The screen arrived in the same slice: `connectedapps/ConnectedAppsScreen.kt` is
+`/account/connected-apps` — the page's title from the same copy source, the card under it, a revoke
+that keeps the server's own refusal without re-reading, and a successful one that re-reads the list
+rather than dropping the row. The account area's remaining pages are each owned by the ticket that
+draws the component they are made of: the account screen itself (profile and sign-out) is
+[#798](https://github.com/royaraqamia/royaraqamia/issues/798), the FAQ, the news preferences and the
+changelog are [#799](https://github.com/royaraqamia/royaraqamia/issues/799), the owned posts list is
+the community feed's post card ([#658](https://github.com/royaraqamia/royaraqamia/issues/658)), the
+short links are LinkSnap ([#654](https://github.com/royaraqamia/royaraqamia/issues/654)) and the
+submissions page is the request and booking forms
+([#659](https://github.com/royaraqamia/royaraqamia/issues/659)).
 
 The account area's pages are one row each in `perf/surfaces.json` — `account`, `account-plan`,
 `account-connected-apps`, `account-faq`, `account-news`, `account-links`, `account-posts`,
@@ -97,20 +106,6 @@ The account area's pages are one row each in `perf/surfaces.json` — `account`,
 routes apiece. That is what lets `docs/mobile/screens.json` answer per page: a surface is native only
 when all of its routes are, and a row that grouped four different pages forced one answer for four
 different ports.
-
-**Wired today (#657).** `connectedapps/ConnectedAppsCard.kt` draws `/account/connected-apps`'s list
-from the page's own two routes — `GET /api/me/mcp/connected-apps`, and the `DELETE` that revokes one
-client or every client: the four states the view draws, the empty prompt, the destructive tint on a
-revoke and the question asked before it. It is a listed pair in `docs/mobile/parity.json`: the words
-come from `shared/copy/account-connected-apps.json` through `npm run copy:generate`, the glyphs from
-`shared/icons/icons.json` through `vectors:generate`, and the relative time is this surface's own
-sentence over the shared `timeAgoParts` rather than a second copy of the thresholds
-([ADR-0104](../adr/0104-a-shared-formatter-returns-parts-not-sentences.md)). A revoke is a request,
-never a local filter — the card re-reads the list from the server, so a revocation that
-half-succeeded cannot look complete — and `AppGraph` wires the repository the workbench draws beside
-the plan card. Still owed: the `*Screen.kt` that puts it on a route, with the rest of `account-server`
-(the plan page's own screen, the FAQ and the news preferences). The inventory records a surface as
-native only when all four of its routes are, so the route still opens the document.
 
 **Wired today (#647, the shell).** `shell/ShellActivity` is the launcher: the splash theme hands over
 to a Compose frame drawn from the tokens, RTL at the root, with the app's own tab bar
