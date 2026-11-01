@@ -103,9 +103,9 @@ describe('summarising the runs', () => {
   });
 
   it('compares a median against the kind of start it belongs to', () => {
-    expect(withinBudget('cold', 400)).toBe(true);
-    expect(withinBudget('cold', 401)).toBe(false);
-    expect(withinBudget('warm', 300)).toBe(true);
+    expect(withinBudget('cold', BUDGET.cold)).toBe(true);
+    expect(withinBudget('cold', BUDGET.cold + 1)).toBe(false);
+    expect(withinBudget('warm', BUDGET.warm)).toBe(true);
     expect(withinBudget('warm', null)).toBe(false);
   });
 });
