@@ -1,0 +1,33 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-budget",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-budget-copy.ts",
+    "export": "SPENDTRACK_BUDGET_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackBudgetCopy.kt",
+    "object": "SpendtrackBudgetCopy"
+  },
+  "notes": {
+    "source": "The budget card's words, in both clients (#653). The site's card is the reference: the month's budget, what has been spent against it, the percentage it names and the sentence it puts in the form are what the app draws.",
+    "placeholders": "`{amount}`, `{symbol}` and `{percent}` are substituted by the client, so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the card does not render."
+  },
+  "strings": {
+    "title": "ميزانيَّة الشَّهر",
+    "loading": "جاري التَّحميل...",
+    "current": "الميزانيَّة الحاليَّة",
+    "unset": "غير مُحدَّدَة",
+    "percent": "{percent}% مُستهلَك",
+    "spent": "المصروف: {amount}",
+    "remaining": "المُتبقِّي: {amount}",
+    "exceeded": "تجاوزت الميزانيَّة هذا الشَّهر",
+    "monthSpent": "المصروف هذا الشَّهر: {amount}",
+    "setLabel": "حدِّد ميزانيَّة شهريَّة ({symbol})",
+    "save": "حفظ",
+    "invalidAmount": "أدخِل مبلغًا صحيحًا أكبر من صفر",
+    "saveError": "فشل حفظ الميزانيَّة",
+    "loadError": "تعذَّر تحميل الميزانيَّة"
+  }
+}

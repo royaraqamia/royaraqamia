@@ -167,6 +167,48 @@ export const SpendtrackCurrencySchema = z.object({
   currency: z.string(),
 });
 
+/**
+ * A month's budget (#653). The server keys it on `(user_id, month, category_id)`
+ * rather than on a client-minted id, which is why no `clientId` travels: the web
+ * drops it for the same reason (`sync-transport.ts`).
+ */
+export const SpendtrackBudgetWriteSchema = z.object({
+  month: z.string(),
+  amount: z.number(),
+  categoryId: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
+/** A budget removal: the pair it was keyed on, and the instant it was decided. */
+export const SpendtrackBudgetDeleteSchema = z.object({
+  month: z.string(),
+  categoryId: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
+/** A new recurring expense: the client-minted id, which makes a replay an upsert. */
+export const SpendtrackRecurringWriteSchema = z.object({
+  clientId: z.string(),
+  amount: z.number(),
+  category_id: z.string(),
+  description: z.string().nullable(),
+  day_of_month: z.number().int(),
+  start_month: z.string(),
+  updatedAt: z.string(),
+});
+
+/** A change to an owned recurring expense. */
+export const SpendtrackRecurringUpdateSchema = z.object({
+  id: z.string(),
+  amount: z.number(),
+  category_id: z.string(),
+  description: z.string().nullable(),
+  day_of_month: z.number().int(),
+  start_month: z.string(),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
+});
+
 /** Outbox/LWW fields shared by offline-owned rows (ADR-0029, ticket #162). */
 type OfflineFields = {
   clientId?: string | null;

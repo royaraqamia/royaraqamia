@@ -1,0 +1,42 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-recurring",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-recurring-copy.ts",
+    "export": "SPENDTRACK_RECURRING_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackRecurringCopy.kt",
+    "object": "SpendtrackRecurringCopy"
+  },
+  "notes": {
+    "source": "The recurring-expenses card's words, in both clients (#653): the card's heading and empty state, the row's fallbacks and actions, and the dialog's fields and its validation.",
+    "placeholders": "None; every sentence is literal, so a client that swaps one is a client that reads differently.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the card does not render."
+  },
+  "strings": {
+    "title": "المصاريف المُتكرِّرة",
+    "subtitle": "جدولة واشتراكات تلقائيَّة",
+    "add": "إضافة",
+    "emptyTitle": "لا توجد مصاريف مُتكرِّرة بعد",
+    "emptyBody": "أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.",
+    "fallback": "مصروف مُتكرِّر",
+    "editAria": "تعديل المصروف المُتكرِّر",
+    "deleteAria": "حذف المصروف المُتكرِّر",
+    "createTitle": "إضافة مصروف مُتكرِّر",
+    "editTitle": "تعديل مصروف مُتكرِّر",
+    "amountLabel": "المبلغ",
+    "dayLabel": "يوم الشَّهر",
+    "categoryLabel": "التَّصنيف",
+    "categoryPlaceholder": "اختر تصنيف",
+    "descriptionLabel": "الوصف (اختياري)",
+    "descriptionPlaceholder": "مثال: فاتورة الإنترنت",
+    "createAction": "إضافة",
+    "save": "حفظ التَّعديلات",
+    "saving": "جاري الحفظ...",
+    "invalidAmount": "أدخِل مبلغًا صحيحًا أكبر من صفر",
+    "invalidCategory": "اختر تصنيفًا",
+    "invalidDay": "أدخِل يومًا صحيحًا بين 1 و 31",
+    "saveError": "حدث خطأ أثناء الحفظ"
+  }
+}

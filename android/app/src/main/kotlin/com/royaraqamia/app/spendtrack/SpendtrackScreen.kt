@@ -26,6 +26,7 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.shell.ServicesCopy
 import com.royaraqamia.app.store.spendtrack.SpendtrackCategoryRow
 import com.royaraqamia.app.store.spendtrack.SpendtrackExpenseRow
+import com.royaraqamia.app.store.spendtrack.SpendtrackRecurringRow
 import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.sync.SyncPill
 import com.royaraqamia.app.sync.SyncPillState
@@ -73,6 +74,11 @@ fun SpendtrackScreen(
     var categories by remember {
         mutableStateOf<SpendtrackCategoriesUiState>(SpendtrackCategoriesUiState.Empty)
     }
+    var budget by remember { mutableStateOf<SpendtrackBudgetUiState>(SpendtrackBudgetUiState.Unset) }
+    var recurring by remember {
+        mutableStateOf<SpendtrackRecurringUiState>(SpendtrackRecurringUiState.Empty)
+    }
+    var recurringForm by remember { mutableStateOf<SpendtrackRecurringTarget?>(null) }
     var currency by remember { mutableStateOf<String?>(null) }
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
 
@@ -84,6 +90,8 @@ fun SpendtrackScreen(
     suspend fun paint() {
         expenses = SpendtrackExpensesUiState.of(repository.expenses())
         categories = SpendtrackCategoriesUiState.of(repository.categories())
+        budget = SpendtrackBudgetUiState.of(repository.budget(currentMonth())?.amount)
+        recurring = SpendtrackRecurringUiState.of(repository.recurring())
         currency = repository.currency()
     }
 
@@ -164,8 +172,33 @@ fun SpendtrackScreen(
             header = {
                 header()
                 val rows = (expenses as? SpendtrackExpensesUiState.Painted)?.rows.orEmpty()
-                Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                    SpendtrackTotalCard(total = monthTotal(rows), currency = currency)
+                val spent = monthTotal(rows)
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SpendtrackTotalCard(total = spent, currency = currency)
+                    SpendtrackBudgetCard(
+                        state = budget,
+                        spent = spent,
+                        currency = currency,
+                        month = currentMonth(),
+                        onSave = { amount ->
+                            scope.launch {
+                                repository.setBudget(currentMonth(), amount)
+                                sync()
+                            }
+                            true
+                        },
+                    )
+                    SpendtrackRecurringCard(
+                        state = recurring,
+                        categories = categoryRows,
+                        currency = currency,
+                        onDelete = { row -> scope.launch { repository.deleteRecurring(row.id); sync() } },
+                        onEdit = { row -> recurringForm = SpendtrackRecurringTarget.Edit(row) },
+                        onAdd = { recurringForm = SpendtrackRecurringTarget.New },
+                    )
                 }
             },
         )
@@ -239,6 +272,47 @@ fun SpendtrackScreen(
             )
         }
     }
+
+
+    recurringForm?.let { target ->
+        val editing = (target as? SpendtrackRecurringTarget.Edit)?.row
+        SpendtrackRecurringDialog(
+            editing = editing,
+            categories = categoryRows,
+            onDismiss = { recurringForm = null },
+            onSave = { amount, categoryId, dayOfMonth, description ->
+                scope.launch {
+                    if (editing == null) {
+                        repository.createRecurring(
+                            amount = amount,
+                            categoryId = categoryId,
+                            dayOfMonth = dayOfMonth,
+                            startMonth = currentMonth(),
+                            description = description,
+                        )
+                    } else {
+                        repository.updateRecurring(
+                            id = editing.id,
+                            amount = amount,
+                            categoryId = categoryId,
+                            dayOfMonth = dayOfMonth,
+                            startMonth = editing.startMonth,
+                            description = description,
+                        )
+                    }
+                    sync()
+                }
+                true
+            },
+        )
+    }
+}
+
+/** Which recurring form is open: a new schedule, or an existing one. */
+private sealed interface SpendtrackRecurringTarget {
+    data object New : SpendtrackRecurringTarget
+
+    data class Edit(val row: SpendtrackRecurringRow) : SpendtrackRecurringTarget
 }
 
 /** Which category dialog is open: a new row, or an existing one. */
@@ -292,7 +366,7 @@ private fun SpendtrackHeader(
     }
 }
 
-/** The month the total is about, in the device's zone: `yyyy-MM`. */
+/** The month the screen is about, in the device's zone: `yyyy-MM`. */
 internal fun currentMonth(): String {
     val calendar = java.util.Calendar.getInstance()
     return String.format(

@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/frontend/ui/primitives/select';
-import { Loader2, Plus, Pencil, Trash2, Repeat, CalendarDays, AlertCircle } from 'lucide-react';
+import { LoaderCircle, Plus, Pencil, Trash, Repeat, CalendarDays, CircleAlert } from 'lucide-react';
+import { SPENDTRACK_RECURRING_COPY } from './spendtrack-recurring-copy';
 import {
   createRecurringExpense,
   updateRecurringExpense,
@@ -67,7 +68,7 @@ export function RecurringExpenses({
   return (
     <Card
       className="group/card relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 shadow-sm transition-safe duration-300 hover:border-border/80 hover:shadow-md"
-      aria-label="المصاريف المُتكرِّرة"
+      aria-label={SPENDTRACK_RECURRING_COPY.title}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 p-5 sm:p-6 pb-4 border-b border-border/40">
         <div className="flex items-center gap-3 min-w-0">
@@ -76,10 +77,10 @@ export function RecurringExpenses({
           </div>
           <div className="min-w-0">
             <CardTitle className="text-base font-bold tracking-tight text-foreground truncate">
-              المصاريف المُتكرِّرة
+              {SPENDTRACK_RECURRING_COPY.title}
             </CardTitle>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              جدولة واشتراكات تلقائيَّة
+              {SPENDTRACK_RECURRING_COPY.subtitle}
             </p>
           </div>
         </div>
@@ -90,7 +91,7 @@ export function RecurringExpenses({
           trigger={
             <HeroCtaButton className="h-10 gap-1.5 px-3.5 text-xs shrink-0 cursor-pointer">
               <Plus className="size-3.5" />
-              <span>إضافة</span>
+              <span>{SPENDTRACK_RECURRING_COPY.add}</span>
             </HeroCtaButton>
           }
         />
@@ -101,9 +102,11 @@ export function RecurringExpenses({
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
             </div>
-            <p className="text-sm font-bold text-foreground">لا توجد مصاريف مُتكرِّرة بعد</p>
+            <p className="text-sm font-bold text-foreground">
+              {SPENDTRACK_RECURRING_COPY.emptyTitle}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed text-balance">
-              أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.
+              {SPENDTRACK_RECURRING_COPY.emptyBody}
             </p>
           </div>
         ) : (
@@ -121,7 +124,7 @@ export function RecurringExpenses({
                   </span>
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="truncate text-sm font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
-                      {item.description || cat?.name || 'مصروف مُتكرِّر'}
+                      {item.description || cat?.name || SPENDTRACK_RECURRING_COPY.fallback}
                     </p>
                     {cat && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
@@ -148,7 +151,7 @@ export function RecurringExpenses({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="تعديل المصروف المُتكرِّر"
+                          aria-label={SPENDTRACK_RECURRING_COPY.editAria}
                           className="size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring transition-safe cursor-pointer"
                         >
                           <Pencil className="size-3.5" />
@@ -158,11 +161,11 @@ export function RecurringExpenses({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="حذف المصروف المُتكرِّر"
+                      aria-label={SPENDTRACK_RECURRING_COPY.deleteAria}
                       className="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive transition-safe cursor-pointer"
                       onClick={() => handleDelete(item)}
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash className="size-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -205,15 +208,15 @@ function RecurringDialog({
     const parsedAmount = parseFloat(amount);
     const parsedDay = Number(dayOfMonth);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError('أدخِل مبلغًا صحيحًا أكبر من صفر');
+      setError(SPENDTRACK_RECURRING_COPY.invalidAmount);
       return;
     }
     if (!categoryId) {
-      setError('اختر تصنيفًا');
+      setError(SPENDTRACK_RECURRING_COPY.invalidCategory);
       return;
     }
     if (!Number.isInteger(parsedDay) || parsedDay < 1 || parsedDay > 31) {
-      setError('أدخِل يومًا صحيحًا بين 1 و 31');
+      setError(SPENDTRACK_RECURRING_COPY.invalidDay);
       return;
     }
 
@@ -234,7 +237,7 @@ function RecurringDialog({
         setIsOpen(false);
         await context?.refresh?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الحفظ');
+        setError(err instanceof Error ? err.message : SPENDTRACK_RECURRING_COPY.saveError);
       } finally {
         setPending(false);
       }
@@ -249,7 +252,7 @@ function RecurringDialog({
       setIsOpen(false);
       router.refresh();
     } else {
-      setError(result?.error ?? 'حدث خطأ أثناء الحفظ');
+      setError(result?.error ?? SPENDTRACK_RECURRING_COPY.saveError);
     }
   }
 
@@ -261,7 +264,7 @@ function RecurringDialog({
         className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card border border-border/80 rounded-3xl shadow-2xl"
       >
         <DialogTitle className="sr-only">
-          {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
+          {item ? SPENDTRACK_RECURRING_COPY.editTitle : SPENDTRACK_RECURRING_COPY.createTitle}
         </DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -270,7 +273,7 @@ function RecurringDialog({
                 htmlFor="rec-amount"
                 className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
               >
-                المبلغ ({getCurrencySymbol(currency)})
+                {SPENDTRACK_RECURRING_COPY.amountLabel} ({getCurrencySymbol(currency)})
               </Label>
               <Input
                 id="rec-amount"
@@ -289,7 +292,7 @@ function RecurringDialog({
                 htmlFor="rec-day"
                 className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
               >
-                يوم الشَّهر
+                {SPENDTRACK_RECURRING_COPY.dayLabel}
               </Label>
               <Input
                 id="rec-day"
@@ -306,11 +309,11 @@ function RecurringDialog({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-bold tracking-wide text-foreground/80 uppercase">
-              التَّصنيف
+              {SPENDTRACK_RECURRING_COPY.categoryLabel}
             </Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe w-full">
-                <SelectValue placeholder="اختر تصنيف" />
+                <SelectValue placeholder={SPENDTRACK_RECURRING_COPY.categoryPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border border-border/80 bg-card shadow-xl p-1">
                 {categories.map((cat) => (
@@ -336,11 +339,11 @@ function RecurringDialog({
               htmlFor="rec-desc"
               className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
             >
-              الوصف (اختياري)
+              {SPENDTRACK_RECURRING_COPY.descriptionLabel}
             </Label>
             <Input
               id="rec-desc"
-              placeholder="مثال: فاتورة الإنترنت"
+              placeholder={SPENDTRACK_RECURRING_COPY.descriptionPlaceholder}
               className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -351,7 +354,7 @@ function RecurringDialog({
               className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium animate-in fade-in duration-200"
               role="alert"
             >
-              <AlertCircle className="size-4 shrink-0" />
+              <CircleAlert className="size-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -359,11 +362,13 @@ function RecurringDialog({
             <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
               {pending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin shrink-0" />
-                  <span>جاري الحفظ...</span>
+                  <LoaderCircle className="size-4 animate-spin shrink-0" />
+                  <span>{SPENDTRACK_RECURRING_COPY.saving}</span>
                 </>
               ) : (
-                <span>{item ? 'حفظ التَّعديلات' : 'إضافة'}</span>
+                <span>
+                  {item ? SPENDTRACK_RECURRING_COPY.save : SPENDTRACK_RECURRING_COPY.createAction}
+                </span>
               )}
             </HeroCtaButton>
           </DialogActions>

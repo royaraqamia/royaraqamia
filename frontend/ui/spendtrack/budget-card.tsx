@@ -7,7 +7,8 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
-import { Wallet, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Wallet, LoaderCircle, TriangleAlert, CircleCheck } from 'lucide-react';
+import { SPENDTRACK_BUDGET_COPY } from './spendtrack-budget-copy';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
 
 export function BudgetCard({
@@ -39,7 +40,7 @@ export function BudgetCard({
         setBudget(value);
         setInput(value != null ? value.toString() : '');
       } catch {
-        if (active) setError('تعذَّر تحميل الميزانيَّة');
+        if (active) setError(SPENDTRACK_BUDGET_COPY.loadError);
       } finally {
         if (active) setLoading(false);
       }
@@ -58,7 +59,7 @@ export function BudgetCard({
     e.preventDefault();
     const amount = parseFloat(input);
     if (isNaN(amount) || amount <= 0) {
-      setError('أدخِل مبلغًا صحيحًا أكبر من صفر');
+      setError(SPENDTRACK_BUDGET_COPY.invalidAmount);
       return;
     }
     setSaving(true);
@@ -72,7 +73,9 @@ export function BudgetCard({
       } catch (error) {
         // A reached cap arrives with its own copy; show it instead of the
         // generic save failure.
-        setError(error instanceof Error && error.message ? error.message : 'فشل حفظ الميزانيَّة');
+        setError(
+          error instanceof Error && error.message ? error.message : SPENDTRACK_BUDGET_COPY.saveError
+        );
       } finally {
         setSaving(false);
       }
@@ -84,19 +87,19 @@ export function BudgetCard({
     if (result?.success) {
       setBudget(amount);
     } else {
-      setError(result?.error ?? 'فشل حفظ الميزانيَّة');
+      setError(result?.error ?? SPENDTRACK_BUDGET_COPY.saveError);
     }
   }
 
   return (
     <Card
       className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-xs transition-safe duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
-      aria-label="ميزانيَّة الشَّهر"
+      aria-label={SPENDTRACK_BUDGET_COPY.title}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <div className="space-y-0.5">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
-            ميزانيَّة الشَّهر
+            {SPENDTRACK_BUDGET_COPY.title}
           </CardTitle>
           {month && (
             <p className="text-xs font-medium text-muted-foreground/60 capitalize">{month}</p>
@@ -110,8 +113,10 @@ export function BudgetCard({
       <CardContent className="px-6 pb-6 pt-2 space-y-5">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-3 min-h-45">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-xs text-muted-foreground/80 font-medium">جاري التَّحميل...</span>
+            <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-xs text-muted-foreground/80 font-medium">
+              {SPENDTRACK_BUDGET_COPY.loading}
+            </span>
           </div>
         ) : (
           <>
@@ -120,13 +125,13 @@ export function BudgetCard({
               <div className="flex items-baseline justify-between gap-2">
                 <div>
                   <span className="text-xs font-medium text-muted-foreground/80 block mb-1">
-                    الميزانيَّة الحاليَّة
+                    {SPENDTRACK_BUDGET_COPY.current}
                   </span>
                   <p
                     className={`text-3xl font-extrabold tracking-tight text-foreground ${budget != null ? 'font-mono' : ''}`}
                     aria-live="polite"
                   >
-                    {budget != null ? formatMoney(budget, currency) : 'غير مُحدَّدَة'}
+                    {budget != null ? formatMoney(budget, currency) : SPENDTRACK_BUDGET_COPY.unset}
                   </p>
                 </div>
 
@@ -138,7 +143,7 @@ export function BudgetCard({
                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                     }`}
                   >
-                    {rawPercent}% مُستهلَك
+                    {SPENDTRACK_BUDGET_COPY.percent.replace('{percent}', String(rawPercent))}
                   </span>
                 )}
               </div>
@@ -155,8 +160,18 @@ export function BudgetCard({
                     />
                   </div>
                   <div className="flex justify-between items-center text-[11px] text-muted-foreground font-medium">
-                    <span>المصروف: {formatMoney(total, currency)}</span>
-                    <span>المُتبقِّي: {formatMoney(Math.max(0, budget - total), currency)}</span>
+                    <span>
+                      {SPENDTRACK_BUDGET_COPY.spent.replace(
+                        '{amount}',
+                        formatMoney(total, currency)
+                      )}
+                    </span>
+                    <span>
+                      {SPENDTRACK_BUDGET_COPY.remaining.replace(
+                        '{amount}',
+                        formatMoney(Math.max(0, budget - total), currency)
+                      )}
+                    </span>
                   </div>
                 </div>
               )}
@@ -166,13 +181,18 @@ export function BudgetCard({
                 <div className="pt-1">
                   {exceeded ? (
                     <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive font-bold">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span>تجاوزت الميزانيَّة هذا الشَّهر</span>
+                      <TriangleAlert className="h-4 w-4 shrink-0" />
+                      <span>{SPENDTRACK_BUDGET_COPY.exceeded}</span>
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <span>المصروف هذا الشَّهر: {formatMoney(total, currency)}</span>
+                      <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      <span>
+                        {SPENDTRACK_BUDGET_COPY.monthSpent.replace(
+                          '{amount}',
+                          formatMoney(total, currency)
+                        )}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -182,7 +202,7 @@ export function BudgetCard({
             {/* Form Section */}
             <form onSubmit={handleSave} className="space-y-3 pt-3 border-t border-border/40">
               <Label htmlFor="budget" className="text-xs font-bold text-foreground/80 block">
-                حدِّد ميزانيَّة شهريَّة ({getCurrencySymbol(currency)})
+                {SPENDTRACK_BUDGET_COPY.setLabel.replace('{symbol}', getCurrencySymbol(currency))}
               </Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -206,13 +226,17 @@ export function BudgetCard({
                   disabled={saving}
                   className="h-10 gap-1.5 px-5 text-xs sm:h-10 sm:px-5 sm:text-xs shrink-0"
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
+                  {saving ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    SPENDTRACK_BUDGET_COPY.save
+                  )}
                 </HeroCtaButton>
               </div>
 
               {error && (
                 <div className="flex items-center gap-1.5 text-xs text-destructive font-medium pt-1">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
                   <p role="alert">{error}</p>
                 </div>
               )}

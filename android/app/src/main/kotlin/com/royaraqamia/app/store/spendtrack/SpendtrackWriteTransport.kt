@@ -1,5 +1,7 @@
 package com.royaraqamia.app.store.spendtrack
 
+import com.royaraqamia.app.contracts.generated.SpendtrackBudgetDelete
+import com.royaraqamia.app.contracts.generated.SpendtrackBudgetWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackCategoryUpdate
 import com.royaraqamia.app.contracts.generated.SpendtrackCategoryWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackDelete
@@ -7,6 +9,8 @@ import com.royaraqamia.app.contracts.generated.SpendtrackExpenseUpdate
 import com.royaraqamia.app.contracts.generated.SpendtrackExpenseUpdateSplitsItem
 import com.royaraqamia.app.contracts.generated.SpendtrackExpenseWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackExpenseWriteSplitsItem
+import com.royaraqamia.app.contracts.generated.SpendtrackRecurringUpdate
+import com.royaraqamia.app.contracts.generated.SpendtrackRecurringWrite
 import com.royaraqamia.app.store.outbox.OutboxIntentRow
 import com.royaraqamia.app.store.outbox.WriteRequest
 import java.net.URLEncoder
@@ -30,6 +34,8 @@ import kotlinx.serialization.json.jsonPrimitive
 object SpendtrackWriteTransport {
     const val EXPENSES_PATH = "/spendtrack/api/expenses"
     const val CATEGORIES_PATH = "/spendtrack/api/categories"
+    const val BUDGET_PATH = "/spendtrack/api/budget"
+    const val RECURRING_PATH = "/spendtrack/api/recurring"
 
     fun requestFor(intent: OutboxIntentRow): WriteRequest = when (intent.type) {
         "expense.create" -> WriteRequest("POST", EXPENSES_PATH, intent.payload)
@@ -38,7 +44,40 @@ object SpendtrackWriteTransport {
         "category.create" -> WriteRequest("POST", CATEGORIES_PATH, intent.payload)
         "category.update" -> WriteRequest("PATCH", pathFor(CATEGORIES_PATH, intent), intent.payload)
         "category.delete" -> deleteRequest(CATEGORIES_PATH, intent.payload)
+        "budget.set" -> WriteRequest("PUT", BUDGET_PATH, intent.payload)
+        "budget.delete" -> WriteRequest("DELETE", budgetDeletePath(intent), deleteBody(intent.payload))
+        "recurring.create" -> WriteRequest("POST", RECURRING_PATH, intent.payload)
+        "recurring.update" -> WriteRequest("PATCH", pathFor(RECURRING_PATH, intent), intent.payload)
+        "recurring.delete" -> deleteRequest(RECURRING_PATH, intent.payload)
         else -> throw IllegalArgumentException("Unknown outbox intent type: ${intent.type}")
+    }
+
+    /**
+     * `DELETE /spendtrack/api/budget?month=…&categoryId=…` — the pair the route
+     * deletes on, because a budget has no id of its own to address.
+     */
+    private fun budgetDeletePath(intent: OutboxIntentRow): String {
+        val body = SpendtrackPayloads.withNulls.parseToJsonElement(intent.payload).jsonObject
+        val month =
+            body["month"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a budget.delete intent carries no month")
+        val categoryId =
+            body["categoryId"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }
+                ?.jsonPrimitive?.content
+        val query = StringBuilder("?month=").append(URLEncoder.encode(month, "UTF-8"))
+        if (categoryId != null) {
+            query.append("&categoryId=").append(URLEncoder.encode(categoryId, "UTF-8"))
+        }
+        return "$BUDGET_PATH$query"
+    }
+
+    /** A delete's body: only the write time, which is what the route reads. */
+    private fun deleteBody(payload: String): String {
+        val body = SpendtrackPayloads.withNulls.parseToJsonElement(payload).jsonObject
+        val updatedAt =
+            body["updatedAt"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a delete intent carries no updatedAt")
+        return """{"updatedAt":"$updatedAt"}"""
     }
 
     /**
@@ -168,4 +207,68 @@ object SpendtrackPayloads {
     /** `{"id": …, "updatedAt": …}`: what a delete carries, and nothing else. */
     fun delete(id: String, updatedAt: String): String =
         withNulls.encodeToString(SpendtrackDelete(id = id, updatedAt = updatedAt))
+
+    /** A budget is set on its `(month, category)` pair, and carries no `clientId`. */
+    fun setBudget(month: String, amount: Double, categoryId: String?, updatedAt: String): String =
+        withNulls.encodeToString(
+            SpendtrackBudgetWrite(
+                month = month,
+                amount = amount,
+                categoryId = categoryId,
+                updatedAt = updatedAt,
+            )
+        )
+
+    /** The same pair, as a removal. */
+    fun deleteBudget(month: String, categoryId: String?, updatedAt: String): String =
+        withNulls.encodeToString(
+            SpendtrackBudgetDelete(
+                month = month,
+                categoryId = categoryId,
+                updatedAt = updatedAt,
+            )
+        )
+
+    fun createRecurring(
+        clientId: String,
+        amount: Double,
+        categoryId: String,
+        description: String?,
+        dayOfMonth: Long,
+        startMonth: String,
+        updatedAt: String,
+    ): String =
+        withNulls.encodeToString(
+            SpendtrackRecurringWrite(
+                clientId = clientId,
+                amount = amount,
+                category_id = categoryId,
+                description = description,
+                day_of_month = dayOfMonth,
+                start_month = startMonth,
+                updatedAt = updatedAt,
+            )
+        )
+
+    fun updateRecurring(
+        id: String,
+        amount: Double,
+        categoryId: String,
+        description: String?,
+        dayOfMonth: Long,
+        startMonth: String,
+        updatedAt: String,
+    ): String =
+        withNulls.encodeToString(
+            SpendtrackRecurringUpdate(
+                id = id,
+                amount = amount,
+                category_id = categoryId,
+                description = description,
+                day_of_month = dayOfMonth,
+                start_month = startMonth,
+                updatedAt = updatedAt,
+                deletedAt = null,
+            )
+        )
 }

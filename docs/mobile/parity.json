@@ -484,6 +484,62 @@
           "copy": "creating"
         }
       ]
+    },
+    {
+      "id": "spendtrack-budget",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/budget-card.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-budget-copy.ts",
+        "copyExport": "SPENDTRACK_BUDGET_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackBudgetCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackBudgetUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackBudgetCopy.kt",
+        "copyObject": "SpendtrackBudgetCopy"
+      },
+      "copySource": "shared/copy/spendtrack-budget.json",
+      "states": [
+        {
+          "name": "Unset",
+          "copy": "unset"
+        },
+        {
+          "name": "Set",
+          "copy": "current"
+        }
+      ]
+    },
+    {
+      "id": "spendtrack-recurring",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/recurring-expenses.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-recurring-copy.ts",
+        "copyExport": "SPENDTRACK_RECURRING_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackRecurringList.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackRecurringUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackRecurringCopy.kt",
+        "copyObject": "SpendtrackRecurringCopy"
+      },
+      "copySource": "shared/copy/spendtrack-recurring.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "title"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
     }
   ]
 }

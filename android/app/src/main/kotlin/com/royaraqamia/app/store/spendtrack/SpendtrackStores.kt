@@ -32,7 +32,13 @@ class SpendtrackStores internal constructor(private val database: SpendtrackData
                     context.applicationContext,
                     SpendtrackDatabase::class.java,
                     SpendtrackDatabase.fileName(identity),
-                ).build()
+                )
+                    // Forward-only (#653): a device that already holds expenses
+                    // gains the two tables the app draws now, and keeps its rows.
+                    // No destructive fallback — a device that lost its expenses on
+                    // upgrade has no way to say so.
+                    .addMigrations(SpendtrackDatabase.MIGRATION_1_2)
+                    .build()
             )
     }
 }
