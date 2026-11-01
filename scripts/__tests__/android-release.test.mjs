@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CHANGELOG_LIMIT,
+  STALE_DAYS,
   archivePathFor,
   changelogWithRelease,
   composeReleaseNotes,
   gradeBump,
+  healthReport,
   isReleaseBookkeeping,
   notesFromArchive,
   notesFromFragments,
@@ -203,5 +205,45 @@ describe('release bookkeeping', () => {
     expect(isReleaseBookkeeping('public/android/changelog.json')).toBe(true);
     expect(isReleaseBookkeeping('android/app/build.gradle')).toBe(false);
     expect(isReleaseBookkeeping('collector.ts')).toBe(false);
+  });
+});
+
+describe('the health report the workflow reads', () => {
+  const plan = {
+    release: true,
+    next: '1.1.0',
+    oldestChangeAgeDays: 5,
+    reason: 'a shell release is due',
+  };
+  /** The lines `main --health` writes to stdout, the stream `$GITHUB_OUTPUT` parses. */
+  const stdoutLines = (report) =>
+    Object.entries(report.outputs).map(([key, value]) => `${key}=${value}`);
+
+  it('sends a person the sentence, in prose the output parser would refuse', () => {
+    const report = healthReport({ plan, maxAgeDays: STALE_DAYS });
+    expect(report.prose).toBe('a shell release is due (1.1.0) but not yet overdue');
+    // The regression: this line reached `$GITHUB_OUTPUT`, and failed the step.
+    expect(stdoutLines(report)).not.toContain(report.prose);
+  });
+
+  it('keeps every stdout line a key=value pair', () => {
+    const lines = stdoutLines(healthReport({ plan, maxAgeDays: STALE_DAYS }));
+    expect(lines).toEqual(['stalled=false', 'release=true', 'next=1.1.0', 'age_days=5']);
+    for (const line of lines) expect(line).toMatch(/^[a-z_]+=/);
+  });
+
+  it('counts an overdue backlog as stalled, and a level train as neither', () => {
+    const overdue = healthReport({ plan: { ...plan, oldestChangeAgeDays: 10 }, maxAgeDays: 9 });
+    expect(overdue.outputs.stalled).toBe('true');
+    expect(overdue.prose).toMatch(/oldest change is 10 day/);
+
+    const level = healthReport({ plan: { release: false, reason: 'no shell change' } });
+    expect(level.outputs).toMatchObject({
+      stalled: 'false',
+      release: 'false',
+      next: '',
+      age_days: 0,
+    });
+    expect(level.prose).toBe('the train is level: no shell change');
   });
 });
