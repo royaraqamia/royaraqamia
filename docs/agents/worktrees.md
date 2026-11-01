@@ -44,6 +44,19 @@ grow on. The cut inherits the reconcile's state by design — the open `(#N)` co
 worktree, and a local commit that is not a `(#N)` copy is unpushed owner work, which the sync's
 stop-and-report rule keeps out of every worktree cut after it ([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)).
 
+Those inherited copies are the checkout's record, and they do **not** travel into the pull request.
+Before pushing (landing.md step 2a):
+
+```powershell
+npm run check:branch-base   # fails when the branch still carries a copy (the pre-push hook runs it)
+npm run sync:base           # rebase onto origin/main, or onto the open pull request's branch
+```
+
+A dependency on unmerged work is based on that pull request's branch (`origin/<branch>`), never on
+its local copy: sharing the base's commits is what keeps the later merge clean. Without this, the
+copy and GitHub's squash of the same request are two different versions of one change, and every
+file both sides touched conflicts when the lower request lands (#831, #832, #833).
+
 ## Make it runnable
 
 A fresh worktree has no `node_modules` and no `.env` (both gitignored), so nothing runs until you add

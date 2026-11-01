@@ -30,6 +30,8 @@
     "icons": "node scripts/generate-icons.mjs",
     "fonts:subset": "node scripts/subset-fonts.mjs",
     "check:env-docs": "node scripts/check-env-docs.mjs",
+    "check:branch-base": "node scripts/check-branch-base.mjs",
+    "sync:base": "node scripts/sync-branch-base.mjs",
     "check:arabic": "node scripts/check-arabic-order.mjs",
     "fix:arabic": "node scripts/check-arabic-order.mjs --fix",
     "check:digits": "node scripts/check-digits.mjs",

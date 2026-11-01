@@ -41,11 +41,12 @@ gh pr list --state merged --json number --jq '.[].number'
 Then cut the branch — from local `main`, never from `origin/main`. A worktree inherits whatever HEAD
 it is cut from ([worktrees.md](worktrees.md)), and `worktree_create` starts at the checkout's current
 HEAD anyway, so the checkout's own `main` is the one base every path agrees on
-([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)). The reconcile above is what makes
+([ADR-0072](../adr/0072-worktrees-are-cut-from-local-main.md)). What the branch inherits are the
+open copies; it must not push them (step 2a). The reconcile above is what makes
 that safe: every commit `origin/main..main` is a `(#N)` squash copy at cut time, and a local commit
 that is not one is unpushed owner work — stop and report before cutting anything. A branch cut from
 local `main` is stacked on the still-open copies, so while they are open its pull request's diff
-reads wider than its own change; merges resolve it. `--prune` drops the remote branches deleted
+reads wider than its own change; merges resolve it once the copies are not in the branch. `--prune` drops the remote branches deleted
 since the last fetch, which is half of what makes a landed branch stay gone.
 
 ```powershell
@@ -62,6 +63,7 @@ the full suite on the pull request regardless, so this step is a fast local pre-
 npm run typecheck            # always — `tsc --noEmit`, the cheapest broad signal
 npm run lint:fix             # always
 npm run format               # always — `format:check` is a CI step; ESLint does not format
+npm run check:branch-base    # always — a branch never carries a local squash copy
 npx vitest run <path>        # the test file(s) beside what you changed
 npx vitest run --changed     # or everything the diff reaches, resolved from git
 ```
@@ -81,6 +83,33 @@ npx vitest run --changed     # or everything the diff reaches, resolved from git
   build — `next.config.js`, routing, `proxy.ts`, a dependency, a server/client boundary, or a
   generated module — and then say in the pull request that you did.
 - **Never** weaken, skip or delete a gate to land. Fix the cause, not the symptom.
+
+## 2a. A branch never carries a local squash copy
+
+Step 6 records a landing on local `main` as a new commit, `"<PR title> (#N)"`. That copy is a patch
+applied to whatever `main` was at the time (and run through lint-staged), not the pull request's own
+tree; GitHub's squash of the same pull request is the tree. Once the request lands, a branch stacked
+on the copy is comparing two different versions of the same change, and the merge conflicts on every
+file both sides touched. That is not hypothetical: #831, #832 and #833 all went conflicting within
+minutes of their bases landing.
+
+So the copies stay in the checkout as the record and never travel into a branch:
+
+```powershell
+npm run check:branch-base    # fails when the branch carries one (the pre-push hook runs it too)
+npm run sync:base            # rebases onto origin/main, or onto the open PR's branch
+git push --force-with-lease  # the rebase rewrote history; the lease is what makes that safe
+```
+
+A dependency on unmerged work is fine — it is based on that pull request's **branch**
+(`origin/<branch>`), never on its local copy, so the two share commits instead of duplicating them.
+The `--force-with-lease` above is the one force-push the workflow allows, and only on a branch whose
+pull request has not been merged yet.
+
+Step 6 tags each record with a git note (`refs/notes/landed-copies`) so the guard is exact: a copy
+found by the note is refused whatever `main` looks like afterwards. Copies recorded before the note
+existed are recognised by their subject — a `(#N)` the remote main already carries as a squash — which
+is also what catches a branch whose checkout no longer holds the copy at all.
 
 `/verify` is the deliberate full sweep (`typecheck`, `lint:fix`, full `npm test`) the owner may ask
 for; it is what CI approximates, and an agent does not reach for it on its own.
@@ -106,6 +135,7 @@ Name the branch `<type>/<issue>-<slug>` when it closes an issue (`fix/204-store-
 `<type>/<slug>` otherwise (`docs/landing`).
 
 ```powershell
+npm run check:branch-base   # the pre-push hook runs it too; step 2a is what it enforces
 git push -u origin HEAD
 ```
 
@@ -137,6 +167,7 @@ git branch temp/squash <local main's HEAD>
 git checkout temp/squash
 git merge --squash <task-branch>
 git commit -m "<PR title> (#<n>)"      # body = the branch's reasoning: the why, not a changelog
+git notes --ref=landed-copies add -m "PR #<n>" HEAD  # marks the copy as a copy (step 2a)
 git checkout <task-branch>             # the worktree returns to the pull request's branch
 git -C D:\Projects\royaraqamia reset --hard temp/squash
 git -C D:\Projects\royaraqamia branch -d temp/squash
