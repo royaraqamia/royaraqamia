@@ -11,8 +11,13 @@ import {
   type PublicUsersRepository,
 } from '@/backend/repositories/users/public-users-repository';
 import { createAvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
+import {
+  createHiddenServicesRepository,
+  type HiddenServicesRepository,
+} from '@/backend/repositories/users/hidden-services-repository';
 import { AdminUsersService } from '@/backend/services/users/admin-users-service';
 import { ProfileService } from '@/backend/services/users/profile-service';
+import { HiddenServicesService } from '@/backend/services/users/hidden-services-service';
 
 export function createAdminUsersService(supabase?: SupabaseClient<Database>): AdminUsersService {
   return new AdminUsersService(createAdminUsersRepository(supabase ?? getAdminSupabase()));
@@ -38,4 +43,18 @@ export function createProfileService(supabase?: SupabaseClient<Database>): Profi
     publicUsers: createPublicUsersRepository(client),
     avatars: createAvatarStorageRepository(client),
   });
+}
+
+/**
+ * The caller's hidden services (ADR-0112). User-scoped on purpose: the rows are
+ * guarded by RLS as well, so the service is not the only thing keeping one
+ * member's preference off another's screen.
+ */
+export function createHiddenServicesService(
+  supabase?: SupabaseClient<Database>
+): HiddenServicesService {
+  const hiddenServices: HiddenServicesRepository = createHiddenServicesRepository(
+    supabase ?? getAdminSupabase()
+  );
+  return new HiddenServicesService({ hiddenServices });
 }
