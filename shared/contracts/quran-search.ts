@@ -235,57 +235,86 @@ export function surahAyahOf(
   return null;
 }
 
+/** What one search answers: as many positions as a page may draw, and how many there are. */
+export interface QuranSearchAnswer {
+  /** The matching positions, in reading order, capped at the `limit` it was given. */
+  positions: number[];
+  /**
+   * Every matching Ayah, the capped ones included. The cap is a display rule, not
+   * a truth rule, so the count the surface reports is this one: a reader judging
+   * whether to keep looking is owed the size of the answer, not the size of the
+   * page.
+   */
+  total: number;
+  /** Whether the second, looser pass answered. */
+  loose: boolean;
+}
+
 /**
- * Every position whose folded text contains the folded query, in reading order, up
- * to `limit`. A plain substring scan over an already-folded corpus: 6,236 short
- * strings is sub-millisecond, which is why there is no worker and no search engine
- * behind this.
+ * Every position whose folded text contains the folded query, in reading order. A
+ * plain substring scan over an already-folded corpus: 6,236 short strings is
+ * sub-millisecond, which is why there is no worker and no search engine behind
+ * this, and why the scan counts to the end instead of stopping at the page.
  */
 export function findAyahPositions(
   exactCorpus: readonly string[],
   looseCorpus: readonly string[],
   query: string,
   limit: number
-): { positions: number[]; loose: boolean } {
+): QuranSearchAnswer {
   const exact = normalizeArabic(query);
-  if (exact.length < QURAN_SEARCH_MIN_QUERY) return { positions: [], loose: false };
+  if (exact.length < QURAN_SEARCH_MIN_QUERY) return { positions: [], total: 0, loose: false };
 
   const hits = scan(exactCorpus, exact, limit);
-  if (hits.length > 0) return { positions: hits, loose: false };
+  if (hits.total > 0) return { ...hits, loose: false };
 
   // The second pass answers a spelling the Uthmani text writes differently; its
   // form is only worth computing once the exact one has failed.
   const folded = normalizeLoose(query);
-  if (folded.length < QURAN_SEARCH_MIN_QUERY) return { positions: [], loose: false };
-  return { positions: scan(looseCorpus, folded, limit), loose: true };
+  if (folded.length < QURAN_SEARCH_MIN_QUERY) return { positions: [], total: 0, loose: false };
+  return { ...scan(looseCorpus, folded, limit), loose: true };
 }
 
-function scan(corpus: readonly string[], needle: string, limit: number): number[] {
-  const hits: number[] = [];
+/**
+ * Counts every hit and keeps the first `limit` of them: the rest are what the
+ * total is made of, so the loop cannot break at the page.
+ */
+function scan(
+  corpus: readonly string[],
+  needle: string,
+  limit: number
+): { positions: number[]; total: number } {
+  const positions: number[] = [];
+  let total = 0;
   for (const [position, ayah] of corpus.entries()) {
-    if (ayah.includes(needle)) {
-      hits.push(position);
-      if (hits.length >= limit) break;
-    }
+    if (!ayah.includes(needle)) continue;
+    total += 1;
+    if (positions.length < limit) positions.push(position);
   }
-  return hits;
+  return { positions, total };
 }
 
-/** `findAyahPositions` over the verbatim text: fold both ways, scan, answer both. */
+/**
+ * `findAyahPositions` over the verbatim text: fold both ways, scan, answer the
+ * hits and how many there are.
+ */
 export function findAyahs(
   corpus: readonly string[],
   query: string,
   limit: number
-): { position: number; ayah: string; loose: boolean }[] {
-  const { positions, loose } = findAyahPositions(
+): { hits: { position: number; ayah: string; loose: boolean }[]; total: number } {
+  const { positions, loose, total } = findAyahPositions(
     corpus.map((ayah) => normalizeArabic(ayah)),
     corpus.map((ayah) => normalizeLoose(ayah)),
     query,
     limit
   );
-  return positions.map((position) => ({
-    position,
-    ayah: corpus[position] as string,
-    loose,
-  }));
+  return {
+    hits: positions.map((position) => ({
+      position,
+      ayah: corpus[position] as string,
+      loose,
+    })),
+    total,
+  };
 }

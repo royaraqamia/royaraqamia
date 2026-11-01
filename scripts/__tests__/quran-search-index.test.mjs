@@ -41,7 +41,7 @@ const corpus = index.surahs.flatMap(
 
 /** The (surah, ayah) a hit lands on, as the reader will see it. */
 function places(query, limit = 50) {
-  const hits = findAyahs(asset.ayahs, query, limit);
+  const { hits } = findAyahs(asset.ayahs, query, limit);
   const counts = index.surahs.map((surah) => surah.ayahCount);
   return hits.map((hit) => {
     const place = surahAyahOf(hit.position, counts);

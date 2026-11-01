@@ -136,6 +136,7 @@ describe('findAyahPositions and findAyahs', () => {
   it('answers exact hits first', () => {
     expect(findAyahPositions(exact, loose, 'قل هو الله', 10)).toEqual({
       positions: [0],
+      total: 1,
       loose: false,
     });
   });
@@ -143,23 +144,28 @@ describe('findAyahPositions and findAyahs', () => {
   it('reaches the Ayat by the plain spelling, through the loose pass', () => {
     expect(findAyahPositions(exact, loose, 'الرحمن', 10)).toEqual({
       positions: [1],
+      total: 1,
       loose: true,
     });
   });
 
   it('ignores a query shorter than the floor', () => {
     expect(findAyahPositions(exact, loose, 'ق', 10).positions).toEqual([]);
+    expect(findAyahPositions(exact, loose, 'ق', 10).total).toBe(0);
     expect(normalizeArabic('ق')).toHaveLength(QURAN_SEARCH_MIN_QUERY - 1);
   });
 
-  it('respects the cap it is given', () => {
+  it('respects the cap it is given, and counts past it', () => {
     const many = Array.from({ length: 50 }, () => RAHMAN);
-    const hits = findAyahs(many, 'الرحمن', QURAN_SEARCH_PAGE_SIZE);
+    const { hits, total } = findAyahs(many, 'الرحمن', QURAN_SEARCH_PAGE_SIZE);
     expect(hits).toHaveLength(QURAN_SEARCH_PAGE_SIZE);
+    // The page is what is drawn; the total is what the status reports, and it is
+    // the size of the answer rather than the size of the page.
+    expect(total).toBe(50);
   });
 
   it('answers with the Ayah as the Mushaf writes it, not the folded copy', () => {
-    const [hit] = findAyahs([RAHMAN], 'الرحمن', 10);
+    const [hit] = findAyahs([RAHMAN], 'الرحمن', 10).hits;
     expect(hit?.ayah).toBe(RAHMAN);
     expect(hit?.loose).toBe(true);
   });
