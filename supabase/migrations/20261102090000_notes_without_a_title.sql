@@ -1,0 +1,21 @@
+-- ============================================================
+-- A note is its body: the title column goes (ADR-0110)
+--
+-- The composer collected a title and a body, and the phone surface spent half
+-- its height on two fields where one would do. A note now opens straight into
+-- the text, like a community post, and the list names a row by the body's first
+-- line — so the column has nothing left to hold.
+--
+-- Destructive on purpose: `title` was written by the composer, so no client
+-- reads it any more (the contract dropped it in the same change) and a column
+-- that every insert would default to '' is dead weight on every row. A client
+-- still holding an old bundle sends the field and the API drops it.
+--
+-- Rollback:
+--   alter table public.notes
+--     add column if not exists title text not null default ''
+--     check (char_length(title) <= 200);
+--   -- the text of a dropped title is gone; only the empty default comes back.
+-- ============================================================
+
+alter table public.notes drop column if exists title;

@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 
 import type { Note } from '@/shared/contracts/notes';
 import { calculateTimeAgo } from '@/frontend/shared/format';
-import { notePreview } from '@/frontend/shared/notes/text';
+import { noteName, notePreview } from '@/frontend/shared/notes/text';
 import { cn } from '@/frontend/shared/cn';
 
 interface NotesListProps {
@@ -76,7 +76,9 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
         <ul role="list" className="min-h-0 flex-1 overflow-y-auto p-2">
           {notes.map((note) => {
             const selected = note.id === selectedId;
-            const title = note.title.trim() || 'بدون عنوان';
+            // A note is its body (ADR-0110): the row is named by the first line
+            // the writer typed, and the preview is the rest of the text.
+            const name = noteName(note.body) || 'ملاحظة بلا نصّ';
             const preview = notePreview(note.body, 90);
 
             return (
@@ -91,7 +93,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
                   )}
                 >
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-bold">{title}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold">{name}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">
                       {calculateTimeAgo(note.updatedAt)}
                     </span>

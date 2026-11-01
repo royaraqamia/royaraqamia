@@ -41,7 +41,6 @@ function toNote(row: NoteRow): Note {
   return {
     id: row.id,
     clientId: row.client_id ?? row.id,
-    title: row.title,
     body: row.body,
     createdAt: instant(row.created_at),
     updatedAt: instant(row.updated_at),
@@ -118,7 +117,6 @@ export function createNotesRepository(supabase: SupabaseClient<Database>): Notes
         if (storedIsNewer((existing as NoteRow).updated_at, meta?.updatedAt)) return;
 
         const update: Database['public']['Tables']['notes']['Update'] = {
-          title: note.title,
           body: note.body,
           updated_at: stamp,
         };
@@ -138,7 +136,6 @@ export function createNotesRepository(supabase: SupabaseClient<Database>): Notes
         id,
         user_id: userId,
         client_id: meta?.clientId ?? id,
-        title: note.title,
         body: note.body,
         created_at: note.createdAt ?? stamp,
         updated_at: stamp,

@@ -2,14 +2,15 @@ import { z } from 'zod';
 
 import { toLatinDigits } from '@/shared/contracts/text';
 
-/** A title long enough for a sentence, short enough to list in one line. */
-export const NOTE_TITLE_MAX = 200;
-
 /** The body's ceiling: a very long note, still a bounded row. */
 export const NOTE_BODY_MAX = 100_000;
 
 /**
  * One note, as the device and the server both hold it.
+ *
+ * A note is its body — there is no title field, and the first line of the body
+ * is the name the list shows (ADR-0110). One field is all a phone composer can
+ * give the keyboard, and it is the field the writer is actually filling.
  *
  * The record is camelCase on both sides because the device's copy is the source
  * of truth: `updatedAt` is the last-write-wins stamp (ADR-0029), `deletedAt` the
@@ -24,7 +25,6 @@ export const NOTE_BODY_MAX = 100_000;
 export type Note = {
   id: string;
   clientId: string;
-  title: string;
   body: string;
   createdAt: string;
   updatedAt: string;
@@ -38,18 +38,12 @@ export interface NotesSyncSnapshot {
   cursor: string | null;
 }
 
-/** Trim, cap and normalise a title on its way out of the editor. */
-export function normalizeNoteTitle(value: string): string {
-  return toLatinDigits(value).trim().slice(0, NOTE_TITLE_MAX);
-}
-
 /** A body is kept as written apart from digit normalisation and the hard cap. */
 export function normalizeNoteBody(value: string): string {
   return toLatinDigits(value).slice(0, NOTE_BODY_MAX);
 }
 
 export const NoteWriteSchema = z.object({
-  title: z.string().max(NOTE_TITLE_MAX).default(''),
   body: z.string().max(NOTE_BODY_MAX).default(''),
   createdAt: z.string().optional(),
   clientId: z.string().uuid().optional().nullable(),
@@ -63,7 +57,6 @@ export const NoteWriteSchema = z.object({
  */
 export const NoteUpdateSchema = z
   .object({
-    title: z.string().max(NOTE_TITLE_MAX).optional(),
     body: z.string().max(NOTE_BODY_MAX).optional(),
     clientId: z.string().uuid().optional().nullable(),
     updatedAt: z.string().optional(),

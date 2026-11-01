@@ -21,6 +21,11 @@ interface DialogActionsProps {
  *
  * Mobile: full-width primary button, with the secondary text-only cancel below it.
  * Tablet/desktop: a right-to-left row of primary + text cancel, aligned to the end.
+ *
+ * On a phone the footer is the first thing the on-screen keyboard takes: while it
+ * is up `app/global.css` hides every `[data-slot='dialog-actions']`, so the field
+ * the writer is in owns the screen and the buttons come back with the keyboard's
+ * dismissal (ADR-0109).
  */
 export function DialogActions({
   children,
@@ -32,6 +37,7 @@ export function DialogActions({
 }: DialogActionsProps) {
   return (
     <div
+      data-slot="dialog-actions"
       className={cn(
         'pt-2 flex flex-col-reverse sm:flex-row items-center gap-3',
         leading ? 'sm:justify-between' : 'justify-end',

@@ -11,9 +11,8 @@ export interface NoteWriteMeta {
   updatedAt?: string;
 }
 
-/** A create or an edit: the rendered fields plus its tombstone decision. */
+/** A create or an edit: the rendered body plus its tombstone decision. */
 export interface NoteWrite {
-  title: string;
   body: string;
   createdAt?: string;
   /** `null` clears a tombstone (an undo); a timestamp tombstones the row. */

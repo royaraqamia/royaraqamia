@@ -1284,7 +1284,6 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           server_updated_at: string;
-          title: string;
           updated_at: string;
           user_id: string;
         };
@@ -1295,7 +1294,6 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           server_updated_at?: string;
-          title?: string;
           updated_at?: string;
           user_id: string;
         };
@@ -1306,7 +1304,6 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           server_updated_at?: string;
-          title?: string;
           updated_at?: string;
           user_id?: string;
         };

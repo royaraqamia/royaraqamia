@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 
-import { NOTE_TITLE_MAX, type Note } from '@/shared/contracts/notes';
+import type { Note } from '@/shared/contracts/notes';
 import type { NotesLocalStore } from '@/frontend/api/notes/local-store';
 import { calculateTimeAgo } from '@/frontend/shared/format';
+import { noteName } from '@/frontend/shared/notes/text';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import {
@@ -14,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/frontend/ui/primitives/dropdown-menu';
-import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -33,10 +33,11 @@ interface NoteEditorDialogProps {
 
 /**
  * One note, in the same composer shell a new note is written in — a centered
- * dialog on tablet and desktop, a full-screen surface on a phone. The body is
- * Markdown in the store, converted at the rich-text boundary; every keystroke
- * lands in local state and a short debounce writes it to the Local Store, so
- * there is no Save button to forget.
+ * dialog on tablet and desktop, a full-screen surface on a phone. There is no
+ * title field: the body is the record and its first line is the name the list
+ * shows (ADR-0110). The body is Markdown in the store, converted at the
+ * rich-text boundary; every keystroke lands in local state and a short debounce
+ * writes it to the Local Store, so there is no Save button to forget.
  */
 export function NoteEditorDialog({ note, store, onClose, onDeleted }: NoteEditorDialogProps) {
   if (!note || !store) return null;
@@ -65,19 +66,18 @@ function NoteEditorDialogBody({
   onClose: () => void;
   onDeleted: (note: Note) => void;
 }) {
-  const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // The last values that reached the store, so an unchanged note is not written
+  // The last body that reached the store, so an unchanged note is not written
   // again and a pull that repaints the list does not fight the cursor.
-  const savedRef = useRef({ title: note.title, body: note.body });
+  const savedRef = useRef(note.body);
 
   // What the component currently holds. Kept in a ref as well as in state so the
   // unmount/pagehide flush can read the newest edit without re-running effects.
-  const latestRef = useRef({ id: note.id, title, body });
-  latestRef.current = { id: note.id, title, body };
+  const latestRef = useRef({ id: note.id, body });
+  latestRef.current = { id: note.id, body };
 
   // Autosave: the store write is the durable step, and its Outbox intent is
   // queued in the same transaction, so a closed tab cannot lose the edit. It
@@ -85,27 +85,22 @@ function NoteEditorDialogBody({
   // overtaken by the unmount flush, which would clear it again.
   const flush = useCallback(async (): Promise<void> => {
     const pending = latestRef.current;
-    const saved = savedRef.current;
-    if (pending.title === saved.title && pending.body === saved.body) return;
+    if (pending.body === savedRef.current) return;
 
     try {
-      const updated = await store.updateNote(pending.id, {
-        title: pending.title,
-        body: pending.body,
-      });
-      if (updated) savedRef.current = { title: pending.title, body: pending.body };
+      const updated = await store.updateNote(pending.id, { body: pending.body });
+      if (updated) savedRef.current = pending.body;
     } catch {
       // The edit stays in this component's state; the next keystroke retries.
     }
   }, [store]);
 
   useEffect(() => {
-    const saved = savedRef.current;
-    if (title === saved.title && body === saved.body) return undefined;
+    if (body === savedRef.current) return undefined;
 
     const timer = setTimeout(() => void flush(), AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [title, body, flush]);
+  }, [body, flush]);
 
   // The debounce is short, but closing the dialog or the tab inside it must not
   // lose the last keystroke: flush on hide and on unmount as well.
@@ -144,7 +139,7 @@ function NoteEditorDialogBody({
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent className="max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
+      <DialogContent className="dialog-phone-full max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
         <DialogHeader>
           <DialogTitle className="text-center">الملاحظة</DialogTitle>
         </DialogHeader>
@@ -171,31 +166,18 @@ function NoteEditorDialogBody({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="min-w-0 space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
-          <div className="space-y-1.5">
-            <Label htmlFor="note-title">العنوان</Label>
-            <Input
-              id="note-title"
-              value={title}
-              maxLength={NOTE_TITLE_MAX}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="بدون عنوان"
+        <div className="flex min-w-0 flex-col gap-1.5 max-sm:min-h-0 max-sm:flex-1">
+          <Label htmlFor="note-body">النَّصّ</Label>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80">
+            <NoteBodyEditor
+              initialMarkdown={note.body}
+              onChange={setBody}
+              id="note-body"
+              surfaceClassName="min-h-40 max-sm:min-h-0"
             />
           </div>
 
-          <div className="space-y-1.5 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
-            <Label htmlFor="note-body">النَّصّ</Label>
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80">
-              <NoteBodyEditor
-                initialMarkdown={note.body}
-                onChange={setBody}
-                id="note-body"
-                surfaceClassName="min-h-40 max-sm:min-h-0"
-              />
-            </div>
-          </div>
-
-          <p className="text-[11px] text-muted-foreground">
+          <p data-slot="composer-meta" className="text-[11px] text-muted-foreground">
             {wordCount > 0 ? `${wordCount} كلمة · ` : ''}
             آخر تعديل {calculateTimeAgo(note.updatedAt)} · يُحفظ تلقائيًّا
           </p>
@@ -209,7 +191,7 @@ function NoteEditorDialogBody({
       <ConfirmDialog
         open={confirmOpen}
         title="حذف الملاحظة؟"
-        message={`سيُحذف «${note.title.trim() || 'بدون عنوان'}» من هذا الجهاز، ومن أجهزتك الأخرى عند المزامنة. يمكنك التَّراجع عنه بعد الحذف لثوانٍ.`}
+        message={`سيُحذف «${noteName(note.body) || 'ملاحظة بلا نصّ'}» من هذا الجهاز، ومن أجهزتك الأخرى عند المزامنة. يمكنك التَّراجع عنه بعد الحذف لثوانٍ.`}
         confirmLabel="حذف"
         cancelLabel="إلغاء"
         icon={Trash2}
