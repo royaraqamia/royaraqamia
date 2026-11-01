@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { NewsBoard as NewsBoardData } from '@/shared/contracts/news';
 import {
   clearAllSnapshots,
@@ -9,12 +9,17 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { toNewsDigestSnapshot, type NewsDigestSnapshot } from '@/frontend/ui/news/news-snapshot';
 
-const { push, replace } = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const { push, replace, navigation } = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  /** The address bar the mocked router reads; a test moves it and re-renders. */
+  navigation: { search: '' },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
   usePathname: () => '/news',
-  useSearchParams: () => new URLSearchParams(''),
+  useSearchParams: () => new URLSearchParams(navigation.search),
 }));
 
 vi.mock('@/frontend/api/news', () => ({
@@ -93,6 +98,7 @@ beforeEach(() => {
   window.localStorage.clear();
   clearAllSnapshots();
   fetchMock.mockReset();
+  navigation.search = '';
   vi.stubGlobal('fetch', fetchMock);
 });
 
@@ -293,5 +299,56 @@ describe('NewsBoard snapshots', () => {
     await expect(screen.findByText('لا يوجد مُلخَّص لهذا اليوم')).resolves.toBeTruthy();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(readPublicSnapshot<NewsDigestSnapshot>('/news')).toEqual(stored);
+  });
+});
+
+/**
+ * A board belongs to the URL that asked for it (#640).
+ *
+ * The read effect depended on the URL but the board it produced did not, so a
+ * filter change kept painting the previous URL's rows while the next read was
+ * in flight — and, because a failed read left the board in place, after it too,
+ * unlabelled by `stale`. A reader moving from one day to another could see
+ * yesterday's digest under today's date, with today's filters above it.
+ */
+describe('NewsBoard and the URL a read answers', () => {
+  it("never paints a previous URL's digest after the filters change", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response('public, max-age=0, must-revalidate', {
+        board: { ...BOARD, personal: { enabled: true, available: true, active: true } },
+      })
+    );
+
+    let failSecondRead: (error: unknown) => void = () => {};
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((_resolve, reject) => {
+        failSecondRead = reject;
+      })
+    );
+
+    const { rerender } = render(<NewsBoard />);
+
+    await expect(screen.findByText('خبر اليوم')).resolves.toBeTruthy();
+    await expect(screen.findByText('مُلخَّصك الخاص')).resolves.toBeTruthy();
+
+    // The reader picks another day: same component, new URL, no answer yet.
+    navigation.search = 'date=2026-10-27';
+    rerender(<NewsBoard />);
+
+    // A's stories are not painted under B's filters while B loads…
+    expect(screen.queryByText('خبر اليوم')).toBeNull();
+    // …and A's reader-scoped half is not carried across either.
+    expect(screen.queryByText('مُلخَّصك الخاص')).toBeNull();
+
+    await act(async () => {
+      failSecondRead(new TypeError('Failed to fetch'));
+    });
+
+    // …nor after B fails. The failure is named, and what sits under it is B's
+    // (here: nothing, so the loading frame) rather than A's digest.
+    await expect(screen.findAllByText(/تعذّر تحميل/)).resolves.not.toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: 'إعادة المحاولة' }).length).toBeGreaterThan(0);
+    expect(screen.queryByText('خبر اليوم')).toBeNull();
+    expect(screen.queryByText('مُلخَّصك الخاص')).toBeNull();
   });
 });
