@@ -152,3 +152,41 @@ data class SpendtrackDelete(
 data class SpendtrackCurrency(
     val currency: String,
 )
+
+@Serializable
+data class SpendtrackBudgetWrite(
+    val month: String,
+    val amount: Double,
+    val categoryId: String?,
+    val updatedAt: String,
+)
+
+@Serializable
+data class SpendtrackBudgetDelete(
+    val month: String,
+    val categoryId: String?,
+    val updatedAt: String,
+)
+
+@Serializable
+data class SpendtrackRecurringWrite(
+    val clientId: String,
+    val amount: Double,
+    val category_id: String,
+    val description: String?,
+    val day_of_month: Long,
+    val start_month: String,
+    val updatedAt: String,
+)
+
+@Serializable
+data class SpendtrackRecurringUpdate(
+    val id: String,
+    val amount: Double,
+    val category_id: String,
+    val description: String?,
+    val day_of_month: Long,
+    val start_month: String,
+    val updatedAt: String,
+    val deletedAt: String?,
+)

@@ -317,11 +317,18 @@ contributes a table, a payload and a transport, and the delivery rules stay in o
 queued write is delivered by the launch drain, the reconnection drain and the worker, all of which
 go through `AppGraph.drainOutbox` — which is what makes "one queue per product" safe to add.
 
-The screen is a pair with the site, five times over (`docs/mobile/parity.json`): the total card, the
-expense list, the expense form, the category list and the category create dialog. What the site
-draws and this slice does not is named in that pull request rather than implied by a missing
-button: the split editor (the app shows a split marker and re-sends the splits untouched), the
-budget card, the recurring list, CSV import and export, and the charts.
+The screen is a pair with the site, seven times over (`docs/mobile/parity.json`): the total card,
+the budget card, the expense list, the expense form, the recurring list with its dialog, the
+category list and the category create dialog. What the site draws and this slice does not is named
+in that pull request rather than implied by a missing button: the split editor (the app shows a
+split marker and re-sends the splits untouched), CSV import and export, the charts, the insights
+strip and the filter bar.
+
+Budgets and recurring expenses are owned rows too (#653): a budget has no id of its own, so the
+device keys it on the `(month, category)` pair the server identifies it by and replays it against
+that pair; a schedule carries the day of the month the server materialises from. Both joined the
+same store — `SpendtrackDatabase` is at version 2, with a forward-only migration, because a device
+that already holds expenses must keep them.
 
 **Exit criteria.** Every owned row in `docs/specs/surfaces.md` has a native screen and an offline
 write path, each with a drill or a UI test; the outbox fixtures still pass.

@@ -9,6 +9,8 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.store.localStoreName
 import com.royaraqamia.app.store.outbox.OutboxIntentRow
@@ -33,10 +35,12 @@ import com.royaraqamia.app.store.outbox.OutboxIntentRow
     entities = [
         SpendtrackCategoryRow::class,
         SpendtrackExpenseRow::class,
+        SpendtrackBudgetRow::class,
+        SpendtrackRecurringRow::class,
         SpendtrackMetaRow::class,
         OutboxIntentRow::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class SpendtrackDatabase : RoomDatabase() {
@@ -53,6 +57,42 @@ abstract class SpendtrackDatabase : RoomDatabase() {
          */
         fun fileName(identity: Identity): String =
             "${localStoreName(PRODUCT, identity).replace(":", "%3A")}.db"
+
+        /**
+         * Budgets and recurring expenses joined the file (#653): the app draws
+         * both now, so the pull writes them instead of dropping them. Forward-only
+         * and additive — a device that already holds expenses keeps them, and the
+         * SQL is exactly the shape Room exports into `2.json`.
+         */
+        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `budgets` (" +
+                        "`id` TEXT NOT NULL, " +
+                        "`month` TEXT NOT NULL, " +
+                        "`amount` REAL NOT NULL, " +
+                        "`categoryId` TEXT, " +
+                        "`clientId` TEXT, " +
+                        "`updatedAt` TEXT, " +
+                        "`deletedAt` TEXT, " +
+                        "PRIMARY KEY(`id`))"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `recurring` (" +
+                        "`id` TEXT NOT NULL, " +
+                        "`amount` REAL NOT NULL, " +
+                        "`categoryId` TEXT NOT NULL, " +
+                        "`description` TEXT, " +
+                        "`dayOfMonth` INTEGER NOT NULL, " +
+                        "`startMonth` TEXT NOT NULL, " +
+                        "`active` INTEGER NOT NULL, " +
+                        "`clientId` TEXT, " +
+                        "`updatedAt` TEXT, " +
+                        "`deletedAt` TEXT, " +
+                        "PRIMARY KEY(`id`))"
+                )
+            }
+        }
     }
 }
 
@@ -100,6 +140,49 @@ data class SpendtrackExpenseRow(
     val deletedAt: String?,
 )
 
+/**
+ * One recurring expense as the store holds it (#653).
+ *
+ * `dayOfMonth` is a number, not a date: the site schedules by the day of the
+ * month and the server materialises the row monthly, so this client only has to
+ * remember which day was chosen.
+ */
+@Entity(tableName = "recurring")
+data class SpendtrackRecurringRow(
+    @PrimaryKey val id: String,
+    val amount: Double,
+    val categoryId: String,
+    val description: String?,
+    val dayOfMonth: Long,
+    val startMonth: String,
+    val active: Boolean,
+    val clientId: String?,
+    val updatedAt: String?,
+    val deletedAt: String?,
+)
+
+/**
+ * One month's budget as the store holds it (#653).
+ *
+ * The id is the local key — `2026-01#` for the month's own budget, `2026-01#<id>`
+ * for a category's — because that is what the web's store keys on: the server
+ * identifies a budget by `(user_id, month, category_id)` and mints no stable id a
+ * device could replay against.
+ */
+@Entity(tableName = "budgets")
+data class SpendtrackBudgetRow(
+    @PrimaryKey val id: String,
+    val month: String,
+    val amount: Double,
+    val categoryId: String?,
+    val clientId: String?,
+    val updatedAt: String?,
+    val deletedAt: String?,
+)
+
+/** The local key for a budget: one row per (month, category). */
+fun budgetKey(month: String, categoryId: String?): String = "$month#${categoryId.orEmpty()}"
+
 /** One key/value fact the store keeps beside the rows: the sync cursor and the currency. */
 @Entity(tableName = "meta")
 data class SpendtrackMetaRow(
@@ -127,6 +210,26 @@ interface SpendtrackDao {
     @Query("SELECT * FROM categories")
     suspend fun allCategories(): List<SpendtrackCategoryRow>
 
+    /** The month's budgets and its categories', tombstones excluded. */
+    @Query("SELECT * FROM budgets WHERE month = :month AND deletedAt IS NULL ORDER BY id ASC")
+    suspend fun budgets(month: String): List<SpendtrackBudgetRow>
+
+    @Query("SELECT * FROM budgets")
+    suspend fun allBudgets(): List<SpendtrackBudgetRow>
+
+    /** Recurring expenses, by the day they fall on — the site's ordering. */
+    @Query("SELECT * FROM recurring WHERE deletedAt IS NULL ORDER BY dayOfMonth ASC, id ASC")
+    suspend fun recurring(): List<SpendtrackRecurringRow>
+
+    @Query("SELECT * FROM recurring")
+    suspend fun allRecurring(): List<SpendtrackRecurringRow>
+
+    @Query("SELECT * FROM budgets WHERE id = :id")
+    suspend fun budget(id: String): SpendtrackBudgetRow?
+
+    @Query("SELECT * FROM recurring WHERE id = :id")
+    suspend fun recurringRow(id: String): SpendtrackRecurringRow?
+
     @Query("SELECT * FROM expenses WHERE id = :id")
     suspend fun expense(id: String): SpendtrackExpenseRow?
 
@@ -135,9 +238,16 @@ interface SpendtrackDao {
 
     /** One pull, one transaction: a process killed halfway writes all of it or none. */
     @Transaction
-    suspend fun apply(categories: List<SpendtrackCategoryRow>, expenses: List<SpendtrackExpenseRow>) {
+    suspend fun apply(
+        categories: List<SpendtrackCategoryRow>,
+        expenses: List<SpendtrackExpenseRow>,
+        budgets: List<SpendtrackBudgetRow>,
+        recurring: List<SpendtrackRecurringRow>,
+    ) {
         upsertCategories(categories)
         upsertExpenses(expenses)
+        upsertBudgets(budgets)
+        upsertRecurring(recurring)
     }
 
     @Upsert
@@ -151,6 +261,18 @@ interface SpendtrackDao {
 
     @Upsert
     suspend fun upsertExpense(row: SpendtrackExpenseRow)
+
+    @Upsert
+    suspend fun upsertBudgets(rows: List<SpendtrackBudgetRow>)
+
+    @Upsert
+    suspend fun upsertRecurring(rows: List<SpendtrackRecurringRow>)
+
+    @Upsert
+    suspend fun upsertBudget(row: SpendtrackBudgetRow)
+
+    @Upsert
+    suspend fun upsertRecurring(row: SpendtrackRecurringRow)
 
     /**
      * A write and its replay intent, committed together (#650, ADR-0109): an
@@ -166,6 +288,18 @@ interface SpendtrackDao {
     @Transaction
     suspend fun commitCategory(category: SpendtrackCategoryRow, intent: OutboxIntentRow) {
         upsertCategory(category)
+        insertIntent(intent)
+    }
+
+    @Transaction
+    suspend fun commitBudget(budget: SpendtrackBudgetRow, intent: OutboxIntentRow) {
+        upsertBudget(budget)
+        insertIntent(intent)
+    }
+
+    @Transaction
+    suspend fun commitRecurring(recurring: SpendtrackRecurringRow, intent: OutboxIntentRow) {
+        upsertRecurring(recurring)
         insertIntent(intent)
     }
 

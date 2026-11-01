@@ -3,11 +3,16 @@ package com.royaraqamia.app.store.spendtrack
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.SpendtrackBudgetWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackCurrency
+import com.royaraqamia.app.contracts.generated.SpendtrackRecurringUpdate
+import com.royaraqamia.app.contracts.generated.SpendtrackRecurringWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackExpenseWriteSplitsItem
 import com.royaraqamia.app.contracts.generated.SpendtrackSyncSnapshot
 import com.royaraqamia.app.contracts.generated.SpendtrackSyncSnapshotCategoriesItem
+import com.royaraqamia.app.contracts.generated.SpendtrackSyncSnapshotBudgetsItem
 import com.royaraqamia.app.contracts.generated.SpendtrackSyncSnapshotExpensesItem
+import com.royaraqamia.app.contracts.generated.SpendtrackSyncSnapshotRecurringItem
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.store.IdentityScopedStore
 import com.royaraqamia.app.store.outbox.ConflictWinner
@@ -77,6 +82,19 @@ class SpendtrackRepository(
 
     /** The account's display currency, as the last pull read it; null before the first. */
     suspend fun currency(): String? = withContext(Dispatchers.IO) { dao().meta(KEY_CURRENCY) }
+
+    /** The month's own budget (not a category's), or null when none is set. */
+    suspend fun budget(month: String): SpendtrackBudgetRow? = withContext(Dispatchers.IO) {
+        dao().budgets(month).firstOrNull { it.categoryId == null }
+    }
+
+    /** Every budget row the month carries, including its categories'. */
+    suspend fun budgets(month: String): List<SpendtrackBudgetRow> =
+        withContext(Dispatchers.IO) { dao().budgets(month) }
+
+    /** The recurring expenses, by the day they fall on. */
+    suspend fun recurring(): List<SpendtrackRecurringRow> =
+        withContext(Dispatchers.IO) { dao().recurring() }
 
     /** The day a new expense is dated, in the device's own zone. */
     fun today(): String = clock.today()
@@ -238,6 +256,163 @@ class SpendtrackRepository(
     }
 
     /**
+     * Sets the month's budget (#653).
+     *
+     * The row and its `budget.set` intent commit together. No `clientId`
+     * travels: the server keys a budget on `(user_id, month, category_id)`, so a
+     * replay lands on the row it already made without one.
+     */
+    suspend fun setBudget(month: String, amount: Double): SpendtrackBudgetRow =
+        withContext(Dispatchers.IO) {
+            require(amount > 0) { "a budget needs an amount above zero" }
+            val dao = dao()
+            val now = clock.nowIso()
+            val id = budgetKey(month, null)
+            val row =
+                SpendtrackBudgetRow(
+                    id = id,
+                    month = month,
+                    amount = amount,
+                    categoryId = null,
+                    clientId = null,
+                    updatedAt = now,
+                    deletedAt = null,
+                )
+            dao.commitBudget(
+                row,
+                intent(
+                    entity = "budget",
+                    type = "budget.set",
+                    payload =
+                        SpendtrackPayloads.setBudget(
+                            month = month,
+                            amount = amount,
+                            categoryId = null,
+                            updatedAt = now,
+                        ),
+                    createdAt = now,
+                ),
+            )
+            row
+        }
+
+    /** Tombstones the month's budget, so the next pull does not resurrect it. */
+    suspend fun deleteBudget(month: String): Boolean = withContext(Dispatchers.IO) {
+        val dao = dao()
+        val existing = dao.budget(budgetKey(month, null)) ?: return@withContext false
+        val now = clock.nowIso()
+        dao.commitBudget(
+            existing.copy(deletedAt = now, updatedAt = now),
+            intent("budget", "budget.delete", SpendtrackPayloads.deleteBudget(month, null, now), now),
+        )
+        true
+    }
+
+    /** Adds a recurring expense: the row and its `recurring.create` intent, together. */
+    suspend fun createRecurring(
+        amount: Double,
+        categoryId: String,
+        dayOfMonth: Long,
+        startMonth: String,
+        description: String?,
+    ): SpendtrackRecurringRow = withContext(Dispatchers.IO) {
+        require(amount > 0) { "a recurring expense needs an amount above zero" }
+        require(dayOfMonth in 1..31) { "a recurring expense needs a day of the month" }
+        val dao = dao()
+        val now = clock.nowIso()
+        val id = clock.uuid()
+        val row =
+            SpendtrackRecurringRow(
+                id = id,
+                amount = amount,
+                categoryId = categoryId,
+                description = description?.trim()?.takeIf { it.isNotEmpty() },
+                dayOfMonth = dayOfMonth,
+                startMonth = startMonth,
+                active = true,
+                clientId = id,
+                updatedAt = now,
+                deletedAt = null,
+            )
+        dao.commitRecurring(
+            row,
+            intent(
+                entity = "recurring",
+                type = "recurring.create",
+                payload =
+                    SpendtrackPayloads.createRecurring(
+                        clientId = id,
+                        amount = amount,
+                        categoryId = categoryId,
+                        description = row.description,
+                        dayOfMonth = dayOfMonth,
+                        startMonth = startMonth,
+                        updatedAt = now,
+                    ),
+                createdAt = now,
+            ),
+        )
+        row
+    }
+
+    /** Edits an owned recurring expense. */
+    suspend fun updateRecurring(
+        id: String,
+        amount: Double,
+        categoryId: String,
+        dayOfMonth: Long,
+        startMonth: String,
+        description: String?,
+    ): SpendtrackRecurringRow? = withContext(Dispatchers.IO) {
+        require(amount > 0) { "a recurring expense needs an amount above zero" }
+        require(dayOfMonth in 1..31) { "a recurring expense needs a day of the month" }
+        val dao = dao()
+        val existing = dao.recurringRow(id) ?: return@withContext null
+        val now = clock.nowIso()
+        val row =
+            existing.copy(
+                amount = amount,
+                categoryId = categoryId,
+                dayOfMonth = dayOfMonth,
+                startMonth = startMonth,
+                description = description?.trim()?.takeIf { it.isNotEmpty() },
+                updatedAt = now,
+                deletedAt = null,
+            )
+        dao.commitRecurring(
+            row,
+            intent(
+                entity = "recurring",
+                type = "recurring.update",
+                payload =
+                    SpendtrackPayloads.updateRecurring(
+                        id = id,
+                        amount = amount,
+                        categoryId = categoryId,
+                        description = row.description,
+                        dayOfMonth = dayOfMonth,
+                        startMonth = startMonth,
+                        updatedAt = now,
+                    ),
+                createdAt = now,
+            ),
+        )
+        row
+    }
+
+    /** Tombstones an owned recurring expense. */
+    suspend fun deleteRecurring(id: String): Boolean = withContext(Dispatchers.IO) {
+        val dao = dao()
+        val existing = dao.recurringRow(id) ?: return@withContext false
+        val now = clock.nowIso()
+        dao.commitRecurring(
+            existing.copy(deletedAt = now, updatedAt = now),
+            intent("recurring", "recurring.delete", SpendtrackPayloads.delete(id, now), now),
+        )
+        true
+    }
+
+    /**
      * Replays the queue once (#653).
      *
      * The DAO is resolved **once**, for the identity the drain started under, and
@@ -322,9 +497,22 @@ class SpendtrackRepository(
                     pending.filter { it.entity == "expense" }
                         .mapNotNull { payloadString(it.payload, "id") ?: payloadString(it.payload, "clientId") }
                         .toSet()
+                val pendingBudgets =
+                    pending.filter { it.entity == "budget" }
+                        .mapNotNull { intent ->
+                            val month = payloadString(intent.payload, "month") ?: return@mapNotNull null
+                            budgetKey(month, payloadString(intent.payload, "categoryId"))
+                        }
+                        .toSet()
+                val pendingRecurring =
+                    pending.filter { it.entity == "recurring" }
+                        .mapNotNull { payloadString(it.payload, "id") ?: payloadString(it.payload, "clientId") }
+                        .toSet()
 
                 val localCategories = dao.allCategories().associateBy { it.id }
                 val localExpenses = dao.allExpenses().associateBy { it.id }
+                val localBudgets = dao.allBudgets().associateBy { it.id }
+                val localRecurring = dao.allRecurring().associateBy { it.id }
 
                 var skipped = 0
                 val categories =
@@ -358,12 +546,47 @@ class SpendtrackRepository(
                         if (winner == ConflictWinner.Server) server.toRow() else null
                     }
 
-                dao.apply(categories, expenses)
+                val budgets =
+                    body.budgets.mapNotNull { server ->
+                        // A budget is keyed locally on its month and category, not
+                        // on the server's id: that is the pair the web's store
+                        // keys on, and the pair the route updates.
+                        val key = budgetKey(server.month, server.category_id)
+                        if (pendingBudgets.contains(key)) {
+                            skipped += 1
+                            return@mapNotNull null
+                        }
+                        val winner =
+                            OutboxRules.conflictWinner(
+                                localUpdatedAt = localBudgets[key]?.updatedAt,
+                                serverUpdatedAt = server.updatedAt,
+                                pending = false,
+                            )
+                        if (winner == ConflictWinner.Server) server.toRow() else null
+                    }
+                val recurring =
+                    body.recurring.mapNotNull { server ->
+                        if (pendingRecurring.contains(server.id)) {
+                            skipped += 1
+                            return@mapNotNull null
+                        }
+                        val winner =
+                            OutboxRules.conflictWinner(
+                                localUpdatedAt = localRecurring[server.id]?.updatedAt,
+                                serverUpdatedAt = server.updatedAt,
+                                pending = false,
+                            )
+                        if (winner == ConflictWinner.Server) server.toRow() else null
+                    }
+
+                dao.apply(categories, expenses, budgets, recurring)
                 if (skipped == 0 && body.cursor != null) {
                     dao.putMeta(SpendtrackMetaRow(KEY_CURSOR, body.cursor))
                 }
                 readCurrency(dao)
-                ApiResult.Success(body.categories.size + body.expenses.size)
+                ApiResult.Success(
+                    body.categories.size + body.expenses.size + body.budgets.size + body.recurring.size
+                )
             }
             // A failed pull is passed through as it is: the screen decides what
             // "needs connection" looks like, and it cannot do that if this
@@ -533,4 +756,31 @@ private fun toSplitWrite(
         category_id = split.category_id,
         amount = split.amount,
         clientId = split.clientId,
+    )
+
+/** The contract's budget as the store holds it, keyed on the pair the route uses. */
+fun SpendtrackSyncSnapshotBudgetsItem.toRow(): SpendtrackBudgetRow =
+    SpendtrackBudgetRow(
+        id = budgetKey(month, category_id),
+        month = month,
+        amount = amount,
+        categoryId = category_id,
+        clientId = clientId,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+    )
+
+/** The contract's recurring expense as the store holds it. */
+fun SpendtrackSyncSnapshotRecurringItem.toRow(): SpendtrackRecurringRow =
+    SpendtrackRecurringRow(
+        id = id,
+        amount = amount,
+        categoryId = category_id,
+        description = description,
+        dayOfMonth = day_of_month,
+        startMonth = start_month,
+        active = active,
+        clientId = clientId,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
     )
