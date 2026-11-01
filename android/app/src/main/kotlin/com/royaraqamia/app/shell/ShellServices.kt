@@ -1,22 +1,26 @@
 package com.royaraqamia.app.shell
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -230,7 +235,31 @@ fun ServicesTrigger(onOpen: () -> Unit, modifier: Modifier = Modifier) {
  * Rows are a fixed height so a slot is arithmetic rather than a layout query,
  * which is what keeps the reorder testable in [ServicesOrderRules].
  */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The rows, as a sheet, in the order this device keeps them (#806).
+ *
+ * A row leaves the sheet and then opens its route: the sheet owns the dismissal,
+ * the caller owns where the row goes, which is how the site's own sheet behaves
+ * (`ServicesMenuItems` dismisses, then navigates).
+ *
+ * The surface is the shell's own rather than Material3's `ModalBottomSheet`,
+ * and the reason is the drag: the platform sheet consumes a *downward* drag on
+ * the initial pass, so a row could be dragged up the list but never down - the
+ * gesture became a dismiss instead. Measured on the RMX3195: dragging a row up
+ * reordered it, dragging one down closed the sheet. The shell already draws its
+ * own dialogs (ADR-0054) for the same kind of reason, so the sheet follows them:
+ * scrim tap and back dismiss it, and every pointer on the surface belongs to a
+ * row.
+ *
+ * The order is the device's ([ServicesOrderStore]), so it is written once, on
+ * the drop - a drag that is cancelled leaves the stored order alone. The sentence
+ * the site keeps in a visually hidden live region is drawn here instead: on a
+ * phone it is also the only confirmation the drag did anything, and the words are
+ * the same generated ones ([ServicesOrderCopy]).
+ *
+ * Rows are a fixed height so a slot is arithmetic rather than a layout query,
+ * which is what keeps the reorder testable in [ServicesOrderRules].
+ */
 @Composable
 fun ServicesSheet(
     open: Boolean,
@@ -240,7 +269,6 @@ fun ServicesSheet(
     order: ServicesOrderStore? = null,
 ) {
     if (!open) return
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = LocalRoySpacing.current
 
     val visible = remember(hiddenRoutes) { ServicesEntry.visibleRows(hiddenRoutes) }
@@ -256,93 +284,124 @@ fun ServicesSheet(
     var announcement by remember { mutableStateOf("") }
     var lastDropAt by remember { mutableStateOf(0L) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = spacing.elementGapSm)) {
-            Text(
-                text = ServicesCopy.TRIGGER,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = spacing.containerPadding, vertical = 12.dp),
-            )
-            routes.mapNotNull { byRoute[it] }.forEach { entry ->
-                val dragging = draggingRoute == entry.route
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(SERVICES_ROW_HEIGHT)
-                            .zIndex(if (dragging) 1f else 0f)
-                            .graphicsLayer { translationY = if (dragging) dragOffset else 0f }
-                            .testTag(servicesRowTestTag(entry))
-                            .pointerInput(entry.route) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = {
-                                        draggingRoute = entry.route
-                                        dragOffset = 0f
-                                        announcement = ""
-                                    },
-                                    onDrag = { change, amount ->
-                                        change.consume()
-                                        dragOffset += amount.y
-                                        val from = routes.indexOf(entry.route)
-                                        if (from != -1) {
-                                            val target =
-                                                (from + (dragOffset / rowHeightPx).roundToInt())
-                                                    .coerceIn(0, routes.lastIndex)
-                                            if (target != from) {
-                                                routes = ServicesOrderRules.move(routes, from, target)
-                                                dragOffset -= (target - from) * rowHeightPx
-                                            }
-                                        }
-                                    },
-                                    onDragEnd = {
-                                        val from = routes.indexOf(entry.route)
-                                        draggingRoute = null
-                                        dragOffset = 0f
-                                        lastDropAt = System.currentTimeMillis()
-                                        order?.save(routes)
-                                        if (from != -1) {
-                                            announcement =
-                                                servicesOrderAnnouncement(labelOf(entry), from + 1, routes.size)
-                                        }
-                                    },
-                                    onDragCancel = {
-                                        draggingRoute = null
-                                        dragOffset = 0f
-                                    },
-                                )
-                            }
-                            .clickable {
-                                val since = System.currentTimeMillis() - lastDropAt
-                                if (since > DRAG_CLICK_SUPPRESS_MS) onSelect(entry.route)
-                            }
-                            .semantics { role = Role.Button }
-                            .padding(horizontal = spacing.containerPadding),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Icon(
-                        imageVector = iconOf(entry),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        text = labelOf(entry),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
+    // A sheet is a screen while it is open: back closes it rather than walking the
+    // route underneath (ADR-0082).
+    BackHandler(enabled = true, onBack = onDismiss)
+
+    Box(Modifier.fillMaxSize()) {
+        // `bg-black/70`, the scrim the site's sheets and the shell's dialogs use.
+        Box(
+            Modifier.fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.7f))
+                .pointerInput(Unit) { detectTapGestures { onDismiss() } }
+        )
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = spacing.elementGapSm)) {
+                Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.width(32.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     )
                 }
-            }
-            if (announcement.isNotEmpty()) {
                 Text(
-                    text = announcement,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = ServicesCopy.TRIGGER,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier =
-                        Modifier.padding(horizontal = spacing.containerPadding, vertical = 8.dp)
-                            .semantics { liveRegion = LiveRegionMode.Polite },
+                        Modifier.padding(horizontal = spacing.containerPadding, vertical = 12.dp),
                 )
+                routes.mapNotNull { byRoute[it] }.forEach { entry ->
+                    val dragging = draggingRoute == entry.route
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(SERVICES_ROW_HEIGHT)
+                                .zIndex(if (dragging) 1f else 0f)
+                                .graphicsLayer { translationY = if (dragging) dragOffset else 0f }
+                                .testTag(servicesRowTestTag(entry))
+                                .clickable {
+                                    val since = System.currentTimeMillis() - lastDropAt
+                                    if (since > DRAG_CLICK_SUPPRESS_MS) onSelect(entry.route)
+                                }
+                                .pointerInput(entry.route) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = {
+                                            draggingRoute = entry.route
+                                            dragOffset = 0f
+                                            announcement = ""
+                                        },
+                                        onDrag = { change, amount ->
+                                            change.consume()
+                                            dragOffset += amount.y
+                                            val from = routes.indexOf(entry.route)
+                                            if (from != -1) {
+                                                val target =
+                                                    (from + (dragOffset / rowHeightPx).roundToInt())
+                                                        .coerceIn(0, routes.lastIndex)
+                                                if (target != from) {
+                                                    routes =
+                                                        ServicesOrderRules.move(routes, from, target)
+                                                    dragOffset -= (target - from) * rowHeightPx
+                                                    order?.save(routes)
+                                                }
+                                            }
+                                        },
+                                        onDragEnd = {
+                                            val from = routes.indexOf(entry.route)
+                                            draggingRoute = null
+                                            dragOffset = 0f
+                                            lastDropAt = System.currentTimeMillis()
+                                            order?.save(routes)
+                                            if (from != -1) {
+                                                announcement =
+                                                    servicesOrderAnnouncement(
+                                                        labelOf(entry),
+                                                        from + 1,
+                                                        routes.size,
+                                                    )
+                                            }
+                                        },
+                                        onDragCancel = {
+                                            draggingRoute = null
+                                            dragOffset = 0f
+                                        },
+                                    )
+                                }
+                                .semantics { role = Role.Button }
+                                .padding(horizontal = spacing.containerPadding),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(
+                            imageVector = iconOf(entry),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = labelOf(entry),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
+                    }
+                }
+                if (announcement.isNotEmpty()) {
+                    Text(
+                        text = announcement,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier.padding(horizontal = spacing.containerPadding, vertical = 8.dp)
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                }
             }
         }
     }
