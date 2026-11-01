@@ -3,55 +3,37 @@ package com.royaraqamia.app;
 import android.webkit.JavascriptInterface;
 
 /**
- * The one object the shell injects into a page as `RoyShellSync` (ADR-0059).
+ * The one object the app injects into the document as `RoyShellSync`.
  *
- * It carries the directions of the background drain, and nothing else — no
- * data, no credentials, no way to act on the queue itself:
+ * It carries a direction, and nothing else — no data, no credentials, no way to
+ * act on a queue: `schedule()` is the page saying a write was left queued, so
+ * the app enqueues its drain. The replay happens in `OutboxDrainWorker`, against
+ * the Local Store's Outbox (#651); the page's own IndexedDB queue is replayed by
+ * the page when it is next open, because that store is not one the app can read.
  *
- * - `schedule()` — the app's WebView says a write was left queued, so the shell
- *   enqueues its drain. It is a *signal*; the replay happens in the headless page
- *   that runs the same engine as a tab, so the shell never grows a second writer.
- * - `report(json)` — the drain page says which products were drained and what is
- *   left, which is what ends the worker's wait.
- *
- * The worker's copy of this bridge answers `schedule()` with nothing, because a
- * drain asking for another drain is how a queue would spend its life scheduling
- * itself.
+ * The drain half of this interface — `report(json)`, which the headless
+ * `/sync-flush.html` page called to end the worker's wait — is gone with the
+ * WebView drain (#651). The served page still answers to the installed base's
+ * shells, which inject their own copy of it.
  */
 final class ShellSyncBridge {
 
     /** The name the page reads the interface from. Also the page's name for it. */
     static final String NAME = "RoyShellSync";
 
-    interface Reporter {
-        void onReport(String json);
-    }
-
     private final Runnable schedule;
-    private final Reporter reporter;
 
-    ShellSyncBridge(Runnable schedule, Reporter reporter) {
+    ShellSyncBridge(Runnable schedule) {
         this.schedule = schedule;
-        this.reporter = reporter;
     }
 
-    /** What the app's WebView gets: scheduling only. */
+    /** What the document's page gets: scheduling only. */
     static ShellSyncBridge forApp(Runnable schedule) {
-        return new ShellSyncBridge(schedule, json -> {});
-    }
-
-    /** What the drain page gets: it is the drain, so it only reports. */
-    static ShellSyncBridge forDrain(Reporter reporter) {
-        return new ShellSyncBridge(() -> {}, reporter);
+        return new ShellSyncBridge(schedule);
     }
 
     @JavascriptInterface
     public void schedule() {
         schedule.run();
-    }
-
-    @JavascriptInterface
-    public void report(String json) {
-        reporter.onReport(json);
     }
 }

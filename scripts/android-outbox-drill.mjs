@@ -5,10 +5,11 @@
  *
  * This is the one acceptance criterion of the ticket a browser and a JVM test
  * cannot reach. `docs/mobile/native-app.md`'s phase 1 asks for exactly it: "a
- * `native:drill` script that does what `scripts/shell-drill.mjs` does: kill the
+ * `native:drill` script that does what `scripts/shell-drill.mjs` did: kill the
  * process with a write queued, restore the radio, and assert the row lands on the
- * server". The device half is `OutboxDrillActivity` in `src/debug`, so a release
- * APK has neither the activity nor a way to seed a write.
+ * server". The shell's own drill was retired with the WebView drain (#651); this
+ * is the app's. The device half is `OutboxDrillActivity` in `src/debug`, so a
+ * release APK has neither the activity nor a way to seed a write.
  *
  * What it does, in order:
  *

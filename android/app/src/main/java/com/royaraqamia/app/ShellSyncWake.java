@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * Kept apart from the service that receives it so the decision is testable
  * without Firebase: the service is a thin Android shell around this, the way
- * `SyncFlushResult` is around the worker.
+ * `DrainDecision` is around the worker.
  */
 final class ShellSyncWake {
 

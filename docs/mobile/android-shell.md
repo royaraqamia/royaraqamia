@@ -27,7 +27,8 @@ ADR-0088.
 > installed by the shell, the deep-link filters are declared on it, and `MainActivity` keeps no
 > splash of its own ([ADR-0105](../adr/0105-the-shell-launches-and-the-document-is-a-destination.md)).
 > A manual launch for a runbook step therefore starts `.shell.ShellActivity`; starting
-> `.MainActivity` directly still opens the document, which is what `npm run android:drill` does.
+> `.MainActivity` directly still opens the document, which is what the shell drills used to drive
+> (`npm run android:drill` is retired with the WebView drain, [#651](https://github.com/royaraqamia/royaraqamia/issues/651)).
 
 ## Prerequisites
 
@@ -320,27 +321,27 @@ changes rather than only on the machine that wrote them.
 
 ## What the shell wires up
 
-| Capability                                                       | Where                                                                                        | State                                                                                                                                                                                              |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| capability                                                       | where                                                                                        | state                                                                                                                                                                                              |
-| ------------------------------------                             | -----------------------------------------------------                                        | --------------------------------------------------------------------------------------                                                                                                             |
-| Load the live site (the shipped shape)                           | `capacitor.config.ts` `server.url`                                                           | Working — this is still the shell that ships; the bundled shape is [ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) and lands as #502/#503                             |
-| Load a bundled document (the bundled target)                     | `server.url` unset, Vite build in `webDir`, `MainActivity.bundledRootFor`                    | Spike-proven (#500, [two-origin-spike.md](two-origin-spike.md)): `https://localhost/`, Back returns to it, remote surfaces reached by Custom Tab; release APK 15.4 MiB against the shell's 16.1    |
-| Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                        | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
-| Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                       | Working — in-page, so it shows in the shell too                                                                                                                                                    |
-| Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                            | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
-| Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                            | Working                                                                                                                                                                                            |
-| Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                    | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
-| Splash (platform), launch skeleton, status bar, RTL, back button | launch theme, `res/layout/shell_skeleton.xml`, `capacitor.config.ts` plugins, `MainActivity` | Working — the splash lifts into the skeleton (ADR-0061, #498); Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                   |
-| WebView settings                                                 | `MainActivity.installWebViewSettings`                                                        | offscreen pre-raster on, so the skeleton lifts onto a painted document; `cacheMode` left at `LOAD_DEFAULT` (#499, "What the document costs", above)                                                |
-| Native file save / share                                         | `@capacitor/filesystem`, `@capacitor/share` installed                                        | Installed, unused by app code yet                                                                                                                                                                  |
-| Biometric lock                                                   | `@capgo/capacitor-native-biometric` installed                                                | Installed, unused by app code yet                                                                                                                                                                  |
-| Bluetooth LE + Contacts                                          | plugins installed, **no manifest permissions**                                               | Scaffolding only, by decision                                                                                                                                                                      |
-| Push (FCM)                                                       | `@capacitor/push-notifications` + manifest + `google-services.json`                          | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below                                                                  |
-| Camera (the Scanner)                                             | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                                         | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                                                                             |
-| Background drain                                                 | `SyncScheduler`, `SyncFlushWorker`, `public/sync-flush.html`                                 | Working — WorkManager loads the drain page in a headless WebView, replays the Outbox and pulls what it can                                                                                         |
-| Background wake (FCM)                                            | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`                               | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor                                                                  |
-| Battery-exemption prompt                                         | `ShellBatteryPrompt`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`                                 | Working — a drain that ends with work still owed, or a wake received in the background, asks once with the reason stated; the tap opens the platform's one-tap dialog (ADR-0059's amendment, #381) |
+| Capability                                                       | Where                                                                                                              | State                                                                                                                                                                                              |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| capability                                                       | where                                                                                                              | state                                                                                                                                                                                              |
+| ------------------------------------                             | -----------------------------------------------------                                                              | --------------------------------------------------------------------------------------                                                                                                             |
+| Load the live site (the shipped shape)                           | `capacitor.config.ts` `server.url`                                                                                 | Working — this is still the shell that ships; the bundled shape is [ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) and lands as #502/#503                             |
+| Load a bundled document (the bundled target)                     | `server.url` unset, Vite build in `webDir`, `MainActivity.bundledRootFor`                                          | Spike-proven (#500, [two-origin-spike.md](two-origin-spike.md)): `https://localhost/`, Back returns to it, remote surfaces reached by Custom Tab; release APK 15.4 MiB against the shell's 16.1    |
+| Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                                              | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
+| Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                                             | Working — in-page, so it shows in the shell too                                                                                                                                                    |
+| Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                                                  | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
+| Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                                                  | Working                                                                                                                                                                                            |
+| Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                                          | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
+| Splash (platform), launch skeleton, status bar, RTL, back button | launch theme, `res/layout/shell_skeleton.xml`, `capacitor.config.ts` plugins, `MainActivity`                       | Working — the splash lifts into the skeleton (ADR-0061, #498); Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                   |
+| WebView settings                                                 | `MainActivity.installWebViewSettings`                                                                              | offscreen pre-raster on, so the skeleton lifts onto a painted document; `cacheMode` left at `LOAD_DEFAULT` (#499, "What the document costs", above)                                                |
+| Native file save / share                                         | `@capacitor/filesystem`, `@capacitor/share` installed                                                              | Installed, unused by app code yet                                                                                                                                                                  |
+| Biometric lock                                                   | `@capgo/capacitor-native-biometric` installed                                                                      | Installed, unused by app code yet                                                                                                                                                                  |
+| Bluetooth LE + Contacts                                          | plugins installed, **no manifest permissions**                                                                     | Scaffolding only, by decision                                                                                                                                                                      |
+| Push (FCM)                                                       | `@capacitor/push-notifications` + manifest + `google-services.json`                                                | Working — the client config is committed (ADR-0050); the server side needs three Vercel variables, see "Push notifications" below                                                                  |
+| Camera (the Scanner)                                             | manifest `CAMERA` + `frontend/ui/scan/scan-page.tsx`                                                               | Working — declared from `1.0.6` (`20006`); an older shell is told to update (ADR-0053)                                                                                                             |
+| Background drain                                                 | `OutboxDrainWorker`, `SyncScheduler` (native, #651); `SyncFlushWorker` + `public/sync-flush.html` were the shell's | Working — the app replays its own Outbox with the app closed; the drain page remains for shells installed before #651                                                                              |
+| Background wake (FCM)                                            | `SyncMessagingService`, `ShellSyncWake`, `POST /api/push/wake`                                                     | Working — a delivered write wakes the account's other devices with a silent data message; a force-stopped app waits for the floor                                                                  |
+| Battery-exemption prompt                                         | `ShellBatteryPrompt`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`                                                       | Working — a drain that ends with work still owed, or a wake received in the background, asks once with the reason stated; the tap opens the platform's one-tap dialog (ADR-0059's amendment, #381) |
 
 ### Text input stays on the WebView's own IME connection
 
@@ -454,6 +455,16 @@ connected, so none of it is carried forward on trust.
 
 ### The background drain
 
+> **Retired in the app by [#651](https://github.com/royaraqamia/royaraqamia/issues/651).** The app no
+> longer loads `/sync-flush.html` in a headless WebView: `OutboxDrainWorker` replays the Local Store's
+> own Outbox, so delivery is native on both sides of the queue
+> ([native-app.md](native-app.md#phase-2--the-shell) records it as wired). Two things survive from the
+> section below, which is kept as the shell's record: the two schedules
+> (`royaraqamia-drain-periodic` / `royaraqamia-drain-now`), their `CONNECTED` constraint and the
+> five-attempt budget, and the battery prompt the drain's report still triggers. The page itself, and
+> `scripts/build-sync-flush.mjs` with it, stays served for shells installed before the update — a
+> released shell still loads it, and `public/` is the only place it can come from.
+
 The shell is a remote-URL WebView with no native background components, so a write queued while the app
 is not in front used to wait for the next open. `SyncFlushWorker` is what comes back for it (ADR-0059):
 
@@ -510,9 +521,15 @@ the defect it found, are in "The real-device matrix" below.
 
 ### The drain drill
 
-`scripts/shell-drill.mjs` is that whole arrangement as one command (`npm run android:drill`). It exists
-because the first version of this section was four throwaway scripts (`.drill.mjs`, `.probe*.mjs`) and
-the next person wrote them again: the knowledge was here, the driver was not.
+> **Retired by [#651](https://github.com/royaraqamia/royaraqamia/issues/651).** `scripts/shell-drill.mjs`
+> and `npm run android:drill` went with the WebView drain they wait on: the drill's whole assertion was
+> the worker's `RoySyncFlush: drained (failed=0)` line, and that worker no longer exists. The app's own
+> proof is `npm run android:outbox-drill` (#650) — sign in, cut the radio, queue a write, force-stop,
+> restore the radio, open the app, and read the row back from the server inside the five-second budget
+> — plus `adb logcat -s RoyOutboxDrain:*` for the background half.
+
+The arrangement it drove is kept below, because the steps are still what a hand-run looks like and the
+two WebView limits it records are properties of the image, not of the app:
 
 1. Boots `Pixel_API_30` headless, or uses hardware with `--device <serial>`.
 2. Serves the site locally and builds the **debug** APK against `http://localhost:<port>`, then runs
@@ -588,8 +605,10 @@ adb logcat -s RoySyncFlush:*
 
 The drill above proves one case: a write queued with the radio off survives the process and the
 worker delivers it. The table below is the rest of phase 7's matrix — the part that needs a phone,
-for the two environmental reasons above. `--matrix` fills the three rows that do not need a person
-pressing buttons:
+for the two environmental reasons above. `--matrix` filled the three rows that do not need a person
+pressing buttons until the drill was retired with the WebView drain (#651); the force-stop row is now
+`npm run android:outbox-drill`'s own case, and the doze and mid-flush rows are run by hand against
+`OutboxDrainWorker`.
 
 | Case                    | What it does                                                                                                     | What it proves                                                                                                                             |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -597,21 +616,14 @@ pressing buttons:
 | Doze                    | queues offline, `am kill`s, forces `mState=IDLE`, restores the radio, waits a minute, releases                   | the `CONNECTED` job is deferred while idle and is still queued after release; the write lands at the next launch or period, not on release |
 | Process death mid-flush | queues offline, `am kill`s, restores the radio, `SIGKILL`s the process the moment the worker starts it, launches | the queue survives an interrupted drain, and the retry leaves exactly one habit — not two                                                  |
 
-```powershell
-npm run android:drill -- --device <serial> --matrix
-```
-
 Three constraints, all of them things a short run would otherwise measure dishonestly:
 
 - **Doze is a deferral test, not a 15-minute clock.** The floor is `PERIOD_MINUTES = 15` in
-  `SyncScheduler.java`, which WorkManager enforces; what the case watches is that the forced-idle
+  `SyncScheduler.kt`, which WorkManager enforces; what the case watches is that the forced-idle
   device runs no worker at all, and that the job is still there after release. It does not drain on
   release: measured on Android 15 (#485), leaving idle reschedules the deferred job to the next
   period and the queued write arrived at the next launch. A late write is the platform's behaviour
-  here, not a lost one, and the row above states it that way. `npm run android:drill -- --matrix`
-  still asserts the old expectation — «deferred while idle, drains after release» — and reports this
-  row as `FAIL`; repointing it would chase a component the cutover deletes (#662), so that failure is
-  expected until the shell goes.
+  here, not a lost one, and the row above states it that way.
 - **A case the device refuses is recorded as `skipped`, never as a pass.** An OEM that ignores
   `force-idle`, a build where `run-as` cannot signal the app, a drain that starts and finishes
   before the kill lands — each prints the device's own words in the table.
@@ -622,7 +634,7 @@ The cases that stay manual, and why:
 
 - **The FCM wake** needs a Firebase-enabled build _and_ the server-side service account: with FCM
   unconfigured (which `.env` leaves it) `POST /api/push/wake` answers `202` and sends nothing, so a
-  scripted wake would "pass" by never happening. Watch it land with `adb logcat -s RoySyncFlush:*`
+  scripted wake would "pass" by never happening. Watch it land with `adb logcat -s RoyOutboxDrain:*`
   after a write from a second device.
 - **Low storage / a full quota, a worker swap mid-queue and several tabs** are browser behaviours
   first (`docs/specs/offline-first.md`, Verification) whose device form needs a person to fill the
@@ -680,7 +692,7 @@ account moved somewhere else", for the app that would hear that over Realtime if
 To watch one land, and to check the receiver wiring after any plugin bump:
 
 ```powershell
-adb logcat -s RoySyncFlush:*   # what the worker did with the wake, or with its floor
+adb logcat -s RoyOutboxDrain:*   # what the worker did with the wake, or with its floor
 # Exactly one MESSAGING_EVENT service, and it is com.royaraqamia.app.SyncMessagingService:
 Select-String -Path android/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml -Pattern 'MESSAGING_EVENT'
 ```

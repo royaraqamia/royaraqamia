@@ -24,6 +24,7 @@ import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
+import com.royaraqamia.app.sync.SyncScheduler
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
@@ -86,11 +87,18 @@ class ShellActivity : ComponentActivity() {
 
         // A queued write is delivered because the radio came back, not because
         // the user opened the screen that made it (#650). The launch path drains
-        // in `graph.start()`; this is the reconnect while the app is open.
+        // in `graph.start()`; this is the reconnect while the app is open, and
+        // the reconnect while it is not is the worker's floor (#651).
         networkWatch =
             Connectivity.watch(this) {
                 lifecycleScope.launch { graph.drainOutbox() }
             }
+
+        // The floor that covers what a push cannot (#651): enqueued from the
+        // launcher rather than from the document's activity, because the app is
+        // the launcher now and a device that never opens a web surface still
+        // owes its queued writes.
+        SyncScheduler.ensurePeriodic(this)
 
         setContent {
             RoyaraqamiaTheme {

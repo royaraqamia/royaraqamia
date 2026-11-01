@@ -49,8 +49,9 @@ native ask at all — both spend the same permission-free trust, but less of del
 exempted: the list screen asks the user to know which toggle is whose, and copy-only explains a
 constraint it could have lifted.
 
-The moment is the one written above, not a cold start. `SyncFlushWorker` asks when a drain's report says
-work is still owed (`SyncFlushResult.retry` — the give-up after `MAX_ATTEMPTS` included), and
+The moment is the one written above, not a cold start. `OutboxDrainWorker` asks when a drain's report
+says work is still owed (`DrainDecision.Retry` — the give-up after `MAX_ATTEMPTS` included; the worker
+was `SyncFlushWorker` until #651 made the drain native), and
 `SyncMessagingService` asks when a wake arrives while the app is not foregrounded. Both funnel into one
 gate in `ShellBatteryPrompt` — already exempt (`PowerManager.isIgnoringBatteryOptimizations`), already
 asked once (a `SharedPreferences` one-shot), notifications actually enabled, and the app in the
