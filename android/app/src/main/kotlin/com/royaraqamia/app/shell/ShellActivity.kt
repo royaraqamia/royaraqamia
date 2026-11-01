@@ -11,11 +11,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
@@ -26,6 +31,7 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.sync.SyncScheduler
 import kotlinx.coroutines.launch
+import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 
 /**
@@ -56,6 +62,9 @@ class ShellActivity : ComponentActivity() {
      * ever held one, so the running app had no session at all.
      */
     private lateinit var graph: AppGraph
+
+    /** One resolver for the whole app, so the preload and the composition share a cache. */
+    private val fonts: FontFamily.Resolver by lazy { createFontFamilyResolver(this) }
 
     /** Whether the restored session answered, which decides what the frame holds. */
     private var signedIn by mutableStateOf(false)
@@ -92,6 +101,17 @@ class ShellActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
+        // The Arabic faces are ~350 KB of TTF, and decoding them is what the first
+        // text costs: measured on the RMX3195, an empty frame reaches its first
+        // `withFrameNanos` at ~290 ms and the same frame with these faces at ~440.
+        // Warming them off the main thread moves that ~90 ms under the window work
+        // instead of onto the frame. If the frame wins the race, Compose draws the
+        // first text in the system face and re-lays it out when the font arrives.
+        lifecycleScope.launch(Dispatchers.Default) {
+            fonts.preload(RoyFonts.ui)
+            fonts.preload(RoyFonts.digits)
+        }
+
         stack = ShellBackStack(DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME)
         current = stack.route
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
@@ -115,7 +135,10 @@ class ShellActivity : ComponentActivity() {
             RoyaraqamiaTheme {
                 // The app is RTL before it is anything else (ADR-0089): the site is
                 // Arabic, and a screen laid out left-to-right is the wrong screen.
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides LayoutDirection.Rtl,
+                    LocalFontFamilyResolver provides fonts,
+                ) {
                     ShellFrame(
                         currentRoute = current,
                         hiddenRoutes = hiddenRoutes,
