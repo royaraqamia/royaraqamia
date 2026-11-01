@@ -181,6 +181,27 @@ git worktree prune             # drop records for directories already gone
 `worktree_remove` does the same, with force as an explicit opt-in — force only after checking that
 nothing unlanded is in there.
 
+### A merged branch is finished, and a push revives it
+
+The merge deletes the branch on GitHub, so the remote ref is gone the moment the pull request merges.
+A push to it afterwards **recreates** it, and GitHub then offers its "this branch had recent pushes —
+Compare & pull request" banner: a branch that reads like work nobody landed, in an inbox that has
+nothing left to land.
+
+The way in is a conflict resolution still being written when the merge happens — the branch is
+reopened by the push that was meant to make it mergeable. So the order is: resolve, push, then let the
+merge land. After the merge the branch is read-only, and the worktree is only somewhere to look.
+
+A revived branch proves itself empty before anything is done with it:
+
+```powershell
+git fetch origin --prune
+git diff origin/main origin/<branch>     # prints nothing: the merge already has it
+git push origin --delete <branch>        # the whole cleanup
+```
+
+If it prints a diff, that is work nobody merged: stop and report it rather than deleting the ref.
+
 ## When there is nothing to land
 
 A task that changed no files ends at step 2 — no commit, no pull request, no squash. Say so rather
