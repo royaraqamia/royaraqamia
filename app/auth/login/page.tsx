@@ -60,7 +60,9 @@ function LoginForm() {
         window.location.assign(result.redirectUrl);
         return;
       }
-      setMessage(result.message);
+      // A refusal the server did not explain still reads as one: the fallback is
+      // applied where the message is set, so the render never tests it again.
+      setMessage(result.message || SIGN_IN_COPY.refused);
       setOffline(result.offline);
     } finally {
       setIsPending(false);
@@ -126,7 +128,7 @@ function LoginForm() {
                 role="alert"
                 className="text-xs sm:text-sm font-medium leading-relaxed"
               >
-                {message ?? SIGN_IN_COPY.refused}
+                {message}
               </p>
             </div>
           )
