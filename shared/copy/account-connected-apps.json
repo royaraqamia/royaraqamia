@@ -1,5 +1,5 @@
 {
-  "surface": "account-server",
+  "surface": "account-connected-apps",
   "component": "account-connected-apps",
   "web": {
     "file": "frontend/ui/account/mcp-connected-apps-copy.ts",

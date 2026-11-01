@@ -10,6 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const PLAN_CARD_COPY = {
+  pageTitle: 'الاشتراك والاستهلاك',
   planFree: 'الخطَّة المجَّانيَّة',
   planPro: 'الخطَّة المدفوعة',
   unlimited: 'غير محدود',

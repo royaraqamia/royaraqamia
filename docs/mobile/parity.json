@@ -74,7 +74,7 @@
     },
     {
       "id": "plan-card",
-      "surface": "account-server",
+      "surface": "account-plan",
       "issue": "#647",
       "web": {
         "route": "app/account/plan/page.tsx",
@@ -110,7 +110,7 @@
     },
     {
       "id": "account-connected-apps",
-      "surface": "account-server",
+      "surface": "account-connected-apps",
       "issue": "#657",
       "web": {
         "route": "app/account/connected-apps/page.tsx",

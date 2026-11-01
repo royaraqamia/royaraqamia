@@ -15,6 +15,7 @@
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a copy key the reference component (`frontend/ui/account/plan-view.tsx`) does not render - the site is the design the app is measured against."
   },
   "strings": {
+    "pageTitle": "الاشتراك والاستهلاك",
     "planFree": "الخطَّة المجَّانيَّة",
     "planPro": "الخطَّة المدفوعة",
     "unlimited": "غير محدود",
