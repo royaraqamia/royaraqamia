@@ -201,6 +201,198 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_attachments: {
+        Row: {
+          byte_size: number;
+          created_at: string;
+          file_name: string;
+          id: string;
+          message_id: string;
+          mime_type: string;
+          storage_path: string;
+          uploader_id: string;
+        };
+        Insert: {
+          byte_size: number;
+          created_at?: string;
+          file_name: string;
+          id?: string;
+          message_id: string;
+          mime_type: string;
+          storage_path: string;
+          uploader_id: string;
+        };
+        Update: {
+          byte_size?: number;
+          created_at?: string;
+          file_name?: string;
+          id?: string;
+          message_id?: string;
+          mime_type?: string;
+          storage_path?: string;
+          uploader_id?: string;
+        };
+        Relationships: [];
+      };
+      chat_blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_conversations: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          created_by: string;
+          direct_key: string | null;
+          id: string;
+          kind: string;
+          last_message_at: string | null;
+          status: string;
+          title: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          created_at?: string;
+          created_by: string;
+          direct_key?: string | null;
+          id?: string;
+          kind?: string;
+          last_message_at?: string | null;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          direct_key?: string | null;
+          id?: string;
+          kind?: string;
+          last_message_at?: string | null;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_messages: {
+        Row: {
+          body: string | null;
+          conversation_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          edited_at: string | null;
+          id: string;
+          reply_to_id: string | null;
+          sender_id: string | null;
+          sender_kind: string;
+        };
+        Insert: {
+          body?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          reply_to_id?: string | null;
+          sender_id?: string | null;
+          sender_kind?: string;
+        };
+        Update: {
+          body?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          reply_to_id?: string | null;
+          sender_id?: string | null;
+          sender_kind?: string;
+        };
+        Relationships: [];
+      };
+      chat_participants: {
+        Row: {
+          conversation_id: string;
+          created_at: string;
+          invited_by: string | null;
+          joined_at: string | null;
+          last_read_at: string | null;
+          role: string;
+          status: string;
+          user_id: string;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string;
+          invited_by?: string | null;
+          joined_at?: string | null;
+          last_read_at?: string | null;
+          role?: string;
+          status?: string;
+          user_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string;
+          invited_by?: string | null;
+          joined_at?: string | null;
+          last_read_at?: string | null;
+          role?: string;
+          status?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      chat_reports: {
+        Row: {
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          reason: string;
+          reported_user_id: string | null;
+          reporter_id: string;
+          snapshot: Json;
+          status: string;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          reason: string;
+          reported_user_id?: string | null;
+          reporter_id: string;
+          snapshot: Json;
+          status?: string;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          reported_user_id?: string | null;
+          reporter_id?: string;
+          snapshot?: Json;
+          status?: string;
+        };
+        Relationships: [];
+      };
       community_categories: {
         Row: {
           created_at: string;
@@ -2377,6 +2569,34 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      list_chat_threads: {
+        Args: Record<string, never>;
+        Returns: {
+          counterpart_id: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          last_message_at: string | null;
+          last_message_body: string | null;
+          last_message_created_at: string | null;
+          last_message_has_attachments: boolean;
+          last_message_sender_kind: string | null;
+          my_last_read_at: string | null;
+          my_role: string;
+          my_status: string;
+          status: string;
+          title: string | null;
+          unread_count: number;
+        }[];
+      };
+      report_chat_conversation: {
+        Args: {
+          p_conversation_id: string;
+          p_reason: string;
+          p_reported_user_id?: string | null;
+        };
+        Returns: string;
+      };
       activate_plan: {
         Args: {
           p_activated_by: string;
