@@ -11,6 +11,7 @@ import {
   type PieLabelRenderProps,
 } from 'recharts';
 import { formatMoney } from '@/shared/currency';
+import { SPENDTRACK_CATEGORY_CHART_COPY } from './spendtrack-category-chart-copy';
 
 type CategorySpending = {
   name: string;
@@ -40,7 +41,9 @@ function CustomTooltip({
         <span className="text-xs font-bold text-foreground truncate">{item.name}</span>
       </div>
       <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-border/40 pt-2">
-        <span className="text-[11px] font-medium text-muted-foreground">المبلغ</span>
+        <span className="text-[11px] font-medium text-muted-foreground">
+          {SPENDTRACK_CATEGORY_CHART_COPY.amountLabel}
+        </span>
         <span className="text-sm font-bold tracking-tight text-foreground">
           {formatMoney(item.value, currency)}
         </span>
@@ -100,7 +103,7 @@ export function CategoryPieChart({
       <div
         className="group relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-border/80 bg-slate-50/50 dark:bg-neutral-900/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-slate-50 dark:hover:bg-neutral-900/60"
         role="img"
-        aria-label="لا توجد بيانات إنفاق حسب التَّصنيف"
+        aria-label={SPENDTRACK_CATEGORY_CHART_COPY.noDataTitle}
       >
         <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 ring-8 ring-primary/5 transition-transform duration-300 group-hover:scale-110">
           <svg
@@ -120,10 +123,10 @@ export function CategoryPieChart({
 
         <div className="text-center space-y-1.5 max-w-xs">
           <p className="text-sm sm:text-base font-bold text-foreground tracking-tight">
-            لا توجد بيانات
+            {SPENDTRACK_CATEGORY_CHART_COPY.noDataTitle}
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            أضِف مصاريف لرؤية توزيع الإنفاق حسب التَّصنيف
+            {SPENDTRACK_CATEGORY_CHART_COPY.noDataBody}
           </p>
         </div>
       </div>
@@ -155,16 +158,20 @@ export function CategoryPieChart({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-            توزيع الإنفاق حسب التَّصنيف
+            {SPENDTRACK_CATEGORY_CHART_COPY.title}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {selectedCategories.length > 0
-              ? `تمَّ تحديد ${selectedCategories.length} من أصل ${data.length} تصنيفات`
-              : 'اضغط على أيِّ تصنيف للتَّصفية والمقارنة'}
+              ? SPENDTRACK_CATEGORY_CHART_COPY.selectedHint
+                  .replace('{selected}', String(selectedCategories.length))
+                  .replace('{total}', String(data.length))
+              : SPENDTRACK_CATEGORY_CHART_COPY.hint}
           </p>
         </div>
         <div className="self-start sm:self-auto flex items-center gap-2 rounded-2xl bg-muted/60 px-3 py-1.5 border border-border/40">
-          <span className="text-xs font-medium text-muted-foreground">الإجمالي:</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {SPENDTRACK_CATEGORY_CHART_COPY.totalLabel}:
+          </span>
           <span className="text-sm font-bold tracking-tight text-foreground">
             {formatMoney(grandTotal, currency)}
           </span>
@@ -172,11 +179,7 @@ export function CategoryPieChart({
       </div>
 
       {/* Main Chart Section */}
-      <div
-        className="relative"
-        role="img"
-        aria-label="رسم بياني يُوضِّح توزيع الإنفاق حسب التَّصنيف"
-      >
+      <div className="relative" role="img" aria-label={SPENDTRACK_CATEGORY_CHART_COPY.title}>
         <div className="relative h-70 sm:h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -217,7 +220,7 @@ export function CategoryPieChart({
           {/* Donut Center Display */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90">
-              الإجمالي
+              {SPENDTRACK_CATEGORY_CHART_COPY.totalLabel}
             </span>
             <span className="text-lg sm:text-xl font-bold tracking-tight text-foreground mt-0.5">
               {formatMoney(grandTotal, currency)}
@@ -256,7 +259,10 @@ export function CategoryPieChart({
                   <div className="truncate">
                     <p className="text-xs font-bold text-foreground truncate">{entry.name}</p>
                     <span className="text-[11px] text-muted-foreground font-medium">
-                      {percentage}% من الإجمالي
+                      {SPENDTRACK_CATEGORY_CHART_COPY.shareOfTotal.replace(
+                        '{percentage}',
+                        String(percentage)
+                      )}
                     </span>
                   </div>
                 </div>
@@ -273,7 +279,7 @@ export function CategoryPieChart({
       </div>
 
       {/* Accessible Screen Reader List */}
-      <div className="sr-only" role="list" aria-label="التَّصنيفات">
+      <div className="sr-only" role="list" aria-label={SPENDTRACK_CATEGORY_CHART_COPY.legendLabel}>
         {data.map((entry, index) => (
           <div key={index} role="listitem">
             {entry.name}: {formatMoney(entry.total, currency)}

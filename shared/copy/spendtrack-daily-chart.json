@@ -1,0 +1,23 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-daily-chart",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-daily-chart-copy.ts",
+    "export": "SPENDTRACK_DAILY_CHART_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackDailyChartCopy.kt",
+    "object": "SpendtrackDailyChartCopy"
+  },
+  "notes": {
+    "source": "The daily chart's words, in both clients (#653): its empty state and the two axes it names.",
+    "placeholders": "`{symbol}` is the currency symbol the client substitutes into the amount axis.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the chart does not render."
+  },
+  "strings": {
+    "noDataTitle": "لا توجد بيانات",
+    "noDataBody": "أضِف مصاريف لرؤية الاتِّجاهات اليوميَّة",
+    "dateAxis": "التَّاريخ",
+    "amountAxis": "المبلغ ({symbol})"
+  }
+}

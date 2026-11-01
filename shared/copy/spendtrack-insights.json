@@ -1,0 +1,24 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-insights",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-insights-copy.ts",
+    "export": "SPENDTRACK_INSIGHTS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackInsightsCopy.kt",
+    "object": "SpendtrackInsightsCopy"
+  },
+  "notes": {
+    "source": "The insights strip's words, in both clients (#653): the three metrics the site names — the daily average, the top category and the comparison with the period before — and the sentence it shows when the window holds nothing.",
+    "placeholders": "The numbers are substituted by the client; the words around them are these.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the strip does not render."
+  },
+  "strings": {
+    "avgLabel": "متوسط الإنفاق اليومي",
+    "topLabel": "أعلى تصنيف",
+    "comparisonLabel": "مقارنة بالفترة السابقة",
+    "noData": "لا توجد بيانات",
+    "percent": "٪"
+  }
+}

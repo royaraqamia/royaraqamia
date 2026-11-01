@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
+import { SPENDTRACK_DAILY_CHART_COPY } from './spendtrack-daily-chart-copy';
 
 type DailySpending = {
   date: string;
@@ -40,7 +41,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
       <div
         className="group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border/70 bg-card/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-card/60"
         role="img"
-        aria-label="لا توجد بيانات إنفاق يوميَّة"
+        aria-label={SPENDTRACK_DAILY_CHART_COPY.noDataTitle}
       >
         <div className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-b from-primary/15 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 transition-safe duration-500 group-hover:scale-110 group-hover:ring-primary/30">
           <svg
@@ -59,9 +60,11 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
           </svg>
         </div>
         <div className="max-w-xs space-y-1.5">
-          <p className="text-base font-bold text-foreground tracking-tight">لا توجد بيانات</p>
+          <p className="text-base font-bold text-foreground tracking-tight">
+            {SPENDTRACK_DAILY_CHART_COPY.noDataTitle}
+          </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            أضِف مصاريف لرؤية الاتِّجاهات اليوميَّة
+            {SPENDTRACK_DAILY_CHART_COPY.noDataBody}
           </p>
         </div>
       </div>
@@ -86,7 +89,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
               axisLine={{ stroke: 'var(--color-border)', strokeOpacity: 0.3 }}
               dy={8}
               label={{
-                value: 'التَّاريخ',
+                value: SPENDTRACK_DAILY_CHART_COPY.dateAxis,
                 position: 'insideBottomRight',
                 offset: -4,
                 style: { fontSize: 11, fill: 'var(--color-muted-foreground)', fontWeight: 500 },
@@ -100,7 +103,10 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
               axisLine={false}
               dx={-4}
               label={{
-                value: `المبلغ (${getCurrencySymbol(currency)})`,
+                value: SPENDTRACK_DAILY_CHART_COPY.amountAxis.replace(
+                  '{symbol}',
+                  getCurrencySymbol(currency)
+                ),
                 angle: -90,
                 position: 'insideLeft',
                 offset: 12,
