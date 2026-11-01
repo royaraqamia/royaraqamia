@@ -62,6 +62,9 @@ object Routes {
 
     fun isPrimary(path: String?): Boolean = path != null && primary.contains(normalize(path))
 
+/** The notification centre (#659): still the document, and the bell's destination. */
+const val NOTIFICATIONS_ROUTE = "/notifications"
+
     private fun segmentsOf(route: String): List<String> = route.split('/').filter { it.isNotEmpty() }
 
     fun isLayoutOnly(route: String): Boolean {

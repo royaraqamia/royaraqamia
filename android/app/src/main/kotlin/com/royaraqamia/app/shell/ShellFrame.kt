@@ -41,6 +41,8 @@ fun ShellFrame(
     hiddenRoutes: Set<String> = emptySet(),
     /** Where the sheet keeps this device's order (#806). */
     servicesOrder: ServicesOrderStore? = null,
+    /** The bell's unread count, or null while there is no session to ask (#659). */
+    unreadCount: Int? = null,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     var servicesOpen by remember { mutableStateOf(false) }
@@ -50,6 +52,8 @@ fun ShellFrame(
             ShellTopBar(
                 onOpenServices = { servicesOpen = true },
                 showServices = ServicesEntry.visibleRows(hiddenRoutes).isNotEmpty(),
+                unreadCount = unreadCount,
+                onOpenNotifications = { onOpenRoute(Routes.NOTIFICATIONS_ROUTE) },
             )
             Box(Modifier.weight(1f).fillMaxWidth(), content = content)
             ShellTabBar(currentRoute = currentRoute, onSelect = onSelect)

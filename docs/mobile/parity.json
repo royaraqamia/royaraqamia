@@ -282,6 +282,28 @@
       },
       "copySource": "shared/copy/shell-services-order.json",
       "states": [{ "name": "Moved", "copy": "moved" }]
+    },
+    {
+      "id": "notification-bell",
+      "surface": "home",
+      "issue": "#659",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/shared/notification-bell.tsx",
+        "copyModule": "frontend/ui/shared/notification-bell-copy.ts",
+        "copyExport": "NOTIFICATION_BELL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellTopBar.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/NotificationBellState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/NotificationBellCopy.kt",
+        "copyObject": "NotificationBellCopy"
+      },
+      "copySource": "shared/copy/notification-bell.json",
+      "states": [
+        { "name": "Idle", "copy": "label" },
+        { "name": "Unread", "copy": "unread" }
+      ]
     }
   ]
 }
