@@ -160,6 +160,30 @@ describe('GET /api/news/board', () => {
     expect(res.headers['Cache-Control']).toBe('no-store');
   });
 
+  it('refuses a snapshot for an available digest the shared view is not showing', async () => {
+    mockLoadNewsBoard.mockResolvedValue({
+      ...SHARED_BOARD,
+      personal: { enabled: true, available: true, active: false },
+      preferences: null,
+    });
+
+    const res = (await boardGET(request({ view: 'public' }))) as unknown as RouteResponse;
+
+    expect(res.headers['Cache-Control']).toBe('no-store');
+  });
+
+  it('serves an anonymous board publicly', async () => {
+    mockLoadNewsBoard.mockResolvedValue({
+      ...SHARED_BOARD,
+      personal: null,
+      preferences: null,
+    });
+
+    const res = (await boardGET(request())) as unknown as RouteResponse;
+
+    expect(res.headers['Cache-Control']).toBe('public, max-age=0, must-revalidate');
+  });
+
   it('refuses a snapshot for a digest narrowed by the reader’s sources', async () => {
     mockLoadNewsBoard.mockResolvedValue({
       ...SHARED_BOARD,
