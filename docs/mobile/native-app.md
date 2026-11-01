@@ -10,9 +10,13 @@ volume: repetitive, parallel, and the part that is easiest to under-estimate.
 
 ## Budgets
 
-These are the numbers a phase exit is measured against, on a real device rather than an emulator.
-They replace the shell's, which are in [android-shell.md](android-shell.md) and stay there as the
-baseline being beaten.
+These are the numbers a phase exit is measured against, on the reference phone rather than an
+emulator: the **RMX3195** (realme C25s, Android 13, 360 dp, Helio G85, 4 GB) is the device this
+project has, so it is the one the budget is witnessed on. The managed emulators (API 30 and API 35)
+are where `npm run android:launch` runs when the phone is not attached — an emulator's number is a
+regression comparison and a floor, not the figure a phase exit is signed off on. They replace the
+shell's, which are in [android-shell.md](android-shell.md) and stay there as the baseline being
+beaten.
 
 | Measure                                | Budget                      | Today (shell)                                                                 |
 | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
@@ -145,9 +149,12 @@ pill, `shell/ShellServices.kt` the sheet and its sixteen rows — the site's ord
 `shared/copy/shell-services.json`, the site's glyphs through `vectors:generate`, and a parity row whose
 states are the trigger and the rows. The menu's table moved out of `frontend/ui/app-shell/constants.ts`
 into `frontend/ui/navbar/services-link.ts` in the same change, because the generated copy is now its
-only source of words. Still owed from this slice: the cold and warm starts measured on a mid-range
-device (`npm run android:launch`, [#752](https://github.com/royaraqamia/royaraqamia/issues/752)), the
-320 dp run, and the two chrome gaps [two-clients.md](two-clients.md) lists.
+only source of words. The cold and warm starts are measured on the reference phone
+(`npm run android:launch`, [#752](https://github.com/royaraqamia/royaraqamia/issues/752)): cold is
+466 ms median, over the 400 ms budget, and the profile [#762](https://github.com/royaraqamia/royaraqamia/issues/762)
+ships is what narrows it — the number is re-measured there, not asserted. The 320 dp run was made on an
+emulator at 320 dp. Still owed from this slice: the two chrome gaps [two-clients.md](two-clients.md)
+lists.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
