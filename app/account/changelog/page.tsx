@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { ChangelogView } from '@/frontend/ui/account/changelog-view';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
   title: 'ما الجديد',
@@ -18,5 +19,15 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function AccountChangelogPage() {
-  return <ChangelogView />;
+  return (
+    <div className="space-y-6">
+      <header className="mb-10 text-center">
+        <SectionTitle as="h1">
+          <SectionTitleHighlight>ما الجديد</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+
+      <ChangelogView />
+    </div>
+  );
 }

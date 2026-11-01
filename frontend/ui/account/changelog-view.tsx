@@ -92,13 +92,6 @@ export function ChangelogView() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="text-lg font-bold text-foreground">ما الجديد</h1>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          ملاحظات كل إصدار من تطبيق الأندرويد، كما كُتبت عندما صدر.
-        </p>
-      </header>
-
       {releases.length === 0 ? (
         <section className="rounded-2xl border border-border/50 bg-card/60 p-5 text-center">
           <p className="text-sm leading-relaxed text-muted-foreground">
