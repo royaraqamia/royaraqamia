@@ -94,6 +94,26 @@ grading, and release notes written for the people receiving them.
   count as a shell change, or every release would earn itself another one the following Monday.
 - `release-health.yml` raises one issue when native changes have sat unreleased past the cadence
   (nine days), which is the only way a train that never started becomes visible.
+- That switch reports its own failure: an issue of its own when it cannot read the train at all
+  (amendment below), because a watcher that goes quiet is indistinguishable from a train on time.
 
 Supersedes ADR-0046's web half and the release-train machinery of ADR-0051, ADR-0052 and ADR-0068.
 ADR-0043, ADR-0044, ADR-0047 and ADR-0069 still stand, amended only in when a version is written.
+
+## Amendment (2026-11-01): the switch's stdout is data, and being blind is one of the things it says
+
+The switch said nothing for four days. `--health` printed its sentence — `a shell release is due
+(1.1.0) but not yet overdue` — to stdout, and the workflow appends stdout to `$GITHUB_OUTPUT`, so
+every daily run from 2026-10-29 failed with `Invalid format` before the alert step could run. The
+alert step only ran on success, so it was skipped with the reading step: nothing opened, nothing
+updated, nothing closed. The one issue this switch exists to raise would have gone unraised.
+
+Two halves now hold separately, so neither failure mode hides the other.
+
+- `--health` is a machine mode, like `--json`: the sentence goes to stderr and stdout carries only
+  the `key=value` pairs the workflow parses (`healthReport` in `scripts/android-release.mjs`). A
+  caller no longer has to remember a flag that keeps its output parseable.
+- The alert step runs on `always()`. A failed reading step opens — and later updates — a second
+  issue, `Release health cannot read the train`, linked to the run that broke; the run that reads
+  the train again closes it. A red run in Actions is only loud if someone is looking, and the point
+  of a dead-man's switch is that nobody is.
