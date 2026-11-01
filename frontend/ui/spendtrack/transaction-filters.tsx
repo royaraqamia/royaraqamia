@@ -14,20 +14,21 @@ import {
   SelectValue,
 } from '@/frontend/ui/primitives/select';
 import { ChevronDown, X, Search, Calendar, Tag, ArrowUpDown, RotateCcw, Check } from 'lucide-react';
+import { SPENDTRACK_FILTERS_COPY } from './spendtrack-filters-copy';
 import type { Category } from '@/shared/contracts/spendtrack';
 
 const datePresets = [
-  { label: 'هذا الشَّهر', value: 'this_month' },
-  { label: 'آخر 7 أيَّام', value: 'last_7' },
-  { label: 'آخر 30 يومًا', value: 'last_30' },
-  { label: 'الكل', value: 'all' },
+  { label: SPENDTRACK_FILTERS_COPY.thisMonth, value: 'this_month' },
+  { label: SPENDTRACK_FILTERS_COPY.last7, value: 'last_7' },
+  { label: SPENDTRACK_FILTERS_COPY.last30, value: 'last_30' },
+  { label: SPENDTRACK_FILTERS_COPY.all, value: 'all' },
 ] as const;
 
 const sortOptions = [
-  { label: 'الأحدث أوَّلًا', value: 'date_desc' },
-  { label: 'الأقدم أوَّلًا', value: 'date_asc' },
-  { label: 'الأعلى مبلغًا', value: 'amount_desc' },
-  { label: 'الأقل مبلغًا', value: 'amount_asc' },
+  { label: SPENDTRACK_FILTERS_COPY.dateDesc, value: 'date_desc' },
+  { label: SPENDTRACK_FILTERS_COPY.dateAsc, value: 'date_asc' },
+  { label: SPENDTRACK_FILTERS_COPY.amountDesc, value: 'amount_desc' },
+  { label: SPENDTRACK_FILTERS_COPY.amountAsc, value: 'amount_asc' },
 ] as const;
 
 export function TransactionFilters({ categories }: { categories: Category[] }) {
@@ -76,7 +77,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
   const hasFilters = searchParams.toString().length > 0;
 
   return (
-    <section className="w-full" aria-label="فلاتر المعاملات">
+    <section className="w-full" aria-label={SPENDTRACK_FILTERS_COPY.sectionLabel}>
       <div className="w-full bg-card/70 border border-border/60 rounded-2xl p-2.5 sm:p-3.5 shadow-xs transition-safe duration-300 hover:border-border/80">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3">
           {/* Search bar input */}
@@ -88,7 +89,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
               <SelectTrigger
                 className="h-10 sm:h-11 w-full sm:w-auto min-w-32.5 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs flex items-center justify-between gap-2"
-                aria-label="نطاق التَّاريخ"
+                aria-label={SPENDTRACK_FILTERS_COPY.rangeLabel}
               >
                 <div className="flex items-center gap-2 truncate">
                   <Calendar className="size-4 text-muted-foreground shrink-0" />
@@ -123,7 +124,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     router.push(`${pathname}?${params.toString()}`);
                   }}
                   className="w-full sm:w-60 h-10 sm:h-11 rounded-xl border-border/60 shadow-xs"
-                  aria-label="الفترة الزَّمنيَّة"
+                  aria-label={SPENDTRACK_FILTERS_COPY.rangeLabel}
                 />
               </div>
             )}
@@ -138,14 +139,19 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                       ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15'
                       : 'bg-background/80 hover:bg-accent/40 text-foreground'
                   }`}
-                  aria-label={`التَّصنيفات${selectedCount > 0 ? ` (${selectedCount} مُحدَّدَة)` : ''}`}
+                  aria-label={SPENDTRACK_FILTERS_COPY.categoriesLabel}
                 >
                   <span className="flex items-center gap-2 truncate">
                     <Tag
                       className={`size-4 shrink-0 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
                     />
                     <span>
-                      {selectedCount > 0 ? `التَّصنيفات (${selectedCount})` : 'جميع التَّصنيفات'}
+                      {selectedCount > 0
+                        ? SPENDTRACK_FILTERS_COPY.selectedCategories.replace(
+                            '{count}',
+                            String(selectedCount)
+                          )
+                        : SPENDTRACK_FILTERS_COPY.allCategories}
                     </span>
                   </span>
                   <ChevronDown className="size-4 opacity-50 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -181,7 +187,10 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                           checked={isSelected}
                           onChange={() => toggleCategory(cat.id)}
                           className="sr-only"
-                          aria-label={`تصنيف ${cat.name}`}
+                          aria-label={SPENDTRACK_FILTERS_COPY.categoryAria.replace(
+                            '{name}',
+                            cat.name
+                          )}
                         />
                         <div
                           className="size-2.5 rounded-full shrink-0 ring-2 ring-background shadow-2xs"
@@ -199,7 +208,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             <Select value={currentSort} onValueChange={(v) => updateParam('sort', v)}>
               <SelectTrigger
                 className="h-10 sm:h-11 w-full sm:w-auto min-w-35 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs flex items-center justify-between gap-2"
-                aria-label="ترتيب المعاملات"
+                aria-label={SPENDTRACK_FILTERS_COPY.sortLabel}
               >
                 <div className="flex items-center gap-2 truncate">
                   <ArrowUpDown className="size-4 text-muted-foreground shrink-0" />
@@ -226,10 +235,10 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                 size="sm"
                 onClick={() => router.push(pathname)}
                 className="h-10 sm:h-11 px-3.5 w-full sm:w-auto gap-1.5 rounded-xl text-xs sm:text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-safe duration-200 shrink-0 active:scale-95"
-                aria-label="مسح الفلاتر"
+                aria-label={SPENDTRACK_FILTERS_COPY.clear}
               >
                 <RotateCcw className="size-3.5 transition-transform duration-300 hover:-rotate-90" />
-                <span>مسح الفلاتر</span>
+                <span>{SPENDTRACK_FILTERS_COPY.clear}</span>
                 {selectedCount > 0 && (
                   <span className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-2xs ms-0.5">
                     {selectedCount}
@@ -267,8 +276,8 @@ function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: str
       <Input
         type="search"
         value={input}
-        placeholder="ابحث في الوصف..."
-        aria-label="البحث في المصاريف"
+        placeholder={SPENDTRACK_FILTERS_COPY.searchPlaceholder}
+        aria-label={SPENDTRACK_FILTERS_COPY.searchPlaceholder}
         className="w-full h-10 sm:h-11 ps-10 pe-9 bg-background/80 hover:bg-accent/40 focus:bg-background border-border/60 hover:border-border focus:border-primary/50 rounded-xl transition-safe duration-200 text-xs sm:text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 focus-visible:outline-none shadow-xs"
         onChange={(e) => {
           const next = e.target.value;
@@ -286,7 +295,7 @@ function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: str
             onChange('');
           }}
           className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground hover:bg-muted/80 p-1 rounded-md transition-safe active:scale-90"
-          aria-label="مسح البحث"
+          aria-label={SPENDTRACK_FILTERS_COPY.clearSearch}
         >
           <X className="size-3.5" />
         </button>

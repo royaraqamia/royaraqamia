@@ -644,6 +644,30 @@
           "copy": "noDataTitle"
         }
       ]
+    },
+    {
+      "id": "spendtrack-filters",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/transaction-filters.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-filters-copy.ts",
+        "copyExport": "SPENDTRACK_FILTERS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackFilterBar.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackFiltersUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackFiltersCopy.kt",
+        "copyObject": "SpendtrackFiltersCopy"
+      },
+      "copySource": "shared/copy/spendtrack-filters.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "sectionLabel"
+        }
+      ]
     }
   ]
 }

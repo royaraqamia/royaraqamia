@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "strokeWidth": 2,
   "icons": [
+    "ArrowUpDown",
     "Bell",
     "BookOpen",
     "Calendar",
@@ -9,6 +10,8 @@
     "CalendarClock",
     "CalendarDays",
     "ChartPie",
+    "Check",
+    "ChevronDown",
     "CircleAlert",
     "CircleCheck",
     "CloudOff",
@@ -31,9 +34,11 @@
     "RefreshCw",
     "Repeat",
     "Rocket",
+    "RotateCcw",
     "RotateCw",
     "ScanBarcode",
     "ScanLine",
+    "Search",
     "SquareCheck",
     "StickyNote",
     "SunMoon",
@@ -47,6 +52,7 @@
     "Unplug",
     "UserRound",
     "Users",
-    "Wallet"
+    "Wallet",
+    "X"
   ]
 }

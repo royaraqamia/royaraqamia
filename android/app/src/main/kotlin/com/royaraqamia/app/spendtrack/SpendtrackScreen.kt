@@ -79,6 +79,7 @@ fun SpendtrackScreen(
         mutableStateOf<SpendtrackRecurringUiState>(SpendtrackRecurringUiState.Empty)
     }
     var recurringForm by remember { mutableStateOf<SpendtrackRecurringTarget?>(null) }
+    var filter by remember { mutableStateOf(SpendtrackFilterState()) }
     var currency by remember { mutableStateOf<String?>(null) }
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
 
@@ -132,6 +133,13 @@ fun SpendtrackScreen(
     val categoryRows = (categories as? SpendtrackCategoriesUiState.Painted)?.rows.orEmpty()
     val categoryById: Map<String, SpendtrackCategoryRow> = categoryRows.associateBy { it.id }
 
+    // What the filter leaves: the site applies the same window, categories and
+    // search to the rows it paints and to every number above them, so a filter
+    // cannot say one thing and the total another.
+    val storedRows = (expenses as? SpendtrackExpensesUiState.Painted)?.rows.orEmpty()
+    val filteredRows = SpendtrackFilters.apply(storedRows, filter)
+    val visibleExpenses = SpendtrackExpensesUiState.of(filteredRows)
+
     val header: @Composable () -> Unit = {
         SpendtrackHeader(
             route = route,
@@ -172,7 +180,7 @@ fun SpendtrackScreen(
         )
     } else {
         SpendtrackExpenseList(
-            state = expenses,
+            state = visibleExpenses,
             categories = categoryById,
             currency = currency,
             onEdit = { editingExpense = it },
@@ -180,9 +188,14 @@ fun SpendtrackScreen(
             modifier = modifier,
             header = {
                 header()
-                val rows = (expenses as? SpendtrackExpensesUiState.Painted)?.rows.orEmpty()
-                val spent = monthTotal(rows)
-                val window = monthStart() to monthEnd()
+                SpendtrackFilterBar(
+                    state = filter,
+                    categories = categoryRows,
+                    onChange = { filter = it },
+                )
+                val rows = filteredRows
+                val spent = SpendtrackStats.total(rows, "1900-01-01", "2099-12-31")
+                val window = SpendtrackFilters.window(filter)
                 val insights =
                     SpendtrackStats.insights(rows, categoryRows, window.first, window.second)
                 val categoryChart =
