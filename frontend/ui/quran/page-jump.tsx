@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { QURAN_PAGE_COUNT } from '@/shared/contracts/quran-pages';
+import { toLatinDigits } from '@/shared/contracts/text';
 
 /**
  * «انتقل إلى صفحة»: a printed page number, answered with the Ayah that opens it (P5).
@@ -12,6 +13,11 @@ import { QURAN_PAGE_COUNT } from '@/shared/contracts/quran-pages';
  * that would set a page per screen waits on a licence answer, and a jump to a page's
  * first Ayah needs none of it. So the control ships, and it lands where the reader
  * can see they arrived: `#ayah-N`, which the sura route marks.
+ *
+ * The field is `type="text"` on purpose: an `<input type="number">` discards the
+ * Arabic-Indic digits an Arabic-locale keyboard produces, so the reader would type a
+ * page and be told it is out of range. `inputMode="numeric"` still asks a phone for
+ * the number pad, and the range is checked here instead of by the browser.
  *
  * `pages` is flat — `[surah, ayah, surah, ayah, …]` — because it crosses the
  * server/client boundary and 1,208 numbers are cheaper than 604 objects.
@@ -23,7 +29,7 @@ export function PageJump({ pages }: { pages: readonly number[] }) {
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const page = Number(value);
+    const page = Number(toLatinDigits(value).trim());
     if (!Number.isInteger(page) || page < 1 || page > QURAN_PAGE_COUNT) {
       setInvalid(true);
       return;
@@ -58,11 +64,8 @@ export function PageJump({ pages }: { pages: readonly number[] }) {
         <input
           id="quran-page"
           name="page"
-          type="number"
+          type="text"
           inputMode="numeric"
-          min={1}
-          max={QURAN_PAGE_COUNT}
-          step={1}
           value={value}
           onChange={(event) => {
             setValue(event.target.value);
