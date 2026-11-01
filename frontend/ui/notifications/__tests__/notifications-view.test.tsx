@@ -46,6 +46,21 @@ vi.mock('@/frontend/ui/shared/push-notification-toggle', () => ({
   PushNotificationToggle: () => <button type="button">push-toggle</button>,
 }));
 
+/**
+ * The Chats tab's list is its own read (ADR-0113); this file is about the tab
+ * frame, so the panel is stubbed as a settled, empty list.
+ */
+vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
+  useChatThreads: () => ({
+    threads: [],
+    unreadCount: 0,
+    isLoading: false,
+    refresh: vi.fn(),
+    respond: vi.fn(),
+    start: vi.fn(),
+  }),
+}));
+
 function notification(
   id: string,
   type: NotificationType,
