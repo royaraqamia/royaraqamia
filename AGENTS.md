@@ -34,6 +34,8 @@ taskkill /PID $p.Id /T /F
 
 **Work in a worktree — never commit in a tree another agent may be writing to.** The canonical checkout is shared, and concurrent `git` there has silently lost a commit and published other agents' unpushed work. Create a worktree from local `main` — `worktree_create`, or `git worktree add -b <task> <dir> main` after the landing sync (never `origin/main`, [ADR-0072](docs/adr/0072-worktrees-are-cut-from-local-main.md)) — land your work by pushing from it, then remove it. Setup and cleanup: [docs/agents/worktrees.md](docs/agents/worktrees.md).
 
+**A branch never carries a local `main` squash copy.** The copies are the checkout's record; a copy and GitHub's squash of the same pull request are two different commits, so a branch stacked on one conflicts on every file both sides touched the moment the lower request lands (#831, #832, #833). `npm run check:branch-base` refuses one (the pre-push hook runs it), `npm run sync:base` rebases onto `origin/main` — or onto the open pull request's branch when the work depends on it — and then `git push --force-with-lease`. [landing.md](docs/agents/landing.md), step 2a.
+
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
 **Digits are ASCII, always.** Type `0-9`, never Arabic-Indic (U+0660–U+0669) or Persian (U+06F0–U+06F9) numerals — in source, docs, UI copy, tests and stored content. `npm run check:digits` gates it and `npm run fix:digits` rewrites. Read-only numbers render in Aref Ruqaa through `--font-digits`; editable fields opt back out. Runtime input goes through `toLatinDigits` in `shared/contracts/text.ts`.
