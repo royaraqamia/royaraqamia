@@ -81,9 +81,10 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
 
   const result = useMemo(() => {
     if (!corpus || !longEnough) return null;
-    // One past the page, so «عرض المزيد» is drawn only when there is something
-    // behind it rather than on every full page.
-    return findAyahPositions(corpus.exact, corpus.loose, query, shown + 1);
+    // The page is all that is drawn; how much there is behind it comes back as
+    // `total`, so the status can name the whole answer and «عرض المزيد» is gated
+    // on that rather than on a page's worth of positions.
+    return findAyahPositions(corpus.exact, corpus.loose, query, shown);
   }, [corpus, longEnough, query, shown]);
 
   const groups = useMemo(() => {
@@ -116,7 +117,9 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
     return [...bySurah.entries()].map(([surah, hits]) => ({ surah, hits }));
   }, [corpus, counts, folded, query, result, shown]);
 
-  const hitCount = Math.min(result?.positions.length ?? 0, shown);
+  // The whole answer, not the page: a reader judging whether to keep looking is
+  // owed the true number of matching Ayat.
+  const total = result?.total ?? 0;
   const nameOf = (surah: number) => surahs[surah - 1]?.name ?? '';
 
   const status = (() => {
@@ -125,7 +128,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
     if (corpusState === 'loading') return 'جاري البحث في الآيات…';
     if (corpusState === 'failed') return 'تعذّر تحميل البحث في الآيات.';
     if (corpusState === 'ready') {
-      return `${matchedSurahs.length} سورة، و${hitCount} آية مطابقة`;
+      return `${matchedSurahs.length} سورة، و${total} آية مطابقة`;
     }
     return '';
   })();
@@ -215,7 +218,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
             </div>
           ))}
 
-          {result && result.positions.length > shown ? (
+          {result && result.total > shown ? (
             <button
               type="button"
               onClick={() => setShown((current) => current + QURAN_SEARCH_PAGE_SIZE)}
@@ -227,7 +230,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
         </section>
       ) : null}
 
-      {longEnough && corpusState === 'ready' && hitCount === 0 ? (
+      {longEnough && corpusState === 'ready' && total === 0 ? (
         <p className="text-center text-sm text-muted-foreground">لا نتائج في الآيات.</p>
       ) : null}
     </div>
