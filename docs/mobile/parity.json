@@ -263,6 +263,25 @@
           "copy": "mcpGuide"
         }
       ]
+    },
+    {
+      "id": "shell-services-order",
+      "surface": "home",
+      "issue": "#806",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/navbar/use-services-order.ts",
+        "copyModule": "frontend/ui/navbar/services-order-copy.ts",
+        "copyExport": "SERVICES_ORDER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellServices.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesOrderState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesOrderCopy.kt",
+        "copyObject": "ServicesOrderCopy"
+      },
+      "copySource": "shared/copy/shell-services-order.json",
+      "states": [{ "name": "Moved", "copy": "moved" }]
     }
   ]
 }

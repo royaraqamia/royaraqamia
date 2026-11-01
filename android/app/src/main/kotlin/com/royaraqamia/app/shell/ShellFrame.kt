@@ -39,6 +39,8 @@ fun ShellFrame(
     modifier: Modifier = Modifier,
     /** The routes this member hid; the sheet draws the rest (ADR-0112). */
     hiddenRoutes: Set<String> = emptySet(),
+    /** Where the sheet keeps this device's order (#806). */
+    servicesOrder: ServicesOrderStore? = null,
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     var servicesOpen by remember { mutableStateOf(false) }
@@ -55,6 +57,7 @@ fun ShellFrame(
         ServicesSheet(
             open = servicesOpen,
             hiddenRoutes = hiddenRoutes,
+            order = servicesOrder,
             onDismiss = { servicesOpen = false },
             onSelect = { route ->
                 servicesOpen = false

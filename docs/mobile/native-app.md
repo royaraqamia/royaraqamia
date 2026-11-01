@@ -145,7 +145,8 @@ that decides which routes are drawn instead of handed over; a surface's port is 
 it.
 
 The top bar and the `خدماتنا` menu landed with it (#647): `shell/ShellTopBar.kt` draws the mark and the
-pill, `shell/ShellServices.kt` the sheet and its sixteen rows — the site's order, the site's words in
+pill, `shell/ShellServices.kt` the sheet and its sixteen rows — the device's own order (#806,
+`shell/ServicesOrderRules.kt` over `rr:services-order:v1`), the site's words in
 `shared/copy/shell-services.json`, the site's glyphs through `vectors:generate`, and a parity row whose
 states are the trigger and the rows. The menu's table moved out of `frontend/ui/app-shell/constants.ts`
 into `frontend/ui/navbar/services-link.ts` in the same change, because the generated copy is now its

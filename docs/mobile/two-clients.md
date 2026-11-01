@@ -140,11 +140,12 @@ narrower route to read.
   screenshot diff of the same component rendered by both clients (Paparazzi on the
   JVM against a Playwright capture at a pinned viewport/DPR, failing on the element
   that moved rather than a pixel count).
-- **Where the app's chrome is not yet the site's chrome.** Two gaps are deliberate and listed, not
-  discovered: the services menu shows the site's shipped order and not the per-device drag order the
-  sheet keeps in `localStorage` (`rr:services-order:v1`), and the top bar has no notification bell until
-  the notifications surface lands (#659) — the site's bell shows an unread count, and a bell that cannot
-  say how many are unread is a control that lies.
+- **Where the app's chrome is not yet the site's chrome.** One gap is deliberate and listed, not
+  discovered: the top bar has no notification bell until the notifications surface lands (#659) —
+  the site's bell shows an unread count, and a bell that cannot say how many are unread is a control
+  that lies. The services menu keeps the device's own order on both sides (#806): the same rules
+  (`frontend/ui/navbar/services-order.ts`), the same key (`rr:services-order:v1`) and the same
+  sentence when a row moves.
 - **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
   column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws
   it, with its own check.
