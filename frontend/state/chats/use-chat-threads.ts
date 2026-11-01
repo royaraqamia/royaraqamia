@@ -11,6 +11,18 @@ import {
 } from '@/frontend/api/chats';
 import type { ChatConversationSummary } from '@/shared/contracts/chat';
 
+/**
+ * A failed call's own sentence, or the caller's copy when it carries none.
+ *
+ * `request` throws on a 4xx/5xx with the server's Arabic message, and this
+ * surface answers a refusal as text rather than as an outage — so the write
+ * helpers below never reject: an unhandled rejection is a click that appears to
+ * do nothing.
+ */
+function failureOf(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export interface ChatThreadsState {
   threads: ChatConversationSummary[];
   unreadCount: number;
@@ -67,19 +79,27 @@ export function useChatThreads(enabled: boolean): ChatThreadsState {
 
   const respond = useCallback(
     async (id: string, answer: 'accept' | 'decline') => {
-      const result = await respondToChat(id, answer);
-      await refresh();
-      return result.success ? null : (result.error ?? 'تعذّر تنفيذ الطلب');
+      try {
+        const result = await respondToChat(id, answer);
+        await refresh();
+        return result.success ? null : (result.error ?? 'تعذّر تنفيذ الطلب');
+      } catch (error) {
+        return failureOf(error, 'تعذّر تنفيذ الطلب');
+      }
     },
     [refresh]
   );
 
   const start = useCallback(
     async (userId: string) => {
-      const result = await startDirectChat(userId);
-      if (!result.success || !result.conversationId) return null;
-      await refresh();
-      return result.conversationId;
+      try {
+        const result = await startDirectChat(userId);
+        if (!result.success || !result.conversationId) return null;
+        await refresh();
+        return result.conversationId;
+      } catch {
+        return null;
+      }
     },
     [refresh]
   );

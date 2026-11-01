@@ -51,6 +51,11 @@ project and the first migration is a stub.
 
 - **RLS is not access control.** Policies choose rows; grants decide whether the role reaches the
   object at all. A table with perfect policies and no grant is invisible.
+- **A function a policy calls needs `execute` for the calling role.** A policy expression runs with
+  the privileges of whoever queries the table, so `security definer` on the helper decides whose
+  rights its body runs with, not who may call it. Revoking execute from `authenticated` leaves the
+  policy — and every read or write it guards — failing with
+  `42501 permission denied for function ...` before RLS decides anything (the chats #811 regression).
 - **`service_role` needs a grant too.** It bypasses row level security, not privileges. A server-written
   table without `grant all ... to service_role` fails on its first write from the admin client, a cron
   job or a workflow.
