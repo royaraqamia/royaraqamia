@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
+import com.royaraqamia.app.connectedapps.ConnectedAppsCard
+import com.royaraqamia.app.connectedapps.ConnectedAppsCopy
+import com.royaraqamia.app.connectedapps.ConnectedAppsUiState
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.plans.PlanCard
 import com.royaraqamia.app.plans.UsageUiState
 import com.royaraqamia.app.session.SignInOutcome
@@ -76,7 +82,10 @@ private fun Workbench() {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Column(
-                    modifier = Modifier.safeDrawingPadding().padding(16.dp),
+                    modifier =
+                        Modifier.safeDrawingPadding()
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
@@ -120,6 +129,8 @@ private fun Connected() {
     val scope = rememberCoroutineScope()
 
     var usage by remember { mutableStateOf<UsageUiState>(UsageUiState.Loading) }
+    var apps by remember { mutableStateOf<ConnectedAppsUiState>(ConnectedAppsUiState.Loading) }
+    var appsError by remember { mutableStateOf<String?>(null) }
     var signedIn by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(true) }
@@ -129,12 +140,31 @@ private fun Connected() {
         usage = UsageUiState.from(graph.usage.load())
     }
 
+    suspend fun readApps() {
+        apps = ConnectedAppsUiState.Loading
+        apps = ConnectedAppsUiState.from(graph.connectedApps.list())
+    }
+
+    /** A revoke is a request: the list is re-read from the server either way. */
+    fun disconnect(clientId: String) {
+        scope.launch {
+            appsError = null
+            if (graph.connectedApps.disconnect(clientId) is ApiResult.Failure) {
+                appsError = ConnectedAppsCopy.DISCONNECT_FAILED
+            }
+            readApps()
+        }
+    }
+
     LaunchedEffect(graph) {
         // The same call the first native screen will make at launch: a stored
         // refresh token is a session that survived the process.
         signedIn = graph.start()
         busy = false
-        if (signedIn) read()
+        if (signedIn) {
+            read()
+            readApps()
+        }
     }
 
     if (signedIn) {
@@ -142,6 +172,23 @@ private fun Connected() {
             state = usage,
             onRetry = { scope.launch { read() } },
             onSignIn = { signedIn = false },
+        )
+        ConnectedAppsCard(
+            state = apps,
+            actionError = appsError,
+            onRetry = { scope.launch { readApps() } },
+            onSignIn = { signedIn = false },
+            onDisconnect = { app -> disconnect(app.clientId) },
+            onDisconnectAll = {
+                scope.launch {
+                    appsError = null
+                    if (graph.connectedApps.disconnectAll() is ApiResult.Failure) {
+                        appsError = ConnectedAppsCopy.DISCONNECT_FAILED
+                    }
+                    readApps()
+                }
+            },
+            onConnectNew = {},
         )
     } else {
         SignInForm(
@@ -155,6 +202,7 @@ private fun Connected() {
                         is SignInOutcome.SignedIn -> {
                             signedIn = true
                             read()
+                            readApps()
                         }
                         SignInOutcome.Refused -> signInError = "Wrong email or password."
                         is SignInOutcome.Unreachable -> signInError = outcome.detail

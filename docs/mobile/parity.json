@@ -109,6 +109,42 @@
       ]
     },
     {
+      "id": "account-connected-apps",
+      "surface": "account-server",
+      "issue": "#657",
+      "web": {
+        "route": "app/account/connected-apps/page.tsx",
+        "component": "frontend/ui/account/mcp-connected-apps-view.tsx",
+        "copyModule": "frontend/ui/account/mcp-connected-apps-copy.ts",
+        "copyExport": "MCP_CONNECTED_APPS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsCopy.kt",
+        "copyObject": "ConnectedAppsCopy"
+      },
+      "copySource": "shared/copy/account-connected-apps.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signIn"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        },
+        {
+          "name": "Ready",
+          "copy": "connectNew"
+        }
+      ]
+    },
+    {
       "id": "shell-tab-bar",
       "surface": "home",
       "issue": "#647",

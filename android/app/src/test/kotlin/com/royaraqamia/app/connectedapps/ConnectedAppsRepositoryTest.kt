@@ -105,6 +105,17 @@ class ConnectedAppsRepositoryTest {
     }
 
     @Test
+    fun `disconnect all asks the collection's own path`() {
+        val transport = RecordingTransport { HttpResponse(200, """{"success":true}""") }
+
+        val result = runBlocking { repository(transport).disconnectAll() }
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("DELETE", transport.requests.single().method)
+        assertEquals("https://app.test/api/me/mcp/connected-apps", transport.requests.single().url)
+    }
+
+    @Test
     fun `the card's states come from the read`() {
         val apps = listOf(ConnectedApp("client-1", "Claude Code", "2026-10-01T09:00:00.000Z", null))
 
