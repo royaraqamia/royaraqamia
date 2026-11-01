@@ -15,6 +15,7 @@ import {
 } from 'react';
 
 import type { NavLink } from './NavDropdown';
+import { SERVICES_ORDER_COPY } from './services-order-copy';
 import {
   moveWithin,
   readServicesOrder,
@@ -59,6 +60,18 @@ export interface ServicesOrder {
   getHandleProps: (
     item: NavLink
   ) => ButtonHTMLAttributes<HTMLButtonElement> & { 'aria-label': string };
+}
+
+/**
+ * The sentence a screen reader hears after a row moves, from the one copy source
+ * both clients read (#806). Substituted here rather than formatted around, so
+ * the word order stays in the source and not in two languages of string surgery.
+ */
+function announcement(label: string, position: number, total: number): string {
+  return SERVICES_ORDER_COPY.moved
+    .replace('{label}', label)
+    .replace('{position}', String(position))
+    .replace('{total}', String(total));
 }
 
 /** The nearest ancestor the pointer can actually scroll, which is the sheet. */
@@ -148,7 +161,7 @@ export function useServicesOrder(items: readonly NavLink[]): ServicesOrder {
 
     const position = finalOrder.indexOf(grab.href);
     if (position !== -1) {
-      setStatus(`نُقِل «${grab.label}» إلى الموضع ${position + 1} من ${finalOrder.length}.`);
+      setStatus(announcement(grab.label, position + 1, finalOrder.length));
     }
   }, []);
 
@@ -362,7 +375,7 @@ export function useServicesOrder(items: readonly NavLink[]): ServicesOrder {
         const next = moveWithin(current, from, to);
         applyOrder(next);
         saveServicesOrder(next);
-        setStatus(`نُقِل «${item.label}» إلى الموضع ${to + 1} من ${current.length}.`);
+        setStatus(announcement(item.label, to + 1, current.length));
       },
     }),
     [applyOrder, startDrag]

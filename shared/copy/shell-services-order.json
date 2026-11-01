@@ -1,0 +1,20 @@
+{
+  "surface": "home",
+  "component": "shell-services-order",
+  "web": {
+    "file": "frontend/ui/navbar/services-order-copy.ts",
+    "export": "SERVICES_ORDER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesOrderCopy.kt",
+    "object": "ServicesOrderCopy"
+  },
+  "notes": {
+    "source": "The services sheet's reorder announcement, in both clients (#806): the sentence a screen reader hears after a row moves. It was an inline template literal in `use-services-order.ts`; the app draws the same sheet, so the sentence moved into one source rather than being retyped into Kotlin (ADR-0098).",
+    "placeholders": "`{label}` is the row, `{position}` is its one-based slot and `{total}` is the number of rows. Each client substitutes them itself, so the punctuation stays in one place.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `frontend/ui/navbar/use-services-order.ts` does not render."
+  },
+  "strings": {
+    "moved": "نُقِل «{label}» إلى الموضع {position} من {total}."
+  }
+}

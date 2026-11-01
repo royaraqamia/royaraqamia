@@ -108,6 +108,7 @@ class ShellActivity : ComponentActivity() {
                     ShellFrame(
                         currentRoute = current,
                         hiddenRoutes = hiddenRoutes,
+                        servicesOrder = graph.servicesOrder,
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {

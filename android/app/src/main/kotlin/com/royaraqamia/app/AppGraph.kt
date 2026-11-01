@@ -6,6 +6,8 @@ import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
+import com.royaraqamia.app.shell.PreferencesServicesOrderStore
+import com.royaraqamia.app.shell.ServicesOrderStore
 import com.royaraqamia.app.session.EncryptedTokenStore
 import com.royaraqamia.app.session.KeystoreTokenCipher
 import com.royaraqamia.app.session.Session
@@ -40,6 +42,8 @@ class AppGraph private constructor(
     val usage: UsageRepository,
     val connectedApps: ConnectedAppsRepository,
     val hiddenServices: HiddenServicesRepository,
+    /** The services sheet's order, on this device (#806). */
+    val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val grant: SupabasePasswordGrant,
@@ -119,6 +123,7 @@ class AppGraph private constructor(
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
                 hiddenServices = HiddenServicesRepository(client),
+                servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
                         databases = databases,

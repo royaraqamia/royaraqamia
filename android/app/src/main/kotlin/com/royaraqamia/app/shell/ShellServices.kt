@@ -1,10 +1,12 @@
 package com.royaraqamia.app.shell
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,30 +18,54 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlin.math.roundToInt
 
 /** The test handle for a row, so a check can find one without its label. */
 fun servicesRowTestTag(entry: ServicesEntry): String = "shell-service-${entry.route.trimStart('/')}"
 
+/** One row's height. Fixed, because the drag measures slots with it (#806). */
+internal val SERVICES_ROW_HEIGHT: Dp = 44.dp
+
+/**
+ * How long a drop keeps the row from acting as a tap.
+ *
+ * The site needs the same guard for the same reason (`CLICK_SUPPRESS_MS`): the
+ * pointer up that ends a drag is also a tap on a row that navigates, so a
+ * reorder would leave the sheet by opening the row it was arranging.
+ */
+internal const val DRAG_CLICK_SUPPRESS_MS = 400L
+
 /**
  * The `خدماتنا` menu: its trigger and the sixteen rows behind it (#647).
  *
- * The rows are the site's (`frontend/ui/navbar/services-link.ts`), in the site's
- * order and with the site's words — `shared/copy/shell-services.json`, generated
- * into [ServicesCopy] — and the glyphs are the site's own `lucide-react` imports
- * through [LucideVectors] (ADR-0098, ADR-0100). The one product the site hides has
- * no row on either side.
+ * The rows are the site's (`frontend/ui/navbar/services-link.ts`), in the order
+ * this device keeps them (#806) and with the site's words — `shared/copy/shell-services.json`,
+ * generated into [ServicesCopy] — and the glyphs are the site's own `lucide-react`
+ * imports through [LucideVectors] (ADR-0098, ADR-0100). The one product the site
+ * hides has no row on either side.
  *
  * [Trigger] is a state here because it is one of the menu's words: the checker
  * pairs each with the string the site draws, so the pill and the sheet cannot
@@ -188,11 +214,21 @@ fun ServicesTrigger(onOpen: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * The rows, as a bottom sheet.
+ * The rows, as a bottom sheet, in the order this device keeps them (#806).
  *
  * A row leaves the sheet and then opens its route: the sheet owns the dismissal,
  * the caller owns where the row goes, which is how the site's own sheet behaves
  * (`ServicesMenuItems` dismisses, then navigates).
+ *
+ * Holding a row and dragging it reorders the list, which is the site's touch
+ * gesture on its own grip. The order is the device's ([ServicesOrderStore]), so
+ * it is written once, on the drop — a drag that is cancelled leaves the stored
+ * order alone. The sentence the site keeps in a visually hidden live region is
+ * drawn here instead: on a phone it is also the only confirmation the drag did
+ * anything, and the words are the same generated ones ([ServicesOrderCopy]).
+ *
+ * Rows are a fixed height so a slot is arithmetic rather than a layout query,
+ * which is what keeps the reorder testable in [ServicesOrderRules].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,10 +237,24 @@ fun ServicesSheet(
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit,
     hiddenRoutes: Set<String> = emptySet(),
+    order: ServicesOrderStore? = null,
 ) {
     if (!open) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = LocalRoySpacing.current
+
+    val visible = remember(hiddenRoutes) { ServicesEntry.visibleRows(hiddenRoutes) }
+    val defaults = remember(visible) { visible.map { it.route } }
+    var routes by remember(defaults) {
+        mutableStateOf(ServicesOrderRules.resolve(defaults, order?.read()))
+    }
+    val byRoute = remember(visible) { visible.associateBy { it.route } }
+
+    val rowHeightPx = with(LocalDensity.current) { SERVICES_ROW_HEIGHT.toPx() }
+    var draggingRoute by remember { mutableStateOf<String?>(null) }
+    var dragOffset by remember { mutableStateOf(0f) }
+    var announcement by remember { mutableStateOf("") }
+    var lastDropAt by remember { mutableStateOf(0L) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = spacing.elementGapSm)) {
@@ -214,14 +264,59 @@ fun ServicesSheet(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = spacing.containerPadding, vertical = 12.dp),
             )
-            ServicesEntry.visibleRows(hiddenRoutes).forEach { entry ->
+            routes.mapNotNull { byRoute[it] }.forEach { entry ->
+                val dragging = draggingRoute == entry.route
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
+                            .height(SERVICES_ROW_HEIGHT)
+                            .zIndex(if (dragging) 1f else 0f)
+                            .graphicsLayer { translationY = if (dragging) dragOffset else 0f }
                             .testTag(servicesRowTestTag(entry))
-                            .clickable { onSelect(entry.route) }
+                            .pointerInput(entry.route) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = {
+                                        draggingRoute = entry.route
+                                        dragOffset = 0f
+                                        announcement = ""
+                                    },
+                                    onDrag = { change, amount ->
+                                        change.consume()
+                                        dragOffset += amount.y
+                                        val from = routes.indexOf(entry.route)
+                                        if (from != -1) {
+                                            val target =
+                                                (from + (dragOffset / rowHeightPx).roundToInt())
+                                                    .coerceIn(0, routes.lastIndex)
+                                            if (target != from) {
+                                                routes = ServicesOrderRules.move(routes, from, target)
+                                                dragOffset -= (target - from) * rowHeightPx
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        val from = routes.indexOf(entry.route)
+                                        draggingRoute = null
+                                        dragOffset = 0f
+                                        lastDropAt = System.currentTimeMillis()
+                                        order?.save(routes)
+                                        if (from != -1) {
+                                            announcement =
+                                                servicesOrderAnnouncement(labelOf(entry), from + 1, routes.size)
+                                        }
+                                    },
+                                    onDragCancel = {
+                                        draggingRoute = null
+                                        dragOffset = 0f
+                                    },
+                                )
+                            }
+                            .clickable {
+                                val since = System.currentTimeMillis() - lastDropAt
+                                if (since > DRAG_CLICK_SUPPRESS_MS) onSelect(entry.route)
+                            }
                             .semantics { role = Role.Button }
-                            .padding(horizontal = spacing.containerPadding, vertical = 12.dp),
+                            .padding(horizontal = spacing.containerPadding),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -239,12 +334,32 @@ fun ServicesSheet(
                     )
                 }
             }
+            if (announcement.isNotEmpty()) {
+                Text(
+                    text = announcement,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier.padding(horizontal = spacing.containerPadding, vertical = 8.dp)
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
         }
     }
 }
 
+/**
+ * The sentence a row's move is announced with, from the one copy source both
+ * clients read (#806). The words are the site's; only the substitution is here.
+ */
+internal fun servicesOrderAnnouncement(label: String, position: Int, total: Int): String =
+    ServicesOrderCopy.MOVED
+        .replace("{label}", label)
+        .replace("{position}", position.toString())
+        .replace("{total}", total.toString())
+
 /** The site's word for a row, from the one copy source both clients read. */
-private fun labelOf(entry: ServicesEntry): String =
+internal fun labelOf(entry: ServicesEntry): String =
     when (entry) {
         ServicesEntry.Trigger -> ServicesCopy.TRIGGER
         ServicesEntry.RequestProject -> ServicesCopy.REQUEST_PROJECT
