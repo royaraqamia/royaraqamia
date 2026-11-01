@@ -77,6 +77,20 @@ project URL from this machine's `android/local.properties`; a release APK contai
 four routes and the inventory does not record a surface as native until all of it is. Phase 2's first
 real screen is still owed, with the rest of its acceptance criteria.
 
+**Wired today (#657).** `connectedapps/ConnectedAppsCard.kt` draws `/account/connected-apps`'s list
+from the page's own two routes — `GET /api/me/mcp/connected-apps`, and the `DELETE` that revokes one
+client or every client: the four states the view draws, the empty prompt, the destructive tint on a
+revoke and the question asked before it. It is a listed pair in `docs/mobile/parity.json`: the words
+come from `shared/copy/account-connected-apps.json` through `npm run copy:generate`, the glyphs from
+`shared/icons/icons.json` through `vectors:generate`, and the relative time is this surface's own
+sentence over the shared `timeAgoParts` rather than a second copy of the thresholds
+([ADR-0104](../adr/0104-a-shared-formatter-returns-parts-not-sentences.md)). A revoke is a request,
+never a local filter — the card re-reads the list from the server, so a revocation that
+half-succeeded cannot look complete — and `AppGraph` wires the repository the workbench draws beside
+the plan card. Still owed: the `*Screen.kt` that puts it on a route, with the rest of `account-server`
+(the plan page's own screen, the FAQ and the news preferences). The inventory records a surface as
+native only when all four of its routes are, so the route still opens the document.
+
 **Wired today (#647, the shell).** `shell/ShellActivity` is the launcher: the splash theme hands over
 to a Compose frame drawn from the tokens, RTL at the root, with the app's own tab bar
 (`shell/ShellTabBar.kt` — the site's three primary routes, its labels through
