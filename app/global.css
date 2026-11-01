@@ -1440,6 +1440,39 @@ select,
   background: hsl(var(--muted-foreground) / 0.45);
 }
 
+/* The empty rich-text surface says what it is for.
+ *
+ * Tiptap's `Placeholder` extension only decorates the empty block: it puts
+ * `data-placeholder` on it and expects the stylesheet to draw the words — the
+ * attribute alone renders nothing, which is why an empty note used to open on a
+ * blank box. Selecting by the attribute rather than by `is-editor-empty`/
+ * `is-empty` means any block the extension decorates (the document's first, or
+ * an emptied paragraph further down) is covered without depending on which of
+ * its two classes the version applies.
+ *
+ * The float is what keeps it from taking a line of its own: a zero-height box
+ * painted in the gap above the text, at the inline start, and out of the way of
+ * every pointer since there is nothing there to press.
+ *
+ * The direction is the one thing that cannot be inherited. The editable surface
+ * carries `dir="auto"` so an English note reads left to right, but `auto` has no
+ * strong character to read while the block is empty and falls back to LTR —
+ * which would put the caret, and with it this hint, on the left of an
+ * Arabic-first composer until the first keystroke flipped both. So the empty
+ * block follows the page: `auto` takes over the moment there is text to detect,
+ * and a note that actually starts in Latin still turns. */
+:root[dir='rtl'] .tiptap p.is-editor-empty {
+  direction: rtl;
+}
+
+.tiptap [data-placeholder]::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground));
+}
+
 /* ========================================
    HERO SECTION & HEADER ENHANCEMENTS
    ======================================== */
