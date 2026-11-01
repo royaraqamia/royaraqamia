@@ -114,6 +114,14 @@ describe('InstallSection inside the Android shell', () => {
     setUserAgent(SHELL_UA);
   });
 
+  it('names the installed version under the check', async () => {
+    setUserAgent(`${BROWSER_UA} RoyaraqamiaShell/1.0.7+20000`);
+    render(<InstallSection />);
+
+    const check = await screen.findByRole('button', { name: /التَّحقُّق من وجود تحديث/ });
+    expect(check).toHaveTextContent('الإصدار 1.0.7');
+  });
+
   it('offers a check instead of an install, with no sub-rows', async () => {
     render(<InstallSection />);
 

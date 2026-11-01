@@ -89,8 +89,6 @@ export function HiddenServicesView() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-7 text-muted-foreground">{HIDDEN_SERVICES_COPY.lede}</p>
-
       {saveError && (
         <p
           role="alert"

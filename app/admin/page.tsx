@@ -80,11 +80,7 @@ const SECTIONS = [
 export default function AdminConsolePage() {
   return (
     <div className="container mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
-      <AdminPageHeader
-        icon={ShieldCheck}
-        title="الإدارة"
-        description="إدارة الشهادات والتَّدريب والاستشارات والرَّوابط"
-      />
+      <AdminPageHeader title="الإدارة" />
 
       <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {SECTIONS.map((section) => {

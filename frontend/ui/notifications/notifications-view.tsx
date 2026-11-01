@@ -147,18 +147,8 @@ export function NotificationsView() {
 
   return (
     <main id="main-content" className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            الإشعارات
-          </h1>
-          {unreadCount > 0 && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              {unreadCount} جديد
-            </span>
-          )}
-        </div>
-        {user && unreadCount > 0 && (
+      {user && unreadCount > 0 && (
+        <div className="mb-3 flex items-center justify-end">
           <button
             type="button"
             onClick={() => markAllAsRead()}
@@ -167,16 +157,16 @@ export function NotificationsView() {
             <Check size={14} className="shrink-0" />
             <span>تحديد الكل كمقروء</span>
           </button>
-        )}
-      </header>
+        </div>
+      )}
 
       {activeTab === null ? (
-        <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-muted/60 sm:w-72" />
+        <div className="h-11 w-full animate-pulse rounded-2xl bg-muted/60 sm:w-72" />
       ) : (
         <div
           role="tablist"
           aria-label="أقسام الإشعارات"
-          className="mt-5 inline-flex w-full items-center gap-1 rounded-2xl border border-border/70 bg-muted/50 p-1 sm:w-auto"
+          className="inline-flex w-full items-center gap-1 rounded-2xl border border-border/70 bg-muted/50 p-1 sm:w-auto"
         >
           {TABS.map((tab) => {
             const selected = tab.id === activeTab;
