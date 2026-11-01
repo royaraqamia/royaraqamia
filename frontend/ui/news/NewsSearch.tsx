@@ -9,6 +9,7 @@ import {
   toReadFailure,
   type ReadFailure,
 } from '@/frontend/ui/shared/read-failure';
+import { newsHref, type NewsView } from '@/frontend/ui/news/news-url';
 import { request } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORY_LABELS,
@@ -26,6 +27,8 @@ interface NewsSearchProps {
   query: string;
   /** The active category chip, kept when a search is committed. */
   category: NewsCategory | null;
+  /** The digest on screen, kept when a search is committed: a search is not a view change. */
+  view: NewsView;
   /**
    * True while the page is showing a snapshot (#555): the field stays in the
    * page so the reader sees which query the rows answered, but committing one
@@ -45,7 +48,7 @@ interface NewsSearchProps {
  * applies, exactly as it does to every other card. Committing a term drops the
  * selected day, because the search spans every retained day (`NewsFilters`).
  */
-export function NewsSearch({ query, category, disabled = false }: NewsSearchProps) {
+export function NewsSearch({ query, category, view, disabled = false }: NewsSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -61,14 +64,9 @@ export function NewsSearch({ query, category, disabled = false }: NewsSearchProp
   const commitQuery = useCallback(
     (next: string) => {
       if (disabled) return;
-      const params = new URLSearchParams();
-      if (next) params.set('q', next);
-      if (category) params.set('category', category);
-
-      const search = params.toString();
-      router.push(search ? `${pathname}?${search}` : pathname, { scroll: false });
+      router.push(newsHref(pathname, { q: next, category, view }), { scroll: false });
     },
-    [category, disabled, pathname, router]
+    [category, disabled, pathname, router, view]
   );
 
   // Keep the field in step with the URL (back/forward, a cleared query).

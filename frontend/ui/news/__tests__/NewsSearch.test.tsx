@@ -49,7 +49,7 @@ describe('NewsSearch', () => {
   }
 
   it('shows story suggestions as the reader types', async () => {
-    render(<NewsSearch query="" category={null} />);
+    render(<NewsSearch query="" category={null} view="mine" />);
 
     await typeQuery('اتفاق');
 
@@ -62,7 +62,7 @@ describe('NewsSearch', () => {
   });
 
   it('paints each suggestion with its category, source and day', async () => {
-    render(<NewsSearch query="" category={null} />);
+    render(<NewsSearch query="" category={null} view="mine" />);
 
     await typeQuery('اتفاق');
 
@@ -73,7 +73,7 @@ describe('NewsSearch', () => {
   });
 
   it('commits a chosen suggestion by its headline, leaving the card to the board', async () => {
-    render(<NewsSearch query="" category={null} />);
+    render(<NewsSearch query="" category={null} view="mine" />);
 
     await typeQuery('اتفاق');
     fireEvent.click(screen.getByText('اتفاق جديد في الشرق'));
@@ -85,7 +85,7 @@ describe('NewsSearch', () => {
   });
 
   it('commits the query on Enter and keeps the category chip', async () => {
-    render(<NewsSearch query="" category="politics" />);
+    render(<NewsSearch query="" category="politics" view="mine" />);
 
     await typeQuery('اتفاق');
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
@@ -96,16 +96,36 @@ describe('NewsSearch', () => {
   });
 
   it('clears the committed search and returns to the latest digest', async () => {
-    render(<NewsSearch query="اتفاق" category="politics" />);
+    render(<NewsSearch query="اتفاق" category="politics" view="mine" />);
 
     fireEvent.click(screen.getByRole('button', { name: 'إلغاء البحث' }));
 
     expect(push).toHaveBeenCalledWith('/news?category=politics', { scroll: false });
   });
 
+  it('keeps the shared view when a search is committed', async () => {
+    render(<NewsSearch query="" category="politics" view="public" />);
+
+    await typeQuery('اتفاق');
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
+
+    expect(push).toHaveBeenCalledWith(
+      '/news?q=%D8%A7%D8%AA%D9%81%D8%A7%D9%82&category=politics&view=public',
+      { scroll: false }
+    );
+  });
+
+  it('keeps the shared view when the search is cleared', async () => {
+    render(<NewsSearch query="اتفاق" category={null} view="public" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'إلغاء البحث' }));
+
+    expect(push).toHaveBeenCalledWith('/news?view=public', { scroll: false });
+  });
+
   it('shows a connection error instead of the empty-results message when the search fails', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    render(<NewsSearch query="" category={null} />);
+    render(<NewsSearch query="" category={null} view="mine" />);
 
     await typeQuery('اتفاق');
 
