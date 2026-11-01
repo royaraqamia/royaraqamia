@@ -4,6 +4,7 @@ import type { Database } from '@/backend/models/database.types';
 import { createSupabaseChatRepository } from '@/backend/repositories/chat/supabase-chat-repository';
 import { ChatService, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
 import { createPublicUsersRepositoryServer } from '@/backend/config/users';
+import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 
 /**
@@ -26,6 +27,9 @@ export function createSupabaseChatService(
     },
     checkRateLimit: (key, limit, windowMs) =>
       checkRateLimit(key, limit, windowMs, { failClosed: true }),
+    // A request is delivered on the service role: `notifications` grants INSERT
+    // to `service_role` only, and the producer is fail-safe by contract.
+    notify: createAdminNotificationProducer(),
     ...deps,
   });
 }
