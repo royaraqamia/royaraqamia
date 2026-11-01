@@ -38,6 +38,23 @@ import {
 
 const BOARD_ERROR = 'تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.';
 
+/**
+ * One read's answer, and the URL it answered.
+ *
+ * The URL is part of the value rather than a sibling state variable so the two
+ * cannot drift: nothing can replace one without the other, which is what makes
+ * "the board on screen belongs to the filters on screen" true by construction
+ * (#640).
+ */
+interface ReadAnswer {
+  url: string;
+  board: NewsDigestSnapshot;
+  personal: NewsPersonalView | null;
+  cards: NewsCardsLimit | null;
+  /** What the store may keep of this answer; `null` for a `no-store` one. */
+  recordable: NewsDigestSnapshot | null;
+}
+
 /** A digest published while the reader is looking folds its burst into one read. */
 const REFRESH_DEBOUNCE_MS = 1200;
 
@@ -73,10 +90,7 @@ export function NewsBoard() {
 
   const snapshot = usePublicSnapshot<NewsDigestSnapshot>(route);
 
-  const [liveBoard, setLiveBoard] = useState<NewsDigestSnapshot | null>(null);
-  const [personal, setPersonal] = useState<NewsPersonalView | null>(null);
-  const [cards, setCards] = useState<NewsCardsLimit | null>(null);
-  const [recordable, setRecordable] = useState<NewsDigestSnapshot | null>(null);
+  const [answer, setAnswer] = useState<ReadAnswer | null>(null);
   const [failure, setFailure] = useState<ReadFailure | null>(null);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
@@ -89,15 +103,18 @@ export function NewsBoard() {
     requestWithMeta<{ board: NewsBoardData }>(apiUrl, { signal: controller.signal })
       .then(({ data, keepable }) => {
         const next = toNewsDigestSnapshot(data.board, new Date().toISOString());
-        setLiveBoard(next);
-        setPersonal(data.board.personal);
-        setCards(data.board.cards ?? null);
         // A personalised answer is `no-store`: it is not a public row, so it is
         // not recorded (the redaction rule, enforced at the response). A 200
         // with no digest and no search is not recordable either: it would erase
         // the last good offline copy on the next visit (#620).
         const hasRows = data.board.day !== null || data.board.search !== null;
-        setRecordable(keepable && hasRows ? next : null);
+        setAnswer({
+          url: apiUrl,
+          board: next,
+          personal: data.board.personal,
+          cards: data.board.cards ?? null,
+          recordable: keepable && hasRows ? next : null,
+        });
         setLoading(false);
       })
       .catch((error: unknown) => {
@@ -133,12 +150,23 @@ export function NewsBoard() {
     };
   }, []);
 
-  usePublicSnapshotRecorder(route, recordable, { trim: trimNewsSnapshot });
+  // A read answers one URL, so the answer is bound to the URL that asked for it
+  // (#640). Without the binding a filter change keeps painting the previous
+  // URL's board under the new URL's filters — while the new read is in flight,
+  // and worse, after it fails: the board is not null, so `stale` cannot label it
+  // and a reader sees one day's digest under another day's date. A retry asks
+  // the same URL again, which is the one case where keeping the board on screen
+  // is right.
+  const live = answer?.url === apiUrl ? answer : null;
+
+  usePublicSnapshotRecorder(route, live?.recordable ?? null, { trim: trimNewsSnapshot });
 
   // The live answer replaces the snapshot wholesale; the snapshot is what a
   // cold mount and an unreachable server have to paint.
-  const view = liveBoard ?? snapshot;
-  const stale = liveBoard === null && snapshot !== null;
+  const view = live?.board ?? snapshot;
+  const stale = live === null && snapshot !== null;
+  const personal = live?.personal ?? null;
+  const cards = live?.cards ?? null;
   const query = useMemo(
     () => ({
       q: searchParams.get('q') ?? '',
