@@ -88,8 +88,11 @@ sentence over the shared `timeAgoParts` rather than a second copy of the thresho
 ([ADR-0104](../adr/0104-a-shared-formatter-returns-parts-not-sentences.md)). A revoke is a request,
 never a local filter — the card re-reads the list from the server, so a revocation that
 half-succeeded cannot look complete — and `AppGraph` wires the repository the workbench draws beside
-the plan card. Still owed: its `*Screen.kt`, with the account screen, the owned posts list, the FAQ,
-the news preferences and the changelog.
+the plan card. The screen arrived in the same slice: `connectedapps/ConnectedAppsScreen.kt` is
+`/account/connected-apps` — the page's title from the same copy source, the card under it, a revoke
+that keeps the server's own refusal without re-reading, and a successful one that re-reads the list
+rather than dropping the row. Still owed for the account area: the account screen, the owned posts
+list, the FAQ, the news preferences and the changelog.
 
 The account area's pages are one row each in `perf/surfaces.json` — `account`, `account-plan`,
 `account-connected-apps`, `account-faq`, `account-news`, `account-links`, `account-posts`,

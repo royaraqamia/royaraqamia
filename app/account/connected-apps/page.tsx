@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 
 import { McpConnectedAppsView } from '@/frontend/ui/account/mcp-connected-apps-view';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
   title: 'التَّطبيقات المتَّصلة بالـ MCP',
@@ -16,15 +15,5 @@ export const metadata: Metadata = {
  * offline it answers with the view's own needs-connection state.
  */
 export default function AccountConnectedAppsPage() {
-  return (
-    <div className="space-y-6">
-      <header className="mb-10 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>التَّطبيقات المتَّصلة بالـ MCP</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
-
-      <McpConnectedAppsView />
-    </div>
-  );
+  return <McpConnectedAppsView />;
 }

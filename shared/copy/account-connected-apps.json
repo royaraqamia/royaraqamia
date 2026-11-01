@@ -15,6 +15,7 @@
     "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
   },
   "strings": {
+    "pageTitle": "التَّطبيقات المتَّصلة بالـ MCP",
     "loadingLabel": "جاري التَّحميل...",
     "signIn": "تسجيل الدُّخول",
     "failed": "تعذّر تحميل التَّطبيقات المتَّصلة.",

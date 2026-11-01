@@ -26,7 +26,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-posts` | `/account/posts` | _web only_ | The app opens the web surface in the shell; the owned posts list lands in #657. |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
-| `account-connected-apps` | `/account/connected-apps` | _web only_ | The app opens the web surface in the shell; the connected-apps screen lands in #657. |
+| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
 | `account-faq` | `/account/faq` | _web only_ | The FAQ is public content; its screen lands with the account area in #657. |
 | `account-news` | `/account/news` | _web only_ | The news preferences are a form over the news contract, and land with the account area in #657. |
 | `account-changelog` | `/account/changelog` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
