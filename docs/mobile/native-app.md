@@ -196,8 +196,34 @@ is the device proof: sign in, cut the radio, queue a write, force-stop the proce
 restore the radio, and read the row back from the server inside the five-second
 budget. Still owed here: the add form and the delete affordance (the store, the
 transport and the fixtures cover create, update, toggle and delete; the screen
-exposes the toggle), delivery with the app closed (#651), and a guest claim on
-sign-in.
+exposes the toggle), and a guest claim on sign-in.
+
+**Wired today (#651).** A queued write is delivered with the app not in front.
+`sync/OutboxDrainWorker` is a `CoroutineWorker` that reads the queue **first** and
+only asks the session for a token when something is owed, so the 15-minute floor
+costs a file read on an empty queue instead of a refresh-token rotation; when
+there is work it replays the Local Store's Outbox through
+`HabitflowRepository.drain`, exactly what the screen does, so the server keeps one
+implementation. `sync/SyncScheduler` keeps the shell's two schedules — a silent
+wake's on-demand drain and the periodic floor, both `CONNECTED`, both backed off
+from 30 s — and `sync/DrainDecision` keeps its two rules: work still owed means
+come back, and the fifth attempt ends _this_ schedule without dropping anything
+(the rows stay queued and the floor re-arms). It runs from the launcher
+(`ShellActivity`), so a device that never opens a web surface still delivers, and
+it releases its database in a `finally` (`AppGraph.close`). The wake is unchanged
+(`SyncMessagingService` → `ShellSyncWake` → `SyncScheduler.flushSoon`); the battery
+prompt still follows a drain that ends owing something. What left with this slice:
+`SyncFlushWorker` and the headless WebView it loaded `/sync-flush.html` in,
+`SyncFlushResult`, and `scripts/shell-drill.mjs` — the drill existed to watch that
+worker's log line, and `npm run android:outbox-drill` is its native replacement.
+The page itself stays served (`public/sync-flush.*`): a shell installed before this
+update still loads it, and the installed base is the honest reason it is still
+built. The work queue names moved to `royaraqamia-drain-*` and the shell's two are
+cancelled once per launch, because a stored periodic request naming a class this
+APK no longer has would otherwise wake a missing worker every quarter of an hour.
+Still owed on a device: the table's `FCM wake, backgrounded`, `FCM wake, killed`
+and `15-minute floor` rows, which need a Firebase-enabled build and the server's
+service account (`docs/mobile/android-shell.md`, "The real-device matrix").
 
 ## Phase 1 — the HabitFlow slice
 
@@ -207,8 +233,9 @@ The smallest complete vertical: screen, session, API, Room, outbox, drain.
   endpoint — the same contract the service worker drains to.
 - List, add, toggle, delete, with the optimistic write painted before the network answers, and the
   failure state a user can retry.
-- A `native:drill` script that does what `scripts/shell-drill.mjs` does: kill the process with a
-  write queued, restore the radio, and assert the row lands on the server.
+- A `native:drill` script that does what `scripts/shell-drill.mjs` did before it was retired with the
+  WebView drain (#651): kill the process with a write queued, restore the radio, and assert the row
+  lands on the server.
 
 **Exit criteria.** All six budgets on one device, one run each; an offline add drains after the
 process was killed; the drill runs from a clean checkout in one command.
@@ -246,8 +273,8 @@ already native (ADR-0086): this phase gives it a Compose controller and deletes 
 **Exit criteria.** Every owned row in `docs/specs/surfaces.md` has a native screen and an offline
 write path, each with a drill or a UI test; the outbox fixtures still pass.
 
-**Retires:** `QuranPlayerPlugin`, the bundled document's reason to exist, `SyncFlushWorker`'s
-headless WebView.
+**Retires:** `QuranPlayerPlugin`, the bundled document's reason to exist. (`SyncFlushWorker`'s headless
+WebView went early, with #651: a queued write is delivered natively now.)
 
 ## Phase 4 — the remote and server-guarded surfaces
 

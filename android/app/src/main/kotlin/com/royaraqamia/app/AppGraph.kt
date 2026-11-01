@@ -80,6 +80,17 @@ class AppGraph private constructor(
         databases.close()
     }
 
+    /**
+     * Releases the store connection this graph opened, and nothing else (#651).
+     *
+     * A worker's graph is built for one run: without this, every background
+     * drain would leave a database open for the life of the process. The session
+     * is deliberately untouched — closing a handle is not signing out.
+     */
+    fun close() {
+        databases.close()
+    }
+
     companion object {
         /**
          * @param siteUrl the site's origin (`https://royaraqamia.com`), where the

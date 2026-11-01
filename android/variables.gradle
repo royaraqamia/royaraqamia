@@ -7,9 +7,9 @@ ext {
     androidxCoordinatorLayoutVersion = '1.3.0'
     androidxCoreVersion = '1.17.0'
     androidxFragmentVersion = '1.8.9'
-    // The background drain's scheduler and its worker (ADR-0059). WorkManager is
-    // the only Android background component this shell has; 2.10.x is the line
-    // that still runs on `minSdkVersion 24`.
+    // The background drain's scheduler and its worker (#651, ADR-0059).
+    // WorkManager is the only Android background component this app has; 2.10.x
+    // is the line that still runs on `minSdkVersion 24`.
     androidxWorkVersion = '2.10.5'
     // The shell's own FCM receiver (ADR-0059, ADR-0060) extends
     // `FirebaseMessagingService`, and a plugin project's dependencies are not
