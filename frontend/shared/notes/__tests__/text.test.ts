@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   markdownToPlainText,
+  noteName,
   notePreview,
   noteSearchText,
   normalizeForSearch,
@@ -39,16 +40,33 @@ describe('normalizeForSearch', () => {
 });
 
 describe('noteSearchText', () => {
-  it('matches a query in the title or in the body', () => {
-    const note = { title: 'قائمة الشِّراء', body: '**حليب** وخبز' };
-    expect(noteSearchText(note)).toContain(normalizeForSearch('قائمة'));
+  it('matches a query anywhere in the body', () => {
+    const note = { body: '**حليب** وخبز' };
     expect(noteSearchText(note)).toContain(normalizeForSearch('حليب'));
   });
 });
 
+describe('noteName', () => {
+  it('is the first line that says something, without its Markdown', () => {
+    expect(noteName('\n## قائمة الشِّراء\n\nحليب وخبز')).toBe('قائمة الشِّراء');
+  });
+
+  it('is empty when the note holds no text', () => {
+    expect(noteName('   \n\n  ')).toBe('');
+  });
+
+  it('truncates a long first line', () => {
+    expect(noteName('كلمة أخرى', 4)).toBe('كلمة…');
+  });
+});
+
 describe('notePreview', () => {
-  it('truncates the plain text and adds an ellipsis', () => {
-    expect(notePreview('**نصّ** طويل', 3)).toBe('نصّ…');
-    expect(notePreview('قصير')).toBe('قصير');
+  it('is the text under the name, truncated', () => {
+    expect(notePreview('قائمة\n\n**نصّ** طويل', 3)).toBe('نصّ…');
+    expect(notePreview('سطر\nقصير')).toBe('قصير');
+  });
+
+  it('is empty when the name is the whole note', () => {
+    expect(notePreview('قصير')).toBe('');
   });
 });

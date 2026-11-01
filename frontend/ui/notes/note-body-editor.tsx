@@ -100,7 +100,10 @@ export function NoteBodyEditor({
         // so a ring here stayed drawn for as long as the note was being typed —
         // the wrapper's border is the only frame this surface needs.
         class: cn(
-          'prose prose-sm dark:prose-invert max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none',
+          // `h-full` makes the whole box the field: without it the editable
+          // element stops at its last line and a tap below it lands on nothing,
+          // which on a phone is most of the screen.
+          'prose prose-sm dark:prose-invert h-full max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none',
           surfaceClassName
         ),
         dir: 'auto',
@@ -147,16 +150,20 @@ export function NoteBodyEditor({
   }
 
   return (
-    <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', className)}>
+    // A phone stacks the tools *under* the text, so the row lands directly above
+    // the keyboard and the first lines of the note are never pushed down by a
+    // toolbar (ADR-0109). Above `sm` the keyboard is not in play and the tools
+    // stay above the text they format.
+    <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col-reverse sm:flex-col', className)}>
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
         // One row everywhere: the tools scroll sideways instead of wrapping, so
-        // the toolbar never eats the first lines of the note on a phone. The row
-        // owns that scroll — `min-w-0` keeps its widest state from widening the
+        // the toolbar never becomes a block of rows over the text. The row owns
+        // that scroll — `min-w-0` keeps its widest state from widening the
         // dialogue's grid track, which used to scroll the whole composer
         // sideways instead of the tools.
-        className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto border-b border-border/50 px-2 py-1.5"
+        className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto border-t border-border/50 px-2 py-1.5 sm:border-t-0 sm:border-b"
       >
         <ToolbarButton
           label="عريض"
@@ -239,7 +246,13 @@ export function NoteBodyEditor({
         />
       </div>
 
-      <EditorContent editor={editor} className="flex-1" />
+      {/* The text owns the scroll, not the dialog: with the tools pinned under it
+          the sentence being typed stays in place while the note runs past the
+          screen, and the toolbar keeps the spot it has above the keyboard. */}
+      <EditorContent
+        editor={editor}
+        className="min-h-0 flex-1 overflow-y-auto dialog-scrollbar-touch-none"
+      />
     </div>
   );
 }

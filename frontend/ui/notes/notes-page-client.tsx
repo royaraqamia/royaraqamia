@@ -7,7 +7,7 @@ import { FilePlus2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Note } from '@/shared/contracts/notes';
-import { noteSearchText, normalizeForSearch } from '@/frontend/shared/notes/text';
+import { noteName, noteSearchText, normalizeForSearch } from '@/frontend/shared/notes/text';
 import { useNotes } from '@/frontend/state/notes/use-notes';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
@@ -101,7 +101,7 @@ function NotesContent() {
   }, []);
 
   const handleCreate = useCallback(
-    async (input: { title: string; body: string }) => {
+    async (input: { body: string }) => {
       if (!store) return;
       try {
         const note = await store.createNote(input);
@@ -120,9 +120,9 @@ function NotesContent() {
   const handleDeleted = useCallback(
     (note: Note) => {
       if (!store) return;
-      const deletedTitle = note.title.trim() || 'بدون عنوان';
+      const deletedName = noteName(note.body) || 'ملاحظة بلا نصّ';
       select(null);
-      toast(`حُذفت «${deletedTitle}»`, {
+      toast(`حُذفت «${deletedName}»`, {
         duration: 8000,
         action: {
           label: 'تراجع',

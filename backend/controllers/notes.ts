@@ -69,7 +69,6 @@ export async function createNote(input: NoteWriteInput): Promise<HttpResult> {
         userId,
         clientId,
         {
-          title: input.title,
           body: input.body,
           ...(input.createdAt ? { createdAt: input.createdAt } : {}),
           deletedAt: null,
@@ -105,7 +104,6 @@ export async function updateNote(id: string, input: NoteUpdateInput): Promise<Ht
         userId,
         id,
         {
-          title: input.title ?? existing?.title ?? '',
           body: input.body ?? existing?.body ?? '',
           ...('deletedAt' in input ? { deletedAt: input.deletedAt ?? null } : {}),
         },

@@ -1,9 +1,4 @@
-import {
-  normalizeNoteBody,
-  normalizeNoteTitle,
-  type Note,
-  type NotesSyncSnapshot,
-} from '@/shared/contracts/notes';
+import { normalizeNoteBody, type Note, type NotesSyncSnapshot } from '@/shared/contracts/notes';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
   promisifyRequest,
@@ -36,7 +31,6 @@ interface OutboxIntent {
 }
 
 export interface NoteWriteInput {
-  title?: string;
   body?: string;
 }
 
@@ -215,7 +209,6 @@ export class NotesLocalStore {
     const record: Note = {
       id,
       clientId: id,
-      title: normalizeNoteTitle(input.title ?? ''),
       body: normalizeNoteBody(input.body ?? ''),
       createdAt: now,
       updatedAt: now,
@@ -226,7 +219,6 @@ export class NotesLocalStore {
       type: 'note.create',
       payload: {
         clientId: record.clientId,
-        title: record.title,
         body: record.body,
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
@@ -242,7 +234,6 @@ export class NotesLocalStore {
     const now = new Date().toISOString();
     const updated: Note = {
       ...existing,
-      title: input.title === undefined ? existing.title : normalizeNoteTitle(input.title),
       body: input.body === undefined ? existing.body : normalizeNoteBody(input.body),
       updatedAt: now,
       // An edit of a tombstoned row (the undo path) also clears the tombstone.
@@ -253,7 +244,6 @@ export class NotesLocalStore {
       type: 'note.update',
       payload: {
         clientId: updated.clientId,
-        title: updated.title,
         body: updated.body,
         updatedAt: updated.updatedAt,
         deletedAt: null,
@@ -279,7 +269,7 @@ export class NotesLocalStore {
   async restoreNote(id: string): Promise<Note | null> {
     const existing = await this.getNote(id);
     if (!existing) return null;
-    return this.updateNote(id, { title: existing.title, body: existing.body });
+    return this.updateNote(id, { body: existing.body });
   }
 
   // --- Bulk / lifecycle -----------------------------------------------------

@@ -15,20 +15,25 @@ test('a guest writes, searches, reloads and undoes a note', async ({ page }) => 
   // Dispatched rather than clicked: in `next dev` the framework's own indicator
   // sits in the same corner and intercepts the pointer.
   await page.locator('#btn-new-note').dispatchEvent('click');
-  await expect(page.locator('#composer-note-title')).toBeVisible();
-  await page.locator('#composer-note-title').fill('ملاحظة اختبار');
+  await expect(page.locator('#composer-note-body')).toBeVisible();
   await page.locator('#composer-note-body').click();
+
+  // A note is its body (ADR-0110): the first line is the name the list shows,
+  // so it is the line this test searches and deletes by.
+  await page.keyboard.type('ملاحظة اختبار');
+  await page.keyboard.press('Enter');
   await page.keyboard.type('محتوى يُحفظ تلقائيًّا.');
   await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
-  await expect(page.locator('#note-title')).toHaveValue('ملاحظة اختبار');
+  await expect(page.locator('#note-body')).toContainText('محتوى يُحفظ تلقائيًّا.');
 
   // A reload paints the same note, with the body still in the editor.
   await page.waitForTimeout(1000);
   await page.reload();
-  await expect(page.locator('#note-title')).toHaveValue('ملاحظة اختبار', { timeout: 10_000 });
-  await expect(page.locator('.ProseMirror')).toContainText('محتوى يُحفظ تلقائيًّا.');
+  await expect(page.locator('#note-body')).toContainText('محتوى يُحفظ تلقائيًّا.', {
+    timeout: 10_000,
+  });
 
-  // The debounce wrote to the store; the list row is the store's own read.
+  // The list row is the store's own read, named by the note's first line.
   await page.getByRole('button', { name: 'تمّ' }).click();
   await expect(page.getByRole('button', { name: /ملاحظة اختبار/ }).first()).toBeVisible({
     timeout: 10_000,
@@ -46,10 +51,13 @@ test('a guest writes, searches, reloads and undoes a note', async ({ page }) => 
     .getByRole('button', { name: /ملاحظة اختبار/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'حذف الملاحظة' }).click();
+  await page.getByRole('button', { name: 'إجراءات الملاحظة' }).click();
+  await page.getByRole('menuitem', { name: 'حذف' }).click();
   await expect(page.getByRole('heading', { name: 'حذف الملاحظة؟' })).toBeVisible();
   await page.getByRole('button', { name: 'حذف', exact: true }).click();
   await expect(page.getByText('لا ملاحظات بعد')).toBeVisible();
+
+  // The row stays put while the note is a tombstone, and the undo revives it.
   await page.getByRole('button', { name: 'تراجع' }).click();
-  await expect(page.locator('#note-title')).toHaveValue('ملاحظة اختبار');
+  await expect(page.locator('#note-body')).toContainText('محتوى يُحفظ تلقائيًّا.');
 });

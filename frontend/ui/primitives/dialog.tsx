@@ -6,6 +6,7 @@ import { XIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useOverlayBack } from '@/frontend/ui/primitives/overlay-back';
+import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 
 function Dialog({
   open,
@@ -62,49 +63,57 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideClose?: boolean }
->(({ className, children, hideClose = false, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      role="dialog"
-      aria-modal="true"
-      data-slot="dialog-content"
-      className={cn(
-        'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-        'border border-border/60 bg-background',
-        'rounded-3xl sm:rounded-2xl',
-        'max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
-        // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
-        // Centred with insets + auto margins, not `translate`: a surface stylesheet
-        // that ships a base `translate-y-*` (the landing chunk does, via Navbar)
-        // loads after this one and would win the `--tw-translate-y` cascade,
-        // pinning the dialog's top edge to the middle of the screen.
-        'inset-x-0 bottom-4 mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
-        // Entrance & Exit Motion Animations
-        'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-        'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-        'max-sm:data-[state=open]:slide-in-from-bottom-6 max-sm:data-[state=closed]:slide-out-to-bottom-6',
-        'sm:data-[state=open]:slide-in-from-top-[48%]',
-        'sm:data-[state=closed]:slide-out-to-top-[48%]',
-        'will-change-[transform,opacity] contain-layout contain-style',
-        className
-      )}
-      {...props}
-    >
-      {children}
-      {!hideClose && (
-        <DialogPrimitive.Close
-          className="absolute top-4 end-4 rounded-full p-2 text-muted-foreground/80 opacity-80 ring-offset-background transition-[color,background-color,opacity,transform] duration-200 hover:bg-accent/80 hover:text-foreground hover:opacity-100 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          aria-label="إغلاق"
-        >
-          <XIcon className="size-4" />
-          <span className="sr-only">إغلاق</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(({ className, children, hideClose = false, ...props }, ref) => {
+  // The on-screen keyboard shortens a phone dialog; `app/global.css` reads what
+  // this publishes. Measured from the surface rather than from the app root on
+  // purpose: the baseline is the height the dialog opened at, before a field
+  // took the focus and raised the keyboard.
+  useKeyboardInset();
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        data-slot="dialog-content"
+        className={cn(
+          'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'border border-border/60 bg-background',
+          'rounded-3xl sm:rounded-2xl',
+          'max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
+          // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
+          // Centred with insets + auto margins, not `translate`: a surface stylesheet
+          // that ships a base `translate-y-*` (the landing chunk does, via Navbar)
+          // loads after this one and would win the `--tw-translate-y` cascade,
+          // pinning the dialog's top edge to the middle of the screen.
+          'inset-x-0 bottom-4 mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
+          // Entrance & Exit Motion Animations
+          'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+          'max-sm:data-[state=open]:slide-in-from-bottom-6 max-sm:data-[state=closed]:slide-out-to-bottom-6',
+          'sm:data-[state=open]:slide-in-from-top-[48%]',
+          'sm:data-[state=closed]:slide-out-to-top-[48%]',
+          'will-change-[transform,opacity] contain-layout contain-style',
+          className
+        )}
+        {...props}
+      >
+        {children}
+        {!hideClose && (
+          <DialogPrimitive.Close
+            className="absolute top-4 end-4 rounded-full p-2 text-muted-foreground/80 opacity-80 ring-offset-background transition-[color,background-color,opacity,transform] duration-200 hover:bg-accent/80 hover:text-foreground hover:opacity-100 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            aria-label="إغلاق"
+          >
+            <XIcon className="size-4" />
+            <span className="sr-only">إغلاق</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
