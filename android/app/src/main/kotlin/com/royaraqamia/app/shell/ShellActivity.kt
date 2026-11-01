@@ -61,6 +61,17 @@ class ShellActivity : ComponentActivity() {
     private var signedIn by mutableStateOf(false)
 
     /**
+     * Whether the session has answered yet (#647).
+     *
+     * The sign-in card is not the first frame: it is what a *guest* sees, and the
+     * first frame is drawn before the stored session is restored. Composing it on
+     * the way in is both wrong on screen — a signed-in member watches a sign-in
+     * card flash and disappear - and the most expensive thing in the frame
+     * (Material3's text fields), for a card most launches do not need.
+     */
+    private var sessionAnswered by mutableStateOf(false)
+
+    /**
      * The services this member hid from `خدماتنا`, read once the session answers
      * (ADR-0112). Empty is the whole menu, which is also what a failed read
      * answers: a network blip must not make the app look like it lost its rows.
@@ -131,7 +142,7 @@ class ShellActivity : ComponentActivity() {
                                     onConnectNew = { openRoute("/mcp/guide") },
                                 )
                         }
-                        if (!signedIn) {
+                        if (sessionAnswered && !signedIn) {
                             SignInCard(
                                 state = authState,
                                 onSignIn = { email, password -> signIn(email, password) },
@@ -146,6 +157,7 @@ class ShellActivity : ComponentActivity() {
                     // the splash would lift onto the document instead.
                     withFrameNanos { }
                     signedIn = graph.start()
+                    sessionAnswered = true
                     handOver()
                     // The launch half of "a queued write survives the process"
                     // (#650): the queue is on disk, so a process that was killed
