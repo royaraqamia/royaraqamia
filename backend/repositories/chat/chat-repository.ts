@@ -125,6 +125,10 @@ export interface ChatRepository {
     reason: string,
     reportedUserId: string | null
   ): Promise<string>;
+  /** Closes a direct request for both sides: the requester takes it back. */
+  withdrawRequest(conversationId: string): Promise<void>;
+  /** Puts a closed direct thread back to `requested`; false when it was open. */
+  requestThread(conversationId: string): Promise<boolean>;
   blockUser(blockerId: string, blockedId: string): Promise<void>;
   unblockUser(blockerId: string, blockedId: string): Promise<void>;
   findBlockedIds(blockerId: string): Promise<string[]>;

@@ -97,6 +97,8 @@ export interface ChatThread extends ChatConversationSummary {
   participants: ChatParticipant[];
   /** The caller's own row: what the composer and the receipts read. */
   me: ChatParticipant | null;
+  /** True when the caller is the one who blocked the counterpart. */
+  blockedByMe: boolean;
   /** True when the caller may post: an active member of an active thread. */
   canWrite: boolean;
 }

@@ -69,10 +69,18 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   consultation_booking: '/admin/consultations/bookings',
   project_request: '/admin/clients/project-requests',
   retainer_request: '/admin/clients/retainers',
+  chat_request: '/notifications?tab=chats',
 };
 
 export function toPushUrl(type: NotificationType, metadata?: Record<string, unknown>): string {
   const base = PUSH_URL_BY_TYPE[type];
+  if (type === 'chat_request') {
+    // The request is answered in the thread, so the push opens it directly.
+    const conversationId = metadata?.conversationId;
+    if (typeof conversationId === 'string' && conversationId.length > 0) {
+      return `/chats/${encodeURIComponent(conversationId)}`;
+    }
+  }
   if (type === 'certificate_issued') {
     const code = metadata?.certificateCode;
     if (typeof code === 'string' && code.length > 0) {

@@ -16,7 +16,10 @@ const peerUser: PublicUser = {
   verified: true,
 };
 
-function makeRepository(overrides: Partial<ChatRepository> = {}) {
+function makeRepository(
+  overrides: Partial<ChatRepository> = {},
+  depOverrides: Partial<ChatServiceDeps> = {}
+) {
   const repository: ChatRepository = {
     listThreads: vi.fn(async () => []),
     findConversation: vi.fn(async () => null),
@@ -52,6 +55,8 @@ function makeRepository(overrides: Partial<ChatRepository> = {}) {
     tombstoneMessage: vi.fn(async () => undefined),
     deleteMessageAttachments: vi.fn(async () => undefined),
     reportConversation: vi.fn(async () => 'r-1'),
+    withdrawRequest: vi.fn(async () => undefined),
+    requestThread: vi.fn(async () => false),
     blockUser: vi.fn(async () => undefined),
     unblockUser: vi.fn(async () => undefined),
     findBlockedIds: vi.fn(async () => []),
@@ -65,6 +70,7 @@ function makeRepository(overrides: Partial<ChatRepository> = {}) {
       search: vi.fn(async () => [peerUser]),
     },
     checkRateLimit: vi.fn(async () => true),
+    ...depOverrides,
   };
 
   return { repository, deps, service: new ChatService(repository, deps) };
@@ -116,6 +122,192 @@ describe('ChatService.startDirect', () => {
       status: 'requested',
       invitedBy: me,
     });
+  });
+
+  it('tells the peer a request is waiting', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { service } = makeRepository(
+      {},
+      {
+        notify,
+        users: {
+          getById: vi.fn(async (id: string) =>
+            id === me ? { ...peerUser, id: me, username: 'ahmad', name: 'أحمد' } : peerUser
+          ),
+          getMany: vi.fn(async () => [peerUser]),
+          search: vi.fn(async () => [peerUser]),
+        },
+      }
+    );
+
+    await service.startDirect(me, peerId);
+
+    expect(notify).toHaveBeenCalledWith({
+      user_id: peerId,
+      type: 'chat_request',
+      title: 'طلب محادثة',
+      body: 'أحمد يريد بدء محادثة معك',
+      metadata: { conversationId: 'c-1' },
+    });
+  });
+
+  it('reopens a closed thread instead of opening a second one, and notifies', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findThreadIdByDirectKey: vi.fn(async () => 'c-closed'),
+        requestThread: vi.fn(async () => true),
+      },
+      { notify }
+    );
+
+    await expect(service.startDirect(me, peerId)).resolves.toEqual({
+      conversationId: 'c-closed',
+    });
+    expect(repository.createConversation).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays quiet when the existing thread was already open', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findThreadIdByDirectKey: vi.fn(async () => 'c-open'),
+        requestThread: vi.fn(async () => false),
+      },
+      { notify }
+    );
+
+    await service.startDirect(me, peerId);
+
+    expect(repository.requestThread).toHaveBeenCalledWith('c-open');
+    expect(notify).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatService.withdraw', () => {
+  it('closes a request for both sides', async () => {
+    const { repository, service } = makeRepository({
+      findParticipants: vi.fn(async () => [
+        {
+          conversationId: 'c-1',
+          userId: me,
+          role: 'owner',
+          status: 'active',
+          lastReadAt: null,
+          joinedAt: null,
+        },
+        {
+          conversationId: 'c-1',
+          userId: peerId,
+          role: 'member',
+          status: 'requested',
+          lastReadAt: null,
+          joinedAt: null,
+        },
+      ]),
+    });
+
+    await service.withdraw(me, 'c-1');
+
+    expect(repository.withdrawRequest).toHaveBeenCalledWith('c-1');
+  });
+
+  it('refuses once the request was answered', async () => {
+    const { repository, service } = makeRepository({
+      findParticipants: vi.fn(async () => [
+        {
+          conversationId: 'c-1',
+          userId: me,
+          role: 'owner',
+          status: 'active',
+          lastReadAt: null,
+          joinedAt: null,
+        },
+        {
+          conversationId: 'c-1',
+          userId: peerId,
+          role: 'member',
+          status: 'active',
+          lastReadAt: null,
+          joinedAt: null,
+        },
+      ]),
+    });
+
+    await expect(service.withdraw(me, 'c-1')).rejects.toMatchObject({ status: 409 });
+    expect(repository.withdrawRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatService.reopen', () => {
+  it('asks again on a declined thread and tells the peer', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findConversation: vi.fn(async () => ({
+          id: 'c-1',
+          kind: 'direct',
+          title: null,
+          status: 'declined',
+          createdBy: me,
+          lastMessageAt: null,
+          createdAt: '2026-11-01T10:00:00.000Z',
+        })),
+        findParticipants: vi.fn(async () => [
+          {
+            conversationId: 'c-1',
+            userId: me,
+            role: 'owner',
+            status: 'active',
+            lastReadAt: null,
+            joinedAt: null,
+          },
+          {
+            conversationId: 'c-1',
+            userId: peerId,
+            role: 'member',
+            status: 'declined',
+            lastReadAt: null,
+            joinedAt: null,
+          },
+        ]),
+        requestThread: vi.fn(async () => true),
+      },
+      { notify }
+    );
+
+    await service.reopen(me, 'c-1');
+
+    expect(repository.requestThread).toHaveBeenCalledWith('c-1');
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a thread that is still open', async () => {
+    const { repository, service } = makeRepository({
+      findConversation: vi.fn(async () => ({
+        id: 'c-1',
+        kind: 'direct',
+        title: null,
+        status: 'active',
+        createdBy: me,
+        lastMessageAt: null,
+        createdAt: '2026-11-01T10:00:00.000Z',
+      })),
+    });
+
+    await expect(service.reopen(me, 'c-1')).rejects.toMatchObject({ status: 409 });
+    expect(repository.requestThread).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatService.listBlocked', () => {
+  it('answers the blocked members with their public face', async () => {
+    const { service } = makeRepository({ findBlockedIds: vi.fn(async () => [peerId]) });
+
+    await expect(service.listBlocked(me)).resolves.toEqual([
+      { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+    ]);
   });
 });
 

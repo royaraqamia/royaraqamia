@@ -41,6 +41,19 @@ export interface ChatServiceDeps {
     search(query: string, limit: number): Promise<PublicUser[]>;
   };
   checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean>;
+  /**
+   * In-app notification producer (the request stage, ADR-0113). Wired to the
+   * service-role producer because the `notifications` table grants INSERT to
+   * `service_role` only; it never throws, so a request is never lost to a
+   * delivery failure.
+   */
+  notify?: (input: {
+    user_id: string;
+    type: 'chat_request';
+    title: string;
+    body?: string;
+    metadata?: Record<string, unknown>;
+  }) => Promise<void>;
 }
 
 const PAGE_SIZE = 30;
@@ -136,6 +149,10 @@ export class ChatService {
 
     const peers = await this.loadPeers(participants.map((participant) => participant.userId));
     const me = participants.find((participant) => participant.userId === userId);
+    const counterpartId = participants.find((participant) => participant.userId !== userId)?.userId;
+    const blockedByMe = counterpartId
+      ? (await this.repo.findBlockedIds(userId)).includes(counterpartId)
+      : false;
 
     const roster: ChatParticipant[] = participants.map((participant) => ({
       userId: participant.userId,
@@ -150,6 +167,7 @@ export class ChatService {
       ...summary,
       participants: roster,
       me: roster.find((participant) => participant.userId === userId) ?? null,
+      blockedByMe,
       canWrite: Boolean(me?.status === 'active' && conversation.status === 'active'),
     };
   }
@@ -177,6 +195,11 @@ export class ChatService {
    * A direct thread, or the one that already exists. The pair index is what
    * decides; a second attempt resolves to the first thread instead of failing,
    * because the member's intent was "open a chat with this person".
+   *
+   * The existing thread may be closed — declined, or withdrawn by either side.
+   * Reaching it through the picker asks again on that same thread (the pair is
+   * unique, so a new conversation is not available), and the other side is
+   * told about the new request only when it actually reopened.
    */
   async startDirect(userId: string, peerId: string): Promise<{ conversationId: string }> {
     if (userId === peerId) {
@@ -187,9 +210,6 @@ export class ChatService {
       throw new ChatError(429, 'تم تجاوز الحد: بدء المحادثات محدود بـ 20 محادثة في الساعة');
     }
 
-    const existing = await this.findDirectThread(userId, peerId);
-    if (existing) return { conversationId: existing };
-
     const peer = await this.deps.users.getById(peerId);
     if (!peer || !peer.verified) {
       throw new ChatError(404, 'العضو غير موجود');
@@ -198,6 +218,14 @@ export class ChatService {
     const blocked = await this.repo.findBlockedIds(userId);
     if (blocked.includes(peerId)) {
       throw new ChatError(403, 'أزل الحظر قبل بدء المحادثة');
+    }
+
+    const existing = await this.findDirectThread(userId, peerId);
+    if (existing) {
+      if (await this.repo.requestThread(existing)) {
+        await this.notifyRequest(userId, peerId, existing);
+      }
+      return { conversationId: existing };
     }
 
     const conversation = await this.repo.createConversation({
@@ -227,6 +255,8 @@ export class ChatService {
       }
       throw error;
     }
+
+    await this.notifyRequest(userId, peerId, conversation.id);
 
     return { conversationId: conversation.id };
   }
@@ -259,6 +289,50 @@ export class ChatService {
     }
 
     await this.repo.setParticipantStatus(conversationId, userId, 'left');
+  }
+
+  /**
+   * Take a pending request back. Both sides leave the roster, so the thread
+   * disappears from the peer's inbox too rather than leaving them a request
+   * nobody is waiting on; the pair can ask again through `startDirect`.
+   */
+  async withdraw(userId: string, conversationId: string): Promise<void> {
+    const participants = await this.repo.findParticipants(conversationId);
+    const me = participants.find((participant) => participant.userId === userId);
+    const peer = participants.find((participant) => participant.userId !== userId);
+
+    if (!me || me.status !== 'active') {
+      throw new ChatError(403, 'لا يمكنك إلغاء طلب لم ترسله');
+    }
+    if (!peer || peer.status !== 'requested') {
+      throw new ChatError(409, 'لم يعد هذا الطلب بانتظار رد');
+    }
+
+    await this.repo.withdrawRequest(conversationId);
+  }
+
+  /**
+   * Ask again on a closed thread (declined or withdrawn). The pair is unique,
+   * so this reopens the same conversation instead of opening a second one.
+   */
+  async reopen(userId: string, conversationId: string): Promise<void> {
+    const conversation = await this.repo.findConversation(conversationId);
+    if (!conversation || conversation.kind !== 'direct') {
+      throw new ChatError(404, 'المحادثة غير موجودة');
+    }
+    if (conversation.status !== 'declined' && conversation.status !== 'archived') {
+      throw new ChatError(409, 'هذه المحادثة ليست مغلقة');
+    }
+
+    const participants = await this.repo.findParticipants(conversationId);
+    const peer = participants.find((participant) => participant.userId !== userId);
+    if (!peer) {
+      throw new ChatError(403, 'أنت لست عضواً في هذه المحادثة');
+    }
+
+    if (await this.repo.requestThread(conversationId)) {
+      await this.notifyRequest(userId, peer.userId, conversationId);
+    }
   }
 
   /** Post a line, and mark everything before it read for the writer. */
@@ -329,8 +403,40 @@ export class ChatService {
     await this.repo.unblockUser(userId, blockedId);
   }
 
-  async listBlocked(userId: string): Promise<string[]> {
-    return this.repo.findBlockedIds(userId);
+  /** Who the caller has blocked, with the directory's public face attached. */
+  async listBlocked(userId: string): Promise<ChatPeer[]> {
+    const ids = await this.repo.findBlockedIds(userId);
+    if (ids.length === 0) return [];
+
+    const users = await this.deps.users.getMany(ids);
+    const byId = new Map(users.map((user) => [user.id, user]));
+    return ids.flatMap((id) => {
+      const peer = toPeer(byId.get(id));
+      return peer ? [peer] : [];
+    });
+  }
+
+  /**
+   * Tell the other side a request is waiting. The producer is fail-safe: a
+   * refused or failed notification never undoes the request itself.
+   */
+  private async notifyRequest(
+    fromUserId: string,
+    toUserId: string,
+    conversationId: string
+  ): Promise<void> {
+    if (!this.deps.notify) return;
+
+    const me = await this.deps.users.getById(fromUserId);
+    const label = me?.name?.trim() || (me ? `@${me.username}` : 'عضو');
+
+    await this.deps.notify({
+      user_id: toUserId,
+      type: 'chat_request',
+      title: 'طلب محادثة',
+      body: `${label} يريد بدء محادثة معك`,
+      metadata: { conversationId },
+    });
   }
 
   /**
