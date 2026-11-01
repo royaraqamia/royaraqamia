@@ -44,7 +44,9 @@
       "states": [
         { "name": "Offline", "copy": "offline" },
         { "name": "RefreshFailed", "copy": "refreshFailed" },
-        { "name": "Syncing", "copy": "syncing" }
+        { "name": "Syncing", "copy": "syncing" },
+        { "name": "Pending", "copy": "pending" },
+        { "name": "Failed", "copy": "failed" }
       ]
     },
     {

@@ -379,6 +379,10 @@ reading because of a chunk they never asked for (#332).
   resolved; its rows moved off the document with the native store (#768), which keeps one SQLite
   database per identity and remembers the partition so the first frame can open it before any
   network answer ([ADR-0107](../adr/0107-the-habit-store-is-one-database-per-identity.md)).
+  Since #650 that database also holds the Outbox: a write and its replay intent commit in one
+  transaction, the queue belongs to the identity that made it, and a drain replays it to the same
+  endpoints the web's outbox drains to
+  ([ADR-0109](../adr/0109-a-queued-write-is-a-row-and-an-intent-in-one-transaction.md)).
 - Analytics/errors are best-effort, bounded and droppable; they share none of the Outbox guarantees.
 - **Every miss is counted by door** (ADR-0074, #474, and its 2026-10-30 amendment): the worker
   labels each one (`navigation-deadline`, `navigation-offline`, `navigation-prefix`,
@@ -529,6 +533,10 @@ and the Realtime hint tier. It ships as a remote shell rather than a bundled sur
   [Storage & telemetry](#storage--telemetry).
 - **Android device matrix**, on real hardware: app backgrounded, app force-stopped, doze, process death
   mid-flush, no network at launch, low storage/quota, worker swap mid-queue, multiple tabs.
+  The native half of the resume proof is a drill rather than a browser test:
+  `npm run android:outbox-drill` queues a HabitFlow write with the radio off, `am force-stop`s the
+  process, restores the radio, and reads the row back from the server's own snapshot inside the
+  five-second budget (#650, [ADR-0109](../adr/0109-a-queued-write-is-a-row-and-an-intent-in-one-transaction.md)).
 - **Needs-connection states are asserted where they were missing.** Consultation's availability and
   package reads carry a failure state and a retry instead of the "none available" empty state; the media
   downloader renders the inspection failure it used to swallow and names the connection while offline;

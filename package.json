@@ -78,7 +78,8 @@
     "android:test": "npm run android:sync && node scripts/android.mjs test",
     "android:profile": "node scripts/android.mjs profile",
     "prepare": "husky",
-    "android:note": "node scripts/android-note.mjs"
+    "android:note": "node scripts/android-note.mjs",
+    "android:outbox-drill": "node scripts/android-outbox-drill.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

@@ -3,12 +3,11 @@ package com.royaraqamia.app.shell
 /**
  * The routes the shell draws itself, and the ones it hands over (#647).
  *
- * The list is empty on purpose, and that is its whole content today: no primary
- * surface has a native screen yet — home and community are #658, the account pages
- * #657 — so every destination is still the document. A destination arrives here
- * when a `*Screen.kt` exists for it, which is also the pull request that adds its
- * row to `docs/mobile/screens.json`; the two facts are the same fact, so they are
- * kept in one place.
+ * `/habitflow` arrived with the list screen (#649); every other destination is
+ * still the document — home and community are #658, the account pages #657. A
+ * destination arrives here when a `*Screen.kt` exists for it, which is also the
+ * pull request that adds its row to `docs/mobile/screens.json`; the two facts are
+ * the same fact, so they are kept in one place.
  *
  * It is a set rather than a flag because the shell's own frame is unchanged either
  * way: what differs is whether a route opens the document or fills the content
