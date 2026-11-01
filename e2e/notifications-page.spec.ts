@@ -17,7 +17,7 @@ test.describe('notification centre', () => {
 
     await bell.click();
     await page.waitForURL('**/notifications');
-    await expect(page.getByRole('heading', { name: 'الإشعارات' })).toBeVisible();
+    await expect(page.getByRole('tablist', { name: 'أقسام الإشعارات' })).toBeVisible();
     await expect(page.getByRole('menu')).toHaveCount(0);
   });
 
