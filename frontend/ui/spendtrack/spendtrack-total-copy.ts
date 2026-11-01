@@ -12,6 +12,7 @@
 export const SPENDTRACK_TOTAL_COPY = {
   totalTitle: 'إجمالي الإنفاق',
   totalLabel: 'إجمالي الإنفاق: {amount}',
+  rangeSeparator: 'إلى',
 } as const;
 
 export type SpendtrackTotalCopyStrings = typeof SPENDTRACK_TOTAL_COPY;

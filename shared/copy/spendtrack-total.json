@@ -16,6 +16,7 @@
   },
   "strings": {
     "totalTitle": "إجمالي الإنفاق",
-    "totalLabel": "إجمالي الإنفاق: {amount}"
+    "totalLabel": "إجمالي الإنفاق: {amount}",
+    "rangeSeparator": "إلى"
   }
 }

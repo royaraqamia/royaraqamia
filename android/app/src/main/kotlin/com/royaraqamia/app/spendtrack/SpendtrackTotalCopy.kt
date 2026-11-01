@@ -14,4 +14,5 @@ package com.royaraqamia.app.spendtrack
 object SpendtrackTotalCopy {
     const val TOTAL_TITLE = "إجمالي الإنفاق"
     const val TOTAL_LABEL = "إجمالي الإنفاق: {amount}"
+    const val RANGE_SEPARATOR = "إلى"
 }

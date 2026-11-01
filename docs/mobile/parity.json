@@ -540,6 +540,30 @@
           "copy": "emptyTitle"
         }
       ]
+    },
+    {
+      "id": "spendtrack-currency",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/currency-selector.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-currency-copy.ts",
+        "copyExport": "SPENDTRACK_CURRENCY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCurrencyPicker.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCurrencyUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCurrencyCopy.kt",
+        "copyObject": "SpendtrackCurrencyCopy"
+      },
+      "copySource": "shared/copy/spendtrack-currency.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "label"
+        }
+      ]
     }
   ]
 }

@@ -29,8 +29,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 /**
  * SpendTrack's store, as the screen uses it (#653), and its Outbox.
@@ -95,6 +97,28 @@ class SpendtrackRepository(
     /** The recurring expenses, by the day they fall on. */
     suspend fun recurring(): List<SpendtrackRecurringRow> =
         withContext(Dispatchers.IO) { dao().recurring() }
+
+    /**
+     * Sets the account's display currency (#653).
+     *
+     * Not an Outbox intent: the site changes it with a request, not with a queued
+     * write, because a currency that arrives late changes how every amount reads
+     * and a queue that replayed it a day later would relabel history. Offline, the
+     * control says so instead of pretending.
+     *
+     * On success the code is written into the store, so the next cold launch draws
+     * the same symbol with the radio off.
+     */
+    suspend fun setAccountCurrency(code: String): ApiResult<Unit> = withContext(Dispatchers.IO) {
+        val body = buildJsonObject { put("currency", code) }.toString()
+        when (val answer = client.send("PUT", CURRENCY_PATH, body)) {
+            is ApiResult.Success -> {
+                dao().putMeta(SpendtrackMetaRow(KEY_CURRENCY, code))
+                ApiResult.Success(Unit)
+            }
+            is ApiResult.Failure -> answer
+        }
+    }
 
     /** The day a new expense is dated, in the device's own zone. */
     fun today(): String = clock.today()
