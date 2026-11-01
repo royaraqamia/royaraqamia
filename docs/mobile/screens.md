@@ -9,7 +9,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 
 | Screen | Routes | App | Why / ticket |
 | --- | --- | --- | --- |
-| `chats` | `/chats/[id]` | _web only_ | The app opens the web thread in the shell for now; the native port is the change ADR-0113 names as its last stage, and it lands with a parity.json row. |
+| `chats` | `/chats/[id]`<br>`/chats/new` | _web only_ | The app opens the web thread in the shell for now; the native port is the change ADR-0113 names as its last stage, and it lands with a parity.json row. |
 | `home` | `/` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `habitflow` | `/habitflow` | `HabitflowScreen.kt` |  |

@@ -125,6 +125,16 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the switches and the set are a client read, so a precached shell would paint sixteen unknown switches; the slot belongs to `/verify`',
   },
+  // The new-conversation screen, which `/chats/[id]` leads to and which is
+  // dynamic for the same reason: who the `?to=` handle is, and the thread this
+  // pair already has, are read on the client with the session's own client. A
+  // precached copy would paint an empty frame that then navigates somewhere else
+  // — the one thing a shell must not do offline. Cached at runtime instead.
+  {
+    route: '/chats/new',
+    reason:
+      'the member and the existing thread are a per-identity client read, so a precached shell would paint an empty frame; the thread it resolves to is dynamic too',
+  },
 ];
 
 /**
