@@ -9,6 +9,7 @@ import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { searchChatMembers } from '@/frontend/api/chats';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
+import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
 /**
@@ -157,17 +158,17 @@ export function ChatsPanel() {
 
 function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
   const label = thread.counterpart?.name ?? thread.counterpart?.username ?? thread.title;
-  const initial = label.trim().charAt(0) || '?';
 
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
-      <span
-        aria-hidden="true"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground"
-      >
-        {initial}
-      </span>
+      <MemberAvatar
+        name={label}
+        avatarUrl={thread.counterpart?.avatarUrl ?? null}
+        size="sm"
+        ring={false}
+      />
       <div className="min-w-0 flex-1">
+        {' '}
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
           {thread.status === 'declined'
@@ -257,12 +258,12 @@ function MemberPicker({
                   'hover:bg-accent focus-visible:bg-accent focus-visible:outline-none'
                 )}
               >
-                <span
-                  aria-hidden="true"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground"
-                >
-                  {(peer.name ?? peer.username).charAt(0)}
-                </span>
+                <MemberAvatar
+                  name={peer.name ?? peer.username}
+                  avatarUrl={peer.avatarUrl}
+                  size="sm"
+                  ring={false}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-bold text-foreground">
                     {peer.name ?? peer.username}
