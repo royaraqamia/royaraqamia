@@ -29,6 +29,7 @@ import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
+import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.sync.SyncScheduler
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyFonts
@@ -148,6 +149,16 @@ class ShellActivity : ComponentActivity() {
                     ) {
                         when (Routes.normalize(current)) {
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
+                            // SpendTrack's two routes are one screen (#653): the
+                            // total and list, and the categories that list files
+                            // against — the pair the site's surface matrix gives
+                            // one row.
+                            "/spendtrack", "/spendtrack/categories" ->
+                                SpendtrackScreen(
+                                    route = Routes.normalize(current),
+                                    repository = graph.spendtrack,
+                                    onOpenCategories = { openRoute("/spendtrack/categories") },
+                                )
                             "/account/plan" ->
                                 PlanScreen(
                                     repository = graph.usage,

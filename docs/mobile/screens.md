@@ -13,7 +13,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `home` | `/` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `habitflow` | `/habitflow` | `HabitflowScreen.kt` |  |
-| `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
+| `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` |  |
 | `linksnap` | `/linksnap` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |

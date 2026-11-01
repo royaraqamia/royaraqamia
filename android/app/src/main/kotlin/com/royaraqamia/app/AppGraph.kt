@@ -21,7 +21,9 @@ import com.royaraqamia.app.store.PreferencesIdentityStorage
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
-import com.royaraqamia.app.store.habitflow.DrainReport
+import com.royaraqamia.app.store.outbox.DrainReport
+import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
+import com.royaraqamia.app.store.spendtrack.SpendtrackStores
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -34,9 +36,15 @@ import com.royaraqamia.app.store.habitflow.DrainReport
  * justify it.
  *
  * What it builds is the whole read path — Keystore-backed refresh storage, the
- * session on top of it, the one HTTP client, the Local Store, and the
+ * session on top of it, the one HTTP client, each product's Local Store, and the
  * repository a screen asks — so a screen never learns a URL, a key, a file name
  * or how a token is kept.
+ *
+ * **One queue per product, one drain for the app** (#653): HabitFlow and
+ * SpendTrack each own their rows and their Outbox in their own file, and every
+ * path that delivers a queued write — the launch, a reconnection, the worker
+ * (#651) — goes through [drainOutbox] rather than naming a product. A second
+ * product therefore cannot be added with a queue nothing drains.
  */
 class AppGraph private constructor(
     val session: Session,
@@ -48,7 +56,10 @@ class AppGraph private constructor(
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
+    /** SpendTrack's store and queue (#653). */
+    val spendtrack: SpendtrackRepository,
     private val databases: IdentityScopedStore<HabitStores>,
+    private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val grant: SupabasePasswordGrant,
 ) {
     /** Whether a request can be sent right now, without waiting on a refresh. */
@@ -65,8 +76,35 @@ class AppGraph private constructor(
      */
     suspend fun start(): Boolean = session.start()
 
-    /** One drain of the HabitFlow queue, for a launch or a radio that came back (#650). */
-    suspend fun drainOutbox(): DrainReport = habitflow.drain()
+    /**
+     * One drain of every product's queue, for a launch or a radio that came back
+     * (#650, #653).
+     *
+     * The reports are summed rather than returned per product: the caller is the
+     * worker's decision and the pill, and both ask the same two questions — is
+     * anything still owed, and did the server refuse something — which a total
+     * answers without the caller learning which product owes it.
+     */
+    suspend fun drainOutbox(): DrainReport {
+        val habit = habitflow.drain()
+        val spend = spendtrack.drain()
+        return DrainReport(
+            replayed = habit.replayed + spend.replayed,
+            pending = habit.pending + spend.pending,
+            failed = habit.failed + spend.failed,
+        )
+    }
+
+    /** What the device owes, product by product, without sending anything (#651). */
+    suspend fun outboxStatus(): DrainReport {
+        val habit = habitflow.outboxStatus()
+        val spend = spendtrack.outboxStatus()
+        return DrainReport(
+            replayed = 0,
+            pending = habit.pending + spend.pending,
+            failed = habit.failed + spend.failed,
+        )
+    }
 
     /** Signs in with a password grant, and holds the pair it mints. */
     suspend fun signIn(email: String, password: String): SignInOutcome {
@@ -76,19 +114,20 @@ class AppGraph private constructor(
     }
 
     /**
-     * Ends the session and closes the store it was reading (#768).
+     * Ends the session and closes the stores it was reading (#768, #653).
      *
      * The close is not optional here: the next identity's first read opens its
-     * own database, and a connection left open under the previous account is the
+     * own databases, and a connection left open under the previous account is the
      * one way a row could be painted for the wrong person.
      */
     suspend fun signOut() {
         session.signOut()
         databases.close()
+        spendtrackDatabases.close()
     }
 
     /**
-     * Releases the store connection this graph opened, and nothing else (#651).
+     * Releases the store connections this graph opened, and nothing else (#651).
      *
      * A worker's graph is built for one run: without this, every background
      * drain would leave a database open for the life of the process. The session
@@ -96,6 +135,7 @@ class AppGraph private constructor(
      */
     fun close() {
         databases.close()
+        spendtrackDatabases.close()
     }
 
     companion object {
@@ -104,7 +144,7 @@ class AppGraph private constructor(
          *   owned routes live.
          * @param authUrl the project's auth base (`https://<ref>.supabase.co/auth/v1`).
          * @param anonKey the project's publishable key. Public by design: it names
-         *   the project, and RLS — not this key — decides what a token can read.
+         *   the project, and RLS — not this key — decides what a token may read.
          */
         fun create(context: Context, siteUrl: String, authUrl: String, anonKey: String): AppGraph {
             val store = EncryptedTokenStore(SharedPreferencesStorage(context), KeystoreTokenCipher())
@@ -116,10 +156,18 @@ class AppGraph private constructor(
                 )
             val client = ApiClient(siteUrl, session)
 
-            // One database per identity, opened on first use and closed when the
-            // identity changes (ADR-0027, #768). The name is the web's, so a
-            // device dump reads the same on both clients.
+            // One database per identity, per product, opened on first use and
+            // closed when the identity changes (ADR-0027, #768). The names are
+            // the web's, so a device dump reads the same on both clients.
             val databases = IdentityScopedStore { identity -> HabitStores.open(context, identity) }
+            val spendtrackDatabases =
+                IdentityScopedStore { identity -> SpendtrackStores.open(context, identity) }
+
+            // A guest's queue waits for a sign-in rather than being sent as
+            // nobody (ADR-0027), and a drain with the radio off spends an attempt
+            // learning what the platform already knows (#650).
+            val signedIn = { session.signedIn }
+            val online = { Connectivity.isOnline(context) }
 
             return AppGraph(
                 session = session,
@@ -133,14 +181,19 @@ class AppGraph private constructor(
                         databases = databases,
                         identity = { session.storeIdentity },
                         client = client,
-                        // A guest's queue waits for a sign-in rather than being
-                        // sent as nobody (ADR-0027), and a drain with the radio
-                        // off is a drain that spends an attempt learning what the
-                        // platform already knows (#650).
-                        signedIn = { session.signedIn },
-                        online = { Connectivity.isOnline(context) },
+                        signedIn = signedIn,
+                        online = online,
+                    ),
+                spendtrack =
+                    SpendtrackRepository(
+                        databases = spendtrackDatabases,
+                        identity = { session.storeIdentity },
+                        client = client,
+                        signedIn = signedIn,
+                        online = online,
                     ),
                 databases = databases,
+                spendtrackDatabases = spendtrackDatabases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
         }

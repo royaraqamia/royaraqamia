@@ -47,6 +47,9 @@ jobs:
       - name: Generated Copy Is Current
         run: npm run check:copy
 
+      - name: Generated Currency Table Is Current
+        run: npm run check:currency
+
       - name: Ported Components Match The Site
         run: npm run check:parity
 

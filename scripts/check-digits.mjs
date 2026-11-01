@@ -16,6 +16,9 @@
  *     jump to prove the control reads them;
  *   - `shared/contracts/__tests__/text.test.ts` and this script's own test use
  *     them as fixtures;
+ *   - the app's `SpendtrackExpenseDialog.kt` folds them to ASCII before parsing
+ *     an amount, and `SpendtrackMoneyTest.kt` feeds them in to prove it, which is
+ *     the Android half of that same normalisation;
  *   - `docs/conventions.md` (it shows the forbidden shape as an example) and
  *     `supabase/migrations/` are history and must not be rewritten (the
  *     digit-normalising migration carries the literals);
@@ -45,6 +48,10 @@ export const EXCLUDED = [
   'frontend/ui/__tests__/quran-pages.test.tsx',
   'shared/contracts/__tests__/text.test.ts',
   'scripts/__tests__/digits.test.mjs',
+  // The Android half of `toLatinDigits`: the dialog folds Arabic-Indic digits
+  // before parsing an amount, and its test feeds them in to prove it (#653).
+  'android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseDialog.kt',
+  'android/app/src/test/kotlin/com/royaraqamia/app/spendtrack/SpendtrackMoneyTest.kt',
 ];
 
 export const isExcluded = (file) =>

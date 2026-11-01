@@ -1,0 +1,38 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-expense-dialog",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-expense-dialog-copy.ts",
+    "export": "SPENDTRACK_EXPENSE_DIALOG_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackExpenseDialogCopy.kt",
+    "object": "SpendtrackExpenseDialogCopy"
+  },
+  "notes": {
+    "source": "The expense form's words, in both clients (#653). The site's dialog is the reference: the triggers, the field labels and placeholders, and the save state are what the app's dialog draws, so neither client spells them.",
+    "gaps": "The site's split editor is not one of these keys: the app shows the splits an expense carries and re-sends them untouched, but a split editor is a later pair (see the screen's note).",
+    "placeholders": "`{symbol}` is the currency symbol the client substitutes.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dialog does not render."
+  },
+  "strings": {
+    "addAction": "إضافة مصروف",
+    "addAria": "إضافة مصروف جديد",
+    "editTitle": "تعديل المصروف",
+    "amountLabel": "المبلغ",
+    "categoryLabel": "التَّصنيف",
+    "categoryPlaceholder": "اختر تصنيف",
+    "dateLabel": "التَّاريخ",
+    "datePlaceholder": "اختر التَّاريخ",
+    "descriptionLabel": "الوصف",
+    "descriptionPlaceholder": "مثال: غداء في المطعم",
+    "optional": "(اختياري)",
+    "currencyLabel": "العملة",
+    "currencyPlaceholder": "العملة الأساسية",
+    "currencyInherit": "العملة الأساسية ({symbol})",
+    "currencyHint": "تُستخدم عملة حسابك الأساسية عند عدم التحديد",
+    "save": "حفظ التَّعديلات",
+    "saving": "جاري الحفظ...",
+    "errorLabel": "فشل حفظ المصروف"
+  }
+}

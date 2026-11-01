@@ -1,4 +1,4 @@
-package com.royaraqamia.app.store.habitflow
+package com.royaraqamia.app.store.outbox
 
 /** What one drain came to, which is what the pill and the drill report. */
 data class DrainReport(
@@ -37,6 +37,8 @@ interface OutboxQueue {
  * The engine is product-agnostic — the queue and the sender are injected — so
  * the JVM suite can run it against the fixture's cases without a database, and
  * the repository can bind it to real Room access without the engine knowing.
+ * It lives in `store/outbox` rather than in HabitFlow's package for that reason:
+ * SpendTrack's queue (#653) drains with these rules, not with a second copy.
  *
  * It also stops when the store's identity changes mid-run: an intent belongs to
  * the identity that queued it, and a sign-out during a flush must not have the

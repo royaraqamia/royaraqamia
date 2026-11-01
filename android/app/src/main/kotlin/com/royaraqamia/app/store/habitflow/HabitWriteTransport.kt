@@ -9,9 +9,8 @@ import com.royaraqamia.app.contracts.generated.HabitLogWrite
 import com.royaraqamia.app.contracts.generated.HabitUpdate
 import com.royaraqamia.app.contracts.generated.HabitWrite
 import com.royaraqamia.app.contracts.generated.HabitWriteFrequency
-
-/** One HTTP request a queued intent becomes. */
-data class WriteRequest(val method: String, val path: String, val body: String?)
+import com.royaraqamia.app.store.outbox.OutboxIntentRow
+import com.royaraqamia.app.store.outbox.WriteRequest
 
 /**
  * A queued intent as the request the web's outbox sends (#650).

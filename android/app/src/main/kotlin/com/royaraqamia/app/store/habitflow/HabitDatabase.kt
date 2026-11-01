@@ -13,6 +13,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.store.localStoreName
+import com.royaraqamia.app.store.outbox.OutboxIntentRow
 
 /**
  * HabitFlow's Local Store (#768, #650): the rows the list paints from, and the

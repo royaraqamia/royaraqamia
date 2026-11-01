@@ -8,7 +8,7 @@ import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.ShellBatteryPrompt
 import com.royaraqamia.app.contracts.ApiResult
-import com.royaraqamia.app.store.habitflow.DrainReport
+import com.royaraqamia.app.store.outbox.DrainReport
 
 /**
  * Delivers a queued write with the app not in front (#651).
@@ -61,7 +61,7 @@ class OutboxDrainWorker(context: Context, params: WorkerParameters) :
     }
 
     private suspend fun deliver(graph: AppGraph): Result {
-        val owed = graph.habitflow.outboxStatus()
+        val owed = graph.outboxStatus()
         // A wake is also the account saying it moved elsewhere (ADR-0060), so it
         // is worth a pull even when this device owes nothing. The floor is not:
         // it asks only about what this device still has to deliver, so an empty
