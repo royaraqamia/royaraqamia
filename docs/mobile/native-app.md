@@ -27,6 +27,24 @@ beaten.
 | Release APK (universal)                | 20 MiB                      | 11.4 MiB, minified ([ADR-0094](../adr/0094-the-release-build-is-minified.md)) |
 | Scroll, 60 fps list of 500 rows        | no dropped frame > 2        | not measured                                                                  |
 
+**Witnessed on the RMX3195, 2026-11-01** (release APK, upload key, installed over the app; the drill is
+`npm run android:launch`, the app-side marks came from a launch instrumented for one session):
+
+| State                                                | Cold                       | Warm          |
+| ---------------------------------------------------- | -------------------------- | ------------- |
+| after `bg-dexopt-job` (`status=speed-profile`), cool | 565 ms median, 519 ms best | 112 ms, `HOT` |
+| fresh install (`status=verify`), device hot          | 645 ms median              | —             |
+
+The budget stands at 400 ms and the reference phone misses it, so the criterion stays open rather than
+being rewritten to fit the device: moving the number would retire the only pressure to make the first
+frame cheaper. Only ~30 ms of the launch is the app's own work — the splash, the graph, connectivity
+and WorkManager are single-digit milliseconds each; ~135 ms is window and Compose setup and ~250 ms is
+the first composition, of which the sign-in card was the largest subtree until it was gated on the
+session answering ([#809](https://github.com/royaraqamia/royaraqamia/pull/809)). A startup-targeted
+baseline profile is the remaining lever, and it cannot be generated on this phone: its ROM refuses
+`cmd package compile` to `adb shell`
+([#762](https://github.com/royaraqamia/royaraqamia/issues/762)).
+
 ## Phase 0 — the seam
 
 No product UI. This phase exists to make everything after it mechanical.
