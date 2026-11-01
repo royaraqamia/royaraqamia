@@ -28,8 +28,8 @@ import androidx.core.content.ContextCompat;
  * reason stated; this class is what honours that, and the two moments it
  * follows are already the system's own:
  *
- * - `SyncFlushWorker` calls {@link #promptIfNeeded} after a drain whose report
- *   says work is still owed (`SyncFlushResult.retry` — the give-up after
+ * - `OutboxDrainWorker` calls {@link #promptIfNeeded} after a drain whose report
+ *   says work is still owed (`DrainDecision.Retry` — the give-up after
  *   `MAX_ATTEMPTS` included),
  * - `SyncMessagingService` calls it when a wake arrives while the app is not
  *   foregrounded.

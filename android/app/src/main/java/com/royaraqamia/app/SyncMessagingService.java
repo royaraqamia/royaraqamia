@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.royaraqamia.app.sync.SyncScheduler;
 
 /**
  * The shell's FCM entry point (ADR-0059, ADR-0060).

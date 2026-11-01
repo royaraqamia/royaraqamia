@@ -19,6 +19,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginLoadException;
 import com.getcapacitor.PluginManager;
 import com.getcapacitor.WebViewListener;
+import com.royaraqamia.app.sync.SyncScheduler;
 
 import java.util.ArrayList;
 import java.util.List;
