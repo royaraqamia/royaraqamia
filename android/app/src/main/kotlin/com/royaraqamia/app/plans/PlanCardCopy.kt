@@ -12,6 +12,7 @@ package com.royaraqamia.app.plans
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object PlanCardCopy {
+    const val PAGE_TITLE = "الاشتراك والاستهلاك"
     const val PLAN_FREE = "الخطَّة المجَّانيَّة"
     const val PLAN_PRO = "الخطَّة المدفوعة"
     const val UNLIMITED = "غير محدود"

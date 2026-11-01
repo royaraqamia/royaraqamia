@@ -6,6 +6,7 @@ import { PLAN_CARD_COPY } from './plan-card-copy';
 
 import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { useMyPlan } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
@@ -30,11 +31,31 @@ function formatMoney(cents: number, currency: string): string {
 }
 
 /**
+ * The page: its title, then the member's plan or the state that stands in for it.
+ * The heading lives here rather than in `page.tsx` so the app's screen can draw
+ * the same sentence from the same generated copy (ADR-0098), and the route stays
+ * a data-free shell (#448).
+ */
+export function PlanView() {
+  return (
+    <div className="space-y-6">
+      <header className="mb-10 text-center">
+        <SectionTitle as="h1">
+          <SectionTitleHighlight>{PLAN_CARD_COPY.pageTitle}</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+
+      <PlanBody />
+    </div>
+  );
+}
+
+/**
  * The member's plan and every activation behind it. The view owns the guard
  * (as the other `/account` children do), so the document is a data-free shell
  * and a guest is pointed at sign-in rather than at an empty history.
  */
-export function PlanView() {
+function PlanBody() {
   const { user, isLoading: sessionLoading } = useSession();
   const { plan, loading, failed, reload } = useMyPlan(Boolean(user));
 

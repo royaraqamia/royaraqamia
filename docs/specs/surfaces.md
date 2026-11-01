@@ -21,8 +21,14 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `notes` | `/notes` | local-store | store | outbox | precached | remote | `product-offline-render.spec.ts`<br>`notes-offline.spec.ts`<br>`notes.spec.ts` | `paint:notes` |  |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | bundled | `quran-reader.spec.ts` |  | #559 |
 | `athkar` | `/athkar` | static | swr | none | precached | remote | `athkar.spec.ts` |  |  |
-| `account-owned` | `/account`<br>`/account/links`<br>`/account/posts`<br>`/account/submissions` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
-| `account-server` | `/account/plan`<br>`/account/connected-apps`<br>`/account/faq`<br>`/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account` | `/account` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
+| `account-links` | `/account/links` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
+| `account-posts` | `/account/posts` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
+| `account-submissions` | `/account/submissions` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
+| `account-plan` | `/account/plan` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account-connected-apps` | `/account/connected-apps` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account-faq` | `/account/faq` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account-news` | `/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-changelog` | `/account/changelog` | static | swr | none | swr | remote | _ungated_ |  | #663 |
 | `notifications` | `/notifications` | server | needs-connection | none | swr | remote | _ungated_ |  |  |
 | `community` | `/community` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |
