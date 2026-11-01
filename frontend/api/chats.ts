@@ -4,6 +4,7 @@ import type {
   ChatMessagePage,
   ChatMessageSendInput,
   ChatPeer,
+  ChatPreview,
   ChatThread,
 } from '@/shared/contracts/chat';
 import { request } from '@/frontend/transport/http';
@@ -162,6 +163,32 @@ export async function searchChatMembers(query: string): Promise<ChatPeer[]> {
     { cache: 'no-store' }
   );
   return result.members ?? [];
+}
+
+/** The pre-chat screen: the member a handle names, and the thread already open. */
+export async function getChatPreview(username: string): Promise<ChatPreview> {
+  return request<{ success: boolean } & ChatPreview>(
+    `/api/chats/preview?to=${encodeURIComponent(username)}`,
+    { cache: 'no-store' }
+  );
+}
+
+/** The requester takes a pending request back; it closes for both sides. */
+export async function withdrawChatRequest(id: string): Promise<ChatOkResponse> {
+  return request<ChatOkResponse>(`/api/chats/${id}/withdraw`, { method: 'POST' });
+}
+
+/** Ask again on a closed thread: the same conversation goes back to waiting. */
+export async function requestChatThread(id: string): Promise<ChatOkResponse> {
+  return request<ChatOkResponse>(`/api/chats/${id}/request`, { method: 'POST' });
+}
+
+/** The members the caller has blocked, with their public face attached. */
+export async function getBlockedChatMembers(): Promise<ChatPeer[]> {
+  const result = await request<{ success: boolean; blocked?: ChatPeer[] }>('/api/chats/blocks', {
+    cache: 'no-store',
+  });
+  return result.blocked ?? [];
 }
 
 /**

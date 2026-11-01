@@ -8,10 +8,23 @@ import {
   getChatMessages,
   getChatThread,
   markChatRead,
+  requestChatThread,
+  respondToChat,
   sendChatMessage,
   subscribeToChatThread,
+  unblockChatUser,
+  withdrawChatRequest,
 } from '@/frontend/api/chats';
 import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+
+/**
+ * A refused write is a sentence, not an unhandled rejection: the buttons that
+ * call these answer a click, and a click that silently does nothing reads as a
+ * broken screen.
+ */
+function failureOf(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export interface ChatThreadState {
   thread: ChatThread | null;
@@ -25,6 +38,11 @@ export interface ChatThreadState {
   send: (body: string) => Promise<boolean>;
   edit: (messageId: string, body: string) => Promise<boolean>;
   remove: (messageId: string) => Promise<boolean>;
+  /** Answer a request, withdraw one, ask again, or lift a block. `null` = done. */
+  respond: (answer: 'accept' | 'decline') => Promise<string | null>;
+  withdraw: () => Promise<string | null>;
+  request: () => Promise<string | null>;
+  unblock: (peerId: string) => Promise<string | null>;
 }
 
 /**
@@ -142,6 +160,41 @@ export function useChatThread(conversationId: string): ChatThreadState {
     return true;
   }, []);
 
+  /** Every lifecycle write refreshes: the screen is derived from the thread. */
+  const act = useCallback(
+    async (run: () => Promise<{ success: boolean; error?: string }>, fallback: string) => {
+      try {
+        const result = await run();
+        await refresh();
+        return result.success ? null : (result.error ?? fallback);
+      } catch (error) {
+        return failureOf(error, fallback);
+      }
+    },
+    [refresh]
+  );
+
+  const respond = useCallback(
+    (answer: 'accept' | 'decline') =>
+      act(() => respondToChat(conversationId, answer), 'تعذّر تنفيذ الطلب'),
+    [act, conversationId]
+  );
+
+  const withdraw = useCallback(
+    () => act(() => withdrawChatRequest(conversationId), 'تعذّر إلغاء الطلب'),
+    [act, conversationId]
+  );
+
+  const request = useCallback(
+    () => act(() => requestChatThread(conversationId), 'تعذّر إرسال الطلب'),
+    [act, conversationId]
+  );
+
+  const unblock = useCallback(
+    async (peerId: string) => act(() => unblockChatUser(peerId), 'تعذّر إلغاء الحظر'),
+    [act]
+  );
+
   return {
     thread,
     messages,
@@ -154,5 +207,9 @@ export function useChatThread(conversationId: string): ChatThreadState {
     send,
     edit,
     remove,
+    respond,
+    withdraw,
+    request,
+    unblock,
   };
 }

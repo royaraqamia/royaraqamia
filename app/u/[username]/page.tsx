@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { FileText } from 'lucide-react';
+import { FileText, MessageCircle } from 'lucide-react';
 import { loadCommunityMember } from '@/backend/loaders/community';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -75,6 +76,13 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 {member.bio}
               </p>
             )}
+            <Link
+              href={`/chats/new?to=${encodeURIComponent(member.username)}`}
+              className="group/hc relative mt-5 inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-6 text-sm font-bold text-white shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] transition-safe duration-300 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500"
+            >
+              <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
+              مراسلة
+            </Link>
           </div>
         </div>
       </header>
