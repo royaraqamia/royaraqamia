@@ -14,7 +14,6 @@ import {
   GraduationCap,
   Link2,
   Megaphone,
-  MessagesSquare,
   SquarePen,
   X,
 } from 'lucide-react';
@@ -22,7 +21,9 @@ import {
 import type { NotificationWithMeta } from '@/shared/contracts/notifications';
 import { cn } from '@/frontend/shared/cn';
 import { useNotifications } from '@/frontend/state/NotificationContext';
+import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useSession } from '@/frontend/state/session-provider';
+import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
 import { PushNotificationToggle } from '@/frontend/ui/shared/push-notification-toggle';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { notificationTarget } from './notification-target';
@@ -61,11 +62,13 @@ function tabOf(_notification: NotificationWithMeta): TabId {
 }
 
 /**
- * The tab the page opens on when the URL does not name one: the tab holding the
- * newest unread row, and Chats when nothing in the feed is unread. "Newest" is
- * the row order the feed already arrives in, so no separate sort.
+ * The tab the page opens on when the URL does not name one: an unread message
+ * makes it Chats, then a tab holding the newest unread alert, and Chats when
+ * nothing in the feed is unread. "Newest" is the row order the feed already
+ * arrives in, so no separate sort.
  */
-function defaultTab(notifications: NotificationWithMeta[]): TabId {
+function defaultTab(notifications: NotificationWithMeta[], unreadChats: number): TabId {
+  if (unreadChats > 0) return 'chats';
   const newestUnread = notifications.find((notification) => !notification.is_read);
   return newestUnread ? tabOf(newestUnread) : 'chats';
 }
@@ -77,6 +80,7 @@ export function NotificationsView() {
   const searchParams = useSearchParams();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
+  const chats = useChatThreads(Boolean(user));
 
   const baseId = useId();
   const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
@@ -88,16 +92,18 @@ export function NotificationsView() {
   // Until the feed answers, the page cannot tell Alerts from Chats, so it paints
   // the frame and a loading panel instead of a tab that is about to change.
   const activeTab: TabId | null =
-    requestedTab ?? chosen ?? (settled ? defaultTab(notifications) : null);
+    requestedTab ?? chosen ?? (settled ? defaultTab(notifications, chats.unreadCount) : null);
 
   /**
    * The badge on each tab. Alerts carries the server's unread count rather than a
    * count of the rows on screen: the feed is the newest 20, and a badge that
    * shrinks because older rows fell off the list would disagree with the bell.
+   * Chats is the sum of its threads' unread messages, from the same read that
+   * paints the list.
    */
   const unreadByTab = useMemo<Record<TabId, number>>(
-    () => ({ chats: 0, alerts: unreadCount }),
-    [unreadCount]
+    () => ({ chats: chats.unreadCount, alerts: unreadCount }),
+    [chats.unreadCount, unreadCount]
   );
 
   const selectTab = useCallback(
@@ -227,12 +233,7 @@ export function NotificationsView() {
             <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
           </PanelState>
         ) : activeTab === 'chats' ? (
-          <PanelState icon={<MessagesSquare size={24} />}>
-            <p className="text-sm font-bold text-foreground">لا توجد محادثات بعد</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              ستظهر هنا محادثاتك عندما يبدأ التَّواصل.
-            </p>
-          </PanelState>
+          <ChatsPanel />
         ) : notifications.length === 0 ? (
           <PanelState icon={<Bell size={24} />}>
             <p className="text-sm font-bold text-foreground">لا توجد إشعارات</p>

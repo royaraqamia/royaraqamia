@@ -30,6 +30,8 @@ export interface PublicUsersRepository {
   search(query: string, limit: number): Promise<PublicUser[]>;
   getByUsername(username: string): Promise<PublicUser | null>;
   getById(id: string): Promise<PublicUser | null>;
+  /** Several members in one read, for a chat thread's roster. */
+  getMany(ids: string[]): Promise<PublicUser[]>;
 }
 
 export function createPublicUsersRepository(
@@ -107,6 +109,19 @@ export function createPublicUsersRepository(
 
       if (error && !isNotFoundError(error)) throw error;
       return (data as PublicUser | null) ?? null;
+    },
+
+    async getMany(ids): Promise<PublicUser[]> {
+      const unique = [...new Set(ids)];
+      if (unique.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('users')
+        .select(PUBLIC_USER_COLUMNS)
+        .in('id', unique);
+
+      if (error) throw error;
+      return (data ?? []) as PublicUser[];
     },
   });
 }
