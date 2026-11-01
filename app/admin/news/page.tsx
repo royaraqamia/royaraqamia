@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Newspaper, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { decideNewsSourceRequest, getAdminNewsSourceRequests } from '@/frontend/api/news';
@@ -149,11 +149,7 @@ export default function AdminNewsSourcesPage() {
 
   return (
     <div>
-      <AdminPageHeader
-        icon={Newspaper}
-        title="مصادر الأخبار"
-        description="ما لم يستطع النظام تحويله يظهر هنا. الصق له خلاصة RSS أو Atom، واختر وجهته: قائمة القارئ وحدها (الافتراضيّ)، أو القائمة العامّة التي يراها الجميع. أما ما يُحلّ تلقائيًّا فيُضاف إلى قائمة صاحبه دون مرور بهذه الصفحة."
-      />
+      <AdminPageHeader title="مصادر الأخبار" />
 
       <div role="group" aria-label="تصفية حسب الحالة" className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((filter) => (
