@@ -60,6 +60,17 @@ test here.
   one, and a mixed bulk batch stamps only the drafts (#552).
 - `anon` cannot execute `publish_post`.
 
+`plan_reads_test.sql`:
+
+- `get_owned_item_states` answers for a Free member, one row per `plan_limits` row, and every
+  `plan_limits` key has a branch in `private.owned_item_count` — the read that broke
+  `/account/plan` for every account when the switch lost `mcp_connected_apps`.
+- An Admin's owned-item caps read as the unlimited placeholder and `get_usage_counters` reports
+  `unlimited`.
+- `chat_agent_allowance` answers an Admin as `pro` with the Pro cap, a live Pro activation as
+  `pro`, and a Free member as `free` with no allowance.
+- `record_usage` lets an Admin's assistant turn through and still refuses a Free member's.
+
 In `rls_authorization_test.sql` every write attempt is expected to be _refused_, so a failed
 rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
 cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
@@ -201,6 +212,10 @@ verified. The pgTAP harness around them still needs `supabase test db`.
 and its `insert … on conflict (user_id, client_id)` planned against the linked project inside a
 rolled-back transaction, and the deterministic `client_id` expression was evaluated there. The
 fixtures (an `auth.users` row per owner, an expense list at the cap) still need a local stack.
+
+`plan_reads_test.sql` was rehearsed against the linked project inside a rolled-back transaction
+(the two function bodies, every assertion's arithmetic and the Admin exemption), so only the
+pgTAP harness around it needs `supabase test db`.
 
 `chats_test.sql` (#843) is in the same position: no Docker on the writing machine, so the guard, the
 policy and the fixtures are unrun. Its shapes mirror `plan_cap_enforcement_test.sql` (replica-role
