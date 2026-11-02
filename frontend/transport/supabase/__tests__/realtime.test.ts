@@ -4,7 +4,10 @@ const { createClientMock } = vi.hoisted(() => ({ createClientMock: vi.fn() }));
 
 vi.mock('@/frontend/transport/supabase/client', () => ({ createClient: createClientMock }));
 
-import { subscribeToPostgresChanges } from '@/frontend/transport/supabase/realtime';
+import {
+  subscribeToPostgresChanges,
+  joinBroadcastChannel,
+} from '@/frontend/transport/supabase/realtime';
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -175,5 +178,114 @@ describe('subscribeToPostgresChanges', () => {
     await flush();
 
     expect(() => stop()).not.toThrow();
+  });
+});
+
+/** A client whose channel can be told it has joined, as Realtime does. */
+function fakeBroadcastSupabase() {
+  const builder = { on: vi.fn(), subscribe: vi.fn(), send: vi.fn() };
+  builder.on.mockReturnValue(builder);
+  builder.subscribe.mockReturnValue(builder);
+  builder.send.mockReturnValue('ok');
+
+  const channel = vi.fn(() => builder);
+  const removeChannel = vi.fn();
+
+  return { supabase: { channel, removeChannel }, channel, builder, removeChannel };
+}
+
+/** The status callback Realtime calls when the topic is joined or refused. */
+function statusOf(builder: ReturnType<typeof fakeBroadcastSupabase>['builder']) {
+  return builder.subscribe.mock.calls[0]?.[0] as (status: string) => void;
+}
+
+describe('joinBroadcastChannel', () => {
+  const handlers = {
+    typing: vi.fn(),
+    stop: vi.fn(),
+  };
+  const BROADCAST = { topic: 'chat:c-1', handlers };
+
+  it('joins the topic as a private channel and binds each event', async () => {
+    const fake = fakeBroadcastSupabase();
+    createClientMock.mockReturnValue(Promise.resolve(fake.supabase));
+
+    joinBroadcastChannel(BROADCAST);
+    await flush();
+
+    expect(fake.channel).toHaveBeenCalledWith('chat:c-1', { config: { private: true } });
+    expect(fake.builder.on.mock.calls.map(([type, config]) => [type, config])).toEqual([
+      ['broadcast', { event: 'typing' }],
+      ['broadcast', { event: 'stop' }],
+    ]);
+  });
+
+  it('hands the payload of a received event to its handler', async () => {
+    const fake = fakeBroadcastSupabase();
+    createClientMock.mockReturnValue(Promise.resolve(fake.supabase));
+
+    joinBroadcastChannel(BROADCAST);
+    await flush();
+
+    const typing = fake.builder.on.mock.calls[0]?.[2] as (message: unknown) => void;
+    typing({ type: 'broadcast', event: 'typing', payload: { userId: 'peer-2' } });
+
+    expect(handlers.typing).toHaveBeenCalledWith({ userId: 'peer-2' });
+  });
+
+  it('waits for the join before sending, then flushes what was queued', async () => {
+    const fake = fakeBroadcastSupabase();
+    createClientMock.mockReturnValue(Promise.resolve(fake.supabase));
+
+    const channel = joinBroadcastChannel(BROADCAST);
+    await flush();
+
+    channel.send('typing', { userId: 'me' });
+    expect(fake.builder.send).not.toHaveBeenCalled();
+
+    statusOf(fake.builder)('SUBSCRIBED');
+    expect(fake.builder.send).toHaveBeenCalledWith({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId: 'me' },
+    });
+  });
+
+  it('sends straight through once joined, and drops what comes after leave', async () => {
+    const fake = fakeBroadcastSupabase();
+    createClientMock.mockReturnValue(Promise.resolve(fake.supabase));
+
+    const channel = joinBroadcastChannel(BROADCAST);
+    await flush();
+    statusOf(fake.builder)('SUBSCRIBED');
+
+    channel.send('stop');
+    expect(fake.builder.send).toHaveBeenCalledWith({
+      type: 'broadcast',
+      event: 'stop',
+      payload: {},
+    });
+
+    channel.leave();
+    expect(fake.removeChannel).toHaveBeenCalledWith(fake.builder);
+
+    channel.send('typing');
+    expect(fake.builder.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('is safe to leave twice, and before the client resolves', async () => {
+    const client = deferred<Supabase>();
+    createClientMock.mockReturnValue(client.promise);
+
+    const channel = joinBroadcastChannel(BROADCAST);
+    channel.leave();
+    channel.leave();
+
+    const fake = fakeBroadcastSupabase();
+    client.resolve(fake.supabase);
+    await flush();
+
+    expect(fake.channel).not.toHaveBeenCalled();
+    expect(fake.removeChannel).not.toHaveBeenCalled();
   });
 });

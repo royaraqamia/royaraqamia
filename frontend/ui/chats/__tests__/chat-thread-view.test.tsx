@@ -26,6 +26,11 @@ vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
   isChatAttachmentTooLarge: () => false,
 }));
 
+/** The typing channel is a broadcast under test elsewhere; here it is a seam. */
+vi.mock('@/frontend/state/chats/use-chat-typing', () => ({
+  useChatTyping: () => ({ typers: [], noteTyping: vi.fn(), stopTyping: vi.fn() }),
+}));
+
 const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
 
 /** The hook is under test elsewhere; here its writes are the seams. */

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
+import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
 import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
@@ -28,6 +29,7 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
 import { MemberPicker } from './member-picker';
+import { readReceiptOf, typingLabel } from './read-receipt';
 import {
   canEditChatMessage,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
@@ -114,6 +116,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
 
   const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
 
+  // The channel is joined only where someone can actually write: a thread this
+  // member cannot post in has no typing to draw and nothing to broadcast.
+  const { typers, noteTyping, stopTyping } = useChatTyping(
+    conversationId,
+    state === 'write' ? (user?.id ?? null) : null
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
@@ -138,12 +147,14 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   }
 
   const counterpart = counterpartOf(thread);
+  const typing = typingLabel(thread, typers);
 
   async function handleSend() {
     if (isSending) return;
     if (await send(draft, files)) {
       setDraft('');
       setFiles([]);
+      stopTyping();
     }
   }
 
@@ -313,21 +324,32 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         {messages.length === 0 ? (
           <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
         ) : (
-          messages.map((message, index) => (
-            <div key={message.id} className="flex w-full flex-col gap-2">
-              {isNewDay(messages[index - 1], message) && <DaySeparator at={message.createdAt} />}
-              <MessageRow
-                message={message}
-                mine={Boolean(user && message.senderId === user.id)}
-                onEdit={edit}
-                onDownload={(attachmentId) => void handleDownload(attachmentId)}
-                onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
-              />
-            </div>
-          ))
+          messages.map((message, index) => {
+            const mine = Boolean(user && message.senderId === user.id);
+            return (
+              <div key={message.id} className="flex w-full flex-col gap-2">
+                {isNewDay(messages[index - 1], message) && <DaySeparator at={message.createdAt} />}
+                <MessageRow
+                  message={message}
+                  mine={mine}
+                  receipt={readReceiptOf(thread, message, mine)}
+                  onEdit={edit}
+                  onDownload={(attachmentId) => void handleDownload(attachmentId)}
+                  onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
+                />
+              </div>
+            );
+          })
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Who is writing, drawn from a broadcast that is never stored (#816). */}
+      {typing && (
+        <p aria-live="polite" className="px-4 pb-1 text-[11px] font-medium text-muted-foreground">
+          {typing}
+        </p>
+      )}
 
       <ThreadFooter
         thread={thread}
@@ -337,6 +359,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         files={files}
         isSending={isSending}
         onDraft={setDraft}
+        onTyping={noteTyping}
         onAddFiles={addFiles}
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
@@ -723,6 +746,7 @@ function ThreadFooter({
   files,
   isSending,
   onDraft,
+  onTyping,
   onAddFiles,
   onRemoveFile,
   onSend,
@@ -739,6 +763,8 @@ function ThreadFooter({
   files: File[];
   isSending: boolean;
   onDraft: (value: string) => void;
+  /** A keystroke: the typing channel throttles, so every change may call this. */
+  onTyping: () => void;
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
   onSend: () => void;
@@ -813,7 +839,12 @@ function ThreadFooter({
 
           <textarea
             value={draft}
-            onChange={(event) => onDraft(event.target.value)}
+            onChange={(event) => {
+              onDraft(event.target.value);
+              // A draft that is being typed says so; a cleared one says nothing,
+              // and the reader's own five-second window closes it.
+              if (event.target.value.trim()) onTyping();
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -943,12 +974,15 @@ function DaySeparator({ at }: { at: string }) {
 function MessageRow({
   message,
   mine,
+  receipt,
   onEdit,
   onDownload,
   onDelete,
 }: {
   message: ChatMessage;
   mine: boolean;
+  /** Who has read this line, or `null` when nobody has reached it yet (#816). */
+  receipt: string | null;
   onEdit: (id: string, body: string) => Promise<boolean>;
   onDownload: (attachmentId: string) => void;
   onDelete: (id: string) => void;
@@ -1037,6 +1071,7 @@ function MessageRow({
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
         <span>{calculateTimeAgo(message.createdAt)}</span>
         {message.editedAt && !deleted && <span>· عُدّلت</span>}
+        {receipt && <span>· {receipt}</span>}
         {mine && !deleted && (
           <>
             {editable && (

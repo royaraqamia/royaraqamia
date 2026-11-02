@@ -12,6 +12,7 @@ import {
   requestChatThread,
   respondToChat,
   sendChatMessage,
+  subscribeToChatRoster,
   subscribeToChatThread,
   unblockChatUser,
   withdrawChatRequest,
@@ -56,9 +57,9 @@ export interface ChatThreadState {
 /**
  * One open thread: its header, its first page and the writes it owns.
  *
- * The read watermark is stamped on open and whenever a new line arrives while
- * the thread is on screen, which is what makes the list's badge agree with what
- * the reader has actually seen.
+ * The read watermark is stamped on open, on a new line that arrives while the
+ * thread is on screen, and when the window regains focus — never from a tab the
+ * reader is not looking at, which is what keeps the list's badge honest (#816).
  */
 export function useChatThread(conversationId: string): ChatThreadState {
   const [thread, setThread] = useState<ChatThread | null>(null);
@@ -67,7 +68,24 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The newest line the screen holds, stamped or not. */
+  const newestRef = useRef<string | null>(null);
+  /** The newest line this tab has actually shown the reader. */
   const markedRef = useRef<string | null>(null);
+
+  /**
+   * A hidden tab has shown nobody anything, so it stamps nothing: the watermark
+   * is what the reader has seen, not what the browser happened to fetch.
+   */
+  const markSeen = useCallback(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+
+    const newest = newestRef.current;
+    if (!newest || newest === markedRef.current) return;
+
+    markedRef.current = newest;
+    void markChatRead(conversationId);
+  }, [conversationId]);
 
   const refresh = useCallback(async () => {
     try {
@@ -81,26 +99,53 @@ export function useChatThread(conversationId: string): ChatThreadState {
       setCursor(page.nextCursor);
 
       if (nextThread) {
-        const newest = page.messages[page.messages.length - 1]?.id ?? null;
-        if (newest !== markedRef.current) {
-          markedRef.current = newest;
-          void markChatRead(conversationId);
-        }
+        newestRef.current = page.messages[page.messages.length - 1]?.id ?? null;
+        markSeen();
       }
     } catch {
       setThread(null);
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId]);
+  }, [conversationId, markSeen]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  /**
+   * Coming back to the tab is what stamps what arrived while it was in the
+   * background — and it is also when the peer's «قُرئت» catches up.
+   */
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') markSeen();
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [markSeen]);
+
   useEffect(
     () =>
       subscribeToChatThread(conversationId, () => {
+        void refresh();
+      }),
+    [conversationId, refresh]
+  );
+
+  // A receipt is a peer's watermark moving, which is a roster write rather than
+  // a message; without this the sender waits for the peer's next line to see it.
+  useEffect(
+    () =>
+      subscribeToChatRoster(conversationId, () => {
         void refresh();
       }),
     [conversationId, refresh]
