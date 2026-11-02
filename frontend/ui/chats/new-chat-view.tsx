@@ -152,11 +152,6 @@ export function NewChatView() {
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground/80">
           لا رسائل بعد. أرسل طلب محادثة، وسيتمكّن كل منكما من الكتابة بعد أن يقبله.
         </p>
-        {error && (
-          <p role="alert" className="text-xs font-medium text-destructive">
-            {error}
-          </p>
-        )}
       </div>
 
       <div className="border-t border-border/40 p-3">

@@ -47,7 +47,7 @@ function refExists(ref) {
 }
 
 function hasCopyNote(sha) {
-  return tryGit(['notes', '--ref=landed-copies', 'show', sha]).ok;
+  return tryGit(['notes', `--ref=${NOTES_REF}`, 'show', sha]).ok;
 }
 
 /** The `(#N)` a subject ends with, if any. */
@@ -124,7 +124,7 @@ export function main(argv = process.argv.slice(2), log = console.log) {
 
 /** Tags `sha` as a landed copy, so a branch from it can be told apart later. */
 export function markCopy(sha, number) {
-  execFileSync('git', ['notes', '--ref=landed-copies', 'add', '-f', '-m', `PR #${number}`, sha], {
+  execFileSync('git', ['notes', `--ref=${NOTES_REF}`, 'add', '-f', '-m', `PR #${number}`, sha], {
     stdio: 'ignore',
   });
 }
