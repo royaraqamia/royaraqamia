@@ -98,6 +98,20 @@ the contract is `ApiError.InvalidContract` naming the field, not an exception on
 thread. The Kotlin Gradle plugin is pinned in `android/build.gradle` rather than `variables.gradle`,
 because a buildscript classpath is resolved before that file is applied.
 
+**Read on a device (2026-11-02).** The pipeline was exercised rather than described: a debug APK
+built from `1331a204` was installed on the reference phone (`RMX3195`, Android 13 / API 33), the
+test account signed in through the app's own card (`GET` to GoTrue, no browser), and
+`/account/plan` was opened from the phone's own deep link. `ShellActivity` dispatched the route to
+`PlanScreen`, whose numbers can only come from the server body: `GET /api/me/plan` over the
+generated `MyPlanResponse` rendered `3 / 50` habits, `4 / 50` expenses, `4 / 50` short links,
+`4 / 10` MCP apps, the plan's expiry (`10 رمضان 1458 هـ`) and the empty activation history. The
+same account's bearer fetched the same route outside the app and returned those counters
+(`used: 3, 4, 4`; `mcp_connected_apps.used: 4`; `plan: "pro"`; `activations: []`), so the read is
+the route's answer and not a fixture. That closes the last criterion of
+[#648](https://github.com/royaraqamia/royaraqamia/issues/648); the typed-failure half is
+`ContractCodecTest`'s, which holds a missing field, an out-of-range value and a non-JSON body to
+`ApiError.InvalidContract`.
+
 **Wired today (#647).** Compose is a dependency of the app module: the BOM is pinned in
 `android/variables.gradle`, the compiler plugin sits beside the Kotlin plugin in
 `android/build.gradle`, and `android/app/src/main/kotlin/com/royaraqamia/app/theme/` holds the theme
