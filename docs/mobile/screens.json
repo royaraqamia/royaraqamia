@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "One row per surface in perf/surfaces.json: either the Kotlin screen that draws it, or the reason the app does not have one. docs/mobile/screens.md is generated from this file by npm run check:screens, which fails on a surface with no row and on a *Screen.kt with no row. The rules: docs/mobile/two-clients.md (#665).",
+  "notes": "One row per surface in perf/surfaces.json: either the Kotlin screen that draws it, or the reason the app does not have one. A row may also be a port that is switched off (\"enabled\": false plus a reason) - the screen exists in the tree and the shell hands the route to the document until the port is the same screen as the page (#872, ADR-0117). docs/mobile/screens.md is generated from this file by npm run check:screens, which fails on a surface with no row and on a *Screen.kt with no row. The rules: docs/mobile/two-clients.md (#665).",
   "screens": [
     {
       "surface": "chats",
@@ -19,11 +19,15 @@
     },
     {
       "surface": "habitflow",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/habitflow/HabitflowScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "spendtrack",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "linksnap",
@@ -87,11 +91,15 @@
     },
     {
       "surface": "account-plan",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "account-connected-apps",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "account-faq",
@@ -125,7 +133,9 @@
     },
     {
       "surface": "community",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityFeedScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityFeedScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "community-post",
@@ -139,15 +149,21 @@
     },
     {
       "surface": "rates",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "verify",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "verify-code",
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeScreen.kt"
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "profile",

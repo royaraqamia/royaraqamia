@@ -29,6 +29,12 @@ ADR-0088.
 > A manual launch for a runbook step therefore starts `.shell.ShellActivity`; starting
 > `.MainActivity` directly still opens the document, which is what the shell drills used to drive
 > (`npm run android:drill` is retired with the WebView drain, [#651](https://github.com/royaraqamia/royaraqamia/issues/651)).
+>
+> **Since #872 the document is every destination.** `NativeSurfaces` is empty, so the shell hands
+> every route over - signed in or not - and is only the launch frame, the update card and the
+> hand-off. A native screen returns one route at a time, switched on by the change that makes it the
+> same screen as the page (`docs/mobile/screens.md` marks the ports `(off)`); the decision and its
+> costs are [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md).
 
 ## Prerequisites
 
