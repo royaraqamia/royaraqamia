@@ -46,14 +46,26 @@ export type Database = {
       app_settings: {
         Row: {
           admin_emails: string[];
+          chat_attachment_daily_bytes: number;
+          chat_attachment_file_bytes: number;
+          chat_attachment_member_bytes: number;
+          chat_attachment_project_bytes: number;
           id: boolean;
         };
         Insert: {
           admin_emails?: string[];
+          chat_attachment_daily_bytes?: number;
+          chat_attachment_file_bytes?: number;
+          chat_attachment_member_bytes?: number;
+          chat_attachment_project_bytes?: number;
           id?: boolean;
         };
         Update: {
           admin_emails?: string[];
+          chat_attachment_daily_bytes?: number;
+          chat_attachment_file_bytes?: number;
+          chat_attachment_member_bytes?: number;
+          chat_attachment_project_bytes?: number;
           id?: boolean;
         };
         Relationships: [];
@@ -2569,6 +2581,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      chat_attachment_allowance: {
+        Args: Record<string, never>;
+        Returns: {
+          file_bytes: number;
+          today_used_bytes: number;
+          today_limit_bytes: number;
+          total_used_bytes: number;
+          total_limit_bytes: number;
+          project_used_bytes: number;
+          project_limit_bytes: number;
+        }[];
+      };
+      chat_attachment_bytes_used: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
       list_chat_threads: {
         Args: Record<string, never>;
         Returns: {

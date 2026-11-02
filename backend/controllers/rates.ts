@@ -1,27 +1,14 @@
-import { timingSafeEqual } from 'node:crypto';
 import * as Sentry from '@sentry/nextjs';
-import { env } from '@/backend/config/env';
 import { createRatesService } from '@/backend/config/rates';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { isCronAuthorized } from '@/backend/shared/cron-auth';
 import { RATES_MUTATION_TAGS } from '@/backend/shared/rates-cache-tags';
 import { NO_STORE, PUBLIC_CACHEABLE } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { RateSeriesQuerySchema } from '@/shared/contracts/rates';
 
-function isAuthorized(headers: Headers): boolean {
-  const expected = env.cronSecret;
-  const supplied = headers.get('authorization') ?? '';
-  const token = supplied.startsWith('Bearer ') ? supplied.slice('Bearer '.length) : '';
-  return (
-    Boolean(expected) &&
-    token.length > 0 &&
-    token.length === expected!.length &&
-    timingSafeEqual(Buffer.from(token), Buffer.from(expected!))
-  );
-}
-
 export async function refreshRates(headers: Headers): Promise<HttpResult> {
-  if (!isAuthorized(headers)) {
+  if (!isCronAuthorized(headers)) {
     return jsonResult(401, { success: false, error: 'غير مصرح' }, { headers: NO_STORE });
   }
 

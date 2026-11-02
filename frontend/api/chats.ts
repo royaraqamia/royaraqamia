@@ -53,6 +53,14 @@ interface ChatOkResponse {
   error?: string;
 }
 
+interface ChatAttachmentResponse {
+  success: boolean;
+  url?: string;
+  fileName?: string;
+  inline?: boolean;
+  error?: string;
+}
+
 export async function getChatThreads(): Promise<ChatConversationSummary[]> {
   const result = await request<ChatThreadsResponse>('/api/chats', { cache: 'no-store' });
   return result.threads ?? [];
@@ -106,6 +114,24 @@ export async function editChatMessage(
 
 export async function deleteChatMessage(messageId: string): Promise<ChatOkResponse> {
   return request<ChatOkResponse>(`/api/chats/messages/${messageId}`, { method: 'DELETE' });
+}
+
+/**
+ * One attachment's short-lived signed URL. The client never holds the object
+ * path: it names the thread and the attachment, and the server answers a URL a
+ * minute long — anything else is a file the browser was told to download.
+ */
+export async function getChatAttachmentUrl(
+  conversationId: string,
+  attachmentId: string
+): Promise<{ url: string; fileName: string; inline: boolean } | null> {
+  const result = await request<ChatAttachmentResponse>(
+    `/api/chats/${conversationId}/attachments/${attachmentId}`,
+    { cache: 'no-store' }
+  );
+
+  if (!result.success || !result.url) return null;
+  return { url: result.url, fileName: result.fileName ?? '', inline: result.inline === true };
 }
 
 export async function respondToChat(

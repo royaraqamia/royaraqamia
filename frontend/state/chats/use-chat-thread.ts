@@ -15,7 +15,11 @@ import {
   unblockChatUser,
   withdrawChatRequest,
 } from '@/frontend/api/chats';
-import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import {
+  removeChatAttachmentObjects,
+  uploadChatAttachment,
+} from '@/frontend/transport/supabase/chat-attachments';
+import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
 
 /**
  * A refused write is a sentence, not an unhandled rejection: the buttons that
@@ -35,7 +39,7 @@ export interface ChatThreadState {
   hasOlder: boolean;
   refresh: () => Promise<void>;
   loadOlder: () => Promise<void>;
-  send: (body: string) => Promise<boolean>;
+  send: (body: string, files?: File[]) => Promise<boolean>;
   edit: (messageId: string, body: string) => Promise<boolean>;
   /** The tombstone's refusal sentence, or `null` once the message is gone. */
   remove: (messageId: string) => Promise<string | null>;
@@ -106,27 +110,50 @@ export function useChatThread(conversationId: string): ChatThreadState {
     setCursor(page.nextCursor);
   }, [conversationId, cursor]);
 
+  /**
+   * Files go up first, then the message that describes them. A failed send
+   * removes what it uploaded, so a refusal leaves no object behind; the daily
+   * sweep is the backstop for the cases a browser cannot clean up.
+   */
   const send = useCallback(
-    async (body: string) => {
+    async (body: string, files: File[] = []) => {
       const trimmed = body.trim();
-      if (!trimmed) return false;
+      if (!trimmed && files.length === 0) return false;
 
       setIsSending(true);
       setError(null);
+
+      const uploaded: ChatAttachmentInput[] = [];
       try {
-        const result = await sendChatMessage(conversationId, { body: trimmed });
+        for (const file of files) {
+          uploaded.push(await uploadChatAttachment(conversationId, file));
+        }
+
+        const result = await sendChatMessage(conversationId, {
+          ...(trimmed ? { body: trimmed } : {}),
+          ...(uploaded.length > 0 ? { attachments: uploaded } : {}),
+        });
+
         if (!result.success || !result.message) {
+          await removeChatAttachmentObjects(uploaded.map((attachment) => attachment.storagePath));
           setError(result.error ?? 'تعذّر إرسال الرسالة');
           return false;
         }
 
         setMessages((current) => [...current, result.message as ChatMessage]);
+        // The thread carries the quota, so the composer's reading of it is one
+        // refresh behind without this.
+        void refresh();
         return true;
+      } catch (error) {
+        await removeChatAttachmentObjects(uploaded.map((attachment) => attachment.storagePath));
+        setError(failureOf(error, 'تعذّر إرسال الرسالة'));
+        return false;
       } finally {
         setIsSending(false);
       }
     },
-    [conversationId]
+    [conversationId, refresh]
   );
 
   const edit = useCallback(async (messageId: string, body: string) => {

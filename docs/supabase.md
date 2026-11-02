@@ -137,6 +137,31 @@ not a review. See ADR 0040 (the check) and ADR 0041 (the apply).
 - Storage bucket changes
 - Data backfills over user tables
 
+## Attachment allowances (Free-plan period)
+
+Chat attachments are capped on the server while both providers are on Free: Supabase gives a
+project **1 GB of file storage in total** and Vercel Hobby caps CPU at 4 hours, and one 24 MB file
+would be 2.4% of that storage. Text is not the pressure point (~1 KB per message with its indexes),
+so the caps are on files (ADR-0113, #852).
+
+| Lever              | Free                                  | After Pro |
+| ------------------ | ------------------------------------- | --------- |
+| Per file           | 10 MB                                 | 25 MB     |
+| Per member per day | 50 MB, reset at Damascus midnight     | none      |
+| Per member total   | 100 MB                                | 1 GB      |
+| Project total      | 500 MB — files refuse, text continues | —         |
+
+- The four numbers are columns on the `app_settings` singleton (`chat_attachment_file_bytes`,
+  `…_daily_bytes`, `…_member_bytes`, `…_project_bytes`), so raising them after Pro is one `update`
+  — no deploy, no migration. `private.enforce_chat_attachment_quota` reads them on every insert and
+  answers `53400` with a distinct sentence per cap; `public.chat_attachment_allowance()` is what the
+  composer draws.
+- **The bucket is the exception**: Storage enforces `file_size_limit` from the bucket row, which
+  cannot read `app_settings`. Raising the per-file cap therefore needs a migration that updates
+  `storage.buckets` alongside the setting.
+- The 25 MB in `shared/contracts/chat.ts` (`CHAT_ATTACHMENT_MAX_BYTES`) is the absolute ceiling a
+  deployment may configure, not the effective cap.
+
 ## Operations
 
 - **Advisors:** Run `supabase_get_advisors` (security + performance) after schema changes

@@ -11,7 +11,22 @@ export const CHAT_GROUP_MEMBERS_MAX = 32;
 
 /** Per file, and the whole of one member's attachment storage. */
 export const CHAT_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
+/**
+ * The absolute ceiling a deployment may configure a member's storage to. The
+ * effective numbers are settings on the server while the project runs on a Free
+ * plan, and arrive with the thread (`ChatAttachmentQuota`), never from here.
+ */
 export const CHAT_ATTACHMENT_QUOTA_BYTES = 1024 * 1024 * 1024;
+
+/**
+ * The bucket a thread's files live in. Object paths are
+ * `{conversationId}/{uuid}/{fileName}`, so the conversation is the first folder
+ * and the storage policy can read it (ADR-0113).
+ */
+export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
+
+/** Attachments in one message: one bubble, five chips. */
+export const CHAT_ATTACHMENTS_PER_MESSAGE_MAX = 5;
 
 /** Mirrors the RLS window on `chat_messages`: after this, an edit is refused. */
 export const CHAT_EDIT_WINDOW_MS = 15 * 60 * 1000;
@@ -49,6 +64,33 @@ export interface ChatAttachment {
   fileName: string;
   mimeType: string;
   byteSize: number;
+}
+
+/**
+ * What the composer shows before a refusal happens. The numbers are settings on
+ * the server (Free-plan allowances: 10 MB per file, 50 MB a day, 100 MB per
+ * member, 500 MB across the project), so both clients read them rather than
+ * carrying them.
+ */
+export interface ChatAttachmentQuota {
+  /** The largest single file right now. */
+  fileBytes: number;
+  /** Since Damascus midnight — the app's day, and the one the trigger resets on. */
+  today: { usedBytes: number; limitBytes: number };
+  /** The caller's stored bytes, and the wall the database enforces. */
+  total: { usedBytes: number; limitBytes: number };
+  /** The project's own storage, so a member is not surprised by someone else's. */
+  project: { usedBytes: number; limitBytes: number };
+}
+
+/**
+ * An image is drawn; everything else is a file. SVG is an image by MIME and a
+ * script by behaviour, so it is a file here — the same rule the `/community`
+ * bucket applies to post images, one layer out (ADR-0113).
+ */
+export function chatAttachmentIsInlineImage(mimeType: string): boolean {
+  const normalized = mimeType.trim().toLowerCase();
+  return normalized.startsWith('image/') && normalized !== 'image/svg+xml';
 }
 
 export interface ChatMessage {
@@ -110,6 +152,8 @@ export interface ChatThread extends ChatConversationSummary {
   blockedByMe: boolean;
   /** True when the caller may post: an active member of an active thread. */
   canWrite: boolean;
+  /** What the caller has already stored, against the 1 GB the database enforces. */
+  attachmentQuota: ChatAttachmentQuota;
 }
 
 export interface ChatMessagePage {
@@ -157,7 +201,7 @@ export const ChatMessageSendSchema = z
     replyToId: z.string().uuid().optional().nullable(),
     attachments: z
       .array(ChatAttachmentInputSchema)
-      .max(5, 'خمسة مرفقات في الرسالة الواحدة')
+      .max(CHAT_ATTACHMENTS_PER_MESSAGE_MAX, 'خمسة مرفقات في الرسالة الواحدة')
       .optional(),
   })
   .refine((value) => Boolean(value.body?.trim()) || (value.attachments?.length ?? 0) > 0, {

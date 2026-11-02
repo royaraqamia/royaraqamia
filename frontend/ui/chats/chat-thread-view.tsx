@@ -2,19 +2,36 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Check, MoreVertical, Pencil, Send, Trash2 } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Download,
+  MoreVertical,
+  Paperclip,
+  Pencil,
+  Send,
+  Trash2,
+  X,
+} from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
 import { useSession } from '@/frontend/state/session-provider';
-import { blockChatUser, leaveChat, reportChat } from '@/frontend/api/chats';
+import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
+import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
 import { calculateTimeAgo } from '@/frontend/shared/format';
+import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
-import { canEditChatMessage, type ChatMessage, type ChatThread } from '@/shared/contracts/chat';
+import {
+  canEditChatMessage,
+  CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
+  type ChatMessage,
+  type ChatThread,
+} from '@/shared/contracts/chat';
 
 /**
  * What the bottom of the screen offers, derived from the thread's own state:
@@ -70,6 +87,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   } = useChatThread(conversationId);
   const { user } = useSession();
   const [draft, setDraft] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -109,9 +127,61 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const counterpart = counterpartOf(thread);
 
   async function handleSend() {
-    const line = draft.trim();
-    if (!line || isSending) return;
-    if (await send(line)) setDraft('');
+    if (isSending) return;
+    if (await send(draft, files)) {
+      setDraft('');
+      setFiles([]);
+    }
+  }
+
+  /**
+   * Files are checked before they are staged, so a refusal is immediate rather
+   * than a wasted upload: the file cap, the five-per-message cap, then the three
+   * allowances — today, the caller's own, and the project's.
+   */
+  function addFiles(picked: File[]) {
+    if (picked.length === 0) return;
+
+    const quota = thread?.attachmentQuota;
+    if (!quota) return;
+
+    if (picked.some((file) => isChatAttachmentTooLarge(file, quota.fileBytes))) {
+      setNotice(`حجم الملف يتجاوز ${formatAttachmentSize(quota.fileBytes)}، اختر ملفاً أصغر`);
+      return;
+    }
+    if (files.length + picked.length > CHAT_ATTACHMENTS_PER_MESSAGE_MAX) {
+      setNotice('خمسة مرفقات في الرسالة الواحدة');
+      return;
+    }
+
+    const staged = [...files, ...picked];
+    const stagedBytes = staged.reduce((sum, file) => sum + file.size, 0);
+
+    if (quota.today.usedBytes + stagedBytes > quota.today.limitBytes) {
+      setNotice('بلغت حدّ المرفقات اليوم، يعود غداً');
+      return;
+    }
+    if (quota.total.usedBytes + stagedBytes > quota.total.limitBytes) {
+      setNotice('مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات');
+      return;
+    }
+    if (quota.project.usedBytes + stagedBytes > quota.project.limitBytes) {
+      setNotice('مساحة مرفقات الموقع ممتلئة، حاول لاحقاً');
+      return;
+    }
+
+    setNotice(null);
+    setFiles(staged);
+  }
+
+  /** A chip asks the server for a URL a minute long, then hands it to the browser. */
+  async function handleDownload(attachmentId: string) {
+    const file = await getChatAttachmentUrl(conversationId, attachmentId);
+    if (!file) {
+      setNotice('تعذّر تجهيز الملف');
+      return;
+    }
+    window.location.assign(file.url);
   }
 
   /** Runs a dialog's action, keeping the dialog open with its spinner. */
@@ -207,6 +277,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                 message={message}
                 mine={Boolean(user && message.senderId === user.id)}
                 onEdit={edit}
+                onDownload={(attachmentId) => void handleDownload(attachmentId)}
                 onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
               />
             </div>
@@ -220,8 +291,11 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         state={state}
         counterpart={counterpart}
         draft={draft}
+        files={files}
         isSending={isSending}
         onDraft={setDraft}
+        onAddFiles={addFiles}
+        onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
         onAccept={() => setConfirm({ kind: 'accept' })}
         onDecline={() => setConfirm({ kind: 'decline' })}
@@ -458,8 +532,11 @@ function ThreadFooter({
   state,
   counterpart,
   draft,
+  files,
   isSending,
   onDraft,
+  onAddFiles,
+  onRemoveFile,
   onSend,
   onAccept,
   onDecline,
@@ -471,8 +548,11 @@ function ThreadFooter({
   state: ThreadState;
   counterpart: ReturnType<typeof counterpartOf>;
   draft: string;
+  files: File[];
   isSending: boolean;
   onDraft: (value: string) => void;
+  onAddFiles: (files: File[]) => void;
+  onRemoveFile: (index: number) => void;
   onSend: () => void;
   onAccept: () => void;
   onDecline: () => void;
@@ -480,39 +560,102 @@ function ThreadFooter({
   onRequest: () => void;
   onUnblock: () => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   if (state === 'write') {
+    const quota = thread.attachmentQuota;
+    const todayRemaining = Math.max(0, quota.today.limitBytes - quota.today.usedBytes);
+    const totalRemaining = Math.max(0, quota.total.limitBytes - quota.total.usedBytes);
+
     return (
       <form
         onSubmit={(event) => {
           event.preventDefault();
           onSend();
         }}
-        className="flex items-end gap-2 border-t border-border/40 p-3"
+        className="space-y-2 border-t border-border/40 p-3"
       >
-        <textarea
-          value={draft}
-          onChange={(event) => onDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              onSend();
-            }
-          }}
-          rows={1}
-          maxLength={4000}
-          placeholder="اكتب رسالة..."
-          aria-label="نص الرسالة"
-          className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-        />
-        <Button
-          type="submit"
-          variant="hero"
-          size="icon-sm"
-          aria-label="إرسال"
-          disabled={isSending || draft.trim().length === 0}
-        >
-          <Send size={16} />
-        </Button>
+        {files.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5">
+            {files.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="flex max-w-64 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
+              >
+                <Paperclip size={11} className="shrink-0" />
+                <span className="truncate">{file.name}</span>
+                <span className="shrink-0 text-muted-foreground/70">
+                  {formatAttachmentSize(file.size)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRemoveFile(index)}
+                  aria-label={`إزالة ${file.name}`}
+                  className="shrink-0 rounded p-0.5 hover:text-destructive"
+                >
+                  <X size={11} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(event) => {
+              onAddFiles(Array.from(event.target.files ?? []));
+              // Reset so picking the same file twice still fires a change.
+              event.target.value = '';
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="إرفاق ملف"
+            disabled={isSending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip size={16} />
+          </Button>
+
+          <textarea
+            value={draft}
+            onChange={(event) => onDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+            rows={1}
+            maxLength={4000}
+            placeholder="اكتب رسالة..."
+            aria-label="نص الرسالة"
+            className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+          />
+          <Button
+            type="submit"
+            variant="hero"
+            size="icon-sm"
+            aria-label="إرسال"
+            disabled={isSending || (draft.trim().length === 0 && files.length === 0)}
+          >
+            <Send size={16} />
+          </Button>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground/70">
+          {todayRemaining === 0
+            ? 'بلغت حدّ المرفقات اليوم، يعود غداً.'
+            : totalRemaining === 0
+              ? 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات.'
+              : `المتبقي اليوم: ${formatAttachmentSize(todayRemaining)} · إجمالاً: ${formatAttachmentSize(totalRemaining)}`}
+        </p>
       </form>
     );
   }
@@ -615,11 +758,13 @@ function MessageRow({
   message,
   mine,
   onEdit,
+  onDownload,
   onDelete,
 }: {
   message: ChatMessage;
   mine: boolean;
   onEdit: (id: string, body: string) => Promise<boolean>;
+  onDownload: (attachmentId: string) => void;
   onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -676,14 +821,27 @@ function MessageRow({
             </div>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap break-words">{message.body}</p>
+          message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>
         )}
 
         {message.attachments.length > 0 && !deleted && (
           <ul className="mt-2 space-y-1">
             {message.attachments.map((attachment) => (
-              <li key={attachment.id} className="truncate text-[11px] opacity-90">
-                {attachment.fileName}
+              <li key={attachment.id}>
+                {/* A chip, never a preview: no type is drawn inline (ADR-0113),
+                    and the download is the only action a file has. */}
+                <button
+                  type="button"
+                  onClick={() => onDownload(attachment.id)}
+                  className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
+                  aria-label={`تنزيل ${attachment.fileName}`}
+                >
+                  <Download size={12} className="shrink-0" />
+                  <span className="max-w-48 truncate">{attachment.fileName}</span>
+                  <span className="shrink-0 opacity-70">
+                    {formatAttachmentSize(attachment.byteSize)}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
