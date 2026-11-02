@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
 import {
+  ChatThreadFullError,
   DirectThreadExistsError,
   type AddParticipantInput,
   type ChatAttachmentRecord,
@@ -28,6 +29,9 @@ const POLICY_REFUSAL = '42501';
 
 /** `private.enforce_chat_attachment_quota` raises this when 1 GB is crossed. */
 const QUOTA_EXCEEDED = '53400';
+
+/** `private.enforce_chat_thread_size` raises this when a group is full. */
+const THREAD_FULL = 'CH001';
 
 function causeCode(error: unknown): string | null {
   const cause = (error as { cause?: unknown } | null)?.cause;
@@ -191,6 +195,9 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         // The second direct thread between two people trips the pair index;
         // that is an outcome the service answers with the existing thread.
         if (underlyingCode(error) === UNIQUE_VIOLATION) throw new DirectThreadExistsError();
+        // A group that already holds its 32 live members is a full room, not a
+        // data-access failure: the service names it and the invite stops there.
+        if (underlyingCode(error) === THREAD_FULL) throw new ChatThreadFullError();
         throw repositoryFailure('chat.addParticipant', error);
       }
     },

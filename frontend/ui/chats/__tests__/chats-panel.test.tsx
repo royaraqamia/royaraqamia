@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const navigation = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock('next/navigation', () => ({ useRouter: () => navigation }));
 
 // The avatar is what is under test, not Next's optimizer.
 vi.mock('next/image', () => ({
@@ -29,10 +31,11 @@ vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
   }),
 }));
 
-const api = vi.hoisted(() => ({ searchChatMembers: vi.fn() }));
+const api = vi.hoisted(() => ({ searchChatMembers: vi.fn(), createChatGroup: vi.fn() }));
 
 vi.mock('@/frontend/api/chats', () => ({
   searchChatMembers: api.searchChatMembers,
+  createChatGroup: api.createChatGroup,
 }));
 
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
@@ -58,6 +61,19 @@ const THREAD: ChatConversationSummary = {
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
+const GROUP: ChatConversationSummary = {
+  id: 'g-1',
+  kind: 'group',
+  status: 'active',
+  title: 'فريق التصميم',
+  counterpart: null,
+  myStatus: 'active',
+  lastMessage: null,
+  unreadCount: 0,
+  lastMessageAt: null,
+  createdAt: '2026-11-01T00:00:00.000Z',
+};
+
 /**
  * The member's own picture is the row's identity: the directory hands it over as
  * `avatarUrl` (ADR-0088), so a list that only draws initials has dropped half of
@@ -69,6 +85,8 @@ describe('ChatsPanel', () => {
     hooks.start.mockReset().mockResolvedValue('c-1');
     hooks.respond.mockReset().mockResolvedValue(null);
     api.searchChatMembers.mockReset().mockResolvedValue([PEER]);
+    api.createChatGroup.mockReset();
+    navigation.push.mockReset();
   });
 
   it('draws a thread peer’s picture', () => {
@@ -88,5 +106,49 @@ describe('ChatsPanel', () => {
 
     expect(await screen.findByText('@alber-tabsi')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: PEER.name! })).toHaveAttribute('src', PEER.avatarUrl);
+  });
+
+  /**
+   * A group is a row like a direct thread, so the list draws it by its name
+   * rather than by whichever member the read happened to order first.
+   */
+  it('draws a group by its name with no member’s face', () => {
+    hooks.threads = [GROUP];
+    render(<ChatsPanel />);
+
+    expect(screen.getByText('فريق التصميم')).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('creates a named group from the picked members and enters it', async () => {
+    api.createChatGroup.mockResolvedValue({ success: true, conversationId: 'g-9' });
+    render(<ChatsPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: /محادثة جديدة/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'مجموعة' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'اسم المجموعة' }), {
+      target: { value: 'فريق التصميم' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'البحث عن عضو' }), {
+      target: { value: 'al' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Alber Tabsi/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء المجموعة' }));
+
+    await waitFor(() =>
+      expect(api.createChatGroup).toHaveBeenCalledWith('فريق التصميم', [PEER.id])
+    );
+    expect(navigation.push).toHaveBeenCalledWith('/chats/g-9');
+  });
+
+  it('says why a group with no name is refused, before any write', async () => {
+    render(<ChatsPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: /محادثة جديدة/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'مجموعة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'إنشاء المجموعة' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('اسم المجموعة مطلوب');
+    expect(api.createChatGroup).not.toHaveBeenCalled();
   });
 });

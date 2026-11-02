@@ -17,6 +17,7 @@ const api = vi.hoisted(() => ({
   getChatAttachmentUrl: vi.fn(),
   leaveChat: vi.fn(),
   reportChat: vi.fn(),
+  searchChatMembers: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => api);
@@ -33,6 +34,7 @@ const hook = vi.hoisted(() => ({
   send: vi.fn(),
   edit: vi.fn(),
   remove: vi.fn(),
+  invite: vi.fn(),
 }));
 
 vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
@@ -52,6 +54,7 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
     withdraw: vi.fn(),
     request: vi.fn(),
     unblock: vi.fn(),
+    invite: hook.invite,
   }),
 }));
 
@@ -150,6 +153,70 @@ describe('ChatThreadView menu', () => {
 
     expect(screen.queryByText('الأعضاء المحظورون')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'العودة إلى المحادثات' })).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * A group is a room: the roster is drawn from the thread the screen already
+ * loaded, and the invite is a roster write. A full room is a sentence, not a
+ * silent click (#844).
+ */
+describe('ChatThreadView group roster', () => {
+  const INVITEE: ChatPeer = {
+    id: 'peer-3',
+    username: 'layla',
+    name: 'ليلى',
+    avatarUrl: null,
+    verified: true,
+  };
+
+  beforeEach(() => {
+    thread.current = makeThread('group');
+    hook.invite.mockReset().mockResolvedValue(null);
+    api.searchChatMembers.mockReset().mockResolvedValue([INVITEE]);
+  });
+
+  it('draws the roster from the thread it already has', () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('region', { name: 'أعضاء المجموعة' })).toBeInTheDocument();
+    expect(screen.getByText('مالك')).toBeInTheDocument();
+  });
+
+  it('offers no roster on a direct thread', () => {
+    thread.current = makeThread('direct');
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.queryByRole('region', { name: 'أعضاء المجموعة' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'إضافة أعضاء' })).toBeNull();
+  });
+
+  it('invites the member picked in the roster panel', async () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة أعضاء' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'البحث عن عضو' }), {
+      target: { value: 'la' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /ليلى/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'دعوة' }));
+
+    await waitFor(() => expect(hook.invite).toHaveBeenCalledWith([INVITEE.id]));
+  });
+
+  it('keeps the panel open and says a full room refused the invite', async () => {
+    hook.invite.mockResolvedValue('بلغت المجموعة الحد الأقصى: 32 عضواً');
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة أعضاء' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'البحث عن عضو' }), {
+      target: { value: 'la' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /ليلى/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'دعوة' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('32'));
+    expect(screen.getByRole('button', { name: 'دعوة' })).toBeInTheDocument();
   });
 });
 

@@ -1,14 +1,19 @@
 import { createSupabaseChatService } from '@/backend/config/chat';
+import { createPlanGate } from '@/backend/config/plans';
+import { planRefusalResult } from '@/backend/middleware/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { ChatError } from '@/backend/services/chat/chat-service';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
+  ChatAddParticipantsSchema,
   ChatMessageEditSchema,
   ChatMessageSendSchema,
   ChatReadSchema,
   ChatReportSchema,
+  CreateGroupChatSchema,
   StartDirectChatSchema,
   type ChatConversationSummary,
   type ChatMessage,
@@ -31,7 +36,13 @@ import {
  * file only parses, calls once and shapes the answer.
  */
 
-/** A policy refusal answers with its own status; anything else is a 500. */
+/**
+ * A policy refusal answers with its own status; anything else is a 500.
+ *
+ * A plan refusal (`OwnedItemCapReachedError`, 402 + `owned_item_cap`) is an
+ * `AppError` rather than a `ChatError`, and its sentence is the upgrade nudge —
+ * so it keeps its own status and code instead of collapsing into the fallback.
+ */
 function chatFailure(fallback: string) {
   return (error: unknown): HttpResult => {
     if (error instanceof ChatError) {
@@ -41,6 +52,9 @@ function chatFailure(fallback: string) {
         { headers: NO_STORE }
       );
     }
+    const refusal = planRefusalResult(error);
+    if (refusal) return { ...refusal, headers: NO_STORE };
+
     return jsonResult(500, { success: false, error: fallback }, { headers: NO_STORE });
   };
 }
@@ -115,6 +129,72 @@ export async function startChat(
       return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
     },
     { mapError: chatFailure('تعذّر بدء المحادثة') }
+  );
+}
+
+/**
+ * A named group. The plan cap is asked here, before any row exists: the
+ * pre-check is what answers the upgrade nudge, and the trigger on
+ * `chat_conversations` is what makes the cap true for a caller that skips this
+ * route entirely (#526, ADR-0113).
+ */
+export async function createChatGroup(
+  body: Record<string, unknown>,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      const parsed = CreateGroupChatSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(
+          400,
+          { success: false, error: firstIssue(parsed.error) },
+          { headers: NO_STORE }
+        );
+      }
+
+      await createPlanGate().cap(userId, OWNED_ITEMS.chatGroups);
+
+      const result = await createSupabaseChatService(supabase).startGroup(userId, parsed.data);
+      return jsonResult(201, { success: true, ...result }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّر إنشاء المجموعة') }
+  );
+}
+
+/** Invite more members into a group the caller is active in. */
+export async function addChatMembers(
+  id: string,
+  body: Record<string, unknown>,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      const parsed = ChatAddParticipantsSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(
+          400,
+          { success: false, error: firstIssue(parsed.error) },
+          { headers: NO_STORE }
+        );
+      }
+
+      const result = await createSupabaseChatService(supabase).addMembers(
+        userId,
+        id,
+        parsed.data.memberIds
+      );
+      return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّرت دعوة الأعضاء') }
   );
 }
 

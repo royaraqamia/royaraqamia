@@ -7,6 +7,7 @@ import {
   editChatMessage,
   getChatMessages,
   getChatThread,
+  inviteChatMembers,
   markChatRead,
   requestChatThread,
   respondToChat,
@@ -48,6 +49,8 @@ export interface ChatThreadState {
   withdraw: () => Promise<string | null>;
   request: () => Promise<string | null>;
   unblock: (peerId: string) => Promise<string | null>;
+  /** Invite members into a group: the refusal sentence, or `null` when invited. */
+  invite: (memberIds: string[]) => Promise<string | null>;
 }
 
 /**
@@ -236,6 +239,16 @@ export function useChatThread(conversationId: string): ChatThreadState {
     [act]
   );
 
+  /**
+   * An invite is a roster write, so the thread's own refresh is what draws the
+   * invited member afterwards — the screen is derived from the thread here too.
+   */
+  const invite = useCallback(
+    (memberIds: string[]) =>
+      act(() => inviteChatMembers(conversationId, memberIds), 'تعذّرت دعوة الأعضاء'),
+    [act, conversationId]
+  );
+
   return {
     thread,
     messages,
@@ -252,5 +265,6 @@ export function useChatThread(conversationId: string): ChatThreadState {
     withdraw,
     request,
     unblock,
+    invite,
   };
 }
