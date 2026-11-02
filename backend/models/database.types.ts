@@ -2569,6 +2569,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      chat_attachment_bytes_used: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
       list_chat_threads: {
         Args: Record<string, never>;
         Returns: {

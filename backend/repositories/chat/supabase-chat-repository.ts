@@ -26,6 +26,9 @@ const UNIQUE_VIOLATION = '23505';
 /** The guard and the policies refuse with `insufficient_privilege`. */
 const POLICY_REFUSAL = '42501';
 
+/** `private.enforce_chat_attachment_quota` raises this when 1 GB is crossed. */
+const QUOTA_EXCEEDED = '53400';
+
 function causeCode(error: unknown): string | null {
   const cause = (error as { cause?: unknown } | null)?.cause;
   if (typeof cause === 'object' && cause !== null && 'code' in cause) {
@@ -83,6 +86,8 @@ function toAttachment(row: AttachmentRow): ChatAttachmentRecord {
   return {
     id: row.id,
     messageId: row.message_id,
+    uploaderId: row.uploader_id,
+    storagePath: row.storage_path,
     fileName: row.file_name,
     mimeType: row.mime_type,
     byteSize: Number(row.byte_size),
@@ -246,6 +251,29 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
       return (data ?? []).map(toAttachment);
     },
 
+    async findAttachmentInConversation(conversationId, attachmentId) {
+      // The embedded filter is the point: the id alone would find an attachment
+      // of another thread the caller is also a member of, and the route names
+      // the thread it was opened on.
+      const { data, error } = await supabase
+        .from('chat_attachments')
+        .select('*, chat_messages!inner(conversation_id)')
+        .eq('id', attachmentId)
+        .eq('chat_messages.conversation_id', conversationId)
+        .maybeSingle();
+
+      if (error && !isNotFoundError(error)) {
+        throw repositoryFailure('chat.findAttachmentInConversation', error);
+      }
+      return data ? toAttachment(data as unknown as AttachmentRow) : null;
+    },
+
+    async sumAttachmentBytes() {
+      const { data, error } = await supabase.rpc('chat_attachment_bytes_used');
+      if (error) throw repositoryFailure('chat.sumAttachmentBytes', error);
+      return Number(data ?? 0);
+    },
+
     async insertMessage(input: InsertMessageInput) {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -274,10 +302,20 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
           }))
         );
 
-        if (attachError) throw repositoryFailure('chat.insertAttachments', attachError);
+        if (attachError) {
+          if (underlyingCode(attachError) === POLICY_REFUSAL) {
+            // The path guard or the insert policy refused: a policy answer, not
+            // an outage, and the service names it.
+            return { record: toMessage(data), attachmentFailure: { code: POLICY_REFUSAL } };
+          }
+          if (underlyingCode(attachError) === QUOTA_EXCEEDED) {
+            return { record: toMessage(data), attachmentFailure: { code: QUOTA_EXCEEDED } };
+          }
+          throw repositoryFailure('chat.insertAttachments', attachError);
+        }
       }
 
-      return toMessage(data);
+      return { record: toMessage(data), attachmentFailure: null };
     },
 
     async updateMessageBody(id, userId, body) {

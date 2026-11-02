@@ -13,6 +13,16 @@ export const CHAT_GROUP_MEMBERS_MAX = 32;
 export const CHAT_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
 export const CHAT_ATTACHMENT_QUOTA_BYTES = 1024 * 1024 * 1024;
 
+/**
+ * The bucket a thread's files live in. Object paths are
+ * `{conversationId}/{uuid}/{fileName}`, so the conversation is the first folder
+ * and the storage policy can read it (ADR-0113).
+ */
+export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
+
+/** Attachments in one message: one bubble, five chips. */
+export const CHAT_ATTACHMENTS_PER_MESSAGE_MAX = 5;
+
 /** Mirrors the RLS window on `chat_messages`: after this, an edit is refused. */
 export const CHAT_EDIT_WINDOW_MS = 15 * 60 * 1000;
 
@@ -49,6 +59,26 @@ export interface ChatAttachment {
   fileName: string;
   mimeType: string;
   byteSize: number;
+}
+
+/**
+ * The caller's own attachment allowance. The composer reads it so a refusal
+ * ("the storage is full") is a number the member can see, not a surprise after
+ * a 24 MB upload.
+ */
+export interface ChatAttachmentQuota {
+  usedBytes: number;
+  limitBytes: number;
+}
+
+/**
+ * An image is drawn; everything else is a file. SVG is an image by MIME and a
+ * script by behaviour, so it is a file here — the same rule the `/community`
+ * bucket applies to post images, one layer out (ADR-0113).
+ */
+export function chatAttachmentIsInlineImage(mimeType: string): boolean {
+  const normalized = mimeType.trim().toLowerCase();
+  return normalized.startsWith('image/') && normalized !== 'image/svg+xml';
 }
 
 export interface ChatMessage {
@@ -110,6 +140,8 @@ export interface ChatThread extends ChatConversationSummary {
   blockedByMe: boolean;
   /** True when the caller may post: an active member of an active thread. */
   canWrite: boolean;
+  /** What the caller has already stored, against the 1 GB the database enforces. */
+  attachmentQuota: ChatAttachmentQuota;
 }
 
 export interface ChatMessagePage {
@@ -157,7 +189,7 @@ export const ChatMessageSendSchema = z
     replyToId: z.string().uuid().optional().nullable(),
     attachments: z
       .array(ChatAttachmentInputSchema)
-      .max(5, 'خمسة مرفقات في الرسالة الواحدة')
+      .max(CHAT_ATTACHMENTS_PER_MESSAGE_MAX, 'خمسة مرفقات في الرسالة الواحدة')
       .optional(),
   })
   .refine((value) => Boolean(value.body?.trim()) || (value.attachments?.length ?? 0) > 0, {

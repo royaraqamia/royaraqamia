@@ -4,11 +4,15 @@ import {
   type ChatRepository,
   type ChatMessageRecord,
 } from '@/backend/repositories/chat/chat-repository';
+import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { PublicUser } from '@/shared/contracts/users';
 import {
+  CHAT_ATTACHMENT_QUOTA_BYTES,
+  chatAttachmentIsInlineImage,
   chatTitle,
   normalizeChatBody,
   type ChatAttachment,
+  type ChatAttachmentQuota,
   type ChatConversationSummary,
   type ChatMessage,
   type ChatMessagePage,
@@ -43,6 +47,8 @@ export interface ChatServiceDeps {
     search(query: string, limit: number): Promise<PublicUser[]>;
   };
   checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean>;
+  /** The bucket the attachments live in: signing and removal only. */
+  attachments: ChatAttachmentStorage;
   /**
    * In-app notification producer (the request stage, ADR-0113). Wired to the
    * service-role producer because the `notifications` table grants INSERT to
@@ -59,6 +65,10 @@ export interface ChatServiceDeps {
 }
 
 const PAGE_SIZE = 30;
+
+/** The database's quota refusal, and a policy refusal, as sentences. */
+const QUOTA_EXCEEDED_CODE = '53400';
+const POLICY_REFUSAL_CODE = '42501';
 
 function toPeer(user: PublicUser | undefined): ChatPeer | null {
   if (!user) return null;
@@ -171,6 +181,7 @@ export class ChatService {
       me: roster.find((participant) => participant.userId === userId) ?? null,
       blockedByMe,
       canWrite: Boolean(me?.status === 'active' && conversation.status === 'active'),
+      attachmentQuota: await this.attachmentQuota(),
     };
   }
 
@@ -352,7 +363,7 @@ export class ChatService {
       throw new ChatError(400, 'اكتب رسالة أو أرفق ملفاً');
     }
 
-    const record = await this.repo.insertMessage({
+    const result = await this.repo.insertMessage({
       conversationId,
       senderId: userId,
       senderKind: 'user',
@@ -361,9 +372,24 @@ export class ChatService {
       attachments: input.attachments,
     });
 
+    if (result.attachmentFailure) {
+      // The message is already a row. A bubble that claims files it does not
+      // have is worse than a tombstone, so the failed send leaves the tombstone
+      // the thread can explain and the composer shows the sentence (#815).
+      await this.repo.tombstoneMessage(result.record.id, userId);
+
+      if (result.attachmentFailure.code === QUOTA_EXCEEDED_CODE) {
+        throw new ChatError(409, 'مساحة المرفقات ممتلئة');
+      }
+      if (result.attachmentFailure.code === POLICY_REFUSAL_CODE) {
+        throw new ChatError(403, 'لا يمكن إرفاق ملف في هذه الرسالة');
+      }
+      throw new ChatError(500, 'تعذّر إرسال الرسالة');
+    }
+
     await this.repo.setLastRead(conversationId, userId, new Date().toISOString());
 
-    const [message] = await this.hydrate([record]);
+    const [message] = await this.hydrate([result.record]);
     if (!message) throw new ChatError(500, 'تعذّر إرسال الرسالة');
     return message;
   }
@@ -383,11 +409,53 @@ export class ChatService {
    * A tombstone, not a delete: the thread keeps its shape. The database bounds
    * an edit in time, never a tombstone, so the only refusal here is "this is not
    * your live message" — someone else's, or one already deleted.
+   *
+   * The rows go with the tombstone, and so do their objects. #811 left the rows
+   * in place and hid them in the UI, which is a storage leak that this closes.
    */
   async deleteMessage(userId: string, messageId: string): Promise<void> {
+    const attachments = (await this.repo.findAttachments([messageId])).filter(
+      (attachment) => attachment.uploaderId === userId
+    );
+
     if (!(await this.repo.tombstoneMessage(messageId, userId))) {
       throw new ChatError(403, 'لا يمكن حذف هذه الرسالة');
     }
+
+    await this.repo.deleteMessageAttachments(messageId, userId);
+    await this.deps.attachments.remove(attachments.map((attachment) => attachment.storagePath));
+  }
+
+  /**
+   * One attachment's short-lived URL. Membership is the table's RLS (this reads
+   * through the caller's client), and the object's own policy is the bucket's;
+   * signing happens on the same session, so neither rule is bypassed. Anything
+   * that is not a drawing-safe image is `Content-Disposition: attachment`, and
+   * SVG, HTML and XML are files here, never something the browser renders.
+   */
+  async attachmentUrl(
+    userId: string,
+    conversationId: string,
+    attachmentId: string
+  ): Promise<{ url: string; fileName: string; mimeType: string; inline: boolean }> {
+    await this.assertMember(userId, conversationId);
+
+    const attachment = await this.repo.findAttachmentInConversation(conversationId, attachmentId);
+    if (!attachment) throw new ChatError(404, 'المرفق غير موجود');
+
+    const inline = chatAttachmentIsInlineImage(attachment.mimeType);
+    const url = await this.deps.attachments.signedUrl(
+      attachment.storagePath,
+      inline ? null : attachment.fileName
+    );
+    if (!url) throw new ChatError(502, 'تعذّر تجهيز الملف');
+
+    return {
+      url,
+      fileName: attachment.fileName,
+      mimeType: attachment.mimeType,
+      inline,
+    };
   }
 
   async markRead(userId: string, conversationId: string, at?: string): Promise<void> {
@@ -489,6 +557,13 @@ export class ChatService {
         avatarUrl: member.avatar_url,
         verified: member.verified,
       }));
+  }
+
+  private async attachmentQuota(): Promise<ChatAttachmentQuota> {
+    return {
+      usedBytes: await this.repo.sumAttachmentBytes(),
+      limitBytes: CHAT_ATTACHMENT_QUOTA_BYTES,
+    };
   }
 
   private async assertMember(userId: string, conversationId: string): Promise<void> {

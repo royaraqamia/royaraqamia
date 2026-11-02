@@ -217,6 +217,39 @@ export async function deleteChatMessage(messageId: string, headers: Headers): Pr
   );
 }
 
+/**
+ * One attachment's signed URL. The response is the only place the URL appears:
+ * the object path is never sent to a client, and the URL expires in a minute,
+ * so a copy taken from the response reads nothing by the time it is replayed.
+ */
+export async function getChatAttachment(
+  conversationId: string,
+  attachmentId: string
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const file = await createSupabaseChatService(supabase).attachmentUrl(
+        userId,
+        conversationId,
+        attachmentId
+      );
+
+      return jsonResult(
+        200,
+        { success: true, ...file } satisfies {
+          success: true;
+          url: string;
+          fileName: string;
+          mimeType: string;
+          inline: boolean;
+        },
+        { headers: NO_STORE }
+      );
+    },
+    { mapError: chatFailure('تعذّر تجهيز الملف') }
+  );
+}
+
 export async function respondToChat(
   id: string,
   body: Record<string, unknown>,
