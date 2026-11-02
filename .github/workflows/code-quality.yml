@@ -78,6 +78,11 @@ jobs:
       - name: Visual Gate
         run: npm run check:visual
 
+      # Every screen is on the list, and the list agrees with what is switched
+      # on (#882): this refuses a surface nobody planned.
+      - name: Screen Plan
+        run: npm run check:plan
+
       - name: Lint
         run: npm run lint
 

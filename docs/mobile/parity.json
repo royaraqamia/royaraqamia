@@ -72,6 +72,7 @@
     },
     {
       "id": "sign-in",
+      "surface": "auth",
       "issue": "#770",
       "web": {
         "route": "app/auth/login/page.tsx",
