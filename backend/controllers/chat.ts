@@ -1,20 +1,27 @@
-import { createSupabaseChatService } from '@/backend/config/chat';
+import { createSupabaseChatAgentService, createSupabaseChatService } from '@/backend/config/chat';
 import { createPlanGate } from '@/backend/config/plans';
 import { planRefusalResult } from '@/backend/middleware/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
-import { withAuthenticatedUser } from '@/backend/transport/session-handler';
+import {
+  withAuthenticatedStream,
+  withAuthenticatedUser,
+} from '@/backend/transport/session-handler';
 import { isSameOrigin } from '@/backend/transport/http';
-import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { jsonResult, toNextResponse, type HttpResult } from '@/backend/transport/http-result';
+import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { ChatError } from '@/backend/services/chat/chat-service';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   ChatAddParticipantsSchema,
+  ChatAgentTurnSchema,
   ChatMessageEditSchema,
   ChatMessageSendSchema,
   ChatReadSchema,
   ChatReportSchema,
   CreateGroupChatSchema,
   StartDirectChatSchema,
+  type ChatAgentEvent,
+  type ChatAssistantState,
   type ChatConversationSummary,
   type ChatMessage,
   type ChatMessagePage,
@@ -533,4 +540,109 @@ export async function previewChat(to: string | null): Promise<HttpResult> {
     },
     { mapError: chatFailure('تعذّر تحميل بيانات العضو') }
   );
+}
+
+/**
+ * The assistant (ADR-0113, #817).
+ *
+ * The thread is created on first open — one per member, no title — and the two
+ * reads below say what the composer may do: whether a provider key exists, and
+ * how much of today's allowance is left. Neither answer is an error when the
+ * assistant is off or spent; the thread stays readable and the composer names
+ * the state.
+ */
+export async function startChatAssistant(headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      const result = await createSupabaseChatService(supabase).startAssistant(userId);
+      return jsonResult(201, { success: true, ...result }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّر فتح المحادثة مع المساعد') }
+  );
+}
+
+/** What the assistant's composer needs before it draws: availability and meters. */
+export async function getChatAssistant(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const state = await createSupabaseChatAgentService(supabase).state(userId);
+      return jsonResult(
+        200,
+        { success: true, ...state } satisfies { success: true } & ChatAssistantState,
+        { headers: NO_STORE }
+      );
+    },
+    { mapError: chatFailure('تعذّر تحميل حالة المساعد') }
+  );
+}
+
+/**
+ * One assistant turn, answered as an event stream.
+ *
+ * This is the chats surface's only handler that writes its body after the
+ * response exists, so it returns a `Response` rather than an `HttpResult`: the
+ * refusal for a request that cannot start (not signed in, not the member,
+ * allowance spent) is still a JSON status, and only a turn that reserved its
+ * allowance opens a stream. Each frame is one JSON event — a text delta, the
+ * stored reply, or the sentence explaining why the turn stopped.
+ */
+export async function streamChatAgentTurn(
+  id: string,
+  body: Record<string, unknown>,
+  headers: Headers
+): Promise<Response> {
+  return withAuthenticatedStream(async ({ userId, supabase }) => {
+    if (!isSameOrigin(headers)) {
+      return toNextResponse(
+        jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE })
+      );
+    }
+
+    const parsed = ChatAgentTurnSchema.safeParse(body);
+    if (!parsed.success) {
+      return toNextResponse(
+        jsonResult(400, { success: false, error: firstIssue(parsed.error) }, { headers: NO_STORE })
+      );
+    }
+
+    const service = createSupabaseChatAgentService(supabase);
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const write = (event: ChatAgentEvent) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        };
+
+        try {
+          for await (const event of service.turn(userId, id, parsed.data.body)) write(event);
+        } catch (error) {
+          write({ type: 'error', error: agentTurnFailure(error) });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-store, no-transform',
+        Connection: 'keep-alive',
+        // Vercel's proxy buffers a stream unless told not to, which would hold
+        // the whole answer until the turn finished.
+        'X-Accel-Buffering': 'no',
+      },
+    });
+  });
+}
+
+/** A turn's failure, in the one sentence its stream carries to the composer. */
+function agentTurnFailure(error: unknown): string {
+  if (error instanceof ChatAgentError) return error.message;
+  return 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
 }

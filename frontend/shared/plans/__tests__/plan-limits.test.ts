@@ -40,6 +40,7 @@ const freeCaps: PlanCaps = {
     'scanner.scan': { window: 'daily', cap: 5 },
     'quran.surah.read': { window: 'daily', cap: 5 },
     'downloader.job.create': { window: 'lifetime', cap: 5 },
+    'chat.agent.turn': { window: 'daily', cap: 0 },
   },
 };
 

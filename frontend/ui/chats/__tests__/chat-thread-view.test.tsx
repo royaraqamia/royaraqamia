@@ -18,6 +18,9 @@ const api = vi.hoisted(() => ({
   leaveChat: vi.fn(),
   reportChat: vi.fn(),
   searchChatMembers: vi.fn(),
+  getChatAssistant: vi.fn(),
+  streamChatAgentTurn: vi.fn(),
+  startAssistantChat: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => api);
@@ -296,5 +299,100 @@ describe('ChatThreadView refused writes', () => {
       ).toBeNull()
     );
     expect(screen.getByRole('alert')).toHaveTextContent('تعذّر حذف الرسالة');
+  });
+});
+
+/**
+ * The assistant (#817): one thread, a text-only composer, and three states that
+ * are sentences rather than failures — no provider key, a Free member, and a day
+ * whose allowance is spent. The disclosure is drawn in the thread itself.
+ */
+describe('ChatThreadView assistant', () => {
+  const PRO_ALLOWANCE = {
+    plan: 'pro' as const,
+    member: { used: 1, cap: 40 },
+    project: { used: 2, limit: 200 },
+    resetsAt: '2026-11-03T00:00:00.000Z',
+  };
+
+  function agentThread(): ChatThread {
+    const base = makeThread('agent');
+    return {
+      ...base,
+      title: 'المساعد الذكي',
+      counterpart: null,
+      participants: base.me ? [base.me] : [],
+    };
+  }
+
+  beforeEach(() => {
+    hook.messages.current = [];
+    thread.current = agentThread();
+    api.getChatAssistant.mockReset();
+    api.streamChatAgentTurn.mockReset();
+    api.getChatAssistant.mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
+  });
+
+  it('draws the disclosure and a text-only composer', async () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(
+      screen.getByText('الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.')
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'إرفاق ملف' })).toBeNull();
+  });
+
+  it('locks a Free member and points at the plans', async () => {
+    api.getChatAssistant.mockResolvedValue({
+      available: true,
+      allowance: { ...PRO_ALLOWANCE, plan: 'free', member: { used: 0, cap: 0 } },
+    });
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(await screen.findByText('المساعد متاح لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('names the spent day instead of drawing a composer', async () => {
+    api.getChatAssistant.mockResolvedValue({
+      available: true,
+      allowance: { ...PRO_ALLOWANCE, member: { used: 40, cap: 40 } },
+    });
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(await screen.findByText(/وصلت إلى حد اليوم/)).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('says the assistant is unavailable when no provider key is configured', async () => {
+    api.getChatAssistant.mockResolvedValue({ available: false, allowance: PRO_ALLOWANCE });
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(await screen.findByText('المساعد غير متاح حالياً.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('asks the server and clears the draft once the answer lands', async () => {
+    api.streamChatAgentTurn.mockResolvedValue(undefined);
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
+    fireEvent.change(box, { target: { value: 'ما هو الذكاء الاصطناعي؟' } });
+    fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
+
+    await waitFor(() =>
+      expect(api.streamChatAgentTurn).toHaveBeenCalledWith(
+        'c-1',
+        'ما هو الذكاء الاصطناعي؟',
+        expect.any(Function)
+      )
+    );
+    await waitFor(() => expect(box).toHaveValue(''));
   });
 });

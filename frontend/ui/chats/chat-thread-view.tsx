@@ -16,6 +16,10 @@ import {
 } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
+import {
+  useChatAssistant,
+  type ChatAssistantState,
+} from '@/frontend/state/chats/use-chat-assistant';
 import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
@@ -28,6 +32,7 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
+import { ASSISTANT_COPY } from './assistant-copy';
 import { MemberPicker } from './member-picker';
 import { readReceiptOf, typingLabel } from './read-receipt';
 import {
@@ -98,6 +103,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     request,
     unblock,
     invite,
+    refresh,
   } = useChatThread(conversationId);
   const { user } = useSession();
   const [draft, setDraft] = useState('');
@@ -110,9 +116,14 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  const isAssistant = thread?.kind === 'agent';
+  const assistant = useChatAssistant(conversationId, Boolean(isAssistant), () => {
+    void refresh();
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length]);
+  }, [messages.length, assistant.streamingText]);
 
   const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
 
@@ -301,6 +312,12 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         />
       )}
 
+      {isAssistant && (
+        <p className="border-b border-border/40 bg-muted/30 px-4 py-2 text-[11px] leading-relaxed text-muted-foreground/80">
+          {ASSISTANT_COPY.disclosure}
+        </p>
+      )}
+
       {(notice || error) && (
         <p
           role="alert"
@@ -341,6 +358,19 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             );
           })
         )}
+
+        {assistant.isStreaming && (
+          <div className="flex w-full flex-col items-start gap-1">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
+              {assistant.streamingText ? (
+                <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
+              ) : (
+                <p className="text-xs italic opacity-70">{ASSISTANT_COPY.thinking}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
@@ -358,11 +388,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         draft={draft}
         files={files}
         isSending={isSending}
+        assistant={assistant}
         onDraft={setDraft}
         onTyping={noteTyping}
         onAddFiles={addFiles}
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
+        onAsk={(body) => {
+          void assistant.ask(body).then((sent) => {
+            if (sent) setDraft('');
+          });
+        }}
         onAccept={() => setConfirm({ kind: 'accept' })}
         onDecline={() => setConfirm({ kind: 'decline' })}
         onWithdraw={() => setConfirm({ kind: 'withdraw' })}
@@ -496,11 +532,15 @@ function ThreadHeader({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
-          {thread.kind === 'direct' && counterpart
-            ? `@${counterpart.username}`
-            : `${threadMembers(thread).length} أعضاء`}
-        </p>
+        {/* The assistant's thread has one participant, so a member count would
+            read "1 members"; the assistant is not one (#817). */}
+        {thread.kind !== 'agent' && (
+          <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
+            {thread.kind === 'direct' && counterpart
+              ? `@${counterpart.username}`
+              : `${threadMembers(thread).length} أعضاء`}
+          </p>
+        )}
       </div>
 
       <div className="relative">
@@ -516,13 +556,17 @@ function ThreadHeader({
 
         {menuOpen && (
           <div className="absolute end-0 top-10 z-20 w-44 overflow-hidden rounded-xl border border-border/70 bg-popover shadow-lg">
-            <button
-              type="button"
-              onClick={onReport}
-              className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
-            >
-              إبلاغ عن المحادثة
-            </button>
+            {/* Nothing in an assistant thread is reportable: the only other
+                writer is the server's own model (#817). */}
+            {thread.kind !== 'agent' && (
+              <button
+                type="button"
+                onClick={onReport}
+                className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
+              >
+                إبلاغ عن المحادثة
+              </button>
+            )}
             {counterpart && (
               <button
                 type="button"
@@ -732,7 +776,8 @@ function ThreadIntro({
       )}
       <p className="text-sm font-bold text-foreground">{thread.title}</p>
       <p className="text-xs leading-relaxed text-muted-foreground/80">
-        {note ?? 'لا رسائل بعد. ابدأ المحادثة برسالة.'}
+        {note ??
+          (thread.kind === 'agent' ? ASSISTANT_COPY.intro : 'لا رسائل بعد. ابدأ المحادثة برسالة.')}
       </p>
     </div>
   );
@@ -745,11 +790,13 @@ function ThreadFooter({
   draft,
   files,
   isSending,
+  assistant,
   onDraft,
   onTyping,
   onAddFiles,
   onRemoveFile,
   onSend,
+  onAsk,
   onAccept,
   onDecline,
   onWithdraw,
@@ -762,12 +809,14 @@ function ThreadFooter({
   draft: string;
   files: File[];
   isSending: boolean;
+  assistant: ChatAssistantState;
   onDraft: (value: string) => void;
   /** A keystroke: the typing channel throttles, so every change may call this. */
   onTyping: () => void;
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
   onSend: () => void;
+  onAsk: (body: string) => void;
   onAccept: () => void;
   onDecline: () => void;
   onWithdraw: () => void;
@@ -775,6 +824,14 @@ function ThreadFooter({
   onUnblock: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // The assistant owns its composer: no files, no reply-to, and a locked or
+  // spent state is a sentence rather than a disabled input with no reason.
+  if (thread.kind === 'agent') {
+    return (
+      <AssistantComposer assistant={assistant} draft={draft} onDraft={onDraft} onAsk={onAsk} />
+    );
+  }
 
   if (state === 'write') {
     const quota = thread.attachmentQuota;
@@ -949,12 +1006,141 @@ function ThreadFooter({
   );
 }
 
+const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'Asia/Damascus',
+});
+
+/** The spent-day sentence, from the server's own reset instant. */
+function limitReachedSentence(resetsAt: string): string {
+  const reset = new Date(resetsAt);
+  const time = Number.isNaN(reset.getTime())
+    ? ASSISTANT_COPY.midnight
+    : RESET_TIME_FORMAT.format(reset);
+  return ASSISTANT_COPY.limitReached.replace('{time}', time);
+}
+
+/**
+ * The assistant's composer (ADR-0113, #817). Three states come before the input
+ * and each names its own remedy: no provider key, a Free member, or a day whose
+ * allowance is spent. The input itself is text only — no files, no reply-to.
+ */
+function AssistantComposer({
+  assistant,
+  draft,
+  onDraft,
+  onAsk,
+}: {
+  assistant: ChatAssistantState;
+  draft: string;
+  onDraft: (value: string) => void;
+  onAsk: (body: string) => void;
+}) {
+  const allowance = assistant.allowance;
+
+  if (!assistant.available) {
+    return (
+      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+        {ASSISTANT_COPY.unavailable}
+      </p>
+    );
+  }
+
+  if (allowance && allowance.member.cap === 0) {
+    return (
+      <div className="space-y-1.5 border-t border-border/40 p-3 text-center">
+        <p className="text-xs text-muted-foreground">{ASSISTANT_COPY.locked}</p>
+        <Link
+          href="/pricing"
+          className="inline-block text-xs font-bold text-primary hover:underline"
+        >
+          {ASSISTANT_COPY.upgrade}
+        </Link>
+      </div>
+    );
+  }
+
+  const spent = allowance
+    ? allowance.member.used >= allowance.member.cap ||
+      allowance.project.used >= allowance.project.limit
+    : false;
+
+  if (allowance && spent) {
+    return (
+      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+        {limitReachedSentence(allowance.resetsAt)}
+      </p>
+    );
+  }
+
+  const remaining = allowance
+    ? Math.max(
+        0,
+        Math.min(
+          allowance.member.cap - allowance.member.used,
+          allowance.project.limit - allowance.project.used
+        )
+      )
+    : null;
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onAsk(draft);
+      }}
+      className="space-y-2 border-t border-border/40 p-3"
+    >
+      <div className="flex items-end gap-2">
+        <textarea
+          value={draft}
+          onChange={(event) => onDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              onAsk(draft);
+            }
+          }}
+          rows={1}
+          maxLength={4000}
+          placeholder={ASSISTANT_COPY.placeholder}
+          aria-label={ASSISTANT_COPY.placeholder}
+          className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+        />
+        <Button
+          type="submit"
+          variant="hero"
+          size="icon-sm"
+          aria-label={ASSISTANT_COPY.send}
+          disabled={assistant.isStreaming || draft.trim().length === 0}
+        >
+          <Send size={16} />
+        </Button>
+      </div>
+
+      {remaining !== null && allowance && (
+        <p className="text-[11px] text-muted-foreground/70">
+          {ASSISTANT_COPY.remaining
+            .replace('{remaining}', String(remaining))
+            .replace('{cap}', String(allowance.member.cap))}
+        </p>
+      )}
+
+      {assistant.error && (
+        <p role="alert" className="text-[11px] font-medium text-destructive">
+          {assistant.error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 const DAY_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
   weekday: 'long',
   day: 'numeric',
   month: 'long',
 });
-
 function dayKey(iso: string): string {
   return iso.slice(0, 10);
 }

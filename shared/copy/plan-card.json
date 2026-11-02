@@ -34,6 +34,7 @@
     "noteLine": "«{note}»",
     "methodShamcash": "ShamCash",
     "methodEfendim": "Efendim Pay",
-    "methodOther": "أخرى"
+    "methodOther": "أخرى",
+    "assistantDisclosure": "الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google."
   }
 }

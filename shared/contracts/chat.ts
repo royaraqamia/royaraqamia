@@ -1,9 +1,21 @@
 import { z } from 'zod';
 
+import type { PlanId } from '@/shared/contracts/plans.constants';
 import { toLatinDigits } from '@/shared/contracts/text';
 
 /** A message body's ceiling. Long enough for a real answer, still one row. */
 export const CHAT_BODY_MAX = 4_000;
+
+/**
+ * What the assistant is sent, and what it answers. The window is the last
+ * twenty messages trimmed to roughly six thousand tokens (four characters is
+ * the usual estimate), because the system prompt is sent apart from it and the
+ * provider's own limit is the hard ceiling (#817).
+ */
+export const CHAT_AGENT_HISTORY_MAX = 20;
+export const CHAT_AGENT_TOKEN_BUDGET = 6_000;
+/** A turn ends inside the platform's 60-second function ceiling. */
+export const CHAT_AGENT_TURN_TIMEOUT_MS = 55_000;
 
 /** A group's name, and the ceiling on its members (ADR-0113). */
 export const CHAT_GROUP_TITLE_MAX = 80;
@@ -189,6 +201,41 @@ export interface ChatMessagePage {
   /** Opaque `created_at` cursor for the next page, or null at the start. */
   nextCursor: string | null;
 }
+
+/**
+ * The assistant's allowance, as the thread's composer reads it. Both numbers
+ * reset at Damascus midnight (`resetsAt`), and the project's is shared by every
+ * member because the provider's free limits are per project (#817).
+ */
+export interface ChatAgentAllowance {
+  plan: PlanId;
+  member: { used: number; cap: number };
+  project: { used: number; limit: number };
+  resetsAt: string;
+}
+
+/**
+ * What the thread needs before it draws a composer: whether a provider key is
+ * configured at all, and the allowance that bounds the turn. An environment
+ * without a key renders the assistant as unavailable, never as a broken send.
+ */
+export interface ChatAssistantState {
+  available: boolean;
+  allowance: ChatAgentAllowance;
+}
+
+/** One assistant turn: the question, and nothing else (no tools, no files). */
+export const ChatAgentTurnSchema = z.object({
+  body: z.string().trim().min(1, 'اكتب سؤالك').max(CHAT_BODY_MAX, 'السؤال طويل جداً'),
+});
+
+export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;
+
+/** The frames the turn's stream carries, one JSON object per SSE `data:` line. */
+export type ChatAgentEvent =
+  | { type: 'delta'; text: string }
+  | { type: 'done'; message: ChatMessage }
+  | { type: 'error'; error: string };
 
 /** A direct thread starts as a request; acceptance happens in the list. */
 export const StartDirectChatSchema = z.object({

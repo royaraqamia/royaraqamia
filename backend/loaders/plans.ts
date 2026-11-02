@@ -147,6 +147,15 @@ const CATALOG_FALLBACK: PlanCatalog = {
       proCap: 50,
       sortOrder: 40,
     },
+    {
+      key: 'chat.agent.turn',
+      label: 'سؤال للمساعد الذكي',
+      window: 'daily',
+      visitorCap: 0,
+      freeCap: 0,
+      proCap: 40,
+      sortOrder: 50,
+    },
   ],
   quotas: FALLBACK_QUOTAS,
 };

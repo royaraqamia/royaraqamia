@@ -163,8 +163,10 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               </PlanPoint>
               <PlanPoint>
                 يوميًّا: {formatCount(counterCapOf(catalog, 'scanner.scan', PRO))} عملية مسح، و
-                {formatCount(counterCapOf(catalog, 'quran.surah.read', PRO))} سورة.
+                {formatCount(counterCapOf(catalog, 'quran.surah.read', PRO))} سورة، و
+                {formatCount(counterCapOf(catalog, 'chat.agent.turn', PRO))} سؤالًا للمساعد الذكي.
               </PlanPoint>
+              <PlanPoint>الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.</PlanPoint>
               <PlanPoint>
                 أخبار: {formatCount(quotaCapOf(catalog, 'news.story.cards', PRO))} بطاقة في الصفحة،
                 و{formatCount(quotaCapOf(catalog, 'news.sources', PRO))} مصدرًا مختارًا.
