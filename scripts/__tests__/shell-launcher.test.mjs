@@ -102,6 +102,18 @@ describe('the launcher', () => {
     expect(launcher).toContain('withFrameNanos');
   });
 
+  it('draws the bell from the session’s real unread count', () => {
+    // #659 the top bar owns the site's bell, but #647 draws the frame it lives
+    // in: the launcher has to hand the count down, or the control never appears.
+    const launcher = shell('ShellActivity.kt');
+    expect(launcher).toContain('graph.notifications.unreadCount()');
+    expect(launcher).toContain('unreadCount = unreadCount');
+
+    const frame = shell('ShellFrame.kt');
+    expect(frame).toContain('unreadCount = unreadCount');
+    expect(frame).toContain('unreadCount: Int?');
+  });
+
   it('paints the splash in the colour the first frame paints', () => {
     // #752: the platform splash lifts onto the shell's own frame, so the two are
     // one colour. Neither spells it: the launch theme reads the generated

@@ -88,6 +88,16 @@ class ShellActivity : ComponentActivity() {
      */
     private var hiddenRoutes by mutableStateOf<Set<String>>(emptySet())
 
+    /**
+     * The bell's number (#659), or null while there is no session to ask.
+     *
+     * Read after the session answers and again when the app comes back to the
+     * foreground, so a notification that arrived while the document was on top is
+     * the same number the site would show. A failed read leaves it null rather
+     * than drawing a zero the app does not know ([ShellTopBar]).
+     */
+    private var unreadCount by mutableStateOf<Int?>(null)
+
     private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
 
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
@@ -144,6 +154,7 @@ class ShellActivity : ComponentActivity() {
                         currentRoute = current,
                         hiddenRoutes = hiddenRoutes,
                         servicesOrder = graph.servicesOrder,
+                        unreadCount = unreadCount,
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {
@@ -163,13 +174,13 @@ class ShellActivity : ComponentActivity() {
                                 PlanScreen(
                                     repository = graph.usage,
                                     signedIn = signedIn,
-                                    onSignIn = { signedIn = false },
+                                    onSignIn = ::showSignIn,
                                 )
                             "/account/connected-apps" ->
                                 ConnectedAppsScreen(
                                     repository = graph.connectedApps,
                                     signedIn = signedIn,
-                                    onSignIn = { signedIn = false },
+                                    onSignIn = ::showSignIn,
                                     // The page's "connect a new client" opens the MCP
                                     // guide, which the app has no screen for yet: it
                                     // is a route the shell hands to the document.
@@ -198,6 +209,9 @@ class ShellActivity : ComponentActivity() {
                     // with writes pending drains as soon as the session answers.
                     // After `handOver`, so a long queue cannot delay the frame.
                     if (signedIn) {
+                        // The count is a second read rather than part of the frame:
+                        // a slow answer must not hold up the menu or the queue.
+                        lifecycleScope.launch { refreshUnreadCount() }
                         // The menu is drawn before the queue drains, so it is
                         // right on the first open rather than after a sync.
                         hiddenRoutes =
@@ -238,6 +252,16 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
+     * Coming back to the app is when the bell is most likely stale: the
+     * notification centre is still the document, so a read that happened there
+     * has to reach the frame that is underneath it.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (signedIn) lifecycleScope.launch { refreshUnreadCount() }
+    }
+
+    /**
      * Releases the network watcher: a callback that outlives the activity would
      * keep the composition root, and with it a database connection, alive.
      */
@@ -271,8 +295,38 @@ class ShellActivity : ComponentActivity() {
             val outcome = graph.signIn(email, password)
             authState = SignInUiState.of(outcome)
             signedIn = graph.signedIn
-            if (signedIn) handOver()
+            if (signedIn) {
+                handOver()
+                lifecycleScope.launch { refreshUnreadCount() }
+            } else {
+                unreadCount = null
+            }
         }
+    }
+
+    /**
+     * The bell's number, from the route the site's own bell reads (#659).
+     *
+     * Null is the honest answer for a guest, a refusal or an unreachable server:
+     * the bell is drawn only when it has a count to stand behind, never as a zero
+     * the app cannot vouch for.
+     */
+    private suspend fun refreshUnreadCount() {
+        unreadCount =
+            when (val result = graph.notifications.unreadCount()) {
+                is ApiResult.Success -> result.value
+                is ApiResult.Failure -> null
+            }
+    }
+
+    /**
+     * A screen's guest prompt asked for the sign-in card: the frame is no longer
+     * the signed-in one, and a bell for nobody is exactly what [ShellTopBar]
+     * refuses to draw.
+     */
+    private fun showSignIn() {
+        signedIn = false
+        unreadCount = null
     }
 
     /**
