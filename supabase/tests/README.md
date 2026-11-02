@@ -64,6 +64,18 @@ In `rls_authorization_test.sql` every write attempt is expected to be _refused_,
 rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
 cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
 
+`chats_test.sql` (#843, ADR-0113):
+
+- A message older than fifteen minutes can be tombstoned: the window bounds an edit, not a
+  delete.
+- The tombstone clears the body in the same write and does not stamp `edited_at`.
+- A second tombstone changes no row, so the repository tells the client no row changed instead
+  of reporting a success the refresh undoes.
+- A body change past the window raises `42501`; one inside it is stored and stamps `edited_at`.
+- A tombstone is final: the body cannot come back and `deleted_at` cannot be cleared.
+- A member can neither edit nor tombstone the other side of the thread, and a message keeps its
+  identity.
+
 `habit_reminders_damascus_test.sql` (#604):
 
 - The reminder window on the Damascus clock: 08:00 is due at 08:00:00 and 08:14:59, not at
@@ -131,6 +143,11 @@ verified. The pgTAP harness around them still needs `supabase test db`.
 and its `insert … on conflict (user_id, client_id)` planned against the linked project inside a
 rolled-back transaction, and the deterministic `client_id` expression was evaluated there. The
 fixtures (an `auth.users` row per owner, an expense list at the cap) still need a local stack.
+
+`chats_test.sql` (#843) is in the same position: no Docker on the writing machine, so the guard, the
+policy and the fixtures are unrun. Its shapes mirror `plan_cap_enforcement_test.sql` (replica-role
+fixtures, a rolled-back file, one `set local role authenticated` block), which is the closest
+available rehearsal.
 
 ## Worth adding next
 

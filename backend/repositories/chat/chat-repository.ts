@@ -118,7 +118,8 @@ export interface ChatRepository {
   findAttachments(messageIds: string[]): Promise<ChatAttachmentRecord[]>;
   insertMessage(input: InsertMessageInput): Promise<ChatMessageRecord>;
   updateMessageBody(id: string, userId: string, body: string): Promise<ChatMessageRecord | null>;
-  tombstoneMessage(id: string, userId: string): Promise<void>;
+  /** False when no row changed: a refusal, or a message already tombstoned. */
+  tombstoneMessage(id: string, userId: string): Promise<boolean>;
   deleteMessageAttachments(messageId: string, userId: string): Promise<void>;
   reportConversation(
     conversationId: string,

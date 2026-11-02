@@ -257,7 +257,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             else if (confirm.kind === 'withdraw') void run(withdraw, true);
             else if (confirm.kind === 'deleteMessage') {
               const id = confirm.messageId;
-              void run(async () => ((await remove(id)) ? null : 'تعذّر حذف الرسالة'), true);
+              void run(() => remove(id), true);
             } else if (confirm.kind === 'block') {
               void run(async () => {
                 if (!counterpart) return null;

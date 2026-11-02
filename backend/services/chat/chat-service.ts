@@ -379,9 +379,15 @@ export class ChatService {
     return message;
   }
 
-  /** A tombstone, not a delete: the thread keeps its shape. */
+  /**
+   * A tombstone, not a delete: the thread keeps its shape. The database bounds
+   * an edit in time, never a tombstone, so the only refusal here is "this is not
+   * your live message" — someone else's, or one already deleted.
+   */
   async deleteMessage(userId: string, messageId: string): Promise<void> {
-    await this.repo.tombstoneMessage(messageId, userId);
+    if (!(await this.repo.tombstoneMessage(messageId, userId))) {
+      throw new ChatError(403, 'لا يمكن حذف هذه الرسالة');
+    }
   }
 
   async markRead(userId: string, conversationId: string, at?: string): Promise<void> {
