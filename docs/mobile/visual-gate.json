@@ -1,5 +1,15 @@
 {
   "schemaVersion": 1,
-  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when this file carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the elements and properties both clients must agree on), the test that draws the app side, and the tolerances: pixels is the share of the capture allowed to differ, length the CSS-pixel drift allowed on a box. Evidence lives in e2e/__visual__/<surface>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen). Nothing is switched on yet: every port is off until its pair passes.",
-  "surfaces": []
+  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when this file carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the elements and properties both clients must agree on), the test that draws the app side, and the tolerances: pixels is the share of the capture allowed to differ, length the CSS-pixel drift allowed on a box. Evidence lives in e2e/__visual__/<surface>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen).",
+  "surfaces": [
+    {
+      "surface": "verify",
+      "web": { "route": "/verify" },
+      "contract": "shared/visual/verify.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/verify/VerifyScreenVisualTest.kt"
+      },
+      "tolerance": { "pixels": 0.002, "length": 0.5 }
+    }
+  ]
 }

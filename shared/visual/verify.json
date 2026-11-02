@@ -1,0 +1,45 @@
+{
+  "surface": "verify",
+  "route": "/verify",
+  "notes": "The page at rest: the title, the search card, the code field, the submit button and the line of hints under them. The states after a lookup (found, not found, rate-limited, unreachable) are separate recordings and are not part of this contract yet.",
+  "elements": [
+    {
+      "name": "title",
+      "web": { "selector": "[data-visual='title'] h1" },
+      "app": { "tag": "verify-title" },
+      "properties": ["top", "width", "height", "fontSize", "fontWeight", "color"]
+    },
+    {
+      "name": "card",
+      "web": { "selector": "[data-visual='card']" },
+      "app": { "tag": "verify-card" },
+      "properties": [
+        "top",
+        "width",
+        "height",
+        "radius",
+        "paddingTop",
+        "paddingLeft",
+        "backgroundColor"
+      ]
+    },
+    {
+      "name": "code-input",
+      "web": { "selector": "[data-visual='input']" },
+      "app": { "tag": "verify-input" },
+      "properties": ["width", "height", "radius", "fontSize", "paddingLeft", "paddingRight"]
+    },
+    {
+      "name": "submit",
+      "web": { "selector": "[data-visual='submit']" },
+      "app": { "tag": "verify-submit" },
+      "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+    },
+    {
+      "name": "hint",
+      "web": { "selector": "[data-visual='hint']" },
+      "app": { "tag": "verify-hint" },
+      "properties": ["top", "width", "height", "fontSize"]
+    }
+  ]
+}

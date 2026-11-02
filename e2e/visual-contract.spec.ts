@@ -54,6 +54,25 @@ async function measure(page: Page, elements: Measured[]) {
       return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : value;
     };
 
+    // Tailwind 4 states colours in `oklab()`, which is not a value either client can
+    // compare against a Compose colour, and assigning one to a canvas keeps the
+    // `oklab()` serialisation. Painting it and reading the pixel is the sRGB value
+    // the app can produce from its tokens, alpha included.
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const color = (value: string): string => {
+      if (!context) return value;
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = '#000';
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      const data = context.getImageData(0, 0, 1, 1).data;
+      const [r, g, b, alpha] = [data[0] ?? 0, data[1] ?? 0, data[2] ?? 0, data[3] ?? 255];
+      return `rgba(${r}, ${g}, ${b}, ${Math.round((alpha / 255) * 100) / 100})`;
+    };
+
     const out: Record<string, Record<string, number | string>> = {};
     for (const spec of specs) {
       const node = document.querySelector(spec.selector);
@@ -110,10 +129,10 @@ async function measure(page: Page, elements: Measured[]) {
             props[property] = number(style.letterSpacing);
             break;
           case 'color':
-            props[property] = style.color;
+            props[property] = color(style.color);
             break;
           case 'backgroundColor':
-            props[property] = style.backgroundColor;
+            props[property] = color(style.backgroundColor);
             break;
           case 'borderTopWidth':
             props[property] = number(style.borderTopWidth);
