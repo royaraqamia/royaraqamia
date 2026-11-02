@@ -135,6 +135,22 @@ export const env = {
   get downloaderCallbackSecret(): string | undefined {
     return read('DOWNLOADER_CALLBACK_SECRET');
   },
+  /**
+   * The assistant's provider (ADR-0113, #817). Any OpenAI-compatible endpoint
+   * works, so switching vendor is these three values and nothing else: Gemini's
+   * compatibility URL and a Flash model are the documented defaults, and
+   * DeepSeek's own base URL is the escape hatch. A missing key means the
+   * assistant is off — the thread stays readable and says so — not broken.
+   */
+  get aiChatBaseUrl(): string | undefined {
+    return read('AI_CHAT_BASE_URL');
+  },
+  get aiChatModel(): string | undefined {
+    return read('AI_CHAT_MODEL');
+  },
+  get aiChatApiKey(): string | undefined {
+    return read('AI_CHAT_API_KEY');
+  },
   get pushEndpointAllowlist(): string[] {
     const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
     return (raw && raw.length > 0 ? raw : DEFAULT_PUSH_ENDPOINT_ALLOWLIST)

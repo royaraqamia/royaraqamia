@@ -1,6 +1,8 @@
 import {
   chatTypingTopic,
   CHAT_TYPING_EVENTS,
+  type ChatAgentEvent,
+  type ChatAssistantState,
   type ChatConversationSummary,
   type ChatMessage,
   type ChatMessagePage,
@@ -9,7 +11,7 @@ import {
   type ChatPreview,
   type ChatThread,
 } from '@/shared/contracts/chat';
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 import {
   joinBroadcastChannel,
   subscribeToPostgresChanges,
@@ -244,6 +246,90 @@ export async function getBlockedChatMembers(): Promise<ChatPeer[]> {
     cache: 'no-store',
   });
   return result.blocked ?? [];
+}
+
+/**
+ * The assistant (ADR-0113, #817).
+ *
+ * Opening it is idempotent: one thread per member, created on first open, so the
+ * Chats tab can offer the assistant without knowing whether it already exists.
+ */
+export async function startAssistantChat(): Promise<ChatStartResponse> {
+  return request<ChatStartResponse>('/api/chats/assistant', { method: 'POST' });
+}
+
+/** Whether the assistant is configured, and how much of today is left. */
+export async function getChatAssistant(): Promise<ChatAssistantState> {
+  const result = await request<{ success: boolean } & ChatAssistantState>('/api/chats/assistant', {
+    cache: 'no-store',
+  });
+  return { available: result.available === true, allowance: result.allowance };
+}
+
+/** A server message the stream never opened with, since SSE carries its own. */
+async function agentRefusal(response: Response): Promise<string> {
+  const data = (await response.json().catch(() => ({}))) as { error?: unknown };
+  return typeof data.error === 'string' && data.error.trim()
+    ? data.error
+    : 'تعذّر إرسال السؤال. حاول مرّة أخرى.';
+}
+
+/**
+ * One turn, read as it arrives. The route answers SSE, so the body is a run of
+ * `data:` frames rather than one JSON object; a frame that does not parse is
+ * skipped rather than ending the answer, which is what keeps a long reply
+ * readable when a chunk boundary lands mid-line.
+ */
+export async function streamChatAgentTurn(
+  id: string,
+  body: string,
+  onEvent: (event: ChatAgentEvent) => void
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/chats/${id}/assistant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+  } catch (cause) {
+    throw new ApiError('تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.', undefined, {
+      cause,
+    });
+  }
+
+  if (!response.ok || !response.body)
+    throw new ApiError(await agentRefusal(response), response.status);
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      for (;;) {
+        const boundary = buffer.indexOf('\n\n');
+        if (boundary === -1) break;
+        const frame = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+
+        const line = frame.split('\n').find((part) => part.startsWith('data:'));
+        if (!line) continue;
+
+        try {
+          onEvent(JSON.parse(line.slice('data:'.length).trim()) as ChatAgentEvent);
+        } catch {
+          // A frame the parser cannot read is dropped; the next one still arrives.
+        }
+      }
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
 }
 
 /**

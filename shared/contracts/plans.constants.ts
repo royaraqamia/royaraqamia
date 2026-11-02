@@ -47,6 +47,7 @@ export const USAGE_COUNTERS = {
   downloads: 'downloader.job.create',
   scannerScans: 'scanner.scan',
   quranSurahs: 'quran.surah.read',
+  chatAgentTurns: 'chat.agent.turn',
 } as const;
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
@@ -65,6 +66,9 @@ export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   'downloader.job.create': 1,
   'scanner.scan': 1,
   'quran.surah.read': 1,
+  // The assistant needs an account: its allowance is per member and its thread
+  // has no visitor path (ADR-0113).
+  'chat.agent.turn': 0,
 };
 
 /**

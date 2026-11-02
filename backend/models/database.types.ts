@@ -46,6 +46,7 @@ export type Database = {
       app_settings: {
         Row: {
           admin_emails: string[];
+          chat_agent_project_daily_turns: number;
           chat_attachment_daily_bytes: number;
           chat_attachment_file_bytes: number;
           chat_attachment_member_bytes: number;
@@ -54,6 +55,7 @@ export type Database = {
         };
         Insert: {
           admin_emails?: string[];
+          chat_agent_project_daily_turns?: number;
           chat_attachment_daily_bytes?: number;
           chat_attachment_file_bytes?: number;
           chat_attachment_member_bytes?: number;
@@ -62,6 +64,7 @@ export type Database = {
         };
         Update: {
           admin_emails?: string[];
+          chat_agent_project_daily_turns?: number;
           chat_attachment_daily_bytes?: number;
           chat_attachment_file_bytes?: number;
           chat_attachment_member_bytes?: number;
@@ -2581,6 +2584,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      chat_agent_allowance: {
+        Args: { p_user_id: string };
+        Returns: {
+          plan: string;
+          member_used: number;
+          member_cap: number;
+          project_used: number;
+          project_limit: number;
+          resets_at: string;
+        }[];
+      };
       chat_attachment_allowance: {
         Args: Record<string, never>;
         Returns: {

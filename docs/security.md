@@ -17,6 +17,7 @@
 - `E2E_TEST_PASSWORD`
 - `MCP_TOKEN_ENCRYPTION_KEY`
 - `ANONYMOUS_IP_SALT` (the salt behind a visitor's allowance subject; falls back to the MCP key)
+- `AI_CHAT_API_KEY` (the assistant's provider key; absent means the assistant is off)
 - `github_dispatch_token` (Supabase Vault, not env — see runbook below)
 
 ## GitHub Actions secrets

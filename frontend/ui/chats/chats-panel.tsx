@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, MessagesSquare, Plus, Users, X } from 'lucide-react';
+import { Check, MessagesSquare, Plus, Sparkles, Users, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
-import { createChatGroup } from '@/frontend/api/chats';
+import { createChatGroup, startAssistantChat } from '@/frontend/api/chats';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
@@ -36,6 +36,7 @@ export function ChatsPanel() {
     choice: 'accept' | 'decline';
   } | null>(null);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [assistantBusy, setAssistantBusy] = useState(false);
 
   const pending = threads.filter(
     (thread) => thread.myStatus === 'requested' || thread.myStatus === 'invited'
@@ -43,6 +44,25 @@ export function ChatsPanel() {
   const open = threads.filter(
     (thread) => thread.myStatus === 'active' || thread.myStatus === 'declined'
   );
+  const hasAssistant = threads.some((thread) => thread.kind === 'agent');
+
+  /**
+   * The assistant's thread is created on first open, so the tab offers it once
+   * and the list grows a row from then on (#817). Opening it twice answers the
+   * same thread, which is what makes the entry safe to press again.
+   */
+  async function openAssistant() {
+    setAssistantBusy(true);
+    try {
+      const result = await startAssistantChat();
+      if (result.conversationId) router.push(`/chats/${result.conversationId}`);
+      else setFailure(result.error ?? 'تعذّر فتح المساعد');
+    } catch (error) {
+      setFailure(error instanceof Error && error.message ? error.message : 'تعذّر فتح المساعد');
+    } finally {
+      setAssistantBusy(false);
+    }
+  }
 
   async function answer(id: string, choice: 'accept' | 'decline') {
     setIsAnswering(true);
@@ -98,6 +118,25 @@ export function ChatsPanel() {
           onCreated={openCreated}
           onClose={() => setPanel(null)}
         />
+      )}
+
+      {!hasAssistant && (
+        <button
+          type="button"
+          onClick={() => void openAssistant()}
+          disabled={assistantBusy}
+          className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
+        >
+          <span className="rounded-full bg-primary/10 p-2 text-primary">
+            <Sparkles size={18} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-foreground">المساعد الذكي</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground/80">
+              اسأل عن أي شيء، والرد يصلك هنا.
+            </span>
+          </span>
+        </button>
       )}
 
       {pending.length > 0 && (

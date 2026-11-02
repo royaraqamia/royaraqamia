@@ -364,6 +364,32 @@ export class ChatService {
   }
 
   /**
+   * The assistant's thread: one per member, created on first open (ADR-0113).
+   * It carries no title — `chatTitle` names it — and the member is its only
+   * participant, which is what makes the model's rows unambiguous: every
+   * `sender_kind = 'agent'` line in this thread was written by the server.
+   */
+  async startAssistant(userId: string): Promise<{ conversationId: string }> {
+    const existing = (await this.listThreads(userId)).find((thread) => thread.kind === 'agent');
+    if (existing) return { conversationId: existing.id };
+
+    const conversation = await this.repo.createConversation({
+      kind: 'agent',
+      createdBy: userId,
+      status: 'active',
+    });
+
+    await this.repo.addParticipant({
+      conversationId: conversation.id,
+      userId,
+      role: 'owner',
+      status: 'active',
+    });
+
+    return { conversationId: conversation.id };
+  }
+
+  /**
    * Invite more members into a group the caller is active in. The roster is the
    * database's rule (`private.chat_may_add_participant`); this composes the
    * read the surface needs and names the one refusal that is a state — a full
@@ -410,7 +436,8 @@ export class ChatService {
     };
   }
 
-  /** Answer a DM request or a group invite. */ async respond(
+  /** Answer a DM request or a group invite. */
+  async respond(
     userId: string,
     conversationId: string,
     answer: 'accept' | 'decline'
