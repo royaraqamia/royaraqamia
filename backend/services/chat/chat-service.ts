@@ -317,11 +317,22 @@ export class ChatService {
     );
   }
 
+  /**
+   * Leaving is a group exit. A direct thread is the pair, not a room: its exits
+   * are decline or withdraw before acceptance and block after it, so a one-sided
+   * `left` would strand the peer with a thread nobody can read and the leaver
+   * with one they cannot reopen (#842). Read the kind before writing anything.
+   */
   async leave(userId: string, conversationId: string): Promise<void> {
     const participants = await this.repo.findParticipants(conversationId);
     const me = participants.find((participant) => participant.userId === userId);
     if (!me || me.status !== 'active') {
       throw new ChatError(409, 'أنت لست عضواً في هذه المحادثة');
+    }
+
+    const conversation = await this.repo.findConversation(conversationId);
+    if (conversation?.kind !== 'group') {
+      throw new ChatError(409, 'لا يمكن مغادرة محادثة مباشرة');
     }
 
     await this.repo.setParticipantStatus(conversationId, userId, 'left');

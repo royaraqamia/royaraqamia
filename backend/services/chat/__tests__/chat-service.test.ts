@@ -409,6 +409,64 @@ describe('ChatService.respond', () => {
   });
 });
 
+describe('ChatService.leave', () => {
+  const activeMembership = [
+    {
+      conversationId: 'c-1',
+      userId: me,
+      role: 'owner' as const,
+      status: 'active' as const,
+      lastReadAt: null,
+      joinedAt: null,
+    },
+  ];
+
+  /**
+   * A direct thread has no one-sided exit: its pair declines or withdraws before
+   * acceptance and blocks after it. A lone `left` left the peer writing into a
+   * thread nobody could read and the leaver with one they could not reopen (#842).
+   */
+  it('refuses to leave a direct thread and writes nothing', async () => {
+    const { repository, service } = makeRepository({
+      findParticipants: vi.fn(async () => activeMembership),
+      findConversation: vi.fn(async () => ({
+        id: 'c-1',
+        kind: 'direct',
+        title: null,
+        status: 'active',
+        createdBy: me,
+        lastMessageAt: null,
+        createdAt: '2026-11-01T10:00:00.000Z',
+      })),
+    });
+
+    await expect(service.leave(me, 'c-1')).rejects.toMatchObject({
+      status: 409,
+      message: 'لا يمكن مغادرة محادثة مباشرة',
+    });
+    expect(repository.setParticipantStatus).not.toHaveBeenCalled();
+  });
+
+  it('lets a member leave a group thread', async () => {
+    const { repository, service } = makeRepository({
+      findParticipants: vi.fn(async () => activeMembership),
+      findConversation: vi.fn(async () => ({
+        id: 'c-1',
+        kind: 'group',
+        title: 'المجموعة',
+        status: 'active',
+        createdBy: me,
+        lastMessageAt: null,
+        createdAt: '2026-11-01T10:00:00.000Z',
+      })),
+    });
+
+    await service.leave(me, 'c-1');
+
+    expect(repository.setParticipantStatus).toHaveBeenCalledWith('c-1', me, 'left');
+  });
+});
+
 describe('ChatService.sendMessage', () => {
   it('refuses a blank message', async () => {
     const { repository, service } = makeRepository();
