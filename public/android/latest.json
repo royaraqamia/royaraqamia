@@ -1,11 +1,11 @@
 {
-  "versionCode": 20021,
-  "versionName": "1.0.21",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.0.21.apk",
-  "sha256": "f654ea26c65dde3c82aab6c788cd51ae5bd6a30da9cfbbe53aac74edb73d0623",
-  "sizeBytes": 10696865,
+  "versionCode": 20100,
+  "versionName": "1.1.0",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.1.0.apk",
+  "sha256": "1f1d7da2da2c975e738ed4e63f3c17ae4231ddab379d7cd0aa825c62def46638",
+  "sizeBytes": 7424047,
   "minSupportedVersionCode": 20000,
   "rollout": 100,
-  "notes": "fix(android): regenerate the plugin lists and stop a dirty tree blocking the manifest (#631)",
-  "releasedAt": "2026-10-27"
+  "notes": "زر الرجوع يعود بك إلى صفحة التطبيق السابقة بدل أن يغلق التطبيق.",
+  "releasedAt": "2026-11-02"
 }
