@@ -56,6 +56,12 @@ decoded off the main thread before the frame needs them — ~90 ms on its own
 the one lever left and it cannot be generated from this phone: its ROM refuses `cmd package compile`
 to `adb shell` ([#762](https://github.com/royaraqamia/royaraqamia/issues/762)).
 
+A warm start only counts when the platform says it made one. `am start -W` answers
+`LaunchState: UNKNOWN` with no `TotalTime` while the activity still holds the top-resumed state after
+leaving the screen, and on a slow device that outlasts any fixed settle — so the drill re-issues the
+start rather than recording the answer, because an UNKNOWN read as a number is an infinitely fast
+launch.
+
 ## Phase 0 — the seam
 
 No product UI. This phase exists to make everything after it mechanical.

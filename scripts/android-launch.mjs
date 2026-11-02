@@ -25,6 +25,15 @@
  * resumed from the background, which is the floor rather than the case). The
  * script prints which it saw and never pretends a `COLD` run was a `WARM` one.
  *
+ * A warm start can also come back as no launch at all. The activity keeps the
+ * top-resumed state for a moment after the app leaves the screen, and on a slow
+ * device that outlasts any fixed settle: `am start` then answers
+ * `LaunchState: UNKNOWN` with no `TotalTime` and "its current task has been
+ * brought to the front". That is not a measurement, so the start is re-issued
+ * rather than recorded — a re-issued start that finally lands is a real warm
+ * launch, while an UNKNOWN recorded as a number would read as an infinitely fast
+ * one.
+ *
  * Usage:
  *   npm run android:launch                     # 3 runs, default device
  *   npm run android:launch -- --device <serial>
@@ -60,14 +69,25 @@ export const LAUNCH_ACTIVITY = '.shell.ShellActivity';
 export const BUDGET = { cold: 550, warm: 300 };
 /** How many runs the median is taken over by default. */
 export const RUNS = 3;
-/** How long the app is given to leave the foreground after the HOME key. */
+/** How long the app is given to report that it stopped after the HOME key. */
 export const HOME_TIMEOUT_MS = 3000;
-/** How often that is checked, while it is still in front. */
+/** How often that state is read, while the activity is still resumed. */
 export const HOME_POLL_MS = 150;
-/** How long the home transition is given after it lands: the task is modal for a moment. */
+/** How long the home transition is given after the activity stopped: the task is modal for a moment. */
 export const HOME_SETTLE_MS = 700;
 /** How long `am force-stop` is given to actually remove the process. */
 export const PROCESS_DEATH_TIMEOUT_MS = 3000;
+/**
+ * How long a warm start waits before it is re-issued.
+ *
+ * The app can still hold the top-resumed state after it has left the screen, and
+ * `am start` answers that with no `TotalTime` at all. Each re-issue is another
+ * `am start -W`, so this is also how much of the transition the drill is willing
+ * to sit through before calling the run unmeasurable.
+ */
+export const WARM_RETRY_MS = 700;
+/** How many times a warm start is issued before the run is called unmeasurable. */
+export const WARM_ATTEMPTS = 6;
 
 /**
  * The options, from argv.
@@ -202,14 +222,24 @@ export function startArgs() {
   return ['shell', 'am', 'start', '-W', '-n', `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`];
 }
 
-/** One launch, with the reading the platform printed. */
+/** One launch, with the reading the platform printed and the raw answer beside it. */
 function launch(adbPath, device) {
   const stdout = adb(adbPath, device, startArgs());
-  const reading = parseAmStart(stdout);
-  if (reading.totalTime === null) {
-    throw new Error(`am start printed no TotalTime:\n${stdout.trim()}`);
-  }
-  return reading;
+  return { ...parseAmStart(stdout), stdout };
+}
+
+/**
+ * A start the platform answered without launching the activity.
+ *
+ * `am start -W` prints `LaunchState: UNKNOWN` when the task it was asked for is
+ * still the front one: nothing was started, so there is nothing to time — and it
+ * prints that as either no `TotalTime` at all or `TotalTime: 0`. A real launch is
+ * the platform naming `COLD`, `WARM` or `HOT` and a positive number beside it, so
+ * anything else is waited out rather than recorded: an UNKNOWN read as a number is
+ * an infinitely fast launch.
+ */
+export function answeredWithoutLaunch(reading) {
+  return reading.state === null || !(reading.totalTime > 0);
 }
 
 function coldRun(adbPath, device) {
@@ -217,6 +247,9 @@ function coldRun(adbPath, device) {
   waitUntilDead(adbPath, device);
   background(adbPath, device);
   const reading = launch(adbPath, device);
+  if (answeredWithoutLaunch(reading)) {
+    throw new Error(`am start did not launch the activity:\n${reading.stdout.trim()}`);
+  }
   if (reading.state !== 'COLD') {
     throw new Error(
       `expected a COLD launch, the platform reported ${reading.state ?? 'no state'}: ` +
@@ -226,9 +259,30 @@ function coldRun(adbPath, device) {
   return reading;
 }
 
+/**
+ * A warm start, re-issued while the platform still answers that it did not launch.
+ *
+ * The cold path cannot do this: a cold run that came back as a launch it did not
+ * make would be a different measurement, and its state guard already refuses it.
+ */
+function warmLaunch(adbPath, device) {
+  let reading = launch(adbPath, device);
+  for (let attempt = 1; attempt < WARM_ATTEMPTS && answeredWithoutLaunch(reading); attempt += 1) {
+    sleep(WARM_RETRY_MS);
+    reading = launch(adbPath, device);
+  }
+  if (answeredWithoutLaunch(reading)) {
+    throw new Error(
+      `am start did not launch the activity in ${WARM_ATTEMPTS} attempts, so it never left the ` +
+        `top-resumed state:\n${reading.stdout.trim()}`
+    );
+  }
+  return reading;
+}
+
 function warmRun(adbPath, device) {
   background(adbPath, device);
-  const reading = launch(adbPath, device);
+  const reading = warmLaunch(adbPath, device);
   if (reading.state === 'COLD') {
     throw new Error('a warm run came back COLD: the process died between runs');
   }
@@ -249,34 +303,53 @@ function waitUntilDead(adbPath, device) {
 }
 
 /**
- * Whether our activity is the one the platform resumed.
+ * The state the platform reports for one activity record, in its own words.
  *
- * A start while it is resumed is a no-op — the platform answers `LaunchState:
- * UNKNOWN` with no `TotalTime` — so the warm run waits for the HOME key to land
- * rather than trusting a fixed sleep.
+ * `dumpsys activity activities` prints an `ActivityRecord{...}` header per record
+ * and a `state=` line inside it (`RESUMED`, `PAUSED`, `STOPPED`, …). Reading the
+ * field rather than the presence of a line is what makes "the app is out of the
+ * way" a fact: the platform's summary of what is on top is not the same question,
+ * and a start while this still says `RESUMED` is answered as a task brought to the
+ * front instead of a launch.
  */
-function isForeground(adbPath, device) {
-  const resumed = adb(adbPath, device, [
-    'shell',
-    'dumpsys activity activities | grep ResumedActivity',
-  ]);
-  return resumed.includes(`${PACKAGE_ID}/`);
+export function activityState(dump, component) {
+  let current = null;
+  for (const line of dump.split('\n')) {
+    const header = /ActivityRecord\{\S+ u\d+ ([^}]+)\}/.exec(line);
+    if (header) {
+      current = header[1].replace(/\s+t\d+$/, '').trim();
+      continue;
+    }
+    if (current !== component) continue;
+    const state = /^\s+state=(\w+)/.exec(line);
+    if (state) return state[1];
+  }
+  return null;
 }
 
+/**
+ * The app is out of the way before anything is started.
+ *
+ * Leaving the screen is not the same as being stopped: the activity keeps the
+ * top-resumed state for a moment, and `am start` inside that window is answered
+ * as a task brought to the front rather than as a launch — `LaunchState: UNKNOWN`
+ * and no `TotalTime`. The platform's own `state=` on the activity record is what
+ * says the transition is over, so that is what is waited for, and the settle after
+ * it covers the task still being modal for a moment.
+ */
 function background(adbPath, device) {
   adb(adbPath, device, ['shell', 'input', 'keyevent', 'KEYCODE_HOME']);
   const deadline = Date.now() + HOME_TIMEOUT_MS;
   while (Date.now() < deadline) {
     sleep(HOME_POLL_MS);
-    if (!isForeground(adbPath, device)) {
-      // The task is still modal for a moment after the launcher is resumed: a
-      // start inside that window answers UNKNOWN with no TotalTime, which is not
-      // a measurement.
+    const dump = adb(adbPath, device, ['shell', 'dumpsys activity activities']);
+    const state = activityState(dump, `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`);
+    if (state === null || state === 'STOPPED' || state === 'DESTROYED') {
       sleep(HOME_SETTLE_MS);
       return;
     }
   }
-  throw new Error('the app did not leave the foreground after the HOME key');
+  throw new Error(`the app did not stop after the HOME key: ${HOME_TIMEOUT_MS} ms`);
 }
 
 function report(cold, warm, { budget }) {
