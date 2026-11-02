@@ -152,13 +152,38 @@ gh pr create --base main --fill
 and link the issue it closes with `Closes #<n>` so the owner's merge closes it. Body conventions: the
 `pr` skill.
 
+## 5a. Keep the pull request green
+
+An open pull request is a claim that the branch is ready to merge, and the owner should be able to
+merge it the moment they finish reading the diff. So it is the agent's job to keep it green and
+mergeable, not to open it and walk away:
+
+```powershell
+gh pr checks --watch --fail-fast        # exits non-zero on the first red check
+gh pr view --json mergeable,mergeStateStatus
+```
+
+- **A red check is the agent's to fix.** Read the failing step
+  (`gh run view <run-id> --log-failed`), fix the cause, commit, push to the same branch. Weakening,
+  skipping or deleting the gate is not a fix, and a check that flaked is re-run, not argued with.
+- **A conflict is the same kind of work.** `npm run sync:base` (onto `origin/main`, or onto the branch
+  of the pull request this one stacks on) and then `git push --force-with-lease` — the one force-push
+  the workflow allows, and only while the pull request is open.
+- **A push after the pull request opens is normal**, and it is always to this branch, for this
+  reason. It is not a merge: `gh pr merge`, auto-merge and `--delete-branch` stay the owner's, and an
+  agent never runs them.
+- **Say when it is green** — the checks that passed, and anything the owner still has to decide — so
+  the report matches the pull request's actual state. A check that cannot be made green with the
+  branch as it stands is still worth reporting, with the failing step named.
+
 ## 6. The local squash — the last step
 
-After `gh pr create`, the branch's content is squash-merged into the canonical checkout's `main`, and
-the loop stops. The pull request itself is never touched afterward: no push to its branch, no edit,
-no `gh pr merge`, no auto-merge, no `--delete-branch`, and waiting on CI remains nobody's duty — a
-person merges on GitHub
-([ADR 0066](adr/0066-agents-stop-at-the-open-pull-request.md) and its amendment).
+Once the pull request is green (step 5a), the branch's content is squash-merged into the canonical
+checkout's `main`, and the loop stops. Nothing is merged on GitHub by the agent: no `gh pr merge`, no
+auto-merge, no `--delete-branch` — a person merges there
+([ADR 0066](adr/0066-agents-stop-at-the-open-pull-request.md) and its amendments). A later push that
+keeps the pull request green changes what it carries, so the record is rebuilt from the final branch,
+never left as a copy of an earlier commit.
 
 ```powershell
 # in the task's worktree — the guard refuses agent commits in the canonical
@@ -182,11 +207,12 @@ git -C D:\Projects\royaraqamia branch -d temp/squash
   the pointer does. A local commit on `main` that is _not_ a squash copy (`(#N)`-suffixed) is
   unpushed work of the owner's; a reset that would swallow it must stop and report instead.
 - **One-commit branches still squash** — the form of the record is the point, not its size.
+- **A fix after the squash rebuilds the record.** A push that answers a red check or a conflict
+  (step 5a) changes what the pull request carries, so the copy is made again from the final branch:
+  the same recipe with `git branch temp/squash <the copy's parent>`, which drops the earlier record of
+  this one pull request and nothing else.
 - **The worktree and the branch stay exactly as they are** — the pull request needs the branch, and
-  the worktree is where the owner finishes a failing check.
-
-A check that fails is still worth reporting — say which one — and the pull request stays open for the
-owner either way.
+  the worktree is where the next fix is made.
 
 ## 7. After the owner merges (reconciled at the next start)
 

@@ -114,6 +114,11 @@
       "reason": "The app's release notes as a screen, from the weekly train's own list, land in #799."
     },
     {
+      "surface": "account-blocked",
+      "native": null,
+      "reason": "The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799)."
+    },
+    {
       "surface": "notifications",
       "native": null,
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."

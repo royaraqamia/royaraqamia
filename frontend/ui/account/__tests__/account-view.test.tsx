@@ -23,7 +23,7 @@ const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 vi.mock('@/frontend/shared/constants', () => ({
-  getWhatsAppUrl: () => 'https://wa.me/963968478904',
+  SUPPORT_USERNAME: 'royaraqamia',
 }));
 
 /* The install row reads the PWA context; it has its own suite. */
@@ -70,6 +70,12 @@ describe('AccountView', () => {
     );
     expect(screen.getByText('تواصل معنا')).toBeInTheDocument();
 
+    // Support is a chat with the site's own account, not WhatsApp.
+    expect(screen.getByRole('link', { name: /تواصل معنا/ })).toHaveAttribute(
+      'href',
+      '/chats/new?to=royaraqamia'
+    );
+
     // The FAQ row is public: a guest gets a link, not the sign-in prompt.
     expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
       'href',
@@ -99,6 +105,7 @@ describe('AccountView', () => {
       'المنشورات',
       'الرَّوابط المختصَرة',
       'التَّطبيقات المتَّصلة بالـ MCP',
+      'الأعضاء المحظورون',
     ]) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
@@ -143,6 +150,10 @@ describe('AccountView', () => {
       '/account/faq'
     );
     expect(screen.getByRole('link', { name: /خطط التَّسعير/ })).toHaveAttribute('href', '/pricing');
+    expect(screen.getByRole('link', { name: /الأعضاء المحظورون/ })).toHaveAttribute(
+      'href',
+      '/account/blocked'
+    );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
   });

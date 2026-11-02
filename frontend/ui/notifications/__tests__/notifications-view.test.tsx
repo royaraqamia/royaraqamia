@@ -101,7 +101,7 @@ describe('NotificationsView tabs', () => {
 
     render(<NotificationsView />);
 
-    expect(tab(/التنبيهات/)).toHaveAttribute('aria-selected', 'true');
+    expect(tab(/التَّنبيهات/)).toHaveAttribute('aria-selected', 'true');
     expect(tab(/المحادثات/)).toHaveAttribute('aria-selected', 'false');
   });
 
@@ -142,7 +142,7 @@ describe('NotificationsView tabs', () => {
 
     render(<NotificationsView />);
 
-    expect(tab(/التنبيهات/)).toHaveTextContent('3');
+    expect(tab(/التَّنبيهات/)).toHaveTextContent('3');
     expect(tab(/المحادثات/)).not.toHaveTextContent('0');
   });
 

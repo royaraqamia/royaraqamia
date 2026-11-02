@@ -136,16 +136,21 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # The suite writes its fixtures on one shared account, so that account has
-      # to start with headroom: it is put on Pro here, because the free
-      # owned-item caps (5 habits, 10 links, 5 drafts) are smaller than what a
-      # handful of runs leaves behind, and a capped account answers every
-      # creating spec with 402 before it can even clean up after itself.
-      # Idempotent, and refreshed every run. `--reset` is deliberately not
-      # passed: two branches' offline jobs can run at once against this account,
-      # and a purge would delete rows the other run is asserting on.
+      # to start with headroom: it is put on Pro here, because the free caps (5
+      # habits, 5 links, 5 drafts) are smaller than what a handful of runs leaves
+      # behind, and a capped account answers every creating spec with 402 before
+      # it can even clean up after itself.
+      #
+      # Pro is 50 of each item since the caps were lowered (`plan_limits`,
+      # 2026-10-29), which is still a handful of runs — so the stale fixtures of
+      # runs that died mid-suite are dropped here too. The window is wider than
+      # this job's 40-minute timeout on purpose: a row younger than that could
+      # belong to another branch's offline job, which shares this account, and a
+      # purge would delete what a live run is still asserting on. `--reset` (drop
+      # everything) stays a manual escape hatch for a poisoned account.
       - name: Prepare the test account
         if: ${{ env.E2E_TEST_EMAIL != '' }}
-        run: node e2e/setup-test-user.ts
+        run: node e2e/setup-test-user.ts --purge-stale=90
 
       # One invocation, so one production build, and serial so the specs do not
       # rate-limit each other's sign-in. The public spec needs no account; the

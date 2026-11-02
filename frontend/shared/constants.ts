@@ -6,6 +6,13 @@ export const WHATSAPP_PHONE =
 
 export const WHATSAPP_MESSAGE = 'السَّلام عليكم ورحمة اللّٰه وبركاته.';
 
+/**
+ * The account the site answers support conversations from. «تواصل معنا» opens a
+ * chat with it inside the product, so a member's question and the reply live in
+ * the same thread as everything else.
+ */
+export const SUPPORT_USERNAME = 'royaraqamia';
+
 export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';

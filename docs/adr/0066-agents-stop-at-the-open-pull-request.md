@@ -61,7 +61,8 @@ instead of reversing it. What an agent may still never do is publish: `origin/ma
 by a person's merge, the pull request is never touched after it opens (no pushes to its branch, no
 `gh pr merge`, no auto-merge, no branch deletion), and a check that fails is reported, not retried.
 What changed is the checkout: instead of falling behind `origin/main` after every task, it now holds
-one squashed record per landed pull request.
+one squashed record per landed pull request. (The "never touched after it opens" clause is narrowed by
+the amendment at the end of this file.)
 
 The squash form is deliberate. It is the same shape the owner's squash-and-merge produces on
 GitHub — one commit per task, subject carrying `(#N)` — so local and remote read alike, and the
@@ -78,3 +79,25 @@ checkout, so the recipe commits the squash on a temporary branch inside the task
 squash's content is the pull request's own diff. The pointer move is the checkout receiving work it
 already saw open as a pull request; it is not the merge this ADR withholds, and the diff the owner
 reads is the same one either way.
+
+## Amendment (2026-11-02): an open pull request is the agent's until it is green
+
+The 2026-10-21 amendment ended an agent run at the open pull request and said the branch is never
+touched again. In practice that left a red check or a conflict with nobody to answer it: the owner was
+asked to merge something that could not be merged, and the first person to look at it became the
+person who finished it. The owner asked for the opposite contract - a pull request an agent opens is
+100% green and mergeable - so the boundary moves by exactly that much.
+
+What an agent now does, and must do, after `gh pr create`: watch the checks (`gh pr checks --watch`)
+and the base (`gh pr view --json mergeable`), and fix what is not green by pushing to that same
+branch - the cause of the failing step, never the gate; a rebase through `npm run sync:base` for a
+conflict with the base. It may edit the body when the change it describes changed, and it rebuilds the
+local `(#N)` record from the final branch so the checkout still reads as the pull request's own diff
+([landing.md](agents/landing.md), steps 5a and 6).
+
+What it still never does: merge. `gh pr merge`, auto-merge and `--delete-branch` remain a person's
+step, and `origin/main` is still written only by that merge. The workflows' check watch keeps its
+cap; a session watches the same way and reports what it saw.
+
+This is not a reversal of the ADR. The boundary it draws is about the _merge_, not about the branch: a
+branch a person is asked to merge is the agent's to finish, and the merge itself stays theirs.

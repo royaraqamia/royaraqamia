@@ -139,6 +139,92 @@ describe('ChatThreadView menu', () => {
 
     expect(screen.getByRole('button', { name: 'مغادرة المحادثة' })).toBeInTheDocument();
   });
+
+  /**
+   * The blocked list is an account page, not a menu entry, and the screen is
+   * reached from the chats list — so the header carries no back link either.
+   */
+  it('offers neither the blocked list nor a back link', () => {
+    thread.current = makeThread('direct');
+    openMenu();
+
+    expect(screen.queryByText('الأعضاء المحظورون')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'العودة إلى المحادثات' })).not.toBeInTheDocument();
+  });
+});
+
+function mineMessage(): ChatMessage {
+  return {
+    id: 'm-1',
+    conversationId: 'c-1',
+    senderId: PEER.id,
+    senderKind: 'user',
+    body: 'الرسالة الأصلية',
+    replyToId: null,
+    editedAt: null,
+    deletedAt: null,
+    createdAt: new Date().toISOString(),
+    attachments: [],
+    replyTo: null,
+  };
+}
+
+/**
+ * A refused write is a sentence, not a silent screen (#844): the hook answers
+ * `false`/a sentence, and the view is what keeps the draft, keeps the editor
+ * open, and takes the spinner off a dialog whose write rejected.
+ */
+describe('ChatThreadView refused writes', () => {
+  beforeEach(() => {
+    hook.messages.current = [];
+    hook.send.mockReset();
+    hook.edit.mockReset();
+    hook.remove.mockReset();
+    thread.current = makeThread('direct');
+  });
+
+  it('keeps the draft when the send is refused', async () => {
+    hook.send.mockResolvedValue(false);
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const composer = screen.getByRole('textbox', { name: 'نص الرسالة' });
+    fireEvent.change(composer, { target: { value: 'سلام' } });
+    fireEvent.click(screen.getByRole('button', { name: 'إرسال' }));
+
+    await waitFor(() => expect(hook.send).toHaveBeenCalledWith('سلام', []));
+    expect(composer).toHaveValue('سلام');
+  });
+
+  it('keeps the editor open when the edit is refused', async () => {
+    hook.messages.current = [mineMessage()];
+    hook.edit.mockResolvedValue(false);
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'تعديل الرسالة' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'تعديل الرسالة' }), {
+      target: { value: 'نص معدّل' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+
+    await waitFor(() => expect(hook.edit).toHaveBeenCalledWith('m-1', 'نص معدّل'));
+    expect(screen.getByRole('textbox', { name: 'تعديل الرسالة' })).toBeInTheDocument();
+  });
+
+  it('closes the delete dialog and reports the refusal when the delete rejects', async () => {
+    hook.messages.current = [mineMessage()];
+    hook.remove.mockRejectedValue(new Error('تعذّر حذف الرسالة'));
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'حذف الرسالة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حذف' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText('ستُحذف الرسالة من عند الطرفين، وتبقى آثارها في المحادثة.')
+      ).toBeNull()
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('تعذّر حذف الرسالة');
+  });
 });
 
 function mineMessage(): ChatMessage {

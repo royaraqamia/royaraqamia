@@ -10,6 +10,7 @@ import {
   Plug,
   ShieldCheck,
   Shield,
+  ShieldOff,
   ScrollText,
   LogOut,
   HelpCircle,
@@ -22,7 +23,7 @@ import {
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { SUPPORT_USERNAME } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
@@ -32,7 +33,6 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
-import { BlockedMembers } from '@/frontend/ui/account/blocked-members';
 import { ShellChangelogRow } from '@/frontend/ui/account/changelog-view';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
 
@@ -146,6 +146,13 @@ export function AccountView() {
           onRequireAuth={setPromptHref}
         />
 
+        <AccountRow
+          href="/account/blocked"
+          icon={ShieldOff}
+          label="الأعضاء المحظورون"
+          onRequireAuth={setPromptHref}
+        />
+
         {/* Public: a visitor may read the plans without an account, so this is a
             plain link rather than a row that opens the sign-in prompt. */}
         <Link href="/pricing" className={rowClasses}>
@@ -188,7 +195,10 @@ export function AccountView() {
           </span>
         </Link>
 
-        <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className={rowClasses}>
+        {/* Support is a chat with the site's own account, in the product rather
+            than on WhatsApp. A guest lands on the chat screen's sign-in prompt,
+            which returns them here after signing in. */}
+        <Link href={`/chats/new?to=${encodeURIComponent(SUPPORT_USERNAME)}`} className={rowClasses}>
           <span className="flex items-center gap-2.5">
             <MessageCircle className="w-4 h-4 shrink-0 text-primary" />
             <span>تواصل معنا</span>
@@ -196,7 +206,7 @@ export function AccountView() {
           <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
             ←
           </span>
-        </a>
+        </Link>
 
         {/* Legal pages — public, so plain links for guests and members alike. */}
         {legalRows.map(({ href, icon: Icon, label }) => (
@@ -227,12 +237,6 @@ export function AccountView() {
           </button>
         )}
       </nav>
-
-      {user && (
-        <div className="mt-6">
-          <BlockedMembers />
-        </div>
-      )}
 
       <ConfirmDialog
         open={isLogoutDialogOpen}

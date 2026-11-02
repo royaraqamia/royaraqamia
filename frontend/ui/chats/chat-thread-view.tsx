@@ -2,17 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Check,
-  Download,
-  MoreVertical,
-  Paperclip,
-  Pencil,
-  Send,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Check, Download, MoreVertical, Paperclip, Pencil, Send, Trash2, X } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
 import { useSession } from '@/frontend/state/session-provider';
@@ -419,14 +409,6 @@ function ThreadHeader({
 }) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      <Link
-        href="/notifications?tab=chats"
-        aria-label="العودة إلى المحادثات"
-        className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
-      >
-        <ArrowRight size={18} />
-      </Link>
-
       {counterpart && (
         <MemberAvatar
           name={counterpart.name ?? counterpart.username}
@@ -438,7 +420,7 @@ function ThreadHeader({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        <p className="truncate text-xs text-muted-foreground/70" dir="ltr">
+        <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
           {thread.kind === 'direct' && counterpart
             ? `@${counterpart.username}`
             : `${thread.participants.length} أعضاء`}
@@ -465,14 +447,6 @@ function ThreadHeader({
             >
               إبلاغ عن المحادثة
             </button>
-            {counterpart && (
-              <Link
-                href="/account#blocked"
-                className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
-              >
-                الأعضاء المحظورون
-              </Link>
-            )}
             {counterpart && (
               <button
                 type="button"

@@ -44,7 +44,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 const TABS = [
   { id: 'chats', label: 'المحادثات' },
-  { id: 'alerts', label: 'التنبيهات' },
+  { id: 'alerts', label: 'التَّنبيهات' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
