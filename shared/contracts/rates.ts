@@ -66,61 +66,79 @@ export type RateRange = (typeof RATE_RANGES)[number];
 export const RATE_BASES = ['official', 'parallel'] as const;
 export type RateBasis = (typeof RATE_BASES)[number];
 
-export interface CurrencyRate {
-  rate: number;
-  previousRate: number | null;
-  changePct: number | null;
+/**
+ * The board's shapes are schemas, not types (#658).
+ *
+ * The app reads the same board the page renders, so the JSON the route answers is
+ * generated into Kotlin by `contracts:generate`; a field the board stops carrying
+ * is then a compile error in the app rather than a column that draws nothing.
+ * The TypeScript names are inferred from the schemas, so every existing use keeps
+ * the shape it had.
+ */
+export const CurrencyRateSchema = z.object({
+  rate: z.number(),
+  previousRate: z.number().nullable(),
+  changePct: z.number().nullable(),
   /** Quote date of this value (`YYYY-MM-DD`), or null when the source omits it. */
-  asOf: string | null;
-}
+  asOf: z.string().nullable(),
+});
 
-export interface ParallelMarket {
-  key: string;
-  name: string;
-  rate: CurrencyRate;
-}
+export type CurrencyRate = z.infer<typeof CurrencyRateSchema>;
 
-export interface CurrencyQuote {
-  code: string;
-  name: string;
-  symbol: string;
-  /** Official rate: the central-bank value when a dedicated source answered,
-   * otherwise the reference feed. Always present. */
-  rate: number;
-  previousRate: number | null;
-  changePct: number | null;
-  /** Quote date of the official value (`YYYY-MM-DD`), or null. */
-  asOf: string | null;
-  /** Parallel-market rate; present only for a dual-rate Currency. */
-  parallel: CurrencyRate | null;
-  /** Per-market parallel rates when the parallel value spans more than one
-   * market (YER). Absent for single-market currencies. */
-  parallelMarkets?: ParallelMarket[];
-}
+export const ParallelMarketSchema = z.object({
+  key: z.string(),
+  name: z.string(),
+  rate: CurrencyRateSchema,
+});
 
-export interface MetalKaratQuote {
-  karat: number;
-  pricePerGramUsd: number;
-}
+export type ParallelMarket = z.infer<typeof ParallelMarketSchema>;
 
-export interface MetalQuote {
-  code: string;
-  name: string;
-  pricePerOunceUsd: number;
-  pricePerGramUsd: number;
-  previousPricePerOunceUsd: number | null;
-  changePct: number | null;
-  karats: MetalKaratQuote[];
-}
+export const CurrencyQuoteSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  symbol: z.string(),
+  /** The central-bank value when a dedicated source answered, else the reference feed. */
+  rate: z.number(),
+  previousRate: z.number().nullable(),
+  changePct: z.number().nullable(),
+  asOf: z.string().nullable(),
+  /** Present only for a dual-rate Currency. */
+  parallel: CurrencyRateSchema.nullable(),
+  /** Per-market parallel rates when the value spans more than one market (YER). */
+  parallelMarkets: z.array(ParallelMarketSchema).optional(),
+});
 
-export interface RatesBoard {
-  base: string;
-  fetchedAt: string;
-  providerQuoteDate: string;
-  isStale: boolean;
-  currencies: CurrencyQuote[];
-  metals: MetalQuote[];
-}
+export type CurrencyQuote = z.infer<typeof CurrencyQuoteSchema>;
+
+export const MetalKaratQuoteSchema = z.object({
+  karat: z.number(),
+  pricePerGramUsd: z.number(),
+});
+
+export type MetalKaratQuote = z.infer<typeof MetalKaratQuoteSchema>;
+
+export const MetalQuoteSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  pricePerOunceUsd: z.number(),
+  pricePerGramUsd: z.number(),
+  previousPricePerOunceUsd: z.number().nullable(),
+  changePct: z.number().nullable(),
+  karats: z.array(MetalKaratQuoteSchema),
+});
+
+export type MetalQuote = z.infer<typeof MetalQuoteSchema>;
+
+export const RatesBoardSchema = z.object({
+  base: z.string(),
+  fetchedAt: z.string(),
+  providerQuoteDate: z.string(),
+  isStale: z.boolean(),
+  currencies: z.array(CurrencyQuoteSchema),
+  metals: z.array(MetalQuoteSchema),
+});
+
+export type RatesBoard = z.infer<typeof RatesBoardSchema>;
 
 export interface RateSeriesPoint {
   date: string;

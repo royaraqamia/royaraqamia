@@ -135,6 +135,14 @@ export const CONTRACTS = [
     file: 'CertificateContracts.kt',
     schemas: ['VerifyRequestSchema', 'VerifyResultSchema'],
   },
+  // The rates board (#658): the page and the app read one server-owned snapshot,
+  // so the shape the app decodes is generated from the same schema the route is
+  // typed by. Metals and currencies both, because the app draws both.
+  {
+    module: 'shared/contracts/rates',
+    file: 'RatesContracts.kt',
+    schemas: ['RatesBoardSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([
