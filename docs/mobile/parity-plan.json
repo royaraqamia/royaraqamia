@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "notes": "The todo list for making the APK the web (#882): one row per surface in perf/surfaces.json, in the order the work is meant to happen, and the state of each. `state` is `native` only when the row in docs/mobile/screens.json says `enabled: true` and its evidence passes check:visual (ADR-0118); `todo` is a surface the app still opens in the document; `blocked` is one that cannot be worked yet, and `blockedBy` says why. `check:plan` fails when a surface has no row, a row names a surface that does not exist, the two files disagree about what is on, or a ported component in docs/mobile/parity.json belongs to a surface this plan does not know. docs/mobile/parity-plan.md and the tracking issue are generated from this file - do not hand-edit either.",
+  "phases": [
+    {
+      "id": "gate",
+      "title": "Prove the gate",
+      "why": "The three surfaces that already have a Kotlin screen. Recording both sides here exercises the harness on screens that exist, before a single line of new drawing."
+    },
+    {
+      "id": "public-content",
+      "title": "Public content",
+      "why": "Read with no session, so the page can be recorded without the fixture account and a failure is about the screen rather than about data."
+    },
+    {
+      "id": "auth",
+      "title": "Sign-in",
+      "why": "The site is what signs in since #873, and the native card is the one screen a guest sees first. It is also the surface every other signed-in recording depends on."
+    },
+    {
+      "id": "core",
+      "title": "The app's core",
+      "why": "Home, the account area, notifications and chats: the screens a member opens daily."
+    },
+    {
+      "id": "products",
+      "title": "Products",
+      "why": "The local-store products, where the app has a real reason to be native: offline writes and a device store behind the same screen."
+    },
+    {
+      "id": "leads",
+      "title": "Requests and bookings",
+      "why": "Forms that end in a server write, so a port has to bring the same validation and the same confirmation as the page."
+    },
+    {
+      "id": "operator",
+      "title": "Operator surfaces",
+      "why": "Listed so nothing is missing, and blocked as one decision: the admin area needs its own security review before any of it is drawn natively (#660)."
+    }
+  ],
+  "surfaces": [
+    { "surface": "verify", "phase": "gate", "state": "todo" },
+    { "surface": "verify-code", "phase": "gate", "state": "todo" },
+    { "surface": "rates", "phase": "gate", "state": "todo" },
+    { "surface": "marketing", "phase": "public-content", "state": "todo" },
+    { "surface": "downloader", "phase": "public-content", "state": "todo" },
+    { "surface": "community", "phase": "public-content", "state": "todo" },
+    { "surface": "community-post", "phase": "public-content", "state": "todo" },
+    { "surface": "profile", "phase": "public-content", "state": "todo" },
+    { "surface": "news", "phase": "public-content", "state": "todo" },
+    { "surface": "scan", "phase": "public-content", "state": "todo" },
+    { "surface": "linksnap-unlock", "phase": "public-content", "state": "todo" },
+    { "surface": "mcp-guide", "phase": "public-content", "state": "todo" },
+    { "surface": "mcp-connect", "phase": "public-content", "state": "todo" },
+    { "surface": "athkar", "phase": "public-content", "state": "todo" },
+    { "surface": "auth", "phase": "auth", "state": "todo" },
+    { "surface": "home", "phase": "core", "state": "todo" },
+    { "surface": "account", "phase": "core", "state": "todo", "issue": "#798" },
+    { "surface": "account-links", "phase": "core", "state": "todo", "issue": "#654" },
+    { "surface": "account-posts", "phase": "core", "state": "todo" },
+    { "surface": "account-submissions", "phase": "core", "state": "todo", "issue": "#659" },
+    { "surface": "account-plan", "phase": "core", "state": "todo" },
+    { "surface": "account-connected-apps", "phase": "core", "state": "todo" },
+    { "surface": "account-blocked", "phase": "core", "state": "todo", "issue": "#799" },
+    { "surface": "account-faq", "phase": "core", "state": "todo", "issue": "#799" },
+    { "surface": "account-services", "phase": "core", "state": "todo", "issue": "#799" },
+    { "surface": "account-news", "phase": "core", "state": "todo", "issue": "#799" },
+    { "surface": "account-changelog", "phase": "core", "state": "todo", "issue": "#799" },
+    { "surface": "notifications", "phase": "core", "state": "todo" },
+    { "surface": "chats", "phase": "core", "state": "todo", "issue": "#819" },
+    { "surface": "habitflow", "phase": "products", "state": "todo" },
+    { "surface": "spendtrack", "phase": "products", "state": "todo" },
+    { "surface": "linksnap", "phase": "products", "state": "todo", "issue": "#654" },
+    { "surface": "blogpress", "phase": "products", "state": "todo", "issue": "#655" },
+    { "surface": "blogpress-editor", "phase": "products", "state": "todo", "issue": "#655" },
+    { "surface": "quran", "phase": "products", "state": "todo", "issue": "#656" },
+    { "surface": "quran-surah", "phase": "products", "state": "todo", "issue": "#656" },
+    { "surface": "notes", "phase": "products", "state": "todo" },
+    { "surface": "leads", "phase": "leads", "state": "todo", "issue": "#659" },
+    { "surface": "consultation", "phase": "leads", "state": "todo", "issue": "#659" },
+    { "surface": "admin", "phase": "operator", "state": "blocked", "blockedBy": "#660" }
+  ]
+}
