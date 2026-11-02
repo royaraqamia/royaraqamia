@@ -1,11 +1,11 @@
 {
-  "versionCode": 20100,
-  "versionName": "1.1.0",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.1.0.apk",
-  "sha256": "1f1d7da2da2c975e738ed4e63f3c17ae4231ddab379d7cd0aa825c62def46638",
-  "sizeBytes": 7424047,
+  "versionCode": 20200,
+  "versionName": "1.2.0",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.2.0.apk",
+  "sha256": "0a441b14a0d46d581e93b60318786653b96d7fa719c68fe904085ad2e2cd9c9d",
+  "sizeBytes": 7793678,
   "minSupportedVersionCode": 20000,
   "rollout": 100,
-  "notes": "زر الرجوع يعود بك إلى صفحة التطبيق السابقة بدل أن يغلق التطبيق.",
+  "notes": "ميزة: إنشاء محادثات جماعية باسم، ودعوة الأعضاء إليها",
   "releasedAt": "2026-11-02"
 }
