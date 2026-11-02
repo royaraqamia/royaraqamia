@@ -25,6 +25,25 @@ separate args (`accepts 1 arg(s), received 5`). Prefer `--json <fields>` and fil
 `ConvertFrom-Json`; when `--jq` is genuinely needed, keep it a single bare token with no spaces or
 double quotes.
 
+### A screen issue carries its rows
+
+Any issue that adds or changes a screen names the rows it will add, because the APK is the web and
+that is checked, not judged (#882):
+
+- a row in `docs/mobile/screens.json` — the Kotlin screen, or the reason there is none;
+- a row in `docs/mobile/parity-plan.json` — its phase, and `todo` (the document draws it) or
+  `blocked`;
+- a contract in `shared/visual/<surface>.json` — the boxes and styles both clients must agree on.
+
+A port becomes `native` only in the pull request where `check:visual` passes for it: the layout
+contract exact and the raster inside the surface's tolerance
+([ADR-0118](../adr/0118-a-port-is-switched-on-by-two-measurements.md)). Until then the line stays
+`todo` and the app opens the site's page — which is a finished state, not a failure, so an issue is
+never blocked on "making it native".
+
+`.github/ISSUE_TEMPLATE/feature.yml` asks for the same three rows, so a request that skips them is
+answered rather than guessed.
+
 ## When `gh` is unavailable
 
 Some networks block GitHub's release-asset CDN — `release-assets.githubusercontent.com`
