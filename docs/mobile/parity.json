@@ -668,6 +668,34 @@
           "copy": "sectionLabel"
         }
       ]
+    },
+    {
+      "id": "spendtrack-csv",
+      "surface": "spendtrack",
+      "issue": "#653",
+      "web": {
+        "route": "app/spendtrack/(app)/page.tsx",
+        "component": "frontend/ui/spendtrack/csv-actions.tsx",
+        "copyModule": "frontend/ui/spendtrack/spendtrack-csv-copy.ts",
+        "copyExport": "SPENDTRACK_CSV_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCsvImport.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCsvUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCsvCopy.kt",
+        "copyObject": "SpendtrackCsvCopy"
+      },
+      "copySource": "shared/copy/spendtrack-csv.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "action"
+        },
+        {
+          "name": "Busy",
+          "copy": "importing"
+        }
+      ]
     }
   ]
 }

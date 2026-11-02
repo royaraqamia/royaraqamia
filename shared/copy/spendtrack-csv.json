@@ -1,0 +1,29 @@
+{
+  "surface": "spendtrack",
+  "component": "spendtrack-csv",
+  "web": {
+    "file": "frontend/ui/spendtrack/spendtrack-csv-copy.ts",
+    "export": "SPENDTRACK_CSV_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCsvCopy.kt",
+    "object": "SpendtrackCsvCopy"
+  },
+  "notes": {
+    "source": "The CSV import's words, in both clients (#653). The site's dialog is the reference: the columns it names, the rows it promises to skip, the picker and the two answers an import can give.",
+    "placeholders": "`{count}` is how many rows were imported or skipped.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dialog does not render."
+  },
+  "strings": {
+    "action": "استيراد",
+    "title": "استيراد المصاريف",
+    "columnsHint": "ارفع ملف CSV بالأعمدة:",
+    "rules": "الصفوف السليمة تُضاف، وتُتجاهل الصفوف غير الصالحة، وتُنشأ التصنيفات الجديدة تلقائيًا.",
+    "pickFile": "اختر ملف CSV للاستيراد",
+    "chooseFirst": "اختر ملف CSV أولًا",
+    "importing": "جاري الاستيراد...",
+    "imported": "تم استيراد {count} مصروف",
+    "skipped": "تم تخطّي {count} صفًا غير صالح",
+    "failed": "فشل استيراد المصاريف"
+  }
+}
