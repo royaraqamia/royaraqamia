@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "strokeWidth": 2,
   "icons": [
+    "ArrowRight",
     "ArrowUpDown",
     "Bell",
     "BookOpen",
@@ -21,6 +22,7 @@
     "Copy",
     "DollarSign",
     "Download",
+    "ExternalLink",
     "FileText",
     "GraduationCap",
     "Hash",
@@ -43,6 +45,7 @@
     "ScanBarcode",
     "ScanLine",
     "Search",
+    "ShieldAlert",
     "ShieldCheck",
     "SquareCheck",
     "StickyNote",

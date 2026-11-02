@@ -422,6 +422,13 @@ are three pairs in `docs/mobile/parity.json`. `RatesFormat` writes the figures t
 amount formatter does — `en-US` grouping in ASCII digits — so an Arabic-locale phone cannot answer in
 Arabic-Indic numerals (ADR-0054).
 
+**Wired today (#658).** `/verify/<code>` — the page a printed certificate's QR points at — is the
+first _dynamic_ destination the shell draws: `NativeSurfaces` matches it by shape and `VerifyRoutes`
+reads the code out of the route, so a deep link, a scanner and the page's own link all land on the
+certificate instead of the document. The seal is encoded in the app (ADR-0116) with the reference
+implementation of the QR standard, because a printed certificate's code is the one a stranger holds;
+`VerifyQrCodeTest` decodes what the encoder produced rather than asserting that a picture exists.
+
 **Exit criteria.** Every row of the surface matrix has a native screen; a release can be cut and
 installed by the update path in one command; the escape hatch is exercised once, on purpose.
 

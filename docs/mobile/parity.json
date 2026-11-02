@@ -856,6 +856,38 @@
           "copy": "noConversion"
         }
       ]
+    },
+    {
+      "id": "verify-code-page",
+      "surface": "verify-code",
+      "issue": "#658",
+      "web": {
+        "route": "app/verify/[code]/page.tsx",
+        "component": "app/verify/[code]/verify-client.tsx",
+        "copyModule": "app/verify/[code]/verify-code-copy.ts",
+        "copyExport": "VERIFY_CODE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeCopy.kt",
+        "copyObject": "VerifyCodeCopy"
+      },
+      "copySource": "shared/copy/verify-code.json",
+      "states": [
+        {
+          "name": "Found",
+          "copy": "verifiedLead"
+        },
+        {
+          "name": "NotFound",
+          "copy": "notFoundHeading"
+        },
+        {
+          "name": "Unreachable",
+          "copy": "retryAction"
+        }
+      ]
     }
   ],
   "exempt": [

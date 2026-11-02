@@ -250,6 +250,11 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "androidx.room:room-testing:$roomVersion"
+    // The certificate seal (#658): the QR a printed certificate carries, encoded
+    // with the reference implementation of the same standard the site's `qrcode`
+    // package writes. See `variables.gradle` for why this is a dependency and not
+    // a hand-written encoder.
+    implementation "com.google.zxing:core:$zxingVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

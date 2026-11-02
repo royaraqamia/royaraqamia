@@ -58,4 +58,10 @@ ext {
     // database needs.
     robolectricVersion = '4.17'
     androidxTestCoreVersion = '1.7.0'
+    // The certificate seal (#658, ADR-0116): a shared certificate's QR is the
+    // site's own drawing — the print on the document points at it — so the app
+    // encodes the same link with the same algorithm rather than omitting the
+    // seal. `zxing:core` is the reference implementation of ISO/IEC 18004 and is
+    // pure Java, so it carries no renderer, no camera and no UI of its own.
+    zxingVersion = '3.5.3'
 }

@@ -23,6 +23,32 @@ import androidx.compose.ui.unit.dp
 object LucideVectors {
     private val stroke = SolidColor(Color.Black)
 
+    /** `arrow-right`, the site's own drawing. */
+    val ArrowRight: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "arrow-right",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M5 12h14"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("m12 5 7 7-7 7"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `arrow-up-down`, the site's own drawing. */
     val ArrowUpDown: ImageVector by lazy {
         ImageVector.Builder(
@@ -670,6 +696,39 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("m7 10 5 5 5-5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `external-link`, the site's own drawing. */
+    val ExternalLink: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "external-link",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M15 3h6v6"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M10 14 21 3"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -1452,6 +1511,39 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `shield-alert`, the site's own drawing. */
+    val ShieldAlert: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "shield-alert",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M12 8v4"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M12 16h.01"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
