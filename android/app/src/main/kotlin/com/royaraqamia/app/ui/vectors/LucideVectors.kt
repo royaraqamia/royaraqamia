@@ -577,14 +577,14 @@ object LucideVectors {
             viewportHeight = 24f,
         ).apply {
             addPath(
-                addPathNodes("M12 2L12 22"),
+                addPathNodes("M12 3v18"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             )
             addPath(
-                addPathNodes("M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"),
+                addPathNodes("M17 5H9.5a1 1 0 000 7h5a1 1 0 010 7H6"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
