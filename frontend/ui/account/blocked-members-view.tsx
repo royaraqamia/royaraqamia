@@ -1,20 +1,29 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ShieldOff } from 'lucide-react';
 
 import { getBlockedChatMembers, unblockChatUser } from '@/frontend/api/chats';
+import { useSession } from '@/frontend/state/session-provider';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import type { ChatPeer } from '@/shared/contracts/chat';
+
+/** `/account/blocked`: the members the account has blocked, and the action that lifts it. */
+const BLOCKED_ROUTE = '/account/blocked';
 
 /**
  * The members the account has blocked, and the one action that lifts it.
  *
- * Blocking lives in the thread's menu, where the member is; this is the place
- * it can be undone without finding that thread again — a blocked member may not
- * appear anywhere else in the product.
+ * Blocking lives in the thread's menu, where the member is; this page is the
+ * place it can be undone without finding that thread again — a blocked member
+ * may not appear anywhere else in the product.
+ *
+ * The list is account data, so the page is a data-free shell like the rest of
+ * `/account` (#448): a guest is pointed at sign-in, and the read runs on the
+ * client.
  */
-export function BlockedMembers() {
+export function BlockedMembersView() {
+  const { user, isLoading: isSessionLoading } = useSession();
   const [members, setMembers] = useState<ChatPeer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +41,12 @@ export function BlockedMembers() {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     void load();
-  }, [load]);
+  }, [load, user]);
 
   async function unblock(peer: ChatPeer) {
     setLifting(peer.id);
@@ -48,16 +61,31 @@ export function BlockedMembers() {
     }
   }
 
-  return (
-    <section id="blocked" aria-labelledby="blocked-title" className="scroll-mt-24">
-      <h2
-        id="blocked-title"
-        className="mb-2 flex items-center gap-2 px-1 text-sm font-bold text-foreground"
-      >
-        <ShieldOff className="size-4 text-primary" aria-hidden="true" />
-        الأعضاء المحظورون
-      </h2>
+  if (isSessionLoading) {
+    return (
+      <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center">
+        <div className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        <p className="text-xs font-medium text-muted-foreground">جاري التَّحميل...</p>
+      </div>
+    );
+  }
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
+        <p className="text-sm font-bold text-foreground">
+          سجِّل الدُّخول لمتابعة الأعضاء المحظورين
+        </p>
+        <SignInCta
+          href={`/auth/login?redirect=${encodeURIComponent(BLOCKED_ROUTE)}`}
+          className="mt-4"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
       {isLoading ? (
         <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center">
           <div className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
@@ -88,7 +116,7 @@ export function BlockedMembers() {
                 <p className="truncate text-sm font-bold text-foreground">
                   {member.name ?? member.username}
                 </p>
-                <p className="truncate text-xs text-muted-foreground/70" dir="ltr">
+                <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
                   @{member.username}
                 </p>
               </div>
@@ -104,6 +132,6 @@ export function BlockedMembers() {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

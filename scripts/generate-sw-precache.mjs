@@ -135,6 +135,15 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the member and the existing thread are a per-identity client read, so a precached shell would paint an empty frame; the thread it resolves to is dynamic too',
   },
+  // The blocked list is the hidden-services page one step smaller: a title and
+  // nothing until the account's own list arrives, so a precached copy buys an
+  // offline visitor nothing the ancestor shell does not already give them, and
+  // it costs `/verify` its slot. Cached at runtime instead.
+  {
+    route: '/account/blocked',
+    reason:
+      'the list is a per-identity client read, so a precached shell would paint an empty page; the slot belongs to `/verify`',
+  },
 ];
 
 /**

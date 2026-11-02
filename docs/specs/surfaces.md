@@ -27,6 +27,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-submissions` | `/account/submissions` | local-store | store | outbox | precached | bundled | _ungated_ |  | #493 |
 | `account-plan` | `/account/plan` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-connected-apps` | `/account/connected-apps` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
+| `account-blocked` | `/account/blocked` | server | needs-connection | none | swr | bundled | _ungated_ |  |  |
 | `account-faq` | `/account/faq` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-services` | `/account/services` | server | needs-connection | none | swr | bundled | _ungated_ |  |  |
 | `account-news` | `/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
