@@ -145,8 +145,7 @@
     },
     {
       "surface": "verify",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyScreen.kt"
     },
     {
       "surface": "verify-code",

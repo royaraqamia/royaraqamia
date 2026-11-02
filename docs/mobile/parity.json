@@ -696,6 +696,78 @@
           "copy": "importing"
         }
       ]
+    },
+    {
+      "id": "verify-page",
+      "surface": "verify",
+      "issue": "#658",
+      "web": {
+        "route": "app/verify/page.tsx",
+        "component": "app/verify/page.tsx",
+        "copyModule": "app/verify/verify-copy.ts",
+        "copyExport": "VERIFY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCopy.kt",
+        "copyObject": "VerifyCopy"
+      },
+      "copySource": "shared/copy/verify.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "submit"
+        },
+        {
+          "name": "Busy",
+          "copy": "busyTitle"
+        },
+        {
+          "name": "Found",
+          "copy": "foundLabel"
+        },
+        {
+          "name": "NotFound",
+          "copy": "notFoundTitle"
+        },
+        {
+          "name": "RateLimited",
+          "copy": "rateLimitedTitle"
+        },
+        {
+          "name": "Unreachable",
+          "copy": "unreachableTitle"
+        }
+      ]
+    },
+    {
+      "id": "certificate-result",
+      "surface": "verify",
+      "issue": "#658",
+      "web": {
+        "route": "app/verify/page.tsx",
+        "component": "frontend/ui/verify/certificate-result-card.tsx",
+        "copyModule": "frontend/ui/verify/certificate-result-copy.ts",
+        "copyExport": "CERTIFICATE_RESULT_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/verify/CertificateResultCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/verify/CertificateResultState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/verify/CertificateResultCopy.kt",
+        "copyObject": "CertificateResultCopy"
+      },
+      "copySource": "shared/copy/certificate-result.json",
+      "states": [
+        {
+          "name": "Valid",
+          "copy": "validBadge"
+        },
+        {
+          "name": "Expired",
+          "copy": "expiredBadge"
+        }
+      ]
     }
   ],
   "exempt": [
