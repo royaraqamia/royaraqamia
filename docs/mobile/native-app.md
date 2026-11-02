@@ -400,6 +400,18 @@ have to be built here rather than assumed:
 distributed binary, so the operator UI is readable by anyone who unpacks it. Nothing in it may be a
 capability the server does not re-check.
 
+**Wired today (#658).** `/verify` is the first public surface drawn natively, and it is the shape the
+rest of this phase copies. The check is the site's own anonymous route
+(`POST /api/certificates/verify`), so the app sends no bearer at all
+(`ApiClient.postPublic`) and a visitor with no account can use it; `NativeSurfaces` gained the second
+list that says so, which is why the sign-in card no longer covers a public destination. Two rows in
+`docs/mobile/parity.json` hold the pair — the page with its six states and the verified certificate
+card — each with its own copy source, and the icons are the site's own (`Hash`, `ShieldCheck`, `User`,
+`Clock` and `Copy` joined `shared/icons/icons.json`). The four failure states are distinguished the
+way the page distinguishes them: unknown code, spent allowance, a drifted answer, and a request that
+never left. Nothing is read from the shell's web cache: a check needs the network, so
+`VerifyUiState.Unreachable` is the offline answer rather than a last-seen row.
+
 **Exit criteria.** Every row of the surface matrix has a native screen; a release can be cut and
 installed by the update path in one command; the escape hatch is exercised once, on purpose.
 

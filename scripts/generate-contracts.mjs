@@ -126,6 +126,15 @@ export const CONTRACTS = [
     file: 'AppFailureContracts.kt',
     schemas: ['AppFailureReportSchema'],
   },
+  // The certificate check (#658): the app verifies a code the same way the site's
+  // form does, on the one route a visitor can call with no session —
+  // `POST /api/certificates/verify`. The request is generated too, so a body the
+  // site stops accepting is a compile error rather than a check that never runs.
+  {
+    module: 'shared/contracts/certificates',
+    file: 'CertificateContracts.kt',
+    schemas: ['VerifyRequestSchema', 'VerifyResultSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

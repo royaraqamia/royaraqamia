@@ -1,5 +1,7 @@
 package com.royaraqamia.app.shell
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,6 +37,7 @@ import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.update.ShellUpdateChannel
 import com.royaraqamia.app.update.ShellUpdateController
+import com.royaraqamia.app.verify.VerifyScreen
 
 /**
  * The app's launcher, and the frame it draws first (#647, ADR-0105).
@@ -197,8 +200,17 @@ class ShellActivity : ComponentActivity() {
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
                                 )
+                            // The certificate check (#658): public by design, so it
+                            // is drawn whether or not there is a session, and its
+                            // scanner link is the one destination it hands over.
+                            "/verify" ->
+                                VerifyScreen(
+                                    repository = graph.verify,
+                                    onCopy = ::copyToClipboard,
+                                    onOpenScan = { openRoute("/scan") },
+                                )
                         }
-                        if (sessionAnswered && !signedIn) {
+                        if (sessionAnswered && !signedIn && !NativeSurfaces.isPublic(current)) {
                             SignInCard(
                                 state = authState,
                                 onSignIn = { email, password -> signIn(email, password) },
@@ -370,6 +382,16 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
+     * The certificate card's copy action (#658): the platform's clipboard, which is
+     * the shell's to reach. The screen takes it as a callback so the card can be
+     * drawn in a test without one.
+     */
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(ClipboardManager::class.java) ?: return
+        clipboard.setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, text))
+    }
+
+    /**
      * Opens the current destination in the document when the shell cannot draw it.
      *
      * The shell stays underneath, which is what makes back from a web surface land
@@ -386,5 +408,10 @@ class ShellActivity : ComponentActivity() {
         if (update.blocksHandover) return
         if (NativeSurfaces.isNative(stack.route)) return
         WebSurface.open(this, stack.current)
+    }
+
+    private companion object {
+        /** What the clipboard entry is labelled on the device. */
+        const val CLIPBOARD_LABEL = "certificate-code"
     }
 }

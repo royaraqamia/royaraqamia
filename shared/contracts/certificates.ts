@@ -23,11 +23,24 @@ export interface Certificate {
  * (`/api/certificates/verify` and `/verify/[code]`). Strips internal recipient
  * info (user ids + recipient email) and the issuing Admin so none of it is
  * exposed to visitors.
+ *
+ * The shape is a Zod schema rather than a type alone because the app decodes it:
+ * `npm run contracts:generate` emits the Kotlin type from this schema, so a field
+ * the site stops sending is a compile error in the app instead of a card that
+ * draws an empty line (#658, ADR-0089).
  */
-export type PublicCertificate = Omit<
-  Certificate,
-  'recipient_email' | 'recipient_user_ids' | 'created_by'
->;
+export const PublicCertificateSchema = z.object({
+  id: z.string(),
+  certificate_code: z.string(),
+  student_name: z.string(),
+  course_name: z.string(),
+  issue_date: z.string(),
+  expiration_date: z.string().nullable(),
+  grade_or_status: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export type PublicCertificate = z.infer<typeof PublicCertificateSchema>;
 
 export function toPublicCertificate(certificate: Certificate): PublicCertificate {
   return {
@@ -92,9 +105,27 @@ export type CertificateIntakeValues = Omit<
   'recipient_user_ids'
 > & { recipient_user_ids: string[] };
 
-export interface VerifyResult {
-  success: boolean;
-  certificate?: PublicCertificate;
-  error?: string;
-  rateLimited?: boolean;
-}
+/** What the anonymous verify route is asked: the code a visitor typed. */
+export const VerifyRequestSchema = z.object({
+  code: z.string(),
+});
+
+export type VerifyRequest = z.infer<typeof VerifyRequestSchema>;
+
+/**
+ * The anonymous verify route's answer (#658).
+ *
+ * `success: false` is a normal answer — an unknown code, or a visitor who spent
+ * their allowance — so the failure is a value the card renders rather than a
+ * status the client guesses at. `rateLimited` is the server saying *why*, and it
+ * is separate from `error` because the two states are worded differently on both
+ * clients.
+ */
+export const VerifyResultSchema = z.object({
+  success: z.boolean(),
+  certificate: PublicCertificateSchema.optional(),
+  error: z.string().optional(),
+  rateLimited: z.boolean().optional(),
+});
+
+export type VerifyResult = z.infer<typeof VerifyResultSchema>;

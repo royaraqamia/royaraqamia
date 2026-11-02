@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { m } from 'motion/react';
 import { detailVariants } from './verify-variants';
+import { CERTIFICATE_RESULT_COPY } from './certificate-result-copy';
 
 export function CertificateResultCard({
   certificate,
@@ -32,27 +33,31 @@ export function CertificateResultCard({
   const details = [
     {
       icon: <Hash className="size-4" />,
-      label: 'رمز الشَّهادة',
+      label: CERTIFICATE_RESULT_COPY.codeLabel,
       value: certificate.certificate_code,
       highlight: true,
       copyable: true,
     },
-    { icon: <User className="size-4" />, label: 'اسم الطَّالب', value: certificate.student_name },
+    {
+      icon: <User className="size-4" />,
+      label: CERTIFICATE_RESULT_COPY.studentLabel,
+      value: certificate.student_name,
+    },
     {
       icon: <GraduationCap className="size-4" />,
-      label: 'اسم الدَّورة',
+      label: CERTIFICATE_RESULT_COPY.courseLabel,
       value: certificate.course_name,
     },
     {
       icon: <CalendarDays className="size-4" />,
-      label: 'تاريخ الإصدار',
+      label: CERTIFICATE_RESULT_COPY.issuedLabel,
       value: formatDateArabic(certificate.issue_date),
     },
     ...(certificate.expiration_date
       ? [
           {
             icon: <Clock className="size-4" />,
-            label: 'تاريخ الانتهاء',
+            label: CERTIFICATE_RESULT_COPY.expiresLabel,
             value: formatDateArabic(certificate.expiration_date),
             danger: !!isExpired,
           } as const,
@@ -62,7 +67,7 @@ export function CertificateResultCard({
       ? [
           {
             icon: <Trophy className="size-4" />,
-            label: 'الدَّرجة / الحالة',
+            label: CERTIFICATE_RESULT_COPY.gradeLabel,
             value: certificate.grade_or_status,
           } as const,
         ]
@@ -90,11 +95,11 @@ export function CertificateResultCard({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-                تمَّ التَّحقُّق بنجاح
+                {CERTIFICATE_RESULT_COPY.verifiedTitle}
               </h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤيَة رقَميَّة
+              {CERTIFICATE_RESULT_COPY.verifiedBody}
             </p>
           </div>
         </div>
@@ -119,7 +124,7 @@ export function CertificateResultCard({
                 }`}
               />
             </span>
-            {isExpired ? 'شهادة منتهية' : 'شهادة صالحة ومُوثَّقة'}
+            {isExpired ? CERTIFICATE_RESULT_COPY.expiredBadge : CERTIFICATE_RESULT_COPY.validBadge}
           </Badge>
         </m.div>
       </m.div>
@@ -132,7 +137,7 @@ export function CertificateResultCard({
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <User className="size-3.5 text-primary" />
-                <span>اسم الطَّالب / الحاصل على الشَّهادة</span>
+                <span>{CERTIFICATE_RESULT_COPY.studentHeading}</span>
               </div>
               <p className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-snug">
                 {certificate.student_name}
@@ -143,7 +148,7 @@ export function CertificateResultCard({
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <GraduationCap className="size-3.5 text-primary" />
-                <span>اسم الدَّورة / البرنامج التَّدريبي</span>
+                <span>{CERTIFICATE_RESULT_COPY.courseHeading}</span>
               </div>
               <p className="text-base sm:text-lg font-bold text-foreground leading-snug">
                 {certificate.course_name}
@@ -190,17 +195,19 @@ export function CertificateResultCard({
                   type="button"
                   onClick={() => onCopy(detail.value ?? '')}
                   className="relative inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-border/60 bg-muted/50 px-2 py-1.5 text-xs font-medium text-muted-foreground transition-safe duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary cursor-pointer active:scale-95 sm:px-2.5"
-                  aria-label="نسخ رمز الشَّهادة"
+                  aria-label={CERTIFICATE_RESULT_COPY.copyAria}
                 >
                   {copied ? (
                     <>
                       <Check className="size-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-bold">تمَّ النَّسخ</span>
+                      <span className="text-emerald-500 font-bold">
+                        {CERTIFICATE_RESULT_COPY.copied}
+                      </span>
                     </>
                   ) : (
                     <>
                       <Copy className="size-3.5" />
-                      <span>نسخ</span>
+                      <span>{CERTIFICATE_RESULT_COPY.copy}</span>
                     </>
                   )}
                 </button>
