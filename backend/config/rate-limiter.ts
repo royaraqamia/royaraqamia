@@ -297,3 +297,20 @@ export function appPerfRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حدّ الطلب: قياس الأداء محدود بـ 60 طلبًا في الدقيقة.',
   };
 }
+
+/**
+ * The app's failure report (#667) is one request per crash, per ANR and per drain
+ * that ended owing work — normally none, and a boot loop is the case the bucket
+ * bounds. Thirty leaves room for a queue draining after a bad night while still
+ * refusing a loop that would fill the issue stream. Per IP and fail-closed, for
+ * the reason the two beacons above are: losing a report during a limiter outage
+ * is the cheaper failure, and the app keeps what it could not send.
+ */
+export function appFailureRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `app-failure:${ip}`,
+    limit: 30,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تقارير الأعطال محدودة بـ 30 طلبًا في الدقيقة.',
+  };
+}

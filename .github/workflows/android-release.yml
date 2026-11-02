@@ -399,6 +399,31 @@ jobs:
             --notes "$body"
           echo "created $TAG with $ASSET"
 
+      # A crash report is retraced against the mapping R8 wrote for the release it
+      # names (#667, ADR-0115). A minified frame is an obfuscated class and a line
+      # number; without this file it is a class name and a number that mean
+      # nothing. It travels with the release, so it lives as long as the APK it
+      # describes.
+      - name: Keep the mapping beside the release
+        if: steps.plan.outputs.release == 'true' && inputs.dry_run != true && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.publish.outputs.tag }}
+          VERSION: ${{ steps.publish.outputs.versionName }}
+        run: |
+          set -euo pipefail
+          mapping=android/app/build/outputs/mapping/release/mapping.txt
+          if [ ! -f "$mapping" ]; then
+            # An adopted version was built by an earlier run: its mapping was on
+            # that runner, not this one. The release still stands, and the note is
+            # the honest record of what is missing.
+            echo "::warning title=No R8 mapping to keep::$mapping does not exist, so this release's frames cannot be retraced here"
+            exit 0
+          fi
+          cp "$mapping" "$RUNNER_TEMP/mapping-$VERSION.txt"
+          gh release upload "$TAG" "$RUNNER_TEMP/mapping-$VERSION.txt" --clobber
+          echo "kept mapping-$VERSION.txt on $TAG"
+
       # The cut's own commit, and deliberately no `[skip ci]`: a push made with
       # GITHUB_TOKEN starts no workflows anyway (except the dispatch-driven ones),
       # and the manifest has to reach the site. The version, the notes, the

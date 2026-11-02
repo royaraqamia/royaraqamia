@@ -20,10 +20,16 @@ import { AppUpdateRequiredSchema } from '@/shared/contracts/app-update';
  * Only the shell's own user agent is gated. A browser sends no counter, so the web
  * is never refused; `/api/version` stays open because it is the deploy's identity
  * rather than owned data, and `/api/app-perf` stays open so even a below-floor
- * build can report why it is failing.
+ * build can report why it is failing. `/api/app-failures` is open for the same
+ * reason one step further: the build most likely to crash is the one below the
+ * floor, and a report refused with `426` would be a crash nobody hears about.
  */
 export const OWNED_API_PREFIX = '/api/';
-export const APP_UPDATE_BYPASS_PATHS = ['/api/version', '/api/app-perf'] as const;
+export const APP_UPDATE_BYPASS_PATHS = [
+  '/api/version',
+  '/api/app-perf',
+  '/api/app-failures',
+] as const;
 
 export interface AppUpdateGateOptions {
   minimumVersionCode?: number;

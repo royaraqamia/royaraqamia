@@ -44,7 +44,12 @@ describe('the app-update gate', () => {
   });
 
   it('leaves the deploy identity and diagnostics open', () => {
-    for (const pathname of ['/api/version', '/api/app-perf', '/android/latest.json']) {
+    for (const pathname of [
+      '/api/version',
+      '/api/app-perf',
+      '/api/app-failures',
+      '/android/latest.json',
+    ]) {
       expect(appUpdateRequired({ userAgent: OLDER, pathname, minimumVersionCode: 30000 })).toBe(
         false
       );

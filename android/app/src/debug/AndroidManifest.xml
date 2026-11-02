@@ -42,5 +42,18 @@
             android:exported="true"
             android:theme="@style/AppTheme.NoActionBarLaunch" />
 
+        <!--
+          The crash drill (#667): the debug-only half of `npm run android:crash-drill`.
+          It throws on purpose, from a real process, so the reporter can be watched
+          end to end - the queue file, the release it names and the delivery after
+          the radio returns. Exported because the script starts it with adb, no
+          launcher entry because it is not a screen, and absent from a release
+          APK because this manifest is not merged into one.
+        -->
+        <activity
+            android:name=".debug.CrashDrillActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.NoActionBarLaunch" />
+
     </application>
 </manifest>

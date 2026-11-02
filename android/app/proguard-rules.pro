@@ -12,10 +12,16 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Line numbers stay in a minified release, and the source file name does not
+# (#667). A crash report is retraced against the mapping R8 writes beside the
+# build (`android/app/build/outputs/mapping/release/mapping.txt`, ADR-0094): the
+# frames name obfuscated classes and methods, and the line number is what makes
+# the mapping able to say which line of which method. Without this the report
+# would arrive with frames that no mapping can restore, which is a report nobody
+# can act on - the failure this feature exists to end.
+#
+# `-renamesourcefileattribute` keeps the file name out of the APK: a retrace
+# needs the mapping, not a path, and the path is the only part that could name
+# something the report should not carry.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

@@ -27,7 +27,6 @@ object ContractCodec {
 
     inline fun <reified T> decode(body: String): ApiResult<T> =
         decode(body, serializer<T>())
-
     fun <T> decode(body: String, serializer: KSerializer<T>): ApiResult<T> =
         try {
             ApiResult.Success(json.decodeFromString(serializer, body))
@@ -38,6 +37,16 @@ object ContractCodec {
             // SerializationException; both mean the same thing to a screen.
             ApiResult.Failure(ApiError.InvalidContract(fieldOf(error), error.message ?: "unreadable"))
         }
+
+    /**
+     * The other direction: a generated type as the body a route accepts.
+     *
+     * Only the failure queue writes one today (#667), and it writes it with the
+     * same [json] a response is read with — `explicitNulls = false` is what keeps
+     * a field the schema made optional out of the body instead of sending it as
+     * an explicit `null` the server would have to accept.
+     */
+    inline fun <reified T> encode(value: T): String = json.encodeToString(serializer<T>(), value)
 
     /**
      * The field the decoder objected to, when it names one. A missing field
