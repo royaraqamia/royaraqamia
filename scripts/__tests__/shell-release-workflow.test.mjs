@@ -34,10 +34,24 @@ describe('the Android release train', () => {
   });
 
   it('cuts the version and the notes before it builds', () => {
-    const applyAt = workflow.indexOf('node scripts/android-release.mjs --apply --json');
+    const cutAt = workflow.indexOf('cut=$(node scripts/android-release.mjs "${args[@]}")');
     const publishAt = workflow.indexOf('Build or adopt, sign and stamp');
-    expect(applyAt).toBeGreaterThan(-1);
-    expect(applyAt).toBeLessThan(publishAt);
+    expect(cutAt).toBeGreaterThan(-1);
+    expect(cutAt).toBeLessThan(publishAt);
+  });
+
+  it('forces the cut on a dispatch, so it cannot refuse the cadence the plan was forced past', () => {
+    // Run 41488339972: the plan was forced, the cut was not, so `--apply` printed
+    // "nothing to release", exited 0, and the build shipped the previous number.
+    const cutArgsAt = workflow.indexOf('args=(--apply --json)');
+    const forcedAt = workflow.indexOf('args+=(--force)', cutArgsAt);
+    const cutAt = workflow.indexOf('cut=$(node scripts/android-release.mjs "${args[@]}")');
+    expect(cutArgsAt).toBeGreaterThan(-1);
+    expect(forcedAt).toBeGreaterThan(cutArgsAt);
+    expect(forcedAt).toBeLessThan(cutAt);
+    expect(workflow).toContain('if [ "${{ github.event_name }}" = \'workflow_dispatch\' ]');
+    // A cut that disagrees with the plan is a broken release, not a number to carry on with.
+    expect(workflow).toContain('The cut disagreed with the plan');
   });
 
   it('publishes the release before it commits, so a failed commit can resume', () => {
