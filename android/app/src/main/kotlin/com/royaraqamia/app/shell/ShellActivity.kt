@@ -38,6 +38,8 @@ import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.update.ShellUpdateChannel
 import com.royaraqamia.app.update.ShellUpdateController
+import com.royaraqamia.app.verify.VerifyCodeScreen
+import com.royaraqamia.app.verify.VerifyRoutes
 import com.royaraqamia.app.verify.VerifyScreen
 
 /**
@@ -214,6 +216,20 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // A shared certificate (#658): the link a printed QR
+                            // carries. The code is the route's own segment, so this
+                            // is the one destination the shell reads out of a route
+                            // rather than matching whole.
+                            else ->
+                                VerifyRoutes.codeOf(current)?.let { code ->
+                                    VerifyCodeScreen(
+                                        code = code,
+                                        repository = graph.verify,
+                                        siteUrl = BuildConfig.SITE_URL,
+                                        onCopy = ::copyToClipboard,
+                                        onOpenRoute = ::openRoute,
+                                    )
+                                }
                         }
                         if (sessionAnswered && !signedIn && !NativeSurfaces.isPublic(current)) {
                             SignInCard(

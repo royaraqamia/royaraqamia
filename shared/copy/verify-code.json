@@ -1,0 +1,45 @@
+{
+  "surface": "verify-code",
+  "component": "verify-code",
+  "web": {
+    "file": "app/verify/[code]/verify-code-copy.ts",
+    "export": "VERIFY_CODE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/verify/VerifyCodeCopy.kt",
+    "object": "VerifyCodeCopy"
+  },
+  "notes": {
+    "source": "The shared-certificate page's words, in both clients (#658). The site's `app/verify/[code]/verify-client.tsx` is the reference: this is the page a printed certificate's QR points at, so it is the one surface a stranger reaches with no account and no context.",
+    "placeholders": "None: the code a link carried is drawn as a value, not written into a sentence.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "notFoundBadge": "خطأ في التَّحقُّق",
+    "notFoundHeading": "شهادة غير موجودة",
+    "notFoundBody": "لم يتمَّ العثور على أي بيانات مسجَّلة برمز الشهادة:",
+    "notFoundReason": "الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته",
+    "notFoundHint": "تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال: COMP-2024-XXXXXX).",
+    "retryAction": "المحاولة مرَّة أخرى",
+    "homeAction": "الصَّفحة الرَّئيسيَّة",
+    "verifiedLead": "تمَّ التَّحقُّق",
+    "verifiedAccent": "بنجاح",
+    "verifiedBody": "هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤيَة رقَميَّة.",
+    "verifiedCardTitle": "شهادة مُوثَّقَة",
+    "verifiedCardSubtitle": "صادرة عن رؤيَة رقَميَّة",
+    "validBadge": "صالحة ومُعتمَدَة",
+    "expiredBadge": "منتهية الصَّلاحيَّة",
+    "codeLabel": "رمز الشَّهادة",
+    "studentLabel": "اسم الطَّالب",
+    "courseLabel": "اسم الدَّورة",
+    "issuedLabel": "تاريخ الإصدار",
+    "expiresLabel": "تاريخ الانتهاء",
+    "gradeLabel": "الدَّرجة / الحالة",
+    "scanHint": "أو امسح الرَّمز بماسح QR و Barcode",
+    "copiedStatus": "تمَّ نسخ رابط التَّحقُّق",
+    "verifyAnother": "التَّحقُّق من شهادة أخرى",
+    "copied": "تمَّ النَّسخ",
+    "copyLink": "نسخ رابط التَّحقُّق",
+    "siteName": "رؤيَة رقَميَّة"
+  }
+}

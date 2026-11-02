@@ -25,6 +25,7 @@ import Link from 'next/link';
 import type { PublicCertificate } from '@/shared/contracts/certificates';
 import { formatDateArabic, isCertificateExpired } from '@/frontend/shared/format';
 import { CertificateQRCodeClient } from '@/frontend/ui/certificate-qr-code-client';
+import { VERIFY_CODE_COPY } from './verify-code-copy';
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -80,7 +81,7 @@ function NotFoundState({ code }: { code: string }) {
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
-              خطأ في التَّحقُّق
+              {VERIFY_CODE_COPY.notFoundBadge}
             </span>
           </m.div>
 
@@ -101,14 +102,14 @@ function NotFoundState({ code }: { code: string }) {
             variants={fadeUp}
             className="mb-3 text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-neutral-900 dark:text-neutral-50"
           >
-            شهادة غير موجودة
+            {VERIFY_CODE_COPY.notFoundHeading}
           </m.h1>
 
           <m.p
             variants={fadeUp}
             className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-lg leading-relaxed mb-8"
           >
-            لم يتمَّ العثور على أي بيانات مسجَّلة برمز الشهادة:{' '}
+            {VERIFY_CODE_COPY.notFoundBody}{' '}
             <span
               dir="ltr"
               className="inline-block font-mono font-bold text-neutral-900 dark:text-neutral-100 bg-neutral-200/60 dark:bg-neutral-800/80 px-2.5 py-0.5 rounded-md border border-neutral-300 dark:border-neutral-700"
@@ -127,11 +128,10 @@ function NotFoundState({ code }: { code: string }) {
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته
+                      {VERIFY_CODE_COPY.notFoundReason}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال:
-                      COMP-2024-XXXXXX).
+                      {VERIFY_CODE_COPY.notFoundHint}
                     </p>
                   </div>
                 </div>
@@ -145,7 +145,7 @@ function NotFoundState({ code }: { code: string }) {
                   >
                     <Link href="/verify">
                       <ArrowRight className="size-4" />
-                      المحاولة مرَّة أخرى
+                      {VERIFY_CODE_COPY.retryAction}
                     </Link>
                   </Button>
                   <Button
@@ -154,7 +154,7 @@ function NotFoundState({ code }: { code: string }) {
                     size="lg"
                     className="w-full sm:w-auto min-w-40 gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-safe duration-300 hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <Link href="/">الصَّفحة الرَّئيسيَّة</Link>
+                    <Link href="/">{VERIFY_CODE_COPY.homeAction}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -181,30 +181,30 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
   const details = [
     {
       icon: <Hash className="size-4" />,
-      label: 'رمز الشَّهادة',
+      label: VERIFY_CODE_COPY.codeLabel,
       value: certificate.certificate_code,
       isCode: true,
     },
     {
       icon: <User className="size-4" />,
-      label: 'اسم الطَّالب',
+      label: VERIFY_CODE_COPY.studentLabel,
       value: certificate.student_name,
     },
     {
       icon: <GraduationCap className="size-4" />,
-      label: 'اسم الدَّورة',
+      label: VERIFY_CODE_COPY.courseLabel,
       value: certificate.course_name,
     },
     {
       icon: <CalendarDays className="size-4" />,
-      label: 'تاريخ الإصدار',
+      label: VERIFY_CODE_COPY.issuedLabel,
       value: formatDateArabic(certificate.issue_date),
     },
     ...(certificate.expiration_date
       ? [
           {
             icon: <Clock className="size-4" />,
-            label: 'تاريخ الانتهاء',
+            label: VERIFY_CODE_COPY.expiresLabel,
             value: formatDateArabic(certificate.expiration_date),
             isExp: true,
           },
@@ -214,7 +214,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
       ? [
           {
             icon: <Trophy className="size-4" />,
-            label: 'الدَّرجة / الحالة',
+            label: VERIFY_CODE_COPY.gradeLabel,
             value: certificate.grade_or_status,
           },
         ]
@@ -290,9 +290,9 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               variants={fadeUp}
               className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-neutral-900 dark:text-neutral-50"
             >
-              تمَّ التَّحقُّق{' '}
+              {VERIFY_CODE_COPY.verifiedLead}{' '}
               <span className="bg-linear-to-r from-primary via-accent-indigo to-accent-purple bg-clip-text text-transparent">
-                بنجاح
+                {VERIFY_CODE_COPY.verifiedAccent}
               </span>
             </m.h1>
 
@@ -300,7 +300,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               variants={fadeUp}
               className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-md leading-relaxed"
             >
-              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤيَة رقَميَّة.
+              {VERIFY_CODE_COPY.verifiedBody}
             </m.p>
           </div>
 
@@ -322,10 +322,10 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                     </div>
                     <div>
                       <h2 className="font-bold text-base md:text-lg text-neutral-900 dark:text-neutral-100">
-                        شهادة مُوثَّقَة
+                        {VERIFY_CODE_COPY.verifiedCardTitle}
                       </h2>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        صادرة عن رؤيَة رقَميَّة
+                        {VERIFY_CODE_COPY.verifiedCardSubtitle}
                       </p>
                     </div>
                   </div>
@@ -341,7 +341,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         }`}
                       />
                     </span>
-                    {isExpired ? 'منتهية الصَّلاحيَّة' : 'صالحة ومُعتمَدَة'}
+                    {isExpired ? VERIFY_CODE_COPY.expiredBadge : VERIFY_CODE_COPY.validBadge}
                   </Badge>
                 </div>
 
@@ -407,7 +407,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                       >
                         <ScanBarcode className="size-3.5" />
-                        أو امسح الرَّمز بماسح QR و Barcode
+                        {VERIFY_CODE_COPY.scanHint}
                       </Link>
                     </m.div>
                   </div>
@@ -424,7 +424,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             transition={reduce ? undefined : { delay: 0.5, duration: 0.4 }}
           >
             <span className="sr-only" role="status" aria-live="polite">
-              {copied ? 'تمَّ نسخ رابط التَّحقُّق' : ''}
+              {copied ? VERIFY_CODE_COPY.copiedStatus : ''}
             </span>
             <Button
               asChild
@@ -434,7 +434,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             >
               <Link href="/verify">
                 <Search className="size-4" />
-                التَّحقُّق من شهادة أخرى
+                {VERIFY_CODE_COPY.verifyAnother}
               </Link>
             </Button>
 
@@ -449,7 +449,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               ) : (
                 <Copy className="size-4" />
               )}
-              {copied ? 'تمَّ النَّسخ' : 'نسخ رابط التَّحقُّق'}
+              {copied ? VERIFY_CODE_COPY.copied : VERIFY_CODE_COPY.copyLink}
             </Button>
 
             <Button
@@ -460,7 +460,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             >
               <Link href="/">
                 <ExternalLink className="size-4" />
-                رؤيَة رقَميَّة
+                {VERIFY_CODE_COPY.siteName}
               </Link>
             </Button>
           </m.div>

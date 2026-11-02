@@ -39,7 +39,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `rates` | `/rates` | `RatesScreen.kt` |  |
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
-| `verify-code` | `/verify/[code]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
 | `profile` | `/u/[username]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `scan` | `/scan` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

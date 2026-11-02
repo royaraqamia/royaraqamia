@@ -1,5 +1,7 @@
 package com.royaraqamia.app.shell
 
+import com.royaraqamia.app.verify.VerifyRoutes
+
 /**
  * The routes the shell draws itself, the ones it hands over, and the ones a guest
  * may read (#647, #658).
@@ -40,10 +42,12 @@ object NativeSurfaces {
     private val publicRoutes: Set<String> = setOf("/verify", "/rates")
 
     /** Whether the shell can draw [route] without the document. */
-    fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))
+    fun isNative(route: String): Boolean =
+        routes.contains(Routes.normalize(route)) || VerifyRoutes.matches(route)
 
     /** Whether [route] is readable with no session (the matrix's public rows). */
-    fun isPublic(route: String): Boolean = publicRoutes.contains(Routes.normalize(route))
+    fun isPublic(route: String): Boolean =
+        publicRoutes.contains(Routes.normalize(route)) || VerifyRoutes.matches(route)
 
     /** How many destinations the shell draws, for the check that reads this list. */
     val count: Int get() = routes.size
