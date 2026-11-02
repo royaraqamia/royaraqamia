@@ -22,11 +22,13 @@ Land the work in this tree, end to end and without asking.
    exists in `git log --oneline -1`.
 5. **Open the pull request.** `gh pr create --base main --fill`, then edit the body so it says what
    changed and why and links `Closes #<n>` when there is an issue.
-6. **Stop at the open pull request.** Report the pull request URL and stop. Do **not** merge — no
-   `gh pr merge`, no auto-merge, no `--delete-branch`: the merge is the repository owner's manual
-   step. Leave the worktree and branch in place, and leave local `main` alone; it is reconciled
-   after the owner merges. A failing check is worth reporting, but the pull request stays open
-   either way.
+6. **Keep it green.** `gh pr checks --watch --fail-fast` and `gh pr view --json mergeable`. A red
+   check or a conflict with the base is yours to fix on that same branch and push
+   ([landing.md step 5a](../../docs/agents/landing.md)); never weaken or skip a gate to get there.
+7. **Record it, and stop.** Squash the final branch into local `main` per landing.md step 6, then
+   report the pull request URL and the checks' result. Do **not** merge — no `gh pr merge`, no
+   auto-merge, no `--delete-branch`: the merge is the repository owner's manual step. Leave the
+   worktree and branch in place; a later reconcile after the owner merges is landing.md step 1.
 
 Report the pull request URL. If nothing changed, stop after step 2 and say so rather than
 manufacturing a commit.
