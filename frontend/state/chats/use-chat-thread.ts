@@ -37,7 +37,8 @@ export interface ChatThreadState {
   loadOlder: () => Promise<void>;
   send: (body: string) => Promise<boolean>;
   edit: (messageId: string, body: string) => Promise<boolean>;
-  remove: (messageId: string) => Promise<boolean>;
+  /** The tombstone's refusal sentence, or `null` once the message is gone. */
+  remove: (messageId: string) => Promise<string | null>;
   /** Answer a request, withdraw one, ask again, or lift a block. `null` = done. */
   respond: (answer: 'accept' | 'decline') => Promise<string | null>;
   withdraw: () => Promise<string | null>;
@@ -143,21 +144,27 @@ export function useChatThread(conversationId: string): ChatThreadState {
     return true;
   }, []);
 
-  const remove = useCallback(async (messageId: string) => {
-    const result = await deleteChatMessage(messageId);
-    if (!result.success) {
-      setError(result.error ?? 'تعذّر حذف الرسالة');
-      return false;
-    }
+  /**
+   * A tombstone of a message of any age. The backend answers 403 only when the
+   * row is not the caller's or is already deleted, and that sentence is what the
+   * dialog shows — a silent no-op was the bug (#843).
+   */
+  const remove = useCallback(async (messageId: string): Promise<string | null> => {
+    try {
+      const result = await deleteChatMessage(messageId);
+      if (!result.success) return result.error ?? 'تعذّر حذف الرسالة';
 
-    setMessages((current) =>
-      current.map((message) =>
-        message.id === messageId
-          ? { ...message, body: null, deletedAt: new Date().toISOString(), attachments: [] }
-          : message
-      )
-    );
-    return true;
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId
+            ? { ...message, body: null, deletedAt: new Date().toISOString(), attachments: [] }
+            : message
+        )
+      );
+      return null;
+    } catch (error) {
+      return failureOf(error, 'تعذّر حذف الرسالة');
+    }
   }, []);
 
   /** Every lifecycle write refreshes: the screen is derived from the thread. */

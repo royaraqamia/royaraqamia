@@ -23,6 +23,9 @@ type AttachmentRow = Database['public']['Tables']['chat_attachments']['Row'];
 /** Postgres' unique_violation: the second direct thread between two people. */
 const UNIQUE_VIOLATION = '23505';
 
+/** The guard and the policies refuse with `insufficient_privilege`. */
+const POLICY_REFUSAL = '42501';
+
 function causeCode(error: unknown): string | null {
   const cause = (error as { cause?: unknown } | null)?.cause;
   if (typeof cause === 'object' && cause !== null && 'code' in cause) {
@@ -287,19 +290,30 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         .maybeSingle();
 
       if (error && !isNotFoundError(error)) {
+        // An edit past the window is the guard answering, not a failure: hand it
+        // back as "no row changed" so the service names the refusal (403).
+        if (underlyingCode(error) === POLICY_REFUSAL) return null;
         throw repositoryFailure('chat.updateMessageBody', error);
       }
       return data ? toMessage(data) : null;
     },
 
     async tombstoneMessage(id, userId) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .update({ deleted_at: new Date().toISOString(), body: null })
         .eq('id', id)
-        .eq('sender_id', userId);
+        .eq('sender_id', userId)
+        // A tombstone is final, so an already deleted row is not rewritten and
+        // the caller is told no row changed rather than a silent success.
+        .is('deleted_at', null)
+        .select('id')
+        .maybeSingle();
 
-      if (error) throw repositoryFailure('chat.tombstoneMessage', error);
+      if (error && !isNotFoundError(error)) {
+        throw repositoryFailure('chat.tombstoneMessage', error);
+      }
+      return data !== null;
     },
 
     async deleteMessageAttachments(messageId, userId) {

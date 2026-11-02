@@ -52,7 +52,7 @@ function makeRepository(
       createdAt: '2026-11-01T10:05:00.000Z',
     })),
     updateMessageBody: vi.fn(async () => null),
-    tombstoneMessage: vi.fn(async () => undefined),
+    tombstoneMessage: vi.fn(async () => true),
     deleteMessageAttachments: vi.fn(async () => undefined),
     reportConversation: vi.fn(async () => 'r-1'),
     withdrawRequest: vi.fn(async () => undefined),
@@ -420,6 +420,41 @@ describe('ChatService.sendMessage', () => {
 
     await expect(service.sendMessage(me, 'c-1', { body: 'مرحباً' })).rejects.toMatchObject({
       status: 429,
+    });
+  });
+});
+
+describe('ChatService.deleteMessage', () => {
+  it('tombstones a message of any age', async () => {
+    const { repository, service } = makeRepository();
+
+    await service.deleteMessage(me, 'm-old');
+
+    expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-old', me);
+  });
+
+  it('answers a refusal when no row changed', async () => {
+    const { service } = makeRepository({
+      tombstoneMessage: vi.fn(async () => false),
+    });
+
+    await expect(service.deleteMessage(me, 'm-theirs')).rejects.toMatchObject({
+      status: 403,
+      message: 'لا يمكن حذف هذه الرسالة',
+    });
+  });
+});
+
+describe('ChatService.editMessage', () => {
+  it('answers a refusal, not a failure, past the window', async () => {
+    const { service } = makeRepository({
+      // A guard refusal crosses the repository seam as "no row changed".
+      updateMessageBody: vi.fn(async () => null),
+    });
+
+    await expect(service.editMessage(me, 'm-old', 'نص')).rejects.toMatchObject({
+      status: 403,
+      message: 'لا يمكن تعديل هذه الرسالة',
     });
   });
 });
