@@ -533,6 +533,11 @@ export class ChatService {
    * The pre-chat screen's one read: the member a handle names, and the thread
    * this pair already has. Nothing is created here — the request is a separate,
    * deliberate click (`startDirect`).
+   *
+   * A closed thread still resolves to the pair, but only one the caller can
+   * open: a withdrawal leaves both roster rows `left`, and the thread page reads
+   * the list, so answering with that id would land the member on a 404. It
+   * answers "no thread" instead and the request button reopens the same row.
    */
   async preview(userId: string, username: string): Promise<ChatPreview> {
     const handle = username.trim().replace(/^@+/, '').toLowerCase();
@@ -545,7 +550,12 @@ export class ChatService {
     const peer = toPeer(user);
     if (!peer) throw new ChatError(404, 'العضو غير موجود');
 
-    return { peer, conversationId: await this.findDirectThread(userId, user.id) };
+    const conversationId = await this.findDirectThread(userId, user.id);
+    if (!conversationId) return { peer, conversationId: null };
+
+    const participants = await this.repo.findParticipants(conversationId);
+    const me = participants.find((participant) => participant.userId === userId);
+    return { peer, conversationId: me?.status === 'left' ? null : conversationId };
   }
 
   /**

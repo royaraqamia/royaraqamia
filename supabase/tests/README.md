@@ -76,6 +76,18 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - A member can neither edit nor tombstone the other side of the thread, and a message keeps its
   identity.
 
+`chat_direct_key_test.sql` (#841, ADR-0113):
+
+- A direct thread with two roster rows is keyed by the sorted pair, and one with a single row
+  carries no key — the guard that keeps `startDirect`'s intermediate state and a thread missing a
+  roster row out of the unique index.
+- A decline keeps the pair as the key, the pair lookup still answers the declined thread, and a
+  second direct thread for the pair is refused (`23505`).
+- A withdrawal (`left` on both rows) keeps the pair as the key and the index still refuses a second
+  thread; reopening either status keeps the same conversation and the same key.
+- The fixtures run with the status and pair-key triggers live, which is why this file does not seed
+  with `session_replication_role = replica`.
+
 `chat_participants_test.sql` (#840, ADR-0113):
 
 - The creator of a direct thread adds their one peer as `requested`; a second add, or a third
@@ -195,6 +207,10 @@ comments beside each assertion; the risk is the settings update between role swi
 first-run adjustment are the `current_user` owner check inside the guard (it compares against
 `pg_class.relowner`, not a literal role name) and the direct pair keys the triggers write while the
 file runs.
+
+`chat_direct_key_test.sql` (#841) is unrun too, and it seeds with the status trigger live instead of
+`replica`, so the trigger writes the keys the file is about: if `plan(17)` and the run disagree, the
+fixture order (two rows before the first assertion) is the place to look first.
 
 ## Worth adding next
 
