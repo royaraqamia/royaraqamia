@@ -163,22 +163,43 @@ class ApiClient(
         }
 
     /**
+     * One public read (#658): the routes the site serves to a visitor, with no
+     * bearer and no refresh. Rates and the certificate check are both here for the
+     * same reason — a guest must be able to read them, and the difference is the
+     * route's contract rather than the caller's luck.
+     */
+    suspend fun <T> getPublic(path: String, serializer: KSerializer<T>): ApiResult<T> =
+        publicAfter("GET", path, null, serializer)
+
+    /**
      * One public write (#658): the routes the site serves to a visitor, on the same
      * base URL and the same status split, with no bearer and no refresh.
-     *
-     * It is its own entry point rather than "the session, if there is one" because
-     * the difference is the route's contract, not the caller's luck: certificate
-     * verification must answer a guest, and a client that quietly sent a token
-     * where the site expects none would hide a route that stopped being public.
      */
     suspend fun <T> postPublic(path: String, body: String, serializer: KSerializer<T>): ApiResult<T> =
+        publicAfter("POST", path, body, serializer)
+
+    /**
+     * The public exchange: no token, no retry, the same status handling and decode.
+     *
+     * A `426` is published to the update channel exactly as the bearer path does,
+     * because the floor applies to a guest too: an APK below it is answered by the
+     * card wherever the request went.
+     */
+    private suspend fun <T> publicAfter(
+        method: String,
+        path: String,
+        body: String?,
+        serializer: KSerializer<T>,
+    ): ApiResult<T> =
         withContext(Dispatchers.IO) {
             val answered =
                 try {
                     transport.send(
-                        method = "POST",
+                        method = method,
                         url = urlFor(path),
-                        headers = mapOf("Content-Type" to "application/json"),
+                        headers =
+                            if (body == null) emptyMap()
+                            else mapOf("Content-Type" to "application/json"),
                         body = body,
                     )
                 } catch (error: IOException) {
@@ -198,6 +219,10 @@ class ApiClient(
 
             ContractCodec.decode(answered.body, serializer)
         }
+
+    /** [getPublic] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> getPublic(path: String): ApiResult<T> =
+        getPublic(path, serializer<T>())
 
     /** [postPublic] with the serializer taken from the type the caller asked for. */
     suspend inline fun <reified T> postPublic(path: String, body: String): ApiResult<T> =

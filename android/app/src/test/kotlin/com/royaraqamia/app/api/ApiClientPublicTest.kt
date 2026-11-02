@@ -138,7 +138,26 @@ class ApiClientPublicTest {
         assertEquals(ApiResult.Failure(ApiError.Server(429, "slow down")), result)
     }
 
+    @Test
+    fun `a public read carries no bearer either`() {
+        val transport =
+            RecordingTransport {
+                HttpResponse(200, """{"base":"USD","fetchedAt":"x","providerQuoteDate":"y","isStale":false,"currencies":[],"metals":[]}""")
+            }
+        val client = ApiClient(baseUrl, signedIn(), transport)
+
+        val result =
+            runBlocking { client.getPublic<com.royaraqamia.app.contracts.generated.RatesBoard>(RATES_PATH) }
+
+        assertTrue(result is ApiResult.Success)
+        val request = transport.requests.single()
+        assertEquals("GET", request.method)
+        assertEquals("$baseUrl$RATES_PATH", request.url)
+        assertNull(request.bearer)
+    }
+
     private companion object {
         const val VERIFY_PATH = "/api/certificates/verify"
+        const val RATES_PATH = "/api/rates/board"
     }
 }

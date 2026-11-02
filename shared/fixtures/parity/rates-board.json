@@ -1,0 +1,195 @@
+{
+  "notes": "What the site converts a rate to. `shared/rates.ts` is the arithmetic, and the app ported it to `RatesMath.kt` because the server sends a board and not a number; both suites assert this file, so a doubled or inverted rate on either side is a red test rather than a figure a visitor has to notice (ADR-0098). Every `expected` is rounded to six decimals and compared with a 1e-6 tolerance.",
+  "board": {
+    "base": "USD",
+    "fetchedAt": "2026-11-01T06:00:00.000Z",
+    "providerQuoteDate": "2026-10-31",
+    "isStale": false,
+    "currencies": [
+      {
+        "code": "USD",
+        "name": "╪º┘ä╪»┘Å┘æ┘ê┘ä╪º╪▒ ╪º┘ä╪ú┘à╪▒┘è┘â┘è",
+        "symbol": "$",
+        "rate": 1,
+        "previousRate": 1,
+        "changePct": 0,
+        "asOf": "2026-10-31",
+        "parallel": null
+      },
+      {
+        "code": "SAR",
+        "name": "╪º┘ä╪▒┘É┘æ┘è╪º┘ä ╪º┘ä╪│┘Å┘æ╪╣┘ê╪»┘è",
+        "symbol": "╪▒.╪│",
+        "rate": 3.75,
+        "previousRate": 3.75,
+        "changePct": 0,
+        "asOf": "2026-10-31",
+        "parallel": null
+      },
+      {
+        "code": "SYP",
+        "name": "╪º┘ä┘ä┘É┘æ┘è╪▒╪⌐ ╪º┘ä╪│┘Å┘æ┘ê╪▒┘è┘Ä┘æ╪⌐",
+        "symbol": "┘ä.╪│",
+        "rate": 13000,
+        "previousRate": 12900,
+        "changePct": 0.7751937984496124,
+        "asOf": "2026-10-31",
+        "parallel": {
+          "rate": 13800,
+          "previousRate": 13700,
+          "changePct": 0.72992700729927,
+          "asOf": "2026-10-30"
+        }
+      },
+      {
+        "code": "YER",
+        "name": "╪º┘ä╪▒┘É┘æ┘è╪º┘ä ╪º┘ä┘è┘Å┘à┘å┘è",
+        "symbol": "╪▒.┘è",
+        "rate": 250,
+        "previousRate": 250,
+        "changePct": 0,
+        "asOf": "2026-10-31",
+        "parallel": { "rate": 530, "previousRate": 530, "changePct": 0, "asOf": "2026-10-29" },
+        "parallelMarkets": [
+          {
+            "key": "sanaa",
+            "name": "╪╡┘å╪╣╪º╪í",
+            "rate": { "rate": 530, "previousRate": 530, "changePct": 0, "asOf": "2026-10-29" }
+          },
+          {
+            "key": "aden",
+            "name": "╪╣╪»┘å",
+            "rate": { "rate": 640, "previousRate": 640, "changePct": 0, "asOf": "2026-10-30" }
+          }
+        ]
+      }
+    ],
+    "metals": [
+      {
+        "code": "XAU",
+        "name": "╪º┘ä╪░┘Ä┘æ┘ç╪¿",
+        "pricePerOunceUsd": 2000,
+        "pricePerGramUsd": 64.30149313725596,
+        "previousPricePerOunceUsd": 1980,
+        "changePct": 1.0101010101010102,
+        "karats": [
+          { "karat": 24, "pricePerGramUsd": 64.30149313725596 },
+          { "karat": 22, "pricePerGramUsd": 58.94303537581796 },
+          { "karat": 21, "pricePerGramUsd": 56.26380649509896 },
+          { "karat": 18, "pricePerGramUsd": 48.22611985294197 }
+        ]
+      },
+      {
+        "code": "XAG",
+        "name": "╪º┘ä┘ü┘É╪╢┘Ä┘æ╪⌐",
+        "pricePerOunceUsd": 25,
+        "pricePerGramUsd": 0.8037686642156995,
+        "previousPricePerOunceUsd": 25,
+        "changePct": 0,
+        "karats": []
+      }
+    ]
+  },
+  "conversions": [
+    {
+      "name": "dollars to riyals at the official rate",
+      "from": "USD",
+      "to": "SAR",
+      "amount": 100,
+      "expected": { "result": 375, "rate": 3.75 }
+    },
+    {
+      "name": "riyals back to dollars",
+      "from": "SAR",
+      "to": "USD",
+      "amount": 3.75,
+      "expected": { "result": 1, "rate": 0.266667 }
+    },
+    {
+      "name": "dollars to the pound at the parallel rate",
+      "from": "USD",
+      "to": "SYP",
+      "amount": 100,
+      "basis": "parallel",
+      "expected": { "result": 1380000, "rate": 13800 }
+    },
+    {
+      "name": "riyals to the pound at the parallel rate",
+      "from": "SAR",
+      "to": "SYP",
+      "amount": 1,
+      "basis": "parallel",
+      "expected": { "result": 3680, "rate": 3680 }
+    },
+    {
+      "name": "dollars to a gram of gold",
+      "from": "USD",
+      "to": "XAU",
+      "amount": 2000,
+      "expected": { "result": 31.103477, "rate": 0.015552 }
+    },
+    {
+      "name": "a gram of gold to dollars",
+      "from": "XAU",
+      "to": "USD",
+      "amount": 1,
+      "expected": { "result": 64.301493, "rate": 64.301493 }
+    },
+    {
+      "name": "a gram of 18-karat gold to dollars",
+      "from": "XAU",
+      "to": "USD",
+      "amount": 1,
+      "karat": 18,
+      "expected": { "result": 48.22612, "rate": 48.22612 }
+    },
+    {
+      "name": "a gram of silver to riyals",
+      "from": "XAG",
+      "to": "SAR",
+      "amount": 1,
+      "expected": { "result": 3.014132, "rate": 3.014132 }
+    },
+    {
+      "name": "dollars to the Yemeni rial in Sanaa",
+      "from": "USD",
+      "to": "YER",
+      "amount": 1,
+      "basis": "parallel",
+      "market": "sanaa",
+      "expected": { "result": 530, "rate": 530 }
+    },
+    {
+      "name": "dollars to the Yemeni rial in Aden",
+      "from": "USD",
+      "to": "YER",
+      "amount": 1,
+      "basis": "parallel",
+      "market": "aden",
+      "expected": { "result": 640, "rate": 640 }
+    },
+    {
+      "name": "a pair the board cannot price",
+      "from": "USD",
+      "to": "XYZ",
+      "amount": 1,
+      "expected": null
+    }
+  ],
+  "markets": [
+    { "codes": ["YER"], "expected": ["sanaa", "aden"] },
+    { "codes": ["USD", "SAR"], "expected": [] },
+    { "codes": ["SYP", "YER"], "expected": ["sanaa", "aden"] }
+  ],
+  "oldestParallelAsOf": [
+    { "codes": ["USD", "SYP"], "expected": "2026-10-30" },
+    { "codes": ["USD", "SAR"], "expected": null },
+    { "codes": ["YER", "SYP"], "expected": "2026-10-29" }
+  ],
+  "defaults": [
+    { "detectedCountry": null, "detectedCurrency": null, "from": "USD", "to": "SYP" },
+    { "detectedCountry": "SA", "detectedCurrency": "SAR", "from": "USD", "to": "SAR" },
+    { "detectedCountry": "ZZ", "detectedCurrency": "XYZ", "from": "USD", "to": "SYP" },
+    { "detectedCountry": "US", "detectedCurrency": "USD", "from": "SYP", "to": "USD" }
+  ]
+}
