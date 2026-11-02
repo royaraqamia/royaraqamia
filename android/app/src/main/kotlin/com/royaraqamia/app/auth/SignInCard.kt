@@ -34,6 +34,12 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * reset and the site's own provider path arrive with the ticket that carries the
  * `royar://auth` return; leaving them out is stated here rather than implied by a
  * missing button.
+ *
+ * **It is switched off since #872.** The shell draws the document for every route
+ * and the document signs in, so this card is not reachable; it is kept because the
+ * next attempt is this card redrawn as the site's `AuthCard` - glass, gradient
+ * title, provider button and both links - and because the states below are already
+ * the ones a port has to answer. Nothing in `shell/` composes it.
  */
 @Composable
 fun SignInCard(

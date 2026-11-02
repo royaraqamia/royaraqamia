@@ -97,6 +97,48 @@ describe('the screen inventory', () => {
     ).toEqual([`row "home" claims ${NATIVE}/ui/HomeScreen.kt, which does not exist`]);
   });
 
+  it('accepts a port that exists and is switched off', () => {
+    const repo = makeRepo({ [`${NATIVE}/ui/HomeScreen.kt`]: '' });
+
+    expect(
+      check(repo, [
+        {
+          surface: 'home',
+          native: `${NATIVE}/ui/HomeScreen.kt`,
+          enabled: false,
+          reason: 'ported, and off until it matches the page',
+        },
+        { surface: 'notes', reason: 'the notes surface is web only' },
+      ])
+    ).toEqual([]);
+  });
+
+  it('refuses a switched-off row with no reason', () => {
+    const repo = makeRepo({ [`${NATIVE}/ui/HomeScreen.kt`]: '' });
+
+    expect(
+      check(repo, [
+        { surface: 'home', native: `${NATIVE}/ui/HomeScreen.kt`, enabled: false },
+        { surface: 'notes', reason: 'web only' },
+      ])
+    ).toEqual([
+      'row "home" is disabled, so it needs a "reason" (why the port is off)',
+      // A row that is not a claim: the screen behind it is still unlisted.
+      `native screens with no row: ${NATIVE}/ui/HomeScreen.kt`,
+    ]);
+  });
+
+  it('refuses a switched-off row with no screen behind it', () => {
+    const repo = makeRepo();
+
+    expect(
+      check(repo, [
+        { surface: 'home', enabled: false, reason: 'off for no reason at all' },
+        { surface: 'notes', reason: 'web only' },
+      ])
+    ).toEqual(['row "home" is disabled ("enabled": false) but names no Kotlin screen']);
+  });
+
   it('refuses a Kotlin screen with no row', () => {
     const repo = makeRepo({ [`${NATIVE}/notes/NotesScreen.kt`]: '' });
 
@@ -149,6 +191,22 @@ describe('the rendered table', () => {
     expect(rendered).toContain('| `home` | `/` | `HomeScreen.kt` |');
     expect(rendered).toContain(
       '| `notes` | `/notes` | _web only_ | the notes surface is web only #123 |'
+    );
+  });
+
+  it('marks a port that is switched off, so the table does not claim it is drawn', () => {
+    const rendered = renderMarkdown(
+      inventory({
+        surface: 'home',
+        native: `${NATIVE}/ui/HomeScreen.kt`,
+        enabled: false,
+        reason: 'off until it matches the page',
+      }),
+      matrix
+    );
+
+    expect(rendered).toContain(
+      '| `home` | `/` | `HomeScreen.kt` (off) | off until it matches the page |'
     );
   });
 });

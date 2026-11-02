@@ -86,7 +86,20 @@ export function validate({ inventory, matrix, repoRoot = ROOT, nativeRoot = NATI
 
     const hasNative = typeof row.native === 'string' && row.native.length > 0;
     const hasReason = typeof row.reason === 'string' && row.reason.trim().length > 0;
-    if (hasNative === hasReason) {
+    // A port can exist and be switched off: the screen is in the tree, the shell
+    // does not route to it, and the reason says why (#872). That is a third state
+    // rather than a lie in either direction - `native` alone claims the app draws
+    // it, `reason` alone denies the file exists.
+    const off = row.enabled === false;
+    if (off && !hasNative) {
+      errors.push(`row "${id}" is disabled ("enabled": false) but names no Kotlin screen`);
+      continue;
+    }
+    if (off && !hasReason) {
+      errors.push(`row "${id}" is disabled, so it needs a "reason" (why the port is off)`);
+      continue;
+    }
+    if (!off && hasNative === hasReason) {
       errors.push(
         `row "${id}" needs exactly one of "native" (a Kotlin screen) and "reason" (why there is none)`
       );
@@ -128,7 +141,10 @@ function cells(row, surface) {
     ...(surface?.routes ?? []),
     ...(typeof surface?.prefix === 'string' ? [`${surface.prefix}/**`] : []),
   ];
-  const app = typeof row.native === 'string' ? `\`${row.native.split('/').pop()}\`` : '_web only_';
+  const app =
+    typeof row.native === 'string'
+      ? `\`${row.native.split('/').pop()}\`${row.enabled === false ? ' (off)' : ''}`
+      : '_web only_';
   const why = typeof row.reason === 'string' ? row.reason : '';
   const ticket = row.issue ? ` ${row.issue}` : '';
   return [
@@ -152,7 +168,10 @@ export function renderMarkdown(inventory, matrix) {
     '(#665, [two-clients.md](two-clients.md)).\n\n' +
     '`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web ' +
     'surface in the shell; the reason says why, and the phases are in ' +
-    '[native-app.md](native-app.md). The offline half of the same question — whether the app can show a ' +
+    '[native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not ' +
+    'route to it yet: it is switched on by the change that makes it the same screen as the page ' +
+    '(#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)). The ' +
+    'offline half of the same question — whether the app can show a ' +
     'surface with the radio off — is the `Bundle` column of ' +
     '[the surface matrix](../specs/surfaces.md), not this table.\n\n';
 
@@ -196,8 +215,10 @@ export function main(argv = process.argv.slice(2)) {
   }
 
   const screens = inventory.screens ?? [];
+  const ported = screens.filter((row) => typeof row.native === 'string');
+  const on = ported.filter((row) => row.enabled !== false).length;
   console.log(
-    `  ok ${screens.length} screens, ${screens.filter((row) => row.native).length} drawn natively`
+    `  ok ${screens.length} screens, ${on} drawn natively, ${ported.length - on} ported but off`
   );
   return 0;
 }

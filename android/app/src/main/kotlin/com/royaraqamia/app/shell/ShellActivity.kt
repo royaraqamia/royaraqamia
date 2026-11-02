@@ -7,6 +7,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -24,8 +26,6 @@ import com.royaraqamia.app.AppGraph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
-import com.royaraqamia.app.auth.SignInCard
-import com.royaraqamia.app.auth.SignInUiState
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
@@ -41,6 +41,7 @@ import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.update.ShellUpdateChannel
 import com.royaraqamia.app.update.ShellUpdateController
+import com.royaraqamia.app.update.ShellUpdateUiState
 import com.royaraqamia.app.verify.VerifyCodeScreen
 import com.royaraqamia.app.verify.VerifyRoutes
 import com.royaraqamia.app.verify.VerifyScreen
@@ -59,6 +60,13 @@ import com.royaraqamia.app.verify.VerifyScreen
  * back gesture walks ([ShellBackStack]), and the tab the frame lights
  * ([ShellTab]). All three are the site's own grammar, and each is unit-tested
  * rather than asserted here.
+ *
+ * **Every destination is the document (#872).** [NativeSurfaces] is empty, so the
+ * frame is a launch screen rather than a second design: it exists to lift the
+ * splash onto the app's own colours, to own the update card, and to hand the route
+ * to [WebSurface] - signed in or not, because the site is what signs in. A native
+ * screen returns to this frame only with the change that makes it
+ * indistinguishable from the page.
  */
 class ShellActivity : ComponentActivity() {
     /** The route the frame is showing. */
@@ -81,17 +89,6 @@ class ShellActivity : ComponentActivity() {
     private var signedIn by mutableStateOf(false)
 
     /**
-     * Whether the session has answered yet (#647).
-     *
-     * The sign-in card is not the first frame: it is what a *guest* sees, and the
-     * first frame is drawn before the stored session is restored. Composing it on
-     * the way in is both wrong on screen — a signed-in member watches a sign-in
-     * card flash and disappear - and the most expensive thing in the frame
-     * (Material3's text fields), for a card most launches do not need.
-     */
-    private var sessionAnswered by mutableStateOf(false)
-
-    /**
      * The services this member hid from `خدماتنا`, read once the session answers
      * (ADR-0112). Empty is the whole menu, which is also what a failed read
      * answers: a network blip must not make the app look like it lost its rows.
@@ -108,7 +105,16 @@ class ShellActivity : ComponentActivity() {
      */
     private var unreadCount by mutableStateOf<Int?>(null)
 
-    private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
+    /**
+     * Whether the frame was brought forward for an update card (#872).
+     *
+     * The document is on top by default, so a card that appears after launch has
+     * to bring this activity forward to be seen at all; once the user has answered
+     * it, [ShellUpdateUiState.Idle] is what sends them back to the document. The
+     * flag is what keeps that second hand-over from happening at launch, where the
+     * document was never vacated.
+     */
+    private var cardShown by mutableStateOf(false)
 
     /**
      * The update channel (#652): the check, the download, the install, and the
@@ -121,6 +127,18 @@ class ShellActivity : ComponentActivity() {
 
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
     private var networkWatch: java.io.Closeable? = null
+
+    /**
+     * The document, launched for result (#872).
+     *
+     * Since every destination is the document, the frame underneath has nothing to
+     * show, so the document finishing is the one back that leaves the app
+     * (ADR-0082). A plain `startActivity` cannot hear that; this can.
+     */
+    private val document: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            finish()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch theme declares the platform splash items; this is what reads
@@ -247,12 +265,6 @@ class ShellActivity : ComponentActivity() {
                                     )
                                 }
                         }
-                        if (sessionAnswered && !signedIn && !NativeSurfaces.isPublic(current)) {
-                            SignInCard(
-                                state = authState,
-                                onSignIn = { email, password -> signIn(email, password) },
-                            )
-                        }
                     }
                 }
                 LaunchedEffect(Unit) {
@@ -262,7 +274,6 @@ class ShellActivity : ComponentActivity() {
                     // the splash would lift onto the document instead.
                     withFrameNanos { }
                     signedIn = graph.start()
-                    sessionAnswered = true
                     handOver()
                     // The launch half of "a queued write survives the process"
                     // (#650): the queue is on disk, so a process that was killed
@@ -291,6 +302,27 @@ class ShellActivity : ComponentActivity() {
                     update.requireUpdate(ShellUpdateChannel.floor)
                 }
 
+                // An update the user has to answer is the one screen the frame still
+                // owns (#872, #652): the document is on top, so the frame is brought
+                // forward to be seen at all, and answering the card hands the
+                // destination back. A card that arrived while the document was open
+                // would otherwise never be seen, and an app that cannot announce an
+                // APK is an app that never updates.
+                LaunchedEffect(update.state) {
+                    when (update.state) {
+                        is ShellUpdateUiState.Asking -> {
+                            cardShown = true
+                            bringFrameForward()
+                        }
+                        is ShellUpdateUiState.Idle ->
+                            if (cardShown) {
+                                cardShown = false
+                                handOver()
+                            }
+                        else -> Unit
+                    }
+                }
+
                 ShellUpdatePrompt(
                     state = update.state,
                     onInstall = update::install,
@@ -310,8 +342,16 @@ class ShellActivity : ComponentActivity() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
+                    // A card the frame was brought forward for is a screen of its
+                    // own (#652): back is "later", not a walk down a stack the user
+                    // cannot see.
+                    if (update.state !is ShellUpdateUiState.Idle) {
+                        update.decline()
+                        return
+                    }
                     if (stack.back()) {
                         current = stack.route
+                        handOver()
                     } else {
                         // Home is the root (ADR-0082): this is the one back that
                         // closes the app, and no other destination may reach it.
@@ -373,27 +413,6 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * One sign-in attempt (#770): the state the card draws while it is in flight,
-     * then whatever the server answered. A success is the only outcome that
-     * unlocks the frame, so a refusal leaves the form where it was.
-     */
-    private fun signIn(email: String, password: String) {
-        if (authState is SignInUiState.Busy) return
-        authState = SignInUiState.Busy
-        lifecycleScope.launch {
-            val outcome = graph.signIn(email, password)
-            authState = SignInUiState.of(outcome)
-            signedIn = graph.signedIn
-            if (signedIn) {
-                handOver()
-                lifecycleScope.launch { refreshUnreadCount() }
-            } else {
-                unreadCount = null
-            }
-        }
-    }
-
-    /**
      * The bell's number, from the route the site's own bell reads (#659).
      *
      * Null is the honest answer for a guest, a refusal or an unreachable server:
@@ -409,13 +428,29 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * A screen's guest prompt asked for the sign-in card: the frame is no longer
-     * the signed-in one, and a bell for nobody is exactly what [ShellTopBar]
-     * refuses to draw.
+     * A screen's guest prompt asked to sign in: the site's own login page, opened
+     * in the document (#872).
+     *
+     * The frame used to draw a native card here (#770), and it was a bare Material
+     * form next to the site's glass one - a different screen with the same job. The
+     * page is the sign-in screen again until a port can say otherwise.
      */
     private fun showSignIn() {
         signedIn = false
         unreadCount = null
+        openRoute("/auth/login")
+    }
+
+    /**
+     * Brings the frame back to the front, over the document (#872). Used for the
+     * update card and nothing else: a destination is handed *to* the document, and
+     * the only thing the frame has to say about it is that a newer APK exists.
+     */
+    private fun bringFrameForward() {
+        startActivity(
+            Intent(this, ShellActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        )
     }
 
     /**
@@ -429,26 +464,25 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * Opens the current destination in the document when the shell cannot draw it.
+     * Opens the current destination in the document (#647, #872).
      *
-     * The shell stays underneath, which is what makes back from a web surface land
-     * on the app's own frame rather than closing the app (ADR-0105). When the
-     * destination has a native screen, this does nothing and the frame's content
-     * area is the screen.
+     * Every route goes there now, signed in or not: the site is the app's UI, and
+     * it is also what signs in, so a guest sees the page's own login instead of a
+     * second drawing of it. The shell stays underneath, which is what makes an
+     * update card able to come forward over the document (#652) and back from a web
+     * surface land on the frame rather than closing the app (ADR-0105).
      *
-     * A build below the site's floor never gets there (#652, ADR-0114): every
-     * owned route would answer `426`, so the blocking card is the honest screen
-     * rather than a document that refuses everything it is asked.
+     * A destination with a native screen - none today - stays on the frame when
+     * [NativeSurfaces.isNative] says so. A build below the site's floor never gets
+     * there (#652, ADR-0114): every owned route would answer `426`, so the blocking
+     * card is the honest screen rather than a document that refuses everything it
+     * is asked.
      */
     private fun handOver() {
+        if (isFinishing || isDestroyed) return
         if (update.blocksHandover) return
         if (NativeSurfaces.isNative(stack.route)) return
-        // A public destination is readable with no session — the site serves the
-        // feed, a post and a profile to a visitor — so a guest is handed the
-        // document rather than left on a frame with nothing in it. Every other
-        // route needs the session the sign-in card is offering.
-        if (!signedIn && !NativeSurfaces.isPublic(stack.route)) return
-        WebSurface.open(this, stack.current)
+        document.launch(WebSurface.intentFor(this, stack.current))
     }
 
     private companion object {

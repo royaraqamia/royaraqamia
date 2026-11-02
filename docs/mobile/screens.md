@@ -5,15 +5,15 @@
 
 Every surface the site serves, and which client draws it. A screen that exists in the app and not the site — or the other way round — is a row here with the ticket that lands it or the reason it never will, because a gap found on a device is a bug and a gap listed here is a decision (#665, [two-clients.md](two-clients.md)).
 
-`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). The offline half of the same question — whether the app can show a surface with the radio off — is the `Bundle` column of [the surface matrix](../specs/surfaces.md), not this table.
+`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not route to it yet: it is switched on by the change that makes it the same screen as the page (#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)). The offline half of the same question — whether the app can show a surface with the radio off — is the `Bundle` column of [the surface matrix](../specs/surfaces.md), not this table.
 
 | Screen | Routes | App | Why / ticket |
 | --- | --- | --- | --- |
 | `chats` | `/chats/[id]`<br>`/chats/new` | _web only_ | The app opens the web thread in the shell for now; the native port is the change ADR-0113 names as its last stage, and it lands with a parity.json row. |
 | `home` | `/` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `habitflow` | `/habitflow` | `HabitflowScreen.kt` |  |
-| `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` |  |
+| `habitflow` | `/habitflow` | `HabitflowScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `linksnap` | `/linksnap` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
@@ -26,20 +26,20 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-links` | `/account/links` | _web only_ | The owned links list is LinkSnap's dashboard, so it arrives with the app's LinkSnap screen (#654). |
 | `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
-| `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
-| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
+| `account-plan` | `/account/plan` | `PlanScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-faq` | `/account/faq` | _web only_ | The FAQ's content is shared by both clients first; the screen lands in #799. |
 | `account-news` | `/account/news` | _web only_ | The news preferences read and write the news contract; the screens land in #799. |
 | `account-services` | `/account/services` | _web only_ | The switches are a server preference read on the client; the screen lands with the rest of the account area (#799). |
 | `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
 | `account-blocked` | `/account/blocked` | _web only_ | The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `community` | `/community` | `CommunityFeedScreen.kt` |  |
+| `community` | `/community` | `CommunityFeedScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `community-post` | `/community/[slug]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `rates` | `/rates` | `RatesScreen.kt` |  |
-| `verify` | `/verify` | `VerifyScreen.kt` |  |
-| `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
+| `rates` | `/rates` | `RatesScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `verify` | `/verify` | `VerifyScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `profile` | `/u/[username]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `scan` | `/scan` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

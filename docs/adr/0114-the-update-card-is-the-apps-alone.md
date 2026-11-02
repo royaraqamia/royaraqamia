@@ -41,6 +41,8 @@ announcement, and moving it raised three questions that a port does not usually 
   so an offer that arrives while a web surface is open is seen when the user comes back to the
   frame. The floor case does not have this hole: it blocks the hand-over, and a floor that arrives
   late either closes the document through the bridge or is waiting when the user returns.
+  _Amended by [ADR-0117](0117-the-document-is-the-app-until-a-port-is-the-same-screen.md): the frame
+  is brought forward when an offer arrives, so the document no longer hides it._
 - **Two activities still race the check.** A cold launch hands a web-backed destination over before
   the manifest has answered, which is the same race `#647` left open for every other launch path.
   The `426` path is what closes it, and it closes with the WebView

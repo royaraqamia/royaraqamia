@@ -1,67 +1,33 @@
 package com.royaraqamia.app.shell
 
-import com.royaraqamia.app.community.CommunityRoutes
-import com.royaraqamia.app.profile.ProfileRoutes
-import com.royaraqamia.app.verify.VerifyRoutes
-
 /**
- * The routes the shell draws itself, the ones it hands over, and the ones a guest
- * may read (#647, #658).
+ * The routes the shell draws itself, and the ones it hands to the document
+ * (#647, #872).
  *
- * `/habitflow` arrived with the list screen (#649), `/account/plan` with the
- * account area (#657), SpendTrack's two routes with its screen (#653), `/verify`
- * and `/rates` with the public surfaces (#658), and `/community` with the feed
- * (#658); every other destination is still the document — home is phase 4, the
- * rest of the account pages #657.
+ * **The set is empty on purpose.** A native screen is a second drawing of a
+ * surface the site already draws, and the copies had drifted: a bare Material card
+ * where the site has its glass sign-in card, a bottom sheet without the site's
+ * per-row grips, HabitFlow and SpendTrack in the app's own layout, and a feed that
+ * arrived after the document was already the answer. One design was never what the
+ * two clients were actually shipping, so the document is the default until a port
+ * proves it is the same screen.
  *
- * A destination arrives here when a `*Screen.kt` exists for it, which is also the
- * pull request that adds its row to `docs/mobile/screens.json`; the two facts are
- * the same fact, so they are kept in one place.
+ * A route arrives here only with the change that makes its port indistinguishable
+ * from the page - same layout, same states, same words - and the same change
+ * flips its row in `docs/mobile/screens.json` from `enabled: false` to enabled.
+ * `docs/adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md`
+ * records the decision and the gate that has to pass first.
  *
- * It is a set rather than a flag because the shell's own frame is unchanged either
- * way: what differs is whether a route opens the document or fills the content
- * area (`ShellFrame`).
- *
- * [public] is the second list, and it is the site's `perf/surfaces.json` answer
- * rather than a third opinion: a route whose matrix row a visitor can read with no
- * session must not be covered by the sign-in card. `/verify` is the first, because
- * checking someone else's certificate is exactly what a visitor does.
+ * The list survives rather than being deleted because the mechanism is what a
+ * passing port needs: [isNative] is the one question the shell asks.
  */
 object NativeSurfaces {
-    private val routes: Set<String> =
-        setOf(
-            "/habitflow",
-            "/spendtrack",
-            "/spendtrack/categories",
-            "/account/plan",
-            "/account/connected-apps",
-            "/verify",
-            "/rates",
-            "/community",
-        )
-
     /**
-     * The routes a signed-out visitor reads: the app draws them and never covers
-     * them with the sign-in card.
-     *
-     * `/community` is the feed, and a post is its child: both are the site's
-     * public content, so a guest reads them exactly as they read the page. A post
-     * is still the document until its screen lands (#658), which is why
-     * [isPublic] and [isNative] answer separately.
+     * Nothing yet. A route arrives here with the pull request that makes its port
+     * indistinguishable from the page, never before it.
      */
-    private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
+    private val routes: Set<String> = emptySet()
 
     /** Whether the shell can draw [route] without the document. */
-    fun isNative(route: String): Boolean =
-        routes.contains(Routes.normalize(route)) || VerifyRoutes.matches(route)
-
-    /** Whether [route] is readable with no session (the matrix's public rows). */
-    fun isPublic(route: String): Boolean =
-        publicRoutes.contains(Routes.normalize(route)) ||
-            VerifyRoutes.matches(route) ||
-            CommunityRoutes.matches(route) ||
-            ProfileRoutes.matches(route)
-
-    /** How many destinations the shell draws, for the check that reads this list. */
-    val count: Int get() = routes.size
+    fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))
 }
