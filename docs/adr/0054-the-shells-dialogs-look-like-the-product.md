@@ -1,5 +1,9 @@
 # The shell's dialogs look like the product
 
+> **Superseded in part by [ADR 0114](0114-the-update-card-is-the-apps-alone.md)**, which moves the
+> update card to Compose in the shell's own frame (#652). What survives is the decision this records:
+> the card is the product's rather than the platform's, and the states it draws are the same three.
+
 ADR-0043 made the update announcement native, and it was right to: the page cannot be relied on to
 carry it, because on the WebViews this app meets the Capacitor bridge is injected through a proxy that
 a single failed request takes with it. But "native" arrived as an `AlertDialog`, and an `AlertDialog`

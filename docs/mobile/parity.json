@@ -697,5 +697,11 @@
         }
       ]
     }
+  ],
+  "exempt": [
+    {
+      "path": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellUpdatePrompt.kt",
+      "reason": "The update card is the app's alone (#652, ADR-0114): the site never offers an APK install, so a web deploy alone never prompts and no second client holds these words. It draws the site's card, glyphs and digit face — which is why the discovery sees it — and its copy is res/values/strings.xml, the app's own single source."
+    }
   ]
 }

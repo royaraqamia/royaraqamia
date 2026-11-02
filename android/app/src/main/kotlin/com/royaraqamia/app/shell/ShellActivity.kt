@@ -31,9 +31,10 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.sync.SyncScheduler
-import kotlinx.coroutines.launch
 import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
+import com.royaraqamia.app.update.ShellUpdateChannel
+import com.royaraqamia.app.update.ShellUpdateController
 
 /**
  * The app's launcher, and the frame it draws first (#647, ADR-0105).
@@ -100,6 +101,15 @@ class ShellActivity : ComponentActivity() {
 
     private var authState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
 
+    /**
+     * The update channel (#652): the check, the download, the install, and the
+     * card the frame draws when one of them has something to say. It is the
+     * shell's rather than the page's — the document cannot reach native code
+     * reliably ([com.royaraqamia.app.update.ShellUpdateController]) — and a build
+     * below the site's floor never gets past it to the document at all.
+     */
+    private lateinit var update: ShellUpdateController
+
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
     private var networkWatch: java.io.Closeable? = null
 
@@ -126,6 +136,7 @@ class ShellActivity : ComponentActivity() {
         stack = ShellBackStack(DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME)
         current = stack.route
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
+        update = ShellUpdateController(this, BuildConfig.SITE_URL, lifecycleScope)
 
         // A queued write is delivered because the radio came back, not because
         // the user opened the screen that made it (#650). The launch path drains
@@ -222,8 +233,29 @@ class ShellActivity : ComponentActivity() {
                         graph.drainOutbox()
                     }
                 }
+
+                // A screen that reached a `426` publishes the floor here (#503),
+                // and the card is the shell's: this is where the number becomes
+                // one. Reading the channel in the composition is what makes a
+                // floor that arrived while the document was on top recompose.
+                LaunchedEffect(ShellUpdateChannel.floor) {
+                    update.requireUpdate(ShellUpdateChannel.floor)
+                }
+
+                ShellUpdatePrompt(
+                    state = update.state,
+                    onInstall = update::install,
+                    onRetry = update::retry,
+                    onLater = update::decline,
+                    onCancelDownload = update::cancelDownload,
+                )
             }
         }
+
+        // The launch check (#652): the card is drawn by the frame above, and the
+        // manifest is read off the main thread, so a slow answer never holds the
+        // first frame.
+        update.maybeCheck(true)
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -255,19 +287,27 @@ class ShellActivity : ComponentActivity() {
      * Coming back to the app is when the bell is most likely stale: the
      * notification centre is still the document, so a read that happened there
      * has to reach the frame that is underneath it.
+     *
+     * The update check rides the same return (#652): a shell that was in the
+     * background for a day should look again, and an install parked on the
+     * "install unknown apps" setting continues here.
      */
     override fun onResume() {
         super.onResume()
         if (signedIn) lifecycleScope.launch { refreshUnreadCount() }
+        update.maybeCheck(false)
+        update.resume()
     }
 
     /**
-     * Releases the network watcher: a callback that outlives the activity would
-     * keep the composition root, and with it a database connection, alive.
+     * Releases the network watcher and the update channel: a callback that
+     * outlives the activity would keep the composition root, and with it a
+     * database connection, alive.
      */
     override fun onDestroy() {
         networkWatch?.close()
         networkWatch = null
+        update.shutdown()
         super.onDestroy()
     }
 
@@ -336,9 +376,14 @@ class ShellActivity : ComponentActivity() {
      * on the app's own frame rather than closing the app (ADR-0105). When the
      * destination has a native screen, this does nothing and the frame's content
      * area is the screen.
+     *
+     * A build below the site's floor never gets there (#652, ADR-0114): every
+     * owned route would answer `426`, so the blocking card is the honest screen
+     * rather than a document that refuses everything it is asked.
      */
     private fun handOver() {
         if (!signedIn) return
+        if (update.blocksHandover) return
         if (NativeSurfaces.isNative(stack.route)) return
         WebSurface.open(this, stack.current)
     }
