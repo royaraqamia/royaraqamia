@@ -57,6 +57,8 @@ export interface ChatMessageRecord {
 export interface ChatAttachmentRecord {
   id: string;
   messageId: string;
+  uploaderId: string;
+  storagePath: string;
   fileName: string;
   mimeType: string;
   byteSize: number;
@@ -92,6 +94,18 @@ export interface InsertMessageInput {
 }
 
 /**
+ * A message is written before its attachment rows, so a refusal in that second
+ * write cannot roll the first one back. The repository reports it instead of
+ * throwing: the service decides what the thread should show (a tombstone) and
+ * which sentence the composer answers with.
+ */
+export interface InsertMessageResult {
+  record: ChatMessageRecord;
+  /** `null` when the message carried no files, or they all landed. */
+  attachmentFailure: { code: string | null } | null;
+}
+
+/**
  * Data access for the chat tables. Nothing here decides a policy: the database
  * holds the rules (RLS, the derived conversation status, the block check) and
  * this interface only speaks the rows to them.
@@ -116,7 +130,17 @@ export interface ChatRepository {
   ): Promise<ChatMessageRecord[]>;
   findMessagesByIds(ids: string[]): Promise<ChatMessageRecord[]>;
   findAttachments(messageIds: string[]): Promise<ChatAttachmentRecord[]>;
-  insertMessage(input: InsertMessageInput): Promise<ChatMessageRecord>;
+  /**
+   * One attachment of a thread, read through the caller's own RLS, so a
+   * non-member's id finds nothing. `null` is "not yours to see", never "broken".
+   */
+  findAttachmentInConversation(
+    conversationId: string,
+    attachmentId: string
+  ): Promise<ChatAttachmentRecord | null>;
+  /** Bytes the caller has stored, for the quota the composer shows. */
+  sumAttachmentBytes(): Promise<number>;
+  insertMessage(input: InsertMessageInput): Promise<InsertMessageResult>;
   updateMessageBody(id: string, userId: string, body: string): Promise<ChatMessageRecord | null>;
   /** False when no row changed: a refusal, or a message already tombstoned. */
   tombstoneMessage(id: string, userId: string): Promise<boolean>;

@@ -6,6 +6,7 @@ import {
   ChatReportSchema,
   CreateGroupChatSchema,
   canEditChatMessage,
+  chatAttachmentIsInlineImage,
   chatTitle,
   normalizeChatBody,
 } from '@/shared/contracts/chat';
@@ -134,5 +135,57 @@ describe('ChatReportSchema', () => {
       reportedUserId: '0d6a1b51-52a1-4c1f-8a4e-9b0b3d8f6a11',
     });
     expect(parsed.success).toBe(true);
+  });
+});
+
+describe('chatAttachmentIsInlineImage', () => {
+  it('draws a real image and nothing else', () => {
+    expect(chatAttachmentIsInlineImage('image/png')).toBe(true);
+    expect(chatAttachmentIsInlineImage('IMAGE/JPEG')).toBe(true);
+  });
+
+  it('treats SVG, HTML and XML as files (ADR-0113)', () => {
+    expect(chatAttachmentIsInlineImage('image/svg+xml')).toBe(false);
+    expect(chatAttachmentIsInlineImage('text/html')).toBe(false);
+    expect(chatAttachmentIsInlineImage('application/xml')).toBe(false);
+    expect(chatAttachmentIsInlineImage('application/pdf')).toBe(false);
+  });
+});
+
+describe('ChatMessageSendSchema attachments', () => {
+  it('accepts any file type up to five per message', () => {
+    const attachment = {
+      storagePath: 'c-1/u-1/report.pdf',
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      byteSize: 1024,
+    };
+
+    expect(
+      ChatMessageSendSchema.safeParse({ attachments: Array.from({ length: 5 }, () => attachment) })
+        .success
+    ).toBe(true);
+    expect(
+      ChatMessageSendSchema.safeParse({ attachments: Array.from({ length: 6 }, () => attachment) })
+        .success
+    ).toBe(false);
+  });
+
+  it('refuses a file the bucket would refuse, with the size sentence', () => {
+    const parsed = ChatMessageSendSchema.safeParse({
+      attachments: [
+        {
+          storagePath: 'c-1/u-1/big.zip',
+          fileName: 'big.zip',
+          mimeType: 'application/zip',
+          byteSize: 30 * 1024 * 1024,
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.message).toContain('25');
+    }
   });
 });

@@ -41,16 +41,21 @@ function makeRepository(
     findMessagesByIds: vi.fn(async () => []),
     findAttachments: vi.fn(async () => []),
     insertMessage: vi.fn(async () => ({
-      id: 'm-1',
-      conversationId: 'c-1',
-      senderId: me,
-      senderKind: 'user' as const,
-      body: 'مرحباً',
-      replyToId: null,
-      editedAt: null,
-      deletedAt: null,
-      createdAt: '2026-11-01T10:05:00.000Z',
+      record: {
+        id: 'm-1',
+        conversationId: 'c-1',
+        senderId: me,
+        senderKind: 'user' as const,
+        body: 'مرحباً',
+        replyToId: null,
+        editedAt: null,
+        deletedAt: null,
+        createdAt: '2026-11-01T10:05:00.000Z',
+      },
+      attachmentFailure: null,
     })),
+    findAttachmentInConversation: vi.fn(async () => null),
+    sumAttachmentBytes: vi.fn(async () => 0),
     updateMessageBody: vi.fn(async () => null),
     tombstoneMessage: vi.fn(async () => true),
     deleteMessageAttachments: vi.fn(async () => undefined),
@@ -73,6 +78,10 @@ function makeRepository(
       search: vi.fn(async () => [peerUser]),
     },
     checkRateLimit: vi.fn(async () => true),
+    attachments: {
+      signedUrl: vi.fn(async () => 'https://storage.test/signed'),
+      remove: vi.fn(async () => undefined),
+    },
     ...depOverrides,
   };
 
@@ -455,6 +464,169 @@ describe('ChatService.editMessage', () => {
     await expect(service.editMessage(me, 'm-old', 'نص')).rejects.toMatchObject({
       status: 403,
       message: 'لا يمكن تعديل هذه الرسالة',
+    });
+  });
+});
+
+const attachmentRecord = (overrides: Record<string, unknown> = {}) => ({
+  id: 'a-1',
+  messageId: 'm-1',
+  uploaderId: me,
+  storagePath: 'c-1/u-1/report.pdf',
+  fileName: 'report.pdf',
+  mimeType: 'application/pdf',
+  byteSize: 2048,
+  ...overrides,
+});
+
+/** A caller who is an active member of `c-1`, which is what every read asserts. */
+const myMembership = [
+  {
+    conversationId: 'c-1',
+    userId: me,
+    role: 'owner',
+    status: 'active',
+    lastReadAt: null,
+    joinedAt: null,
+  },
+];
+
+describe('ChatService.deleteMessage attachments', () => {
+  it('removes the rows and the objects of the caller’s own attachments', async () => {
+    const remove = vi.fn(async () => undefined);
+    const { service, repository } = makeRepository(
+      {
+        findAttachments: vi.fn(async () => [
+          attachmentRecord(),
+          attachmentRecord({
+            id: 'a-2',
+            uploaderId: peerId,
+            storagePath: 'c-1/u-2/theirs.png',
+          }),
+        ]),
+        tombstoneMessage: vi.fn(async () => true),
+      },
+      { attachments: { signedUrl: vi.fn(async () => null), remove } }
+    );
+
+    await service.deleteMessage(me, 'm-1');
+
+    expect(repository.deleteMessageAttachments).toHaveBeenCalledWith('m-1', me);
+    // Only what the caller uploaded: another member's file is not theirs to remove.
+    expect(remove).toHaveBeenCalledWith(['c-1/u-1/report.pdf']);
+  });
+});
+
+describe('ChatService.sendMessage attachments', () => {
+  it('tombstones the message and names the quota when the rows are refused', async () => {
+    const { service, repository } = makeRepository({
+      insertMessage: vi.fn(async () => ({
+        record: {
+          id: 'm-9',
+          conversationId: 'c-1',
+          senderId: me,
+          senderKind: 'user' as const,
+          body: null,
+          replyToId: null,
+          editedAt: null,
+          deletedAt: null,
+          createdAt: '2026-11-01T10:05:00.000Z',
+        },
+        attachmentFailure: { code: '53400' },
+      })),
+    });
+
+    await expect(
+      service.sendMessage(me, 'c-1', {
+        attachments: [
+          {
+            storagePath: 'c-1/u-1/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 2048,
+          },
+        ],
+      })
+    ).rejects.toMatchObject({ status: 409, message: 'مساحة المرفقات ممتلئة' });
+
+    // No message that claims files it does not have.
+    expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-9', me);
+  });
+
+  it('names a path the guard refused as a policy answer', async () => {
+    const { service } = makeRepository({
+      insertMessage: vi.fn(async () => ({
+        record: {
+          id: 'm-9',
+          conversationId: 'c-1',
+          senderId: me,
+          senderKind: 'user' as const,
+          body: null,
+          replyToId: null,
+          editedAt: null,
+          deletedAt: null,
+          createdAt: '2026-11-01T10:05:00.000Z',
+        },
+        attachmentFailure: { code: '42501' },
+      })),
+    });
+
+    await expect(
+      service.sendMessage(me, 'c-1', {
+        attachments: [
+          {
+            storagePath: 'c-2/u-1/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 2048,
+          },
+        ],
+      })
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe('ChatService.attachmentUrl', () => {
+  it('serves a PDF as a download and leaves an image inline', async () => {
+    const signedUrl = vi.fn(async () => 'https://storage.test/signed');
+    const { service } = makeRepository(
+      {
+        findParticipants: vi.fn(async () => myMembership),
+        findAttachmentInConversation: vi.fn(async () => attachmentRecord()),
+      },
+      { attachments: { signedUrl, remove: vi.fn(async () => undefined) } }
+    );
+
+    const file = await service.attachmentUrl(me, 'c-1', 'a-1');
+    expect(file.inline).toBe(false);
+    expect(signedUrl).toHaveBeenCalledWith('c-1/u-1/report.pdf', 'report.pdf');
+  });
+
+  it('treats an SVG as a file, never a drawing', async () => {
+    const signedUrl = vi.fn(async () => 'https://storage.test/signed');
+    const { service } = makeRepository(
+      {
+        findParticipants: vi.fn(async () => myMembership),
+        findAttachmentInConversation: vi.fn(async () =>
+          attachmentRecord({ fileName: 'logo.svg', mimeType: 'image/svg+xml' })
+        ),
+      },
+      { attachments: { signedUrl, remove: vi.fn(async () => undefined) } }
+    );
+
+    const file = await service.attachmentUrl(me, 'c-1', 'a-1');
+    expect(file.inline).toBe(false);
+    expect(signedUrl).toHaveBeenCalledWith('c-1/u-1/report.pdf', 'logo.svg');
+  });
+
+  it('answers 404 for an attachment the caller cannot read', async () => {
+    const { service } = makeRepository({
+      findParticipants: vi.fn(async () => myMembership),
+      findAttachmentInConversation: vi.fn(async () => null),
+    });
+
+    await expect(service.attachmentUrl(me, 'c-1', 'a-theirs')).rejects.toMatchObject({
+      status: 404,
     });
   });
 });
