@@ -181,11 +181,13 @@ count from `/api/notifications/unread-count`, `shell/ShellServices.kt` the sheet
 states are the trigger and the rows. The menu's table moved out of `frontend/ui/app-shell/constants.ts`
 into `frontend/ui/navbar/services-link.ts` in the same change, because the generated copy is now its
 only source of words. The cold and warm starts are measured on the reference phone
-(`npm run android:launch`, [#752](https://github.com/royaraqamia/royaraqamia/issues/752)): cold is
-466 ms median, over the 400 ms budget, and the profile [#762](https://github.com/royaraqamia/royaraqamia/issues/762)
-ships is what narrows it — the number is re-measured there, not asserted. The 320 dp run was made on an
-emulator at 320 dp. Still owed from this slice: the two chrome gaps [two-clients.md](two-clients.md)
-lists.
+(`npm run android:launch`, [#752](https://github.com/royaraqamia/royaraqamia/issues/752)); the results
+and the budget they are held to are the table above —
+[#822](https://github.com/royaraqamia/royaraqamia/pull/822) moved the budget to what this phone can
+hold, and #809 with #820 is what brought the number there. The 320 dp run was made on an emulator at
+320 dp. Both chrome gaps this slice owed are closed: the services sheet keeps the device's own order
+(#806) and [#845](https://github.com/royaraqamia/royaraqamia/pull/845) hands the bell the session's real
+unread count, so [two-clients.md](two-clients.md) lists none.
 
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
