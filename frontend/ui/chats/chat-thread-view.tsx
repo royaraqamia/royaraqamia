@@ -472,13 +472,16 @@ function ThreadHeader({
                 حظر @{counterpart.username}
               </button>
             )}
-            <button
-              type="button"
-              onClick={onLeave}
-              className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
-            >
-              مغادرة المحادثة
-            </button>
+            {/* A direct thread is the pair: it exits by decline, withdraw or block (#842). */}
+            {thread.kind === 'group' && (
+              <button
+                type="button"
+                onClick={onLeave}
+                className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
+              >
+                مغادرة المحادثة
+              </button>
+            )}
           </div>
         )}
       </div>
