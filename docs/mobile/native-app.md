@@ -412,6 +412,16 @@ way the page distinguishes them: unknown code, spent allowance, a drifted answer
 never left. Nothing is read from the shell's web cache: a check needs the network, so
 `VerifyUiState.Unreachable` is the offline answer rather than a last-seen row.
 
+**Wired today (#658).** `/rates` is the first surface that keeps the matrix's promise of a _snapshot_:
+the board is read once on arrival, kept on disk, and shown with the day it was quoted when the read
+fails — so the app says "these rates, from then" instead of "nothing to show" where the browser shows
+yesterday's numbers. The board comes from the page's own route (`GET /api/rates/board`), the arithmetic
+from `RatesMath`, which is a port of `shared/rates.ts` pinned case-for-case by
+`shared/fixtures/parity/rates-board.json`, and the two converters, the result box and the freshness line
+are three pairs in `docs/mobile/parity.json`. `RatesFormat` writes the figures the way the site's own
+amount formatter does — `en-US` grouping in ASCII digits — so an Arabic-locale phone cannot answer in
+Arabic-Indic numerals (ADR-0054).
+
 **Exit criteria.** Every row of the surface matrix has a native screen; a release can be cut and
 installed by the update path in one command; the escape hatch is exercised once, on purpose.
 
