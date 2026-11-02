@@ -102,7 +102,18 @@ export interface InsertMessageInput {
 export interface InsertMessageResult {
   record: ChatMessageRecord;
   /** `null` when the message carried no files, or they all landed. */
-  attachmentFailure: { code: string | null } | null;
+  attachmentFailure: { code: string | null; message: string | null } | null;
+}
+
+/** The server's attachment allowances, as the composer reads them. */
+export interface ChatAttachmentAllowanceRecord {
+  fileBytes: number;
+  todayUsedBytes: number;
+  todayLimitBytes: number;
+  totalUsedBytes: number;
+  totalLimitBytes: number;
+  projectUsedBytes: number;
+  projectLimitBytes: number;
 }
 
 /**
@@ -138,8 +149,8 @@ export interface ChatRepository {
     conversationId: string,
     attachmentId: string
   ): Promise<ChatAttachmentRecord | null>;
-  /** Bytes the caller has stored, for the quota the composer shows. */
-  sumAttachmentBytes(): Promise<number>;
+  /** The caller's attachment allowances: the file cap, the day, the totals. */
+  attachmentAllowance(): Promise<ChatAttachmentAllowanceRecord>;
   insertMessage(input: InsertMessageInput): Promise<InsertMessageResult>;
   updateMessageBody(id: string, userId: string, body: string): Promise<ChatMessageRecord | null>;
   /** False when no row changed: a refusal, or a message already tombstoned. */

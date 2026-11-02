@@ -268,10 +268,34 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
       return data ? toAttachment(data as unknown as AttachmentRow) : null;
     },
 
-    async sumAttachmentBytes() {
-      const { data, error } = await supabase.rpc('chat_attachment_bytes_used');
-      if (error) throw repositoryFailure('chat.sumAttachmentBytes', error);
-      return Number(data ?? 0);
+    async attachmentAllowance() {
+      const { data, error } = await supabase.rpc('chat_attachment_allowance');
+      if (error) throw repositoryFailure('chat.attachmentAllowance', error);
+
+      const row = (data ?? [])[0] as
+        | {
+            file_bytes: number;
+            today_used_bytes: number;
+            today_limit_bytes: number;
+            total_used_bytes: number;
+            total_limit_bytes: number;
+            project_used_bytes: number;
+            project_limit_bytes: number;
+          }
+        | undefined;
+
+      // A settings row is a singleton the migration seeds. An empty answer means
+      // the deployment is older than this migration, and zeros fail closed: the
+      // composer refuses a file instead of overspending a cap nothing enforces.
+      return {
+        fileBytes: Number(row?.file_bytes ?? 0),
+        todayUsedBytes: Number(row?.today_used_bytes ?? 0),
+        todayLimitBytes: Number(row?.today_limit_bytes ?? 0),
+        totalUsedBytes: Number(row?.total_used_bytes ?? 0),
+        totalLimitBytes: Number(row?.total_limit_bytes ?? 0),
+        projectUsedBytes: Number(row?.project_used_bytes ?? 0),
+        projectLimitBytes: Number(row?.project_limit_bytes ?? 0),
+      };
     },
 
     async insertMessage(input: InsertMessageInput) {
@@ -303,13 +327,19 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         );
 
         if (attachError) {
-          if (underlyingCode(attachError) === POLICY_REFUSAL) {
+          const code = underlyingCode(attachError);
+          const message =
+            typeof attachError === 'object' && attachError !== null && 'message' in attachError
+              ? String((attachError as { message: unknown }).message)
+              : null;
+
+          if (code === POLICY_REFUSAL) {
             // The path guard or the insert policy refused: a policy answer, not
             // an outage, and the service names it.
-            return { record: toMessage(data), attachmentFailure: { code: POLICY_REFUSAL } };
+            return { record: toMessage(data), attachmentFailure: { code, message } };
           }
-          if (underlyingCode(attachError) === QUOTA_EXCEEDED) {
-            return { record: toMessage(data), attachmentFailure: { code: QUOTA_EXCEEDED } };
+          if (code === QUOTA_EXCEEDED) {
+            return { record: toMessage(data), attachmentFailure: { code, message } };
           }
           throw repositoryFailure('chat.insertAttachments', attachError);
         }
