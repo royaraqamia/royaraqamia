@@ -25,7 +25,7 @@ test.describe('notification centre', () => {
     await page.goto('/notifications');
 
     const chats = page.getByRole('tab', { name: /المحادثات/ });
-    const alerts = page.getByRole('tab', { name: /التنبيهات/ });
+    const alerts = page.getByRole('tab', { name: /التَّنبيهات/ });
     await expect(chats).toBeVisible();
     await expect(alerts).toBeVisible();
 
@@ -41,7 +41,7 @@ test.describe('notification centre', () => {
   test('a ?tab= link selects its tab and survives a reload', async ({ page }) => {
     await page.goto('/notifications?tab=alerts');
 
-    await expect(page.getByRole('tab', { name: /التنبيهات/ })).toHaveAttribute(
+    await expect(page.getByRole('tab', { name: /التَّنبيهات/ })).toHaveAttribute(
       'aria-selected',
       'true'
     );
@@ -61,7 +61,7 @@ test.describe('notification centre', () => {
     await page.goto('/notifications');
 
     await expect(page.getByRole('tab', { name: /المحادثات/ })).toBeVisible();
-    await expect(page.getByRole('tab', { name: /التنبيهات/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /التَّنبيهات/ })).toBeVisible();
     // The old surface became a bottom sheet at this width; a dialog here would be
     // the regression.
     await expect(page.getByRole('dialog')).toHaveCount(0);

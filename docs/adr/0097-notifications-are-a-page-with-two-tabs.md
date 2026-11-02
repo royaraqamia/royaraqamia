@@ -10,7 +10,7 @@ certificate, a booking, a system announcement — and the planned conversation s
 go. A panel that must be dismissed to act, that cannot be linked to, that a browser Back cannot leave,
 and that hides its own scroll behind a popover is a menu doing a page's job.
 
-So `/notifications` is a page at every width, with two tabs: **المحادثات** and **التنبيهات**. The bell
+So `/notifications` is a page at every width, with two tabs: **المحادثات** and **التَّنبيهات**. The bell
 is a link.
 
 ## The decision
