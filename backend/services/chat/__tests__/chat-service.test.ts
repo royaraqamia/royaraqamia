@@ -204,6 +204,44 @@ describe('ChatService.startDirect', () => {
     expect(repository.requestThread).toHaveBeenCalledWith('c-open');
     expect(notify).not.toHaveBeenCalled();
   });
+
+  it('asks again on the declined thread instead of opening a second one', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findThreadIdByDirectKey: vi.fn(async () => 'c-declined'),
+        requestThread: vi.fn(async () => true),
+      },
+      { notify }
+    );
+
+    await expect(service.startDirect(me, peerId)).resolves.toEqual({
+      conversationId: 'c-declined',
+    });
+    expect(repository.findThreadIdByDirectKey).toHaveBeenCalledWith([me, peerId].sort().join('|'));
+    expect(repository.createConversation).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again on a withdrawn thread, whose pair key outlives the roster', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findThreadIdByDirectKey: vi.fn(async () => 'c-withdrawn'),
+        requestThread: vi.fn(async () => true),
+      },
+      { notify }
+    );
+
+    await expect(service.startDirect(me, peerId)).resolves.toEqual({
+      conversationId: 'c-withdrawn',
+    });
+    expect(repository.findThreadIdByDirectKey).toHaveBeenCalledWith([me, peerId].sort().join('|'));
+    expect(repository.createConversation).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: peerId, metadata: { conversationId: 'c-withdrawn' } })
+    );
+  });
 });
 
 describe('ChatService.withdraw', () => {
@@ -349,6 +387,64 @@ describe('ChatService.preview', () => {
     const { service } = makeRepository();
 
     await expect(service.preview(me, 'sara')).resolves.toEqual({
+      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      conversationId: null,
+    });
+  });
+
+  it('answers the declined thread, whose page still opens', async () => {
+    const { service } = makeRepository({
+      findThreadIdByDirectKey: vi.fn(async () => 'c-declined'),
+      findParticipants: vi.fn(async () => [
+        {
+          conversationId: 'c-declined',
+          userId: me,
+          role: 'owner' as const,
+          status: 'active' as const,
+          lastReadAt: null,
+          joinedAt: null,
+        },
+        {
+          conversationId: 'c-declined',
+          userId: peerId,
+          role: 'member' as const,
+          status: 'declined' as const,
+          lastReadAt: null,
+          joinedAt: null,
+        },
+      ]),
+    });
+
+    await expect(service.preview(me, '@sara')).resolves.toEqual({
+      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      conversationId: 'c-declined',
+    });
+  });
+
+  it('answers no thread when the caller withdrew it, so the picker can ask again', async () => {
+    const { service } = makeRepository({
+      findThreadIdByDirectKey: vi.fn(async () => 'c-withdrawn'),
+      findParticipants: vi.fn(async () => [
+        {
+          conversationId: 'c-withdrawn',
+          userId: me,
+          role: 'owner' as const,
+          status: 'left' as const,
+          lastReadAt: null,
+          joinedAt: null,
+        },
+        {
+          conversationId: 'c-withdrawn',
+          userId: peerId,
+          role: 'member' as const,
+          status: 'left' as const,
+          lastReadAt: null,
+          joinedAt: null,
+        },
+      ]),
+    });
+
+    await expect(service.preview(me, '@sara')).resolves.toEqual({
       peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
       conversationId: null,
     });
