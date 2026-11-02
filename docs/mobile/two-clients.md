@@ -133,13 +133,15 @@ narrower route to read.
 
 ## What the checks do not cover
 
-- **Pixel-level drift.** The recipe and `e2e/plan-card-recipe.spec.ts` pin every
-  value a browser computes — radius, padding, gaps, alphas, type steps, tones,
-  glyph sizes, the shadow and the gradient — but not the raster: font hinting,
-  shadow falloff at the last pixel, optical alignment. The plan for that is a
-  screenshot diff of the same component rendered by both clients (Paparazzi on the
-  JVM against a Playwright capture at a pinned viewport/DPR, failing on the element
-  that moved rather than a pixel count).
+- **Pixel-level drift.** Closed for a surface that is under the visual gate (#874,
+  [ADR-0118](../adr/0118-a-port-is-switched-on-by-two-measurements.md)): the same
+  route is recorded by Playwright and the composed screen by its JVM test, at one
+  pinned viewport/DPR, and `check:visual` compares the named boxes and the two
+  captures. A port outside the gate is not compared at all — which is the state of
+  every port today, because they are switched off ([ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)).
+  What the gate still cannot see is motion: a transition, a scroll behaviour or a
+  gesture that differs between the two clients is invisible to a still frame, and
+  the contract names boxes, not timelines.
 - **Where the app's chrome is the site's chrome.** The two gaps this list used to carry are closed:
   the services menu keeps the device's own order on both sides (#806 — the same rules in
   `frontend/ui/navbar/services-order.ts`, the same key `rr:services-order:v1`, the same sentence when

@@ -73,6 +73,11 @@ jobs:
       - name: Screen Inventory
         run: npm run check:screens
 
+      # A native port is switched on by evidence, not by a review (#874,
+      # ADR-0118): this refuses an enabled screen with no recorded pair.
+      - name: Visual Gate
+        run: npm run check:visual
+
       - name: Lint
         run: npm run lint
 
