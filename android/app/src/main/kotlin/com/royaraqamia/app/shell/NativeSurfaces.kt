@@ -1,10 +1,14 @@
 package com.royaraqamia.app.shell
 
+import com.royaraqamia.app.community.CommunityRoutes
+import com.royaraqamia.app.profile.ProfileRoutes
+import com.royaraqamia.app.verify.VerifyRoutes
+
 /**
- * The routes the shell draws itself, and the ones it hands to the document
- * (#647, #872).
+ * The routes the shell draws itself, the ones it hands to the document, and the
+ * ones a guest may read (#647, #872).
  *
- * **The set is empty on purpose.** A native screen is a second drawing of a
+ * **The drawn set is empty on purpose.** A native screen is a second drawing of a
  * surface the site already draws, and the copies had drifted: a bare Material card
  * where the site has its glass sign-in card, a bottom sheet without the site's
  * per-row grips, HabitFlow and SpendTrack in the app's own layout, and a feed that
@@ -28,6 +32,24 @@ object NativeSurfaces {
      */
     private val routes: Set<String> = emptySet()
 
+    /**
+     * The routes a signed-out visitor reads.
+     *
+     * This is the site's `perf/surfaces.json` answer rather than a third opinion: a
+     * route whose matrix row a visitor can read with no session must never be
+     * covered by a sign-in card. Nothing is covered today - the document decides -
+     * but a port that brings a guest prompt back reads the list here instead of
+     * rebuilding it, and #872's feed already asserts against it.
+     */
+    private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
+
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))
+
+    /** Whether [route] is readable with no session (the matrix's public rows). */
+    fun isPublic(route: String): Boolean =
+        publicRoutes.contains(Routes.normalize(route)) ||
+            VerifyRoutes.matches(route) ||
+            CommunityRoutes.matches(route) ||
+            ProfileRoutes.matches(route)
 }
