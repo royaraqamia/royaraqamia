@@ -3,6 +3,7 @@
 import { CloudOff } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { NEEDS_CONNECTION_COPY } from './needs-connection-copy';
 import { cn } from '@/frontend/shared/cn';
 
 interface NeedsConnectionProps {
@@ -54,11 +55,11 @@ export function NeedsConnection({
       >
         <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-bold leading-snug">يتطلَّب الاتصال بالإنترنت</p>
+          <p className="text-sm font-bold leading-snug">{NEEDS_CONNECTION_COPY.title}</p>
           <p className="text-xs leading-relaxed sm:text-sm">{message}</p>
           {onRetry && (
             <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-1.5">
-              إعادة المحاولة
+              {NEEDS_CONNECTION_COPY.retry}
             </Button>
           )}
         </div>
@@ -69,13 +70,13 @@ export function NeedsConnection({
   return (
     <EmptyState
       icon={CloudOff}
-      title="يتطلَّب الاتصال بالإنترنت"
+      title={NEEDS_CONNECTION_COPY.title}
       description={message}
       className={className}
       action={
         onRetry ? (
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-            إعادة المحاولة
+            {NEEDS_CONNECTION_COPY.retry}
           </Button>
         ) : undefined
       }

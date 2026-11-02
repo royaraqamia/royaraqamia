@@ -1,0 +1,20 @@
+{
+  "surface": "community",
+  "component": "read-failure",
+  "web": {
+    "file": "frontend/ui/shared/read-failure-copy.ts",
+    "export": "READ_FAILURE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shared/ReadFailureCopy.kt",
+    "object": "ReadFailureCopy"
+  },
+  "notes": {
+    "source": "A read the server answered and refused (#658, ADR-0031): the title both variants share and the retry. The offline face is not here - it is `NeedsConnection`, which owns its own title - so an unreachable server and a refusal keep the two different answers the site gives them.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `read-failure.tsx` does not render."
+  },
+  "strings": {
+    "title": "لم يكتمل الطَّلب",
+    "retry": "إعادة المحاولة"
+  }
+}

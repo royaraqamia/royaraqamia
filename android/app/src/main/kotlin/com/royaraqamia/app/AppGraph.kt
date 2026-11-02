@@ -2,6 +2,8 @@ package com.royaraqamia.app
 
 import android.content.Context
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.community.CommunityFeedRepository
+import com.royaraqamia.app.community.CommunityFeedSnapshotStore
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.notifications.NotificationsRepository
@@ -61,6 +63,8 @@ class AppGraph private constructor(
     val verify: VerifyRepository,
     /** The rates board, and the last one this device read (#658). */
     val rates: RatesRepository,
+    /** The community feed, and the last page this device saw (#658). */
+    val community: CommunityFeedRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -185,6 +189,11 @@ class AppGraph private constructor(
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, RatesSnapshotStore(File(context.filesDir, "rates"))),
+                community =
+                    CommunityFeedRepository(
+                        client,
+                        CommunityFeedSnapshotStore(File(context.filesDir, "community")),
+                    ),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(

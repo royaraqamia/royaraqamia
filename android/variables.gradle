@@ -64,4 +64,10 @@ ext {
     // seal. `zxing:core` is the reference implementation of ISO/IEC 18004 and is
     // pure Java, so it carries no renderer, no camera and no UI of its own.
     zxingVersion = '3.5.3'
+    // The feed's images (#658): the first surface that draws a remote picture.
+    // A hand-rolled decoder would be a download, a memory cache and a cancellation
+    // away from the crash a feed full of covers produces, so the app borrows the
+    // standard one. Coil 2 is the line that runs on `minSdkVersion 24` and whose
+    // Compose artifact is one dependency rather than an integration per feature.
+    coilVersion = '2.7.0'
 }

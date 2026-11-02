@@ -1,7 +1,9 @@
 import Link from 'next/link';
-import { FileText, Search, X } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
-import { ReadFailureNotice, type ReadFailure } from '@/frontend/ui/shared/read-failure';
+import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
+import { COMMUNITY_FEED_COPY } from './community-feed-copy';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from './post-card';
 import { LoadMore } from './load-more';
@@ -12,11 +14,31 @@ interface CommunityResultsProps {
   query: string;
   onLoadMore: () => void;
   isLoadingMore: boolean;
-  /** The next page read failed; shown instead of a button that would do nothing. */
-  loadMoreError?: ReadFailure | null;
+  /** The next-page read's error, shown instead of a button that would do nothing. */
+  loadMoreError?: unknown;
   onRetryLoadMore?: () => void;
+  /**
+   * The read that filled the list failed. The cause decides the face — an
+   * unreachable server is `NeedsConnection`, a refusal is "the request did not
+   * complete" (ADR-0031) — and the words for both are the feed's own.
+   */
+  pageError?: unknown;
+  onRetryPage?: () => void;
+  /**
+   * The rows are the snapshot this device kept: shown with the banner that says
+   * so, never passed off as a fresh read (#555).
+   */
+  stale?: boolean;
 }
 
+/**
+ * What the feed draws, once the island has decided what there is to draw.
+ *
+ * It is the app's reference for the surface (#658): the island above fetches and
+ * pages, this component owns the empty state, the snapshot banner and the two
+ * failure faces, so the words the app shows are the words in this file's copy
+ * source rather than a string it typed.
+ */
 export function CommunityResults({
   posts,
   nextCursor,
@@ -25,25 +47,36 @@ export function CommunityResults({
   isLoadingMore,
   loadMoreError,
   onRetryLoadMore,
+  pageError,
+  onRetryPage,
+  stale = false,
 }: CommunityResultsProps) {
+  const pageFailure =
+    pageError == null ? null : toReadFailure(pageError, COMMUNITY_FEED_COPY.pageError);
+  const loadFailure =
+    loadMoreError == null ? null : toReadFailure(loadMoreError, COMMUNITY_FEED_COPY.loadMoreError);
+
+  // A failed read with nothing kept is the whole answer; with a snapshot it is a
+  // banner over the rows this device last showed.
+  if (pageFailure && !stale) {
+    return (
+      <ReadFailureNotice
+        failure={pageFailure}
+        onRetry={onRetryPage}
+        className="my-8 rounded-3xl border border-border bg-muted/20"
+      />
+    );
+  }
+
   return (
     <>
-      {query && (
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border text-sm text-muted-foreground shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <Search className="size-4 text-primary shrink-0" />
-            <span>نتائج البحث عن:</span>
-            <span className="px-3 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-bold text-xs">
-              &ldquo;{query}&rdquo;
-            </span>
-          </div>
-          <Link
-            href="/community"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 border-b border-border hover:border-foreground pb-0.5"
-          >
-            <X className="size-3.5" />
-            إلغاء التَّصفية
-          </Link>
+      {stale && (
+        <div className="mb-4">
+          <NeedsConnection
+            variant="inline"
+            message={COMMUNITY_FEED_COPY.staleMessage}
+            onRetry={onRetryPage}
+          />
         </div>
       )}
 
@@ -53,12 +86,12 @@ export function CommunityResults({
             <FileText className="size-8 stroke-[1.5]" />
           </div>
           <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
-            {query ? 'لا توجد نتائج للبحث' : 'لا توجد منشورات بعد'}
+            {query ? 'لا توجد نتائج للبحث' : COMMUNITY_FEED_COPY.emptyTitle}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
             {query
               ? 'لم نعثر على منشورات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
-              : 'لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.'}
+              : COMMUNITY_FEED_COPY.emptyBody}
           </p>
           {query && (
             <Link href="/community">
@@ -80,9 +113,9 @@ export function CommunityResults({
           </div>
 
           {nextCursor &&
-            (loadMoreError ? (
+            (loadFailure ? (
               <ReadFailureNotice
-                failure={loadMoreError}
+                failure={loadFailure}
                 onRetry={onRetryLoadMore}
                 variant="inline"
                 className="my-8"
@@ -93,6 +126,9 @@ export function CommunityResults({
                 query={query}
                 isLoading={isLoadingMore}
                 onLoadMore={onLoadMore}
+                label={COMMUNITY_FEED_COPY.loadMore}
+                loadingLabel={COMMUNITY_FEED_COPY.loading}
+                ariaLabel={COMMUNITY_FEED_COPY.loadMoreAria}
               />
             ))}
         </>

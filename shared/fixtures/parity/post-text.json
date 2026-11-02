@@ -1,0 +1,54 @@
+{
+  "notes": "What the site reads a post body as. `shared/reading-time.ts` strips the markdown a card shows as plain text and derives the card's label (`postExcerpt`); the app draws the same card, so `PostText.kt` is pinned to these strings by `shared/fixtures/__tests__/post-text.test.ts` and the app's `PostTextFixtureTest` (ADR-0098). `fallback` is what the card shows when the body has no text of its own, and `excerpt` is the label the card and its share text carry.",
+  "cases": [
+    {
+      "name": "a heading, emphasis and a link",
+      "markdown": "## عنوان\n\nمرحبًا **بالعالم**، [زيارة الرابط](https://example.com) و*بالقارئ*.",
+      "fallback": "",
+      "stripped": "عنوان\n\nمرحبًا بالعالم، وبالقارئ.",
+      "excerpt": "عنوان مرحبًا بالعالم، وبالقارئ."
+    },
+    {
+      "name": "inline code and a fenced block",
+      "markdown": "نص `inline` ثم مثال:\n\n```js\nconst a = 1;\n```\n\nوبعد الكود سطر.",
+      "fallback": "",
+      "stripped": "نص ثم مثال:\n\nوبعد الكود سطر.",
+      "excerpt": "نص ثم مثال: وبعد الكود سطر."
+    },
+    {
+      "name": "a quote, both list kinds and a rule",
+      "markdown": "> اقتباس\n\n- أول\n- ثاني\n\n1. واحد\n2. اثنان\n\n---\n\nنهاية",
+      "fallback": "",
+      "stripped": "اقتباس\n\nأول\nثاني\n\nواحد\nاثنان\n\nنهاية",
+      "excerpt": "اقتباس أول ثاني واحد اثنان نهاية"
+    },
+    {
+      "name": "a table, strikethrough and an image",
+      "markdown": "| أ | ب |\n|---|---|\n| 1 | 2 |\n\n~~محذوف~~ صورة ![وصف](https://example.com/x.png) هنا",
+      "fallback": "",
+      "stripped": "أ ب\n--- ---\n1 2\n\nمحذوف صورة هنا",
+      "excerpt": "أ ب --- --- 1 2 محذوف صورة هنا"
+    },
+    {
+      "name": "a body long enough to be ellipsised",
+      "markdown": "هذا منشور طويل يشرح فكرة واحدة بجملة تتكرر حتى تتجاوز الحد الذي يقصّ عنده العنوان: الكتابة عن البرمجة تحتاج أمثلة، والأمثلة تحتاج شرحًا، والشرح يحتاج وقتًا طويلًا، والقارئ يحتاج أن يصل إلى الفكرة قبل أن يملّ من القراءة الطويلة.",
+      "fallback": "",
+      "stripped": "هذا منشور طويل يشرح فكرة واحدة بجملة تتكرر حتى تتجاوز الحد الذي يقصّ عنده العنوان: الكتابة عن البرمجة تحتاج أمثلة، والأمثلة تحتاج شرحًا، والشرح يحتاج وقتًا طويلًا، والقارئ يحتاج أن يصل إلى الفكرة قبل أن يملّ من القراءة الطويلة.",
+      "excerpt": "هذا منشور طويل يشرح فكرة واحدة بجملة تتكرر حتى تتجاوز الحد الذي يقصّ عنده العنوان: الكتابة عن البرمجة تحتاج أمثلة، والأمثلة تحتاج شرحًا، والشرح يحتاج وقتًا طوي…"
+    },
+    {
+      "name": "an empty body falls back to the meta description",
+      "markdown": "",
+      "fallback": "وصف مختصر للمنشور",
+      "stripped": "",
+      "excerpt": "وصف مختصر للمنشور"
+    },
+    {
+      "name": "a body that strips to nothing falls back too",
+      "markdown": "```\nكود فقط\n```",
+      "fallback": "وصف بديل",
+      "stripped": "",
+      "excerpt": "وصف بديل"
+    }
+  ]
+}

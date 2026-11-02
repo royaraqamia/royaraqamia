@@ -1,5 +1,7 @@
 package com.royaraqamia.app.shell
 
+import com.royaraqamia.app.community.CommunityRoutes
+import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.verify.VerifyRoutes
 
 /**
@@ -7,9 +9,11 @@ import com.royaraqamia.app.verify.VerifyRoutes
  * may read (#647, #658).
  *
  * `/habitflow` arrived with the list screen (#649), `/account/plan` with the
- * account area (#657), SpendTrack's two routes with its screen (#653), and
- * `/verify` with the certificate check (#658); every other destination is still
- * the document — home and community are #658, the rest of the account pages #657.
+ * account area (#657), SpendTrack's two routes with its screen (#653), `/verify`
+ * and `/rates` with the public surfaces (#658), and `/community` with the feed
+ * (#658); every other destination is still the document — home is phase 4, the
+ * rest of the account pages #657.
+ *
  * A destination arrives here when a `*Screen.kt` exists for it, which is also the
  * pull request that adds its row to `docs/mobile/screens.json`; the two facts are
  * the same fact, so they are kept in one place.
@@ -33,13 +37,19 @@ object NativeSurfaces {
             "/account/connected-apps",
             "/verify",
             "/rates",
+            "/community",
         )
 
     /**
      * The routes a signed-out visitor reads: the app draws them and never covers
      * them with the sign-in card.
+     *
+     * `/community` is the feed, and a post is its child: both are the site's
+     * public content, so a guest reads them exactly as they read the page. A post
+     * is still the document until its screen lands (#658), which is why
+     * [isPublic] and [isNative] answer separately.
      */
-    private val publicRoutes: Set<String> = setOf("/verify", "/rates")
+    private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean =
@@ -47,7 +57,10 @@ object NativeSurfaces {
 
     /** Whether [route] is readable with no session (the matrix's public rows). */
     fun isPublic(route: String): Boolean =
-        publicRoutes.contains(Routes.normalize(route)) || VerifyRoutes.matches(route)
+        publicRoutes.contains(Routes.normalize(route)) ||
+            VerifyRoutes.matches(route) ||
+            CommunityRoutes.matches(route) ||
+            ProfileRoutes.matches(route)
 
     /** How many destinations the shell draws, for the check that reads this list. */
     val count: Int get() = routes.size

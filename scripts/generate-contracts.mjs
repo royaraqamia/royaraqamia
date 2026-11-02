@@ -143,6 +143,15 @@ export const CONTRACTS = [
     file: 'RatesContracts.kt',
     schemas: ['RatesBoardSchema'],
   },
+  // The community feed (#658): the app draws the same rows the site's feed
+  // island paints, from the same `GET /api/community/index` page and the same
+  // keyset cursor. The publisher joined onto each row is part of the shape,
+  // because a card without its author is not the card the site draws.
+  {
+    module: 'shared/contracts/community',
+    file: 'CommunityContracts.kt',
+    schemas: ['CommunityIndexResponseSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([
