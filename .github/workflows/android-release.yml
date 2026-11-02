@@ -101,8 +101,25 @@ jobs:
         if: steps.plan.outputs.release == 'true'
         run: |
           set -euo pipefail
-          cut=$(node scripts/android-release.mjs --apply --json)
+          # A dispatch is a person saying "cut it now", and the plan above was
+          # forced past the cadence; the cut has to be told the same thing. Without
+          # it `--apply` refuses the same cadence, prints "nothing to release" and
+          # exits 0, and the build then keeps the previous version's number - which
+          # is how run 41488339972 tried to republish 1.1.0 with different bytes.
+          args=(--apply --json)
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            args+=(--force)
+          fi
+          cut=$(node scripts/android-release.mjs "${args[@]}")
           echo "$cut"
+          # The plan and the cut are the same decision asked twice, so a
+          # disagreement is a broken release, not a number to carry on with.
+          version=$(echo "$cut" | jq -r '.version // empty')
+          planned="${{ steps.plan.outputs.version }}"
+          if [ -z "$version" ] || { [ -n "$planned" ] && [ "$version" != "$planned" ]; }; then
+            echo "::error title=The cut disagreed with the plan::planned ${planned:-?}, cut ${version:-nothing}"
+            exit 1
+          fi
           {
             echo "notes=$(echo "$cut" | jq -r .manifestNotes)"
             echo "archive=$(echo "$cut" | jq -r .archive)"
