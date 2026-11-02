@@ -1,0 +1,68 @@
+name: Feature
+description: A capability, a screen, or a behaviour the product does not have yet
+title: 'feat(<area>): '
+labels: ['needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue, one thing somebody can finish and a check can prove. If this adds or changes a
+        screen, the three rows below are part of the work, not paperwork: they are what makes the
+        APK the web ([#882](https://github.com/royaraqamia/royaraqamia/issues/882)).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What it does
+      description: A user's sentence, not an implementation's. What can they do afterwards that they could not before?
+      placeholder: A visitor can check a certificate by scanning its QR code instead of typing the code.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Does this add or change a screen?
+      options:
+        - 'No: no route, no layout change'
+        - 'Yes: an existing surface changes'
+        - 'Yes: a new route or a new surface'
+    validations:
+      required: true
+
+  - type: textarea
+    id: rows
+    attributes:
+      label: The rows this screen needs
+      description: |
+        If a screen changes, name the rows this issue will add. Write `n/a` when none change.
+
+        - `docs/mobile/screens.json` - one row per surface: the Kotlin screen or the reason there is none
+        - `docs/mobile/parity-plan.json` - the surface's phase and state (`todo` here; `native` only when the port passes the gate)
+        - `shared/visual/<surface>.json` - the contract: every element that carries a design decision, its web selector, its app test tag and the properties to compare
+
+        A native screen is switched on only when `check:visual` passes for it: the layout contract
+        exact, and the raster inside the surface's tolerance ([ADR-0118](https://github.com/royaraqamia/royaraqamia/blob/main/docs/adr/0118-a-port-is-switched-on-by-two-measurements.md)).
+        Until then the app opens the site's own page, which is a finished state.
+      placeholder: |
+        screens.json: row for `verify` stays as it is
+        parity-plan.json: `verify` - phase gate, state todo -> native
+        shared/visual/verify.json: title, code input, submit, result card
+    validations:
+      required: true
+
+  - type: textarea
+    id: proof
+    attributes:
+      label: How it is proven
+      description: The test, check or measurement that fails today and passes when this is done. "Looks right" is not a proof.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Links, screenshots, the issue this came from, what is explicitly out of scope.
+    validations:
+      required: false
