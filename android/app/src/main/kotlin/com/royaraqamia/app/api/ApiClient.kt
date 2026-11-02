@@ -162,6 +162,47 @@ class ApiClient(
             Answer.Unreachable(error.message ?: "unreachable")
         }
 
+    /**
+     * One public write (#658): the routes the site serves to a visitor, on the same
+     * base URL and the same status split, with no bearer and no refresh.
+     *
+     * It is its own entry point rather than "the session, if there is one" because
+     * the difference is the route's contract, not the caller's luck: certificate
+     * verification must answer a guest, and a client that quietly sent a token
+     * where the site expects none would hide a route that stopped being public.
+     */
+    suspend fun <T> postPublic(path: String, body: String, serializer: KSerializer<T>): ApiResult<T> =
+        withContext(Dispatchers.IO) {
+            val answered =
+                try {
+                    transport.send(
+                        method = "POST",
+                        url = urlFor(path),
+                        headers = mapOf("Content-Type" to "application/json"),
+                        body = body,
+                    )
+                } catch (error: IOException) {
+                    return@withContext ApiResult.Failure(
+                        ApiError.Network(error.message ?: "unreachable")
+                    )
+                }
+
+            if (answered.status !in 200..299) {
+                if (answered.status == ShellUpdateRequired.STATUS) {
+                    ShellUpdateChannel.require(ShellUpdateRequired.floorOf(answered.body))
+                }
+                return@withContext ApiResult.Failure(
+                    ApiError.Server(answered.status, answered.body.take(MAX_DETAIL))
+                )
+            }
+
+            ContractCodec.decode(answered.body, serializer)
+        }
+
+    /** [postPublic] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> postPublic(path: String, body: String): ApiResult<T> =
+        postPublic(path, body, serializer<T>())
+
     private fun urlFor(path: String): String = "${baseUrl.trimEnd('/')}/${path.trimStart('/')}"
 
     private companion object {

@@ -24,6 +24,7 @@ import com.royaraqamia.app.store.habitflow.HabitflowRepository
 import com.royaraqamia.app.store.outbox.DrainReport
 import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.store.spendtrack.SpendtrackStores
+import com.royaraqamia.app.verify.VerifyRepository
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -53,6 +54,8 @@ class AppGraph private constructor(
     val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
+    /** The certificate check (#658): the one route a visitor can call with no session. */
+    val verify: VerifyRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -175,6 +178,7 @@ class AppGraph private constructor(
                 connectedApps = ConnectedAppsRepository(client),
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
+                verify = VerifyRepository(client),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
