@@ -146,11 +146,24 @@ object FailureReportFactory {
         return "${element.className}.${element.methodName}($file:${element.lineNumber})"
     }
 
-    /** The exception's class, never its message. */
+    /**
+     * The exception's class, never its message.
+     *
+     * Sanitised to the contract's own signature pattern rather than trusted: a
+     * class name is machine-shaped in every case we have seen, and the one case
+     * nobody predicted must not cost the whole report to a `400` on a field that
+     * only exists to group issues.
+     */
     private fun signatureOf(error: Throwable): String {
-        val name = error.javaClass.name
-        return if (name.length > MAX_SIGNATURE_CHARS) name.take(MAX_SIGNATURE_CHARS) else name
+        val raw = error.javaClass.name
+        val safe = raw.map { character -> if (SIGNATURE_CHARS.contains(character)) character else '_' }
+        val name = safe.joinToString("")
+        val anchored = if (name.isEmpty() || name[0].isDigit()) "_$name" else name
+        return if (anchored.length > MAX_SIGNATURE_CHARS) anchored.take(MAX_SIGNATURE_CHARS) else anchored
     }
+
+    /** The contract's signature alphabet: `[A-Za-z0-9._$<>[\]]`, minus the first-character rule. */
+    private const val SIGNATURE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._$<>[]"
 
     private fun shellOf(shell: ShellIdentity) =
         AppFailureReportShell(name = shell.name, code = shell.code.toLong())
