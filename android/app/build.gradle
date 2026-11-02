@@ -255,6 +255,10 @@ dependencies {
     // package writes. See `variables.gradle` for why this is a dependency and not
     // a hand-written encoder.
     implementation "com.google.zxing:core:$zxingVersion"
+    // The feed's pictures (#658): a cover image, and the publisher's avatar when
+    // they have one. The library owns the memory cache, the request cancellation
+    // and the disk cache; the app owns only the crop it asks for.
+    implementation "io.coil-kt:coil-compose:$coilVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')

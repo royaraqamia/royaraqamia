@@ -26,11 +26,14 @@ import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.auth.SignInCard
 import com.royaraqamia.app.auth.SignInUiState
+import com.royaraqamia.app.community.CommunityFeedScreen
+import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
+import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.sync.SyncScheduler
@@ -216,6 +219,19 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // The community feed (#658): public like the page, so
+                            // a guest reads it, and the last page read is painted
+                            // with the banner that says it is one when the radio is
+                            // off. A card's destinations are routes, not screens:
+                            // the post and the profile are the document for now.
+                            "/community" ->
+                                CommunityFeedScreen(
+                                    repository = graph.community,
+                                    onOpenPost = { slug -> openRoute(CommunityRoutes.postOf(slug)) },
+                                    onOpenProfile = { username ->
+                                        openRoute(ProfileRoutes.profileOf(username))
+                                    },
+                                )
                             // A shared certificate (#658): the link a printed QR
                             // carries. The code is the route's own segment, so this
                             // is the one destination the shell reads out of a route
@@ -425,9 +441,13 @@ class ShellActivity : ComponentActivity() {
      * rather than a document that refuses everything it is asked.
      */
     private fun handOver() {
-        if (!signedIn) return
         if (update.blocksHandover) return
         if (NativeSurfaces.isNative(stack.route)) return
+        // A public destination is readable with no session — the site serves the
+        // feed, a post and a profile to a visitor — so a guest is handed the
+        // document rather than left on a frame with nothing in it. Every other
+        // route needs the session the sign-in card is offering.
+        if (!signedIn && !NativeSurfaces.isPublic(stack.route)) return
         WebSurface.open(this, stack.current)
     }
 

@@ -5,6 +5,7 @@ import { ApiError } from '@/frontend/transport/http';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { READ_FAILURE_COPY } from './read-failure-copy';
 import { cn } from '@/frontend/shared/cn';
 
 /**
@@ -75,7 +76,7 @@ export function ReadFailureNotice({
 
   const retry = onRetry ? (
     <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-      إعادة المحاولة
+      {READ_FAILURE_COPY.retry}
     </Button>
   ) : undefined;
 
@@ -90,7 +91,7 @@ export function ReadFailureNotice({
       >
         <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-bold leading-snug">لم يكتمل الطَّلب</p>
+          <p className="text-sm font-bold leading-snug">{READ_FAILURE_COPY.title}</p>
           <p className="text-xs leading-relaxed sm:text-sm">{failure.message}</p>
           {retry && <div className="mt-1.5">{retry}</div>}
         </div>
@@ -102,7 +103,7 @@ export function ReadFailureNotice({
     <EmptyState
       icon={TriangleAlert}
       variant="card"
-      title="لم يكتمل الطَّلب"
+      title={READ_FAILURE_COPY.title}
       description={failure.message}
       className={className}
       action={retry}

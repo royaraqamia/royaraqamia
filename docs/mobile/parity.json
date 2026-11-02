@@ -888,6 +888,126 @@
           "copy": "retryAction"
         }
       ]
+    },
+    {
+      "id": "post-card",
+      "surface": "community",
+      "issue": "#658",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/post-card.tsx",
+        "copyModule": "app/community/_components/post-card-copy.ts",
+        "copyExport": "POST_CARD_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCardState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCardCopy.kt",
+        "copyObject": "PostCardCopy"
+      },
+      "copySource": "shared/copy/post-card.json",
+      "states": [
+        {
+          "name": "Collapsed",
+          "copy": "expand"
+        },
+        {
+          "name": "Expanded",
+          "copy": "collapse"
+        }
+      ]
+    },
+    {
+      "id": "community-feed",
+      "surface": "community",
+      "issue": "#658",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/community-results.tsx",
+        "copyModule": "app/community/_components/community-feed-copy.ts",
+        "copyExport": "COMMUNITY_FEED_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityFeedScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityFeedUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityFeedCopy.kt",
+        "copyObject": "CommunityFeedCopy"
+      },
+      "copySource": "shared/copy/community-feed.json",
+      "states": [
+        {
+          "name": "Live",
+          "copy": "loadMore"
+        },
+        {
+          "name": "Snapshot",
+          "copy": "staleMessage"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "pageError"
+        }
+      ]
+    },
+    {
+      "id": "needs-connection",
+      "surface": "community",
+      "issue": "#658",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "frontend/ui/shared/needs-connection.tsx",
+        "copyModule": "frontend/ui/shared/needs-connection-copy.ts",
+        "copyExport": "NEEDS_CONNECTION_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shared/NeedsConnection.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shared/NeedsConnectionState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shared/NeedsConnectionCopy.kt",
+        "copyObject": "NeedsConnectionCopy"
+      },
+      "copySource": "shared/copy/needs-connection.json",
+      "states": [
+        {
+          "name": "Block",
+          "copy": "title"
+        },
+        {
+          "name": "Inline",
+          "copy": "title"
+        }
+      ]
+    },
+    {
+      "id": "read-failure",
+      "surface": "community",
+      "issue": "#658",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "frontend/ui/shared/read-failure.tsx",
+        "copyModule": "frontend/ui/shared/read-failure-copy.ts",
+        "copyExport": "READ_FAILURE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shared/ReadFailureNotice.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shared/ReadFailureState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shared/ReadFailureCopy.kt",
+        "copyObject": "ReadFailureCopy"
+      },
+      "copySource": "shared/copy/read-failure.json",
+      "states": [
+        {
+          "name": "Failed",
+          "copy": "title"
+        },
+        {
+          "name": "FailedInline",
+          "copy": "title"
+        }
+      ]
     }
   ],
   "exempt": [

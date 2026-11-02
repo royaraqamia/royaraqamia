@@ -2,6 +2,59 @@ import { z } from 'zod';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import type { PublicUser } from '@/shared/contracts/users';
 
+/**
+ * The feed card's publisher, as the public route projects it (#658).
+ *
+ * `PostSummary` and `Post` are TypeScript interfaces, which is enough for the
+ * site and not enough for the app: a shape the app decodes is a schema, so the
+ * feed's row is stated here once and generated into Kotlin
+ * (`npm run contracts:generate`). The projection is the same one
+ * `backend/loaders/community.ts` joins onto each post — no private column.
+ */
+export const PostAuthorSummarySchema = z.object({
+  username: z.string(),
+  name: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+});
+
+/** One row of the public feed: the post the site publishes, plus its publisher. */
+export const PostSummarySchema = z.object({
+  id: z.string(),
+  author_id: z.string(),
+  client_id: z.string().nullable().optional(),
+  deleted_at: z.string().nullable().optional(),
+  slug: z.string(),
+  content: z.string().nullable(),
+  status: z.enum(['draft', 'published', 'scheduled']),
+  cover_image: z.string().nullable(),
+  meta_title: z.string().nullable(),
+  meta_desc: z.string().nullable(),
+  published_at: z.string().nullable(),
+  publish_at: z.string().nullable(),
+  view_count: z.number().int(),
+  featured: z.boolean(),
+  community_visible: z.boolean(),
+  reading_time_minutes: z.number().int(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  author: PostAuthorSummarySchema.nullable().optional(),
+});
+
+/**
+ * `GET /api/community/index`: one keyset page of the public feed.
+ *
+ * The cursor is opaque and belongs to the server; `null` is the last page. The
+ * app pages the same way the site's island does, so the two clients ask the same
+ * route the same question rather than one of them inventing a page size.
+ */
+export const CommunityIndexResponseSchema = z.object({
+  posts: z.array(PostSummarySchema),
+  // Absent and `null` are the same answer — the last page — so the app may
+  // encode its own snapshot without an explicit `null` the decoder would have to
+  // accept twice.
+  nextCursor: z.string().nullable().optional(),
+});
+
 export const PostSchema = z.object({
   slug: z
     .string()

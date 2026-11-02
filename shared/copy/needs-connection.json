@@ -1,0 +1,20 @@
+{
+  "surface": "community",
+  "component": "needs-connection",
+  "web": {
+    "file": "frontend/ui/shared/needs-connection-copy.ts",
+    "export": "NEEDS_CONNECTION_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shared/NeedsConnectionCopy.kt",
+    "object": "NeedsConnectionCopy"
+  },
+  "notes": {
+    "source": "The one needs-connection block's own words (#658, ADR-0031). The sentence that says *what* was lost stays the caller's, because each surface knows; the title that says *why* and the retry belong to the block and are the same everywhere, so they are one copy source rather than a string each surface retypes.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `needs-connection.tsx` does not render."
+  },
+  "strings": {
+    "title": "يتطلَّب الاتصال بالإنترنت",
+    "retry": "إعادة المحاولة"
+  }
+}

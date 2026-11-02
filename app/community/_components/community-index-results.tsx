@@ -11,13 +11,8 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
 import { requestWithMeta } from '@/frontend/transport/http';
-import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
-import {
-  ReadFailureNotice,
-  toReadFailure,
-  type ReadFailure,
-} from '@/frontend/ui/shared/read-failure';
 import { CommunityResults } from './community-results';
+import { CommunitySearchSummary } from './community-search-summary';
 
 interface CommunityIndexResultsProps {
   initialPosts: PostSummary[];
@@ -51,9 +46,6 @@ function trimCommunitySnapshot(snapshot: CommunitySnapshot): CommunitySnapshot |
   const posts = halveList(screenful(snapshot.posts));
   return posts.length === 0 ? null : { ...snapshot, posts };
 }
-
-const PAGE_ERROR = 'تعذَّر تحميل المنشورات. أعد المحاولة.';
-const LOAD_MORE_ERROR = 'تعذَّر تحميل المزيد من المنشورات. أعد المحاولة.';
 
 function fetchIndex(
   cursor: string | null,
@@ -121,8 +113,8 @@ export function CommunityIndexResults({
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [ready, setReady] = useState(isDefault);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [pageError, setPageError] = useState<ReadFailure | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<ReadFailure | null>(null);
+  const [pageError, setPageError] = useState<unknown | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<unknown | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [recordable, setRecordable] = useState<CommunitySnapshot | null>(null);
 
@@ -173,7 +165,7 @@ export function CommunityIndexResults({
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setPageError(toReadFailure(error, PAGE_ERROR));
+        setPageError(error);
         setReady(true);
       });
 
@@ -201,7 +193,7 @@ export function CommunityIndexResults({
         setNextCursor(data.nextCursor);
       })
       .catch((error: unknown) => {
-        setLoadMoreError(toReadFailure(error, LOAD_MORE_ERROR));
+        setLoadMoreError(error);
       })
       .finally(() => setIsLoadingMore(false));
   }, [isLoadingMore, nextCursor, query]);
@@ -214,47 +206,37 @@ export function CommunityIndexResults({
 
   // A read that never reached the server keeps the rows this device last showed
   // instead of an empty screen, and says so (#555). Without a snapshot there is
-  // nothing to paint, and the failure is the whole answer.
-  if (pageError && snapshot) {
-    return (
-      <div className="space-y-4">
-        <NeedsConnection
-          variant="inline"
-          message="هذه آخر مشاركات ظهرت لك في هذا القسم. لا يمكن تحديثها أو البحث بلا اتصال."
-          onRetry={handleRetryPage}
-        />
-        <CommunityResults
-          posts={snapshot.posts}
-          nextCursor={null}
-          query={query}
-          onLoadMore={handleLoadMore}
-          isLoadingMore={isLoadingMore}
-          loadMoreError={loadMoreError}
-          onRetryLoadMore={handleLoadMore}
-        />
-      </div>
-    );
-  }
-
+  // nothing to paint, and the failure is the whole answer. Both faces are the
+  // results component's: it owns the words, the island owns the fetch.
   if (pageError) {
     return (
-      <ReadFailureNotice
-        failure={pageError}
-        onRetry={handleRetryPage}
-        className="my-8 rounded-3xl border border-border bg-muted/20"
+      <CommunityResults
+        posts={snapshot ? snapshot.posts : []}
+        nextCursor={null}
+        query={query}
+        onLoadMore={handleLoadMore}
+        isLoadingMore={isLoadingMore}
+        loadMoreError={loadMoreError}
+        onRetryLoadMore={handleLoadMore}
+        pageError={snapshot ? null : pageError}
+        onRetryPage={handleRetryPage}
+        stale={Boolean(snapshot)}
       />
     );
   }
 
   return (
-    <CommunityResults
-      posts={posts}
-      nextCursor={nextCursor}
-      query={query}
-      onLoadMore={handleLoadMore}
-      isLoadingMore={isLoadingMore}
-      loadMoreError={loadMoreError}
-      onRetryLoadMore={handleLoadMore}
-    />
+    <>
+      {query && <CommunitySearchSummary query={query} />}
+      <CommunityResults
+        posts={posts}
+        nextCursor={nextCursor}
+        query={query}
+        onLoadMore={handleLoadMore}
+        isLoadingMore={isLoadingMore}
+        loadMoreError={loadMoreError}
+        onRetryLoadMore={handleLoadMore}
+      />
+    </>
   );
 }

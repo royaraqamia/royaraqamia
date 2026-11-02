@@ -7,6 +7,7 @@ import { Calendar, User } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { postExcerpt, stripMarkdown } from '@/shared/reading-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+import { POST_CARD_COPY } from './post-card-copy';
 import { SocialShare } from './social-share';
 import { PostActionsMenu } from './post-actions-menu';
 
@@ -50,7 +51,7 @@ export function PostCard({ post, index }: PostCardProps) {
           {post.author?.name && (
             <Link
               href={`/u/${encodeURIComponent(post.author.username)}`}
-              aria-label={`الملف الشَّخصي لـ ${post.author.name}`}
+              aria-label={POST_CARD_COPY.authorLink.replace('{name}', post.author.name)}
               className="relative z-20 mb-3 flex w-fit items-center gap-2.5 rounded-full transition-safe duration-150 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               {post.author.avatar_url?.trim() ? (
@@ -88,6 +89,8 @@ export function PostCard({ post, index }: PostCardProps) {
               lines={4}
               className="mt-3 text-sm text-muted-foreground leading-relaxed font-normal"
               buttonClassName="relative z-20 text-primary hover:text-primary/90"
+              expandLabel={POST_CARD_COPY.expand}
+              collapseLabel={POST_CARD_COPY.collapse}
             >
               {body}
             </CollapsibleText>

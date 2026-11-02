@@ -34,7 +34,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
 | `account-blocked` | `/account/blocked` | _web only_ | The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `community` | `/community` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `community` | `/community` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `rates` | `/rates` | `RatesScreen.kt` |  |

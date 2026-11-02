@@ -1,0 +1,22 @@
+{
+  "surface": "community",
+  "component": "post-card",
+  "web": {
+    "file": "app/community/_components/post-card-copy.ts",
+    "export": "POST_CARD_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCardCopy.kt",
+    "object": "PostCardCopy"
+  },
+  "notes": {
+    "source": "The feed card's words, in both clients (#658). `npm run copy:generate` writes the two files named above from this one; neither client may spell these strings itself, because Arabic writes a word's marks in more than one order and a retyped label is one an exact-text test later misses (ADR-0098).",
+    "placeholders": "`authorLink` carries `{name}`: the card substitutes the publisher's name, so the sentence stays in one place on both clients.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a copy key the reference component (`app/community/_components/post-card.tsx`) does not render - the site is the design the app is measured against."
+  },
+  "strings": {
+    "authorLink": "الملف الشَّخصي لـ {name}",
+    "expand": "عرض المزيد",
+    "collapse": "عرض أقل"
+  }
+}
