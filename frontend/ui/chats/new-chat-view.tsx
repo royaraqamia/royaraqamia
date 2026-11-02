@@ -116,13 +116,6 @@ export function NewChatView() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
       <div className="flex items-center gap-3 border-b border-border/40 px-3 py-3">
-        <Link
-          href="/notifications?tab=chats"
-          aria-label="العودة إلى المحادثات"
-          className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
-        >
-          <span aria-hidden="true">→</span>
-        </Link>
         <MemberAvatar
           name={preview.peer.name ?? preview.peer.username}
           avatarUrl={preview.peer.avatarUrl}
@@ -133,7 +126,7 @@ export function NewChatView() {
           <p className="truncate text-sm font-bold text-foreground">
             {preview.peer.name ?? preview.peer.username}
           </p>
-          <p className="truncate text-xs text-muted-foreground/70" dir="ltr">
+          <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
             @{preview.peer.username}
           </p>
         </div>

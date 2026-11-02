@@ -10,6 +10,7 @@ import { searchChatMembers } from '@/frontend/api/chats';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
@@ -65,20 +66,9 @@ export function ChatsPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-muted-foreground/80">
-          {threads.length === 0 ? 'لا محادثات بعد' : `${threads.length} محادثة`}
-        </p>
-        <button
-          type="button"
-          onClick={() => setPicking((current) => !current)}
-          aria-expanded={picking}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-popover px-3 py-1.5 text-xs font-bold text-foreground transition-safe hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          <Plus size={14} className="shrink-0" />
-          <span>محادثة جديدة</span>
-        </button>
-      </div>
+      <p className="text-xs font-medium text-muted-foreground/80">
+        {threads.length === 0 ? 'لا محادثات بعد' : `${threads.length} محادثة`}
+      </p>
 
       {failure && (
         <p
@@ -179,6 +169,16 @@ export function ChatsPanel() {
           </div>
         )
       )}
+
+      {/* The primary action floats, like the community composer: the list owns
+          the screen, and starting a chat is never a row inside it. */}
+      <FabButton
+        label="محادثة جديدة"
+        aria-expanded={picking}
+        onClick={() => setPicking((current) => !current)}
+      >
+        <Plus className="size-6" />
+      </FabButton>
     </div>
   );
 }

@@ -139,6 +139,18 @@ describe('ChatThreadView menu', () => {
 
     expect(screen.getByRole('button', { name: 'مغادرة المحادثة' })).toBeInTheDocument();
   });
+
+  /**
+   * The blocked list is an account page, not a menu entry, and the screen is
+   * reached from the chats list — so the header carries no back link either.
+   */
+  it('offers neither the blocked list nor a back link', () => {
+    thread.current = makeThread('direct');
+    openMenu();
+
+    expect(screen.queryByText('الأعضاء المحظورون')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'العودة إلى المحادثات' })).not.toBeInTheDocument();
+  });
 });
 
 function mineMessage(): ChatMessage {
