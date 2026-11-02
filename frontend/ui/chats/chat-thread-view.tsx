@@ -184,13 +184,23 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     window.location.assign(file.url);
   }
 
-  /** Runs a dialog's action, keeping the dialog open with its spinner. */
+  /**
+   * Runs a dialog's action, keeping the dialog open with its spinner. A write
+   * that rejects is the same sentence as one that refuses: the spinner always
+   * clears, because a dialog stuck mid-confirm has no way out.
+   */
   async function run(action: () => Promise<string | null>, close: boolean) {
     setBusy(true);
-    const failure = await action();
-    setBusy(false);
-    setNotice(failure);
-    if (close) setConfirm(null);
+    let failure: string | null = null;
+    try {
+      failure = await action();
+    } catch (error) {
+      failure = error instanceof Error && error.message ? error.message : 'تعذّر تنفيذ الطلب';
+    } finally {
+      setBusy(false);
+      setNotice(failure);
+      if (close) setConfirm(null);
+    }
   }
 
   const dialogs: Record<Confirm['kind'], { title: string; message: string; label: string }> = {
