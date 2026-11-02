@@ -2,7 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+      `.RoyApplication` is the app's process entry point, for one job: a crash
+      handler has to be installed before the process can fail, including a
+      process the launcher did not start (#667). Everything else it arms runs off
+      the launch path, because the frame budget owns it — see
+      `docs/mobile/crash-reports.md`.
+    -->
     <application
+        android:name=".RoyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

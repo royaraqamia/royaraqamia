@@ -82,7 +82,8 @@
     "android:profile": "node scripts/android.mjs profile",
     "prepare": "husky",
     "android:note": "node scripts/android-note.mjs",
-    "android:outbox-drill": "node scripts/android-outbox-drill.mjs"
+    "android:outbox-drill": "node scripts/android-outbox-drill.mjs",
+    "android:crash-drill": "node scripts/android-crash-drill.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

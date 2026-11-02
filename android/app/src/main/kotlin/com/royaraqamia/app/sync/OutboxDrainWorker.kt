@@ -8,6 +8,9 @@ import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.ShellBatteryPrompt
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.failure.DrainFailure
+import com.royaraqamia.app.failure.FailureReporter
+import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.store.outbox.DrainReport
 
 /**
@@ -81,12 +84,14 @@ class OutboxDrainWorker(context: Context, params: WorkerParameters) :
             val decision =
                 DrainDecision.of(owed, runAttemptCount, why = "no session to send with")
             Log.i(TAG, decision.summary)
+            reportFailure(decision, signedIn = false)
             return result(decision)
         }
 
         val report: DrainReport = graph.drainOutbox()
         val decision = DrainDecision.of(report, runAttemptCount)
         Log.i(TAG, decision.summary)
+        reportFailure(decision, signedIn = true)
 
         // A pull after the drain, never before: the queue is this device's news,
         // and reading the server's copy first would mean merging over it. It is
@@ -94,6 +99,30 @@ class OutboxDrainWorker(context: Context, params: WorkerParameters) :
         // that failed is a screen that pulls when it opens.
         if (woken) pull(graph)
         return result(decision)
+    }
+
+    /**
+     * A drain that ended owing work says so, as a reason class and two counts
+     * (#667) — the app's own equivalent of the web's Sentry alert, and the only
+     * way a background failure on a phone reaches a person.
+     *
+     * A foreground drain is not reported here: the screen already shows the sync
+     * pill, and a person is looking at it. This is the path that runs with nobody
+     * watching.
+     */
+    private fun reportFailure(decision: DrainDecision, signedIn: Boolean) {
+        val reason =
+            DrainFailure.of(
+                decision,
+                signedIn = signedIn,
+                online = Connectivity.isOnline(applicationContext),
+            ) ?: return
+        FailureReporter.recordDrain(
+            applicationContext,
+            reason,
+            pending = decision.report.pending,
+            failed = decision.report.failed,
+        )
     }
 
     /** The wake's other half (ADR-0060), with its failure kept out of the decision. */

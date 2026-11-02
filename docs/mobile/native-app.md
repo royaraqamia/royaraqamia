@@ -319,6 +319,11 @@ Navigation, the tab bar, RTL, theming, back, deep links, updates, push, diagnost
   document, and a `426` from any screen becomes that card.
 - FCM, the sync wake and the battery prompt stay native, now driving the Kotlin drain.
 - A diagnostics screen replacing `/device` (ADR-0084's withdrawn page stays withdrawn).
+- The app's own failure reports: a crash, an ANR and a background drain that ended owing work reach
+  Sentry beside the web's, attributed to a release by its version code and its contract generation
+  ([#667](https://github.com/royaraqamia/royaraqamia/issues/667), [crash-reports.md](crash-reports.md)).
+  A native client that fails silently is worse than a page that fails loudly: there is no console and
+  no page to inspect ([ADR-0115](../adr/0115-the-app-reports-its-own-failures.md)).
 
 **Exit criteria.** Cold start inside budget from a notification, from a deep link and from the
 launcher; back never exits from a non-root destination; RTL correct at 320 dp.

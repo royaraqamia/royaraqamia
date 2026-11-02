@@ -50,6 +50,18 @@ describe('the Android release train', () => {
     expect(workflow).toContain('--latest');
   });
 
+  it('keeps the R8 mapping with the release a crash report names (#667)', () => {
+    const createAt = workflow.indexOf('gh release create "$TAG" "$STAGED"');
+    const uploadAt = workflow.indexOf(
+      'gh release upload "$TAG" "$RUNNER_TEMP/mapping-$VERSION.txt"'
+    );
+    expect(createAt).toBeGreaterThan(-1);
+    expect(uploadAt).toBeGreaterThan(createAt);
+    expect(workflow).toContain('android/app/build/outputs/mapping/release/mapping.txt');
+    // An adopted version has no mapping on this runner; the release still stands.
+    expect(workflow).toContain('::warning title=No R8 mapping to keep');
+  });
+
   it('lands the version, the notes, the changelog and the manifest as one commit', () => {
     expect(workflow).toContain(
       'git add -A android/shell-version.properties android/release-notes public/android'
