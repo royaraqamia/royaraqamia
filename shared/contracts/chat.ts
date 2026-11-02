@@ -11,6 +11,11 @@ export const CHAT_GROUP_MEMBERS_MAX = 32;
 
 /** Per file, and the whole of one member's attachment storage. */
 export const CHAT_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
+/**
+ * The absolute ceiling a deployment may configure a member's storage to. The
+ * effective numbers are settings on the server while the project runs on a Free
+ * plan, and arrive with the thread (`ChatAttachmentQuota`), never from here.
+ */
 export const CHAT_ATTACHMENT_QUOTA_BYTES = 1024 * 1024 * 1024;
 
 /**
@@ -62,13 +67,20 @@ export interface ChatAttachment {
 }
 
 /**
- * The caller's own attachment allowance. The composer reads it so a refusal
- * ("the storage is full") is a number the member can see, not a surprise after
- * a 24 MB upload.
+ * What the composer shows before a refusal happens. The numbers are settings on
+ * the server (Free-plan allowances: 10 MB per file, 50 MB a day, 100 MB per
+ * member, 500 MB across the project), so both clients read them rather than
+ * carrying them.
  */
 export interface ChatAttachmentQuota {
-  usedBytes: number;
-  limitBytes: number;
+  /** The largest single file right now. */
+  fileBytes: number;
+  /** Since Damascus midnight — the app's day, and the one the trigger resets on. */
+  today: { usedBytes: number; limitBytes: number };
+  /** The caller's stored bytes, and the wall the database enforces. */
+  total: { usedBytes: number; limitBytes: number };
+  /** The project's own storage, so a member is not surprised by someone else's. */
+  project: { usedBytes: number; limitBytes: number };
 }
 
 /**

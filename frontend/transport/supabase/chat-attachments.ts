@@ -26,9 +26,16 @@ export class ChatAttachmentUploadError extends Error {
   }
 }
 
-/** Checked before the upload, so a 30 MB pick never spends a byte of it. */
-export function isChatAttachmentTooLarge(file: File): boolean {
-  return file.size > CHAT_ATTACHMENT_MAX_BYTES;
+/**
+ * Checked before the upload, so an oversized pick never spends a byte of it.
+ * The limit is the allowance the server reports (10 MB on Free); the default is
+ * the contract's absolute ceiling, which is what the upload itself refuses.
+ */
+export function isChatAttachmentTooLarge(
+  file: File,
+  limitBytes: number = CHAT_ATTACHMENT_MAX_BYTES
+): boolean {
+  return file.size > limitBytes;
 }
 
 /** A flat name: a separator would add a folder the path guard refuses. */

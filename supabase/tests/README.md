@@ -85,6 +85,18 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - The row is deletable by its uploader only, which is what a tombstone needs.
 - The composer's allowance (`chat_attachment_bytes_used()`) answers the caller's own bytes.
 
+`chat_attachment_allowances_test.sql` (#852, ADR-0113):
+
+- The four caps each refuse with their own text: the file above the configured size, the day
+  (Damascus midnight), the member's total, and the project's wall.
+- The caps are values in `app_settings`, so the file shrinks them to bytes and asserts the
+  arithmetic instead of megabytes; a row dated two days ago counts against the total and not
+  against today, which is what separates the two refusals.
+- The bucket's own limit is the configured file cap, so Storage refuses an oversized object
+  before the trigger is reached.
+- `chat_attachment_allowance()` answers the caller's day and total plus the project's, which is
+  what the composer draws.
+
 `habit_reminders_damascus_test.sql` (#604):
 
 - The reminder window on the Damascus clock: 08:00 is due at 08:00:00 and 08:14:59, not at
@@ -161,6 +173,9 @@ available rehearsal.
 `chat_attachments_test.sql` (#815) is unrun for the same reason. It is the first assertion here
 against `storage.objects`, so expect its first real run to need the storage triggers' own `NOT NULL`
 columns filled in.
+
+`chat_attachment_allowances_test.sql` (#852) is unrun too. Its arithmetic is checked by hand in the
+comments beside each assertion; the risk is the settings update between role switches, not the caps.
 
 ## Worth adding next
 

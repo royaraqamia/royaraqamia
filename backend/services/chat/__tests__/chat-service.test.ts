@@ -55,7 +55,15 @@ function makeRepository(
       attachmentFailure: null,
     })),
     findAttachmentInConversation: vi.fn(async () => null),
-    sumAttachmentBytes: vi.fn(async () => 0),
+    attachmentAllowance: vi.fn(async () => ({
+      fileBytes: 10 * 1024 * 1024,
+      todayUsedBytes: 0,
+      todayLimitBytes: 50 * 1024 * 1024,
+      totalUsedBytes: 0,
+      totalLimitBytes: 100 * 1024 * 1024,
+      projectUsedBytes: 0,
+      projectLimitBytes: 500 * 1024 * 1024,
+    })),
     updateMessageBody: vi.fn(async () => null),
     tombstoneMessage: vi.fn(async () => true),
     deleteMessageAttachments: vi.fn(async () => undefined),
@@ -532,7 +540,7 @@ describe('ChatService.sendMessage attachments', () => {
           deletedAt: null,
           createdAt: '2026-11-01T10:05:00.000Z',
         },
-        attachmentFailure: { code: '53400' },
+        attachmentFailure: { code: '53400', message: 'chat attachment daily allowance reached' },
       })),
     });
 
@@ -547,10 +555,48 @@ describe('ChatService.sendMessage attachments', () => {
           },
         ],
       })
-    ).rejects.toMatchObject({ status: 409, message: 'مساحة المرفقات ممتلئة' });
+    ).rejects.toMatchObject({
+      status: 429,
+      message: 'بلغت حدّ المرفقات اليوم، يعود غداً',
+    });
 
     // No message that claims files it does not have.
     expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-9', me);
+  });
+
+  it('answers the project wall as its own sentence', async () => {
+    const { service } = makeRepository({
+      insertMessage: vi.fn(async () => ({
+        record: {
+          id: 'm-9',
+          conversationId: 'c-1',
+          senderId: me,
+          senderKind: 'user' as const,
+          body: null,
+          replyToId: null,
+          editedAt: null,
+          deletedAt: null,
+          createdAt: '2026-11-01T10:05:00.000Z',
+        },
+        attachmentFailure: { code: '53400', message: 'chat attachment project storage is full' },
+      })),
+    });
+
+    await expect(
+      service.sendMessage(me, 'c-1', {
+        attachments: [
+          {
+            storagePath: 'c-1/u-1/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 2048,
+          },
+        ],
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
+    });
   });
 
   it('names a path the guard refused as a policy answer', async () => {
@@ -567,7 +613,10 @@ describe('ChatService.sendMessage attachments', () => {
           deletedAt: null,
           createdAt: '2026-11-01T10:05:00.000Z',
         },
-        attachmentFailure: { code: '42501' },
+        attachmentFailure: {
+          code: '42501',
+          message: 'an attachment lives in its conversation folder',
+        },
       })),
     });
 
@@ -627,6 +676,60 @@ describe('ChatService.attachmentUrl', () => {
 
     await expect(service.attachmentUrl(me, 'c-1', 'a-theirs')).rejects.toMatchObject({
       status: 404,
+    });
+  });
+});
+
+describe('ChatService.getThread attachments', () => {
+  it('reads the allowances from the server and shapes them for the composer', async () => {
+    const { service } = makeRepository({
+      listThreads: vi.fn(async () => [
+        {
+          id: 'c-1',
+          kind: 'direct',
+          title: null,
+          status: 'active',
+          createdAt: '2026-11-01T10:00:00.000Z',
+          lastMessageAt: null,
+          unreadCount: 0,
+          lastMessageBody: null,
+          lastMessageSenderKind: null,
+          lastMessageCreatedAt: null,
+          lastMessageHasAttachments: false,
+          counterpartId: peerId,
+          myStatus: 'active',
+          myRole: 'owner',
+          myLastReadAt: null,
+        },
+      ]),
+      findConversation: vi.fn(async () => ({
+        id: 'c-1',
+        kind: 'direct',
+        title: null,
+        status: 'active',
+        createdBy: me,
+        lastMessageAt: null,
+        createdAt: '2026-11-01T10:00:00.000Z',
+      })),
+      findParticipants: vi.fn(async () => myMembership),
+      attachmentAllowance: vi.fn(async () => ({
+        fileBytes: 10 * 1024 * 1024,
+        todayUsedBytes: 1024,
+        todayLimitBytes: 50 * 1024 * 1024,
+        totalUsedBytes: 2048,
+        totalLimitBytes: 100 * 1024 * 1024,
+        projectUsedBytes: 4096,
+        projectLimitBytes: 500 * 1024 * 1024,
+      })),
+    });
+
+    const thread = await service.getThread(me, 'c-1');
+
+    expect(thread?.attachmentQuota).toEqual({
+      fileBytes: 10 * 1024 * 1024,
+      today: { usedBytes: 1024, limitBytes: 50 * 1024 * 1024 },
+      total: { usedBytes: 2048, limitBytes: 100 * 1024 * 1024 },
+      project: { usedBytes: 4096, limitBytes: 500 * 1024 * 1024 },
     });
   });
 });

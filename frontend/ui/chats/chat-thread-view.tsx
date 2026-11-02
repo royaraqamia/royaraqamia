@@ -17,10 +17,7 @@ import {
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
 import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
-import {
-  CHAT_ATTACHMENT_TOO_LARGE,
-  isChatAttachmentTooLarge,
-} from '@/frontend/transport/supabase/chat-attachments';
+import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
@@ -32,7 +29,6 @@ import { ReportChatDialog } from './report-chat-dialog';
 import {
   canEditChatMessage,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
-  CHAT_ATTACHMENT_QUOTA_BYTES,
   type ChatMessage,
   type ChatThread,
 } from '@/shared/contracts/chat';
@@ -140,14 +136,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
 
   /**
    * Files are checked before they are staged, so a refusal is immediate rather
-   * than 24 MB into an upload: the size, the five-per-message cap, and the
-   * caller's own allowance.
+   * than a wasted upload: the file cap, the five-per-message cap, then the three
+   * allowances — today, the caller's own, and the project's.
    */
   function addFiles(picked: File[]) {
     if (picked.length === 0) return;
 
-    if (picked.some(isChatAttachmentTooLarge)) {
-      setNotice(CHAT_ATTACHMENT_TOO_LARGE);
+    const quota = thread?.attachmentQuota;
+    if (!quota) return;
+
+    if (picked.some((file) => isChatAttachmentTooLarge(file, quota.fileBytes))) {
+      setNotice(`حجم الملف يتجاوز ${formatAttachmentSize(quota.fileBytes)}، اختر ملفاً أصغر`);
       return;
     }
     if (files.length + picked.length > CHAT_ATTACHMENTS_PER_MESSAGE_MAX) {
@@ -156,10 +155,18 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     }
 
     const staged = [...files, ...picked];
-    const usedBytes =
-      (thread?.attachmentQuota.usedBytes ?? 0) + staged.reduce((sum, file) => sum + file.size, 0);
-    if (usedBytes > CHAT_ATTACHMENT_QUOTA_BYTES) {
-      setNotice('مساحة المرفقات ممتلئة');
+    const stagedBytes = staged.reduce((sum, file) => sum + file.size, 0);
+
+    if (quota.today.usedBytes + stagedBytes > quota.today.limitBytes) {
+      setNotice('بلغت حدّ المرفقات اليوم، يعود غداً');
+      return;
+    }
+    if (quota.total.usedBytes + stagedBytes > quota.total.limitBytes) {
+      setNotice('مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات');
+      return;
+    }
+    if (quota.project.usedBytes + stagedBytes > quota.project.limitBytes) {
+      setNotice('مساحة مرفقات الموقع ممتلئة، حاول لاحقاً');
       return;
     }
 
@@ -556,10 +563,9 @@ function ThreadFooter({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (state === 'write') {
-    const remaining = Math.max(
-      0,
-      thread.attachmentQuota.limitBytes - thread.attachmentQuota.usedBytes
-    );
+    const quota = thread.attachmentQuota;
+    const todayRemaining = Math.max(0, quota.today.limitBytes - quota.today.usedBytes);
+    const totalRemaining = Math.max(0, quota.total.limitBytes - quota.total.usedBytes);
 
     return (
       <form
@@ -644,9 +650,11 @@ function ThreadFooter({
         </div>
 
         <p className="text-[11px] text-muted-foreground/70">
-          {remaining > 0
-            ? `المساحة المتبقية للمرفقات: ${formatAttachmentSize(remaining)}`
-            : 'مساحة المرفقات ممتلئة، احذف رسالة قديمة فيها ملفات لتفرغ مساحة.'}
+          {todayRemaining === 0
+            ? 'بلغت حدّ المرفقات اليوم، يعود غداً.'
+            : totalRemaining === 0
+              ? 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات.'
+              : `المتبقي اليوم: ${formatAttachmentSize(todayRemaining)} · إجمالاً: ${formatAttachmentSize(totalRemaining)}`}
         </p>
       </form>
     );

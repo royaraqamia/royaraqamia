@@ -7,7 +7,6 @@ import {
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { PublicUser } from '@/shared/contracts/users';
 import {
-  CHAT_ATTACHMENT_QUOTA_BYTES,
   chatAttachmentIsInlineImage,
   chatTitle,
   normalizeChatBody,
@@ -69,6 +68,30 @@ const PAGE_SIZE = 30;
 /** The database's quota refusal, and a policy refusal, as sentences. */
 const QUOTA_EXCEEDED_CODE = '53400';
 const POLICY_REFUSAL_CODE = '42501';
+
+/**
+ * The four attachment caps answer four different sentences, keyed by the text
+ * the trigger raised. A member needs to know whether to pick a smaller file, wait
+ * for tomorrow, delete an old message, or try again later.
+ */
+const ATTACHMENT_REFUSALS: Record<string, { status: number; sentence: string }> = {
+  'chat attachment file is too large': {
+    status: 413,
+    sentence: 'حجم الملف يتجاوز الحد المسموح',
+  },
+  'chat attachment daily allowance reached': {
+    status: 429,
+    sentence: 'بلغت حدّ المرفقات اليوم، يعود غداً',
+  },
+  'chat attachment storage is full': {
+    status: 409,
+    sentence: 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات',
+  },
+  'chat attachment project storage is full': {
+    status: 409,
+    sentence: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
+  },
+};
 
 function toPeer(user: PublicUser | undefined): ChatPeer | null {
   if (!user) return null;
@@ -379,7 +402,10 @@ export class ChatService {
       await this.repo.tombstoneMessage(result.record.id, userId);
 
       if (result.attachmentFailure.code === QUOTA_EXCEEDED_CODE) {
-        throw new ChatError(409, 'مساحة المرفقات ممتلئة');
+        const refusal = ATTACHMENT_REFUSALS[result.attachmentFailure.message ?? ''];
+        throw refusal
+          ? new ChatError(refusal.status, refusal.sentence)
+          : new ChatError(409, 'مساحة المرفقات ممتلئة');
       }
       if (result.attachmentFailure.code === POLICY_REFUSAL_CODE) {
         throw new ChatError(403, 'لا يمكن إرفاق ملف في هذه الرسالة');
@@ -559,10 +585,22 @@ export class ChatService {
       }));
   }
 
+  /**
+   * The composer's meters, in one read: the file cap, today's remaining, the
+   * caller's own remaining, and the project's. The server holds the numbers
+   * (`app_settings`), so the Free-plan allowances can change without a deploy.
+   */
   private async attachmentQuota(): Promise<ChatAttachmentQuota> {
+    const allowance = await this.repo.attachmentAllowance();
+
     return {
-      usedBytes: await this.repo.sumAttachmentBytes(),
-      limitBytes: CHAT_ATTACHMENT_QUOTA_BYTES,
+      fileBytes: allowance.fileBytes,
+      today: { usedBytes: allowance.todayUsedBytes, limitBytes: allowance.todayLimitBytes },
+      total: { usedBytes: allowance.totalUsedBytes, limitBytes: allowance.totalLimitBytes },
+      project: {
+        usedBytes: allowance.projectUsedBytes,
+        limitBytes: allowance.projectLimitBytes,
+      },
     };
   }
 
