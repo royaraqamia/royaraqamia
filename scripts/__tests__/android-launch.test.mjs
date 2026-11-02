@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
+  activityState,
+  answeredWithoutLaunch,
   BUDGET,
   LAUNCH_ACTIVITY,
   median,
@@ -9,6 +11,7 @@ import {
   parseAmStart,
   parseArgs,
   startArgs,
+  WARM_ATTEMPTS,
   withinBudget,
 } from '../android-launch.mjs';
 
@@ -92,6 +95,69 @@ describe('reading am start', () => {
   it('reports no time rather than a guess when the start did not happen', () => {
     const error = 'Error: Activity not started, unable to resolve Intent';
     expect(parseAmStart(error)).toEqual({ state: null, totalTime: null, waitTime: null });
+  });
+});
+
+describe('reading the activity record', () => {
+  // `dumpsys activity activities` on API 35, trimmed to the two records that
+  // matter: the app's, and the launcher's behind it.
+  const DUMP = [
+    '  * Task{6ee242e #20 type=standard A=10209:com.royaraqamia.app U=0 visible=true}',
+    '    * Hist  #0: ActivityRecord{ce026a9 u0 com.royaraqamia.app/.shell.ShellActivity t20}',
+    '      packageName=com.royaraqamia.app processName=com.royaraqamia.app',
+    '      state=RESUMED delayedResume=false finishing=false',
+    '  * Task{8f1c0a4 #6 type=home A=1000:com.google.android.apps.nexuslauncher U=0}',
+    '    * Hist  #0: ActivityRecord{686136d u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t6}',
+    '      packageName=com.google.android.apps.nexuslauncher processName=com.google.android.apps.nexuslauncher',
+    '      state=STOPPED delayedResume=false finishing=false',
+  ].join('\n');
+
+  it('finds the state the platform reports for the activity it is asked about', () => {
+    expect(activityState(DUMP, `${PACKAGE_ID}/${LAUNCH_ACTIVITY}`)).toBe('RESUMED');
+    expect(
+      activityState(DUMP, 'com.google.android.apps.nexuslauncher/.NexusLauncherActivity')
+    ).toBe('STOPPED');
+    expect(activityState(DUMP, 'com.royaraqamia.app/.shell.OtherActivity')).toBeNull();
+  });
+});
+
+describe('a warm start the platform did not make', () => {
+  // `am start -W` on API 35, right after the app left the screen: the activity
+  // still held the top-resumed state, so nothing was started and nothing timed.
+  // The platform prints the absence two ways, and both were seen in one drill run.
+  const NO_LAUNCH = [
+    'Starting: Intent { cmp=com.royaraqamia.app/.shell.ShellActivity }',
+    'Warning: Activity not started, its current task has been brought to the front',
+    'Status: ok',
+    'LaunchState: UNKNOWN (0)',
+    'Activity: com.royaraqamia.app/.shell.ShellActivity',
+    'WaitTime: 81',
+    'Complete',
+  ].join('\n');
+  const NO_LAUNCH_TIMED_ZERO = NO_LAUNCH.replace('WaitTime: 81', 'TotalTime: 0\nWaitTime: 39');
+
+  it('is an answer to wait out, not a number to record', () => {
+    expect(answeredWithoutLaunch(parseAmStart(NO_LAUNCH))).toBe(true);
+    // `TotalTime: 0` is the same non-launch with a number beside it, and recording
+    // it would report an infinitely fast warm start.
+    expect(answeredWithoutLaunch(parseAmStart(NO_LAUNCH_TIMED_ZERO))).toBe(true);
+    expect(answeredWithoutLaunch(parseAmStart(COLD))).toBe(false);
+    expect(answeredWithoutLaunch(parseAmStart(HOT))).toBe(false);
+  });
+
+  it('is re-issued a bounded number of times before the run is called unmeasurable', () => {
+    // Enough attempts to outlast a slow device's home transition, few enough that
+    // a device which never leaves the front fails the drill instead of hanging.
+    expect(WARM_ATTEMPTS).toBeGreaterThan(1);
+    expect(WARM_ATTEMPTS).toBeLessThanOrEqual(10);
+  });
+
+  it('is re-issued by the warm path only, because a cold run that was not a launch is not cold', () => {
+    const source = readFileSync('scripts/android-launch.mjs', 'utf8');
+    const warm = /function warmRun[\s\S]*?\n}/.exec(source)?.[0] ?? '';
+    const cold = /function coldRun[\s\S]*?\n}/.exec(source)?.[0] ?? '';
+    expect(warm).toContain('warmLaunch');
+    expect(cold).not.toContain('warmLaunch');
   });
 });
 
