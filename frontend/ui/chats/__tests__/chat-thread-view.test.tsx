@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-import type { ChatPeer, ChatThread } from '@/shared/contracts/chat';
+import type { ChatMessage, ChatPeer, ChatThread } from '@/shared/contracts/chat';
 
 // The header is under test, not Next's optimizer or the member's picture.
 vi.mock('next/image', () => ({
@@ -27,19 +27,27 @@ vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
 
 const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
 
+/** The hook is under test elsewhere; here its writes are the seams. */
+const hook = vi.hoisted(() => ({
+  messages: { current: [] as ChatMessage[] },
+  send: vi.fn(),
+  edit: vi.fn(),
+  remove: vi.fn(),
+}));
+
 vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
   useChatThread: () => ({
     thread: thread.current,
-    messages: [],
+    messages: hook.messages.current,
     isLoading: false,
     isSending: false,
     error: null,
     hasOlder: false,
     refresh: vi.fn(),
     loadOlder: vi.fn(),
-    send: vi.fn(),
-    edit: vi.fn(),
-    remove: vi.fn(),
+    send: hook.send,
+    edit: hook.edit,
+    remove: hook.remove,
     respond: vi.fn(),
     withdraw: vi.fn(),
     request: vi.fn(),
@@ -130,5 +138,79 @@ describe('ChatThreadView menu', () => {
     openMenu();
 
     expect(screen.getByRole('button', { name: 'مغادرة المحادثة' })).toBeInTheDocument();
+  });
+});
+
+function mineMessage(): ChatMessage {
+  return {
+    id: 'm-1',
+    conversationId: 'c-1',
+    senderId: PEER.id,
+    senderKind: 'user',
+    body: 'الرسالة الأصلية',
+    replyToId: null,
+    editedAt: null,
+    deletedAt: null,
+    createdAt: new Date().toISOString(),
+    attachments: [],
+    replyTo: null,
+  };
+}
+
+/**
+ * A refused write is a sentence, not a silent screen (#844): the hook answers
+ * `false`/a sentence, and the view is what keeps the draft, keeps the editor
+ * open, and takes the spinner off a dialog whose write rejected.
+ */
+describe('ChatThreadView refused writes', () => {
+  beforeEach(() => {
+    hook.messages.current = [];
+    hook.send.mockReset();
+    hook.edit.mockReset();
+    hook.remove.mockReset();
+    thread.current = makeThread('direct');
+  });
+
+  it('keeps the draft when the send is refused', async () => {
+    hook.send.mockResolvedValue(false);
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const composer = screen.getByRole('textbox', { name: 'نص الرسالة' });
+    fireEvent.change(composer, { target: { value: 'سلام' } });
+    fireEvent.click(screen.getByRole('button', { name: 'إرسال' }));
+
+    await waitFor(() => expect(hook.send).toHaveBeenCalledWith('سلام', []));
+    expect(composer).toHaveValue('سلام');
+  });
+
+  it('keeps the editor open when the edit is refused', async () => {
+    hook.messages.current = [mineMessage()];
+    hook.edit.mockResolvedValue(false);
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'تعديل الرسالة' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'تعديل الرسالة' }), {
+      target: { value: 'نص معدّل' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'حفظ' }));
+
+    await waitFor(() => expect(hook.edit).toHaveBeenCalledWith('m-1', 'نص معدّل'));
+    expect(screen.getByRole('textbox', { name: 'تعديل الرسالة' })).toBeInTheDocument();
+  });
+
+  it('closes the delete dialog and reports the refusal when the delete rejects', async () => {
+    hook.messages.current = [mineMessage()];
+    hook.remove.mockRejectedValue(new Error('تعذّر حذف الرسالة'));
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'حذف الرسالة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'حذف' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText('ستُحذف الرسالة من عند الطرفين، وتبقى آثارها في المحادثة.')
+      ).toBeNull()
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('تعذّر حذف الرسالة');
   });
 });

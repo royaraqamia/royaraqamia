@@ -157,18 +157,25 @@ export function useChatThread(conversationId: string): ChatThreadState {
   );
 
   const edit = useCallback(async (messageId: string, body: string) => {
-    const result = await editChatMessage(messageId, body);
-    if (!result.success || !result.message) {
-      setError(result.error ?? 'تعذّر تعديل الرسالة');
+    setError(null);
+
+    try {
+      const result = await editChatMessage(messageId, body);
+      if (!result.success || !result.message) {
+        setError(result.error ?? 'تعذّر تعديل الرسالة');
+        return false;
+      }
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId ? (result.message as ChatMessage) : message
+        )
+      );
+      return true;
+    } catch (error) {
+      setError(failureOf(error, 'تعذّر تعديل الرسالة'));
       return false;
     }
-
-    setMessages((current) =>
-      current.map((message) =>
-        message.id === messageId ? (result.message as ChatMessage) : message
-      )
-    );
-    return true;
   }, []);
 
   /**
