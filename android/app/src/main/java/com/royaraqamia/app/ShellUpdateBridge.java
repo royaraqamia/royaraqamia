@@ -8,7 +8,8 @@ import android.webkit.JavascriptInterface;
  * A below-floor owned API answers `426` with the minimum counter, and the page's
  * transport hands that number here. The shell owns the dialog and the installer,
  * so this interface carries no data and cannot install anything by itself: it only
- * tells {@link ShellUpdatePrompt} that the server has refused this build.
+ * tells the app's update channel that the server has refused this build
+ * ({@link com.royaraqamia.app.update.ShellUpdateChannel}), which is what draws the card.
  *
  * It is a plain `addJavascriptInterface` object, like the sync bridge (ADR-0059),
  * rather than a Capacitor plugin: the plugin bridge is not reliably injected into

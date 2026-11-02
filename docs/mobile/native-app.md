@@ -195,6 +195,21 @@ hold, and #809 with #820 is what brought the number there. The 320 dp run was ma
 (#806) and [#845](https://github.com/royaraqamia/royaraqamia/pull/845) hands the bell the session's real
 unread count, so [two-clients.md](two-clients.md) lists none.
 
+**Wired today (#652).** The update channel is the shell's, and its card is Compose
+([ADR-0114](../adr/0114-the-update-card-is-the-apps-alone.md)). `shell/ShellActivity` owns
+the channel in `update/ShellUpdateController` — the six-hourly manifest read, the download, the
+verification and the in-place install — and draws `shell/ShellUpdatePrompt.kt` in its own frame, with `latest.json`'s
+`notes` under the version range so the card says what the release carries. The decision itself is one
+pure function (`update/ShellUpdateDecision.cardFor`) tested on the JVM beside `ShellUpdateTest`'s
+cases; the card's copy is `res/values/strings.xml` and it is listed under `exempt` in
+`docs/mobile/parity.json`, because the site never offers an APK install and so has no counterpart to be
+a pair with. A build below the floor is the exception the floor always was: `handOver` refuses to open
+the document while it stands, and a typed `426` from a native screen (`update/ShellUpdateRequired`)
+publishes the floor to `update/ShellUpdateChannel`, which is also where the document's
+`RoyShellUpdate.required()` bridge lands — it brings the shell forward and finishes the document on the
+way. The Java dialog, its two layouts, its style, its drawables and `DigitSpans`/`DigitRanges` went
+with it; the digit face is now `shell/DigitRuns.kt`, tested on the JVM against the same cases.
+
 **Wired today (#501).** `Session` keeps the access token in memory and the refresh token sealed at rest
 (`EncryptedTokenStore` over a Keystore key), refreshes once however many requests are answered 401 at
 the same moment, and ends the session only when the server _refuses_ the token — a refresh that never
@@ -298,7 +313,10 @@ Navigation, the tab bar, RTL, theming, back, deep links, updates, push, diagnost
   without a WebView history to walk.
 - Splash theme into the first frame — the sequence ADR-0061 established, with no skeleton needed
   because there is no document to wait for.
-- The update check, download and installer survive as they are; the prompt moves to Compose.
+- The update check, download and installer survive as they are; the prompt is Compose
+  ([#652](https://github.com/royaraqamia/royaraqamia/issues/652), ADR-0114). `ShellActivity` owns the
+  check and draws the card in its own frame; a build below the site's floor never reaches the
+  document, and a `426` from any screen becomes that card.
 - FCM, the sync wake and the battery prompt stay native, now driving the Kotlin drain.
 - A diagnostics screen replacing `/device` (ADR-0084's withdrawn page stays withdrawn).
 

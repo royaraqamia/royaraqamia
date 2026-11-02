@@ -329,7 +329,7 @@ changes rather than only on the machine that wrote them.
 | Load a bundled document (the bundled target)                     | `server.url` unset, Vite build in `webDir`, `MainActivity.bundledRootFor`                                          | Spike-proven (#500, [two-origin-spike.md](two-origin-spike.md)): `https://localhost/`, Back returns to it, remote surfaces reached by Custom Tab; release APK 15.4 MiB against the shell's 16.1    |
 | Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                                              | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
 | Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                                             | Working — in-page, so it shows in the shell too                                                                                                                                                    |
-| Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                                                  | Working — a native dialog, and it installs in place (ADR-0044); `/account` re-checks on demand                                                                                                     |
+| Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                                                  | Working — a Compose card in the shell's frame (#652, ADR-0114), and it installs in place (ADR-0044); `/account` re-checks on demand                                                                |
 | Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                                                  | Working                                                                                                                                                                                            |
 | Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                                          | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
 | Splash (platform), launch skeleton, status bar, RTL, back button | launch theme, `res/layout/shell_skeleton.xml`, `capacitor.config.ts` plugins, `MainActivity`                       | Working — the splash lifts into the skeleton (ADR-0061, #498); Back walks the WebView's history and closes the app at the root (ADR-0082, below)                                                   |
@@ -933,7 +933,7 @@ holds its own offer back while that is pending.
 **What is in place.** `ShellUpdate` reads `/android/latest.json` (published from
 `public/android/latest.json`) and compares its `versionCode` with `BuildConfig.VERSION_CODE`, which comes
 from `android/shell-version.properties` rather than from `package.json`; the manifest's optional
-`rollout` stages that comparison, and `minSupportedVersionCode` is the floor. `ShellUpdatePrompt` asks the
+`rollout` stages that comparison, and `minSupportedVersionCode` is the floor. The shell's card asks the
 user natively when a newer APK exists — an `AlertDialog`, at most every six hours and on a fresh launch —
 and the site stays quiet meanwhile, because `MainActivity` appends `RoyaraqamiaShell/<code>` to the
 WebView's user agent and the page compares that with the same manifest.
@@ -1041,10 +1041,10 @@ reach here; that is the cost of the 344KB, and it is the reason the `.woff2` fil
 
 The numerals in both cards are the exception: they take Aref Ruqaa, the face the site uses for
 read-only numbers (`--font-digits`). `res/font/aref_ruqaa_digits.ttf` is a digit-only subset of the
-same `ArefRuqaa-Bold.woff2` (about 4.5KB), applied by `DigitSpans` to the ASCII runs `DigitRanges`
-finds, so the Arabic around a version or a size stays in IBM Plex. `formatPercent` formats with
-`Locale.ROOT` because `getString(id, args)` otherwise renders `%d` in Arabic-Indic digits on an Arabic
-phone.
+same `ArefRuqaa-Bold.woff2` (about 4.5KB), applied by `digitRunsOf` (`shell/DigitRuns.kt`) to the
+ASCII runs it finds, so the Arabic around a version or a size stays in IBM Plex. The percentage is
+written in ASCII before it reaches the string, because `getString(id, args)` otherwise renders a
+number in Arabic-Indic digits on an Arabic phone.
 
 Measured on the API 30 image — en-US locale, 320dp wide, shell at `20005`, a manifest at `20099`, and an
 APK served at 300KB/s so the bar stayed on screen:

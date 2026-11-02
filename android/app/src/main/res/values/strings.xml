@@ -33,6 +33,9 @@
          so the same characters read as a downgrade on half of the devices. -->
     <string name="shell_update_meta">تحديث من %1$s إلى %2$s</string>
     <string name="shell_update_size">%1$s م.ب</string>
+    <!-- The label above `latest.json`'s `notes`: the one sentence the release
+         train wrote for a user to read (ADR-0090). -->
+    <string name="shell_update_notes_label">ما الجديد</string>
     <string name="shell_update_failed_title">تعذَّر تنزيل التَّحديث</string>
     <string name="shell_update_retry">إعادة المحاولة</string>
 
@@ -42,11 +45,11 @@
       the system installer — which is what asks the last question.
     -->
     <string name="shell_update_downloading">جاري تنزيل التَّحديث…</string>
-    <!-- `%%` is a literal percent sign for `String.format`, so this renders as
-         «42%». Western digits, like every other number the app shows; the
-         formatter in `ShellUpdatePrompt.formatPercent` pins `Locale.ROOT` so an
-         Arabic-locale phone cannot turn it into Arabic-Indic digits. -->
-    <string name="shell_update_percent">%1$d%%</string>
+    <!-- `%1$s%%` rather than `%1$d%%`: `getString` formats a number with the
+         device locale, which turns a percentage into Arabic-Indic digits on an
+         Arabic phone. The caller passes the number already written in ASCII, so
+         only the literal `%%` and the surrounding words are the string's. -->
+    <string name="shell_update_percent">%1$s%%</string>
     <string name="shell_update_progress_size">%1$s من %2$s م.ب</string>
     <string name="shell_update_cancel">إلغاء</string>
     <!-- Said only after «إلغاء» has been tapped: the download stops at the next

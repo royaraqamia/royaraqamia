@@ -39,7 +39,7 @@ import java.util.Locale;
  * key the installed app was signed with, which is why `android:publish` refuses to
  * publish a key that `assetlinks.json` does not list.
  */
-final class ShellDownload {
+public final class ShellDownload {
 
     /**
      * Told how far the download has come, once per read.
@@ -51,13 +51,13 @@ final class ShellDownload {
      * finished sending them. Throwing from here unwinds `fetch` through its own
      * failure path, which is what deletes the partial file.
      */
-    interface Progress {
+    public interface Progress {
         void onProgress(long received, long total) throws IOException;
     }
 
     /** The download did not produce the file the manifest described. */
-    static final class VerificationFailed extends IOException {
-        VerificationFailed(String message) {
+    public static final class VerificationFailed extends IOException {
+        public VerificationFailed(String message) {
             super(message);
         }
     }
@@ -68,8 +68,8 @@ final class ShellDownload {
      * partial file is deleted by exactly the code that deletes it for a
      * truncated one — there is no second cleanup path to keep correct.
      */
-    static final class Cancelled extends IOException {
-        Cancelled(String message) {
+    public static final class Cancelled extends IOException {
+        public Cancelled(String message) {
             super(message);
         }
     }
@@ -90,7 +90,7 @@ final class ShellDownload {
      * leaves no file behind — nothing unverified is ever readable at `target`,
      * because the verified file only appears there by being renamed into place.
      */
-    static File fetch(
+    public static File fetch(
             String url, File target, long expectedBytes, String expectedSha256, Progress progress)
             throws IOException {
         final String expected = normalizeHash(expectedSha256);

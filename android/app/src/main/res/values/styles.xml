@@ -31,54 +31,6 @@
     </style>
 
     <!--
-      The shell's own dialogs (ADR-0054): the update offer, the download in
-      progress, and a failed download.
-
-      The parent is a bare `Theme.AppCompat.Dialog` rather than an alert style,
-      because the dialogs are not the platform's any more — the card, the
-      buttons and the bar are all drawables in this app, and every piece of
-      chrome the parent would draw (a title, a divider, a button panel) is
-      removed here and laid out in the layouts instead.
-
-      The width is set from code rather than by `windowMinWidthMajor`/`Minor`,
-      which are *fractions of the screen*: on a tablet the platform default of
-      65% is a card most of a metre wide. The layout wants a fixed 24dp gutter
-      and a readable maximum, so `ShellUpdatePrompt` sets the window's layout to
-      the smaller of the screen less that gutter and 400dp. The two minimums
-      below are lowered anyway, to 40%, so that the platform's measurement can
-      never ask for more than the code did.
-    -->
-    <style name="Theme.Royaraqamia.Dialog" parent="Theme.AppCompat.Dialog">
-        <item name="android:windowBackground">@drawable/roy_dialog_background</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowMinWidthMajor">40%</item>
-        <item name="android:windowMinWidthMinor">40%</item>
-        <item name="android:windowAnimationStyle">@style/RoyaraqamiaDialogAnimation</item>
-        <!-- `bg-black/70` — the scrim the site's own dialogs use. -->
-        <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:backgroundDimAmount">0.70</item>
-        <!-- Nothing here is a themed widget, but the accent is set so that
-             anything added later agrees with the brand by default. -->
-        <item name="colorPrimary">@color/roy_primary</item>
-        <item name="colorAccent">@color/roy_primary</item>
-        <item name="colorControlHighlight">@color/roy_ripple_on_surface</item>
-    </style>
-
-    <!--
-      The site's dialog motion, in the platform's terms: `zoom-in-95` and
-      `fade-in-0` over 200ms with a fast-out-slow-in curve. Not a decoration —
-      a dialog that appears without a frame of movement reads as a rendering
-      glitch on a phone that animates everything else.
-    -->
-    <style name="RoyaraqamiaDialogAnimation">
-        <item name="android:windowEnterAnimation">@anim/roy_dialog_in</item>
-        <item name="android:windowExitAnimation">@anim/roy_dialog_out</item>
-    </style>
-
-    <!--
       The launch theme is the whole splash: one theme, read by the platform on
       Android 12+ and by `androidx.core:core-splashscreen` below it (which the
       launcher, `ShellActivity`, installs), so every Android version draws the same

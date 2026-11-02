@@ -19,7 +19,9 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginLoadException;
 import com.getcapacitor.PluginManager;
 import com.getcapacitor.WebViewListener;
+import com.royaraqamia.app.shell.ShellActivity;
 import com.royaraqamia.app.sync.SyncScheduler;
+import com.royaraqamia.app.update.ShellUpdateChannel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,8 +67,6 @@ public class MainActivity extends BridgeActivity {
      */
     private static final String LAUNCH_TAG = "RoyLaunch";
 
-    private ShellUpdatePrompt shellUpdate;
-
     /** The launch skeleton, or null once it has been released. */
     private View skeleton;
     /** Whether the skeleton has started leaving; both release paths share it. */
@@ -89,13 +89,10 @@ public class MainActivity extends BridgeActivity {
         installWebViewSettings(getBridge());
         installLaunchSkeleton();
         openFromIntent(getIntent(), false);
-        // Both of these need the bridge, so they run after Capacitor has created
-        // it: the shell's version for the page to read, and the update check that
-        // may end in a prompt.
+        // The page reads the shell's version, and the `426` route below needs the
+        // bridge that Capacitor has just created.
         announceShellVersion();
-        shellUpdate = new ShellUpdatePrompt(this, getBridge() != null ? getBridge().getServerUrl() : null);
         installUpdateBridge(getBridge());
-        shellUpdate.maybeCheck(true);
         // The background drain (ADR-0059): the page signals through the bridge
         // when a flush leaves work behind, and the periodic floor covers what the
         // signal cannot — a shell that was killed before it could ask.
@@ -354,17 +351,33 @@ public class MainActivity extends BridgeActivity {
      * Exposes `RoyShellUpdate.required()` to the page (#503).
      *
      * An owned API below the supported floor answers `426`; the page's transport
-     * cannot show a native dialog, so it passes the floor here. Like the sync
-     * bridge, this is a plain WebView interface rather than a Capacitor plugin,
-     * because the plugin bridge is exactly what this path cannot assume.
+     * cannot reach native code, so it passes the floor here. Like the sync bridge,
+     * this is a plain WebView interface rather than a Capacitor plugin, because the
+     * plugin bridge is exactly what this path cannot assume.
+     *
+     * The card itself is the shell's (#652, ADR-0114), so this does not draw
+     * anything: it publishes the floor and brings the shell forward, which finishes
+     * this document on the way. A build below the floor has no usable route here —
+     * every owned one answers `426` — so leaving the user on a document that
+     * refuses everything is the one answer that makes no sense.
      */
     private void installUpdateBridge(@Nullable Bridge bridge) {
         WebView webView = bridge != null ? bridge.getWebView() : null;
-        if (webView == null || shellUpdate == null) return;
+        if (webView == null) return;
 
         webView.addJavascriptInterface(
-            new ShellUpdateBridge(shellUpdate::requireUpdate),
+            new ShellUpdateBridge(this::requireUpdate),
             ShellUpdateBridge.NAME
+        );
+    }
+
+    /** Publishes the floor the page was told, and returns to the card that draws it. */
+    private void requireUpdate(int minimumVersionCode) {
+        if (minimumVersionCode <= 0) return;
+        ShellUpdateChannel.require(minimumVersionCode);
+        startActivity(
+            new Intent(this, ShellActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP)
         );
     }
 
@@ -404,21 +417,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        // A shell that was in the background for a day should have another look;
-        // `ShellUpdatePrompt` throttles this to once every few hours. The second
-        // call lets an install that was waiting on a permission continue, which is
-        // the state the user returns in after granting it.
-        if (shellUpdate != null) {
-            shellUpdate.maybeCheck(false);
-            shellUpdate.resume();
-        }
-    }
-
-    @Override
     public void onDestroy() {
-        if (shellUpdate != null) shellUpdate.shutdown();
         // The ceiling is posted on the skeleton itself; an activity that finishes
         // inside those 2.5 seconds would otherwise keep it, and the callback with
         // it, alive until the delay expired.

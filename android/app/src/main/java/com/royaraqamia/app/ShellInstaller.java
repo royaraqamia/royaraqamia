@@ -22,7 +22,7 @@ import java.io.IOException;
  * packages at all yet — send the user to the one setting that changes that. From
  * Android 8 that switch is per app, and only the user can flip it.
  */
-final class ShellInstaller {
+public final class ShellInstaller {
 
     private static final String TAG = "ShellUpdater";
     private static final String PACKAGE_ARCHIVE = "application/vnd.android.package-archive";
@@ -40,7 +40,7 @@ final class ShellInstaller {
     private ShellInstaller() {}
 
     /** Downloads and verifies the APK the manifest describes. */
-    static File fetch(Activity activity, ShellUpdate.Status status, ShellDownload.Progress progress)
+    public static File fetch(Activity activity, ShellUpdate.Status status, ShellDownload.Progress progress)
             throws IOException {
         File target = target(activity, status.latestCode);
         File directory = target.getParentFile();
@@ -63,12 +63,12 @@ final class ShellInstaller {
      * that it was a single global switch this app cannot read, so the install is
      * not blocked by us.
      */
-    static boolean canInstall(Activity activity) {
+    public static boolean canInstall(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true;
         return activity.getPackageManager().canRequestPackageInstalls();
     }
 
-    static void requestPermission(Activity activity) {
+    public static void requestPermission(Activity activity) {
         Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
                 .setData(Uri.parse("package:" + activity.getPackageName()));
         try {
@@ -89,7 +89,7 @@ final class ShellInstaller {
 
     /** Opens the system installer on the APK. */
     @SuppressWarnings("deprecation") // ACTION_INSTALL_PACKAGE is the fallback below Android 8.
-    static void offer(Activity activity, File apk) throws IOException {
+    public static void offer(Activity activity, File apk) throws IOException {
         Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileprovider", apk);
         Intent intent = new Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, PACKAGE_ARCHIVE)

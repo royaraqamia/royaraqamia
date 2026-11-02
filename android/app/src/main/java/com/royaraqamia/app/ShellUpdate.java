@@ -20,8 +20,8 @@ import java.util.Locale;
  * site does, while the installed APK never moves on its own. What the shell can
  * know is whether a newer APK exists: this reads `public/android/latest.json`
  * from the same origin the shell loads, compares its `versionCode` with the
- * installed one, and hands the answer to {@link ShellUpdatePrompt}, which asks
- * the user and — since ADR-0044 — installs it.
+ * installed one, and hands the answer to the app's update channel, which asks the
+ * user and — since ADR-0044 — installs it (#652, ADR-0114).
  *
  * Everything here is deliberately pure and blocking-free at the edges — parsing,
  * the URL it fetches, the comparison, and which URLs may be trusted — so it can
@@ -29,30 +29,30 @@ import java.util.Locale;
  * a WebView. Only {@link #check} touches the network, and its caller does that off
  * the main thread.
  */
-final class ShellUpdate {
+public final class ShellUpdate {
 
     /** Where the manifest lives, relative to the origin the shell loads. */
-    static final String MANIFEST_PATH = "/android/latest.json";
+    public static final String MANIFEST_PATH = "/android/latest.json";
     /** How the shell names itself in the WebView's user agent (ADR-0043). */
-    static final String USER_AGENT_TOKEN = "RoyaraqamiaShell";
+    public static final String USER_AGENT_TOKEN = "RoyaraqamiaShell";
     private static final int TIMEOUT_MS = 10_000;
 
     private ShellUpdate() {}
 
-    static final class Status {
-        final int installedCode;
-        final int latestCode;
-        final int minSupportedCode;
-        final String versionName;
-        final String apkUrl;
+    public static final class Status {
+        public final int installedCode;
+        public final int latestCode;
+        public final int minSupportedCode;
+        public final String versionName;
+        public final String apkUrl;
         /** What the published APK must hash to, and how big it is. */
-        final String sha256;
-        final long sizeBytes;
-        final String notes;
+        public final String sha256;
+        public final long sizeBytes;
+        public final String notes;
         /** Percentage of devices this release is offered to; 100 means everyone. */
-        final int rollout;
+        public final int rollout;
         /** Whether this device is inside the staged rollout for this release. */
-        final boolean rolloutEligible;
+        public final boolean rolloutEligible;
 
         Status(
                 int installedCode,
@@ -82,12 +82,12 @@ final class ShellUpdate {
          * the release's rollout cohort. A floor is absolute and does not wait for
          * a percentage: {@link #unsupported()} is the reason it cannot be declined.
          */
-        boolean updatePending() {
+        public boolean updatePending() {
             return latestCode > installedCode && rolloutEligible;
         }
 
         /** The installed shell is too old for the current site (nothing to decline). */
-        boolean unsupported() {
+        public boolean unsupported() {
             return minSupportedCode > installedCode;
         }
 
@@ -96,7 +96,7 @@ final class ShellUpdate {
          * before the manifest names the new floor; the app still has to show the
          * blocking card rather than a dismissable offer.
          */
-        Status withMinimumSupportedCode(int floor) {
+        public Status withMinimumSupportedCode(int floor) {
             int merged = Math.max(minSupportedCode, floor);
             return new Status(
                     installedCode,
@@ -112,7 +112,7 @@ final class ShellUpdate {
         }
     }
 
-    static Status idle(int installedCode) {
+    public static Status idle(int installedCode) {
         return new Status(installedCode, installedCode, 0, "", "", "", 0, "", 100, true);
     }
 
@@ -125,7 +125,7 @@ final class ShellUpdate {
      * same origin: two spellings of "our origin" would be two chances to disagree
      * about which site this shell talks to.
      */
-    static String manifestUrl(String serverUrl) {
+    public static String manifestUrl(String serverUrl) {
         return ShellServer.pageUrl(serverUrl, MANIFEST_PATH);
     }
 
@@ -139,7 +139,7 @@ final class ShellUpdate {
      * an editor on Windows, and failing on it would take the whole channel down
      * silently — the manifest would look unreadable forever, on every device.
      */
-    static Status parse(String json, int installedCode) throws JSONException {
+    public static Status parse(String json, int installedCode) throws JSONException {
         return parse(json, installedCode, "");
     }
 
@@ -149,7 +149,7 @@ final class ShellUpdate {
      * same device gets the same answer for the same release, while a later release
      * is a fresh cohort.
      */
-    static Status parse(String json, int installedCode, String deviceSeed) throws JSONException {
+    public static Status parse(String json, int installedCode, String deviceSeed) throws JSONException {
         JSONObject manifest = new JSONObject(json.replace("\uFEFF", ""));
         int latestCode = manifest.optInt("versionCode", 0);
         int rollout = rolloutOf(manifest);
@@ -187,7 +187,7 @@ final class ShellUpdate {
      * device seed and the release counter — no clock, no random source, and a new
      * release reshuffles the cohort.
      */
-    static int rolloutBucket(String deviceSeed, int versionCode) {
+    public static int rolloutBucket(String deviceSeed, int versionCode) {
         String key = (deviceSeed == null ? "" : deviceSeed) + ":" + versionCode;
         long hash = 0x811c9dc5L;
         for (int index = 0; index < key.length(); index++) {
@@ -198,7 +198,7 @@ final class ShellUpdate {
     }
 
     /** Whether a release at this percentage includes this device. */
-    static boolean isRolledOut(String deviceSeed, int versionCode, int rollout) {
+    public static boolean isRolledOut(String deviceSeed, int versionCode, int rollout) {
         if (rollout >= 100) return true;
         if (rollout <= 0) return false;
         return rolloutBucket(deviceSeed, versionCode) < rollout;
@@ -220,7 +220,7 @@ final class ShellUpdate {
      * attribute, and this check refuses http in a release build in any case. A
      * release build never allows it.
      */
-    static boolean isAllowedUpdateUrl(String url, boolean debug) {
+    public static boolean isAllowedUpdateUrl(String url, boolean debug) {
         if (url == null || url.isEmpty()) return false;
         try {
             URL parsed = new URL(url);
@@ -241,12 +241,12 @@ final class ShellUpdate {
     }
 
     /** Fetches the manifest and compares it with the installed shell. */
-    static Status check(String manifestUrl, int installedCode) throws IOException, JSONException {
+    public static Status check(String manifestUrl, int installedCode) throws IOException, JSONException {
         return check(manifestUrl, installedCode, "");
     }
 
     /** Fetches the manifest and places this device in its optional rollout. */
-    static Status check(String manifestUrl, int installedCode, String deviceSeed)
+    public static Status check(String manifestUrl, int installedCode, String deviceSeed)
             throws IOException, JSONException {
         HttpURLConnection connection = null;
         try {
@@ -287,7 +287,7 @@ final class ShellUpdate {
      * is noise in a sentence about how big a download is, and a size that never
      * carries one is the exception, not the rule.
      */
-    static String formatSize(long bytes) {
+    public static String formatSize(long bytes) {
         String mebibytes = String.format(Locale.ROOT, "%.1f", Math.max(0L, bytes) / 1024.0 / 1024.0);
         return mebibytes.endsWith(".0")
                 ? mebibytes.substring(0, mebibytes.length() - 2)

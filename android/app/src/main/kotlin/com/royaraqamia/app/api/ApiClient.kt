@@ -7,6 +7,8 @@ import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.net.HttpTransport
 import com.royaraqamia.app.net.Transport
 import com.royaraqamia.app.session.Session
+import com.royaraqamia.app.update.ShellUpdateChannel
+import com.royaraqamia.app.update.ShellUpdateRequired
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
@@ -124,6 +126,14 @@ class ApiClient(
         }
 
         if (answered.status !in 200..299) {
+            // A build below the site's floor is answered `426` with the floor in
+            // the body (#652). The card that installs a newer APK is the shell's,
+            // not a screen's, so the number is published to it rather than turned
+            // into an error no screen can act on — and the caller still gets the
+            // failure, because the request itself did fail.
+            if (answered.status == ShellUpdateRequired.STATUS) {
+                ShellUpdateChannel.require(ShellUpdateRequired.floorOf(answered.body))
+            }
             return ApiResult.Failure(
                 ApiError.Server(answered.status, answered.body.take(MAX_DETAIL))
             )
