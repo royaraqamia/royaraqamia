@@ -365,6 +365,32 @@ export class SupabaseUsageRepository implements UsageRepository {
             .eq('user_id', userId)
             .is('deleted_at', null)
         );
+      case 'chat_groups': {
+        // A group is owned until its creator leaves it, and `created_by` never
+        // changes — so the slot is the conversation minus the rosters where the
+        // creator's own row went `left` (leaving is the exit; nothing is
+        // hard-deleted). Two reads, on a pre-check that only runs on a create
+        // and is bounded by the 20-group Pro cap.
+        const { data: created, error } = await this.supabase
+          .from('chat_conversations')
+          .select('id')
+          .eq('kind', 'group')
+          .eq('created_by', userId);
+
+        if (error) throw error;
+        const ids = (created ?? []).map((row) => row.id);
+        if (ids.length === 0) return 0;
+
+        const { data: left, error: leftError } = await this.supabase
+          .from('chat_participants')
+          .select('conversation_id')
+          .eq('user_id', userId)
+          .eq('status', 'left')
+          .in('conversation_id', ids);
+
+        if (leftError) throw leftError;
+        return ids.length - new Set((left ?? []).map((row) => row.conversation_id)).size;
+      }
       case 'mcp_connected_apps': {
         // One grant may hold an access and a refresh row for the same app, so the
         // cap counts the app, not the token.

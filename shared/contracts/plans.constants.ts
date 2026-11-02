@@ -31,6 +31,7 @@ export const OWNED_ITEMS = {
   communityCategories: 'community_categories',
   quranBookmarks: 'quran_bookmarks',
   notes: 'notes',
+  chatGroups: 'chat_groups',
   mcpConnectedApps: 'mcp_connected_apps',
 } as const;
 
@@ -134,6 +135,7 @@ export const VISITOR_ITEM_CAPS: Record<OwnedItemKey, number> = {
   community_tags: 0,
   community_categories: 0,
   mcp_connected_apps: 0,
+  chat_groups: 0,
 };
 
 /** The quota keys the code names; the numbers live in `plan_quotas`. */

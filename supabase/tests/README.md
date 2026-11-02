@@ -102,6 +102,17 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
   close a thread, including one whose rows are `left`.
 - A client cannot DELETE a roster row.
 
+`chat_groups_test.sql` (#814, ADR-0113):
+
+- The owned-item cap: three groups are allowed on Free, a fourth raises `PL001`, and a direct thread
+  opened while at the cap is not refused — a group is the only kind that takes a group slot.
+- Leaving is the exit that frees the slot: a `left` roster row drops the count back, and the freed
+  slot accepts the next group.
+- The member ceiling: thirty-two live roster rows fit in a group, the thirty-third invite raises
+  `CH001`, and a declined row frees the seat the next invite takes.
+- A member cannot add somebody else as `active`, a non-member cannot invite at all, and a
+  non-member reads no roster row.
+
 `chat_attachments_test.sql` (#815, ADR-0113):
 
 - A row whose `storage_path` names another conversation, or skips the thread folder, is refused
@@ -211,6 +222,11 @@ file runs.
 `chat_direct_key_test.sql` (#841) is unrun too, and it seeds with the status trigger live instead of
 `replica`, so the trigger writes the keys the file is about: if `plan(17)` and the run disagree, the
 fixture order (two rows before the first assertion) is the place to look first.
+
+`chat_groups_test.sql` (#814) is unrun for the same reason. The parts most likely to need a first-run
+adjustment are the `generate_series` user fixtures (a `users` column the local stack fills that this
+file does not) and the thirty-row invite loop, which relies on the advisory lock being transaction
+scoped.
 
 ## Worth adding next
 

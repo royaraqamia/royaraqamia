@@ -7,6 +7,7 @@ const api = vi.hoisted(() => ({
   editChatMessage: vi.fn(),
   getChatMessages: vi.fn(),
   getChatThread: vi.fn(),
+  inviteChatMembers: vi.fn(),
   markChatRead: vi.fn(),
   requestChatThread: vi.fn(),
   respondToChat: vi.fn(),
@@ -26,6 +27,7 @@ vi.mock('@/frontend/api/chats', () => ({
   editChatMessage: api.editChatMessage,
   getChatMessages: api.getChatMessages,
   getChatThread: api.getChatThread,
+  inviteChatMembers: api.inviteChatMembers,
   markChatRead: api.markChatRead,
   requestChatThread: api.requestChatThread,
   respondToChat: api.respondToChat,
@@ -71,6 +73,7 @@ describe('useChatThread refused writes', () => {
     api.editChatMessage.mockReset();
     api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
     api.getChatThread.mockReset().mockResolvedValue(null);
+    api.inviteChatMembers.mockReset();
     api.markChatRead.mockReset().mockResolvedValue(undefined);
     api.requestChatThread.mockReset();
     api.respondToChat.mockReset();
@@ -122,5 +125,45 @@ describe('useChatThread refused writes', () => {
     });
 
     expect(captured!.error).toBe('تعذّر تعديل الرسالة');
+  });
+});
+
+/**
+ * An invite is a roster write: a group that refused it must say so, and one that
+ * accepted it must redraw the roster — the screen derives from the thread.
+ */
+describe('useChatThread invite', () => {
+  beforeEach(() => {
+    captured = null;
+    api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
+    api.getChatThread.mockReset().mockResolvedValue(null);
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+    api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
+    api.inviteChatMembers.mockReset();
+  });
+
+  it('answers a full group with its sentence', async () => {
+    api.inviteChatMembers.mockResolvedValue({
+      success: false,
+      error: 'بلغت المجموعة الحد الأقصى: 32 عضواً',
+    });
+    const state = await renderThread();
+    const before = api.getChatThread.mock.calls.length;
+
+    await act(async () => {
+      await expect(state.invite(['peer-2'])).resolves.toBe('بلغت المجموعة الحد الأقصى: 32 عضواً');
+    });
+
+    expect(api.inviteChatMembers).toHaveBeenCalledWith('c-1', ['peer-2']);
+    expect(api.getChatThread.mock.calls.length).toBe(before + 1);
+  });
+
+  it('answers a rejected invite with the fallback sentence', async () => {
+    api.inviteChatMembers.mockRejectedValue(new Error(''));
+    const state = await renderThread();
+
+    await act(async () => {
+      await expect(state.invite(['peer-2'])).resolves.toBe('تعذّرت دعوة الأعضاء');
+    });
   });
 });

@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { ChatService, ChatError, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
-import type { ChatRepository } from '@/backend/repositories/chat/chat-repository';
+import {
+  ChatThreadFullError,
+  type ChatRepository,
+} from '@/backend/repositories/chat/chat-repository';
 import type { PublicUser } from '@/shared/contracts/users';
 
 const me = '5f0f3c62-6a37-4a0b-9f0e-2b4c8f7a1d33';
@@ -241,6 +244,151 @@ describe('ChatService.startDirect', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: peerId, metadata: { conversationId: 'c-withdrawn' } })
     );
+  });
+});
+
+describe('ChatService.startGroup', () => {
+  const groupRow = {
+    id: 'g-1',
+    kind: 'group',
+    title: 'فريق التصميم',
+    status: 'active',
+    createdBy: me,
+    lastMessageAt: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+  };
+
+  it('opens the group on its creator and invites everyone else', async () => {
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => groupRow),
+    });
+
+    await expect(
+      service.startGroup(me, { title: 'فريق التصميم', memberIds: [peerId] })
+    ).resolves.toEqual({ conversationId: 'g-1' });
+
+    expect(repository.createConversation).toHaveBeenCalledWith({
+      kind: 'group',
+      title: 'فريق التصميم',
+      createdBy: me,
+      status: 'active',
+    });
+    expect(repository.addParticipant).toHaveBeenNthCalledWith(1, {
+      conversationId: 'g-1',
+      userId: me,
+      role: 'owner',
+      status: 'active',
+    });
+    expect(repository.addParticipant).toHaveBeenNthCalledWith(2, {
+      conversationId: 'g-1',
+      userId: peerId,
+      status: 'invited',
+      invitedBy: me,
+    });
+  });
+
+  it('drops the creator and repeated ids before writing', async () => {
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => groupRow),
+    });
+
+    await service.startGroup(me, { title: 'فريق التصميم', memberIds: [me, peerId, peerId] });
+
+    // The creator's own row, then one invite — not three writes.
+    expect(repository.addParticipant).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses a group with nobody else in it', async () => {
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => groupRow),
+    });
+
+    await expect(service.startGroup(me, { title: 'فريق', memberIds: [me] })).rejects.toMatchObject({
+      status: 400,
+    });
+    expect(repository.createConversation).not.toHaveBeenCalled();
+  });
+
+  it('refuses a member the directory does not verify', async () => {
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => groupRow),
+    });
+
+    await expect(
+      service.startGroup(me, {
+        title: 'فريق',
+        memberIds: ['9c2a7c1e-1f2b-4a3c-8d4e-5f6a7b8c9d0e'],
+      })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.createConversation).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatService.addMembers', () => {
+  const group = {
+    id: 'g-1',
+    kind: 'group',
+    title: 'فريق التصميم',
+    status: 'active',
+    createdBy: me,
+    lastMessageAt: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+  };
+
+  const participant = (userId: string, status: string) => ({
+    conversationId: 'g-1',
+    userId,
+    role: userId === me ? 'owner' : 'member',
+    status,
+    lastReadAt: null,
+    joinedAt: null,
+  });
+
+  it('invites only the ids that are not in the roster already', async () => {
+    const { repository, service } = makeRepository({
+      findConversation: vi.fn(async () => group),
+      findParticipants: vi.fn(async () => [
+        participant(me, 'active'),
+        participant(peerId, 'active'),
+      ]),
+    });
+
+    await expect(service.addMembers(me, 'g-1', [peerId])).rejects.toMatchObject({ status: 409 });
+    expect(repository.addParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a caller who is not an active member', async () => {
+    const { repository, service } = makeRepository({
+      findConversation: vi.fn(async () => group),
+      findParticipants: vi.fn(async () => [participant(me, 'invited')]),
+    });
+
+    await expect(service.addMembers(me, 'g-1', [peerId])).rejects.toMatchObject({ status: 403 });
+    expect(repository.addParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a thread that is not a group', async () => {
+    const { repository, service } = makeRepository({
+      findConversation: vi.fn(async () => ({ ...group, kind: 'direct' })),
+    });
+
+    await expect(service.addMembers(me, 'g-1', [peerId])).rejects.toMatchObject({ status: 404 });
+    expect(repository.addParticipant).not.toHaveBeenCalled();
+  });
+
+  it('names a full room instead of a server failure', async () => {
+    const { service } = makeRepository({
+      findConversation: vi.fn(async () => group),
+      findParticipants: vi.fn(async () => [participant(me, 'active')]),
+      addParticipant: vi.fn(async () => {
+        throw new ChatThreadFullError();
+      }),
+    });
+
+    await expect(service.addMembers(me, 'g-1', [peerId])).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringContaining('32'),
+    });
   });
 });
 
@@ -921,5 +1069,63 @@ describe('ChatService.listThreads', () => {
       lastMessage: { body: 'كيف حالك؟', hasAttachments: false },
     });
     expect(thread?.counterpart?.username).toBe('sara');
+  });
+
+  it('draws a group by its title and never as a member’s face', async () => {
+    const { service } = makeRepository({
+      listThreads: vi.fn(async () => [
+        {
+          id: 'g-1',
+          kind: 'group',
+          title: 'فريق التصميم',
+          status: 'active',
+          createdAt: '2026-11-01T10:00:00.000Z',
+          lastMessageAt: null,
+          unreadCount: 0,
+          lastMessageBody: null,
+          lastMessageSenderKind: null,
+          lastMessageCreatedAt: null,
+          lastMessageHasAttachments: false,
+          // The list read orders a member first; a group must not wear them.
+          counterpartId: peerId,
+          myStatus: 'active',
+          myRole: 'owner',
+          myLastReadAt: null,
+        },
+      ]),
+    });
+
+    const [thread] = await service.listThreads(me);
+
+    expect(thread).toMatchObject({ title: 'فريق التصميم', counterpart: null });
+  });
+
+  it('drops a declined group invite, which is a dead row the member never joined', async () => {
+    const row = (kind: 'direct' | 'group', myStatus: string) => ({
+      id: `${kind}-1`,
+      kind,
+      title: kind === 'group' ? 'فريق' : null,
+      status: kind === 'group' ? 'active' : 'declined',
+      createdAt: '2026-11-01T10:00:00.000Z',
+      lastMessageAt: null,
+      unreadCount: 0,
+      lastMessageBody: null,
+      lastMessageSenderKind: null,
+      lastMessageCreatedAt: null,
+      lastMessageHasAttachments: false,
+      counterpartId: kind === 'direct' ? peerId : null,
+      myStatus,
+      myRole: 'member',
+      myLastReadAt: null,
+    });
+
+    const { service } = makeRepository({
+      listThreads: vi.fn(async () => [row('group', 'declined'), row('direct', 'declined')]),
+    });
+
+    const threads = await service.listThreads(me);
+
+    // The direct row stays: its own thread is closed and the surface says so.
+    expect(threads.map((thread) => thread.id)).toEqual(['direct-1']);
   });
 });

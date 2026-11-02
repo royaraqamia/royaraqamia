@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Check, Download, MoreVertical, Paperclip, Pencil, Send, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  Download,
+  MoreVertical,
+  Paperclip,
+  Pencil,
+  Send,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
 import { useSession } from '@/frontend/state/session-provider';
@@ -16,10 +27,13 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
+import { MemberPicker } from './member-picker';
 import {
   canEditChatMessage,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
+  CHAT_GROUP_MEMBERS_MAX,
   type ChatMessage,
+  type ChatPeer,
   type ChatThread,
 } from '@/shared/contracts/chat';
 
@@ -54,6 +68,13 @@ function counterpartOf(thread: ChatThread) {
   return thread.participants.find((participant) => participant.userId !== meId)?.peer ?? null;
 }
 
+/** What a waiting answer says: a direct request, or a group invitation. */
+function inviteNote(thread: ChatThread): string {
+  return thread.kind === 'group'
+    ? `دُعيت إلى المجموعة «${thread.title}»، اقبل للانضمام إليها.`
+    : `${thread.title} يريد بدء محادثة معك.`;
+}
+
 /**
  * `/chats/[id]`: one thread, drawn from the same contract the tab's rows come
  * from, so a member reads the same title and the same last line in both places.
@@ -74,11 +95,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     withdraw,
     request,
     unblock,
+    invite,
   } = useChatThread(conversationId);
   const { user } = useSession();
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -196,12 +219,18 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const dialogs: Record<Confirm['kind'], { title: string; message: string; label: string }> = {
     accept: {
       title: 'قبول المحادثة',
-      message: `ستتمكّن أنت و${thread.title} من إرسال الرسائل بعد القبول.`,
+      message:
+        thread.kind === 'group'
+          ? `ستنضمّ إلى «${thread.title}» وترى رسائلها بعد القبول.`
+          : `ستتمكّن أنت و${thread.title} من إرسال الرسائل بعد القبول.`,
       label: 'قبول',
     },
     decline: {
       title: 'رفض المحادثة',
-      message: 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.',
+      message:
+        thread.kind === 'group'
+          ? 'سيُرفض الانضمام، ولن تظهر لك رسائل هذه المجموعة.'
+          : 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.',
       label: 'رفض',
     },
     withdraw: {
@@ -246,6 +275,20 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           setConfirm({ kind: 'leave' });
         }}
       />
+
+      {thread.kind === 'group' && (
+        <GroupRoster
+          thread={thread}
+          inviting={inviting}
+          onStartInviting={() => setInviting(true)}
+          onStopInviting={() => setInviting(false)}
+          onInvite={async (memberIds) => {
+            const refused = await invite(memberIds);
+            setNotice(refused);
+            if (!refused) setInviting(false);
+          }}
+        />
+      )}
 
       {(notice || error) && (
         <p
@@ -409,13 +452,23 @@ function ThreadHeader({
 }) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      {counterpart && (
-        <MemberAvatar
-          name={counterpart.name ?? counterpart.username}
-          avatarUrl={counterpart.avatarUrl}
-          size="sm"
-          ring={false}
-        />
+      {thread.kind === 'group' ? (
+        // A group is a room, not one member's face: the roster below names who.
+        <span
+          aria-hidden
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80"
+        >
+          <Users size={16} />
+        </span>
+      ) : (
+        counterpart && (
+          <MemberAvatar
+            name={counterpart.name ?? counterpart.username}
+            avatarUrl={counterpart.avatarUrl}
+            size="sm"
+            ring={false}
+          />
+        )
       )}
 
       <div className="min-w-0 flex-1">
@@ -423,7 +476,7 @@ function ThreadHeader({
         <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
           {thread.kind === 'direct' && counterpart
             ? `@${counterpart.username}`
-            : `${thread.participants.length} أعضاء`}
+            : `${threadMembers(thread).length} أعضاء`}
         </p>
       </div>
 
@@ -473,6 +526,154 @@ function ThreadHeader({
   );
 }
 
+/** The members who hold a seat: active, or invited and not yet answered. */
+function threadMembers(thread: ChatThread): ChatThread['participants'] {
+  return thread.participants.filter(
+    (participant) => participant.status === 'active' || participant.status === 'invited'
+  );
+}
+
+/**
+ * A group's roster, drawn from the thread the screen already loaded — the same
+ * rows the receipts will read, never a second query.
+ *
+ * The invite panel is the tab's own member search with several answers; only an
+ * active member may invite, which is the rule the insert policy asks as well, so
+ * a non-member's click is refused by the database rather than by this screen.
+ */
+function GroupRoster({
+  thread,
+  inviting,
+  onStartInviting,
+  onStopInviting,
+  onInvite,
+}: {
+  thread: ChatThread;
+  inviting: boolean;
+  onStartInviting: () => void;
+  onStopInviting: () => void;
+  onInvite: (memberIds: string[]) => Promise<void>;
+}) {
+  const [selected, setSelected] = useState<ChatPeer[]>([]);
+  const [busy, setBusy] = useState(false);
+  const members = threadMembers(thread);
+  const canInvite = thread.me?.status === 'active';
+
+  function toggle(peer: ChatPeer) {
+    setSelected((current) =>
+      current.some((member) => member.id === peer.id)
+        ? current.filter((member) => member.id !== peer.id)
+        : [...current, peer]
+    );
+  }
+
+  async function submit() {
+    if (busy || selected.length === 0) return;
+    setBusy(true);
+    try {
+      await onInvite(selected.map((member) => member.id));
+      setSelected([]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-label="أعضاء المجموعة" className="border-b border-border/40 px-3 py-2">
+      <ul className="flex items-center gap-1.5 overflow-x-auto">
+        {members.map((participant) => {
+          const name = participant.peer?.name ?? participant.peer?.username ?? 'عضو';
+
+          return (
+            <li
+              key={participant.userId}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 py-1 pe-2 ps-1"
+            >
+              <MemberAvatar
+                name={name}
+                avatarUrl={participant.peer?.avatarUrl ?? null}
+                size="xs"
+                ring={false}
+              />
+              <span className="max-w-28 truncate text-[11px] font-medium text-foreground/80">
+                {name}
+              </span>
+              {participant.role === 'owner' && (
+                <span className="text-[10px] text-muted-foreground/70">مالك</span>
+              )}
+              {participant.status === 'invited' && (
+                <span className="text-[10px] text-muted-foreground/70">بانتظار القبول</span>
+              )}
+            </li>
+          );
+        })}
+
+        {canInvite && (
+          <li className="shrink-0">
+            <button
+              type="button"
+              onClick={onStartInviting}
+              aria-label="إضافة أعضاء"
+              aria-expanded={inviting}
+              className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-bold text-primary transition-safe hover:bg-primary/10"
+            >
+              <UserPlus size={13} />
+              إضافة
+            </button>
+          </li>
+        )}
+      </ul>
+
+      {inviting && (
+        <div className="mt-2 rounded-xl border border-border/60 bg-background/60 p-2">
+          <MemberPicker
+            multiple
+            selected={selected}
+            onToggle={toggle}
+            onClose={onStopInviting}
+            excludeIds={thread.participants.map((participant) => participant.userId)}
+          />
+
+          {selected.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="المدعوون">
+              {selected.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex max-w-56 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
+                >
+                  <span className="truncate">{member.name ?? member.username}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggle(member)}
+                    aria-label={`إزالة ${member.name ?? member.username}`}
+                    className="shrink-0 rounded p-0.5 hover:text-destructive"
+                  >
+                    <X size={11} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] text-muted-foreground/70">
+              {members.length} من {CHAT_GROUP_MEMBERS_MAX} عضواً
+            </p>
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={busy || selected.length === 0}
+              className="rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
+            >
+              {busy ? 'جاري الدعوة...' : 'دعوة'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** The empty thread: who this is, and what can happen next. */
 function ThreadIntro({
   thread,
@@ -485,7 +686,7 @@ function ThreadIntro({
 }) {
   const note =
     state === 'answer'
-      ? `${thread.title} يريد بدء محادثة معك.`
+      ? inviteNote(thread)
       : state === 'waiting'
         ? 'بانتظار موافقة الطرف الآخر على طلبك.'
         : state === 'closed'
@@ -650,9 +851,7 @@ function ThreadFooter({
   if (state === 'answer') {
     return (
       <div className="space-y-2 border-t border-border/40 p-3">
-        <p className="text-center text-xs text-muted-foreground">
-          {thread.title} يريد بدء محادثة معك.
-        </p>
+        <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
           <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
             قبول

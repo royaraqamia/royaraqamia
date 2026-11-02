@@ -1,4 +1,5 @@
 import {
+  ChatThreadFullError,
   DirectThreadExistsError,
   directPairKey,
   type ChatRepository,
@@ -143,32 +144,45 @@ export class ChatService {
       rows.map((row) => row.counterpartId).filter((id): id is string => Boolean(id))
     );
 
-    return rows.map((row) => {
-      const counterpart = row.counterpartId ? toPeer(peers.get(row.counterpartId)) : null;
-      return {
-        id: row.id,
-        kind: row.kind as ChatConversationSummary['kind'],
-        status: row.status as ChatConversationSummary['status'],
-        title: chatTitle({
-          kind: row.kind as ChatConversationSummary['kind'],
-          title: row.title,
-          counterpart,
-        }),
-        counterpart,
-        myStatus: row.myStatus as ChatParticipantStatus,
-        lastMessage: row.lastMessageCreatedAt
-          ? {
-              body: row.lastMessageBody,
-              senderKind: row.lastMessageSenderKind ?? 'user',
-              createdAt: row.lastMessageCreatedAt,
-              hasAttachments: row.lastMessageHasAttachments,
-            }
-          : null,
-        unreadCount: row.unreadCount,
-        lastMessageAt: row.lastMessageAt,
-        createdAt: row.createdAt,
-      };
-    });
+    return (
+      rows
+        // A declined group invite is not a thread the member can enter: the room
+        // stays open for everyone else, and this side never agreed to be in it,
+        // so leaving the row in the list would be a dead entry that never closes.
+        .filter((row) => !(row.kind === 'group' && row.myStatus === 'declined'))
+        .map((row) => {
+          // A group is named by its title, so its "counterpart" — whichever
+          // member the list read happened to order first — is nobody's face.
+          const counterpart =
+            row.kind === 'direct' && row.counterpartId
+              ? toPeer(peers.get(row.counterpartId))
+              : null;
+
+          return {
+            id: row.id,
+            kind: row.kind as ChatConversationSummary['kind'],
+            status: row.status as ChatConversationSummary['status'],
+            title: chatTitle({
+              kind: row.kind as ChatConversationSummary['kind'],
+              title: row.title,
+              counterpart,
+            }),
+            counterpart,
+            myStatus: row.myStatus as ChatParticipantStatus,
+            lastMessage: row.lastMessageCreatedAt
+              ? {
+                  body: row.lastMessageBody,
+                  senderKind: row.lastMessageSenderKind ?? 'user',
+                  createdAt: row.lastMessageCreatedAt,
+                  hasAttachments: row.lastMessageHasAttachments,
+                }
+              : null,
+            unreadCount: row.unreadCount,
+            lastMessageAt: row.lastMessageAt,
+            createdAt: row.createdAt,
+          };
+        })
+    );
   }
 
   /** One thread's header, roster and the caller's own rights in it. */
@@ -184,7 +198,13 @@ export class ChatService {
 
     const peers = await this.loadPeers(participants.map((participant) => participant.userId));
     const me = participants.find((participant) => participant.userId === userId);
-    const counterpartId = participants.find((participant) => participant.userId !== userId)?.userId;
+    // A block is a fact between two people. In a group the block still refuses
+    // posting (the database's `chat_can_write` checks every peer), but it does
+    // not close the thread, so the surface is not told it did.
+    const counterpartId =
+      conversation.kind === 'direct'
+        ? participants.find((participant) => participant.userId !== userId)?.userId
+        : undefined;
     const blockedByMe = counterpartId
       ? (await this.repo.findBlockedIds(userId)).includes(counterpartId)
       : false;
@@ -297,8 +317,100 @@ export class ChatService {
     return { conversationId: conversation.id };
   }
 
-  /** Answer a DM request or a group invite. */
-  async respond(
+  /**
+   * A named group: the creator is `owner` and active at once (the database opens
+   * a group on its creator, not on consent from everyone else), and everyone
+   * else is `invited` until they answer.
+   *
+   * The plan cap is the controller's pre-check with the upgrade nudge; the
+   * trigger on `chat_conversations` is the enforcement, so this method does not
+   * count anything. It does own the two rules the database cannot state: only
+   * verified members are invited, and the creator is not one of them.
+   */
+  async startGroup(
+    userId: string,
+    input: { title: string; memberIds: string[] }
+  ): Promise<{ conversationId: string }> {
+    const memberIds = this.invitableIds(userId, input.memberIds);
+    if (memberIds.length === 0) {
+      throw new ChatError(400, 'أضف عضواً واحداً على الأقل');
+    }
+
+    if (!(await this.deps.checkRateLimit(`chat-start:${userId}`, 20, 3600_000))) {
+      throw new ChatError(429, 'تم تجاوز الحد: بدء المحادثات محدود بـ 20 محادثة في الساعة');
+    }
+
+    await this.assertVerified(memberIds);
+
+    const conversation = await this.repo.createConversation({
+      kind: 'group',
+      title: input.title,
+      createdBy: userId,
+      // A group is open while someone is in it; the invited rows join at their
+      // own pace and the roster is what says so.
+      status: 'active',
+    });
+
+    await this.repo.addParticipant({
+      conversationId: conversation.id,
+      userId,
+      role: 'owner',
+      status: 'active',
+    });
+
+    await this.inviteMembers(userId, conversation.id, input.title, memberIds);
+
+    return { conversationId: conversation.id };
+  }
+
+  /**
+   * Invite more members into a group the caller is active in. The roster is the
+   * database's rule (`private.chat_may_add_participant`); this composes the
+   * read the surface needs and names the one refusal that is a state — a full
+   * room.
+   *
+   * Someone already in the roster is skipped rather than retried: an invite is
+   * idempotent from the inviter's point of view, and the insert would answer a
+   * unique violation that means "they are already here".
+   */
+  async addMembers(
+    userId: string,
+    conversationId: string,
+    memberIds: string[]
+  ): Promise<{ added: number }> {
+    const conversation = await this.repo.findConversation(conversationId);
+    if (!conversation || conversation.kind !== 'group') {
+      throw new ChatError(404, 'المحادثة غير موجودة');
+    }
+
+    const participants = await this.repo.findParticipants(conversationId);
+    const me = participants.find((participant) => participant.userId === userId);
+    if (me?.status !== 'active') {
+      throw new ChatError(403, 'أنت لست عضواً في هذه المحادثة');
+    }
+
+    const present = new Set(participants.map((participant) => participant.userId));
+    const targets = this.invitableIds(userId, memberIds).filter((id) => !present.has(id));
+    if (targets.length === 0) {
+      throw new ChatError(409, 'هؤلاء الأعضاء في المجموعة بالفعل');
+    }
+
+    if (!(await this.deps.checkRateLimit(`chat-invite:${userId}`, 60, 3600_000))) {
+      throw new ChatError(429, 'تم تجاوز الحد: الدعوات محدودة بـ 60 دعوة في الساعة');
+    }
+
+    await this.assertVerified(targets);
+    return {
+      added: await this.inviteMembers(
+        userId,
+        conversationId,
+        conversation.title ?? 'مجموعة',
+        targets
+      ),
+    };
+  }
+
+  /** Answer a DM request or a group invite. */ async respond(
     userId: string,
     conversationId: string,
     answer: 'accept' | 'decline'
@@ -561,11 +673,15 @@ export class ChatService {
   /**
    * Tell the other side a request is waiting. The producer is fail-safe: a
    * refused or failed notification never undoes the request itself.
+   *
+   * A group invite says so, because "wants to start a chat with you" reads as a
+   * DM in an inbox that now holds both.
    */
   private async notifyRequest(
     fromUserId: string,
     toUserId: string,
-    conversationId: string
+    conversationId: string,
+    groupTitle?: string
   ): Promise<void> {
     if (!this.deps.notify) return;
 
@@ -575,10 +691,72 @@ export class ChatService {
     await this.deps.notify({
       user_id: toUserId,
       type: 'chat_request',
-      title: 'طلب محادثة',
-      body: `${label} يريد بدء محادثة معك`,
+      title: groupTitle ? 'دعوة إلى محادثة جماعية' : 'طلب محادثة',
+      body: groupTitle
+        ? `دعاك ${label} إلى محادثة جماعية «${groupTitle}»`
+        : `${label} يريد بدء محادثة معك`,
       metadata: { conversationId },
     });
+  }
+
+  /** The ids a caller may invite: deduplicated, and never themselves. */
+  private invitableIds(userId: string, memberIds: string[]): string[] {
+    return [...new Set(memberIds)].filter((id) => id !== userId);
+  }
+
+  /**
+   * A group is a room of members, so the invite list is the directory's own
+   * ceiling: a verified handle only, exactly as a direct thread's counterpart.
+   * The service role read is the one way to know, because `public.users` is not
+   * readable by the caller's session.
+   */
+  private async assertVerified(memberIds: string[]): Promise<void> {
+    const members = await this.deps.users.getMany(memberIds);
+    const verified = new Set(
+      members.filter((member) => member.verified).map((member) => member.id)
+    );
+
+    if (memberIds.some((id) => !verified.has(id))) {
+      throw new ChatError(400, 'يمكن دعوة الأعضاء الموثَّقين فقط');
+    }
+  }
+
+  /**
+   * The invite itself: `invited`, never `active`, so the other side answers
+   * before they read anything. A full room stops the loop and answers its own
+   * sentence — the rows already written stay, because an invite that reached
+   * someone is not undone by the one that did not.
+   */
+  private async inviteMembers(
+    fromUserId: string,
+    conversationId: string,
+    groupTitle: string,
+    memberIds: string[]
+  ): Promise<number> {
+    let added = 0;
+
+    for (const memberId of memberIds) {
+      try {
+        await this.repo.addParticipant({
+          conversationId,
+          userId: memberId,
+          status: 'invited',
+          invitedBy: fromUserId,
+        });
+      } catch (error) {
+        // The unique violation means the row is already there: idempotent.
+        if (error instanceof DirectThreadExistsError) continue;
+        if (error instanceof ChatThreadFullError) {
+          throw new ChatError(409, 'بلغت المجموعة الحد الأقصى: 32 عضواً');
+        }
+        throw error;
+      }
+
+      added += 1;
+      await this.notifyRequest(fromUserId, memberId, conversationId, groupTitle);
+    }
+
+    return added;
   }
 
   /**

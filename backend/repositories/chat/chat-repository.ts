@@ -186,3 +186,16 @@ export class DirectThreadExistsError extends Error {
     this.name = 'DirectThreadExistsError';
   }
 }
+
+/**
+ * Raised by `private.enforce_chat_thread_size` when a group already holds
+ * `CHAT_GROUP_MEMBERS_MAX` live members. A full room is a state the surface
+ * explains, not an outage, so it crosses the repository seam as its own type
+ * instead of a `RepositoryError` that would answer 500.
+ */
+export class ChatThreadFullError extends Error {
+  constructor() {
+    super('the group already holds its maximum members');
+    this.name = 'ChatThreadFullError';
+  }
+}

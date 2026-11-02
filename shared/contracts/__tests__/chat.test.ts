@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CHAT_EDIT_WINDOW_MS,
+  CHAT_GROUP_MEMBERS_MAX,
   ChatMessageSendSchema,
   ChatReportSchema,
   CreateGroupChatSchema,
@@ -121,6 +122,28 @@ describe('CreateGroupChatSchema', () => {
       memberIds: ['5f0f3c62-6a37-4a0b-9f0e-2b4c8f7a1d33'],
     });
     expect(parsed.success).toBe(true);
+  });
+
+  /**
+   * A group of 32 counts its creator, so the payload carries at most 31: the
+   * database trigger is the enforcement, and this is the same number stated
+   * before the request is sent.
+   */
+  it('carries at most 31 invites beside the creator', () => {
+    const ids = (count: number) =>
+      Array.from(
+        { length: count },
+        (_, index) => `5f0f3c62-6a37-4a0b-9f0e-${index.toString(16).padStart(12, '0')}`
+      );
+
+    expect(
+      CreateGroupChatSchema.safeParse({ title: 'فريق', memberIds: ids(CHAT_GROUP_MEMBERS_MAX - 1) })
+        .success
+    ).toBe(true);
+    expect(
+      CreateGroupChatSchema.safeParse({ title: 'فريق', memberIds: ids(CHAT_GROUP_MEMBERS_MAX) })
+        .success
+    ).toBe(false);
   });
 });
 
