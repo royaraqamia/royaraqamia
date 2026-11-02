@@ -77,7 +77,26 @@ export default defineConfig({
       use: {
         viewport: { width: 1280, height: 720 },
       },
-      testIgnore: /responsive/,
+      testIgnore: [/responsive/, /visual-contract/],
+    },
+    // The visual gate (#874, ADR-0118): one project, because the measurement *is*
+    // the viewport, the DPR and the colour scheme. A second project at another
+    // width would record a different page and the app would be measured against
+    // the wrong one.
+    {
+      name: 'visual-gate',
+      use: {
+        ...devices['Pixel 7'],
+        browserName: 'chromium',
+        viewport: { width: 393, height: 852 },
+        deviceScaleFactor: 2.75,
+        isMobile: true,
+        hasTouch: true,
+        colorScheme: 'dark',
+        locale: 'ar',
+        timezoneId: 'Asia/Riyadh',
+      },
+      testMatch: /visual-contract/,
     },
   ],
   webServer: {

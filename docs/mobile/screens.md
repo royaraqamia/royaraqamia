@@ -5,7 +5,7 @@
 
 Every surface the site serves, and which client draws it. A screen that exists in the app and not the site — or the other way round — is a row here with the ticket that lands it or the reason it never will, because a gap found on a device is a bug and a gap listed here is a decision (#665, [two-clients.md](two-clients.md)).
 
-`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not route to it yet: it is switched on by the change that makes it the same screen as the page (#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)). The offline half of the same question — whether the app can show a surface with the radio off — is the `Bundle` column of [the surface matrix](../specs/surfaces.md), not this table.
+`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not route to it yet: it is switched on by the change that makes it the same screen as the page (#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)), and only when [the visual gate](../adr/0118-a-port-is-switched-on-by-two-measurements.md) passes. The offline half of the same question — whether the app can show a surface with the radio off — is the `Bundle` column of [the surface matrix](../specs/surfaces.md), not this table.
 
 | Screen | Routes | App | Why / ticket |
 | --- | --- | --- | --- |
