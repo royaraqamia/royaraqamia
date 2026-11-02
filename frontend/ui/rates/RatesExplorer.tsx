@@ -14,14 +14,15 @@ import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { type RateBasis, type RatesBoard } from '@/shared/contracts/rates';
 import { OLD_SYP_PER_NEW_SYP } from '@/shared/currency';
 import { convertAmount, isParallelRate } from '@/shared/rates';
+import { RATES_CONVERTER_COPY } from './rates-converter-copy';
 
 interface RatesExplorerProps {
   board: RatesBoard;
 }
 
 const BASIS_OPTIONS: readonly SegmentedOption<RateBasis>[] = [
-  { value: 'parallel', label: 'السُّوق الموازي' },
-  { value: 'official', label: 'السِّعر الرَّسمي' },
+  { value: 'parallel', label: RATES_CONVERTER_COPY.basisParallel },
+  { value: 'official', label: RATES_CONVERTER_COPY.basisOfficial },
 ];
 
 export function RatesExplorer({ board }: RatesExplorerProps) {
@@ -97,7 +98,10 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   // Name the applied rate basis so the non-SYP result is never ambiguous: the
   // parallel market (or its specific market when it spans several), or the
   // official rate. SYP results keep their old-lira companion line instead.
-  const basisLabel = effectiveBasis === 'official' ? 'السِّعر الرَّسمي' : 'السُّوق الموازي';
+  const basisLabel =
+    effectiveBasis === 'official'
+      ? RATES_CONVERTER_COPY.basisOfficial
+      : RATES_CONVERTER_COPY.basisParallel;
   const basisCaption = basisRelevant
     ? effectiveBasis === 'parallel' && marketRelevant
       ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? basisLabel)
@@ -120,10 +124,10 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     <div className="space-y-10">
       <section
         className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
-        aria-label="محوِّل العملات"
+        aria-label={RATES_CONVERTER_COPY.converterAria}
       >
         <div className="form-field">
-          <Label htmlFor="rates-amount">المبلغ</Label>
+          <Label htmlFor="rates-amount">{RATES_CONVERTER_COPY.amount}</Label>
           <Input
             id="rates-amount"
             type="number"
@@ -137,15 +141,15 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <div className="form-field">
-            <Label htmlFor="rates-from">من</Label>
+            <Label htmlFor="rates-from">{RATES_CONVERTER_COPY.from}</Label>
             <SearchableSelect
               id="rates-from"
-              aria-label="من"
+              aria-label={RATES_CONVERTER_COPY.from}
               value={from}
               onValueChange={handleFromChange}
               options={options}
-              searchPlaceholder="ابحث عن عملة…"
-              sheetTitle="اختر العملة"
+              searchPlaceholder={RATES_CONVERTER_COPY.searchPlaceholder}
+              sheetTitle={RATES_CONVERTER_COPY.sheetTitle}
             />
           </div>
 
@@ -155,7 +159,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             size="icon"
             onClick={swap}
             className="h-11 w-11 justify-self-center rounded-xl text-primary"
-            aria-label="عكس الاتِّجاه"
+            aria-label={RATES_CONVERTER_COPY.swap}
           >
             <svg
               className="size-5 rotate-90 transition-transform duration-200 sm:rotate-0"
@@ -174,24 +178,26 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </Button>
 
           <div className="form-field">
-            <Label htmlFor="rates-to">إلى</Label>
+            <Label htmlFor="rates-to">{RATES_CONVERTER_COPY.to}</Label>
             <SearchableSelect
               id="rates-to"
-              aria-label="إلى"
+              aria-label={RATES_CONVERTER_COPY.to}
               value={to}
               onValueChange={handleToChange}
               options={options}
-              searchPlaceholder="ابحث عن عملة…"
-              sheetTitle="اختر العملة"
+              searchPlaceholder={RATES_CONVERTER_COPY.searchPlaceholder}
+              sheetTitle={RATES_CONVERTER_COPY.sheetTitle}
             />
           </div>
         </div>
 
         {basisRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التَّحويل</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              {RATES_CONVERTER_COPY.rateLabel}
+            </span>
             <SegmentedControl
-              label="أساس سعر التَّحويل"
+              label={RATES_CONVERTER_COPY.basisAria}
               value={basis}
               options={BASIS_OPTIONS}
               onValueChange={setBasis}
@@ -201,9 +207,11 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
         {marketRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">السُّوق</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              {RATES_CONVERTER_COPY.market}
+            </span>
             <SegmentedControl
-              label="سوق الصرف"
+              label={RATES_CONVERTER_COPY.marketAria}
               value={activeMarket ?? ''}
               options={marketOptions.map((option) => ({ value: option.key, label: option.name }))}
               onValueChange={setMarket}
@@ -217,6 +225,13 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           oldLiraAmount={oldLiraAmount}
           basisCaption={basisCaption}
           staleMarketAsOf={staleMarketAsOf}
+          copy={{
+            newLira: RATES_CONVERTER_COPY.newLira,
+            oldLira: RATES_CONVERTER_COPY.oldLira,
+            stalePrefix: RATES_CONVERTER_COPY.stalePrefix,
+            noConversion: RATES_CONVERTER_COPY.noConversion,
+            emptyResult: RATES_CONVERTER_COPY.emptyResult,
+          }}
         />
       </section>
 

@@ -768,6 +768,94 @@
           "copy": "expiredBadge"
         }
       ]
+    },
+    {
+      "id": "rates-page",
+      "surface": "rates",
+      "issue": "#658",
+      "web": {
+        "route": "app/rates/page.tsx",
+        "component": "app/rates/page.tsx",
+        "copyModule": "app/rates/rates-page-copy.ts",
+        "copyExport": "RATES_PAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesPageCopy.kt",
+        "copyObject": "RatesPageCopy"
+      },
+      "copySource": "shared/copy/rates-page.json",
+      "states": [
+        {
+          "name": "Live",
+          "copy": "pageTitle"
+        },
+        {
+          "name": "Snapshot",
+          "copy": "updatedLabel"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "failureBody"
+        }
+      ]
+    },
+    {
+      "id": "rates-converter",
+      "surface": "rates",
+      "issue": "#658",
+      "web": {
+        "route": "app/rates/page.tsx",
+        "component": "frontend/ui/rates/RatesExplorer.tsx",
+        "copyModule": "frontend/ui/rates/rates-converter-copy.ts",
+        "copyExport": "RATES_CONVERTER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesConverterCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesConverterState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesConverterCopy.kt",
+        "copyObject": "RatesConverterCopy"
+      },
+      "copySource": "shared/copy/rates-converter.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "amount"
+        },
+        {
+          "name": "NoConversion",
+          "copy": "noConversion"
+        }
+      ]
+    },
+    {
+      "id": "rates-metals",
+      "surface": "rates",
+      "issue": "#658",
+      "web": {
+        "route": "app/rates/page.tsx",
+        "component": "frontend/ui/rates/MetalConverter.tsx",
+        "copyModule": "frontend/ui/rates/rates-metals-copy.ts",
+        "copyExport": "RATES_METALS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesMetalsCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesMetalsState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesMetalsCopy.kt",
+        "copyObject": "RatesMetalsCopy"
+      },
+      "copySource": "shared/copy/rates-metals.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "title"
+        },
+        {
+          "name": "NoConversion",
+          "copy": "noConversion"
+        }
+      ]
     }
   ],
   "exempt": [

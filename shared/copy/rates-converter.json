@@ -1,0 +1,37 @@
+{
+  "surface": "rates",
+  "component": "rates-converter",
+  "web": {
+    "file": "frontend/ui/rates/rates-converter-copy.ts",
+    "export": "RATES_CONVERTER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesConverterCopy.kt",
+    "object": "RatesConverterCopy"
+  },
+  "notes": {
+    "source": "The currency converter's words, in both clients (#658). The site's explorer (`frontend/ui/rates/RatesExplorer.tsx`) is the reference, and the result box's sentences are passed into `ConversionResult` from there so this source stays one row.",
+    "placeholders": "None: the figure and its currency are drawn by each client, not written into a sentence.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "converterAria": "محوِّل العملات",
+    "amount": "المبلغ",
+    "from": "من",
+    "to": "إلى",
+    "searchPlaceholder": "ابحث عن عملة…",
+    "sheetTitle": "اختر العملة",
+    "swap": "عكس الاتِّجاه",
+    "rateLabel": "سعر التَّحويل",
+    "basisOfficial": "السِّعر الرَّسمي",
+    "basisParallel": "السُّوق الموازي",
+    "basisAria": "أساس سعر التَّحويل",
+    "market": "السُّوق",
+    "marketAria": "سوق الصرف",
+    "newLira": "ل.س جديدة",
+    "oldLira": "ل.س قديمة",
+    "stalePrefix": "آخر تحديث:",
+    "noConversion": "تعذَّر التَّحويل بين هذين العنصرين.",
+    "emptyResult": "—"
+  }
+}

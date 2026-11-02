@@ -19,14 +19,15 @@ import {
 } from '@/shared/contracts/rates';
 import { OLD_SYP_PER_NEW_SYP } from '@/shared/currency';
 import { convertAmount, isParallelRate } from '@/shared/rates';
+import { RATES_METALS_COPY } from './rates-metals-copy';
 
 interface MetalConverterProps {
   board: RatesBoard;
 }
 
 const BASIS_OPTIONS: readonly SegmentedOption<RateBasis>[] = [
-  { value: 'parallel', label: 'السُّوق الموازي' },
-  { value: 'official', label: 'السِّعر الرَّسمي' },
+  { value: 'parallel', label: RATES_METALS_COPY.basisParallel },
+  { value: 'official', label: RATES_METALS_COPY.basisOfficial },
 ];
 
 const KARAT_OPTIONS: readonly SegmentedOption<GoldKarat>[] = GOLD_KARATS.map((karat) => ({
@@ -105,7 +106,10 @@ export function MetalConverter({ board }: MetalConverterProps) {
   // Name the applied rate basis so the non-SYP result is never ambiguous: the
   // parallel market (or its specific market when it spans several), or the
   // official rate. SYP results keep their old-lira companion line instead.
-  const basisLabel = effectiveBasis === 'official' ? 'السِّعر الرَّسمي' : 'السُّوق الموازي';
+  const basisLabel =
+    effectiveBasis === 'official'
+      ? RATES_METALS_COPY.basisOfficial
+      : RATES_METALS_COPY.basisParallel;
   const basisCaption = basisRelevant
     ? effectiveBasis === 'parallel' && marketRelevant
       ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? basisLabel)
@@ -119,15 +123,17 @@ export function MetalConverter({ board }: MetalConverterProps) {
       : null;
 
   return (
-    <section aria-label="محوِّل الذَّهب والفِضَّة">
+    <section aria-label={RATES_METALS_COPY.metalsAria}>
       <h2 className="mb-4 text-center text-xl font-bold text-foreground sm:text-2xl">
-        الذَّهب والفِضَّة
+        {RATES_METALS_COPY.title}
       </h2>
       <div className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8">
         <div>
-          <span className="mb-1.5 block text-sm font-medium text-foreground">المعدن</span>
+          <span className="mb-1.5 block text-sm font-medium text-foreground">
+            {RATES_METALS_COPY.metal}
+          </span>
           <SegmentedControl
-            label="اختيار المعدن"
+            label={RATES_METALS_COPY.metalAria}
             value={metalCode}
             options={metalOptions}
             onValueChange={setMetalCode}
@@ -135,7 +141,7 @@ export function MetalConverter({ board }: MetalConverterProps) {
         </div>
 
         <div className="mt-4 form-field">
-          <Label htmlFor="metal-amount">عدد الغرامات</Label>
+          <Label htmlFor="metal-amount">{RATES_METALS_COPY.grams}</Label>
           <Input
             id="metal-amount"
             type="number"
@@ -148,23 +154,25 @@ export function MetalConverter({ board }: MetalConverterProps) {
         </div>
 
         <div className="mt-4 form-field">
-          <Label htmlFor="metal-to">إلى</Label>
+          <Label htmlFor="metal-to">{RATES_METALS_COPY.to}</Label>
           <SearchableSelect
             id="metal-to"
-            aria-label="إلى"
+            aria-label={RATES_METALS_COPY.to}
             value={to}
             onValueChange={handleToChange}
             options={currencyOptions}
-            searchPlaceholder="ابحث عن عملة…"
-            sheetTitle="اختر العملة"
+            searchPlaceholder={RATES_METALS_COPY.searchPlaceholder}
+            sheetTitle={RATES_METALS_COPY.sheetTitle}
           />
         </div>
 
         {basisRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التَّحويل</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              {RATES_METALS_COPY.rateLabel}
+            </span>
             <SegmentedControl
-              label="أساس سعر التَّحويل"
+              label={RATES_METALS_COPY.basisAria}
               value={basis}
               options={BASIS_OPTIONS}
               onValueChange={setBasis}
@@ -174,9 +182,11 @@ export function MetalConverter({ board }: MetalConverterProps) {
 
         {marketRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">السُّوق</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              {RATES_METALS_COPY.market}
+            </span>
             <SegmentedControl
-              label="سوق الصرف"
+              label={RATES_METALS_COPY.marketAria}
               value={activeMarket ?? ''}
               options={marketOptions.map((option) => ({ value: option.key, label: option.name }))}
               onValueChange={setMarket}
@@ -186,9 +196,11 @@ export function MetalConverter({ board }: MetalConverterProps) {
 
         {karatRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">العِيار</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              {RATES_METALS_COPY.karat}
+            </span>
             <SegmentedControl
-              label="عيار الذَّهب"
+              label={RATES_METALS_COPY.karatAria}
               value={karat}
               options={KARAT_OPTIONS}
               onValueChange={setKarat}
@@ -202,6 +214,13 @@ export function MetalConverter({ board }: MetalConverterProps) {
           oldLiraAmount={oldLiraAmount}
           basisCaption={basisCaption}
           staleMarketAsOf={staleMarketAsOf}
+          copy={{
+            newLira: RATES_METALS_COPY.newLira,
+            oldLira: RATES_METALS_COPY.oldLira,
+            stalePrefix: RATES_METALS_COPY.stalePrefix,
+            noConversion: RATES_METALS_COPY.noConversion,
+            emptyResult: RATES_METALS_COPY.emptyResult,
+          }}
         />
       </div>
     </section>

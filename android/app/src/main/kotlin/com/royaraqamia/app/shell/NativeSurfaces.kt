@@ -30,13 +30,14 @@ object NativeSurfaces {
             "/account/plan",
             "/account/connected-apps",
             "/verify",
+            "/rates",
         )
 
     /**
      * The routes a signed-out visitor reads: the app draws them and never covers
      * them with the sign-in card.
      */
-    private val publicRoutes: Set<String> = setOf("/verify")
+    private val publicRoutes: Set<String> = setOf("/verify", "/rates")
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))

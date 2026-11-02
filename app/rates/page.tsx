@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { loadRatesBoard } from '@/backend/loaders/rates';
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { RATES_PAGE_COPY } from './rates-page-copy';
 
 export const revalidate = 3600;
 
@@ -73,13 +74,13 @@ export default async function RatesPage() {
         <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">
             <SectionTitle as="h1">
-              <SectionTitleHighlight>أسعار الصَّرف</SectionTitleHighlight>
+              <SectionTitleHighlight>{RATES_PAGE_COPY.pageTitle}</SectionTitleHighlight>
             </SectionTitle>
 
             {board ? (
               <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                 <span>
-                  آخر تحديث:{' '}
+                  {RATES_PAGE_COPY.updatedLabel}{' '}
                   {hijriDate ? (
                     <>
                       <strong className="font-bold text-foreground">{hijriDate}</strong>
@@ -94,7 +95,7 @@ export default async function RatesPage() {
                 </span>
                 {board.isStale ? (
                   <span className="rounded-full border border-warning/30 bg-warning/10 px-3 py-1 font-bold text-warning">
-                    قد تكون البيانات متأخِّرة
+                    {RATES_PAGE_COPY.staleBadge}
                   </span>
                 ) : null}
               </div>
@@ -105,7 +106,7 @@ export default async function RatesPage() {
             <RatesExplorer board={board} />
           ) : (
             <div className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center text-muted-foreground">
-              تعذَّر تحميل الأسعار حاليًّا. يُرجى المحاولة لاحقًا.
+              {RATES_PAGE_COPY.failureBody}
             </div>
           )}
         </div>

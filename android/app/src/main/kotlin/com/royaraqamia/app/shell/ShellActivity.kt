@@ -31,6 +31,7 @@ import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
+import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.sync.SyncScheduler
 import com.royaraqamia.app.theme.RoyFonts
@@ -209,6 +210,10 @@ class ShellActivity : ComponentActivity() {
                                     onCopy = ::copyToClipboard,
                                     onOpenScan = { openRoute("/scan") },
                                 )
+                            // The rates board (#658): public like the page, read once
+                            // on arrival and painted from the last board kept when the
+                            // read fails.
+                            "/rates" -> RatesScreen(repository = graph.rates)
                         }
                         if (sessionAnswered && !signedIn && !NativeSurfaces.isPublic(current)) {
                             SignInCard(
