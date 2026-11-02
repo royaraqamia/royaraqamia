@@ -1,0 +1,34 @@
+{
+  "surface": "verify",
+  "component": "certificate-result-card",
+  "web": {
+    "file": "frontend/ui/verify/certificate-result-copy.ts",
+    "export": "CERTIFICATE_RESULT_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/verify/CertificateResultCopy.kt",
+    "object": "CertificateResultCopy"
+  },
+  "notes": {
+    "source": "The verified-certificate card's words, in both clients (#658). The site's card (`frontend/ui/verify/certificate-result-card.tsx`) is the reference, and it is the only place these labels are written.",
+    "placeholders": "None: the card shows the certificate's own fields, and the labels around them are the copy.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference card does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "verifiedTitle": "تمَّ التَّحقُّق بنجاح",
+    "verifiedBody": "هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤيَة رقَميَّة",
+    "validBadge": "شهادة صالحة ومُوثَّقة",
+    "expiredBadge": "شهادة منتهية",
+    "studentHeading": "اسم الطَّالب / الحاصل على الشَّهادة",
+    "courseHeading": "اسم الدَّورة / البرنامج التَّدريبي",
+    "codeLabel": "رمز الشَّهادة",
+    "studentLabel": "اسم الطَّالب",
+    "courseLabel": "اسم الدَّورة",
+    "issuedLabel": "تاريخ الإصدار",
+    "expiresLabel": "تاريخ الانتهاء",
+    "gradeLabel": "الدَّرجة / الحالة",
+    "copy": "نسخ",
+    "copied": "تمَّ النَّسخ",
+    "copyAria": "نسخ رمز الشَّهادة"
+  }
+}

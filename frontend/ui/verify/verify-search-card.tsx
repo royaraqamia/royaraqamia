@@ -17,6 +17,14 @@ interface VerifySearchCardProps {
   onCodeChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onSampleClick: () => void;
+  /** The page's words (ADR-0098): one generated source, both clients. */
+  codeLabel: string;
+  placeholder: string;
+  submitLabel: string;
+  sampleLabel: string;
+  sampleCode: string;
+  scanHint: string;
+  invalidFormat: string;
 }
 
 export function VerifySearchCard({
@@ -27,6 +35,13 @@ export function VerifySearchCard({
   onCodeChange,
   onSubmit,
   onSampleClick,
+  codeLabel,
+  placeholder,
+  submitLabel,
+  sampleLabel,
+  sampleCode,
+  scanHint,
+  invalidFormat,
 }: VerifySearchCardProps) {
   return (
     <m.div variants={cardVariants}>
@@ -44,12 +59,12 @@ export function VerifySearchCard({
                 type="text"
                 value={code}
                 onChange={(e) => onCodeChange(e.target.value.toUpperCase())}
-                placeholder="COMP-2026-A1B2C3D4"
+                placeholder={placeholder}
                 className="h-13 w-full rounded-2xl border-border/70 bg-background/50 ps-11 pe-11 font-mono text-base tracking-wider uppercase shadow-xs transition-safe duration-300 placeholder:font-sans placeholder:tracking-normal placeholder:normal-case focus:border-primary/60 focus:bg-background focus:ring-4 focus:ring-primary/10 dark:bg-neutral-900/60"
                 maxLength={30}
                 autoFocus
                 required
-                aria-label="رمز الشَّهادة"
+                aria-label={codeLabel}
               />
               {isValidFormat === true && (
                 <div className="pointer-events-none absolute inset-y-0 inset-e-0 flex items-center pe-4">
@@ -65,7 +80,7 @@ export function VerifySearchCard({
               className="h-13 min-h-13 px-8 rounded-2xl bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-600/25 hover:shadow-xl hover:shadow-purple-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-safe duration-300 sm:w-auto w-full gap-2 shrink-0 cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!loading && <Search className="size-5" />}
-              <span>تحقُّق</span>
+              <span>{submitLabel}</span>
             </Button>
           </form>
 
@@ -76,9 +91,9 @@ export function VerifySearchCard({
               className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
             >
               <ScanLine className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
-              <span>مثال للتَّجربة:</span>
+              <span>{sampleLabel}</span>
               <code className="font-mono font-bold text-primary transition-underline group-hover:underline">
-                COMP-2026-UHVW9SG5
+                {sampleCode}
               </code>
             </button>
 
@@ -87,7 +102,7 @@ export function VerifySearchCard({
               className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground"
             >
               <ScanBarcode className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
-              <span>أو امسح رمز الشَّهادة بالكاميرا</span>
+              <span>{scanHint}</span>
             </Link>
 
             {isValidFormat === false && code.length >= 5 && (
@@ -97,7 +112,7 @@ export function VerifySearchCard({
                 className="inline-flex items-center gap-1.5 font-medium text-destructive bg-destructive/10 px-3 py-1 rounded-lg border border-destructive/20 text-xs"
               >
                 <AlertCircle className="size-3.5 shrink-0" />
-                <span>الصِّيغة الصَّحيحة: COMP-YYYY-XXXXXXXX</span>
+                <span>{invalidFormat}</span>
               </m.div>
             )}
           </div>

@@ -7,13 +7,29 @@ import { AlertCircle, RotateCcw } from 'lucide-react';
 import { m } from 'motion/react';
 import { resultVariants } from './verify-variants';
 
+/**
+ * The page's failure card: the reason, its badge, and one way to try again.
+ *
+ * One card for the three ways a check can come back empty — an unknown code, a
+ * spent allowance, a request that never left — because they are the same shape
+ * with different words, and the words are the page's (`app/verify/page.tsx`,
+ * ADR-0098). `message` is the server's own sentence when it sent one; the
+ * `subtitle` is the state's, and it stands alone when there is nothing more to
+ * say. The app draws the same card from the same copy source.
+ */
 export function VerifyErrorState({
-  rateLimited,
-  error,
+  title,
+  subtitle,
+  message,
+  badge,
+  retryLabel,
   onRetry,
 }: {
-  rateLimited?: boolean;
-  error?: string;
+  title: string;
+  subtitle: string;
+  message?: string;
+  badge: string;
+  retryLabel: string;
   onRetry: () => void;
 }) {
   return (
@@ -32,25 +48,21 @@ export function VerifyErrorState({
               <AlertCircle className="size-6" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-destructive">
-                {rateLimited ? 'تجاوز عدد المحاولات المسموحة' : 'خطأ في التَّحقُّق'}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {rateLimited
-                  ? 'الرَّجاء الانتظار بضع دقائق قبل المحاولة مرَّة أخرى'
-                  : 'تعذَّر العثور على شهادة بهذا الرَّمز في سجلاتنا'}
-              </p>
+              <h2 className="font-bold text-lg text-destructive">{title}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
             </div>
           </div>
           <Badge variant="destructive" className="px-3 py-1 text-xs rounded-full">
-            {rateLimited ? 'محدود المؤقت' : 'غير مُسجَّلَة'}
+            {badge}
           </Badge>
         </div>
         <CardContent className="p-6 sm:p-8">
-          <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 border border-destructive/15 p-4">
-            <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
-            <p className="text-sm leading-relaxed text-foreground">{error}</p>
-          </div>
+          {message && (
+            <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 border border-destructive/15 p-4">
+              <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm leading-relaxed text-foreground">{message}</p>
+            </div>
+          )}
           <div className="mt-6 flex justify-end">
             <Button
               variant="outline"
@@ -59,7 +71,7 @@ export function VerifyErrorState({
               className="gap-2 rounded-xl border-border hover:bg-muted cursor-pointer transition-safe"
             >
               <RotateCcw className="size-4" />
-              <span>المحاولة مرَّة أخرى</span>
+              <span>{retryLabel}</span>
             </Button>
           </div>
         </CardContent>

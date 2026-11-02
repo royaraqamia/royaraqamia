@@ -100,3 +100,27 @@ export async function verifyCertificate(code: string): Promise<VerifyResult> {
     return { success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' };
   }
 }
+
+/**
+ * What one check came to, told apart from the answer (#658).
+ *
+ * [verifyCertificate] folds a dead radio into a generic sentence, which is right
+ * for the scan page — it offers the link instead of the card either way — and
+ * wrong for the verify page, whose visitor has *not* been told the certificate is
+ * unknown when the request never left. The app draws the same distinction
+ * (`VerifyUiState.Unreachable`), and both clients word it from one copy source.
+ */
+export type VerifyAttempt = { kind: 'answered'; result: VerifyResult } | { kind: 'unreachable' };
+
+export async function verifyCertificateAttempt(code: string): Promise<VerifyAttempt> {
+  try {
+    const result = await request<VerifyResult>('/api/certificates/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+    return { kind: 'answered', result };
+  } catch (error) {
+    if (error instanceof ApiError && error.isNetworkError) return { kind: 'unreachable' };
+    return { kind: 'answered', result: { success: false } };
+  }
+}

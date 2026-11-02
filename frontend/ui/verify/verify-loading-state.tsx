@@ -3,7 +3,12 @@
 import { Loader2 } from 'lucide-react';
 import { m } from 'motion/react';
 
-export function VerifyLoadingState() {
+/**
+ * The page's busy state, in the page's words (`app/verify/page.tsx`, ADR-0098):
+ * the two sentences are props because the app draws the same pair from the same
+ * copy source.
+ */
+export function VerifyLoadingState({ title, body }: { title: string; body: string }) {
   return (
     <m.div
       key="loading"
@@ -18,12 +23,8 @@ export function VerifyLoadingState() {
         </div>
       </div>
       <div className="mt-6 space-y-2">
-        <h3 className="text-base font-bold text-foreground">
-          جاري التَّحقُّق من أصالة الشَّهادة...
-        </h3>
-        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          يتمُّ مطابقة السِّجلات الرَّقميَّة المُشفَّرة والتَّحقُّق من التَّوقيع المُعتمَد
-        </p>
+        <h3 className="text-base font-bold text-foreground">{title}</h3>
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto">{body}</p>
       </div>
       <div className="mt-6 flex justify-center gap-1.5">
         {[0, 1, 2].map((i) => (
