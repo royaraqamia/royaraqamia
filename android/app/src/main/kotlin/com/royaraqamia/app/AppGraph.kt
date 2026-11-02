@@ -7,6 +7,8 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
+import com.royaraqamia.app.rates.RatesRepository
+import com.royaraqamia.app.rates.RatesSnapshotStore
 import com.royaraqamia.app.shell.PreferencesServicesOrderStore
 import com.royaraqamia.app.shell.ServicesOrderStore
 import com.royaraqamia.app.session.EncryptedTokenStore
@@ -25,6 +27,7 @@ import com.royaraqamia.app.store.outbox.DrainReport
 import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.store.spendtrack.SpendtrackStores
 import com.royaraqamia.app.verify.VerifyRepository
+import java.io.File
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -56,6 +59,8 @@ class AppGraph private constructor(
     val notifications: NotificationsRepository,
     /** The certificate check (#658): the one route a visitor can call with no session. */
     val verify: VerifyRepository,
+    /** The rates board, and the last one this device read (#658). */
+    val rates: RatesRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -179,6 +184,7 @@ class AppGraph private constructor(
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
+                rates = RatesRepository(client, RatesSnapshotStore(File(context.filesDir, "rates"))),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
