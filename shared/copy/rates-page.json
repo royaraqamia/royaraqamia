@@ -1,0 +1,23 @@
+{
+  "surface": "rates",
+  "component": "rates-page",
+  "web": {
+    "file": "app/rates/rates-page-copy.ts",
+    "export": "RATES_PAGE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesPageCopy.kt",
+    "object": "RatesPageCopy"
+  },
+  "notes": {
+    "source": "The rates page's own words, in both clients (#658): the title, the freshness line the numbers are read with, the stale badge and the sentence a failed load answers. The site's page (`app/rates/page.tsx`) is the reference.",
+    "placeholders": "None: the dates next to them are formatted by each client from the board's own fields.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference page does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "pageTitle": "أسعار الصَّرف",
+    "updatedLabel": "آخر تحديث:",
+    "staleBadge": "قد تكون البيانات متأخِّرة",
+    "failureBody": "تعذَّر تحميل الأسعار حاليًّا. يُرجى المحاولة لاحقًا."
+  }
+}

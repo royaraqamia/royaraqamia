@@ -15,6 +15,14 @@ interface ConversionResultProps {
   basisCaption: string | null;
   /** Quote date of the market value when it lags the board (carried forward). */
   staleMarketAsOf: string | null;
+  /** The caller's words (ADR-0098): the card is drawn by two rows from two sources. */
+  copy: {
+    newLira: string;
+    oldLira: string;
+    stalePrefix: string;
+    noConversion: string;
+    emptyResult: string;
+  };
 }
 
 export function ConversionResult({
@@ -23,6 +31,7 @@ export function ConversionResult({
   oldLiraAmount,
   basisCaption,
   staleMarketAsOf,
+  copy,
 }: ConversionResultProps) {
   return (
     <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
@@ -33,12 +42,12 @@ export function ConversionResult({
             className={cn(SECTION_TITLE_HIGHLIGHT, 'inline-flex items-baseline gap-2')}
           >
             <span className="text-[0.55em] font-normal opacity-80">
-              {targetCode === 'SYP' ? 'ل.س جديدة' : getCurrencyDisplaySymbol(targetCode)}
+              {targetCode === 'SYP' ? copy.newLira : getCurrencyDisplaySymbol(targetCode)}
             </span>
             <span>{formatRate(result)}</span>
           </span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">{copy.emptyResult}</span>
         )}
       </p>
       {result !== null ? (
@@ -46,20 +55,20 @@ export function ConversionResult({
           {oldLiraAmount !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">
               <span className="font-extrabold">{formatRate(oldLiraAmount)}</span>{' '}
-              <span className="font-normal">ل.س قديمة</span>
+              <span className="font-normal">{copy.oldLira}</span>
             </p>
           ) : basisCaption !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">{basisCaption}</p>
           ) : null}
           {staleMarketAsOf !== null ? (
             <p className="mt-1 text-xs font-medium text-warning">
-              آخر تحديث: {formatHijriDateLabel(staleMarketAsOf)}—{formatDateLabel(staleMarketAsOf)}{' '}
-              م
+              {copy.stalePrefix} {formatHijriDateLabel(staleMarketAsOf)}—
+              {formatDateLabel(staleMarketAsOf)} م
             </p>
           ) : null}
         </>
       ) : (
-        <p className="mt-2 text-xs text-destructive">تعذَّر التَّحويل بين هذين العنصرين.</p>
+        <p className="mt-2 text-xs text-destructive">{copy.noConversion}</p>
       )}
     </div>
   );

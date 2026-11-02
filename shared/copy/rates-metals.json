@@ -1,0 +1,40 @@
+{
+  "surface": "rates",
+  "component": "rates-metals",
+  "web": {
+    "file": "frontend/ui/rates/rates-metals-copy.ts",
+    "export": "RATES_METALS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/rates/RatesMetalsCopy.kt",
+    "object": "RatesMetalsCopy"
+  },
+  "notes": {
+    "source": "The gold and silver converter's words, in both clients (#658). The site's `frontend/ui/rates/MetalConverter.tsx` is the reference; it repeats the basis, market and result sentences rather than borrowing them, because a copy source belongs to one row and the metals card is drawn on its own.",
+    "placeholders": "None: the karat is a number the segmented control draws, not a sentence.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "metalsAria": "محوِّل الذَّهب والفِضَّة",
+    "title": "الذَّهب والفِضَّة",
+    "metal": "المعدن",
+    "metalAria": "اختيار المعدن",
+    "grams": "عدد الغرامات",
+    "to": "إلى",
+    "searchPlaceholder": "ابحث عن عملة…",
+    "sheetTitle": "اختر العملة",
+    "rateLabel": "سعر التَّحويل",
+    "basisOfficial": "السِّعر الرَّسمي",
+    "basisParallel": "السُّوق الموازي",
+    "basisAria": "أساس سعر التَّحويل",
+    "market": "السُّوق",
+    "marketAria": "سوق الصرف",
+    "karat": "العِيار",
+    "karatAria": "عيار الذَّهب",
+    "newLira": "ل.س جديدة",
+    "oldLira": "ل.س قديمة",
+    "stalePrefix": "آخر تحديث:",
+    "noConversion": "تعذَّر التَّحويل بين هذين العنصرين.",
+    "emptyResult": "—"
+  }
+}
