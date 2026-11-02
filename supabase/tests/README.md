@@ -76,6 +76,20 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - A member can neither edit nor tombstone the other side of the thread, and a message keeps its
   identity.
 
+`chat_participants_test.sql` (#840, ADR-0113):
+
+- The creator of a direct thread adds their one peer as `requested`; a second add, or a third
+  participant, is refused by the database, and the refusal leaves the same two rows.
+- An active member cannot move their own row back to `requested` (which would freeze the thread for
+  both sides), cannot answer a request they already accepted, and cannot grant themselves `owner`.
+- `joined_at` only moves with a legal status change, and `last_read_at` still moves on its own at
+  any status.
+- A `declined` participant cannot rejoin without consent; an agent thread admits nobody but its
+  owner; an invited member cannot invite anyone else.
+- The SECURITY DEFINER `request_chat_conversation` and `withdraw_chat_request` still reopen and
+  close a thread, including one whose rows are `left`.
+- A client cannot DELETE a roster row.
+
 `chat_attachments_test.sql` (#815, ADR-0113):
 
 - A row whose `storage_path` names another conversation, or skips the thread folder, is refused
@@ -176,6 +190,11 @@ columns filled in.
 
 `chat_attachment_allowances_test.sql` (#852) is unrun too. Its arithmetic is checked by hand in the
 comments beside each assertion; the risk is the settings update between role switches, not the caps.
+
+`chat_participants_test.sql` (#840) is unrun for the same reason. The parts most likely to need a
+first-run adjustment are the `current_user` owner check inside the guard (it compares against
+`pg_class.relowner`, not a literal role name) and the direct pair keys the triggers write while the
+file runs.
 
 ## Worth adding next
 
