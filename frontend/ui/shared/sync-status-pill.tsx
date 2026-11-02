@@ -29,6 +29,10 @@ export interface SyncPillStatus {
  * not anything is queued, permanent failures are surfaced with a retry and
  * never swallowed; pending work shows while it waits for a connection. A
  * fully-synced, connected flow renders nothing at all.
+ *
+ * Each state carries `data-sync-status`, so a test asks which state is on screen
+ * without spelling its Arabic copy — the label comes from the generated copy
+ * source (#649), and a rewritten label is not a broken pill.
  */
 export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
   const { syncing, pending, failed, online, retry, lastError, lastFailedType } = status;
@@ -39,6 +43,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
     return (
       <button
         type="button"
+        data-sync-status="failed"
         onClick={retry}
         title={failureDetail || undefined}
         aria-label={failureDetail ? SYNC_PILL_COPY.retryFailed : undefined}
@@ -55,6 +60,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
     return (
       <span
         role="status"
+        data-sync-status="offline"
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-300/80 dark:border-zinc-700/80 bg-zinc-100/80 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
@@ -74,6 +80,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
     return (
       <button
         type="button"
+        data-sync-status="refresh-failed"
         onClick={retryRefresh}
         title={refreshError}
         aria-label={SYNC_PILL_COPY.refreshFailed}
@@ -90,6 +97,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
     return (
       <span
         role="status"
+        data-sync-status="syncing"
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
@@ -103,6 +111,7 @@ export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
     return (
       <span
         role="status"
+        data-sync-status="pending"
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-amber-300/70 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-sm"
       >

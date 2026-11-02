@@ -45,9 +45,11 @@ async function expectNoStoreSkeleton(page: Page) {
 
 /** The product pill's offline state: the connection is named, not implied. */
 async function expectOfflinePill(page: Page) {
-  // HabitFlow's own sync pill is the surface that names the connection, so take
-  // the first `status` that carries the copy rather than demanding a single one.
-  await expect(page.getByRole('status').filter({ hasText: 'غير متَّصل' }).first()).toBeVisible();
+  // The pill's states carry `data-sync-status`, so this asks which state is on
+  // screen instead of matching its Arabic label: the label is generated copy
+  // (`shared/copy/sync-status-pill.json`, #649), and it was rewritten from
+  // «غير متَّصل» to «غير متصل» while this helper kept the old spelling.
+  await expect(page.locator('[data-sync-status="offline"]').first()).toBeVisible();
 }
 
 test('HabitFlow reloads offline and keeps the habit written with the radio off', async ({

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoUnderWorkerControl, waitForAppHydrated } from './worker-control';
+import { signIn } from './sign-in';
 
 /**
  * Public-content offline read (#170): a previously visited public route paints
@@ -18,6 +19,17 @@ import { gotoUnderWorkerControl, waitForAppHydrated } from './worker-control';
 const ENABLED = process.env.PUBLIC_OFFLINE_E2E === '1';
 
 test.skip(!ENABLED, 'requires PUBLIC_OFFLINE_E2E=1 (production build)');
+
+/**
+ * The news digest spec needs the shared test account, and the reason is the card
+ * cap (ADR-0093): a visitor is shown one story, so the board's answer carries
+ * `cards` and the route marks it `no-store` — the worker may not keep a
+ * plan-sized body for the next reader. A `no-store` answer is exactly what the
+ * snapshot writer refuses, so a visitor's digest is never recorded and there is
+ * nothing for the spec to reload offline. The Pro test account is not capped at
+ * ten stories, so its answer is the public shared digest and it is recorded.
+ */
+const ACCOUNT = Boolean(process.env.E2E_TEST_EMAIL && process.env.E2E_TEST_PASSWORD);
 
 /**
  * Waits for the worker's background route refresh to reach every path (#489).
@@ -473,12 +485,14 @@ test('the news digest paints from its snapshot with the radio off', async ({
   browser,
   baseURL,
 }) => {
+  test.skip(!ACCOUNT, 'needs the test account: a visitor’s board is capped and not recordable');
   test.setTimeout(120_000);
 
   const context = await browser.newContext({
     serviceWorkers: 'allow',
     viewport: { width: 1280, height: 900 },
   });
+  await signIn(context, baseURL!);
   const page = await context.newPage();
 
   await gotoUnderWorkerControl(page, `${baseURL}/news`);

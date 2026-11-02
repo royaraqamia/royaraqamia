@@ -326,7 +326,9 @@ absolute ceiling per surface and per number, generous enough for CI noise — th
 the gate compares against with a 10% tolerance (`regressionPct`) — the "did this
 pull request make it worse" line. The ceilings are **not** the program's design
 targets: #486's decision gate (900 ms cold, 150 ms warm, 50 ms tap) stays the
-target, and the ceilings sit two to three times above it on purpose.
+target, and the ceilings sit two to three times above it on purpose. SpendTrack's
+warm ceiling is the one four-times exception, calibrated against its own measured
+medians on the runner (the file's `notes` records the numbers).
 
 **The baseline is recorded where it is enforced.** These numbers are
 machine-sensitive the way `perf/baseline.json` is, so a baseline recorded on a
