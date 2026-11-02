@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import { useEffect } from 'react';
 
@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   requestChatThread: vi.fn(),
   respondToChat: vi.fn(),
   sendChatMessage: vi.fn(),
+  subscribeToChatRoster: vi.fn(),
   subscribeToChatThread: vi.fn(),
   unblockChatUser: vi.fn(),
   withdrawChatRequest: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@/frontend/api/chats', () => ({
   requestChatThread: api.requestChatThread,
   respondToChat: api.respondToChat,
   sendChatMessage: api.sendChatMessage,
+  subscribeToChatRoster: api.subscribeToChatRoster,
   subscribeToChatThread: api.subscribeToChatThread,
   unblockChatUser: api.unblockChatUser,
   withdrawChatRequest: api.withdrawChatRequest,
@@ -78,6 +80,7 @@ describe('useChatThread refused writes', () => {
     api.requestChatThread.mockReset();
     api.respondToChat.mockReset();
     api.sendChatMessage.mockReset();
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
     api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
     api.unblockChatUser.mockReset();
     api.withdrawChatRequest.mockReset();
@@ -129,6 +132,91 @@ describe('useChatThread refused writes', () => {
 });
 
 /**
+ * The watermark is what the reader has seen, not what the tab fetched (#816): a
+ * hidden tab stamps nothing, and coming back to it is what stamps what arrived
+ * while it was away.
+ */
+describe('useChatThread read watermark', () => {
+  const first = { id: 'm-1', createdAt: '2026-11-01T10:00:00.000Z' };
+  const second = { id: 'm-2', createdAt: '2026-11-01T10:01:00.000Z' };
+  let onChange: (() => void) | null = null;
+
+  function setVisibility(state: 'visible' | 'hidden') {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
+
+  function setMessages(messages: unknown[]) {
+    api.getChatMessages.mockResolvedValue({ messages, nextCursor: null });
+  }
+
+  beforeEach(() => {
+    captured = null;
+    onChange = null;
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+    api.getChatThread.mockReset().mockResolvedValue({ id: 'c-1' });
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+    api.subscribeToChatThread.mockReset().mockImplementation((_id, change) => {
+      onChange = change;
+      return () => {};
+    });
+    setVisibility('visible');
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'visibilityState');
+  });
+
+  it('stamps the newest line on open, and does not stamp the same line twice', async () => {
+    setMessages([first]);
+    await renderThread();
+    expect(api.markChatRead).toHaveBeenCalledTimes(1);
+    expect(api.markChatRead).toHaveBeenCalledWith('c-1');
+
+    // A roster or thread hint that brings no new line is not a second read.
+    await act(async () => {
+      onChange?.();
+    });
+    expect(api.markChatRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('stamps nothing from a hidden tab, and stamps on return', async () => {
+    setVisibility('hidden');
+    setMessages([first]);
+
+    await renderThread();
+    expect(api.markChatRead).not.toHaveBeenCalled();
+
+    setVisibility('visible');
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(api.markChatRead).toHaveBeenCalledWith('c-1');
+  });
+
+  it('holds back a line that arrives while the tab is away, then stamps it on focus', async () => {
+    setMessages([first]);
+    await renderThread();
+    expect(api.markChatRead).toHaveBeenCalledTimes(1);
+
+    setVisibility('hidden');
+    setMessages([first, second]);
+    await act(async () => {
+      onChange?.();
+    });
+    expect(api.markChatRead).toHaveBeenCalledTimes(1);
+
+    setVisibility('visible');
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(api.markChatRead).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
  * An invite is a roster write: a group that refused it must say so, and one that
  * accepted it must redraw the roster — the screen derives from the thread.
  */
@@ -138,6 +226,7 @@ describe('useChatThread invite', () => {
     api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
     api.getChatThread.mockReset().mockResolvedValue(null);
     api.markChatRead.mockReset().mockResolvedValue(undefined);
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
     api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
     api.inviteChatMembers.mockReset();
   });

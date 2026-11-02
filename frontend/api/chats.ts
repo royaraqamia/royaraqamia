@@ -1,14 +1,19 @@
-import type {
-  ChatConversationSummary,
-  ChatMessage,
-  ChatMessagePage,
-  ChatMessageSendInput,
-  ChatPeer,
-  ChatPreview,
-  ChatThread,
+import {
+  chatTypingTopic,
+  CHAT_TYPING_EVENTS,
+  type ChatConversationSummary,
+  type ChatMessage,
+  type ChatMessagePage,
+  type ChatMessageSendInput,
+  type ChatPeer,
+  type ChatPreview,
+  type ChatThread,
 } from '@/shared/contracts/chat';
 import { request } from '@/frontend/transport/http';
-import { subscribeToPostgresChanges } from '@/frontend/transport/supabase/realtime';
+import {
+  joinBroadcastChannel,
+  subscribeToPostgresChanges,
+} from '@/frontend/transport/supabase/realtime';
 
 /**
  * The chats surface's transport.
@@ -273,4 +278,69 @@ export function subscribeToChatThread(conversationId: string, onChange: () => vo
     filter: `conversation_id=eq.${conversationId}`,
     handlers: { onInsert: onChange, onUpdate: onChange, onDelete: onChange },
   });
+}
+
+/**
+ * The roster of an open thread: a receipt is a peer's watermark moving, which is
+ * a `chat_participants` update and never a message. Without this the sender's
+ * «قُرئت» would wait for the peer's next line (#816).
+ */
+export function subscribeToChatRoster(conversationId: string, onChange: () => void): () => void {
+  return subscribeToPostgresChanges({
+    channel: `chat-roster:${conversationId}`,
+    table: 'chat_participants',
+    filter: `conversation_id=eq.${conversationId}`,
+    handlers: { onInsert: onChange, onUpdate: onChange, onDelete: onChange },
+  });
+}
+
+export interface ChatTypingChannel {
+  /** Say the caller is writing. The throttle is the composer's, not the channel's. */
+  typing: () => void;
+  /** Say the caller stopped, so the indicator goes now rather than in five seconds. */
+  stop: () => void;
+  leave: () => void;
+}
+
+/**
+ * A thread's typing channel. Nothing here is stored: the topic is private (the
+ * policy calls `private.chat_is_participant`), so a member outside the
+ * conversation cannot join it, and the payload is only an identity — the reader
+ * draws a sentence, never a message (ADR-0113 rejects broadcasting content).
+ *
+ * A peer id in the payload is what a group needs to name who is writing. It is
+ * the sender's own word either way: this is a cosmetic signal, not a fact any
+ * screen reads a decision from.
+ */
+export function joinChatTyping(
+  conversationId: string,
+  selfId: string,
+  handlers: { onTyping: (userId: string) => void; onStop: (userId: string) => void }
+): ChatTypingChannel {
+  const channel = joinBroadcastChannel({
+    topic: chatTypingTopic(conversationId),
+    handlers: {
+      [CHAT_TYPING_EVENTS.typing]: (payload) => {
+        const userId = senderOf(payload, selfId);
+        if (userId) handlers.onTyping(userId);
+      },
+      [CHAT_TYPING_EVENTS.stop]: (payload) => {
+        const userId = senderOf(payload, selfId);
+        if (userId) handlers.onStop(userId);
+      },
+    },
+  });
+
+  return {
+    typing: () => channel.send(CHAT_TYPING_EVENTS.typing, { userId: selfId }),
+    stop: () => channel.send(CHAT_TYPING_EVENTS.stop, { userId: selfId }),
+    leave: channel.leave,
+  };
+}
+
+/** The writer's id, unless the event is the caller's own or carries no identity. */
+function senderOf(payload: Record<string, unknown>, selfId: string): string | null {
+  const userId = payload.userId;
+  if (typeof userId !== 'string' || !userId || userId === selfId) return null;
+  return userId;
 }

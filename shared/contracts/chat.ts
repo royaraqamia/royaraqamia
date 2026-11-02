@@ -28,6 +28,34 @@ export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
 /** Attachments in one message: one bubble, five chips. */
 export const CHAT_ATTACHMENTS_PER_MESSAGE_MAX = 5;
 
+/**
+ * A thread's typing channel is a Realtime **private** topic named after the
+ * conversation it belongs to: `chat:<conversation id>`. Realtime authorises the
+ * topic with the policies on `realtime.messages`
+ * (`20261110090000_chat_typing_channel.sql`), so the name is not the boundary —
+ * the membership is (#816).
+ */
+export const CHAT_TYPING_TOPIC_PREFIX = 'chat:';
+
+/** The two events the channel carries. Both are meaningless a minute later. */
+export const CHAT_TYPING_EVENTS = {
+  typing: 'typing',
+  stop: 'stop',
+} as const;
+
+export function chatTypingTopic(conversationId: string): string {
+  return `${CHAT_TYPING_TOPIC_PREFIX}${conversationId}`;
+}
+
+/** The first keystroke goes at once, then at most one event per window. */
+export const CHAT_TYPING_THROTTLE_MS = 4_000;
+
+/**
+ * The reader clears the indicator this long after the last event, so a dropped
+ * "stop" — a closed tab, a dead socket — cannot pin it on screen.
+ */
+export const CHAT_TYPING_TIMEOUT_MS = 5_000;
+
 /** Mirrors the RLS window on `chat_messages`: after this, an edit is refused. */
 export const CHAT_EDIT_WINDOW_MS = 15 * 60 * 1000;
 
