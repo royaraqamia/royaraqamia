@@ -4,7 +4,9 @@ Every task runs the same loop, without being asked: start from the current remot
 open a pull request — then squash-merge the branch into the canonical checkout's local `main` and
 stop (step 6). The GitHub merge is the repository owner's manual step: an agent never runs
 `gh pr merge`, never enables auto-merge, and never passes `--delete-branch` (ADR-0066 and its
-amendment). The local squash is the checkout's record of what was landed, not a merge to the remote;
+amendment). The one exception is the Issue Implementer workflow, which squash-merges its own pull
+request once every check on it is green (ADR 0120); a session never does. The local squash is the
+checkout's record of what was landed, not a merge to the remote;
 the reconcile that reads it is the start of the next task.
 
 Work from your own worktree, never the canonical checkout — the guard refuses `git commit` and

@@ -1,13 +1,24 @@
-# Autonomous issue implementer: picks ONE ready-for-agent issue a day, implements it,
-# opens a pull request that closes it, and watches that pull request's checks. The merge
-# is the repository owner's manual step (ADR 0066, superseding ADR 0048), so this
-# workflow never merges.
+# Autonomous issue implementer: takes up to six ready-for-agent issues a day, one after
+# another, implements each, opens a pull request that closes it, and merges that pull
+# request as soon as every check on it is green (ADR 0120, which supersedes ADR 0066 for
+# this workflow alone - a session and `/oc` still stop at the open pull request).
 #
-# Pipeline: an actions/github-script step selects the target (ready-for-agent,
-# unassigned, not referenced by any open pull request) and prefetches context; one
-# DeepSeek 4.1 Flash phase implements it and writes /tmp/result.json; the pull request
-# title is normalized, its checks are watched and reported, and a final script records
-# the outcome on the issue.
+# Pipeline per round: an actions/github-script step selects the target - ready-for-agent,
+# unassigned, not named by an open pull request, and with no open blocker - in the order
+# `docs/mobile/parity-plan.json` puts its surface, and prefetches context; one DeepSeek
+# 4.1 Flash phase implements it and writes /tmp/result.json; the pull request title is
+# normalized, its checks are watched, and a green result is squash-merged with
+# `--match-head-commit`, so the merge lands on the commit the checks ran on. A final
+# script records the outcome on the issue.
+#
+# The order is not "the lowest number". A slice that waits for its siblings, a screen
+# that waits for the security review, the last gated state of a surface waiting for the
+# other three - each of those is a native `blocked_by` edge, and a body that says
+# `Blocked by: #12` is read as the fallback for the issues filed before the edges
+# existed. Within what is unblocked the plan's phase decides, then the number.
+#
+# Six rounds run as one matrix with `max-parallel: 1`, so each branch is cut from a
+# `main` that already carries the previous merge and no two rounds can claim one issue.
 #
 # Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
 # it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
@@ -68,14 +79,24 @@ concurrency:
 
 jobs:
   implement:
+    name: Round ${{ matrix.round }} of the day
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    # One at a time on purpose: two rounds would cut their branches from the same
+    # `main`, claim the same issue in the seconds before the first pull request exists,
+    # and conflict on the visual baselines both touch.
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        round: [1, 2, 3, 4, 5, 6]
 
     steps:
       - name: Daily guard
         # Idempotency for the redundant triggers: the planner's dispatch, the 06:00
         # schedule and the health-monitor catch-up all point here. Only the first
-        # successful run on a given UTC day does work; the rest exit immediately. The
+        # successful run on a given UTC day does work; the rest exit immediately, and
+        # the run that does work carries the day's six rounds. The
         # window is the calendar day, not a rolling one, so a backstop that lands
         # hours late can never push the next day's punctual run inside the window and
         # suppress it.
@@ -165,22 +186,91 @@ jobs:
                 body: clip(p.body, 300),
               })),
             };
-            const eligible = open
+            core.setOutput('existing_pr_numbers', JSON.stringify(pulls.map((p) => p.number)));
+
+            // The plan is the work order: a surface's phase is where its work sits, and a
+            // row's `issue` names the slice that lands that surface (ADR 0118, ADR 0120).
+            const phases = [];
+            const phaseOf = new Map();
+            try {
+              const plan = JSON.parse(
+                require('fs').readFileSync('docs/mobile/parity-plan.json', 'utf8')
+              );
+              for (const phase of plan.phases || []) phases.push(phase.id);
+              for (const row of plan.surfaces || []) {
+                if (!row.issue) continue;
+                const index = phases.indexOf(row.phase);
+                if (index < 0) continue;
+                const number = Number(String(row.issue).replace('#', ''));
+                const seen = phaseOf.get(number);
+                if (seen === undefined || index < seen) phaseOf.set(number, index);
+              }
+            } catch (error) {
+              core.warning('Could not read the plan for ordering: ' + error.message);
+            }
+
+            const candidates = open
               .filter((i) => !i.pull_request)
               .filter((i) => i.labels.some((l) => l.name === 'ready-for-agent'))
               .filter((i) => (i.assignees || []).length === 0)
               .filter((i) => !referenced.has(i.number))
-              .sort((a, b) => a.number - b.number);
+              .sort((a, b) => {
+                const pa = phaseOf.has(a.number) ? phaseOf.get(a.number) : Number.MAX_SAFE_INTEGER;
+                const pb = phaseOf.has(b.number) ? phaseOf.get(b.number) : Number.MAX_SAFE_INTEGER;
+                return pa === pb ? a.number - b.number : pa - pb;
+              });
 
-            core.setOutput('existing_pr_numbers', JSON.stringify(pulls.map((p) => p.number)));
-            if (eligible.length === 0) {
-              core.info('No ready-for-agent issue is eligible right now.');
+            // A blocker is the gate: the native edge is the truth, and a `Blocked by:`
+            // line is the fallback for issues filed before the edges existed.
+            const openNumbers = new Set(open.filter((i) => !i.pull_request).map((i) => i.number));
+            const namedByProse = (body) => {
+              const match = /^\s*blocked by:?\s*(.+)$/im.exec(body || '');
+              if (!match) return false;
+              for (const ref of match[1].matchAll(/#(\d+)/g)) {
+                if (openNumbers.has(Number(ref[1]))) return true;
+              }
+              return false;
+            };
+            const isBlocked = async (issue) => {
+              if (namedByProse(issue.body)) return true;
+              try {
+                const blockers = await github.paginate(
+                  'GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by',
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    per_page: 100,
+                  }
+                );
+                return blockers.some((blocker) => blocker.state === 'open');
+              } catch (error) {
+                // A repository without the dependencies API answers 404: treat it as
+                // "nothing blocks this", and say so rather than failing the round.
+                if (error.status === 404) return false;
+                core.warning(
+                  'Could not read the blockers of #' + issue.number + ': ' + error.message
+                );
+                return false;
+              }
+            };
+
+            let chosen = null;
+            for (const candidate of candidates) {
+              if (await isBlocked(candidate)) {
+                core.info('Skipping #' + candidate.number + ': a blocker is still open.');
+                continue;
+              }
+              chosen = candidate;
+              break;
+            }
+
+            if (!chosen) {
+              core.info('No ready-for-agent issue is unblocked right now.');
               core.setOutput('issue_number', '');
               core.setOutput('context', JSON.stringify({ ...base, selectedIssue: null }));
               return;
             }
-
-            const chosen = eligible[0];
             const full = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -237,7 +327,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number,
-              body: 'The Issue Implementer picked this up. It will open a pull request for a person to review and merge. Any update will follow here.',
+              body: 'The Issue Implementer picked this up. It will open a pull request and merge it once every check on it is green (ADR 0120). Any update will follow here.',
             });
 
       - name: Implement — DeepSeek 4.1 Flash
@@ -388,12 +478,13 @@ jobs:
               }
             }
 
-      - name: Watch the pull request's checks
+      - name: Watch the pull request's checks, then merge it
         id: checks
-        # The landing loop, run for the implementer, stops at the pull request: the action
-        # above committed, pushed and opened one, and this waits for its checks so the
-        # issue records the result. It never merges — the merge is the repository owner's
-        # manual step, so there is no merge command, no auto-merge and no merge identity.
+        # The merge is the workflow's own gate (ADR 0120): `main` carries no branch
+        # protection, so a repository-level auto-merge would fire the moment the pull
+        # request opened, and requiring checks through protection would gate every human
+        # pull request on the same set. The watch below is what decides, and the merge
+        # names the commit it watched.
         #
         # A check that does not pass is reported on the issue and left for a person,
         # exactly like an implementation the agent could not finish.
@@ -447,7 +538,34 @@ jobs:
           fi
 
           echo "status=green" >> "$GITHUB_OUTPUT"
-          echo "Pull request #$pr is open with green checks; the merge is a person's step."
+
+          # A green pull request the agent did not report as implemented is not merged:
+          # the agent is the one that read the acceptance criteria, so its `cannot` wins
+          # over a coincidentally green check run.
+          if [ -f /tmp/result.json ] && ! grep -q 'implemented' /tmp/result.json; then
+            echo "The agent did not report this issue implemented; leaving pull request #$pr for a person."
+            exit 0
+          fi
+
+          # `--match-head-commit` is the point: the checks ran on this commit, and a push
+          # that lands between the watch and the merge cannot ride along unseen. The
+          # squash is the only merge `main` accepts, and no `--delete-branch`: a branch
+          # the pull request still points at is where a later conflict gets resolved.
+          head=$(gh pr view "$pr" --json headRefOid --jq .headRefOid)
+          if gh pr merge "$pr" --squash --match-head-commit "$head" >/dev/null; then
+            sleep 5
+            state=$(gh pr view "$pr" --json state --jq .state)
+            if [ "$state" = "MERGED" ]; then
+              echo "status=merged" >> "$GITHUB_OUTPUT"
+              echo "Merged pull request #$pr; its \`Closes\` line closes the issue."
+              exit 0
+            fi
+            echo "status=red" >> "$GITHUB_OUTPUT"
+            printf 'reason=%s\n' "Pull request #$pr is green but stayed $state after the merge was requested." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "status=red" >> "$GITHUB_OUTPUT"
+          printf 'reason=%s\n' "Pull request #$pr is green and the merge was refused; it needs a person." >> "$GITHUB_OUTPUT"
 
       - name: Record the outcome
         id: outcome
@@ -485,10 +603,29 @@ jobs:
                 .removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number, name })
                 .catch(() => {});
 
+            if (result.status === 'implemented' && checks === 'merged' && prNumber) {
+              // The merge landed, so `Closes #n` closed this issue on `main`. Nothing is
+              // handed to a person and no readiness label comes back: the slice is done
+              // and its dependents are unblocked by the edge closing with it.
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body:
+                  'The Issue Implementer merged pull request #' +
+                  prNumber +
+                  ' once every check was green (ADR 0120). This issue closes with it.',
+              });
+              await removeLabel('ready-for-agent');
+              await removeLabel('opencode:in-progress');
+              core.info('Merged issue #' + issue_number + ' as pull request #' + prNumber + '.');
+              return;
+            }
+
             if (result.status === 'implemented' && prNumber) {
-              // The pull request is the handoff. `Closes #n` in its body closes this issue
-              // when a person merges it; this comment is the record of which pull request
-              // was opened and whether it is ready for that merge.
+              // Green but not merged (the merge was refused, or the pull request is
+              // older than this run). `Closes #n` still closes the issue when someone
+              // merges it, so the issue stays open with a person.
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
