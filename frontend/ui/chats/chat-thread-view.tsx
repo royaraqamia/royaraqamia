@@ -43,6 +43,12 @@ import {
   type ChatPeer,
   type ChatThread,
 } from '@/shared/contracts/chat';
+import {
+  chatAgentActionIsOpen,
+  chatAgentActionSentence,
+  chatAgentActionStatusLabel,
+  type ChatAgentAction,
+} from '@/shared/contracts/chat-agent-actions';
 
 /**
  * What the bottom of the screen offers, derived from the thread's own state:
@@ -90,6 +96,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const {
     thread,
     messages,
+    actions,
     isLoading,
     isSending,
     error,
@@ -103,6 +110,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     request,
     unblock,
     invite,
+    resolveAction,
     refresh,
   } = useChatThread(conversationId);
   const { user } = useSession();
@@ -126,6 +134,12 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   }, [messages.length, assistant.streamingText]);
 
   const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
+  /** A proposal is drawn under the line it belongs to (#818). */
+  const actionByMessage = useMemo(() => {
+    const byMessage = new Map<string, ChatAgentAction>();
+    for (const action of actions) byMessage.set(action.messageId, action);
+    return byMessage;
+  }, [actions]);
 
   // The channel is joined only where someone can actually write: a thread this
   // member cannot post in has no typing to draw and nothing to broadcast.
@@ -350,6 +364,8 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                   message={message}
                   mine={mine}
                   receipt={readReceiptOf(thread, message, mine)}
+                  action={actionByMessage.get(message.id) ?? null}
+                  onResolve={(actionId, answer) => resolveAction(actionId, answer)}
                   onEdit={edit}
                   onDownload={(attachmentId) => void handleDownload(attachmentId)}
                   onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
@@ -369,6 +385,19 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
               )}
             </div>
           </div>
+        )}
+
+        {/* What this turn read or proposed, so the member sees the tool that ran
+            and the card that is waiting for them (#818). */}
+        {assistant.toolsUsed.length > 0 && (
+          <ul
+            aria-live="polite"
+            className="flex flex-col gap-0.5 text-[11px] text-muted-foreground"
+          >
+            {assistant.toolsUsed.map((line, at) => (
+              <li key={`${at}-${line}`}>· {line}</li>
+            ))}
+          </ul>
         )}
 
         <div ref={bottomRef} />
@@ -1161,6 +1190,8 @@ function MessageRow({
   message,
   mine,
   receipt,
+  action,
+  onResolve,
   onEdit,
   onDownload,
   onDelete,
@@ -1169,6 +1200,9 @@ function MessageRow({
   mine: boolean;
   /** Who has read this line, or `null` when nobody has reached it yet (#816). */
   receipt: string | null;
+  /** The assistant's proposal on this line, or `null` (#818). */
+  action: ChatAgentAction | null;
+  onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
   onEdit: (id: string, body: string) => Promise<boolean>;
   onDownload: (attachmentId: string) => void;
   onDelete: (id: string) => void;
@@ -1187,78 +1221,82 @@ function MessageRow({
         </p>
       )}
 
-      <div
-        className={cn(
-          'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-xs',
-          mine
-            ? 'rounded-br-md bg-primary text-primary-foreground'
-            : 'rounded-bl-md bg-muted text-foreground dark:bg-muted/70'
-        )}
-      >
-        {deleted ? (
-          <span className="text-xs italic opacity-70">حُذفت هذه الرسالة</span>
-        ) : editing ? (
-          <div className="space-y-2">
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              rows={2}
-              maxLength={4000}
-              className="w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
-              aria-label="تعديل الرسالة"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="text-[11px] font-bold opacity-80"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (await onEdit(message.id, draft)) setEditing(false);
-                }}
-                className="inline-flex items-center gap-1 text-[11px] font-bold"
-              >
-                <Check size={12} /> حفظ
-              </button>
-            </div>
-          </div>
-        ) : (
-          message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>
-        )}
-
-        {message.attachments.length > 0 && !deleted && (
-          <ul className="mt-2 space-y-1">
-            {message.attachments.map((attachment) => (
-              <li key={attachment.id}>
-                {/* A chip, never a preview: no type is drawn inline (ADR-0113),
-                    and the download is the only action a file has. */}
+      {action ? (
+        <ActionCard action={action} onResolve={onResolve} />
+      ) : (
+        <div
+          className={cn(
+            'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-xs',
+            mine
+              ? 'rounded-br-md bg-primary text-primary-foreground'
+              : 'rounded-bl-md bg-muted text-foreground dark:bg-muted/70'
+          )}
+        >
+          {deleted ? (
+            <span className="text-xs italic opacity-70">حُذفت هذه الرسالة</span>
+          ) : editing ? (
+            <div className="space-y-2">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                rows={2}
+                maxLength={4000}
+                className="w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
+                aria-label="تعديل الرسالة"
+              />
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => onDownload(attachment.id)}
-                  className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
-                  aria-label={`تنزيل ${attachment.fileName}`}
+                  onClick={() => setEditing(false)}
+                  className="text-[11px] font-bold opacity-80"
                 >
-                  <Download size={12} className="shrink-0" />
-                  <span className="max-w-48 truncate">{attachment.fileName}</span>
-                  <span className="shrink-0 opacity-70">
-                    {formatAttachmentSize(attachment.byteSize)}
-                  </span>
+                  إلغاء
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (await onEdit(message.id, draft)) setEditing(false);
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold"
+                >
+                  <Check size={12} /> حفظ
+                </button>
+              </div>
+            </div>
+          ) : (
+            message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>
+          )}
+
+          {message.attachments.length > 0 && !deleted && (
+            <ul className="mt-2 space-y-1">
+              {message.attachments.map((attachment) => (
+                <li key={attachment.id}>
+                  {/* A chip, never a preview: no type is drawn inline (ADR-0113),
+                    and the download is the only action a file has. */}
+                  <button
+                    type="button"
+                    onClick={() => onDownload(attachment.id)}
+                    className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
+                    aria-label={`تنزيل ${attachment.fileName}`}
+                  >
+                    <Download size={12} className="shrink-0" />
+                    <span className="max-w-48 truncate">{attachment.fileName}</span>
+                    <span className="shrink-0 opacity-70">
+                      {formatAttachmentSize(attachment.byteSize)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
         <span>{calculateTimeAgo(message.createdAt)}</span>
         {message.editedAt && !deleted && <span>· عُدّلت</span>}
         {receipt && <span>· {receipt}</span>}
-        {mine && !deleted && (
+        {mine && !deleted && !action && (
           <>
             {editable && (
               <button
@@ -1281,6 +1319,77 @@ function MessageRow({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The proposal (ADR-0113, #818): the tool in the member's words, the arguments
+ * it was given, and the two answers. Nothing here writes anything — the buttons
+ * ask the server, and the server runs the write as this member.
+ *
+ * A resolved card keeps its words and says what it became; a refusal shows the
+ * service's own sentence, which is the reason the write did not happen.
+ */
+function ActionCard({
+  action,
+  onResolve,
+}: {
+  action: ChatAgentAction;
+  onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const open = chatAgentActionIsOpen(action.status);
+  const reason = typeof action.result?.error === 'string' ? action.result.error : null;
+
+  const resolve = async (answer: 'confirm' | 'reject') => {
+    setBusy(true);
+    try {
+      await onResolve(action.id, answer);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-[85%] rounded-2xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-xs">
+      <p className="font-bold leading-relaxed text-foreground">
+        {chatAgentActionSentence(action.tool, action.args)}
+      </p>
+      <p
+        className={cn(
+          'mt-1 text-[11px]',
+          action.status === 'applied'
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : action.status === 'failed'
+              ? 'text-destructive'
+              : 'text-muted-foreground'
+        )}
+      >
+        {chatAgentActionStatusLabel(action.status)}
+      </p>
+      {reason && <p className="mt-1 text-xs leading-relaxed text-destructive">{reason}</p>}
+
+      {open && (
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void resolve('confirm')}
+            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60"
+          >
+            {ASSISTANT_COPY.confirmAction}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void resolve('reject')}
+            className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 disabled:opacity-60"
+          >
+            {ASSISTANT_COPY.cancelAction}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

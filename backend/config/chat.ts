@@ -3,6 +3,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createSupabaseChatRepository } from '@/backend/repositories/chat/supabase-chat-repository';
 import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import {
+  createSupabaseChatAgentActionRepository,
+  toChatAgentAction,
+} from '@/backend/repositories/chat/chat-agent-action-repository';
+import {
+  ChatAgentActionService,
+  type ChatAgentActionServiceDeps,
+} from '@/backend/services/chat/chat-agent-action-service';
 import { createChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import { createChatAttachmentSweepRepository } from '@/backend/repositories/chat/chat-attachment-sweep-repository';
 import { ChatService, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
@@ -43,6 +51,14 @@ export function createSupabaseChatService(
     // The bucket is private and its policies ask the same membership question
     // the table does, so signing and removal run on the caller's own session.
     attachments: createChatAttachmentStorage(supabase),
+    // A proposal is read on the same session, so a member sees only the cards
+    // of a thread they are in (#818).
+    actions: {
+      listForMessages: async (messageIds) =>
+        (await createSupabaseChatAgentActionRepository(supabase).listForMessages(messageIds)).map(
+          toChatAgentAction
+        ),
+    },
     // A request is delivered on the service role: `notifications` grants INSERT
     // to `service_role` only, and the producer is fail-safe by contract.
     notify: createAdminNotificationProducer(),
@@ -80,6 +96,31 @@ export function createSupabaseChatAgentService(
     chats: createSupabaseChatService(supabase),
     reserve: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.chatAgentTurns),
     client: createAiChatClient(),
+    // The assistant writes the proposal with the service role (a member must
+    // not be able to forge one); the member's own confirmation is a separate
+    // service, on their own session.
+    actions: createSupabaseChatAgentActionService(supabase),
+    ...deps,
+  });
+}
+
+/**
+ * The proposals (ADR-0113, #818).
+ *
+ * Reads and resolutions run on the caller's own client, so a member resolves
+ * their own rows and nobody else's. The one service-role write is the proposal
+ * itself, and the one service-role read behind it is the assistant's line.
+ */
+export function createSupabaseChatAgentActionService(
+  supabase: SupabaseClient<Database>,
+  deps: Partial<ChatAgentActionServiceDeps> = {}
+): ChatAgentActionService {
+  const admin = getAdminSupabase();
+
+  return new ChatAgentActionService({
+    actions: createSupabaseChatAgentActionRepository(supabase, admin),
+    agent: createSupabaseChatAgentRepository(admin),
+    chats: createSupabaseChatService(supabase),
     ...deps,
   });
 }

@@ -7,6 +7,7 @@ import {
 } from '@/backend/repositories/chat/chat-repository';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { PublicUser } from '@/shared/contracts/users';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import {
   chatAttachmentIsInlineImage,
   chatTitle,
@@ -49,6 +50,14 @@ export interface ChatServiceDeps {
   checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean>;
   /** The bucket the attachments live in: signing and removal only. */
   attachments: ChatAttachmentStorage;
+  /**
+   * The assistant's proposals, read on the caller's own session so RLS decides
+   * which of them exist for this member (#818). Absent in a surface that has no
+   * assistant — the thread then simply carries no cards.
+   */
+  actions?: {
+    listForMessages(messageIds: string[]): Promise<ChatAgentAction[]>;
+  };
   /**
    * In-app notification producer (the request stage, ADR-0113). Wired to the
    * service-role producer because the `notifications` table grants INSERT to
@@ -241,9 +250,14 @@ export class ChatService {
     const records = hasMore ? page.slice(0, PAGE_SIZE) : page;
 
     const messages = await this.hydrate(records);
+    const actions = this.deps.actions
+      ? await this.deps.actions.listForMessages(records.map((record) => record.id))
+      : [];
+
     return {
       messages: messages.reverse(),
       nextCursor: hasMore ? (records[records.length - 1]?.createdAt ?? null) : null,
+      actions,
     };
   }
 

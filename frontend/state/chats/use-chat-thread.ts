@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  confirmChatAgentAction,
   deleteChatMessage,
   editChatMessage,
   getChatMessages,
   getChatThread,
   inviteChatMembers,
   markChatRead,
+  rejectChatAgentAction,
   requestChatThread,
   respondToChat,
   sendChatMessage,
@@ -22,6 +24,7 @@ import {
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
 /**
  * A refused write is a sentence, not an unhandled rejection: the buttons that
@@ -35,6 +38,8 @@ function failureOf(error: unknown, fallback: string): string {
 export interface ChatThreadState {
   thread: ChatThread | null;
   messages: ChatMessage[];
+  /** The assistant's proposals, drawn under the lines they belong to (#818). */
+  actions: ChatAgentAction[];
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
@@ -52,6 +57,11 @@ export interface ChatThreadState {
   unblock: (peerId: string) => Promise<string | null>;
   /** Invite members into a group: the refusal sentence, or `null` when invited. */
   invite: (memberIds: string[]) => Promise<string | null>;
+  /**
+   * Confirm or decline a proposal. The row comes back as it now stands — a
+   * refusal is a `failed` row with its reason, not a thrown error (#818).
+   */
+  resolveAction: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
 }
 
 /**
@@ -64,6 +74,7 @@ export interface ChatThreadState {
 export function useChatThread(conversationId: string): ChatThreadState {
   const [thread, setThread] = useState<ChatThread | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [actions, setActions] = useState<ChatAgentAction[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -96,6 +107,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
 
       setThread(nextThread);
       setMessages(page.messages);
+      setActions(page.actions);
       setCursor(page.nextCursor);
 
       if (nextThread) {
@@ -155,6 +167,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
     if (!cursor) return;
     const page = await getChatMessages(conversationId, cursor);
     setMessages((current) => [...page.messages, ...current]);
+    setActions((current) => [...page.actions, ...current]);
     setCursor(page.nextCursor);
   }, [conversationId, cursor]);
 
@@ -294,9 +307,37 @@ export function useChatThread(conversationId: string): ChatThreadState {
     [act, conversationId]
   );
 
+  /**
+   * A proposal's answer. The row that comes back replaces the one on screen, so
+   * the card shows what the service said without waiting for a broadcast — and
+   * a refusal is that row, not an exception.
+   */
+  const resolveAction = useCallback(
+    async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
+      setError(null);
+      try {
+        const action =
+          answer === 'confirm'
+            ? await confirmChatAgentAction(conversationId, actionId)
+            : await rejectChatAgentAction(conversationId, actionId);
+
+        setActions((current) =>
+          current.map((candidate) => (candidate.id === action.id ? action : candidate))
+        );
+
+        const reason = action.result?.error;
+        return action.status === 'failed' && typeof reason === 'string' ? reason : null;
+      } catch (error) {
+        return failureOf(error, 'تعذّر تنفيذ الإجراء');
+      }
+    },
+    [conversationId]
+  );
+
   return {
     thread,
     messages,
+    actions,
     isLoading,
     isSending,
     error,
@@ -311,5 +352,6 @@ export function useChatThread(conversationId: string): ChatThreadState {
     request,
     unblock,
     invite,
+    resolveAction,
   };
 }

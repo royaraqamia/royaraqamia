@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { getChatAssistant, streamChatAgentTurn } from '@/frontend/api/chats';
 import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
+import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 
 export interface ChatAssistantState {
   /** False when the deployment has no provider key: the thread reads, nothing sends. */
@@ -14,6 +15,12 @@ export interface ChatAssistantState {
   isStreaming: boolean;
   /** The answer as it is written, then dropped once the stored message arrives. */
   streamingText: string;
+  /**
+   * What this turn read or proposed, in the member's words: a read tool ran, or
+   * a proposal is waiting for its card. It is this turn's own record, dropped
+   * when the next one starts (#818).
+   */
+  toolsUsed: string[];
   error: string | null;
   ask: (body: string) => Promise<boolean>;
   refresh: () => Promise<void>;
@@ -36,6 +43,7 @@ export function useChatAssistant(
   const [allowance, setAllowance] = useState<ChatAgentAllowance | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [toolsUsed, setToolsUsed] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -60,6 +68,7 @@ export function useChatAssistant(
 
       setIsStreaming(true);
       setStreamingText('');
+      setToolsUsed([]);
       setError(null);
 
       let failure: string | null = null;
@@ -68,6 +77,12 @@ export function useChatAssistant(
         await streamChatAgentTurn(conversationId, question, (event: ChatAgentEvent) => {
           if (event.type === 'delta') setStreamingText((current) => current + event.text);
           else if (event.type === 'error') failure = event.error;
+          else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
+          else if (event.type === 'proposal')
+            setToolsUsed((current) => [
+              ...current,
+              chatAgentActionSentence(event.action.tool, event.action.args),
+            ]);
         });
       } catch (caught) {
         failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
@@ -87,5 +102,5 @@ export function useChatAssistant(
     [conversationId, isStreaming, onAnswered, refresh]
   );
 
-  return { available, allowance, isStreaming, streamingText, error, ask, refresh };
+  return { available, allowance, isStreaming, streamingText, toolsUsed, error, ask, refresh };
 }

@@ -11,6 +11,7 @@ import {
   type ChatPreview,
   type ChatThread,
 } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { ApiError, request } from '@/frontend/transport/http';
 import {
   joinBroadcastChannel,
@@ -86,7 +87,11 @@ export async function getChatMessages(
   const result = await request<ChatMessagesResponse>(`/api/chats/${id}/messages${query}`, {
     cache: 'no-store',
   });
-  return { messages: result.messages ?? [], nextCursor: result.nextCursor ?? null };
+  return {
+    messages: result.messages ?? [],
+    nextCursor: result.nextCursor ?? null,
+    actions: result.actions ?? [],
+  };
 }
 
 export async function startDirectChat(userId: string): Promise<ChatStartResponse> {
@@ -264,6 +269,43 @@ export async function getChatAssistant(): Promise<ChatAssistantState> {
     cache: 'no-store',
   });
   return { available: result.available === true, allowance: result.allowance };
+}
+
+interface ChatAgentActionResponse {
+  success: boolean;
+  action?: ChatAgentAction;
+  /** The reason a confirmed action failed, drawn on its card. */
+  error?: string;
+}
+
+/**
+ * The member's answer to a proposal (ADR-0113, #818). Confirming runs the write
+ * as this member; a refusal comes back as the `failed` row with its reason, not
+ * as a thrown error, because the card is where it is read.
+ */
+export async function confirmChatAgentAction(
+  conversationId: string,
+  actionId: string
+): Promise<ChatAgentAction> {
+  const result = await request<ChatAgentActionResponse>(
+    `/api/chats/${conversationId}/agent-actions/${actionId}/confirm`,
+    { method: 'POST' }
+  );
+  if (!result.action) throw new ApiError(result.error ?? 'تعذّر تنفيذ الإجراء');
+  return result.action;
+}
+
+/** Declining: the row becomes `rejected` and nothing runs. */
+export async function rejectChatAgentAction(
+  conversationId: string,
+  actionId: string
+): Promise<ChatAgentAction> {
+  const result = await request<ChatAgentActionResponse>(
+    `/api/chats/${conversationId}/agent-actions/${actionId}/reject`,
+    { method: 'POST' }
+  );
+  if (!result.action) throw new ApiError(result.error ?? 'تعذّر إلغاء الإجراء');
+  return result.action;
 }
 
 /** A server message the stream never opened with, since SSE carries its own. */

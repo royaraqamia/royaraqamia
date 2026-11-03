@@ -9,10 +9,15 @@ import { env } from '@/backend/config/env';
  * spoofable first entry.
  */
 export function getClientIp(req: NextRequest): string {
-  const realIp = req.headers.get('x-real-ip')?.trim();
+  return getClientIpFromHeaders(req.headers);
+}
+
+/** The same resolution, for a handler that holds the headers and not the request. */
+export function getClientIpFromHeaders(headers: Headers): string {
+  const realIp = headers.get('x-real-ip')?.trim();
   if (realIp) return realIp;
 
-  const forwarded = req.headers.get('x-forwarded-for');
+  const forwarded = headers.get('x-forwarded-for');
   if (forwarded) {
     const hops = forwarded
       .split(',')
