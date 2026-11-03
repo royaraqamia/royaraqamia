@@ -61,6 +61,21 @@ class ApiClient(
         decodeAfter("DELETE", path, null, serializer)
 
     /**
+     * A `POST` whose answer the caller draws (#819).
+     *
+     * The difference from [send] is what the caller wants back: a chat's write is
+     * answered with the row as it now stands (a message, a thread, a sentence of
+     * refusal), so it is decoded through the generated contract rather than left
+     * as text. [send] stays the Outbox's, which only needs "the server took it".
+     */
+    suspend fun <T> post(path: String, body: String?, serializer: KSerializer<T>): ApiResult<T> =
+        decodeAfter("POST", path, body, serializer)
+
+    /** A `PATCH` on the same path as [post]: an edited message is answered whole. */
+    suspend fun <T> patch(path: String, body: String?, serializer: KSerializer<T>): ApiResult<T> =
+        decodeAfter("PATCH", path, body, serializer)
+
+    /**
      * One write, answered as its raw body (#650).
      *
      * The body is not decoded because the caller is the Outbox: what it needs to
@@ -148,13 +163,29 @@ class ApiClient(
     /** [delete] with the serializer taken from the type the caller asked for. */
     suspend inline fun <reified T> delete(path: String): ApiResult<T> = delete(path, serializer<T>())
 
+    /** [post] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> post(path: String, body: String?): ApiResult<T> =
+        post(path, body, serializer<T>())
+
+    /** [patch] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> patch(path: String, body: String?): ApiResult<T> =
+        patch(path, body, serializer<T>())
+
     private fun send(method: String, path: String, accessToken: String, body: String?): Answer =
         try {
             Answer.Sent(
                 transport.send(
                     method = method,
                     url = urlFor(path),
-                    headers = mapOf("Authorization" to "Bearer $accessToken"),
+                    headers =
+                        if (body == null) {
+                            mapOf("Authorization" to "Bearer $accessToken")
+                        } else {
+                            mapOf(
+                                "Authorization" to "Bearer $accessToken",
+                                "Content-Type" to "application/json",
+                            )
+                        },
                     body = body,
                 )
             )

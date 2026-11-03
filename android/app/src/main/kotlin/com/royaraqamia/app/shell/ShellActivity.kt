@@ -27,6 +27,9 @@ import com.royaraqamia.app.AppGraph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
+import com.royaraqamia.app.chats.ChatRoutes
+import com.royaraqamia.app.chats.ChatThread
+import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
@@ -278,28 +281,53 @@ class ShellActivity : ComponentActivity() {
                             // carries. The code is the route's own segment, so this
                             // is the one destination the shell reads out of a route
                             // rather than matching whole.
+                            // A thread (#819): the conversation the site's row
+                            // opens, drawn from the same three routes. A card's
+                            // destinations are routes, not screens: the member
+                            // picker is `/chats/new`, which is the document.
                             else -> {
+                                val conversationId = ChatRoutes.idOf(current)
                                 val unlock = LinksnapRoutes.codeOf(current)
-                                if (unlock != null) {
-                                    // A protected link (#654): the same route the
-                                    // site serves, and the same live read. The
-                                    // destination opens in the browser, which is
-                                    // where the site's form sends a visitor too.
-                                    LinksnapUnlockScreen(
-                                        code = unlock,
-                                        repository = graph.linksnap,
-                                        onOpenUrl = ::openExternal,
-                                    )
-                                } else {
-                                    VerifyRoutes.codeOf(current)?.let { code ->
-                                        VerifyCodeScreen(
-                                            code = code,
-                                            repository = graph.verify,
-                                            siteUrl = BuildConfig.SITE_URL,
-                                            onCopy = ::copyToClipboard,
-                                            onOpenRoute = ::openRoute,
+                                when {
+                                    ChatRoutes.isChatsTab(current) ->
+                                        ChatsScreen(
+                                            repository = graph.chats,
+                                            onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
+                                            onOpenAssistant = { openRoute(ChatRoutes.threadOf(it)) },
+                                            onNewChat = { openRoute("/chats/new") },
+                                            onUpgrade = { openRoute("/pricing") },
                                         )
-                                    }
+                                    conversationId != null ->
+                                        ChatThread(
+                                            conversationId = conversationId,
+                                            repository = graph.chats,
+                                            onOpenAttachment = ::openExternal,
+                                            // The assistant's thread is the
+                                            // document: it streams rather than
+                                            // reads, and its own stage ports it.
+                                            onOpenAssistantThread = { openRoute(it) },
+                                        )
+                                    unlock != null ->
+                                        // A protected link (#654): the same route
+                                        // the site serves, and the same live read.
+                                        // The destination opens in the browser,
+                                        // which is where the site's form sends a
+                                        // visitor too.
+                                        LinksnapUnlockScreen(
+                                            code = unlock,
+                                            repository = graph.linksnap,
+                                            onOpenUrl = ::openExternal,
+                                        )
+                                    else ->
+                                        VerifyRoutes.codeOf(current)?.let { code ->
+                                            VerifyCodeScreen(
+                                                code = code,
+                                                repository = graph.verify,
+                                                siteUrl = BuildConfig.SITE_URL,
+                                                onCopy = ::copyToClipboard,
+                                                onOpenRoute = ::openRoute,
+                                            )
+                                        }
                                 }
                             }
                         }

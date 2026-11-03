@@ -1,18 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, MessagesSquare, Plus, Sparkles, Users, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
-import { createChatGroup, startAssistantChat } from '@/frontend/api/chats';
-import { calculateTimeAgo } from '@/frontend/shared/format';
+import { createChatGroup, getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
+import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { MemberPicker } from './member-picker';
+import { CHATS_LIST_COPY } from './chats-panel-copy';
+/**
+ * What a past instant is, in the chats surface's words (#819).
+ *
+ * The sentences are the list's own (`chats-list.json`), which is why they are not
+ * `calculateTimeAgo`'s: the tab and the thread are one surface, and a row and its
+ * thread that word "three days ago" differently would be two clients in one app.
+ * The thresholds stay the shared formatter's (`timeAgoParts`), and the date a
+ * month out is the Hijri day the site prints.
+ */
+export function chatTimeAgo(iso: string): string {
+  const parts = timeAgoParts(iso);
+  switch (parts.unit) {
+    case 'now':
+      return CHATS_LIST_COPY.agoNow;
+    case 'minutes':
+      return CHATS_LIST_COPY.agoMinutes.replace('{count}', String(parts.count));
+    case 'hours':
+      return CHATS_LIST_COPY.agoHours.replace('{count}', String(parts.count));
+    case 'days':
+      return CHATS_LIST_COPY.agoDays.replace('{count}', String(parts.count));
+    case 'weeks':
+      return CHATS_LIST_COPY.agoWeeks.replace('{count}', String(parts.count));
+    case 'date':
+      return formatHijriDate(iso);
+  }
+}
+
 import {
   CHAT_GROUP_MEMBERS_MAX,
   type ChatConversationSummary,
@@ -25,10 +54,16 @@ import {
  *
  * It renders inside the page's tabpanel, so it owns no heading of its own and
  * never draws `<main>`.
+ *
+ * The assistant's row is drawn only while this member has no assistant thread
+ * yet, and it is *locked* rather than offered when the plan allows no turn
+ * (`allowance.member.cap === 0`): a row that opens a thread that refuses every
+ * question is a control that lies (#819). The same sentence is the thread's,
+ * from one copy source, so the two screens cannot word the lock differently.
  */
 export function ChatsPanel() {
   const router = useRouter();
-  const { threads, isLoading, respond } = useChatThreads(true);
+  const { threads, isLoading, error, refresh, respond } = useChatThreads(true);
   const [panel, setPanel] = useState<'direct' | 'group' | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
@@ -37,6 +72,7 @@ export function ChatsPanel() {
   } | null>(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
+  const [assistantLocked, setAssistantLocked] = useState(false);
 
   const pending = threads.filter(
     (thread) => thread.myStatus === 'requested' || thread.myStatus === 'invited'
@@ -45,6 +81,21 @@ export function ChatsPanel() {
     (thread) => thread.myStatus === 'active' || thread.myStatus === 'declined'
   );
   const hasAssistant = threads.some((thread) => thread.kind === 'agent');
+
+  // The lock is the server's answer, not a guess: one read says what today's
+  // allowance is, and a failed read leaves the row offered (the thread's own
+  // refusal is then the sentence the member sees).
+  useEffect(() => {
+    let alive = true;
+    void getChatAssistant()
+      .then((state) => {
+        if (alive) setAssistantLocked(state.allowance.member.cap === 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   /**
    * The assistant's thread is created on first open, so the tab offers it once
@@ -56,9 +107,11 @@ export function ChatsPanel() {
     try {
       const result = await startAssistantChat();
       if (result.conversationId) router.push(`/chats/${result.conversationId}`);
-      else setFailure(result.error ?? 'تعذّر فتح المساعد');
+      else setFailure(result.error ?? CHATS_LIST_COPY.assistantFailed);
     } catch (error) {
-      setFailure(error instanceof Error && error.message ? error.message : 'تعذّر فتح المساعد');
+      setFailure(
+        error instanceof Error && error.message ? error.message : CHATS_LIST_COPY.assistantFailed
+      );
     } finally {
       setAssistantBusy(false);
     }
@@ -86,11 +139,21 @@ export function ChatsPanel() {
     router.push(`/chats/${conversationId}`);
   }
 
+  if (error) {
+    return (
+      <ReadFailureNotice
+        failure={toReadFailure(error, CHATS_LIST_COPY.listError)}
+        variant="block"
+        onRetry={() => void refresh()}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
+        <p className="text-sm font-medium text-muted-foreground">{CHATS_LIST_COPY.loading}</p>
       </div>
     );
   }
@@ -98,7 +161,9 @@ export function ChatsPanel() {
   return (
     <div className="space-y-4">
       <p className="text-xs font-medium text-muted-foreground/80">
-        {threads.length === 0 ? 'لا محادثات بعد' : `${threads.length} محادثة`}
+        {threads.length === 0
+          ? CHATS_LIST_COPY.noThreads
+          : CHATS_LIST_COPY.threadCount.replace('{count}', String(threads.length))}
       </p>
 
       {failure && (
@@ -120,27 +185,50 @@ export function ChatsPanel() {
         />
       )}
 
-      {!hasAssistant && (
-        <button
-          type="button"
-          onClick={() => void openAssistant()}
-          disabled={assistantBusy}
-          className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
-        >
-          <span className="rounded-full bg-primary/10 p-2 text-primary">
-            <Sparkles size={18} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-foreground">المساعد الذكي</span>
-            <span className="mt-0.5 block text-xs text-muted-foreground/80">
-              اسأل عن أي شيء، والرد يصلك هنا.
+      {!hasAssistant &&
+        (assistantLocked ? (
+          <div className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs">
+            <span className="rounded-full bg-muted/60 p-2 text-muted-foreground/80">
+              <Sparkles size={18} />
             </span>
-          </span>
-        </button>
-      )}
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-foreground">
+                {CHATS_LIST_COPY.assistantTitle}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground/80">
+                {CHATS_LIST_COPY.assistantLocked}
+              </span>
+            </span>
+            <Link
+              href="/pricing"
+              className="shrink-0 text-xs font-bold text-primary hover:underline"
+            >
+              {CHATS_LIST_COPY.assistantUpgrade}
+            </Link>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void openAssistant()}
+            disabled={assistantBusy}
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
+          >
+            <span className="rounded-full bg-primary/10 p-2 text-primary">
+              <Sparkles size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-foreground">
+                {CHATS_LIST_COPY.assistantTitle}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground/80">
+                {CHATS_LIST_COPY.assistantBody}
+              </span>
+            </span>
+          </button>
+        ))}
 
       {pending.length > 0 && (
-        <section aria-label="طلبات المحادثة" className="space-y-2">
+        <section aria-label={CHATS_LIST_COPY.requestsLabel} className="space-y-2">
           {pending.map((thread) => (
             <div
               key={thread.id}
@@ -148,7 +236,9 @@ export function ChatsPanel() {
             >
               <ThreadIdentity thread={thread} />
               <p className="mt-1 text-xs text-muted-foreground">
-                {thread.myStatus === 'invited' ? 'دعاك إلى محادثة جماعية' : 'يريد بدء محادثة معك'}
+                {thread.myStatus === 'invited'
+                  ? CHATS_LIST_COPY.requestGroup
+                  : CHATS_LIST_COPY.requestDirect}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <button
@@ -157,7 +247,7 @@ export function ChatsPanel() {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90"
                 >
                   <Check size={14} />
-                  قبول
+                  {CHATS_LIST_COPY.accept}
                 </button>
                 <button
                   type="button"
@@ -165,7 +255,7 @@ export function ChatsPanel() {
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe hover:bg-accent"
                 >
                   <X size={14} />
-                  رفض
+                  {CHATS_LIST_COPY.decline}
                 </button>
               </div>
             </div>
@@ -176,18 +266,24 @@ export function ChatsPanel() {
       {answering && (
         <ConfirmDialog
           open
-          title={answering.choice === 'accept' ? 'قبول المحادثة' : 'رفض المحادثة'}
+          title={
+            answering.choice === 'accept'
+              ? CHATS_LIST_COPY.confirmAcceptTitle
+              : CHATS_LIST_COPY.confirmDeclineTitle
+          }
           message={
             answering.choice === 'accept'
               ? answering.thread.kind === 'group'
-                ? `ستنضمّ إلى «${answering.thread.title}» وترى رسائلها بعد القبول.`
-                : `ستتمكّن أنت و${answering.thread.title} من إرسال الرسائل بعد القبول.`
+                ? CHATS_LIST_COPY.acceptGroupMessage.replace('{title}', answering.thread.title)
+                : CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', answering.thread.title)
               : answering.thread.kind === 'group'
-                ? 'سيُرفض الانضمام، ولن تظهر لك رسائل هذه المجموعة.'
-                : 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.'
+                ? CHATS_LIST_COPY.declineGroupMessage
+                : CHATS_LIST_COPY.declineDirectMessage
           }
-          confirmLabel={answering.choice === 'accept' ? 'قبول' : 'رفض'}
-          cancelLabel="إلغاء"
+          confirmLabel={
+            answering.choice === 'accept' ? CHATS_LIST_COPY.accept : CHATS_LIST_COPY.decline
+          }
+          cancelLabel={CHATS_LIST_COPY.cancel}
           isConfirming={isAnswering}
           variant={answering.choice === 'accept' ? 'default' : 'danger'}
           onCancel={() => setAnswering(null)}
@@ -207,12 +303,14 @@ export function ChatsPanel() {
                 <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
                   {thread.lastMessageAt && (
                     <span className="text-[11px] font-medium text-muted-foreground/60">
-                      {calculateTimeAgo(thread.lastMessageAt)}
+                      {chatTimeAgo(thread.lastMessageAt)}
                     </span>
                   )}
                   {thread.unreadCount > 0 && (
                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
-                      {thread.unreadCount > 99 ? '99+' : thread.unreadCount}
+                      {thread.unreadCount > 99
+                        ? CHATS_LIST_COPY.unreadOverflow
+                        : thread.unreadCount}
                     </span>
                   )}
                 </div>
@@ -226,8 +324,8 @@ export function ChatsPanel() {
             <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">
               <MessagesSquare size={24} />
             </div>
-            <p className="text-sm font-bold text-foreground">لا توجد محادثات بعد</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">ابدأ محادثة مع عضو، وستظهر هنا.</p>
+            <p className="text-sm font-bold text-foreground">{CHATS_LIST_COPY.emptyTitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">{CHATS_LIST_COPY.emptyBody}</p>
           </div>
         )
       )}
@@ -235,7 +333,7 @@ export function ChatsPanel() {
       {/* The primary action floats, like the community composer: the list owns
           the screen, and starting a chat is never a row inside it. */}
       <FabButton
-        label="محادثة جديدة"
+        label={CHATS_LIST_COPY.newChat}
         aria-expanded={panel !== null}
         onClick={() => setPanel((current) => (current ? null : 'direct'))}
       >
@@ -263,13 +361,17 @@ function NewConversationPanel({
   onClose: () => void;
 }) {
   const tabs: { mode: 'direct' | 'group'; label: string }[] = [
-    { mode: 'direct', label: 'محادثة' },
-    { mode: 'group', label: 'مجموعة' },
+    { mode: 'direct', label: CHATS_LIST_COPY.typeDirect },
+    { mode: 'group', label: CHATS_LIST_COPY.typeGroup },
   ];
 
   return (
     <div className="rounded-2xl border border-border/70 bg-card/60 p-3 shadow-xs">
-      <div role="tablist" aria-label="نوع المحادثة" className="mb-3 flex items-center gap-1">
+      <div
+        role="tablist"
+        aria-label={CHATS_LIST_COPY.conversationType}
+        className="mb-3 flex items-center gap-1"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.mode}
@@ -323,11 +425,11 @@ function GroupForm({
     if (busy) return;
 
     if (!title.trim()) {
-      setError('اسم المجموعة مطلوب');
+      setError(CHATS_LIST_COPY.groupNameRequired);
       return;
     }
     if (selected.length === 0) {
-      setError('أضف عضواً واحداً على الأقل');
+      setError(CHATS_LIST_COPY.groupMembersRequired);
       return;
     }
 
@@ -342,9 +444,11 @@ function GroupForm({
         onCreated(result.conversationId);
         return;
       }
-      setError(result.error ?? 'تعذّر إنشاء المجموعة');
+      setError(result.error ?? CHATS_LIST_COPY.groupCreateFailed);
     } catch (cause) {
-      setError(cause instanceof Error && cause.message ? cause.message : 'تعذّر إنشاء المجموعة');
+      setError(
+        cause instanceof Error && cause.message ? cause.message : CHATS_LIST_COPY.groupCreateFailed
+      );
     } finally {
       setBusy(false);
     }
@@ -354,21 +458,21 @@ function GroupForm({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <label htmlFor="chat-group-title" className="sr-only">
-          اسم المجموعة
+          {CHATS_LIST_COPY.groupName}
         </label>
         <input
           id="chat-group-title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           maxLength={80}
-          placeholder="اسم المجموعة"
-          aria-label="اسم المجموعة"
+          placeholder={CHATS_LIST_COPY.groupName}
+          aria-label={CHATS_LIST_COPY.groupName}
           className="min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         />
         <button
           type="button"
           onClick={onClose}
-          aria-label="إغلاق البحث"
+          aria-label={CHATS_LIST_COPY.closeSearch}
           className="rounded-lg p-1 text-muted-foreground/70 transition-safe hover:bg-accent hover:text-foreground"
         >
           <X size={16} />
@@ -378,7 +482,7 @@ function GroupForm({
       <MemberPicker multiple selected={selected} onToggle={toggle} />
 
       {selected.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label="المدعوون">
+        <ul className="flex flex-wrap gap-1.5" aria-label={CHATS_LIST_COPY.invitees}>
           {selected.map((member) => (
             <li
               key={member.id}
@@ -388,7 +492,10 @@ function GroupForm({
               <button
                 type="button"
                 onClick={() => toggle(member)}
-                aria-label={`إزالة ${member.name ?? member.username}`}
+                aria-label={CHATS_LIST_COPY.removeInvitee.replace(
+                  '{name}',
+                  member.name ?? member.username
+                )}
                 className="shrink-0 rounded p-0.5 hover:text-destructive"
               >
                 <X size={11} />
@@ -406,7 +513,7 @@ function GroupForm({
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-muted-foreground/70">
-          حتى {CHAT_GROUP_MEMBERS_MAX - 1} عضواً غيرك
+          {CHATS_LIST_COPY.groupLimit.replace('{count}', String(CHAT_GROUP_MEMBERS_MAX - 1))}
         </p>
         <button
           type="button"
@@ -414,7 +521,7 @@ function GroupForm({
           disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
         >
-          {busy ? 'جاري الإنشاء...' : 'إنشاء المجموعة'}
+          {busy ? CHATS_LIST_COPY.groupCreating : CHATS_LIST_COPY.groupCreate}
         </button>
       </div>
     </div>
@@ -445,10 +552,10 @@ function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
           {thread.status === 'declined'
-            ? 'رُفضت المحادثة'
+            ? CHATS_LIST_COPY.declinedLabel
             : thread.lastMessage
               ? previewOf(thread)
-              : 'لا رسائل بعد'}
+              : CHATS_LIST_COPY.noMessages}
         </p>
       </div>
     </div>
@@ -457,8 +564,8 @@ function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
 
 function previewOf(thread: ChatConversationSummary): string {
   const line = thread.lastMessage;
-  if (!line) return 'لا رسائل بعد';
-  if (line.hasAttachments && !line.body) return 'مرفق';
-  const who = line.senderKind === 'agent' ? 'المساعد: ' : '';
+  if (!line) return CHATS_LIST_COPY.noMessages;
+  if (line.hasAttachments && !line.body) return CHATS_LIST_COPY.attachmentOnly;
+  const who = line.senderKind === 'agent' ? CHATS_LIST_COPY.agentPrefix : '';
   return `${who}${line.body ?? ''}`.trim();
 }

@@ -4,8 +4,9 @@
   "screens": [
     {
       "surface": "chats",
-      "native": null,
-      "reason": "The app opens the web thread in the shell for now; the native port is the change ADR-0113 names as its last stage, and it lands with a parity.json row."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatsScreen.kt",
+      "reason": "Ported (#819) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117).",
+      "enabled": false
     },
     {
       "surface": "home",

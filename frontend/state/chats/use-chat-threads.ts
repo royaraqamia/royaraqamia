@@ -27,6 +27,13 @@ export interface ChatThreadsState {
   threads: ChatConversationSummary[];
   unreadCount: number;
   isLoading: boolean;
+  /**
+   * Why the last read failed, or null when it answered. The tab draws the
+   * failure as its own face: an unreachable server is not "you have no
+   * conversations" (ADR-0031), so the reason is kept rather than the list
+   * silently emptying.
+   */
+  error: unknown;
   refresh: () => Promise<void>;
   respond: (id: string, answer: 'accept' | 'decline') => Promise<string | null>;
   start: (userId: string) => Promise<string | null>;
@@ -44,18 +51,22 @@ export function useChatThreads(enabled: boolean): ChatThreadsState {
   const { user } = useSession();
   const [threads, setThreads] = useState<ChatConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
 
   const refresh = useCallback(async () => {
     if (!enabled || !user) {
       setThreads([]);
+      setError(null);
       setIsLoading(false);
       return;
     }
 
     try {
       setThreads(await getChatThreads());
-    } catch {
+      setError(null);
+    } catch (cause) {
       setThreads([]);
+      setError(cause);
     } finally {
       setIsLoading(false);
     }
@@ -104,5 +115,5 @@ export function useChatThreads(enabled: boolean): ChatThreadsState {
     [refresh]
   );
 
-  return { threads, unreadCount, isLoading, refresh, respond, start };
+  return { threads, unreadCount, isLoading, error, refresh, respond, start };
 }

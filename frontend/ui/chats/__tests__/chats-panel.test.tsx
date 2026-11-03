@@ -31,11 +31,18 @@ vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
   }),
 }));
 
-const api = vi.hoisted(() => ({ searchChatMembers: vi.fn(), createChatGroup: vi.fn() }));
+const api = vi.hoisted(() => ({
+  searchChatMembers: vi.fn(),
+  createChatGroup: vi.fn(),
+  getChatAssistant: vi.fn(),
+  startAssistantChat: vi.fn(),
+}));
 
 vi.mock('@/frontend/api/chats', () => ({
   searchChatMembers: api.searchChatMembers,
   createChatGroup: api.createChatGroup,
+  getChatAssistant: api.getChatAssistant,
+  startAssistantChat: api.startAssistantChat,
 }));
 
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
@@ -74,6 +81,13 @@ const GROUP: ChatConversationSummary = {
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
+const PRO_ALLOWANCE = {
+  plan: 'pro' as const,
+  member: { used: 2, cap: 40 },
+  project: { used: 60, limit: 900 },
+  resetsAt: '2026-11-04T00:00:00.000Z',
+};
+
 /**
  * The member's own picture is the row's identity: the directory hands it over as
  * `avatarUrl` (ADR-0088), so a list that only draws initials has dropped half of
@@ -86,6 +100,12 @@ describe('ChatsPanel', () => {
     hooks.respond.mockReset().mockResolvedValue(null);
     api.searchChatMembers.mockReset().mockResolvedValue([PEER]);
     api.createChatGroup.mockReset();
+    api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
+    // A Pro member by default: the row is offered, which is what the other tests
+    // here assume. The lock has its own test below.
+    api.getChatAssistant
+      .mockReset()
+      .mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
     navigation.push.mockReset();
   });
 
@@ -150,5 +170,25 @@ describe('ChatsPanel', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('اسم المجموعة مطلوب');
     expect(api.createChatGroup).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The assistant is Pro-only on the site's own terms (#819): the allowance says
+   * what a turn costs, and a cap of zero is the plan saying no. The row is then a
+   * statement with a way to upgrade, not a control that opens a thread which
+   * refuses every question.
+   */
+  it('offers the assistant locked when the plan allows no turn', async () => {
+    api.getChatAssistant.mockResolvedValue({
+      available: true,
+      allowance: { ...PRO_ALLOWANCE, member: { used: 0, cap: 0 } },
+    });
+
+    render(<ChatsPanel />);
+
+    expect(await screen.findByText('المساعد متاح لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
+    expect(screen.queryByRole('button', { name: /المساعد الذكي/ })).not.toBeInTheDocument();
+    expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 });

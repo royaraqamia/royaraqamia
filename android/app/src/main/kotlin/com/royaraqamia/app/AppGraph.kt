@@ -2,6 +2,7 @@ package com.royaraqamia.app
 
 import android.content.Context
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityFeedSnapshotStore
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
@@ -67,6 +68,8 @@ class AppGraph private constructor(
     val rates: RatesRepository,
     /** The community feed, and the last page this device saw (#658). */
     val community: CommunityFeedRepository,
+    /** The chats surface (#819): the tab rows, one thread and its writes. */
+    val chats: ChatsRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -205,6 +208,7 @@ class AppGraph private constructor(
                         client,
                         CommunityFeedSnapshotStore(File(context.filesDir, "community")),
                     ),
+                chats = ChatsRepository(client),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
