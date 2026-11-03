@@ -41,6 +41,7 @@
  *   GITHUB_TOKEN, GITHUB_REPOSITORY
  */
 
+import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_REPO = 'royaraqamia';
@@ -49,15 +50,39 @@ const MAX_TELEGRAM = 4000;
 const DEFAULT_TZ_MINUTES = 180;
 const INFERENCE_URL = 'https://opencode.ai/inference/go/openai/v1/chat/completions';
 const MODEL = 'deepseek-v4.1-flash';
+const TRANSCRIBE_MODEL = 'mimo-v2.6-flash';
 const SYSTEM_PROMPT = [
-  'أنت مساعد المطوّر في مستودع royaraqamia على GitHub.',
-  'أجب على السؤال مباشرة وبإيجاز، بالعربية، بنبرة إنسان طبيعي.',
-  'أسماء الملفات والأوامر والوسوم تبقى بالإنجليزية كما هي.',
-  'لا تسرد قائمة الأوامر ولا تشرح قدراتك إلا إن سُئلت عنها صراحة.',
-  'إن طلب المستخدم تغييراً أو إصلاحاً في الكود فقل إن ذلك يحتاج /task أو /now،',
-  'وإلا فلا تذكر الأوامر إطلاقاً.',
-  'أنت لا تعدّل الكود بنفسك، ولا تدّعي أنك نفّذت شيئاً لم يُنفّذ.',
+  'أنت صديق مقرّب ومستشار موثوق لأيهم، تكتب بالعربية الطبيعية بلا تكلّف ولا نبرة رسمية.',
+  'أجب عن أي شيء يسأله: الكود، العمل، الحياة، الأفكار، الآراء، التخطيط — كما يفعل صديق ذكي وصريح.',
+  'كن مباشراً وصادقاً: إن كان لك رأي فقلْه، وإن لم تكن متأكداً فقل ذلك بدل أن تخمّن.',
+  'أسماء الملفات والأوامر والتقنيات تبقى بالإنجليزية كما هي.',
+  'ترى آخر رسائل محادثتكما فقط، ولا ترى المستودع ولا الإنترنت، ولا تعدّل الكود بنفسك:',
+  'إن طلب تعديلاً في الكود فقل إن ذلك يحتاج /task أو /now، وإلا فلا تذكر الأوامر إطلاقاً.',
+  'لا تدّعِ أنك نفّذت شيئاً لم يُنفّذ، ولا تخترع أرقام issues أو أسماء فروع.',
 ].join(' ');
+
+/**
+ * The escalation switch. The chat has no tools of its own - it cannot read a
+ * file or open a page - so when a question needs evidence the model calls this
+ * and the answer arrives from a run that has both. Saying "I need to check" is
+ * the honest option; guessing is the one this prevents.
+ */
+const LOOKUP_TOOL = {
+  type: 'function',
+  function: {
+    name: 'lookup',
+    description:
+      'اطلب دليلاً حقيقياً قبل الإجابة: من ملفات المستودع (repo) أو من صفحة/بحث على الإنترنت (web). استخدمها حين تعتمد الإجابة على ملف أو سطر أو معلومة حديثة.',
+    parameters: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', enum: ['repo', 'web'] },
+        query: { type: 'string', description: 'ما تبحث عنه، أو رابط الصفحة' },
+      },
+      required: ['source', 'query'],
+    },
+  },
+};
 
 const env = (name) => process.env[name]?.trim() || '';
 
@@ -371,6 +396,131 @@ async function github(path, init = {}) {
   return response.status === 204 ? null : response.json();
 }
 
+// ---------------------------------------------------------------- the model
+
+/**
+ * One chat completion. `tools` is what lets the answer route ask for evidence
+ * instead of inventing it.
+ */
+async function chat(messages, { model = MODEL, tools } = {}) {
+  const key = env('OPENCODE_API_KEY');
+  if (!key) throw new Error('OPENCODE_API_KEY is not set');
+
+  const response = await fetch(INFERENCE_URL, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${key}`,
+      'content-type': 'application/json',
+      'user-agent': 'royaraqamia-telegram-bridge/1.0',
+      'x-opencode-session': 'bridge',
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.4,
+      messages,
+      ...(tools ? { tools, tool_choice: 'auto' } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`inference failed: ${response.status} ${body.slice(0, 300)}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message ?? {};
+}
+
+/** Turns a voice note into text. `deepseek-v4.1-flash` takes no audio; this one does. */
+async function transcribe(fileId) {
+  const file = await telegram('getFile', { file_id: fileId });
+  if (!file?.file_path) throw new Error('Telegram returned no file path');
+
+  const audio = await fetch(`https://api.telegram.org/file/bot${botToken()}/${file.file_path}`);
+  if (!audio.ok) throw new Error(`downloading the voice note failed: ${audio.status}`);
+
+  const data = Buffer.from(await audio.arrayBuffer()).toString('base64');
+  const message = await chat(
+    [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
+          { type: 'input_audio', input_audio: { data, format: 'ogg' } },
+        ],
+      },
+    ],
+    { model: TRANSCRIBE_MODEL }
+  );
+
+  return String(message.content ?? '').trim();
+}
+
+/**
+ * Real evidence for an escalated question. `repo` greps the checkout the runner
+ * already has; `web` fetches the URL it was given, or the search page when the
+ * question is a phrase. Bounded on purpose: a few kilobytes beats a transcript.
+ */
+function repoEvidence(query) {
+  const words = query
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\p{N}_.-]/gu, ''))
+    .filter((word) => word.length > 2)
+    .slice(0, 6);
+  if (!words.length) return '';
+
+  try {
+    const output = execFileSync(
+      'rg',
+      [
+        '--line-number',
+        '--ignore-case',
+        '--max-count',
+        '3',
+        '--max-columns',
+        '200',
+        '--glob',
+        '!node_modules',
+        '--glob',
+        '!.git',
+        '-e',
+        words.join('|'),
+        '.',
+      ],
+      { encoding: 'utf8', maxBuffer: 2_000_000 }
+    );
+    return output.slice(0, 6000);
+  } catch {
+    return '';
+  }
+}
+
+async function webEvidence(query) {
+  const trimmed = query.trim();
+  const target = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://html.duckduckgo.com/html/?q=${encodeURIComponent(trimmed)}`;
+
+  const response = await fetch(target, {
+    headers: { 'user-agent': 'Mozilla/5.0 (compatible; royaraqamia-bridge/1.0)' },
+  });
+  if (!response.ok) return '';
+
+  const html = await response.text();
+  const text = html
+    // `[^>]*` because a browser closes on `</script >` and `</script foo>` too,
+    // and a stripper that only knows the exact form leaves tags in the text.
+    .replace(/<script[\s\S]*?<\/script[^>]*>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return text.slice(0, 6000);
+}
+
 // ------------------------------------------------------------------- state
 
 async function ensureChat(chatId, title) {
@@ -419,9 +569,28 @@ async function recordOutbound(chatId, body, repo) {
   });
 }
 
-async function summaryFor(chatId) {
-  const rows = await db(`telegram_summaries?chat_id=eq.${chatId}&select=summary`);
-  return rows?.[0]?.summary ?? '';
+/**
+ * The last few exchanges, as the model's only memory. A rolling summary would be
+ * cheaper to read but nothing wrote one - and the first live conversation showed
+ * exactly what that costs: "جميل أعجبتني هذا الأمر" arrived with no idea what
+ * "هذا" was, and the answer said so. Ten rows is a paragraph or two, which is
+ * accurate, cheap, and bounded whatever the conversation length.
+ */
+async function recentHistory(chatId, beforeId) {
+  const filter = beforeId ? `&id=lt.${beforeId}` : '';
+  const rows =
+    (await db(
+      `telegram_messages?chat_id=eq.${chatId}${filter}&select=direction,body,created_at&order=id.desc&limit=10`
+    )) ?? [];
+  return rows.reverse();
+}
+
+/** Renders history the way a person reads it: what they said, what came back. */
+export function formatHistory(rows) {
+  return rows
+    .filter((row) => row?.body)
+    .map((row) => `${row.direction === 'in' ? 'المستخدم' : 'المساعد'}: ${row.body}`)
+    .join('\n');
 }
 
 let reposOfPromise = null;
@@ -452,14 +621,14 @@ function titleAndBody(body) {
   return { title, body: remainder || body };
 }
 
-async function handleTask({ text, chat, fast }) {
+async function handleTask({ text, chat, fast, messageId }) {
   const { owner } = githubTarget();
   const parsed = parseTarget(text);
   const repos = await knownRepos();
   const repo = parsed.repo && repos.has(parsed.repo) ? parsed.repo : DEFAULT_REPO;
   const task = repo === parsed.repo ? parsed.body : text;
   const { title, body } = titleAndBody(task);
-  const summary = await summaryFor(chat);
+  const context = formatHistory(await recentHistory(chat, messageId));
 
   const issue = await createIssue(
     owner,
@@ -470,7 +639,7 @@ async function handleTask({ text, chat, fast }) {
       '',
       body,
       '',
-      summary ? `<details><summary>السياق من المحادثة</summary>\n\n${summary}\n\n</details>` : '',
+      context ? `<details><summary>السياق من المحادثة</summary>\n\n${context}\n\n</details>` : '',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -535,45 +704,53 @@ async function handleTimezone({ args, chat }) {
 /**
  * The one model call in the bridge. Plain text is a question, not a task, so it
  * is answered here; the answer route has no tools and no repository, which is
- * what keeps a chatty message from touching anything. The rolling summary is the
- * only context it gets, so an old conversation costs a paragraph, not a transcript.
+ * what keeps a chatty message from touching anything. The last few exchanges are
+ * the only context it gets, so a long conversation costs a paragraph.
  */
-async function handleAnswer({ text, chat }) {
-  const key = env('OPENCODE_API_KEY');
-  if (!key) {
+async function handleAnswer({ text, chat, messageId }) {
+  if (!env('OPENCODE_API_KEY')) {
     const line = `الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم ${commandSpan('/task')} للمهام.`;
     await sendMessage(chat, line);
     await recordOutbound(chat, line, null);
     return;
   }
 
-  const summary = await summaryFor(chat);
-  const response = await fetch(INFERENCE_URL, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${key}`,
-      'content-type': 'application/json',
-      'user-agent': 'royaraqamia-telegram-bridge/1.0',
-      'x-opencode-session': String(chat),
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.4,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...(summary ? [{ role: 'system', content: `سياق سابق من المحادثة: ${summary}` }] : []),
-        { role: 'user', content: text },
-      ],
-    }),
-  });
+  const history = formatHistory(await recentHistory(chat, messageId));
+  const message = await chat(
+    [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...(history ? [{ role: 'system', content: `آخر ما جرى في المحادثة:\n${history}` }] : []),
+      { role: 'user', content: text },
+    ],
+    { tools: [LOOKUP_TOOL] }
+  );
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`inference failed: ${response.status} ${body.slice(0, 300)}`);
+  const call = message.tool_calls?.[0];
+  if (call?.function?.name === 'lookup') {
+    let args = {};
+    try {
+      args = JSON.parse(call.function.arguments ?? '{}');
+    } catch {
+      args = {};
+    }
+    const source = args.source === 'web' ? 'web' : 'repo';
+    const query = String(args.query ?? text).slice(0, 300);
+
+    await db('telegram_lookups', {
+      method: 'POST',
+      body: JSON.stringify({ chat_id: chat, source, query }),
+    });
+
+    const ack =
+      source === 'web'
+        ? '🔎 سأتحقق من الإنترنت، وأعود خلال دقائق.'
+        : '🔎 سأقرأ في المستودع، وأعود خلال دقائق.';
+    await sendMessage(chat, ack);
+    await recordOutbound(chat, ack, null);
+    return;
   }
 
-  const data = await response.json();
-  const answer = (data?.choices?.[0]?.message?.content ?? '').trim();
+  const answer = String(message.content ?? '').trim();
   const line = answer ? renderAnswer(answer) : 'لم أستطع صياغة إجابة. جرّب صياغة أخرى.';
   await sendMessage(chat, line);
   await recordOutbound(chat, line, null);
@@ -587,9 +764,11 @@ const HELP = [
   `${commandSpan('/tz +3')} — المنطقة الزمنية، مرة واحدة.`,
   `${commandSpan('repo-name:')} بعد ${commandSpan('/task')} — تنفيذ المهمة في مستودع آخر.`,
   'أي رسالة عادية أجيب عليها فقط، بلا issue وبلا تغيير في المستودع.',
+  'إن احتاج جوابي إلى ملف في المستودع أو إلى صفحة على الإنترنت فسأقول ذلك وأتحقق ثم أعود.',
+  'يمكنك إرسال رسالة صوتية وسأحوّلها إلى نص وأتعامل معها كرسالة عادية.',
 ].join('\n');
 
-async function handleMessage({ chat, text }) {
+async function handleMessage({ chat, text, messageId }) {
   if (String(chat) !== String(allowedChat())) return;
 
   const trimmed = (text ?? '').trim();
@@ -615,10 +794,10 @@ async function handleMessage({ chat, text }) {
   }
 
   if (command === 'task' || command === 'now') {
-    return handleTask({ text: args, chat, fast: command === 'now' });
+    return handleTask({ text: args, chat, fast: command === 'now', messageId });
   }
 
-  return handleAnswer({ text: trimmed, chat });
+  return handleAnswer({ text: trimmed, chat, messageId });
 }
 
 /**
@@ -629,7 +808,7 @@ async function handleMessage({ chat, text }) {
 async function drain() {
   const rows =
     (await db(
-      'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body&order=id.asc&limit=20'
+      'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body,voice_file_id&order=id.asc&limit=20'
     )) ?? [];
 
   process.stdout.write(`telegram: ${rows.length} unprocessed message(s)\n`);
@@ -637,7 +816,16 @@ async function drain() {
   for (const row of rows) {
     if (!(await claimRow(row))) continue;
     try {
-      await handleMessage({ chat: row.chat_id, text: row.body });
+      // A voice note is transcribed here, not in the function: the webhook has
+      // seconds and no model, and the drain already holds the bot token.
+      const text = row.voice_file_id ? await transcribe(row.voice_file_id) : row.body;
+      if (row.voice_file_id && text) {
+        await db(`telegram_messages?id=eq.${row.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ body: `🎙️ ${text}` }),
+        });
+      }
+      await handleMessage({ chat: row.chat_id, text, messageId: row.id });
     } catch (error) {
       await releaseRow(row);
       const chat = row.chat_id;
@@ -647,6 +835,61 @@ async function drain() {
           `⚠️ تعذّر تنفيذ الرسالة: ${escapeHtml(String(error.message).slice(0, 300))}`
         ).catch(() => {});
       }
+    }
+  }
+}
+
+/**
+ * Answers what the chat escalated. The evidence is gathered first and handed to
+ * the model as data, so the reply can cite a path or a link instead of sounding
+ * confident about something it never saw.
+ */
+async function lookups() {
+  const rows =
+    (await db(
+      'telegram_lookups?answered_at=is.null&select=id,chat_id,source,query&order=id.asc&limit=5'
+    )) ?? [];
+
+  process.stdout.write(`telegram: ${rows.length} pending lookup(s)\n`);
+
+  for (const row of rows) {
+    const claimed = await db(`telegram_lookups?id=eq.${row.id}&answered_at=is.null`, {
+      method: 'PATCH',
+      headers: { prefer: 'return=representation' },
+      body: JSON.stringify({ answered_at: new Date().toISOString() }),
+    });
+    if (!claimed?.length) continue;
+
+    try {
+      const evidence =
+        row.source === 'web' ? await webEvidence(row.query) : repoEvidence(row.query);
+      const message = await chat([
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'system',
+          content:
+            'فيما يلي مقتطفات حقيقية جُمعت الآن من المصدر المطلوب. أجب عنها وحدها، واذكر المسارات أو الروابط إن وجدت. إن كانت لا تكفي فقل ذلك صراحةً ولا تخمّن.',
+        },
+        {
+          role: 'user',
+          content: `السؤال: ${row.query}\n\nما وجدته:\n${evidence || '(لم أجد شيئاً)'}`,
+        },
+      ]);
+
+      const answer =
+        String(message.content ?? '').trim() || 'لم أجد ما يكفي للإجابة عن هذا السؤال.';
+      await sendMessage(row.chat_id, renderAnswer(answer));
+      await recordOutbound(row.chat_id, answer, null);
+    } catch (error) {
+      // Given back so the next run retries it rather than losing the question.
+      await db(`telegram_lookups?id=eq.${row.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ answered_at: null }),
+      }).catch(() => {});
+      await sendMessage(
+        row.chat_id,
+        `⚠️ تعذّر التحقق: ${escapeHtml(String(error.message).slice(0, 300))}`
+      ).catch(() => {});
     }
   }
 }
@@ -726,6 +969,7 @@ function arg(name) {
 async function main() {
   const mode = process.argv[2];
   if (mode === 'drain') return drain();
+  if (mode === 'lookup') return lookups();
   if (mode === 'remind') return remind();
   if (mode === 'digest') {
     return digest({

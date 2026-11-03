@@ -46,7 +46,7 @@ on:
       mode:
         description: 'What to do in this run'
         type: choice
-        options: [drain, remind, digest-planner, digest-implementer]
+        options: [drain, lookup, remind, digest-planner, digest-implementer]
         default: drain
   workflow_run:
     workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
@@ -137,6 +137,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/telegram-bridge.mjs drain
+
+      - name: Answer what the chat escalated
+        if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'lookup'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        # The repository is already checked out by the step above, so `repo`
+        # lookups grep the real tree instead of a summary of it.
+        run: node scripts/telegram-bridge.mjs lookup
 
       - name: Deliver due reminders
         if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remind'

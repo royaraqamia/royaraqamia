@@ -38,7 +38,20 @@ comes back to the chat. It never checks out a repository and cannot push code by
 
 The answer route is the bridge's only model call: DeepSeek V4.1 Flash through `OPENCODE_API_KEY`,
 with no tools and no repository, so a chatty message cannot change anything. Its only context is the
-rolling summary, which is why an old conversation costs a paragraph rather than a transcript.
+last ten exchanges, which is why an old conversation costs a paragraph rather than a transcript.
+
+## Looking things up, without a command
+
+The chat has one tool, `lookup`, and decides for itself when a question needs it
+([ADR 0123](../adr/0123-the-chat-escalates-instead-of-guessing.md)):
+
+- **`repo`** greps the checkout the runner already has and answers from the matching lines, citing paths.
+- **`web`** fetches the URL it was given, or the search page for a phrase.
+
+When it escalates, the bot first says «سأتحقق…», then the answer arrives in a second message a minute
+or two later. A question that needs neither is answered in about two seconds. Voice notes are
+transcribed first (`mimo-v2.6-flash`, the only audio-capable model on the plan) and then follow the
+same path, so a spoken task is still a task.
 
 The timezone is stored, not detected: Telegram sends none and a runner is always UTC, so without
 `/tz` every reminder is interpreted at the Damascus default (+03:00).
@@ -74,13 +87,14 @@ re-run is harmless. Finally send `/tz +3` once.
 
 ## Storage
 
-| Table                | Purpose                                            | Retention                         |
-| -------------------- | -------------------------------------------------- | --------------------------------- |
-| `telegram_chats`     | who may talk, and their offset                     | kept                              |
-| `telegram_messages`  | the transcript, `update_id` unique, `processed_at` | 90 days (`sweep_telegram_bridge`) |
-| `telegram_summaries` | rolling paragraph injected into a task's issue     | kept                              |
-| `telegram_reminders` | what was asked and whether it was sent             | sent rows pruned at 90 days       |
-| `telegram_state`     | unused since the webhook replaced polling          | —                                 |
+| Table                | Purpose                                                           | Retention                         |
+| -------------------- | ----------------------------------------------------------------- | --------------------------------- |
+| `telegram_chats`     | who may talk, and their offset                                    | kept                              |
+| `telegram_messages`  | the transcript, `update_id` unique, `processed_at`, voice file id | 90 days (`sweep_telegram_bridge`) |
+| `telegram_lookups`   | questions the chat escalated, and whether they were answered      | kept                              |
+| `telegram_summaries` | unused since the answer reads the last exchanges                  | —                                 |
+| `telegram_reminders` | what was asked and whether it was sent                            | sent rows pruned at 90 days       |
+| `telegram_state`     | unused since the webhook replaced polling                         | —                                 |
 
 Row level security is on and there is no policy: only `service_role` reads or writes. There is no
 signed-in user behind a chat, so an anon key reads nothing.

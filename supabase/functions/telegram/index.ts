@@ -48,7 +48,12 @@ Deno.serve(async (request: Request) => {
 
   let update: {
     update_id?: number;
-    message?: { chat?: { id?: number }; text?: string };
+    message?: {
+      chat?: { id?: number };
+      text?: string;
+      voice?: { file_id?: string; duration?: number };
+      audio?: { file_id?: string; duration?: number };
+    };
     edited_message?: { chat?: { id?: number }; text?: string };
   };
   try {
@@ -60,10 +65,16 @@ Deno.serve(async (request: Request) => {
   const message = update.message ?? update.edited_message;
   const text = message?.text?.trim();
   const from = message?.chat?.id;
+  // A voice note has no text but does have a file id; the drain run downloads and
+  // transcribes it, because this function has seconds and no model.
+  const voice =
+    (message && 'voice' in message ? message.voice : undefined) ??
+    (message && 'audio' in message ? message.audio : undefined);
 
-  // Anything that is not a text message from the one allowed chat is dropped
-  // with a 200, so Telegram stops trying and the log stays readable.
-  if (!update.update_id || !from || !text) return reply('ok');
+  // Anything that is not a text or voice message from the one allowed chat is
+  // dropped with a 200, so Telegram stops trying and the log stays readable.
+  if (!update.update_id || !from) return reply('ok');
+  if (!text && !voice?.file_id) return reply('ok');
   if (chatId && String(from) !== String(chatId)) return reply('ok');
 
   const stored = await fetch(`${supabaseUrl}/rest/v1/telegram_messages?on_conflict=update_id`, {
@@ -73,7 +84,9 @@ Deno.serve(async (request: Request) => {
       chat_id: from,
       update_id: update.update_id,
       direction: 'in',
-      body: text,
+      body: text ?? '🎙️',
+      voice_file_id: voice?.file_id ?? null,
+      voice_duration: voice?.duration ?? null,
     }),
   });
 
