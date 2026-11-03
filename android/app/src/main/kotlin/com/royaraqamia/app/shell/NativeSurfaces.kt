@@ -1,6 +1,7 @@
 package com.royaraqamia.app.shell
 
 import com.royaraqamia.app.community.CommunityRoutes
+import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.verify.VerifyRoutes
 
@@ -51,5 +52,6 @@ object NativeSurfaces {
         publicRoutes.contains(Routes.normalize(route)) ||
             VerifyRoutes.matches(route) ||
             CommunityRoutes.matches(route) ||
-            ProfileRoutes.matches(route)
+            ProfileRoutes.matches(route) ||
+            LinksnapRoutes.codeOf(route) != null
 }

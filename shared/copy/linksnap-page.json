@@ -1,0 +1,19 @@
+{
+  "surface": "linksnap",
+  "component": "linksnap-page",
+  "web": {
+    "file": "app/linksnap/(app)/linksnap-page-copy.ts",
+    "export": "LINKSNAP_PAGE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapPageCopy.kt",
+    "object": "LinksnapPageCopy"
+  },
+  "notes": {
+    "source": "The LinkSnap page heading, in both clients (#654). The site's page is the reference, so the app's title is the same string rather than a second spelling.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the page does not render."
+  },
+  "strings": {
+    "pageTitle": "اختصار الرَّوابط"
+  }
+}

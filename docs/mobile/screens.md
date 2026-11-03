@@ -14,8 +14,8 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `habitflow` | `/habitflow` | `HabitflowScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `linksnap` | `/linksnap` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
-| `linksnap-unlock` | `/linksnap/unlock/[code]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `linksnap` | `/linksnap` | `LinksnapScreen.kt` (off) | Ported with its Local Store and Outbox (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` (off) | Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `blogpress-editor` | `/blogpress/editor/[id]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `quran` | `/quran` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
@@ -23,7 +23,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran-surah` | `/quran/[surah]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | _web only_ | The page itself is the profile card and the sign-out, and lands in #798. |
-| `account-links` | `/account/links` | _web only_ | The owned links list is LinkSnap's dashboard, so it arrives with the app's LinkSnap screen (#654). |
+| `account-links` | `/account/links` | `LinksnapAccountScreen.kt` (off) | The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |

@@ -1,5 +1,6 @@
 import { LinkSnapAppView } from '@/frontend/ui/linksnap/link-snap-app-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { LINKSNAP_PAGE_COPY } from './linksnap-page-copy';
 
 /**
  * A cached, data-free shell (#449, ADR-0073).
@@ -14,7 +15,7 @@ export default function LinkSnapAppPage() {
     <>
       <header className="mb-10 text-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>اختصار الرَّوابط</SectionTitleHighlight>
+          <SectionTitleHighlight>{LINKSNAP_PAGE_COPY.pageTitle}</SectionTitleHighlight>
         </SectionTitle>
       </header>
       <LinkSnapAppView />
