@@ -33,8 +33,8 @@
     {
       "surface": "linksnap",
       "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
-      "reason": "Ported with its Local Store and Outbox (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerScreen.kt",
+      "reason": "The shortener is the page at rest and passes the visual gate (#654, #874); the signed-in form's custom code and password fields are still the document, so the surface stays off until they are drawn."
     },
     {
       "surface": "linksnap-unlock",
@@ -80,7 +80,7 @@
     {
       "surface": "account-links",
       "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapAccountScreen.kt",
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
       "reason": "The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {

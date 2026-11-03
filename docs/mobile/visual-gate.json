@@ -15,6 +15,20 @@
         "measured": 0.2261,
         "alignment": { "dx": 0, "dy": 2 }
       }
+    },
+    {
+      "surface": "linksnap",
+      "web": { "route": "/linksnap" },
+      "contract": "shared/visual/linksnap.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/linksnap/LinksnapScreenVisualTest.kt"
+      },
+      "tolerance": { "pixels": 0.055, "length": 0.5 },
+      "baseline": {
+        "recorded": "2026-11-03",
+        "measured": 0.0539,
+        "alignment": { "dx": 0, "dy": -1 }
+      }
     }
   ]
 }

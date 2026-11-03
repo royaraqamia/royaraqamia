@@ -1021,7 +1021,7 @@
         "copyExport": "LINKSNAP_PAGE_COPY"
       },
       "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerScreen.kt",
         "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUiState.kt",
         "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapPageCopy.kt",
         "copyObject": "LinksnapPageCopy"
