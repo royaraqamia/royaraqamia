@@ -43,6 +43,8 @@ export interface ChatThreadState {
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
+  /** Whether the last read failed, so the screen can say so rather than "missing". */
+  readFailed: boolean;
   hasOlder: boolean;
   refresh: () => Promise<void>;
   loadOlder: () => Promise<void>;
@@ -79,6 +81,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readFailed, setReadFailed] = useState(false);
   /** The newest line the screen holds, stamped or not. */
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
@@ -109,6 +112,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
       setMessages(page.messages);
       setActions(page.actions);
       setCursor(page.nextCursor);
+      setReadFailed(false);
 
       if (nextThread) {
         newestRef.current = page.messages[page.messages.length - 1]?.id ?? null;
@@ -116,6 +120,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
       }
     } catch {
       setThread(null);
+      setReadFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -341,6 +346,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
     isLoading,
     isSending,
     error,
+    readFailed,
     hasOlder: cursor !== null,
     refresh,
     loadOlder,

@@ -83,8 +83,8 @@ describe('readReceiptOf', () => {
     const at = makeThread('direct', [participant(ME, null), participant(PEER, LINE)]);
     const past = makeThread('direct', [participant(ME, null), participant(PEER, AFTER)]);
 
-    expect(readReceiptOf(at, makeMessage(LINE), true)).toBe('قُرئت');
-    expect(readReceiptOf(past, makeMessage(LINE), true)).toBe('قُرئت');
+    expect(readReceiptOf(at, makeMessage(LINE), true)).toEqual({ kind: 'peer' });
+    expect(readReceiptOf(past, makeMessage(LINE), true)).toEqual({ kind: 'peer' });
   });
 
   it('never marks the peer’s own line as read to itself', () => {
@@ -110,7 +110,7 @@ describe('readReceiptOf', () => {
       participant('peer-5', AFTER, 'invited'),
     ]);
 
-    expect(readReceiptOf(thread, makeMessage(LINE), true)).toBe('قرأها 2');
+    expect(readReceiptOf(thread, makeMessage(LINE), true)).toEqual({ kind: 'group', count: 2 });
   });
 
   it('says nothing in a group no one has reached yet', () => {

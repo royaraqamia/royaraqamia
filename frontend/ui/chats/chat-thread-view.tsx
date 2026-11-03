@@ -5,11 +5,10 @@ import Link from 'next/link';
 import {
   Check,
   Download,
-  MoreVertical,
-  Paperclip,
+  EllipsisVertical,
   Pencil,
   Send,
-  Trash2,
+  Trash,
   UserPlus,
   Users,
   X,
@@ -24,17 +23,23 @@ import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
 import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
-import { calculateTimeAgo } from '@/frontend/shared/format';
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { ReadFailureNotice } from '@/frontend/ui/shared/read-failure';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { MemberPicker } from './member-picker';
-import { readReceiptOf, typingLabel } from './read-receipt';
+import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
+import { ActionCard } from './chat-agent-action-card';
+import { AssistantComposer } from './chat-assistant-composer';
+import { ChatComposeAttachments } from './chat-compose-attachments';
+import { CHAT_THREAD_COPY } from './chat-thread-copy';
+import { CHATS_LIST_COPY } from './chats-panel-copy';
+import { chatTimeAgo } from './chats-panel';
 import {
   canEditChatMessage,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
@@ -43,12 +48,7 @@ import {
   type ChatPeer,
   type ChatThread,
 } from '@/shared/contracts/chat';
-import {
-  chatAgentActionIsOpen,
-  chatAgentActionSentence,
-  chatAgentActionStatusLabel,
-  type ChatAgentAction,
-} from '@/shared/contracts/chat-agent-actions';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
 /**
  * What the bottom of the screen offers, derived from the thread's own state:
@@ -84,8 +84,8 @@ function counterpartOf(thread: ChatThread) {
 /** What a waiting answer says: a direct request, or a group invitation. */
 function inviteNote(thread: ChatThread): string {
   return thread.kind === 'group'
-    ? `دُعيت إلى المجموعة «${thread.title}»، اقبل للانضمام إليها.`
-    : `${thread.title} يريد بدء محادثة معك.`;
+    ? CHAT_THREAD_COPY.inviteGroup.replace('{title}', thread.title)
+    : CHAT_THREAD_COPY.inviteDirect.replace('{title}', thread.title);
 }
 
 /**
@@ -100,6 +100,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     isLoading,
     isSending,
     error,
+    readFailed,
     hasOlder,
     loadOlder,
     send,
@@ -152,20 +153,30 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
+        <p className="text-sm font-medium text-muted-foreground">{CHAT_THREAD_COPY.loading}</p>
       </div>
+    );
+  }
+
+  if (!thread && readFailed) {
+    return (
+      <ReadFailureNotice
+        failure={{ offline: false, message: CHAT_THREAD_COPY.loadFailed }}
+        variant="block"
+        onRetry={() => void refresh()}
+      />
     );
   }
 
   if (!thread) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
-        <p className="text-sm font-bold text-foreground">المحادثة غير موجودة</p>
+        <p className="text-sm font-bold text-foreground">{CHAT_THREAD_COPY.notFound}</p>
         <Link
           href="/notifications?tab=chats"
           className="mt-3 text-xs font-bold text-primary hover:underline"
         >
-          العودة إلى المحادثات
+          {CHAT_THREAD_COPY.backToChats}
         </Link>
       </div>
     );
@@ -227,7 +238,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   async function handleDownload(attachmentId: string) {
     const file = await getChatAttachmentUrl(conversationId, attachmentId);
     if (!file) {
-      setNotice('تعذّر تجهيز الملف');
+      setNotice(CHAT_THREAD_COPY.downloadFailed);
       return;
     }
     window.location.assign(file.url);
@@ -244,7 +255,8 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     try {
       failure = await action();
     } catch (error) {
-      failure = error instanceof Error && error.message ? error.message : 'تعذّر تنفيذ الطلب';
+      failure =
+        error instanceof Error && error.message ? error.message : CHAT_THREAD_COPY.requestFailed;
     } finally {
       setBusy(false);
       setNotice(failure);
@@ -254,40 +266,40 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
 
   const dialogs: Record<Confirm['kind'], { title: string; message: string; label: string }> = {
     accept: {
-      title: 'قبول المحادثة',
+      title: CHATS_LIST_COPY.confirmAcceptTitle,
       message:
         thread.kind === 'group'
-          ? `ستنضمّ إلى «${thread.title}» وترى رسائلها بعد القبول.`
-          : `ستتمكّن أنت و${thread.title} من إرسال الرسائل بعد القبول.`,
-      label: 'قبول',
+          ? CHATS_LIST_COPY.acceptGroupMessage.replace('{title}', thread.title)
+          : CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', thread.title),
+      label: CHATS_LIST_COPY.accept,
     },
     decline: {
-      title: 'رفض المحادثة',
+      title: CHATS_LIST_COPY.confirmDeclineTitle,
       message:
         thread.kind === 'group'
-          ? 'سيُرفض الانضمام، ولن تظهر لك رسائل هذه المجموعة.'
-          : 'سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.',
-      label: 'رفض',
+          ? CHATS_LIST_COPY.declineGroupMessage
+          : CHATS_LIST_COPY.declineDirectMessage,
+      label: CHATS_LIST_COPY.decline,
     },
     withdraw: {
-      title: 'إلغاء الطلب',
-      message: 'سيختفي الطلب من عند الطرفين، ويمكنك إرساله من جديد لاحقاً.',
-      label: 'إلغاء الطلب',
+      title: CHAT_THREAD_COPY.withdrawTitle,
+      message: CHAT_THREAD_COPY.withdrawMessage,
+      label: CHAT_THREAD_COPY.withdraw,
     },
     block: {
-      title: `حظر ${thread.title}`,
-      message: 'لن تستطيع أنت ولا هذا العضو إرسال رسائل بينكما، ويمكنك إلغاء الحظر لاحقاً.',
-      label: 'حظر',
+      title: CHAT_THREAD_COPY.blockTitle.replace('{title}', thread.title),
+      message: CHAT_THREAD_COPY.blockMessage,
+      label: CHAT_THREAD_COPY.block,
     },
     leave: {
-      title: 'مغادرة المحادثة',
-      message: 'لن تصلك رسائل هذه المحادثة بعد المغادرة.',
-      label: 'مغادرة',
+      title: CHAT_THREAD_COPY.leaveTitle,
+      message: CHAT_THREAD_COPY.leaveMessage,
+      label: CHAT_THREAD_COPY.leaveLabel,
     },
     deleteMessage: {
-      title: 'حذف الرسالة',
-      message: 'ستُحذف الرسالة من عند الطرفين، وتبقى آثارها في المحادثة.',
-      label: 'حذف',
+      title: CHAT_THREAD_COPY.deleteMessageTitle,
+      message: CHAT_THREAD_COPY.deleteMessageMessage,
+      label: CHAT_THREAD_COPY.delete,
     },
   };
 
@@ -348,7 +360,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             onClick={() => void loadOlder()}
             className="mx-auto rounded-lg px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
           >
-            تحميل رسائل أقدم
+            {CHAT_THREAD_COPY.loadOlder}
           </button>
         )}
 
@@ -441,7 +453,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           title={dialogs[confirm.kind].title}
           message={dialogs[confirm.kind].message}
           confirmLabel={dialogs[confirm.kind].label}
-          cancelLabel="إلغاء"
+          cancelLabel={CHATS_LIST_COPY.cancel}
           isConfirming={busy}
           variant={
             confirm.kind === 'block' ||
@@ -470,7 +482,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                   await blockChatUser(counterpart.id);
                   return null;
                 } catch (error) {
-                  return error instanceof Error && error.message ? error.message : 'تعذّر الحظر';
+                  return error instanceof Error && error.message
+                    ? error.message
+                    : CHAT_THREAD_COPY.blockFailed;
                 }
               }, true);
             } else if (confirm.kind === 'leave') {
@@ -482,7 +496,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                 } catch (error) {
                   return error instanceof Error && error.message
                     ? error.message
-                    : 'تعذّرت المغادرة';
+                    : CHAT_THREAD_COPY.leaveFailed;
                 }
               }, true);
             }
@@ -499,9 +513,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           void (async () => {
             try {
               const result = await reportChat(conversationId, reason, counterpart?.id ?? null);
-              setNotice(result.success ? 'تم إرسال الإبلاغ' : (result.error ?? 'تعذّر الإبلاغ'));
+              setNotice(
+                result.success
+                  ? CHAT_THREAD_COPY.reportSent
+                  : (result.error ?? CHAT_THREAD_COPY.reportFailed)
+              );
             } catch (error) {
-              setNotice(error instanceof Error && error.message ? error.message : 'تعذّر الإبلاغ');
+              setNotice(
+                error instanceof Error && error.message
+                  ? error.message
+                  : CHAT_THREAD_COPY.reportFailed
+              );
             } finally {
               setBusy(false);
               setReporting(false);
@@ -567,7 +589,10 @@ function ThreadHeader({
           <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
             {thread.kind === 'direct' && counterpart
               ? `@${counterpart.username}`
-              : `${threadMembers(thread).length} أعضاء`}
+              : CHAT_THREAD_COPY.membersCount.replace(
+                  '{count}',
+                  String(threadMembers(thread).length)
+                )}
           </p>
         )}
       </div>
@@ -576,11 +601,11 @@ function ThreadHeader({
         <button
           type="button"
           onClick={onToggleMenu}
-          aria-label="خيارات المحادثة"
+          aria-label={CHAT_THREAD_COPY.options}
           aria-expanded={menuOpen}
           className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
         >
-          <MoreVertical size={18} />
+          <EllipsisVertical size={18} />
         </button>
 
         {menuOpen && (
@@ -593,7 +618,7 @@ function ThreadHeader({
                 onClick={onReport}
                 className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
               >
-                إبلاغ عن المحادثة
+                {CHAT_THREAD_COPY.report}
               </button>
             )}
             {counterpart && (
@@ -602,7 +627,7 @@ function ThreadHeader({
                 onClick={onBlock}
                 className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
               >
-                حظر @{counterpart.username}
+                {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
               </button>
             )}
             {/* A direct thread is the pair: it exits by decline, withdraw or block (#842). */}
@@ -612,7 +637,7 @@ function ThreadHeader({
                 onClick={onLeave}
                 className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
               >
-                مغادرة المحادثة
+                {CHAT_THREAD_COPY.leave}
               </button>
             )}
           </div>
@@ -675,10 +700,14 @@ function GroupRoster({
   }
 
   return (
-    <section aria-label="أعضاء المجموعة" className="border-b border-border/40 px-3 py-2">
+    <section
+      aria-label={CHAT_THREAD_COPY.rosterLabel}
+      className="border-b border-border/40 px-3 py-2"
+    >
       <ul className="flex items-center gap-1.5 overflow-x-auto">
         {members.map((participant) => {
-          const name = participant.peer?.name ?? participant.peer?.username ?? 'عضو';
+          const name =
+            participant.peer?.name ?? participant.peer?.username ?? CHAT_THREAD_COPY.memberFallback;
 
           return (
             <li
@@ -695,10 +724,14 @@ function GroupRoster({
                 {name}
               </span>
               {participant.role === 'owner' && (
-                <span className="text-[10px] text-muted-foreground/70">مالك</span>
+                <span className="text-[10px] text-muted-foreground/70">
+                  {CHAT_THREAD_COPY.owner}
+                </span>
               )}
               {participant.status === 'invited' && (
-                <span className="text-[10px] text-muted-foreground/70">بانتظار القبول</span>
+                <span className="text-[10px] text-muted-foreground/70">
+                  {CHAT_THREAD_COPY.invited}
+                </span>
               )}
             </li>
           );
@@ -709,12 +742,12 @@ function GroupRoster({
             <button
               type="button"
               onClick={onStartInviting}
-              aria-label="إضافة أعضاء"
+              aria-label={CHAT_THREAD_COPY.addMembers}
               aria-expanded={inviting}
               className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-bold text-primary transition-safe hover:bg-primary/10"
             >
               <UserPlus size={13} />
-              إضافة
+              {CHAT_THREAD_COPY.add}
             </button>
           </li>
         )}
@@ -731,7 +764,7 @@ function GroupRoster({
           />
 
           {selected.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="المدعوون">
+            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={CHATS_LIST_COPY.invitees}>
               {selected.map((member) => (
                 <li
                   key={member.id}
@@ -741,7 +774,10 @@ function GroupRoster({
                   <button
                     type="button"
                     onClick={() => toggle(member)}
-                    aria-label={`إزالة ${member.name ?? member.username}`}
+                    aria-label={CHAT_THREAD_COPY.removeInvitee.replace(
+                      '{name}',
+                      member.name ?? member.username
+                    )}
                     className="shrink-0 rounded p-0.5 hover:text-destructive"
                   >
                     <X size={11} />
@@ -753,7 +789,9 @@ function GroupRoster({
 
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-[11px] text-muted-foreground/70">
-              {members.length} من {CHAT_GROUP_MEMBERS_MAX} عضواً
+              {CHAT_THREAD_COPY.rosterCount
+                .replace('{count}', String(members.length))
+                .replace('{max}', String(CHAT_GROUP_MEMBERS_MAX))}
             </p>
             <button
               type="button"
@@ -761,7 +799,7 @@ function GroupRoster({
               disabled={busy || selected.length === 0}
               className="rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
             >
-              {busy ? 'جاري الدعوة...' : 'دعوة'}
+              {busy ? CHAT_THREAD_COPY.inviting : CHAT_THREAD_COPY.invite}
             </button>
           </div>
         </div>
@@ -784,13 +822,13 @@ function ThreadIntro({
     state === 'answer'
       ? inviteNote(thread)
       : state === 'waiting'
-        ? 'بانتظار موافقة الطرف الآخر على طلبك.'
+        ? CHAT_THREAD_COPY.waitingThread
         : state === 'closed'
           ? thread.status === 'declined'
-            ? 'رُفضت هذه المحادثة.'
-            : 'أُغلقت هذه المحادثة.'
+            ? CHAT_THREAD_COPY.closedDeclined
+            : CHAT_THREAD_COPY.closedArchived
           : state === 'blocked'
-            ? 'حظرت هذا العضو، فلا يمكنكما تبادل الرسائل.'
+            ? CHAT_THREAD_COPY.blockedThread
             : null;
 
   return (
@@ -805,8 +843,7 @@ function ThreadIntro({
       )}
       <p className="text-sm font-bold text-foreground">{thread.title}</p>
       <p className="text-xs leading-relaxed text-muted-foreground/80">
-        {note ??
-          (thread.kind === 'agent' ? ASSISTANT_COPY.intro : 'لا رسائل بعد. ابدأ المحادثة برسالة.')}
+        {note ?? (thread.kind === 'agent' ? ASSISTANT_COPY.intro : CHAT_THREAD_COPY.emptyThread)}
       </p>
     </div>
   );
@@ -852,8 +889,6 @@ function ThreadFooter({
   onRequest: () => void;
   onUnblock: () => void;
 }) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   // The assistant owns its composer: no files, no reply-to, and a locked or
   // spent state is a sentence rather than a disabled input with no reason.
   if (thread.kind === 'agent') {
@@ -875,54 +910,12 @@ function ThreadFooter({
         }}
         className="space-y-2 border-t border-border/40 p-3"
       >
-        {files.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
-            {files.map((file, index) => (
-              <li
-                key={`${file.name}-${index}`}
-                className="flex max-w-64 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
-              >
-                <Paperclip size={11} className="shrink-0" />
-                <span className="truncate">{file.name}</span>
-                <span className="shrink-0 text-muted-foreground/70">
-                  {formatAttachmentSize(file.size)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onRemoveFile(index)}
-                  aria-label={`إزالة ${file.name}`}
-                  className="shrink-0 rounded p-0.5 hover:text-destructive"
-                >
-                  <X size={11} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="flex items-end gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(event) => {
-              onAddFiles(Array.from(event.target.files ?? []));
-              // Reset so picking the same file twice still fires a change.
-              event.target.value = '';
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            aria-label="إرفاق ملف"
-            disabled={isSending}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip size={16} />
-          </Button>
-
+        <ChatComposeAttachments
+          files={files}
+          disabled={isSending}
+          onAdd={onAddFiles}
+          onRemove={onRemoveFile}
+        >
           <textarea
             value={draft}
             onChange={(event) => {
@@ -939,20 +932,20 @@ function ThreadFooter({
             }}
             rows={1}
             maxLength={4000}
-            placeholder="اكتب رسالة..."
-            aria-label="نص الرسالة"
+            placeholder={CHAT_THREAD_COPY.placeholder}
+            aria-label={CHAT_THREAD_COPY.messageLabel}
             className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
           />
           <Button
             type="submit"
             variant="hero"
             size="icon-sm"
-            aria-label="إرسال"
+            aria-label={CHAT_THREAD_COPY.send}
             disabled={isSending || (draft.trim().length === 0 && files.length === 0)}
           >
             <Send size={16} />
           </Button>
-        </div>
+        </ChatComposeAttachments>
 
         <p className="text-[11px] text-muted-foreground/70">
           {todayRemaining === 0
@@ -971,10 +964,10 @@ function ThreadFooter({
         <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
           <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
-            قبول
+            {CHATS_LIST_COPY.accept}
           </HeroCtaButton>
           <Button type="button" variant="outline" onClick={onDecline} className="h-11 px-6">
-            رفض
+            {CHATS_LIST_COPY.decline}
           </Button>
         </div>
       </div>
@@ -985,11 +978,11 @@ function ThreadFooter({
     return (
       <div className="space-y-2 border-t border-border/40 p-3">
         <p className="text-center text-xs text-muted-foreground">
-          بانتظار موافقة {thread.title} على طلبك.
+          {CHAT_THREAD_COPY.waitingComposer.replace('{title}', thread.title)}
         </p>
         <div className="flex justify-center">
           <Button type="button" variant="outline" onClick={onWithdraw} className="h-11 px-6">
-            إلغاء الطلب
+            {CHAT_THREAD_COPY.withdraw}
           </Button>
         </div>
       </div>
@@ -1000,11 +993,11 @@ function ThreadFooter({
     return (
       <div className="space-y-2 border-t border-border/40 p-3">
         <p className="text-center text-xs text-muted-foreground">
-          حظرت هذا العضو. أزل الحظر لتتمكّنا من تبادل الرسائل.
+          {CHAT_THREAD_COPY.blockedComposer}
         </p>
         <div className="flex justify-center">
           <Button type="button" variant="outline" onClick={onUnblock} className="h-11 px-6">
-            إلغاء الحظر
+            {CHAT_THREAD_COPY.unblock}
           </Button>
         </div>
       </div>
@@ -1015,11 +1008,13 @@ function ThreadFooter({
     return (
       <div className="space-y-2 border-t border-border/40 p-3">
         <p className="text-center text-xs text-muted-foreground">
-          {thread.status === 'declined' ? 'رُفضت هذه المحادثة.' : 'أُغلقت هذه المحادثة.'}
+          {thread.status === 'declined'
+            ? CHAT_THREAD_COPY.closedDeclined
+            : CHAT_THREAD_COPY.closedArchived}
         </p>
         <div className="flex justify-center">
           <HeroCtaButton type="button" onClick={onRequest} className="h-11 px-6 text-sm">
-            إرسال طلب جديد
+            {CHAT_THREAD_COPY.newRequest}
           </HeroCtaButton>
         </div>
       </div>
@@ -1029,139 +1024,9 @@ function ThreadFooter({
   return (
     <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
       {thread.status === 'declined'
-        ? 'رُفضت هذه المحادثة، فلا يمكن إرسال رسائل فيها.'
-        : 'أنت لست عضواً فعّالاً في هذه المحادثة.'}
+        ? CHAT_THREAD_COPY.declinedComposer
+        : CHAT_THREAD_COPY.notMember}
     </p>
-  );
-}
-
-const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
-  hour: 'numeric',
-  minute: '2-digit',
-  timeZone: 'Asia/Damascus',
-});
-
-/** The spent-day sentence, from the server's own reset instant. */
-function limitReachedSentence(resetsAt: string): string {
-  const reset = new Date(resetsAt);
-  const time = Number.isNaN(reset.getTime())
-    ? ASSISTANT_COPY.midnight
-    : RESET_TIME_FORMAT.format(reset);
-  return ASSISTANT_COPY.limitReached.replace('{time}', time);
-}
-
-/**
- * The assistant's composer (ADR-0113, #817). Three states come before the input
- * and each names its own remedy: no provider key, a Free member, or a day whose
- * allowance is spent. The input itself is text only — no files, no reply-to.
- */
-function AssistantComposer({
-  assistant,
-  draft,
-  onDraft,
-  onAsk,
-}: {
-  assistant: ChatAssistantState;
-  draft: string;
-  onDraft: (value: string) => void;
-  onAsk: (body: string) => void;
-}) {
-  const allowance = assistant.allowance;
-
-  if (!assistant.available) {
-    return (
-      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
-        {ASSISTANT_COPY.unavailable}
-      </p>
-    );
-  }
-
-  if (allowance && allowance.member.cap === 0) {
-    return (
-      <div className="space-y-1.5 border-t border-border/40 p-3 text-center">
-        <p className="text-xs text-muted-foreground">{ASSISTANT_COPY.locked}</p>
-        <Link
-          href="/pricing"
-          className="inline-block text-xs font-bold text-primary hover:underline"
-        >
-          {ASSISTANT_COPY.upgrade}
-        </Link>
-      </div>
-    );
-  }
-
-  const spent = allowance
-    ? allowance.member.used >= allowance.member.cap ||
-      allowance.project.used >= allowance.project.limit
-    : false;
-
-  if (allowance && spent) {
-    return (
-      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
-        {limitReachedSentence(allowance.resetsAt)}
-      </p>
-    );
-  }
-
-  const remaining = allowance
-    ? Math.max(
-        0,
-        Math.min(
-          allowance.member.cap - allowance.member.used,
-          allowance.project.limit - allowance.project.used
-        )
-      )
-    : null;
-
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onAsk(draft);
-      }}
-      className="space-y-2 border-t border-border/40 p-3"
-    >
-      <div className="flex items-end gap-2">
-        <textarea
-          value={draft}
-          onChange={(event) => onDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              onAsk(draft);
-            }
-          }}
-          rows={1}
-          maxLength={4000}
-          placeholder={ASSISTANT_COPY.placeholder}
-          aria-label={ASSISTANT_COPY.placeholder}
-          className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-        />
-        <Button
-          type="submit"
-          variant="hero"
-          size="icon-sm"
-          aria-label={ASSISTANT_COPY.send}
-          disabled={assistant.isStreaming || draft.trim().length === 0}
-        >
-          <Send size={16} />
-        </Button>
-      </div>
-
-      {remaining !== null && allowance && (
-        <p className="text-[11px] text-muted-foreground/70">
-          {ASSISTANT_COPY.remaining
-            .replace('{remaining}', String(remaining))
-            .replace('{cap}', String(allowance.member.cap))}
-        </p>
-      )}
-
-      {assistant.error && (
-        <p role="alert" className="text-[11px] font-medium text-destructive">
-          {assistant.error}
-        </p>
-      )}
-    </form>
   );
 }
 
@@ -1199,7 +1064,7 @@ function MessageRow({
   message: ChatMessage;
   mine: boolean;
   /** Who has read this line, or `null` when nobody has reached it yet (#816). */
-  receipt: string | null;
+  receipt: ChatReadReceipt | null;
   /** The assistant's proposal on this line, or `null` (#818). */
   action: ChatAgentAction | null;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
@@ -1217,7 +1082,7 @@ function MessageRow({
     <div className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}>
       {message.replyTo && (
         <p className="max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground">
-          {message.replyTo.deletedAt ? 'رسالة محذوفة' : (message.replyTo.body ?? '')}
+          {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : (message.replyTo.body ?? '')}
         </p>
       )}
 
@@ -1233,7 +1098,7 @@ function MessageRow({
           )}
         >
           {deleted ? (
-            <span className="text-xs italic opacity-70">حُذفت هذه الرسالة</span>
+            <span className="text-xs italic opacity-70">{CHAT_THREAD_COPY.deletedMessage}</span>
           ) : editing ? (
             <div className="space-y-2">
               <textarea
@@ -1242,7 +1107,7 @@ function MessageRow({
                 rows={2}
                 maxLength={4000}
                 className="w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
-                aria-label="تعديل الرسالة"
+                aria-label={CHAT_THREAD_COPY.editLabel}
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -1250,7 +1115,7 @@ function MessageRow({
                   onClick={() => setEditing(false)}
                   className="text-[11px] font-bold opacity-80"
                 >
-                  إلغاء
+                  {CHAT_THREAD_COPY.cancel}
                 </button>
                 <button
                   type="button"
@@ -1259,7 +1124,7 @@ function MessageRow({
                   }}
                   className="inline-flex items-center gap-1 text-[11px] font-bold"
                 >
-                  <Check size={12} /> حفظ
+                  <Check size={12} /> {CHAT_THREAD_COPY.save}
                 </button>
               </div>
             </div>
@@ -1277,7 +1142,10 @@ function MessageRow({
                     type="button"
                     onClick={() => onDownload(attachment.id)}
                     className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
-                    aria-label={`تنزيل ${attachment.fileName}`}
+                    aria-label={CHAT_THREAD_COPY.downloadFile.replace(
+                      '{name}',
+                      attachment.fileName
+                    )}
                   >
                     <Download size={12} className="shrink-0" />
                     <span className="max-w-48 truncate">{attachment.fileName}</span>
@@ -1293,16 +1161,23 @@ function MessageRow({
       )}
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
-        <span>{calculateTimeAgo(message.createdAt)}</span>
-        {message.editedAt && !deleted && <span>· عُدّلت</span>}
-        {receipt && <span>· {receipt}</span>}
+        <span>{chatTimeAgo(message.createdAt)}</span>
+        {message.editedAt && !deleted && <span>· {CHAT_THREAD_COPY.edited}</span>}
+        {receipt && (
+          <span>
+            ·{' '}
+            {receipt.kind === 'group'
+              ? CHAT_THREAD_COPY.readByCount.replace('{count}', String(receipt.count))
+              : CHAT_THREAD_COPY.readReceipt}
+          </span>
+        )}
         {mine && !deleted && !action && (
           <>
             {editable && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                aria-label="تعديل الرسالة"
+                aria-label={CHAT_THREAD_COPY.editLabel}
                 className="rounded p-0.5 transition-safe hover:text-foreground"
               >
                 <Pencil size={12} />
@@ -1311,85 +1186,14 @@ function MessageRow({
             <button
               type="button"
               onClick={() => onDelete(message.id)}
-              aria-label="حذف الرسالة"
+              aria-label={CHAT_THREAD_COPY.deleteLabel}
               className="rounded p-0.5 transition-safe hover:text-destructive"
             >
-              <Trash2 size={12} />
+              <Trash size={12} />
             </button>
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-/**
- * The proposal (ADR-0113, #818): the tool in the member's words, the arguments
- * it was given, and the two answers. Nothing here writes anything — the buttons
- * ask the server, and the server runs the write as this member.
- *
- * A resolved card keeps its words and says what it became; a refusal shows the
- * service's own sentence, which is the reason the write did not happen.
- */
-function ActionCard({
-  action,
-  onResolve,
-}: {
-  action: ChatAgentAction;
-  onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
-}) {
-  const [busy, setBusy] = useState(false);
-  const open = chatAgentActionIsOpen(action.status);
-  const reason = typeof action.result?.error === 'string' ? action.result.error : null;
-
-  const resolve = async (answer: 'confirm' | 'reject') => {
-    setBusy(true);
-    try {
-      await onResolve(action.id, answer);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="w-full max-w-[85%] rounded-2xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-xs">
-      <p className="font-bold leading-relaxed text-foreground">
-        {chatAgentActionSentence(action.tool, action.args)}
-      </p>
-      <p
-        className={cn(
-          'mt-1 text-[11px]',
-          action.status === 'applied'
-            ? 'text-emerald-600 dark:text-emerald-400'
-            : action.status === 'failed'
-              ? 'text-destructive'
-              : 'text-muted-foreground'
-        )}
-      >
-        {chatAgentActionStatusLabel(action.status)}
-      </p>
-      {reason && <p className="mt-1 text-xs leading-relaxed text-destructive">{reason}</p>}
-
-      {open && (
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void resolve('confirm')}
-            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60"
-          >
-            {ASSISTANT_COPY.confirmAction}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void resolve('reject')}
-            className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 disabled:opacity-60"
-          >
-            {ASSISTANT_COPY.cancelAction}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -1057,6 +1057,70 @@
           "copy": "emptyTitle"
         }
       ]
+    },
+    {
+      "id": "chats-list",
+      "surface": "chats",
+      "issue": "#819",
+      "web": {
+        "route": "app/notifications/page.tsx",
+        "component": "frontend/ui/chats/chats-panel.tsx",
+        "copyModule": "frontend/ui/chats/chats-panel-copy.ts",
+        "copyExport": "CHATS_LIST_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatsScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatsUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatsListCopy.kt",
+        "copyObject": "ChatsListCopy"
+      },
+      "copySource": "shared/copy/chats-list.json",
+      "states": [
+        {
+          "name": "Live",
+          "copy": "threadCount"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "listError"
+        }
+      ]
+    },
+    {
+      "id": "chat-thread",
+      "surface": "chats",
+      "issue": "#819",
+      "web": {
+        "route": "app/chats/[id]/page.tsx",
+        "component": "frontend/ui/chats/chat-thread-view.tsx",
+        "copyModule": "frontend/ui/chats/chat-thread-copy.ts",
+        "copyExport": "CHAT_THREAD_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThread.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThreadUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThreadCopy.kt",
+        "copyObject": "ChatThreadCopy"
+      },
+      "copySource": "shared/copy/chat-thread.json",
+      "states": [
+        {
+          "name": "Live",
+          "copy": "placeholder"
+        },
+        {
+          "name": "Missing",
+          "copy": "notFound"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "loadFailed"
+        }
+      ]
     }
   ],
   "exempt": [
