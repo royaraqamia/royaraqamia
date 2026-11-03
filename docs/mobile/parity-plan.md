@@ -42,19 +42,19 @@ _The site is what signs in since #873, and the native card is the one screen a g
 _Home, the account area, notifications and chats: the screens a member opens daily._
 
 - [ ] **home** `/` — todo
-- [ ] **account** `/account` — todo · #798
-- [ ] **account-links** `/account/links` — todo · #654
+- [ ] **account** `/account` — todo · #948
+- [ ] **account-links** `/account/links` — todo · #944
 - [ ] **account-posts** `/account/posts` — todo
-- [ ] **account-submissions** `/account/submissions` — todo · #659
+- [ ] **account-submissions** `/account/submissions` — todo · #931
 - [ ] **account-plan** `/account/plan` — todo
 - [ ] **account-connected-apps** `/account/connected-apps` — todo
 - [ ] **account-blocked** `/account/blocked` — todo · #799
-- [ ] **account-faq** `/account/faq` — todo · #799
+- [ ] **account-faq** `/account/faq` — todo · #949
 - [ ] **account-services** `/account/services` — todo · #799
-- [ ] **account-news** `/account/news` — todo · #799
-- [ ] **account-changelog** `/account/changelog` — todo · #799
+- [ ] **account-news** `/account/news` — todo · #950
+- [ ] **account-changelog** `/account/changelog` — todo · #951
 - [ ] **notifications** `/notifications` — todo
-- [ ] **chats** `/chats/[id]` `/chats/new` — todo · #819
+- [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
 
 ## Products
 
@@ -62,25 +62,25 @@ _The local-store products, where the app has a real reason to be native: offline
 
 - [ ] **habitflow** `/habitflow` — todo
 - [ ] **spendtrack** `/spendtrack` `/spendtrack/categories` — todo
-- [ ] **linksnap** `/linksnap` — todo · #654
-- [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #655
-- [ ] **blogpress-editor** `/blogpress/editor/[id]` — todo · #655
-- [ ] **quran** `/quran` — todo · #656
-- [ ] **quran-surah** `/quran/[surah]` — todo · #656
+- [ ] **linksnap** `/linksnap` — todo · #916
+- [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #952
+- [ ] **blogpress-editor** `/blogpress/editor/[id]` — todo · #954
+- [ ] **quran** `/quran` — todo · #955
+- [ ] **quran-surah** `/quran/[surah]` — todo · #955
 - [ ] **notes** `/notes` — todo
 
 ## Requests and bookings
 
 _Forms that end in a server write, so a port has to bring the same validation and the same confirmation as the page._
 
-- [ ] **leads** `/training/apply` `/request-project` `/hire` — todo · #659
-- [ ] **consultation** `/consultation/book` — todo · #659
+- [ ] **leads** `/training/apply` `/request-project` `/hire` — todo · #929
+- [ ] **consultation** `/consultation/book` — todo · #930
 
 ## Operator surfaces
 
 _Listed so nothing is missing, and blocked as one decision: the admin area needs its own security review before any of it is drawn natively (#660)._
 
-- [ ] **admin** `/admin/**` — blocked · blocked by #660
+- [ ] **admin** `/admin/**` — blocked · blocked by #971
 
 ## Components
 
