@@ -1,13 +1,24 @@
-# Autonomous issue implementer: picks ONE ready-for-agent issue a day, implements it,
-# opens a pull request that closes it, and watches that pull request's checks. The merge
-# is the repository owner's manual step (ADR 0066, superseding ADR 0048), so this
-# workflow never merges.
+# Autonomous issue implementer: takes up to six ready-for-agent issues a day, one after
+# another, implements each, opens a pull request that closes it, and merges that pull
+# request as soon as every check on it is green (ADR 0120, which supersedes ADR 0066 for
+# this workflow alone - a session and `/oc` still stop at the open pull request).
 #
-# Pipeline: an actions/github-script step selects the target (ready-for-agent,
-# unassigned, not referenced by any open pull request) and prefetches context; one
-# DeepSeek 4.1 Flash phase implements it and writes /tmp/result.json; the pull request
-# title is normalized, its checks are watched and reported, and a final script records
-# the outcome on the issue.
+# Pipeline per round: an actions/github-script step selects the target - ready-for-agent,
+# unassigned, not named by an open pull request, and with no open blocker - in the order
+# `docs/mobile/parity-plan.json` puts its surface, and prefetches context; one DeepSeek
+# 4.1 Flash phase implements it and writes /tmp/result.json; the pull request title is
+# normalized, its checks are watched, and a green result is squash-merged with
+# `--match-head-commit`, so the merge lands on the commit the checks ran on. A final
+# script records the outcome on the issue.
+#
+# The order is not "the lowest number". A slice that waits for its siblings, a screen
+# that waits for the security review, the last gated state of a surface waiting for the
+# other three - each of those is a native `blocked_by` edge, and a body that says
+# `Blocked by: #12` is read as the fallback for the issues filed before the edges
+# existed. Within what is unblocked the plan's phase decides, then the number.
+#
+# Six rounds run as one matrix with `max-parallel: 1`, so each branch is cut from a
+# `main` that already carries the previous merge and no two rounds can claim one issue.
 #
 # Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
 # it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
@@ -54,6 +65,10 @@ on:
         description: 'Run even if a successful implementer run already happened today (UTC)'
         type: boolean
         default: false
+      rounds:
+        description: 'How many issues this run may take. The daily run takes 6; lower it to debug one round.'
+        type: string
+        default: '6'
 
 permissions:
   id-token: write
@@ -68,14 +83,28 @@ concurrency:
 
 jobs:
   implement:
+    name: Round ${{ matrix.round }} of the day
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    # The daily run takes six; a manual dispatch can ask for fewer (the `rounds` input)
+    # without editing the matrix, which is how a change to this file gets exercised on one
+    # issue before it is trusted with six.
+    if: ${{ matrix.round <= fromJSON(github.event.inputs.rounds || '6') }}
+    # One at a time on purpose: two rounds would cut their branches from the same
+    # `main`, claim the same issue in the seconds before the first pull request exists,
+    # and conflict on the visual baselines both touch.
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        round: [1, 2, 3, 4, 5, 6]
 
     steps:
       - name: Daily guard
         # Idempotency for the redundant triggers: the planner's dispatch, the 06:00
         # schedule and the health-monitor catch-up all point here. Only the first
-        # successful run on a given UTC day does work; the rest exit immediately. The
+        # successful run on a given UTC day does work; the rest exit immediately, and
+        # the run that does work carries the day's six rounds. The
         # window is the calendar day, not a rolling one, so a backstop that lands
         # hours late can never push the next day's punctual run inside the window and
         # suppress it.
@@ -125,6 +154,44 @@ jobs:
         with:
           supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
 
+      # The gate the issue has to pass is not visible without the toolchain that runs it:
+      # a ported surface is switched on by `check:visual` (ADR-0118), and a web change is
+      # proved by the Playwright specs beside it. Both are installed here, before the agent
+      # runs, so the agent can read the same evidence CI will. The Android half is the
+      # expensive part (JDK 21, the SDK and a warm Gradle cache) and it is why this job has
+      # a 150-minute budget rather than 90.
+      - name: Setup JDK 21
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        if: steps.guard.outputs.run == 'true'
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Accept the SDK licences
+        if: steps.guard.outputs.run == 'true'
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Cache Gradle
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install the Playwright browser
+        if: steps.guard.outputs.run == 'true'
+        run: npx playwright install --with-deps chromium
+
       - name: Select the next issue and prefetch context
         id: select
         if: steps.guard.outputs.run == 'true'
@@ -165,22 +232,91 @@ jobs:
                 body: clip(p.body, 300),
               })),
             };
-            const eligible = open
+            core.setOutput('existing_pr_numbers', JSON.stringify(pulls.map((p) => p.number)));
+
+            // The plan is the work order: a surface's phase is where its work sits, and a
+            // row's `issue` names the slice that lands that surface (ADR 0118, ADR 0120).
+            const phases = [];
+            const phaseOf = new Map();
+            try {
+              const plan = JSON.parse(
+                require('fs').readFileSync('docs/mobile/parity-plan.json', 'utf8')
+              );
+              for (const phase of plan.phases || []) phases.push(phase.id);
+              for (const row of plan.surfaces || []) {
+                if (!row.issue) continue;
+                const index = phases.indexOf(row.phase);
+                if (index < 0) continue;
+                const number = Number(String(row.issue).replace('#', ''));
+                const seen = phaseOf.get(number);
+                if (seen === undefined || index < seen) phaseOf.set(number, index);
+              }
+            } catch (error) {
+              core.warning('Could not read the plan for ordering: ' + error.message);
+            }
+
+            const candidates = open
               .filter((i) => !i.pull_request)
               .filter((i) => i.labels.some((l) => l.name === 'ready-for-agent'))
               .filter((i) => (i.assignees || []).length === 0)
               .filter((i) => !referenced.has(i.number))
-              .sort((a, b) => a.number - b.number);
+              .sort((a, b) => {
+                const pa = phaseOf.has(a.number) ? phaseOf.get(a.number) : Number.MAX_SAFE_INTEGER;
+                const pb = phaseOf.has(b.number) ? phaseOf.get(b.number) : Number.MAX_SAFE_INTEGER;
+                return pa === pb ? a.number - b.number : pa - pb;
+              });
 
-            core.setOutput('existing_pr_numbers', JSON.stringify(pulls.map((p) => p.number)));
-            if (eligible.length === 0) {
-              core.info('No ready-for-agent issue is eligible right now.');
+            // A blocker is the gate: the native edge is the truth, and a `Blocked by:`
+            // line is the fallback for issues filed before the edges existed.
+            const openNumbers = new Set(open.filter((i) => !i.pull_request).map((i) => i.number));
+            const namedByProse = (body) => {
+              const match = /^\s*blocked by:?\s*(.+)$/im.exec(body || '');
+              if (!match) return false;
+              for (const ref of match[1].matchAll(/#(\d+)/g)) {
+                if (openNumbers.has(Number(ref[1]))) return true;
+              }
+              return false;
+            };
+            const isBlocked = async (issue) => {
+              if (namedByProse(issue.body)) return true;
+              try {
+                const blockers = await github.paginate(
+                  'GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by',
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    per_page: 100,
+                  }
+                );
+                return blockers.some((blocker) => blocker.state === 'open');
+              } catch (error) {
+                // A repository without the dependencies API answers 404: treat it as
+                // "nothing blocks this", and say so rather than failing the round.
+                if (error.status === 404) return false;
+                core.warning(
+                  'Could not read the blockers of #' + issue.number + ': ' + error.message
+                );
+                return false;
+              }
+            };
+
+            let chosen = null;
+            for (const candidate of candidates) {
+              if (await isBlocked(candidate)) {
+                core.info('Skipping #' + candidate.number + ': a blocker is still open.');
+                continue;
+              }
+              chosen = candidate;
+              break;
+            }
+
+            if (!chosen) {
+              core.info('No ready-for-agent issue is unblocked right now.');
               core.setOutput('issue_number', '');
               core.setOutput('context', JSON.stringify({ ...base, selectedIssue: null }));
               return;
             }
-
-            const chosen = eligible[0];
             const full = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -237,7 +373,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number,
-              body: 'The Issue Implementer picked this up. It will open a pull request for a person to review and merge. Any update will follow here.',
+              body: 'The Issue Implementer picked this up. It will open a pull request and merge it once every check on it is green (ADR 0120). Any update will follow here.',
             });
 
       - name: Implement — DeepSeek 4.1 Flash
@@ -255,6 +391,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          # The dummy Turnstile secret the Playwright suite expects; the real one is a
+          # different value and is not needed to exercise a form locally.
+          TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         with:
           model: opencode-go/deepseek-v4.1-flash
@@ -271,20 +412,27 @@ jobs:
 
             Skills: before starting, load these skills using the skill tool:
             - `implement` — structured implementation workflow
+            - `code-review` — load it before you write the result file and read your own diff with it
             - `supabase` — required if the issue touches database schema, RLS or migrations
             - `supabase-postgres-best-practices` — migration, index and RLS rules
             - `vercel-react-best-practices` — React/Next.js performance patterns
+            - `frontend-design` and `ui-ux-pro-max` — before drawing or reshaping any screen, so the surface is not a templated default
+            - `web-design-guidelines` — the accessibility and interaction rules the site is held to
             - `tdd` — when writing tests
+            - `resolving-merge-conflicts` — only if the base moves under you
+            - `diagnosing-bugs` — when a check fails for a reason you cannot name
 
             Connected tooling (installed for this run, authenticated by environment):
             - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only to inspect deployments, logs and env: `vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`. Do not deploy — pull-request branches create no preview deployment — and never deploy to production.
             - The Supabase MCP server is the only database surface: read with `list_tables`, `list_migrations` and `get_advisors`, and apply schema changes only through `apply_migration` exactly as described in step 3.
+            - Playwright is installed with a Chromium build, and `playwright.config.ts` starts the app itself. Run the specs your change reaches: `npx playwright test <spec>`. `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set when the repository has them; a spec that needs a session and finds them empty is skipped, and the pull request body says so.
+            - The Android toolchain is installed (JDK 21, the SDK and a Gradle cache), so `npm run check:visual` runs here. It is the measurement that switches a ported surface on (ADR-0118); a visual review is not a substitute for it.
 
             Steps:
             1. Read the selected issue in the current state above. If it is ambiguous, unsafe, already satisfied by the current code, or no longer matches the repository, do NOT guess: write /tmp/result.json as `{"status":"cannot","reason":"<one sentence>"}` and stop without touching the working tree.
             2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. If the change touches android/**, capacitor.config.ts or a Capacitor plugin dependency, add the Arabic release note with `npm run android:note -- "..."` and repeat it in the pull request body under `## Release note`.
             3. Database change rules: if the issue needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Read the recorded version back with list_migrations — do not assume the filename timestamp was used. Never run destructive DDL (DROP TABLE, DROP COLUMN, TRUNCATE, disabling RLS, weakening policies) through execute_sql; if that is the only fix, report cannot with the reason instead.
-            4. Review your diff critically for correctness, layering violations, regressions and RLS implications, then run the gates the change can actually break, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests your change reaches (npx vitest run <path> for the test files beside what you touched, or npx vitest run --changed). Do not run the full `npm test` unless the change is repo-wide (a shared type, a base component, a repository contract), do not run e2e tests, and do not run `npm run build` unless nothing cheaper would catch a broken build — next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
+            4. Review your diff critically for correctness, layering violations, regressions and RLS implications — loading the `code-review` skill and reading your own diff with it — then run the gates the change can actually break, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests your change reaches (npx vitest run <path> for the test files beside what you touched, or npx vitest run --changed). When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`); when the issue names a gated surface, or the diff touches `shared/visual/`, `docs/mobile/screens.json` or the app's visual tests, run `npm run check:visual`. Never run the whole suite (`npx playwright test` with no path), do not run the full `npm test` unless the change is repo-wide (a shared type, a base component, a repository contract), and do not run `npm run build` unless nothing cheaper would catch a broken build — next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
             5. Write /tmp/result.json with the Write tool: `{"status":"implemented"}` on success, or `{"status":"cannot","reason":"<one sentence>"}` on any failure. This file is how the workflow learns the outcome, so it is required.
             6. Your final response becomes the pull request. Its first line becomes the title: start it with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. The body MUST contain a line `Closes #${{ steps.select.outputs.issue_number }}`, then (1) what you changed and why, including any migration applied and its exact name, and (2) the gates you ran, quoting each command's final output summary, plus any you deliberately skipped and why. The checks on this pull request run the whole suite, so do not claim more than you ran.
 
@@ -388,15 +536,12 @@ jobs:
               }
             }
 
-      - name: Watch the pull request's checks
+      - name: Watch the pull request's checks, then merge it
         id: checks
-        # The landing loop, run for the implementer, stops at the pull request: the action
-        # above committed, pushed and opened one, and this waits for its checks so the
-        # issue records the result. It never merges — the merge is the repository owner's
-        # manual step, so there is no merge command, no auto-merge and no merge identity.
-        #
-        # A check that does not pass is reported on the issue and left for a person,
-        # exactly like an implementation the agent could not finish.
+        # The merge is the workflow's own gate (ADR 0120): `main` carries no branch
+        # protection, so a repository-level auto-merge would fire the moment the pull
+        # request opened, and requiring checks through protection would gate every human
+        # pull request on the same set. A red result is repaired once, below.
         if: steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
         timeout-minutes: 50
         env:
@@ -420,34 +565,85 @@ jobs:
           fi
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
-          # A pull request that was just opened has no checks on it yet, and `gh pr
-          # checks` answers an empty rollup with a failure exit code rather than a wait,
-          # so wait for the first check to register before watching.
-          for _ in $(seq 1 30); do
-            count=$(gh pr view "$pr" --json statusCheckRollup --jq '[.statusCheckRollup[]] | length')
-            if [ "$count" -gt 0 ]; then break; fi
-            sleep 10
-          done
+          bash scripts/ci/land-pull-request.sh "$pr"
 
-          timeout 2400 gh pr checks "$pr" --watch --interval 20
-          code=$?
+      - name: Repair the failing checks — once
+        id: repair
+        # One repair, not a loop: a second failure usually means the issue needs a
+        # decision, not another patch, and an unbounded retry is how a green check gets
+        # negotiated instead of earned. A second red run hands the issue to a person.
+        #
+        # This runs the CLI (`opencode run`) rather than the GitHub action on purpose: the
+        # action cuts a fresh `opencode/<session>` branch and opens a pull request for it,
+        # so a second invocation would land the fix on a second PR instead of this one.
+        # Here the branch is the pull request's own, checked out first, and the commit is
+        # made by this workflow.
+        if: steps.guard.outputs.run == 'true' && steps.checks.outputs.status == 'red' && steps.checks.outputs.pr != ''
+        timeout-minutes: 45
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          PR: ${{ steps.checks.outputs.pr }}
+          REASON: ${{ steps.checks.outputs.reason }}
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
+        run: |
+          set -euo pipefail
 
-          if [ "$code" -ne 0 ]; then
-            if [ "$code" -eq 124 ]; then
-              reason="The checks on #$pr did not finish within 40 minutes."
-            else
-              failing=$(gh pr checks "$pr" 2>/dev/null |
-                awk -F'\t' '$2 == "fail" || $2 == "pending" { print $1 }' | paste -sd, -)
-              reason="A check on #$pr did not pass: ${failing:-see the pull request}."
-            fi
-            echo "status=red" >> "$GITHUB_OUTPUT"
-            printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Checks are not green::$reason"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          gh pr checkout "$PR"
+
+          cat > /tmp/repair-prompt.txt <<PROMPT
+          You are the Issue Implementer, on the one repair attempt for this pull request. A check on it did not pass:
+
+          <failing-checks>
+          ${REASON}
+          </failing-checks>
+
+          Re-run the gate that failed in this working tree to see the failure for yourself, load the diagnosing-bugs skill if the cause is not obvious, and fix the cause. The workflow commits and pushes for you: do not run git commands and do not open a pull request.
+
+          Never make a check pass by weakening it: no skipped or deleted test, no widened tolerance, no --no-verify, no .only, no commented assertion, no gate removed from a script. A check that is wrong for a reason you can state is reported, not deleted.
+
+          Then run the gates the issue's own instructions name, scoped to your change. Reply with one sentence naming what you fixed.
+          PROMPT
+
+          set +e
+          opencode run --model opencode-go/deepseek-v4.1-flash "$(cat /tmp/repair-prompt.txt)"
+          status=$?
+          set -e
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "The repair run changed nothing; leaving #$PR for a person."
             exit 0
           fi
 
-          echo "status=green" >> "$GITHUB_OUTPUT"
-          echo "Pull request #$pr is open with green checks; the merge is a person's step."
+          git add -A
+          git commit -m "fix: repair the failing checks on #$PR"
+          git push origin "HEAD:$(gh pr view "$PR" --json headRefName --jq .headRefName)"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::warning title=Repair run failed::The repair changed files but exited $status; the checks will decide."
+          fi
+
+      - name: Watch the repaired pull request, then merge it
+        id: recheck
+        # The same script, on the same pull request: the repair pushed a new head, so the
+        # watch has to run again before anything is merged (ADR 0120).
+        if: steps.guard.outputs.run == 'true' && steps.repair.outcome == 'success' && steps.checks.outputs.pr != ''
+        timeout-minutes: 50
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          bash scripts/ci/land-pull-request.sh "${{ steps.checks.outputs.pr }}"
 
       - name: Record the outcome
         id: outcome
@@ -457,9 +653,9 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           ISSUE_NUMBER: ${{ steps.select.outputs.issue_number }}
-          CHECKS: ${{ steps.checks.outputs.status }}
+          CHECKS: ${{ steps.recheck.outputs.status || steps.checks.outputs.status }}
           PR_NUMBER: ${{ steps.checks.outputs.pr }}
-          CHECK_REASON: ${{ steps.checks.outputs.reason }}
+          CHECK_REASON: ${{ steps.recheck.outputs.reason || steps.checks.outputs.reason }}
         with:
           script: |
             const fs = require('fs');
@@ -485,10 +681,29 @@ jobs:
                 .removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number, name })
                 .catch(() => {});
 
+            if (result.status === 'implemented' && checks === 'merged' && prNumber) {
+              // The merge landed, so `Closes #n` closed this issue on `main`. Nothing is
+              // handed to a person and no readiness label comes back: the slice is done
+              // and its dependents are unblocked by the edge closing with it.
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body:
+                  'The Issue Implementer merged pull request #' +
+                  prNumber +
+                  ' once every check was green (ADR 0120). This issue closes with it.',
+              });
+              await removeLabel('ready-for-agent');
+              await removeLabel('opencode:in-progress');
+              core.info('Merged issue #' + issue_number + ' as pull request #' + prNumber + '.');
+              return;
+            }
+
             if (result.status === 'implemented' && prNumber) {
-              // The pull request is the handoff. `Closes #n` in its body closes this issue
-              // when a person merges it; this comment is the record of which pull request
-              // was opened and whether it is ready for that merge.
+              // Green but not merged (the merge was refused, or the pull request is
+              // older than this run). `Closes #n` still closes the issue when someone
+              // merges it, so the issue stays open with a person.
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
