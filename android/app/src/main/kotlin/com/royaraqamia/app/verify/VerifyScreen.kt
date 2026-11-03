@@ -235,6 +235,11 @@ internal fun VerifyScreen(
                 Box(
                     modifier =
                         Modifier.testTag(VerifyMetrics.SUBMIT)
+                            // The page's disabled submit is `opacity-50`, and a
+                            // modifier earlier in the chain is what fades the
+                            // gradient too: one after `background` would only fade
+                            // the label.
+                            .alpha(if (checkable) 1f else 0.5f)
                             .fillMaxWidth()
                             .height(VerifyMetrics.buttonHeight)
                             .clip(RoundedCornerShape(VerifyMetrics.buttonRadius))
@@ -247,7 +252,6 @@ internal fun VerifyScreen(
                                     )
                                 )
                             )
-                            .alpha(if (checkable) 1f else 0.5f)
                             .clickable(enabled = checkable) { check() },
                     contentAlignment = Alignment.Center,
                 ) {
