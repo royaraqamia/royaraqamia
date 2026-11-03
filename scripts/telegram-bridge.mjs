@@ -508,8 +508,10 @@ async function webEvidence(query) {
 
   const html = await response.text();
   const text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    // `[^>]*` because a browser closes on `</script >` and `</script foo>` too,
+    // and a stripper that only knows the exact form leaves tags in the text.
+    .replace(/<script[\s\S]*?<\/script[^>]*>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
