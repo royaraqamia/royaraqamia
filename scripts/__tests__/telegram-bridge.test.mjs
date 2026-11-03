@@ -9,6 +9,7 @@ import {
   parseOffset,
   parseTarget,
   parseWhen,
+  renderAnswer,
 } from '../telegram-bridge.mjs';
 
 describe('parseCommand', () => {
@@ -176,6 +177,20 @@ describe('formatDigest', () => {
     });
 
     expect(text).toContain('&lt;b&gt;x&lt;/b&gt;');
+  });
+});
+
+describe('renderAnswer', () => {
+  it('turns a backticked command into code instead of literal backticks', () => {
+    expect(renderAnswer('استخدم `/task` لذلك')).toBe('استخدم <code>/task</code> لذلك');
+  });
+
+  it('escapes HTML before adding tags, so prose about tags is safe', () => {
+    expect(renderAnswer('<b>x</b>')).toBe('&lt;b&gt;x&lt;/b&gt;');
+  });
+
+  it('leaves plain prose alone', () => {
+    expect(renderAnswer('مرحبا، كل شيء بخير.')).toBe('مرحبا، كل شيء بخير.');
   });
 });
 

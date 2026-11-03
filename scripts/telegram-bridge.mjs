@@ -50,10 +50,12 @@ const INFERENCE_URL = 'https://opencode.ai/inference/go/openai/v1/chat/completio
 const MODEL = 'deepseek-v4.1-flash';
 const SYSTEM_PROMPT = [
   'أنت مساعد المطوّر في مستودع royaraqamia على GitHub.',
-  'أجب بإيجاز وبالعربية، وأبقِ أسماء الملفات والأوامر والوسوم بالإنجليزية كما هي.',
-  'أنت لا تعدّل الكود ولا تفتح مشاكل بنفسك: إن طلب المستخدم مهمة أو إصلاحاً،',
-  'أرشده إلى /task (تُسجَّل ويُنفّذها الوكيل) أو /now (تشتغل فوراً وتتوقف عند pull request).',
-  'لا تدّعِ أنك نفّذت شيئاً لم يُنفّذ، ولا تخترع أرقام issues أو أسماء فروع.',
+  'أجب على السؤال مباشرة وبإيجاز، بالعربية، بنبرة إنسان طبيعي.',
+  'أسماء الملفات والأوامر والوسوم تبقى بالإنجليزية كما هي.',
+  'لا تسرد قائمة الأوامر ولا تشرح قدراتك إلا إن سُئلت عنها صراحة.',
+  'إن طلب المستخدم تغييراً أو إصلاحاً في الكود فقل إن ذلك يحتاج /task أو /now،',
+  'وإلا فلا تذكر الأوامر إطلاقاً.',
+  'أنت لا تعدّل الكود بنفسك، ولا تدّعي أنك نفّذت شيئاً لم يُنفّذ.',
 ].join(' ');
 
 const env = (name) => process.env[name]?.trim() || '';
@@ -209,6 +211,16 @@ export function escapeHtml(text) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/**
+ * The model answers in markdown-ish prose but Telegram is given HTML: escape
+ * first, then turn `code` spans into <code>, so a stray angle bracket cannot
+ * break the message and an inline command reads as code rather than as a
+ * literal backtick pair.
+ */
+export function renderAnswer(text) {
+  return escapeHtml(text).replace(/`([^`\n]{1,300})`/g, '<code>$1</code>');
 }
 
 export function repoPath(owner, repo) {
@@ -565,7 +577,7 @@ async function handleAnswer({ text, chat }) {
 
   const data = await response.json();
   const answer = (data?.choices?.[0]?.message?.content ?? '').trim();
-  const line = answer || 'لم أستطع صياغة إجابة. جرّب صياغة أخرى.';
+  const line = answer ? renderAnswer(answer) : 'لم أستطع صياغة إجابة. جرّب صياغة أخرى.';
   await sendMessage(chat, line);
   await recordOutbound(chat, line, null);
 }
@@ -590,7 +602,10 @@ async function handleUpdate(update) {
   if (!text) return;
 
   // Claimed before anything acts: a redelivered update stops here.
-  if (!(await claimUpdate(update, chat, text))) return;
+  if (!(await claimUpdate(update, chat, text))) {
+    process.stdout.write(`telegram: update ${update.update_id} already claimed, skipped\n`);
+    return;
+  }
 
   const chatRow = await ensureChat(chat, message.chat.title ?? message.chat.username ?? null);
   const offset = chatRow.tz_offset_minutes ?? DEFAULT_TZ_MINUTES;
@@ -637,6 +652,8 @@ async function poll() {
   let offset = await readOffset();
   const updates =
     (await telegram('getUpdates', { offset, timeout: 0, allowed_updates: ['message'] })) ?? [];
+
+  process.stdout.write(`telegram: ${updates.length} update(s) from offset ${offset}\n`);
 
   for (const update of updates) {
     try {
