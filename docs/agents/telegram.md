@@ -78,7 +78,7 @@ re-run is harmless. Finally send `/tz +3` once.
 | -------------------- | -------------------------------------------------- | --------------------------------- |
 | `telegram_chats`     | who may talk, and their offset                     | kept                              |
 | `telegram_messages`  | the transcript, `update_id` unique, `processed_at` | 90 days (`sweep_telegram_bridge`) |
-| `telegram_summaries` | rolling paragraph injected into a task's issue     | kept                              |
+| `telegram_summaries` | unused since the answer reads the last exchanges   | —                                 |
 | `telegram_reminders` | what was asked and whether it was sent             | sent rows pruned at 90 days       |
 | `telegram_state`     | unused since the webhook replaced polling          | —                                 |
 

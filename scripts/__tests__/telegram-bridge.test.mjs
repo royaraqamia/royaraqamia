@@ -5,6 +5,7 @@ import {
   commandSpan,
   formatAlert,
   formatDigest,
+  formatHistory,
   formatOffset,
   parseCommand,
   parseOffset,
@@ -203,6 +204,29 @@ describe('commandSpan', () => {
 
   it('escapes the command, so it cannot inject markup', () => {
     expect(commandSpan('<b>')).toBe('<code>\u200E&lt;b&gt;</code>');
+  });
+});
+
+describe('formatHistory', () => {
+  it('labels who said what, in the order it was said', () => {
+    const text = formatHistory([
+      { direction: 'in', body: 'مرحبا' },
+      { direction: 'out', body: 'أهلاً' },
+    ]);
+    expect(text).toBe('المستخدم: مرحبا\nالمساعد: أهلاً');
+  });
+
+  it('drops rows with no text, so a stored command does not break the prompt', () => {
+    expect(
+      formatHistory([
+        { direction: 'out', body: '' },
+        { direction: 'in', body: 'x' },
+      ])
+    ).toBe('المستخدم: x');
+  });
+
+  it('is empty for an empty conversation', () => {
+    expect(formatHistory([])).toBe('');
   });
 });
 

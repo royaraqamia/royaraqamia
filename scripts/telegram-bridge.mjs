@@ -419,9 +419,28 @@ async function recordOutbound(chatId, body, repo) {
   });
 }
 
-async function summaryFor(chatId) {
-  const rows = await db(`telegram_summaries?chat_id=eq.${chatId}&select=summary`);
-  return rows?.[0]?.summary ?? '';
+/**
+ * The last few exchanges, as the model's only memory. A rolling summary would be
+ * cheaper to read but nothing wrote one - and the first live conversation showed
+ * exactly what that costs: "جميل أعجبتني هذا الأمر" arrived with no idea what
+ * "هذا" was, and the answer said so. Ten rows is a paragraph or two, which is
+ * accurate, cheap, and bounded whatever the conversation length.
+ */
+async function recentHistory(chatId, beforeId) {
+  const filter = beforeId ? `&id=lt.${beforeId}` : '';
+  const rows =
+    (await db(
+      `telegram_messages?chat_id=eq.${chatId}${filter}&select=direction,body,created_at&order=id.desc&limit=10`
+    )) ?? [];
+  return rows.reverse();
+}
+
+/** Renders history the way a person reads it: what they said, what came back. */
+export function formatHistory(rows) {
+  return rows
+    .filter((row) => row?.body)
+    .map((row) => `${row.direction === 'in' ? 'المستخدم' : 'المساعد'}: ${row.body}`)
+    .join('\n');
 }
 
 let reposOfPromise = null;
@@ -452,14 +471,14 @@ function titleAndBody(body) {
   return { title, body: remainder || body };
 }
 
-async function handleTask({ text, chat, fast }) {
+async function handleTask({ text, chat, fast, messageId }) {
   const { owner } = githubTarget();
   const parsed = parseTarget(text);
   const repos = await knownRepos();
   const repo = parsed.repo && repos.has(parsed.repo) ? parsed.repo : DEFAULT_REPO;
   const task = repo === parsed.repo ? parsed.body : text;
   const { title, body } = titleAndBody(task);
-  const summary = await summaryFor(chat);
+  const context = formatHistory(await recentHistory(chat, messageId));
 
   const issue = await createIssue(
     owner,
@@ -470,7 +489,7 @@ async function handleTask({ text, chat, fast }) {
       '',
       body,
       '',
-      summary ? `<details><summary>السياق من المحادثة</summary>\n\n${summary}\n\n</details>` : '',
+      context ? `<details><summary>السياق من المحادثة</summary>\n\n${context}\n\n</details>` : '',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -535,10 +554,10 @@ async function handleTimezone({ args, chat }) {
 /**
  * The one model call in the bridge. Plain text is a question, not a task, so it
  * is answered here; the answer route has no tools and no repository, which is
- * what keeps a chatty message from touching anything. The rolling summary is the
- * only context it gets, so an old conversation costs a paragraph, not a transcript.
+ * what keeps a chatty message from touching anything. The last few exchanges are
+ * the only context it gets, so a long conversation costs a paragraph.
  */
-async function handleAnswer({ text, chat }) {
+async function handleAnswer({ text, chat, messageId }) {
   const key = env('OPENCODE_API_KEY');
   if (!key) {
     const line = `الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم ${commandSpan('/task')} للمهام.`;
@@ -547,7 +566,7 @@ async function handleAnswer({ text, chat }) {
     return;
   }
 
-  const summary = await summaryFor(chat);
+  const history = formatHistory(await recentHistory(chat, messageId));
   const response = await fetch(INFERENCE_URL, {
     method: 'POST',
     headers: {
@@ -561,7 +580,7 @@ async function handleAnswer({ text, chat }) {
       temperature: 0.4,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        ...(summary ? [{ role: 'system', content: `سياق سابق من المحادثة: ${summary}` }] : []),
+        ...(history ? [{ role: 'system', content: `آخر ما جرى في المحادثة:\n${history}` }] : []),
         { role: 'user', content: text },
       ],
     }),
@@ -589,7 +608,7 @@ const HELP = [
   'أي رسالة عادية أجيب عليها فقط، بلا issue وبلا تغيير في المستودع.',
 ].join('\n');
 
-async function handleMessage({ chat, text }) {
+async function handleMessage({ chat, text, messageId }) {
   if (String(chat) !== String(allowedChat())) return;
 
   const trimmed = (text ?? '').trim();
@@ -615,10 +634,10 @@ async function handleMessage({ chat, text }) {
   }
 
   if (command === 'task' || command === 'now') {
-    return handleTask({ text: args, chat, fast: command === 'now' });
+    return handleTask({ text: args, chat, fast: command === 'now', messageId });
   }
 
-  return handleAnswer({ text: trimmed, chat });
+  return handleAnswer({ text: trimmed, chat, messageId });
 }
 
 /**
@@ -637,7 +656,7 @@ async function drain() {
   for (const row of rows) {
     if (!(await claimRow(row))) continue;
     try {
-      await handleMessage({ chat: row.chat_id, text: row.body });
+      await handleMessage({ chat: row.chat_id, text: row.body, messageId: row.id });
     } catch (error) {
       await releaseRow(row);
       const chat = row.chat_id;
