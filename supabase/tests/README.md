@@ -111,6 +111,11 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
   owner; an invited member cannot invite anyone else.
 - The SECURITY DEFINER `request_chat_conversation` and `withdraw_chat_request` still reopen and
   close a thread, including one whose rows are `left`.
+- A member who left reads their own roster row and the thread, but none of their peers' rows or
+  read watermarks (#888); a `requested` recipient and an active member still read the whole roster.
+- `chat_direct_peer()` answers the other side of a two-row direct thread, `null` for a group, a
+  stranger or an unanswered row, and only `authenticated` may execute it; the private roster helper
+  is not executable by `anon`.
 - A client cannot DELETE a roster row.
 
 `chat_groups_test.sql` (#814, ADR-0113):

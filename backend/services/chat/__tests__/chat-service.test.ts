@@ -27,6 +27,7 @@ function makeRepository(
     listThreads: vi.fn(async () => []),
     findConversation: vi.fn(async () => null),
     findParticipants: vi.fn(async () => []),
+    findDirectPeer: vi.fn(async () => null),
     findThreadIdByDirectKey: vi.fn(async () => null),
     createConversation: vi.fn(async () => ({
       id: 'c-1',
@@ -461,24 +462,7 @@ describe('ChatService.reopen', () => {
           lastMessageAt: null,
           createdAt: '2026-11-01T10:00:00.000Z',
         })),
-        findParticipants: vi.fn(async () => [
-          {
-            conversationId: 'c-1',
-            userId: me,
-            role: 'owner',
-            status: 'active',
-            lastReadAt: null,
-            joinedAt: null,
-          },
-          {
-            conversationId: 'c-1',
-            userId: peerId,
-            role: 'member',
-            status: 'declined',
-            lastReadAt: null,
-            joinedAt: null,
-          },
-        ]),
+        findDirectPeer: vi.fn(async () => peerId),
         requestThread: vi.fn(async () => true),
       },
       { notify }
@@ -486,8 +470,34 @@ describe('ChatService.reopen', () => {
 
     await service.reopen(me, 'c-1');
 
+    expect(repository.findDirectPeer).toHaveBeenCalledWith('c-1');
+    // The roster hides a `left` caller's peers; the reopen must not read it.
+    expect(repository.findParticipants).not.toHaveBeenCalled();
     expect(repository.requestThread).toHaveBeenCalledWith('c-1');
     expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a thread whose peer cannot be read', async () => {
+    const notify = vi.fn(async () => undefined);
+    const { repository, service } = makeRepository(
+      {
+        findConversation: vi.fn(async () => ({
+          id: 'c-1',
+          kind: 'direct',
+          title: null,
+          status: 'declined',
+          createdBy: me,
+          lastMessageAt: null,
+          createdAt: '2026-11-01T10:00:00.000Z',
+        })),
+        findDirectPeer: vi.fn(async () => null),
+      },
+      { notify }
+    );
+
+    await expect(service.reopen(me, 'c-1')).rejects.toMatchObject({ status: 403 });
+    expect(repository.requestThread).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('refuses a thread that is still open', async () => {
