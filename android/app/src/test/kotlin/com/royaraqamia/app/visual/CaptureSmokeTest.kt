@@ -1,6 +1,5 @@
 package com.royaraqamia.app.visual
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,7 +59,6 @@ class CaptureSmokeTest {
 
         val bitmap = android.graphics.BitmapFactory.decodeFile(out.path)
         requireNotNull(bitmap) { "the capture was not written to ${out.path}" }
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out.outputStream())
 
         // 393 x 2.75 = 1080.75, which Android truncates to 1080 while Chromium
         // rounds it to 1081, and 852 x 2.75 = 2343 exactly. The gate compares the
