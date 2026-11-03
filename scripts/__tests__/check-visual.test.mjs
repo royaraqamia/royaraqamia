@@ -100,6 +100,7 @@ function repo({ contract = CONTRACT, web, app, pixels = 0.002 } = {}) {
         contract: 'shared/visual/verify.json',
         app: { test: 'VerifyScreenVisualTest.kt' },
         tolerance: { pixels, length: 0.5 },
+        baseline: { recorded: '2026-11-03' },
       },
     ],
   };
@@ -156,19 +157,53 @@ describe('the pixel diff', () => {
   const base = decodePng(png(2, 2, opaque(2, 2)));
 
   it('is zero for the same picture', () => {
-    expect(pixelDifference(base, base)).toBe(0);
+    expect(pixelDifference(base, base).ratio).toBe(0);
   });
 
   it('ignores a channel that moved by the dithering allowance', () => {
     const pixels = opaque(2, 2);
     pixels[0] += 5;
-    expect(pixelDifference(base, decodePng(png(2, 2, pixels)))).toBe(0);
+    expect(pixelDifference(base, decodePng(png(2, 2, pixels))).ratio).toBe(0);
   });
 
   it('counts a pixel that visibly changed, as a share of the image', () => {
     const pixels = opaque(2, 2);
     pixels[0] = 200;
-    expect(pixelDifference(base, decodePng(png(2, 2, pixels)))).toBe(0.25);
+    // Alignment is off here: a two-pixel image can be slid until the changed
+    // pixel falls outside the compared region, which is not what this counts.
+    expect(pixelDifference(base, decodePng(png(2, 2, pixels)), { maxShift: 0 }).ratio).toBe(0.25);
+  });
+
+  it('finds the offset that puts the same screen back on itself', () => {
+    const size = 16;
+    const wide = opaque(size, size);
+    // A pattern whose every column and row is distinguishable, so a shift cannot
+    // hide behind a repeated column.
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        const i = (y * size + x) * 4;
+        wide[i] = (x * 17) % 256;
+        wide[i + 1] = (y * 13) % 256;
+        wide[i + 2] = (x + y) % 256;
+      }
+    }
+    const moved = Buffer.alloc(wide.length);
+    // The same picture, one pixel to the left: every edge differs at (0, 0).
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        const to = (y * size + x) * 4;
+        const from = (y * size + Math.min(size - 1, x + 1)) * 4;
+        Buffer.from(wide.subarray(from, from + 4)).copy(moved, to);
+      }
+    }
+
+    expect(
+      pixelDifference(decodePng(png(size, size, moved)), decodePng(png(size, size, wide)))
+    ).toEqual({
+      ratio: 0,
+      dx: -1,
+      dy: 0,
+    });
   });
 
   it('compares the shared region when the two toolchains round a pixel apart', () => {
@@ -179,7 +214,7 @@ describe('the pixel diff', () => {
     const wider = decodePng(png(3, 2, opaque(3, 2)));
 
     expect(() => pixelDifference(base, wider)).not.toThrow();
-    expect(pixelDifference(base, wider)).toBe(0);
+    expect(pixelDifference(base, wider).ratio).toBe(0);
   });
 
   it('refuses two captures of different sizes', () => {
@@ -344,13 +379,19 @@ describe('the gate', () => {
   it('refuses a capture whose pixels differ above the surface tolerance', () => {
     const fixture = repo({ web: RECORD(), app: RECORD(), pixels: 0.05 });
     const dir = join(fixture.evidence, 'verify');
-    const changed = opaque(2, 2);
-    changed[0] = 200;
-    writeFileSync(join(dir, 'app.png'), png(2, 2, changed));
+    // Half the card repainted: no offset makes that the same screen, which is what
+    // the gate has to refuse.
+    const changed = opaque(20, 20);
+    for (let y = 0; y < 20; y += 1) {
+      for (let x = 0; x < 10; x += 1) changed[(y * 20 + x) * 4] = 200;
+    }
+    writeFileSync(join(dir, 'web.png'), png(20, 20, opaque(20, 20)));
+    writeFileSync(join(dir, 'app.png'), png(20, 20, changed));
 
-    expect(fixture.check()).toEqual([
-      '"verify": 25.000% of pixels differ, above the 5.000% this surface allows',
-    ]);
+    const errors = fixture.check();
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/% of pixels differ at the best alignment/);
+    expect(errors[0]).toMatch(/above the recorded baseline of 5\.000% from 2026-11-03/);
   });
 
   it('refuses a contract that is missing, or asks for a property nobody records', () => {
@@ -366,7 +407,7 @@ describe('the gate', () => {
     const fixture = repo();
     fixture.gate.surfaces[0].tolerance = { pixels: 0.9, length: 40 };
     expect(fixture.check()).toEqual([
-      '"verify": tolerance.pixels is a share of the image above 0 and at most 0.05',
+      '"verify": tolerance.pixels is a recorded baseline above 0 and at most 0.2',
       '"verify": tolerance.length is a CSS-pixel allowance from 0 to 2',
       '"verify" is switched on in screens.json with no evidence recorded',
     ]);

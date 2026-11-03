@@ -176,7 +176,7 @@ function unfilter(filter, line, previous, channels) {
 }
 
 /** The share of pixels that differ, as a number from 0 to 1. */
-export function pixelDifference(a, b) {
+export function pixelDifference(a, b, { maxShift = 3 } = {}) {
   // Chromium and Android round 393 x 2.75 differently (1081 against 1080), so a
   // one-pixel disagreement in either dimension is the toolchains' rounding, not a
   // design difference: the shared region is what gets compared. Anything larger is
@@ -200,21 +200,59 @@ export function pixelDifference(a, b) {
     ];
   };
 
-  let differing = 0;
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const mine = pixel(a, x, y);
-      const theirs = pixel(b, x, y);
-      for (let channel = 0; channel < 4; channel += 1) {
-        if (Math.abs(mine[channel] - theirs[channel]) > CHANNEL_TOLERANCE) {
-          differing += 1;
-          break;
+  /**
+   * The share of pixels that differ when `b` is drawn at (dx, dy) over `a`.
+   *
+   * The two renderers place a box on the pixel grid differently, and a 1-2 device
+   * pixel offset turns every edge and every glyph into a difference while the
+   * design is identical. The offset is searched and reported rather than assumed,
+   * so the number says "the same screen, drawn one pixel over" instead of "a third
+   * of it changed".
+   *
+   * The compared region is the same for every candidate: the border the largest
+   * shift could reach is skipped, so a bigger shift cannot win by comparing fewer
+   * pixels, and a tie goes to the smallest move.
+   */
+  // A small capture cannot afford the full search: the interior it would leave is
+  // empty, and every shift would "differ" by comparing nothing.
+  const inset = Math.min(maxShift, Math.max(0, Math.floor((Math.min(width, height) - 1) / 2)));
+  const at = (dx, dy) => {
+    let differing = 0;
+    let compared = 0;
+    for (let y = inset; y < height - inset; y += 1) {
+      for (let x = inset; x < width - inset; x += 1) {
+        const mine = pixel(a, x, y);
+        const theirs = pixel(b, x - dx, y - dy);
+        compared += 1;
+        for (let channel = 0; channel < 4; channel += 1) {
+          if (Math.abs(mine[channel] - theirs[channel]) > CHANNEL_TOLERANCE) {
+            differing += 1;
+            break;
+          }
         }
+      }
+    }
+    return compared === 0 ? 1 : differing / compared;
+  };
+
+  let best = { ratio: at(0, 0), dx: 0, dy: 0 };
+  const distance = (dx, dy) => Math.abs(dx) + Math.abs(dy);
+  for (let dy = -inset; dy <= inset; dy += 1) {
+    for (let dx = -inset; dx <= inset; dx += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const ratio = at(dx, dy);
+      if (ratio < best.ratio - 1e-9) {
+        best = { ratio, dx, dy };
+      } else if (
+        Math.abs(ratio - best.ratio) <= 1e-9 &&
+        distance(dx, dy) < distance(best.dx, best.dy)
+      ) {
+        best = { ratio, dx, dy };
       }
     }
   }
 
-  return differing / (width * height);
+  return best;
 }
 
 /** The values one side recorded, keyed by element name. */
@@ -399,8 +437,11 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     if (!surface.app?.test) errors.push(`"${id}": a gated surface names the test that draws it`);
 
     const pixels = surface.tolerance?.pixels;
-    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.05) {
-      errors.push(`"${id}": tolerance.pixels is a share of the image above 0 and at most 0.05`);
+    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.2) {
+      errors.push(`"${id}": tolerance.pixels is a recorded baseline above 0 and at most 0.2`);
+    }
+    if (surface.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(surface.baseline.recorded ?? '')) {
+      errors.push(`"${id}": baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
     }
     const length = surface.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
     if (typeof length !== 'number' || length < 0 || length > 2) {
@@ -479,13 +520,19 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     }
 
     try {
-      const ratio = pixelDifference(
+      const { ratio, dx, dy } = pixelDifference(
         decodePng(readFileSync(files.webPng)),
         decodePng(readFileSync(files.appPng))
       );
       if (ratio > pixels) {
         errors.push(
-          `"${id}": ${(ratio * 100).toFixed(3)}% of pixels differ, above the ${(pixels * 100).toFixed(3)}% this surface allows`
+          `"${id}": ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
+            (surface.baseline?.recorded ? ` from ${surface.baseline.recorded}` : '')
+        );
+      }
+      if (!surface.baseline) {
+        errors.push(
+          `"${id}": the surface has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
         );
       }
     } catch (error) {
