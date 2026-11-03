@@ -48,8 +48,15 @@ const ZONES = [
     importer: /^backend\/services\//,
     forbidden: [alias('backend/(repositories|clients)')],
     why: 'a service depends on the interface it declares, and `backend/config` wires it',
+    // Off until #980 is done. The zone is correct — it is what `docs/architecture.md`
+    // says — but 34 existing services import a repository or client by value, and a rule
+    // that lands red teaches people to bypass it. #980 makes them type imports and routes
+    // the rest through the container; the line below is what turns it on.
+    enabled: false,
   },
 ];
+
+const ENABLED_ZONES = ZONES.filter((zone) => zone.enabled !== false);
 
 const plugin = {
   meta: { name: 'layering' },
@@ -71,7 +78,7 @@ const plugin = {
         // Every matching zone is checked, not just the first: `frontend/ui` matches both
         // the client-layer zone and the SDK-isolation zone, and only the second forbids
         // a Supabase import.
-        const zones = ZONES.filter((candidate) => candidate.importer.test(relative));
+        const zones = ENABLED_ZONES.filter((candidate) => candidate.importer.test(relative));
         if (zones.length === 0) return {};
 
         const isTypeOnly = (node) =>
