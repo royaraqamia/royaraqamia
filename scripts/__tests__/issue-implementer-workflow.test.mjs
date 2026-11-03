@@ -98,6 +98,24 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toMatch(/actions:\s*write/);
   });
 
+  it('loads the design skills only when the issue draws a screen, and never the port database', () => {
+    expect(workflow).toContain('`codebase-design`');
+    expect(workflow).toContain('Do NOT load `ui-ux-pro-max` for a port');
+    expect(workflow).toContain('`web-design-guidelines`');
+  });
+
+  it('runs only the gates the diff reaches, and the check that owns each generated source', () => {
+    expect(workflow).toContain('The suite is never run in full');
+    expect(workflow).toContain('`npm run check:copy`');
+    expect(workflow).toContain('`npm run check:parity`');
+    expect(workflow).toContain('`npm run check:tokens`');
+  });
+
+  it('asks the pull request body for what was checked on each screen', () => {
+    expect(workflow).toContain('keyboard and focus');
+    expect(workflow).toContain('the empty state, the error state and the loading state');
+  });
+
   it('records the merge and hands nothing to a person when it landed', () => {
     const merged = workflow.indexOf('The Issue Implementer merged pull request #');
     const handed = workflow.indexOf("labels: ['ready-for-human']");

@@ -410,17 +410,40 @@ jobs:
             ${{ steps.select.outputs.context }}
             </current-state>
 
-            Skills: before starting, load these skills using the skill tool:
-            - `implement` — structured implementation workflow
-            - `code-review` — load it before you write the result file and read your own diff with it
-            - `supabase` — required if the issue touches database schema, RLS or migrations
-            - `supabase-postgres-best-practices` — migration, index and RLS rules
-            - `vercel-react-best-practices` — React/Next.js performance patterns
-            - `frontend-design` and `ui-ux-pro-max` — before drawing or reshaping any screen, so the surface is not a templated default
-            - `web-design-guidelines` — the accessibility and interaction rules the site is held to
-            - `tdd` — when writing tests
-            - `resolving-merge-conflicts` — only if the base moves under you
-            - `diagnosing-bugs` — when a check fails for a reason you cannot name
+            Skills: load these with the skill tool. The three marked ALWAYS are cheap and change
+            every issue; the rest are on demand, because loading guidance the issue does not
+            need spends context and can argue against matching the page.
+
+            ALWAYS
+            - `codebase-design` - the deep-module vocabulary this repo reasons in (a lot of
+              behaviour behind a small interface, at a clean seam). Use its terms when you
+              decide where a seam goes.
+            - `code-review` - before you write the result file, read your own diff with it.
+            - `implement` - the structured implementation workflow.
+
+            WHEN THE ISSUE DRAWS OR RESHAPES A SCREEN
+            - `frontend-design` - aesthetic direction, typography, and the choice that makes a
+              screen not read as a templated default.
+            - `web-design-guidelines` - then run it over the UI files you changed: focus and
+              keyboard, labels and semantics, contrast, reduced motion, RTL. That review, not
+              a feeling, is what "no obvious UI issue" means here.
+            - Do NOT load `ui-ux-pro-max` for a port. It is a style/palette database, and a
+              port's look is decided by the page it must match (`check:visual`), not chosen.
+              Load it only when the issue asks for a screen the site does not have.
+
+            ON THE ISSUE'S KIND
+            - `supabase` + `supabase-postgres-best-practices` - schema, RLS or a migration.
+            - `tdd` - when you are writing tests.
+            - `vercel-react-best-practices` - a React or Next.js change.
+            - `code-refactorer` - only when the issue IS a refactor (behaviour-preserving
+              restructuring). It is the wrong tool for a feature and will rewrite what the
+              issue asked you to add.
+            - `resolving-merge-conflicts` - if the base moves under you.
+            - `diagnosing-bugs` - when a check fails for a reason you cannot name.
+
+            `improve-codebase-architecture` is deliberately not on this list: it is a
+            human-invoked command (`disable-model-invocation: true`), and the vocabulary it
+            builds on is `codebase-design`, which is above.
 
             Connected tooling (installed for this run, authenticated by environment):
             - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only to inspect deployments, logs and env: `vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`. Do not deploy — pull-request branches create no preview deployment — and never deploy to production.
@@ -432,9 +455,24 @@ jobs:
             1. Read the selected issue in the current state above. If it is ambiguous, unsafe, already satisfied by the current code, or no longer matches the repository, do NOT guess: write /tmp/result.json as `{"status":"cannot","reason":"<one sentence>"}` and stop without touching the working tree.
             2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. If the change touches android/**, capacitor.config.ts or a Capacitor plugin dependency, add the Arabic release note with `npm run android:note -- "..."` and repeat it in the pull request body under `## Release note`.
             3. Database change rules: if the issue needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Read the recorded version back with list_migrations — do not assume the filename timestamp was used. Never run destructive DDL (DROP TABLE, DROP COLUMN, TRUNCATE, disabling RLS, weakening policies) through execute_sql; if that is the only fix, report cannot with the reason instead.
-            4. Review your diff critically for correctness, layering violations, regressions and RLS implications — loading the `code-review` skill and reading your own diff with it — then run the gates the change can actually break, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests your change reaches (npx vitest run <path> for the test files beside what you touched, or npx vitest run --changed). When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`); when the issue names a gated surface, or the diff touches `shared/visual/`, `docs/mobile/screens.json` or the app's visual tests, run `npm run check:visual`. Never run the whole suite (`npx playwright test` with no path), do not run the full `npm test` unless the change is repo-wide (a shared type, a base component, a repository contract), and do not run `npm run build` unless nothing cheaper would catch a broken build — next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
+            4. Review your diff critically for correctness, layering violations, regressions and RLS implications - loading the `code-review` skill and reading your own diff with it - then run only the gates your change reaches, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests beside what you touched (npx vitest run <path>, or npx vitest run --changed).
+
+            The suite is never run in full: not `npm test`, not `npx playwright test` without a path. CI runs the whole set on the pull request; what you owe it is the part your diff can break.
+
+            Also run the check that owns each generated source you touched or whose input you changed - this is the web-equals-APK guarantee, and a stale generated file is the failure mode it exists for:
+            - `shared/tokens/**` or `app/tokens.css` -> `npm run check:tokens`
+            - `shared/copy/**` -> `npm run check:copy`
+            - `shared/components/**` -> `npm run check:components`
+            - `shared/icons/**` -> `npm run check:vectors`
+            - `docs/mobile/parity.json` -> `npm run check:parity`
+            - `docs/mobile/parity-plan.json` -> `npm run check:plan`
+            - `docs/mobile/screens.json` -> `npm run check:screens`
+            - `perf/surfaces.json` -> `npm run check:surfaces`
+            - `supabase/migrations/**` -> `npm run check:migrations` and `npm run check:migrations:safety`
+
+            When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`). When the issue names a gated surface, or the diff touches `shared/visual/`, `docs/mobile/screens.json` or the app's visual tests, run `npm run check:visual`. Do not run `npm run build` unless nothing cheaper would catch a broken build - next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
             5. Write /tmp/result.json with the Write tool: `{"status":"implemented"}` on success, or `{"status":"cannot","reason":"<one sentence>"}` on any failure. This file is how the workflow learns the outcome, so it is required.
-            6. Your final response becomes the pull request. Its first line becomes the title: start it with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. The body MUST contain a line `Closes #${{ steps.select.outputs.issue_number }}`, then (1) what you changed and why, including any migration applied and its exact name, and (2) the gates you ran, quoting each command's final output summary, plus any you deliberately skipped and why. The checks on this pull request run the whole suite, so do not claim more than you ran.
+            6. Your final response becomes the pull request. Its first line becomes the title: start it with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. The body MUST contain a line `Closes #${{ steps.select.outputs.issue_number }}`, then (1) what you changed and why, including any migration applied and its exact name, (2) the gates you ran, quoting each command's final output summary, plus any you deliberately skipped and why, and (3) when the diff draws or changes a screen, one line per screen naming what you checked for RTL, keyboard and focus, the empty state, the error state and the loading state - with `web-design-guidelines` as the review that produced it. A screen line you cannot write honestly is a screen you have not finished. The checks on this pull request run the whole suite, so do not claim more than you ran.
 
             Do not create scratch files or logs in the repository. Leave the working tree otherwise clean.
 
