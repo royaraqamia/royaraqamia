@@ -171,8 +171,19 @@ describe('the pixel diff', () => {
     expect(pixelDifference(base, decodePng(png(2, 2, pixels)))).toBe(0.25);
   });
 
+  it('compares the shared region when the two toolchains round a pixel apart', () => {
+    const pixels = opaque(2, 2);
+    pixels[0] = 200;
+    // Chromium rounds 393 x 2.75 up and Android down, so one dimension can be a
+    // pixel larger on one side; the shared region is what is compared.
+    const wider = decodePng(png(3, 2, opaque(3, 2)));
+
+    expect(() => pixelDifference(base, wider)).not.toThrow();
+    expect(pixelDifference(base, wider)).toBe(0);
+  });
+
   it('refuses two captures of different sizes', () => {
-    expect(() => pixelDifference(base, decodePng(png(3, 2, opaque(3, 2))))).toThrow('sizes differ');
+    expect(() => pixelDifference(base, decodePng(png(4, 2, opaque(4, 2))))).toThrow('sizes differ');
   });
 });
 

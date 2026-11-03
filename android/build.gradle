@@ -26,6 +26,11 @@ buildscript {
         // and AGP pair, so moving it is a build change to prove, not a version
         // bump to take.
         classpath 'androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.4.1'
+        // The visual gate's app-side capture (#874, ADR-0118): Robolectric draws
+        // the screen and this writes the PNG the page's screenshot is diffed
+        // against. captureToImage on its own never reaches idle under
+        // Robolectric, so the capture goes through this.
+        classpath 'io.github.takahirom.roborazzi:roborazzi-gradle-plugin:1.77.0'
         // Room's compiler runs as a KSP processor (#768). The plugin is a
         // buildscript classpath for the same reason the Kotlin one is; its
         // version is the Kotlin version plus KSP's own suffix, so it is pinned

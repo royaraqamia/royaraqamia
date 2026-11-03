@@ -7,6 +7,7 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 // The app's UI toolkit from ADR-0089 onward. It is wired now, with the theme,
 // so that the first screen lands as a screen rather than as a dependency change.
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+apply plugin: 'io.github.takahirom.roborazzi'
 // The shell's own baseline profile (#762): the plugin adds `generateBaselineProfile`,
 // which runs the `:baselineprofile` module on the emulator below and saves what the
 // launch compiled into this module's sources.
@@ -248,6 +249,15 @@ dependencies {
     // makes a real SQLite file out of them; `room-testing` is what lets a
     // migration be opened at its previous version.
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    // The visual gate (#874, ADR-0118): a gated surface is composed and captured on
+    // the JVM at the same 393 x 852 @ 2.75 the page is recorded at, so the two
+    // layouts can be compared box by box and the two images diffed.
+    testImplementation "androidx.compose.ui:ui-test-junit4"
+    // Robolectric launches the activity `createComposeRule` starts from the debug
+    // manifest, so the component has to be merged into it.
+    debugImplementation "androidx.compose.ui:ui-test-manifest"
+    testImplementation "io.github.takahirom.roborazzi:roborazzi:1.77.0"
+    testImplementation "io.github.takahirom.roborazzi:roborazzi-compose:1.77.0"
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "androidx.room:room-testing:$roomVersion"
     // The certificate seal (#658): the QR a printed certificate carries, encoded

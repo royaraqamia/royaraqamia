@@ -177,21 +177,41 @@ function unfilter(filter, line, previous, channels) {
 
 /** The share of pixels that differ, as a number from 0 to 1. */
 export function pixelDifference(a, b) {
-  if (a.width !== b.width || a.height !== b.height) {
+  // Chromium and Android round 393 x 2.75 differently (1081 against 1080), so a
+  // one-pixel disagreement in either dimension is the toolchains' rounding, not a
+  // design difference: the shared region is what gets compared. Anything larger is
+  // two different screens.
+  const width = Math.min(a.width, b.width);
+  const height = Math.min(a.height, b.height);
+  if (Math.abs(a.width - b.width) > 1 || Math.abs(a.height - b.height) > 1) {
     throw new Error(`sizes differ: ${a.width}x${a.height} against ${b.width}x${b.height}`);
   }
 
+  const pixel = (image, x, y) => {
+    const at = (y * image.width + x) * 4;
+    return [
+      image.data[at] ?? 0,
+      image.data[at + 1] ?? 0,
+      image.data[at + 2] ?? 0,
+      image.data[at + 3] ?? 255,
+    ];
+  };
+
   let differing = 0;
-  for (let i = 0; i < a.data.length; i += 4) {
-    for (let channel = 0; channel < 4; channel += 1) {
-      if (Math.abs(a.data[i + channel] - b.data[i + channel]) > CHANNEL_TOLERANCE) {
-        differing += 1;
-        break;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const mine = pixel(a, x, y);
+      const theirs = pixel(b, x, y);
+      for (let channel = 0; channel < 4; channel += 1) {
+        if (Math.abs(mine[channel] - theirs[channel]) > CHANNEL_TOLERANCE) {
+          differing += 1;
+          break;
+        }
       }
     }
   }
 
-  return differing / (a.width * a.height);
+  return differing / (width * height);
 }
 
 /** The values one side recorded, keyed by element name. */
