@@ -4,7 +4,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
+import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.VerifyResult
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -77,6 +91,20 @@ fun VerifyScreen(
     onOpenScan: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    VerifyScreen(verify = repository::verify, onCopy = onCopy, onOpenScan = onOpenScan, modifier = modifier)
+}
+
+/**
+ * The screen over the one call it makes, so a test can draw it without a client
+ * (#874, ADR-0118): the visual gate composes this and never presses the button.
+ */
+@Composable
+internal fun VerifyScreen(
+    verify: suspend (String) -> ApiResult<VerifyResult>,
+    onCopy: (String) -> Unit,
+    onOpenScan: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val scope = rememberCoroutineScope()
@@ -92,7 +120,7 @@ fun VerifyScreen(
         val typed = code.trim()
         if (typed.isEmpty() || busy) return
         state = VerifyUiState.Busy
-        scope.launch { state = VerifyUiState.of(repository.verify(VerifyRepository.normalizeCode(typed))) }
+        scope.launch { state = VerifyUiState.of(verify(VerifyRepository.normalizeCode(typed))) }
     }
 
     // The site clears the mark after two seconds; so does this, so a second copy of
@@ -107,53 +135,81 @@ fun VerifyScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(RoyColors.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+                .padding(horizontal = VerifyMetrics.horizontalPadding),
     ) {
         Text(
             text = VerifyCopy.PAGE_TITLE,
-            modifier = Modifier.fillMaxWidth(),
-            style = type.h2,
-            color = RoyColors.primary,
-            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag(VerifyMetrics.TITLE).fillMaxWidth().height(VerifyMetrics.titleHeight),
+            style =
+                TextStyle(
+                    fontSize = VerifyMetrics.titleSize,
+                    fontWeight = VerifyMetrics.titleWeight,
+                    lineHeight = VerifyMetrics.titleLineHeight,
+                    textAlign = TextAlign.Center,
+                ),
+            color = RoyColors.foreground,
         )
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoyShape.card,
-            color = RoyColors.card.copy(alpha = 0.8f),
-            border = BorderStroke(1f.dp, RoyColors.border.copy(alpha = 0.6f)),
+        Spacer(Modifier.height(VerifyMetrics.titleToCard))
+
+        Box(
+            modifier =
+                Modifier.testTag(VerifyMetrics.CARD)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(VerifyMetrics.cardRadius))
+                    .background(RoyColors.card.copy(alpha = 0.8f))
+                    .border(
+                        1.dp,
+                        RoyColors.border.copy(alpha = 0.6f),
+                        RoundedCornerShape(VerifyMetrics.cardRadius),
+                    )
+                    .padding(VerifyMetrics.cardPadding),
         ) {
-            Column(
-                modifier = Modifier.padding(Recipes.Card.padding(spacing)),
-                verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
-            ) {
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = { code = it.uppercase() },
-                    singleLine = true,
-                    enabled = !busy,
-                    label = { Text(VerifyCopy.CODE_LABEL) },
-                    placeholder = { Text(VerifyCopy.PLACEHOLDER) },
-                    keyboardOptions =
-                        KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Characters,
-                            imeAction = ImeAction.Search,
-                        ),
-                    keyboardActions = KeyboardActions(onSearch = { check() }),
-                    trailingIcon = {
-                        if (VerifyCode.isValidFormat(code)) {
-                            Icon(
-                                imageVector = LucideVectors.CircleCheck,
-                                contentDescription = null,
-                                tint = RoyColors.success,
-                                modifier = Modifier.size(Recipes.Glyph.sm),
+            Column(modifier = Modifier.padding(VerifyMetrics.cardInner)) {
+                Box(
+                    modifier =
+                        Modifier.testTag(VerifyMetrics.INPUT)
+                            .fillMaxWidth()
+                            .height(VerifyMetrics.fieldHeight)
+                            .clip(RoundedCornerShape(VerifyMetrics.fieldRadius))
+                            .background(RoyColors.background.copy(alpha = 0.5f))
+                            .border(
+                                1.dp,
+                                RoyColors.border.copy(alpha = 0.7f),
+                                RoundedCornerShape(VerifyMetrics.fieldRadius),
                             )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                            .padding(horizontal = VerifyMetrics.fieldPadding),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (code.isEmpty()) {
+                        Text(
+                            text = VerifyCopy.PLACEHOLDER,
+                            style = TextStyle(fontSize = VerifyMetrics.fieldTextSize),
+                            color = RoyColors.mutedForeground,
+                        )
+                    }
+                    BasicTextField(
+                        value = code,
+                        onValueChange = { code = it.uppercase() },
+                        singleLine = true,
+                        enabled = !busy,
+                        textStyle =
+                            TextStyle(
+                                fontSize = VerifyMetrics.fieldTextSize,
+                                color = RoyColors.foreground,
+                            ),
+                        cursorBrush = SolidColor(RoyColors.primary),
+                        keyboardOptions =
+                            KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                imeAction = ImeAction.Search,
+                            ),
+                        keyboardActions = KeyboardActions(onSearch = { check() }),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 if (VerifyCode.isSuspicious(code)) {
                     Row(
@@ -174,26 +230,68 @@ fun VerifyScreen(
                     }
                 }
 
-                Button(
-                    onClick = { check() },
-                    enabled = checkable,
-                    modifier = Modifier.fillMaxWidth(),
+                Spacer(Modifier.height(VerifyMetrics.fieldToButton))
+
+                Box(
+                    modifier =
+                        Modifier.testTag(VerifyMetrics.SUBMIT)
+                            // The page's disabled submit is `opacity-50`, and a
+                            // modifier earlier in the chain is what fades the
+                            // gradient too: one after `background` would only fade
+                            // the label.
+                            .alpha(if (checkable) 1f else 0.5f)
+                            .fillMaxWidth()
+                            .height(VerifyMetrics.buttonHeight)
+                            .clip(RoundedCornerShape(VerifyMetrics.buttonRadius))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        VerifyMetrics.buttonStart,
+                                        VerifyMetrics.buttonMiddle,
+                                        VerifyMetrics.buttonEnd,
+                                    )
+                                )
+                            )
+                            .clickable(enabled = checkable) { check() },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector =
-                            if (busy) LucideVectors.LoaderCircle else LucideVectors.Search,
-                        contentDescription = null,
-                        modifier = Modifier.size(Recipes.Glyph.sm),
-                    )
-                    Text(
-                        text = if (busy) VerifyCopy.BUSY_TITLE else VerifyCopy.SUBMIT,
-                        modifier = Modifier.padding(start = spacing.elementGapSm / 2f),
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (busy) LucideVectors.LoaderCircle else LucideVectors.Search,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(VerifyMetrics.buttonIcon),
+                        )
+                        Text(
+                            text = if (busy) VerifyCopy.BUSY_TITLE else VerifyCopy.SUBMIT,
+                            style =
+                                TextStyle(
+                                    fontSize = VerifyMetrics.buttonTextSize,
+                                    fontWeight = VerifyMetrics.buttonWeight,
+                                ),
+                            color = Color.White,
+                        )
+                    }
                 }
 
+                Spacer(Modifier.height(VerifyMetrics.buttonToHint))
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                    modifier =
+                        Modifier.testTag(VerifyMetrics.HINT)
+                            .fillMaxWidth()
+                            .height(VerifyMetrics.hintHeight)
+                            .padding(top = VerifyMetrics.hintTopPadding)
+                            .border(
+                                width = 1.dp,
+                                color = RoyColors.border.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(0.dp),
+                            ),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     SampleHint(onClick = { code = VerifyCopy.SAMPLE_CODE })
@@ -257,6 +355,60 @@ fun VerifyScreen(
                 )
         }
     }
+}
+
+/**
+ * The page's numbers, as one source the screen and its visual test both read
+ * (#874, ADR-0118).
+ *
+ * They are what `/verify` resolves to at 393 x 852: the title at 30/800 with a
+ * 46.5 line, 32 between it and the card, the card's 24 radius and its 4 padding
+ * around 20, the 52-high field and button at radius 16, and the 77-high hint row.
+ * Keeping them here rather than inline is what lets the test measure the numbers
+ * the screen draws, so a change to one without the other fails `check:visual`
+ * instead of drifting quietly.
+ */
+internal object VerifyMetrics {
+    const val TITLE = "verify-title"
+    const val CARD = "verify-card"
+    const val INPUT = "verify-input"
+    const val SUBMIT = "verify-submit"
+    const val HINT = "verify-hint"
+
+    val horizontalPadding = 16.dp
+    val titleSize = 30.sp
+    val titleLineHeight = 46.5.sp
+    val titleHeight = 46.5.dp
+    val titleWeight = FontWeight.ExtraBold
+    val titleToCard = 32.dp
+
+    val cardRadius = 24.dp
+    val cardPadding = 4.dp
+    // The page puts 20 inside the card's 1px border; Compose paints the border
+    // inside the bounds without consuming space, so the content is inset by 21.
+    val cardInner = 21.dp
+
+    val fieldHeight = 52.dp
+    val fieldRadius = 16.dp
+    val fieldTextSize = 16.sp
+    val fieldPadding = 44.dp
+    val fieldToButton = 12.dp
+
+    val buttonHeight = 52.dp
+    val buttonRadius = 16.dp
+    val buttonTextSize = 16.sp
+    val buttonWeight = FontWeight.Bold
+    val buttonIcon = 20.dp
+    val buttonToHint = 16.dp
+
+    val hintHeight = 77.dp
+    val hintTopPadding = 16.dp
+    val hintTextSize = 12.sp
+
+    /** Tailwind's `purple-600`, `violet-600` and `indigo-600`. */
+    val buttonStart = Color(0xFF9333EA)
+    val buttonMiddle = Color(0xFF7C3AED)
+    val buttonEnd = Color(0xFF4F46E5)
 }
 
 /** The site's `مثال للتَّجربة:` — a tap fills the field with its own sample code. */

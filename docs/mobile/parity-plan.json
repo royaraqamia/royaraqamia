@@ -39,7 +39,7 @@
     }
   ],
   "surfaces": [
-    { "surface": "verify", "phase": "gate", "state": "todo" },
+    { "surface": "verify", "phase": "gate", "state": "native" },
     { "surface": "verify-code", "phase": "gate", "state": "todo" },
     { "surface": "rates", "phase": "gate", "state": "todo" },
     { "surface": "marketing", "phase": "public-content", "state": "todo" },

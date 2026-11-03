@@ -30,7 +30,7 @@ object NativeSurfaces {
      * Nothing yet. A route arrives here with the pull request that makes its port
      * indistinguishable from the page, never before it.
      */
-    private val routes: Set<String> = emptySet()
+    private val routes: Set<String> = setOf("/verify")
 
     /**
      * The routes a signed-out visitor reads.

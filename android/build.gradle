@@ -26,6 +26,11 @@ buildscript {
         // and AGP pair, so moving it is a build change to prove, not a version
         // bump to take.
         classpath 'androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.4.1'
+        // The visual gate's app-side capture (#874, ADR-0118): Robolectric draws
+        // the screen and this writes the PNG the page's screenshot is diffed
+        // against. captureToImage on its own never reaches idle under
+        // Robolectric, so the capture goes through this.
+        classpath 'io.github.takahirom.roborazzi:roborazzi-gradle-plugin:1.77.0'
         // Room's compiler runs as a KSP processor (#768). The plugin is a
         // buildscript classpath for the same reason the Kotlin one is; its
         // version is the Kotlin version plus KSP's own suffix, so it is pinned
@@ -47,6 +52,23 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+/*
+ * A plugin's build output does not belong inside `node_modules`.
+ *
+ * `capacitor.settings.gradle` points each plugin project at
+ * `../node_modules/<package>/android`, so Gradle writes `build/` beside its sources.
+ * On Windows a daemon keeps `classes.jar` open there, and every later build fails
+ * with "Unable to delete file ... classes.jar" until the daemon is stopped and the
+ * directory deleted by hand; `rm -rf node_modules` cannot remove a tree a build is
+ * writing into either. Those outputs move under the app's own build directory, which
+ * is the same path on every platform and is already ignored.
+ */
+subprojects { sub ->
+    if (sub.projectDir.absolutePath.replace('\\', '/').contains('/node_modules/')) {
+        sub.layout.buildDirectory.set(rootProject.layout.buildDirectory.dir("plugins/${sub.name}"))
     }
 }
 

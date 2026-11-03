@@ -1,0 +1,46 @@
+{
+  "surface": "verify",
+  "route": "/verify",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 96,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "card": {
+      "top": 174.5,
+      "width": 361,
+      "height": 259,
+      "radius": 24,
+      "paddingTop": 4,
+      "paddingLeft": 4
+    },
+    "code-input": {
+      "width": 311,
+      "height": 52,
+      "radius": 16,
+      "fontSize": 16,
+      "paddingLeft": 44,
+      "paddingRight": 44
+    },
+    "submit": {
+      "width": 311,
+      "height": 52,
+      "radius": 16,
+      "fontSize": 16,
+      "fontWeight": 700
+    },
+    "hint": {
+      "top": 331.5,
+      "width": 311,
+      "height": 77,
+      "fontSize": 12
+    }
+  }
+}

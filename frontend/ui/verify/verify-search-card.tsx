@@ -45,7 +45,10 @@ export function VerifySearchCard({
 }: VerifySearchCardProps) {
   return (
     <m.div variants={cardVariants}>
-      <Card className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-1 shadow-2xl shadow-indigo-500/5 transition-safe duration-300 hover:border-border">
+      <Card
+        data-visual="card"
+        className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-1 shadow-2xl shadow-indigo-500/5 transition-safe duration-300 hover:border-border"
+      >
         <CardContent className="p-5 sm:p-8">
           <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -55,6 +58,7 @@ export function VerifySearchCard({
                 />
               </div>
               <Input
+                data-visual="input"
                 ref={inputRef}
                 type="text"
                 value={code}
@@ -73,6 +77,7 @@ export function VerifySearchCard({
               )}
             </div>
             <Button
+              data-visual="submit"
               type="submit"
               size="lg"
               isLoading={loading}
@@ -84,7 +89,10 @@ export function VerifySearchCard({
             </Button>
           </form>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4 text-xs text-muted-foreground">
+          <div
+            data-visual="hint"
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4 text-xs text-muted-foreground"
+          >
             <button
               type="button"
               onClick={onSampleClick}

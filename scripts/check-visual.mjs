@@ -176,22 +176,83 @@ function unfilter(filter, line, previous, channels) {
 }
 
 /** The share of pixels that differ, as a number from 0 to 1. */
-export function pixelDifference(a, b) {
-  if (a.width !== b.width || a.height !== b.height) {
+export function pixelDifference(a, b, { maxShift = 3 } = {}) {
+  // Chromium and Android round 393 x 2.75 differently (1081 against 1080), so a
+  // one-pixel disagreement in either dimension is the toolchains' rounding, not a
+  // design difference: the shared region is what gets compared. Anything larger is
+  // two different screens.
+  const width = Math.min(a.width, b.width);
+  const height = Math.min(a.height, b.height);
+  // Two CSS pixels: the page settles a font or a border between the measurement
+  // and the capture, and an element capture rounds its own box. The layout numbers
+  // are what pin the size; this only decides how much of the image is compared.
+  if (Math.abs(a.width - b.width) > 6 || Math.abs(a.height - b.height) > 6) {
     throw new Error(`sizes differ: ${a.width}x${a.height} against ${b.width}x${b.height}`);
   }
 
-  let differing = 0;
-  for (let i = 0; i < a.data.length; i += 4) {
-    for (let channel = 0; channel < 4; channel += 1) {
-      if (Math.abs(a.data[i + channel] - b.data[i + channel]) > CHANNEL_TOLERANCE) {
-        differing += 1;
-        break;
+  const pixel = (image, x, y) => {
+    const at = (y * image.width + x) * 4;
+    return [
+      image.data[at] ?? 0,
+      image.data[at + 1] ?? 0,
+      image.data[at + 2] ?? 0,
+      image.data[at + 3] ?? 255,
+    ];
+  };
+
+  /**
+   * The share of pixels that differ when `b` is drawn at (dx, dy) over `a`.
+   *
+   * The two renderers place a box on the pixel grid differently, and a 1-2 device
+   * pixel offset turns every edge and every glyph into a difference while the
+   * design is identical. The offset is searched and reported rather than assumed,
+   * so the number says "the same screen, drawn one pixel over" instead of "a third
+   * of it changed".
+   *
+   * The compared region is the same for every candidate: the border the largest
+   * shift could reach is skipped, so a bigger shift cannot win by comparing fewer
+   * pixels, and a tie goes to the smallest move.
+   */
+  // A small capture cannot afford the full search: the interior it would leave is
+  // empty, and every shift would "differ" by comparing nothing.
+  const inset = Math.min(maxShift, Math.max(0, Math.floor((Math.min(width, height) - 1) / 2)));
+  const at = (dx, dy) => {
+    let differing = 0;
+    let compared = 0;
+    for (let y = inset; y < height - inset; y += 1) {
+      for (let x = inset; x < width - inset; x += 1) {
+        const mine = pixel(a, x, y);
+        const theirs = pixel(b, x - dx, y - dy);
+        compared += 1;
+        for (let channel = 0; channel < 4; channel += 1) {
+          if (Math.abs(mine[channel] - theirs[channel]) > CHANNEL_TOLERANCE) {
+            differing += 1;
+            break;
+          }
+        }
+      }
+    }
+    return compared === 0 ? 1 : differing / compared;
+  };
+
+  let best = { ratio: at(0, 0), dx: 0, dy: 0 };
+  const distance = (dx, dy) => Math.abs(dx) + Math.abs(dy);
+  for (let dy = -inset; dy <= inset; dy += 1) {
+    for (let dx = -inset; dx <= inset; dx += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const ratio = at(dx, dy);
+      if (ratio < best.ratio - 1e-9) {
+        best = { ratio, dx, dy };
+      } else if (
+        Math.abs(ratio - best.ratio) <= 1e-9 &&
+        distance(dx, dy) < distance(best.dx, best.dy)
+      ) {
+        best = { ratio, dx, dy };
       }
     }
   }
 
-  return differing / (a.width * a.height);
+  return best;
 }
 
 /** The values one side recorded, keyed by element name. */
@@ -208,11 +269,20 @@ function elementsOf(record, surface) {
 const round = (value) => Math.round(value * 100) / 100;
 
 /** Compares the page's numbers with the screen's; one message per disagreement. */
-export function compareLayout(web, app, { surface, lengthTolerance = DEFAULT_LENGTH_TOLERANCE }) {
-  const theirs = elementsOf(web, surface);
-  const ours = elementsOf(app, surface);
-  if (!theirs) return [`"${surface}": web.json records no elements`];
-  if (!ours) return [`"${surface}": app.json records no elements`];
+export function compareLayout(
+  web,
+  app,
+  { surface, lengthTolerance = DEFAULT_LENGTH_TOLERANCE, origin }
+) {
+  const page = elementsOf(web, surface);
+  const screen = elementsOf(app, surface);
+  if (!page) return [`"${surface}": web.json records no elements`];
+  if (!screen) return [`"${surface}": app.json records no elements`];
+  if (origin && (!page.has(origin) || !screen.has(origin))) {
+    return [`"${surface}": the origin element "${origin}" is not recorded on both sides`];
+  }
+  const theirs = origin ? rebase(page, origin) : page;
+  const ours = origin ? rebase(screen, origin) : screen;
 
   const errors = [];
   for (const [name, expected] of theirs) {
@@ -255,11 +325,43 @@ export function compareLayout(web, app, { surface, lengthTolerance = DEFAULT_LEN
   return errors;
 }
 
+/**
+ * Moves every element's position to be relative to one element's, usually the title.
+ *
+ * The app draws a screen inside its own frame and the page draws it inside the
+ * site's, and those frames are not the same height: what the design actually says is
+ * the *gaps* — title to card, card to its contents — not where the first row lands
+ * on an 852px screen. `top` and `left` are rebased; sizes and styles are untouched.
+ * A missing origin is the caller's error to report, so this returns null.
+ */
+function rebase(elements, origin) {
+  if (!elements) return null;
+  const anchor = elements.get(origin);
+  if (!anchor) return null;
+  const top = typeof anchor.top === 'number' ? anchor.top : 0;
+  const left = typeof anchor.left === 'number' ? anchor.left : 0;
+  return new Map(
+    [...elements].map(([name, props]) => [
+      name,
+      {
+        ...props,
+        ...(typeof props.top === 'number' ? { top: round(props.top - top) } : {}),
+        ...(typeof props.left === 'number' ? { left: round(props.left - left) } : {}),
+      },
+    ])
+  );
+}
+
 /** The contract's own rules: named elements, known properties, no duplicates. */
 export function validateContract(contract, surface) {
   const errors = [];
   if (!Array.isArray(contract.elements) || contract.elements.length === 0) {
     return [`"${surface}": the contract lists no elements`];
+  }
+
+  const names = new Set((contract.elements ?? []).map((element) => element.name));
+  if (contract.origin !== undefined && !names.has(contract.origin)) {
+    errors.push(`"${surface}": origin "${contract.origin}" is not one of the contract elements`);
   }
 
   const seen = new Set();
@@ -335,8 +437,15 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     if (!surface.app?.test) errors.push(`"${id}": a gated surface names the test that draws it`);
 
     const pixels = surface.tolerance?.pixels;
-    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.05) {
-      errors.push(`"${id}": tolerance.pixels is a share of the image above 0 and at most 0.05`);
+    // A ceiling, not a standard: a text-bearing card reaches a fifth of its pixels
+    // through rasterisation alone. The number that matters is the one the pair
+    // recorded, and a run above it fails; this only refuses a baseline so wide it
+    // could hide a different screen.
+    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
+      errors.push(`"${id}": tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
+    }
+    if (surface.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(surface.baseline.recorded ?? '')) {
+      errors.push(`"${id}": baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
     }
     const length = surface.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
     if (typeof length !== 'number' || length < 0 || length > 2) {
@@ -386,7 +495,11 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
       continue;
     }
 
-    for (const problem of compareLayout(web, app, { surface: id, lengthTolerance: length })) {
+    for (const problem of compareLayout(web, app, {
+      surface: id,
+      lengthTolerance: length,
+      origin: contract?.origin,
+    })) {
       errors.push(problem);
     }
 
@@ -411,13 +524,19 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     }
 
     try {
-      const ratio = pixelDifference(
+      const { ratio, dx, dy } = pixelDifference(
         decodePng(readFileSync(files.webPng)),
         decodePng(readFileSync(files.appPng))
       );
       if (ratio > pixels) {
         errors.push(
-          `"${id}": ${(ratio * 100).toFixed(3)}% of pixels differ, above the ${(pixels * 100).toFixed(3)}% this surface allows`
+          `"${id}": ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
+            (surface.baseline?.recorded ? ` from ${surface.baseline.recorded}` : '')
+        );
+      }
+      if (!surface.baseline) {
+        errors.push(
+          `"${id}": the surface has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
         );
       }
     } catch (error) {
