@@ -48,9 +48,9 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 - [ ] **account-submissions** `/account/submissions` — todo · #931
 - [ ] **account-plan** `/account/plan` — todo
 - [ ] **account-connected-apps** `/account/connected-apps` — todo
-- [ ] **account-blocked** `/account/blocked` — todo · #799
+- [ ] **account-blocked** `/account/blocked` — todo · #977
 - [ ] **account-faq** `/account/faq` — todo · #949
-- [ ] **account-services** `/account/services` — todo · #799
+- [ ] **account-services** `/account/services` — todo · #978
 - [ ] **account-news** `/account/news` — todo · #950
 - [ ] **account-changelog** `/account/changelog` — todo · #951
 - [ ] **notifications** `/notifications` — todo
