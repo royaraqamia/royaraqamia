@@ -1,0 +1,21 @@
+{
+  "surface": "linksnap",
+  "component": "linksnap-empty",
+  "web": {
+    "file": "frontend/ui/linksnap/linksnap-copy.ts",
+    "export": "LINKSNAP_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapCopy.kt",
+    "object": "LinksnapCopy"
+  },
+  "notes": {
+    "source": "LinkSnap's empty state, in both clients (#654). The site's dashboard is the reference: the sentence, the description and the action are what the app's list draws when a member owns no links, and they move here so neither client spells them.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dashboard does not render."
+  },
+  "strings": {
+    "emptyTitle": "لم تقم بإنشاء أي روابط مختصَرة بعد.",
+    "emptyBody": "قم باختصار رابطك الأوَّل لبدء تتبع النقرات!",
+    "emptyAction": "إنشاء أول رابط"
+  }
+}

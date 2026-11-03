@@ -1009,6 +1009,54 @@
           "copy": "title"
         }
       ]
+    },
+    {
+      "id": "linksnap-page",
+      "surface": "linksnap",
+      "issue": "#654",
+      "web": {
+        "route": "app/linksnap/(app)/page.tsx",
+        "component": "app/linksnap/(app)/page.tsx",
+        "copyModule": "app/linksnap/(app)/linksnap-page-copy.ts",
+        "copyExport": "LINKSNAP_PAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapPageCopy.kt",
+        "copyObject": "LinksnapPageCopy"
+      },
+      "copySource": "shared/copy/linksnap-page.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "pageTitle"
+        }
+      ]
+    },
+    {
+      "id": "linksnap-empty",
+      "surface": "linksnap",
+      "issue": "#654",
+      "web": {
+        "route": "app/linksnap/(app)/page.tsx",
+        "component": "frontend/ui/linksnap/dashboard-empty-state.tsx",
+        "copyModule": "frontend/ui/linksnap/linksnap-copy.ts",
+        "copyExport": "LINKSNAP_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEmptyState.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEmptyState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapCopy.kt",
+        "copyObject": "LinksnapCopy"
+      },
+      "copySource": "shared/copy/linksnap.json",
+      "states": [
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
     }
   ],
   "exempt": [

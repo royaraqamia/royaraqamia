@@ -25,6 +25,8 @@ import com.royaraqamia.app.store.PreferencesIdentityStorage
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
+import com.royaraqamia.app.store.linksnap.LinksnapRepository
+import com.royaraqamia.app.store.linksnap.LinksnapStores
 import com.royaraqamia.app.store.outbox.DrainReport
 import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.store.spendtrack.SpendtrackStores
@@ -70,8 +72,11 @@ class AppGraph private constructor(
     val habitflow: HabitflowRepository,
     /** SpendTrack's store and queue (#653). */
     val spendtrack: SpendtrackRepository,
+    /** LinkSnap's store and queue (#654). */
+    val linksnap: LinksnapRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
+    private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
     private val grant: SupabasePasswordGrant,
 ) {
     /** Whether a request can be sent right now, without waiting on a refresh. */
@@ -100,10 +105,11 @@ class AppGraph private constructor(
     suspend fun drainOutbox(): DrainReport {
         val habit = habitflow.drain()
         val spend = spendtrack.drain()
+        val links = linksnap.drain()
         return DrainReport(
-            replayed = habit.replayed + spend.replayed,
-            pending = habit.pending + spend.pending,
-            failed = habit.failed + spend.failed,
+            replayed = habit.replayed + spend.replayed + links.replayed,
+            pending = habit.pending + spend.pending + links.pending,
+            failed = habit.failed + spend.failed + links.failed,
         )
     }
 
@@ -111,10 +117,11 @@ class AppGraph private constructor(
     suspend fun outboxStatus(): DrainReport {
         val habit = habitflow.outboxStatus()
         val spend = spendtrack.outboxStatus()
+        val links = linksnap.outboxStatus()
         return DrainReport(
             replayed = 0,
-            pending = habit.pending + spend.pending,
-            failed = habit.failed + spend.failed,
+            pending = habit.pending + spend.pending + links.pending,
+            failed = habit.failed + spend.failed + links.failed,
         )
     }
 
@@ -136,6 +143,7 @@ class AppGraph private constructor(
         session.signOut()
         databases.close()
         spendtrackDatabases.close()
+        linksnapDatabases.close()
     }
 
     /**
@@ -148,6 +156,7 @@ class AppGraph private constructor(
     fun close() {
         databases.close()
         spendtrackDatabases.close()
+        linksnapDatabases.close()
     }
 
     companion object {
@@ -174,6 +183,8 @@ class AppGraph private constructor(
             val databases = IdentityScopedStore { identity -> HabitStores.open(context, identity) }
             val spendtrackDatabases =
                 IdentityScopedStore { identity -> SpendtrackStores.open(context, identity) }
+            val linksnapDatabases =
+                IdentityScopedStore { identity -> LinksnapStores.open(context, identity) }
 
             // A guest's queue waits for a sign-in rather than being sent as
             // nobody (ADR-0027), and a drain with the radio off spends an attempt
@@ -211,8 +222,17 @@ class AppGraph private constructor(
                         signedIn = signedIn,
                         online = online,
                     ),
+                linksnap =
+                    LinksnapRepository(
+                        databases = linksnapDatabases,
+                        identity = { session.storeIdentity },
+                        client = client,
+                        signedIn = signedIn,
+                        online = online,
+                    ),
                 databases = databases,
                 spendtrackDatabases = spendtrackDatabases,
+                linksnapDatabases = linksnapDatabases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
         }

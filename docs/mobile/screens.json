@@ -31,13 +31,15 @@
     },
     {
       "surface": "linksnap",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
+      "reason": "Ported with its Local Store and Outbox (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "linksnap-unlock",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockScreen.kt",
+      "reason": "Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "blogpress",
@@ -76,8 +78,9 @@
     },
     {
       "surface": "account-links",
-      "native": null,
-      "reason": "The owned links list is LinkSnap's dashboard, so it arrives with the app's LinkSnap screen (#654)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapAccountScreen.kt",
+      "reason": "The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "account-posts",

@@ -3,6 +3,7 @@ package com.royaraqamia.app.shell
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -31,6 +32,10 @@ import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
+import com.royaraqamia.app.linksnap.LinksnapAccountScreen
+import com.royaraqamia.app.linksnap.LinksnapRoutes
+import com.royaraqamia.app.linksnap.LinksnapScreen
+import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.profile.ProfileRoutes
@@ -224,6 +229,25 @@ class ShellActivity : ComponentActivity() {
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
                                 )
+                            // LinkSnap (#654): the shortener and the owned list,
+                            // painted from the Local Store. The account area's
+                            // links page is the same screen on the site.
+                            "/linksnap" ->
+                                LinksnapScreen(
+                                    repository = graph.linksnap,
+                                    siteUrl = BuildConfig.SITE_URL,
+                                    signedIn = signedIn,
+                                    onCopy = ::copyToClipboard,
+                                    onSignIn = ::showSignIn,
+                                )
+                            "/account/links" ->
+                                LinksnapAccountScreen(
+                                    repository = graph.linksnap,
+                                    siteUrl = BuildConfig.SITE_URL,
+                                    signedIn = signedIn,
+                                    onCopy = ::copyToClipboard,
+                                    onSignIn = ::showSignIn,
+                                )
                             // The certificate check (#658): public by design, so it
                             // is drawn whether or not there is a session, and its
                             // scanner link is the one destination it hands over.
@@ -254,16 +278,30 @@ class ShellActivity : ComponentActivity() {
                             // carries. The code is the route's own segment, so this
                             // is the one destination the shell reads out of a route
                             // rather than matching whole.
-                            else ->
-                                VerifyRoutes.codeOf(current)?.let { code ->
-                                    VerifyCodeScreen(
-                                        code = code,
-                                        repository = graph.verify,
-                                        siteUrl = BuildConfig.SITE_URL,
-                                        onCopy = ::copyToClipboard,
-                                        onOpenRoute = ::openRoute,
+                            else -> {
+                                val unlock = LinksnapRoutes.codeOf(current)
+                                if (unlock != null) {
+                                    // A protected link (#654): the same route the
+                                    // site serves, and the same live read. The
+                                    // destination opens in the browser, which is
+                                    // where the site's form sends a visitor too.
+                                    LinksnapUnlockScreen(
+                                        code = unlock,
+                                        repository = graph.linksnap,
+                                        onOpenUrl = ::openExternal,
                                     )
+                                } else {
+                                    VerifyRoutes.codeOf(current)?.let { code ->
+                                        VerifyCodeScreen(
+                                            code = code,
+                                            repository = graph.verify,
+                                            siteUrl = BuildConfig.SITE_URL,
+                                            onCopy = ::copyToClipboard,
+                                            onOpenRoute = ::openRoute,
+                                        )
+                                    }
                                 }
+                            }
                         }
                     }
                 }
@@ -461,6 +499,16 @@ class ShellActivity : ComponentActivity() {
     private fun copyToClipboard(text: String) {
         val clipboard = getSystemService(ClipboardManager::class.java) ?: return
         clipboard.setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, text))
+    }
+
+    /**
+     * Opens a link's destination in the browser (#654). The site's unlock form
+     * navigates the window to the URL the server returned; the app hands the same
+     * URL to the platform, without putting the member's password anywhere in a
+     * WebView.
+     */
+    private fun openExternal(url: String) {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     }
 
     /**

@@ -116,6 +116,25 @@ export const CONTRACTS = [
       'SpendtrackImportResultSchema',
     ],
   },
+  // LinkSnap (#654): the snapshot the app's store merges, the shortener answer a
+  // guest's online create decodes, the bodies its Outbox replays, and the unlock
+  // pair. The read is `/linksnap/api/links/sync` — the same route the web's pull
+  // reads, tombstones included (ADR-0029) — so a delete made on another device
+  // lands in the app's store rather than being invisible to it.
+  {
+    module: 'shared/contracts/linksnap',
+    file: 'LinksnapContracts.kt',
+    schemas: [
+      'LinksnapRowSchema',
+      'LinksnapSyncResponseSchema',
+      'LinksnapShortenResponseSchema',
+      'LinksnapCreateWriteSchema',
+      'LinksnapUpdateWriteSchema',
+      'LinksnapDeleteWriteSchema',
+      'LinksnapUnlockRequestSchema',
+      'LinksnapUnlockResponseSchema',
+    ],
+  },
   // The app's own failure report (#667): the body an installed APK sends when it
   // crashes, is killed for not responding, or ends a drain owing work. Generating
   // the type is what makes a field the schema stops accepting a compile error in

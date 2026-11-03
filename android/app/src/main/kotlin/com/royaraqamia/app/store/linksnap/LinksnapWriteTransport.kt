@@ -1,0 +1,141 @@
+package com.royaraqamia.app.store.linksnap
+
+import com.royaraqamia.app.contracts.generated.LinksnapCreateWrite
+import com.royaraqamia.app.contracts.generated.LinksnapDeleteWrite
+import com.royaraqamia.app.contracts.generated.LinksnapUnlockRequest
+import com.royaraqamia.app.store.outbox.OutboxIntentRow
+import com.royaraqamia.app.store.outbox.WriteRequest
+import java.net.URLEncoder
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+
+/**
+ * A queued LinkSnap intent as the request the web's outbox sends (#654).
+ *
+ * The endpoints are the ones `frontend/api/linksnap/sync-transport.ts` already
+ * drains to, so the server keeps one implementation and the two clients cannot
+ * disagree about what a create is. `clientId` is the client-minted identity; the
+ * server upserts on `(user_id, client_id)`, so a replayed write is idempotent and
+ * a replayed delete re-sets the tombstone.
+ */
+object LinksnapWriteTransport {
+    const val SHORTEN_PATH = "/linksnap/api/shorten"
+    const val LINKS_PATH = "/linksnap/api/links"
+    const val UNLOCK_PATH = "/linksnap/api/unlock"
+
+    fun requestFor(intent: OutboxIntentRow): WriteRequest = when (intent.type) {
+        "link.create" -> WriteRequest("POST", SHORTEN_PATH, intent.payload)
+        "link.update" -> WriteRequest("PATCH", LINKS_PATH, intent.payload)
+        "link.delete" -> deleteRequest(intent.payload)
+        else -> throw IllegalArgumentException("Unknown outbox intent type: ${intent.type}")
+    }
+
+    /**
+     * `DELETE /linksnap/api/links?code=…` with `{"updatedAt": …}` as the body.
+     *
+     * The slug rides in the path because that is the endpoint's lookup key, and
+     * only the write time travels in the body because that is all the route
+     * reads for its tombstone.
+     */
+    private fun deleteRequest(payload: String): WriteRequest {
+        val body = LinksnapPayloads.withNulls.parseToJsonElement(payload).jsonObject
+        val code =
+            body["code"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a link.delete intent carries no code")
+        val updatedAt =
+            body["updatedAt"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a link.delete intent carries no updatedAt")
+        val clientId = body["clientId"]?.jsonPrimitive?.content
+        return WriteRequest(
+            method = "DELETE",
+            path = "$LINKS_PATH?code=${URLEncoder.encode(code, "UTF-8")}",
+            body = LinksnapPayloads.delete(code, clientId, updatedAt),
+        )
+    }
+}
+
+/**
+ * How a LinkSnap write becomes an intent's payload (#654).
+ *
+ * The create and delete bodies are generated contract types, so a field the
+ * server stops accepting is a compile error in the app rather than a queued
+ * write that can never drain. An update is built field by field because the
+ * route distinguishes "absent" from "null": `null` clears an expiry or a
+ * password, and a body that always carried null would clear both on every edit.
+ */
+object LinksnapPayloads {
+    /** The encoder the create body uses: the route reads the keys it names. */
+    val withNulls = Json {
+        explicitNulls = true
+        encodeDefaults = true
+    }
+
+    fun create(
+        originalUrl: String,
+        customCode: String,
+        clientId: String,
+        expiresAt: String?,
+        password: String?,
+        updatedAt: String,
+    ): String =
+        withNulls.encodeToString(
+            LinksnapCreateWrite(
+                originalUrl = originalUrl,
+                customCode = customCode,
+                clientId = clientId,
+                expiresAt = expiresAt,
+                password = password,
+                updatedAt = updatedAt,
+            )
+        )
+
+    /**
+     * An edit, with the fields the caller actually changed. `expiresAtSet` and
+     * `passwordSet` are what tell "leave it" from "clear it"; `deletedAtSet` is
+     * the undo's resurrect.
+     */
+    fun update(
+        code: String,
+        clientId: String,
+        newCode: String? = null,
+        originalUrl: String? = null,
+        expiresAtSet: Boolean = false,
+        expiresAt: String? = null,
+        passwordSet: Boolean = false,
+        password: String? = null,
+        updatedAt: String,
+        deletedAtSet: Boolean = false,
+        deletedAt: String? = null,
+    ): String =
+        buildJsonObject {
+            put("code", code)
+            put("clientId", clientId)
+            if (newCode != null) put("newCode", newCode)
+            if (originalUrl != null) put("originalUrl", originalUrl)
+            if (expiresAtSet) {
+                if (expiresAt == null) put("expiresAt", JsonNull) else put("expiresAt", expiresAt)
+            }
+            if (passwordSet) {
+                if (password == null) put("password", JsonNull) else put("password", password)
+            }
+            put("updatedAt", updatedAt)
+            if (deletedAtSet) {
+                if (deletedAt == null) put("deletedAt", JsonNull) else put("deletedAt", deletedAt)
+            }
+        }.toString()
+
+    /** The same pair the route deletes on, and the instant the delete was decided. */
+    fun delete(code: String, clientId: String?, updatedAt: String): String =
+        withNulls.encodeToString(
+            LinksnapDeleteWrite(code = code, clientId = clientId, updatedAt = updatedAt)
+        )
+
+    /** The unlock body: the slug from the route and the password a visitor typed. */
+    fun unlock(code: String, password: String): String =
+        withNulls.encodeToString(LinksnapUnlockRequest(code = code, password = password))
+}
