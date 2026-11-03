@@ -602,7 +602,7 @@ private fun statusLabel(row: LinksnapLinkRow): String =
         else -> "نشط"
     }
 
-private fun messageFor(error: ApiError): String =
+internal fun messageFor(error: ApiError): String =
     when (error) {
         is ApiError.Network -> "يتطلَّب الاتصال بالإنترنت. تحقَّق من اتِّصالك ثم أعد المحاولة."
         ApiError.NotSignedIn -> "سجِّل الدُّخول للمتابعة."

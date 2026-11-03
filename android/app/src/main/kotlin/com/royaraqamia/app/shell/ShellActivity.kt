@@ -32,9 +32,9 @@ import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
-import com.royaraqamia.app.linksnap.LinksnapAccountScreen
-import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapScreen
+import com.royaraqamia.app.linksnap.LinksnapRoutes
+import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
 import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
@@ -229,11 +229,11 @@ class ShellActivity : ComponentActivity() {
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
                                 )
-                            // LinkSnap (#654): the shortener and the owned list,
-                            // painted from the Local Store. The account area's
-                            // links page is the same screen on the site.
+                            // LinkSnap (#654): the page is the shortener and
+                            // nothing else. The owned list is the account
+                            // area's links page, which is its own route.
                             "/linksnap" ->
-                                LinksnapScreen(
+                                LinksnapShortenerScreen(
                                     repository = graph.linksnap,
                                     siteUrl = BuildConfig.SITE_URL,
                                     signedIn = signedIn,
@@ -241,7 +241,7 @@ class ShellActivity : ComponentActivity() {
                                     onSignIn = ::showSignIn,
                                 )
                             "/account/links" ->
-                                LinksnapAccountScreen(
+                                LinksnapScreen(
                                     repository = graph.linksnap,
                                     siteUrl = BuildConfig.SITE_URL,
                                     signedIn = signedIn,

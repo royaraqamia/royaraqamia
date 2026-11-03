@@ -1,0 +1,50 @@
+{
+  "surface": "linksnap",
+  "route": "/linksnap",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 258.78,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "card": {
+      "top": 353.28,
+      "width": 361,
+      "height": 240,
+      "radius": 24,
+      "paddingTop": 20,
+      "paddingLeft": 20
+    },
+    "label": {
+      "top": 374.28,
+      "height": 16,
+      "fontSize": 12,
+      "fontWeight": 700
+    },
+    "input": {
+      "width": 319,
+      "height": 50,
+      "fontSize": 14,
+      "paddingLeft": 16,
+      "paddingRight": 16
+    },
+    "hint": {
+      "top": 468.28,
+      "width": 319,
+      "height": 32,
+      "fontSize": 12
+    },
+    "submit": {
+      "width": 319,
+      "height": 52,
+      "fontSize": 16,
+      "fontWeight": 700
+    }
+  }
+}
