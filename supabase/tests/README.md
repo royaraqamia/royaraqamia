@@ -99,6 +99,15 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - The fixtures run with the status and pair-key triggers live, which is why this file does not seed
   with `session_replication_role = replica`.
 
+`chat_agent_thread_test.sql` (#890, ADR-0113):
+
+- The first `kind = 'agent'` conversation for a member is accepted and a second one for the same
+  `created_by` is refused with `23505`, leaving the first in place — the trigger that makes two
+  concurrent opens answer one thread.
+- A group and a direct thread by the same member, and an assistant thread for another member, are
+  unaffected.
+- The fixtures run with the trigger live; the file rolls back.
+
 `chat_participants_test.sql` (#840, ADR-0113):
 
 - The creator of a direct thread adds their one peer as `requested`; a second add, or a third
@@ -250,6 +259,10 @@ fixture order (two rows before the first assertion) is the place to look first.
 adjustment are the `generate_series` user fixtures (a `users` column the local stack fills that this
 file does not) and the thirty-row invite loop, which relies on the advisory lock being transaction
 scoped.
+
+`chat_agent_thread_test.sql` (#890) is unrun too, and it is the second file here that seeds with its
+own trigger live. If `plan(6)` and the run disagree, the second agent insert is the place to look:
+the refusal depends on the trigger seeing the row the same transaction wrote just before it.
 
 ## Worth adding next
 
