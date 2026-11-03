@@ -132,8 +132,21 @@ export interface ChatRepository {
    */
   findDirectPeer(conversationId: string): Promise<string | null>;
   findThreadIdByDirectKey(key: string): Promise<string | null>;
+  /**
+   * The member's assistant thread, read by creator rather than through the
+   * roster (#890). A create that loses the one-thread race may find the winner's
+   * conversation before its participant row exists, and `listThreads` joins the
+   * roster — so that thread would otherwise be invisible.
+   */
+  findAgentThreadId(userId: string): Promise<string | null>;
   createConversation(input: CreateConversationInput): Promise<ChatConversationRecord>;
   addParticipant(input: AddParticipantInput): Promise<void>;
+  /**
+   * The owner's own roster row, written only when it is missing (#890). A
+   * second insert would trip the primary key, so the row that already exists is
+   * an outcome, not a conflict.
+   */
+  ensureOwnerParticipant(conversationId: string, userId: string): Promise<void>;
   setParticipantStatus(
     conversationId: string,
     userId: string,
@@ -190,6 +203,18 @@ export class DirectThreadExistsError extends Error {
   constructor() {
     super('a direct thread already exists for this pair');
     this.name = 'DirectThreadExistsError';
+  }
+}
+
+/**
+ * Raised when the `chat_conversations` trigger refuses a second assistant
+ * thread for one member (#890). Like `DirectThreadExistsError`, it is an
+ * outcome the service answers with the thread that already exists.
+ */
+export class AgentThreadExistsError extends Error {
+  constructor() {
+    super('an assistant thread already exists for this member');
+    this.name = 'AgentThreadExistsError';
   }
 }
 

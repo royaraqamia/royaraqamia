@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ChatService, ChatError, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
 import {
+  AgentThreadExistsError,
   ChatThreadFullError,
   type ChatRepository,
 } from '@/backend/repositories/chat/chat-repository';
@@ -29,6 +30,7 @@ function makeRepository(
     findParticipants: vi.fn(async () => []),
     findDirectPeer: vi.fn(async () => null),
     findThreadIdByDirectKey: vi.fn(async () => null),
+    findAgentThreadId: vi.fn(async () => null),
     createConversation: vi.fn(async () => ({
       id: 'c-1',
       kind: 'direct',
@@ -39,6 +41,7 @@ function makeRepository(
       createdAt: '2026-11-01T10:00:00.000Z',
     })),
     addParticipant: vi.fn(async () => undefined),
+    ensureOwnerParticipant: vi.fn(async () => undefined),
     setParticipantStatus: vi.fn(async () => undefined),
     setLastRead: vi.fn(async () => undefined),
     findMessages: vi.fn(async () => []),
@@ -245,6 +248,74 @@ describe('ChatService.startDirect', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: peerId, metadata: { conversationId: 'c-withdrawn' } })
     );
+  });
+});
+
+describe('ChatService.startAssistant', () => {
+  const agentRow = {
+    id: 'a-1',
+    kind: 'agent',
+    title: null,
+    status: 'active',
+    createdBy: me,
+    lastMessageAt: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+  };
+
+  it('answers the member’s thread without opening a second one', async () => {
+    const { repository, service } = makeRepository({
+      findAgentThreadId: vi.fn(async () => 'a-existing'),
+    });
+
+    await expect(service.startAssistant(me)).resolves.toEqual({ conversationId: 'a-existing' });
+    expect(repository.createConversation).not.toHaveBeenCalled();
+    expect(repository.ensureOwnerParticipant).toHaveBeenCalledWith('a-existing', me);
+  });
+
+  it('opens the thread on the first visit, with the member as its owner', async () => {
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => agentRow),
+    });
+
+    await expect(service.startAssistant(me)).resolves.toEqual({ conversationId: 'a-1' });
+
+    expect(repository.createConversation).toHaveBeenCalledWith({
+      kind: 'agent',
+      createdBy: me,
+      status: 'active',
+    });
+    expect(repository.addParticipant).toHaveBeenCalledWith({
+      conversationId: 'a-1',
+      userId: me,
+      role: 'owner',
+      status: 'active',
+    });
+    expect(repository.ensureOwnerParticipant).not.toHaveBeenCalled();
+  });
+
+  it('answers the thread a concurrent open created, and ensures its own roster row', async () => {
+    const { repository, service } = makeRepository({
+      findAgentThreadId: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce('a-winner'),
+      createConversation: vi.fn(async () => {
+        throw new AgentThreadExistsError();
+      }),
+    });
+
+    await expect(service.startAssistant(me)).resolves.toEqual({ conversationId: 'a-winner' });
+    expect(repository.ensureOwnerParticipant).toHaveBeenCalledWith('a-winner', me);
+    expect(repository.addParticipant).not.toHaveBeenCalled();
+  });
+
+  it('does not read a conflict into another failure', async () => {
+    const failure = new Error('the database is unavailable');
+    const { repository, service } = makeRepository({
+      createConversation: vi.fn(async () => {
+        throw failure;
+      }),
+    });
+
+    await expect(service.startAssistant(me)).rejects.toBe(failure);
+    expect(repository.ensureOwnerParticipant).not.toHaveBeenCalled();
   });
 });
 

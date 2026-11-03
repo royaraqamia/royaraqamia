@@ -1,4 +1,5 @@
 import {
+  AgentThreadExistsError,
   ChatThreadFullError,
   DirectThreadExistsError,
   directPairKey,
@@ -382,25 +383,48 @@ export class ChatService {
    * It carries no title — `chatTitle` names it — and the member is its only
    * participant, which is what makes the model's rows unambiguous: every
    * `sender_kind = 'agent'` line in this thread was written by the server.
+   *
+   * Two opens can race, and the trigger on `chat_conversations` decides which
+   * one creates the row: the loser is refused with `23505`, which the repository
+   * reports as `AgentThreadExistsError`. That thread is the answer, so the loser
+   * reads it by creator — the roster join would hide a conversation whose
+   * participant row the winner has not written yet — and ensures its own roster
+   * row rather than inserting a second one (#890).
    */
   async startAssistant(userId: string): Promise<{ conversationId: string }> {
-    const existing = (await this.listThreads(userId)).find((thread) => thread.kind === 'agent');
-    if (existing) return { conversationId: existing.id };
+    const existing = await this.repo.findAgentThreadId(userId);
+    if (existing) {
+      await this.repo.ensureOwnerParticipant(existing, userId);
+      return { conversationId: existing };
+    }
 
-    const conversation = await this.repo.createConversation({
-      kind: 'agent',
-      createdBy: userId,
-      status: 'active',
-    });
+    try {
+      const conversation = await this.repo.createConversation({
+        kind: 'agent',
+        createdBy: userId,
+        status: 'active',
+      });
 
-    await this.repo.addParticipant({
-      conversationId: conversation.id,
-      userId,
-      role: 'owner',
-      status: 'active',
-    });
+      await this.repo.addParticipant({
+        conversationId: conversation.id,
+        userId,
+        role: 'owner',
+        status: 'active',
+      });
 
-    return { conversationId: conversation.id };
+      return { conversationId: conversation.id };
+    } catch (error) {
+      if (!(error instanceof AgentThreadExistsError)) throw error;
+
+      const winner = await this.repo.findAgentThreadId(userId);
+      // The winner's row was committed before the trigger saw it, so this is
+      // unreachable unless it has since been deleted; report rather than invent
+      // a thread the caller cannot read.
+      if (!winner) throw error;
+
+      await this.repo.ensureOwnerParticipant(winner, userId);
+      return { conversationId: winner };
+    }
   }
 
   /**

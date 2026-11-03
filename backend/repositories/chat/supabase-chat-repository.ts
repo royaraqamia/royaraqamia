@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
 import {
+  AgentThreadExistsError,
   ChatThreadFullError,
   DirectThreadExistsError,
   type AddParticipantInput,
@@ -174,6 +175,21 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
       return data?.id ?? null;
     },
 
+    async findAgentThreadId(userId) {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('kind', 'agent')
+        .eq('created_by', userId)
+        // The oldest row wins, so a member who already carried duplicates before
+        // the trigger existed keeps answering the thread they were reading.
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      if (error) throw repositoryFailure('chat.findAgentThreadId', error);
+      return data?.[0]?.id ?? null;
+    },
+
     async createConversation(input: CreateConversationInput) {
       const { data, error } = await supabase
         .from('chat_conversations')
@@ -186,7 +202,15 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         .select()
         .single();
 
-      if (error) throw repositoryFailure('chat.createConversation', error);
+      if (error) {
+        // `private.enforce_one_agent_thread` refuses a second agent row for the
+        // same member; that is an outcome the service answers with the thread
+        // that already exists (#890).
+        if (input.kind === 'agent' && underlyingCode(error) === UNIQUE_VIOLATION) {
+          throw new AgentThreadExistsError();
+        }
+        throw repositoryFailure('chat.createConversation', error);
+      }
       return toConversation(data);
     },
 
@@ -209,6 +233,23 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         if (underlyingCode(error) === THREAD_FULL) throw new ChatThreadFullError();
         throw repositoryFailure('chat.addParticipant', error);
       }
+    },
+
+    async ensureOwnerParticipant(conversationId, userId) {
+      const { error } = await supabase.from('chat_participants').upsert(
+        {
+          conversation_id: conversationId,
+          user_id: userId,
+          role: 'owner',
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        },
+        // The pair key of a roster row: only an existing row is ignored, so a
+        // conflict on any other constraint still raises.
+        { onConflict: 'conversation_id,user_id', ignoreDuplicates: true }
+      );
+
+      if (error) throw repositoryFailure('chat.ensureOwnerParticipant', error);
     },
 
     async setParticipantStatus(conversationId, userId, status) {
