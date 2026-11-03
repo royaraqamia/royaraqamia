@@ -183,7 +183,9 @@ describe('the pixel diff', () => {
   });
 
   it('refuses two captures of different sizes', () => {
-    expect(() => pixelDifference(base, decodePng(png(4, 2, opaque(4, 2))))).toThrow('sizes differ');
+    expect(() => pixelDifference(base, decodePng(png(12, 2, opaque(12, 2))))).toThrow(
+      'sizes differ'
+    );
   });
 });
 
@@ -223,6 +225,27 @@ describe('the layout contract', () => {
     ]);
     expect(compareLayout(app, RECORD(), { surface: 'verify' })).toEqual([
       '"verify": extra is on the page and not in the app',
+    ]);
+  });
+
+  it('rebases positions on the origin, so two different frames compare by their gaps', () => {
+    const web = {
+      surface: 'verify',
+      elements: { title: { top: 96, height: 46 }, card: { top: 174, width: 361 } },
+    };
+    const app = {
+      surface: 'verify',
+      elements: { title: { top: 64, height: 46 }, card: { top: 142, width: 361 } },
+    };
+
+    expect(compareLayout(web, app, { surface: 'verify', origin: 'title' })).toEqual([]);
+    // Without an origin the same pair fails by the frame's own top.
+    expect(compareLayout(web, app, { surface: 'verify' })).toHaveLength(2);
+  });
+
+  it('refuses a contract whose origin is not an element it measures', () => {
+    expect(validateContract({ origin: 'header', elements: CONTRACT.elements }, 'verify')).toEqual([
+      '"verify": origin "header" is not one of the contract elements',
     ]);
   });
 

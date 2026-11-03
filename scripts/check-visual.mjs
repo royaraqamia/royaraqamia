@@ -183,7 +183,10 @@ export function pixelDifference(a, b) {
   // two different screens.
   const width = Math.min(a.width, b.width);
   const height = Math.min(a.height, b.height);
-  if (Math.abs(a.width - b.width) > 1 || Math.abs(a.height - b.height) > 1) {
+  // Two CSS pixels: the page settles a font or a border between the measurement
+  // and the capture, and an element capture rounds its own box. The layout numbers
+  // are what pin the size; this only decides how much of the image is compared.
+  if (Math.abs(a.width - b.width) > 6 || Math.abs(a.height - b.height) > 6) {
     throw new Error(`sizes differ: ${a.width}x${a.height} against ${b.width}x${b.height}`);
   }
 
@@ -228,11 +231,20 @@ function elementsOf(record, surface) {
 const round = (value) => Math.round(value * 100) / 100;
 
 /** Compares the page's numbers with the screen's; one message per disagreement. */
-export function compareLayout(web, app, { surface, lengthTolerance = DEFAULT_LENGTH_TOLERANCE }) {
-  const theirs = elementsOf(web, surface);
-  const ours = elementsOf(app, surface);
-  if (!theirs) return [`"${surface}": web.json records no elements`];
-  if (!ours) return [`"${surface}": app.json records no elements`];
+export function compareLayout(
+  web,
+  app,
+  { surface, lengthTolerance = DEFAULT_LENGTH_TOLERANCE, origin }
+) {
+  const page = elementsOf(web, surface);
+  const screen = elementsOf(app, surface);
+  if (!page) return [`"${surface}": web.json records no elements`];
+  if (!screen) return [`"${surface}": app.json records no elements`];
+  if (origin && (!page.has(origin) || !screen.has(origin))) {
+    return [`"${surface}": the origin element "${origin}" is not recorded on both sides`];
+  }
+  const theirs = origin ? rebase(page, origin) : page;
+  const ours = origin ? rebase(screen, origin) : screen;
 
   const errors = [];
   for (const [name, expected] of theirs) {
@@ -275,11 +287,43 @@ export function compareLayout(web, app, { surface, lengthTolerance = DEFAULT_LEN
   return errors;
 }
 
+/**
+ * Moves every element's position to be relative to one element's, usually the title.
+ *
+ * The app draws a screen inside its own frame and the page draws it inside the
+ * site's, and those frames are not the same height: what the design actually says is
+ * the *gaps* — title to card, card to its contents — not where the first row lands
+ * on an 852px screen. `top` and `left` are rebased; sizes and styles are untouched.
+ * A missing origin is the caller's error to report, so this returns null.
+ */
+function rebase(elements, origin) {
+  if (!elements) return null;
+  const anchor = elements.get(origin);
+  if (!anchor) return null;
+  const top = typeof anchor.top === 'number' ? anchor.top : 0;
+  const left = typeof anchor.left === 'number' ? anchor.left : 0;
+  return new Map(
+    [...elements].map(([name, props]) => [
+      name,
+      {
+        ...props,
+        ...(typeof props.top === 'number' ? { top: round(props.top - top) } : {}),
+        ...(typeof props.left === 'number' ? { left: round(props.left - left) } : {}),
+      },
+    ])
+  );
+}
+
 /** The contract's own rules: named elements, known properties, no duplicates. */
 export function validateContract(contract, surface) {
   const errors = [];
   if (!Array.isArray(contract.elements) || contract.elements.length === 0) {
     return [`"${surface}": the contract lists no elements`];
+  }
+
+  const names = new Set((contract.elements ?? []).map((element) => element.name));
+  if (contract.origin !== undefined && !names.has(contract.origin)) {
+    errors.push(`"${surface}": origin "${contract.origin}" is not one of the contract elements`);
   }
 
   const seen = new Set();
@@ -406,7 +450,11 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
       continue;
     }
 
-    for (const problem of compareLayout(web, app, { surface: id, lengthTolerance: length })) {
+    for (const problem of compareLayout(web, app, {
+      surface: id,
+      lengthTolerance: length,
+      origin: contract?.origin,
+    })) {
       errors.push(problem);
     }
 

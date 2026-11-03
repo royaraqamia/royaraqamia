@@ -155,6 +155,14 @@ android {
         buildConfig true
         compose true
     }
+    // The visual gate records its app-side capture with
+    // `-Proborazzi.record=true` on the ordinary test task (#874, ADR-0118): the
+    // plugin's own record task skips a test whose outputs it considers current,
+    // which is exactly the state a re-recording starts from.
+    tasks.withType(Test).configureEach { test ->
+        test.systemProperty 'roborazzi.record', providers.gradleProperty('roborazzi.record').getOrElse('false')
+    }
+
     testOptions {
         unitTests {
             // The store's DAO tests run on the JVM under Robolectric (#768),

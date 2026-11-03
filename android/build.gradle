@@ -55,6 +55,23 @@ allprojects {
     }
 }
 
+/*
+ * A plugin's build output does not belong inside `node_modules`.
+ *
+ * `capacitor.settings.gradle` points each plugin project at
+ * `../node_modules/<package>/android`, so Gradle writes `build/` beside its sources.
+ * On Windows a daemon keeps `classes.jar` open there, and every later build fails
+ * with "Unable to delete file ... classes.jar" until the daemon is stopped and the
+ * directory deleted by hand; `rm -rf node_modules` cannot remove a tree a build is
+ * writing into either. Those outputs move under the app's own build directory, which
+ * is the same path on every platform and is already ignored.
+ */
+subprojects { sub ->
+    if (sub.projectDir.absolutePath.replace('\\', '/').contains('/node_modules/')) {
+        sub.layout.buildDirectory.set(rootProject.layout.buildDirectory.dir("plugins/${sub.name}"))
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

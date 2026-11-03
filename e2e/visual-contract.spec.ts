@@ -210,12 +210,25 @@ test.describe('the visual gate', () => {
         'utf8'
       );
 
-      await page.screenshot({
-        path: join(dir, 'web.png'),
-        fullPage: false,
-        animations: 'disabled',
-        caret: 'hide',
-      });
+      // The raster compares the region both clients draw identically. The page's
+      // frame and the app's are not the same height, so a viewport capture would
+      // compare the site's chrome with the app's; the contract names the element.
+      const region = contract.capture
+        ? elements.find((element) => element.name === contract.capture)
+        : null;
+      if (region) {
+        await page
+          .locator(region.selector)
+          .first()
+          .screenshot({ path: join(dir, 'web.png'), animations: 'disabled', caret: 'hide' });
+      } else {
+        await page.screenshot({
+          path: join(dir, 'web.png'),
+          fullPage: false,
+          animations: 'disabled',
+          caret: 'hide',
+        });
+      }
     });
   }
 });
