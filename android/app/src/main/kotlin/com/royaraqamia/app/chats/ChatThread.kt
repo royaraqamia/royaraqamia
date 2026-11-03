@@ -116,6 +116,8 @@ fun ChatThread(
         mutableStateOf<List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>>(emptyList())
     }
     var invited by remember { mutableStateOf<Set<String>>(emptySet()) }
+    /** The newest line already stamped read: a poll must not write again for it. */
+    var markedLine by remember { mutableStateOf<String?>(null) }
 
     /** One read of the thread and its lines, and the read watermark it stamps. */
     suspend fun load(): Boolean {
@@ -131,9 +133,15 @@ fun ChatThread(
                 when (val page = repository.messages(conversationId)) {
                     is ApiResult.Success -> {
                         messages = page.value.messages
-                        // Seen is stamped once per arrival, the way the site's hook
-                        // does: the badge is the reader's watermark (#816).
-                        if (page.value.messages.isNotEmpty()) repository.markRead(conversationId)
+                        // Seen is stamped once per *new* line, the way the site's hook
+                        // does: the badge is the reader's watermark (#816), and a poll
+                        // that wrote again every few seconds would spend a write for
+                        // nothing.
+                        val newest = page.value.messages.lastOrNull()?.id
+                        if (newest != null && newest != markedLine) {
+                            markedLine = newest
+                            repository.markRead(conversationId)
+                        }
                     }
                     is ApiResult.Failure ->
                         failure = ChatFailure.sentenceOf(page.error) ?: ChatThreadCopy.LOAD_FAILED
