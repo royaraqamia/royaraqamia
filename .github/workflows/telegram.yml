@@ -53,7 +53,11 @@ on:
     types: [completed]
   push:
     branches: [main]
-    paths: ['supabase/functions/telegram/**']
+    paths:
+      - 'supabase/functions/telegram/**'
+      # The workflow itself, so a change to the deploy steps re-runs them - the
+      # secrets, the deploy and setWebhook are all idempotent.
+      - '.github/workflows/telegram.yml'
 
 permissions:
   contents: read
@@ -86,7 +90,8 @@ jobs:
           npx --yes supabase@latest secrets set \
             "TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET" \
             "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" \
-            --project-ref "$SUPABASE_PROJECT_REF"
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --yes
 
       - name: Deploy the function
         env:
