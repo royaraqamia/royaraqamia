@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   chunkMessage,
+  commandSpan,
   formatAlert,
   formatDigest,
   formatOffset,
@@ -181,8 +182,8 @@ describe('formatDigest', () => {
 });
 
 describe('renderAnswer', () => {
-  it('turns a backticked command into code instead of literal backticks', () => {
-    expect(renderAnswer('استخدم `/task` لذلك')).toBe('استخدم <code>/task</code> لذلك');
+  it('turns a backticked command into code, with a direction mark', () => {
+    expect(renderAnswer('استخدم `/task` لذلك')).toBe('استخدم <code>\u200E/task</code> لذلك');
   });
 
   it('escapes HTML before adding tags, so prose about tags is safe', () => {
@@ -191,6 +192,17 @@ describe('renderAnswer', () => {
 
   it('leaves plain prose alone', () => {
     expect(renderAnswer('مرحبا، كل شيء بخير.')).toBe('مرحبا، كل شيء بخير.');
+  });
+});
+
+describe('commandSpan', () => {
+  it('keeps a leading slash on the left of the command in an RTL paragraph', () => {
+    // Without U+200E the bidi algorithm moves `/` to the visual end (`task/`).
+    expect(commandSpan('/task')).toBe('<code>\u200E/task</code>');
+  });
+
+  it('escapes the command, so it cannot inject markup', () => {
+    expect(commandSpan('<b>')).toBe('<code>\u200E&lt;b&gt;</code>');
   });
 });
 

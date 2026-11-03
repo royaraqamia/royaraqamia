@@ -219,9 +219,19 @@ export function escapeHtml(text) {
  * first, then turn `code` spans into <code>, so a stray angle bracket cannot
  * break the message and an inline command reads as code rather than as a
  * literal backtick pair.
+ *
+ * Each span opens with U+200E (LEFT-TO-RIGHT MARK). Without it the bidi
+ * algorithm treats the leading `/` of `/task` as neutral and moves it to the
+ * visual end inside an Arabic paragraph, which is why the first live replies
+ * rendered `task/` — the command read like a path, not a command.
  */
 export function renderAnswer(text) {
-  return escapeHtml(text).replace(/`([^`\n]{1,300})`/g, '<code>$1</code>');
+  return escapeHtml(text).replace(/`([^`\n]{1,300})`/g, '<code>\u200E$1</code>');
+}
+
+/** A code span for a command, with the same direction guard as an answer. */
+export function commandSpan(text) {
+  return `<code>\u200E${escapeHtml(text)}</code>`;
 }
 
 export function repoPath(owner, repo) {
@@ -475,7 +485,7 @@ async function handleTask({ text, chat, fast }) {
   }
 
   const line = fast
-    ? `⚡ فتحت <a href="${issue.html_url}">#${issue.number}</a> في <code>${repo}</code> وشغّلت <code>/oc</code>. سيصل الطلب مفتوحاً لمراجعتك.`
+    ? `⚡ فتحت <a href="${issue.html_url}">#${issue.number}</a> في <code>${repo}</code> وشغّلت ${commandSpan('/oc')}. سيصل الطلب مفتوحاً لمراجعتك.`
     : `📥 سجّلت <a href="${issue.html_url}">#${issue.number}</a> في <code>${repo}</code> بالوسم <code>ready-for-agent</code>. سينفّذها Implementer في دورته القادمة ويدمجها إذا كان الفحص أخضر.`;
   await sendMessage(chat, line);
   await recordOutbound(chat, line, repo);
@@ -484,8 +494,7 @@ async function handleTask({ text, chat, fast }) {
 async function handleRemind({ args, chat, offset }) {
   const when = parseWhen(args, Date.now(), offset);
   if (!when || !when.rest) {
-    const line =
-      'اكتب التذكير هكذا: <code>/remind 09:30 نص التذكير</code> أو <code>/remind in 30m نص التذكير</code>.';
+    const line = `اكتب التذكير هكذا: ${commandSpan('/remind 09:30')} نص التذكير أو ${commandSpan('/remind in 30m')} نص التذكير.`;
     await sendMessage(chat, line);
     await recordOutbound(chat, line, null);
     return;
@@ -509,8 +518,7 @@ async function handleRemind({ args, chat, offset }) {
 async function handleTimezone({ args, chat }) {
   const parsed = parseOffset(args);
   if (!parsed) {
-    const line =
-      'لم أفهم المنطقة الزمنية. مثال: <code>/tz +3</code> أو <code>/tz Asia/Damascus</code>.';
+    const line = `لم أفهم المنطقة الزمنية. مثال: ${commandSpan('/tz +3')} أو ${commandSpan('/tz Asia/Damascus')}.`;
     await sendMessage(chat, line);
     await recordOutbound(chat, line, null);
     return;
@@ -533,8 +541,7 @@ async function handleTimezone({ args, chat }) {
 async function handleAnswer({ text, chat }) {
   const key = env('OPENCODE_API_KEY');
   if (!key) {
-    const line =
-      'الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم <code>/task</code> للمهام.';
+    const line = `الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم ${commandSpan('/task')} للمهام.`;
     await sendMessage(chat, line);
     await recordOutbound(chat, line, null);
     return;
@@ -574,11 +581,11 @@ async function handleAnswer({ text, chat }) {
 
 const HELP = [
   '<b>الأوامر</b>',
-  '/task نص المهمة — تسجيلها كـ issue بالوسم <code>ready-for-agent</code> (Auto-merge إذا كان الفحص أخضر).',
-  '/now نص المهمة — تشغيلها فوراً بـ <code>/oc</code>، وتتوقف عند pull request مفتوح لتراجعه.',
-  '/remind 09:30 النص — أو <code>/remind in 30m النص</code>.',
-  '/tz +3 — المنطقة الزمنية، مرة واحدة.',
-  '<code>repo-name: …</code> بعد /task — تنفيذ المهمة في مستودع آخر.',
+  `${commandSpan('/task')} نص المهمة — تسجيلها كـ issue بالوسم <code>ready-for-agent</code> (Auto-merge إذا كان الفحص أخضر).`,
+  `${commandSpan('/now')} نص المهمة — تشغيلها فوراً بـ ${commandSpan('/oc')}، وتتوقف عند pull request مفتوح لتراجعه.`,
+  `${commandSpan('/remind 09:30')} النص — أو ${commandSpan('/remind in 30m')} النص.`,
+  `${commandSpan('/tz +3')} — المنطقة الزمنية، مرة واحدة.`,
+  `${commandSpan('repo-name:')} بعد ${commandSpan('/task')} — تنفيذ المهمة في مستودع آخر.`,
   'أي رسالة عادية أجيب عليها فقط، بلا issue وبلا تغيير في المستودع.',
 ].join('\n');
 
