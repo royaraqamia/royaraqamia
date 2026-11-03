@@ -14,10 +14,16 @@
 --     before it dispatches, so a dispatch that never starts is recoverable: the
 --     drain run picks up every row that is still unprocessed. Claiming is still
 --     `update_id`, so a Telegram retry cannot file a second issue.
---   - the pg_cron job slows from five minutes to fifteen. It is no longer the
---     latency mechanism - it is the dead-man's switch for a function outage or a
---     dispatch that GitHub dropped. Fifteen minutes is fast enough to catch that
---     and slow enough to stay out of the run history.
+--   - `wake_telegram_bridge()`, and a pg_cron job that calls it. This is the
+--     dead-man's switch, and it deliberately does not dispatch on a timer: the
+--     question "is anything pending?" is answered in Postgres, and a dispatch
+--     happens only when the answer is yes. An idle day therefore starts zero
+--     workflow runs, instead of the 96 a blind fifteen-minute dispatch would
+--     have added to the history.
+--
+-- The check runs every five minutes rather than fifteen because it costs nothing
+-- when idle and it is also what keeps a reminder punctual: a due reminder wakes
+-- the same run that would have delivered it.
 --
 -- The function dispatches through `dispatch_github_workflow`, which keeps the
 -- Vault PAT as the only credential that can start a workflow. It was reachable
@@ -26,8 +32,9 @@
 -- else.
 --
 -- Rollback:
---   select cron.unschedule('telegram-bridge-drain');
+--   select cron.unschedule('telegram-bridge-wake');
 --   revoke execute on function public.dispatch_github_workflow(text, text) from service_role;
+--   drop function if exists public.wake_telegram_bridge();
 --   alter table public.telegram_messages drop column if exists processed_at;
 -- ============================================================
 
@@ -42,17 +49,55 @@ create index if not exists idx_telegram_messages_unprocessed
 -- from PUBLIC, so without this line every webhook call answers 42501.
 grant execute on function public.dispatch_github_workflow(text, text) to service_role;
 
+/**
+ * Wakes the bridge only when there is work: an update the function stored but
+ * could not dispatch, or a reminder that has come due. Answers "nothing to do"
+ * without spending a workflow run, which is what keeps an idle day out of the
+ * Actions history.
+ */
+create or replace function public.wake_telegram_bridge()
+returns void
+language plpgsql
+security definer
+set search_path = 'public'
+as $fn$
+declare
+  pending integer;
+begin
+  select count(*) into pending
+  from public.telegram_messages
+  where direction = 'in' and processed_at is null;
+
+  if pending = 0 then
+    select count(*) into pending
+    from public.telegram_reminders
+    where sent_at is null and due_at <= now();
+  end if;
+
+  if pending > 0 then
+    perform public.dispatch_github_workflow('telegram.yml', 'main');
+  end if;
+end;
+$fn$;
+
+revoke execute on function public.wake_telegram_bridge()
+  from public, anon, authenticated;
+
 do $do$
 begin
   if exists (select 1 from cron.job where jobname = 'telegram-bridge-poll') then
     perform cron.unschedule('telegram-bridge-poll');
   end if;
 
-  if not exists (select 1 from cron.job where jobname = 'telegram-bridge-drain') then
+  if exists (select 1 from cron.job where jobname = 'telegram-bridge-drain') then
+    perform cron.unschedule('telegram-bridge-drain');
+  end if;
+
+  if not exists (select 1 from cron.job where jobname = 'telegram-bridge-wake') then
     perform cron.schedule(
-      'telegram-bridge-drain',
-      '*/15 * * * *',
-      $$select public.dispatch_github_workflow('telegram.yml', 'main')$$
+      'telegram-bridge-wake',
+      '*/5 * * * *',
+      $$select public.wake_telegram_bridge()$$
     );
   end if;
 end;

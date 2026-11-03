@@ -23,9 +23,11 @@ issue creation and the answers stay in the workflow, where they already worked.
 ## Why it stores before it dispatches
 
 A dispatch can fail — GitHub is down, the PAT was rotated, the call timed out. Forwarding alone
-would lose the message. Storing first means the row survives, and the fifteen-minute `drain` run
-picks up anything with no `processed_at`. That is the whole backstop, and it is why the cron did not
-disappear: it stopped being the latency mechanism and became the dead-man's switch.
+would lose the message. Storing first means the row survives, and a pg_cron function,
+`wake_telegram_bridge`, dispatches whenever a row is unprocessed (or a reminder is due). That is the
+whole backstop, and it does not run the workflow on a timer: the question "anything pending?" is
+answered in Postgres, so an idle day starts no run at all. A blind five-minute dispatch would have
+added 288 runs a day to hide the 288 it replaced.
 
 Claiming is a compare-and-set on `processed_at`, so the webhook's run and the backstop's run cannot
 both handle one message.

@@ -14,8 +14,9 @@ a webhook).
    text message from `TELEGRAM_CHAT_ID`, and stores the update in `telegram_messages`.
 3. It dispatches `telegram.yml` through `dispatch_github_workflow` (Vault PAT, no new credential).
 4. The workflow drains unprocessed rows, routes them, and replies — ~20–40 seconds end to end.
-5. Every fifteen minutes a pg_cron job dispatches the same workflow as a backstop: it drains anything
-   the function stored but could not dispatch, and sends due reminders.
+5. Every five minutes a pg_cron function (`wake_telegram_bridge`) asks Postgres whether anything is
+   pending — an undispatched update, or a due reminder — and dispatches the workflow only when the
+   answer is yes. An idle day therefore starts **zero** runs.
 
 ## What it is
 
@@ -87,9 +88,9 @@ signed-in user behind a chat, so an anon key reads nothing.
 ## Troubleshooting
 
 - **No reply within a minute or two.** The webhook did not reach the function, or the dispatch failed.
-  Check the backstop: `select * from cron.job where jobname = 'telegram-bridge-drain'` should exist and
-  fire every fifteen minutes, and it drains whatever is still unprocessed. `select count(*) from
-telegram_messages where direction = 'in' and processed_at is null` is the backlog.
+  Check the backstop: `select * from cron.job where jobname = 'telegram-bridge-wake'` should exist and
+  fire every five minutes, dispatching only when there is a row to work on. The backlog is
+  `select count(*) from telegram_messages where direction = 'in' and processed_at is null`.
 - **Every call answers 401.** `TELEGRAM_WEBHOOK_SECRET` differs between the function's secrets and the
   value passed to `setWebhook`. Re-run the deploy job, which sets both.
 - **The bot stops answering.** Check the last `Telegram Bridge` run. A 401 means a rotated token; a

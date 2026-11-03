@@ -20,11 +20,13 @@
 #     idempotent: `setWebhook` on the same URL and secret is a no-op.
 #   - `workflow_dispatch` is what the function calls (through the Vault PAT), and
 #     what the owner can run by hand.
-#   - `schedule` every fifteen minutes is the dead-man's switch: it drains
-#     messages the function stored but could not dispatch, and sends due
-#     reminders. Not the latency mechanism - the backstop.
 #   - `workflow_run` on completion is what makes the daily summary a reaction
 #     instead of a clock; the planner and the implementer finish when they finish.
+#
+# There is no `schedule`. The backstop is a pg_cron function
+# (`wake_telegram_bridge`) that answers "is anything pending?" inside Postgres and
+# dispatches only when the answer is yes - so an idle day starts no run at all,
+# and GitHub's own unreliable scheduler is not part of the path.
 #
 # Setup (repository secrets):
 #   TELEGRAM_BOT_TOKEN        — BotFather
@@ -39,10 +41,6 @@
 name: 'Telegram Bridge'
 
 on:
-  schedule:
-    # Backstop only: drains stored-but-undispatched messages and sends due
-    # reminders. The webhook is the fast path.
-    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       mode:
