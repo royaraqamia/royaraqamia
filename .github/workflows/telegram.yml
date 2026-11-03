@@ -1,0 +1,177 @@
+# The owner's phone, wired to the autonomous issue pipeline.
+#
+# One file, three triggers, one script (`scripts/telegram-bridge.mjs`) and one
+# storage (the Telegram tables in `supabase/migrations/20261113120000_telegram_bridge.sql`).
+#
+#   - `schedule` every five minutes is the door: `getUpdates` with an offset kept
+#     in Postgres, so a message becomes an issue within one interval. GitHub's
+#     `schedule` is best-effort and can land minutes late; that is affordable
+#     because the offset makes a late run process a batch instead of missing one.
+#   - `workflow_dispatch` exists so the owner (or the pg_cron dispatcher that
+#     already wakes the planner) can ask for a digest immediately.
+#   - `workflow_run` is what makes the daily summary *not* a clock. The planner
+#     and the implementer finish whenever they finish, so their completion is the
+#     trigger, and a late run can never cost the day its summary (ADR 0121).
+#
+# This is a dispatcher, not an agent: it files an issue and lets the workflows
+# that own the work do it. `/now` comments `/oc`, which stops at an open pull
+# request (ADR 0066); `/task` is labelled `ready-for-agent`, and the implementer
+# merges that one when its checks are green (ADR 0120).
+#
+# Plain text is answered, not filed. The answer is the bridge's only model call
+# (`OPENCODE_API_KEY`, DeepSeek V4.1 Flash, no tools, no repository), so a
+# sentence that is not a task never becomes an issue.
+#
+# Why not a Vercel webhook: it needs a public endpoint, and this project's Hobby
+# account has already exceeded its Fluid Active CPU cap once
+# (docs/vercel-usage.md). A public repository's Actions minutes are free, so the
+# poll costs nothing that is metered.
+#
+# Setup (repository secrets):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — the bot and the one chat allowed to use it
+#   OPENCODE_API_KEY                    — already present for the agent workflows
+#   SUPABASE_SERVICE_ROLE_KEY           — already present for the other workflows
+#   SUPABASE_URL                        — optional; SUPABASE_PROJECT_REF is used when absent
+#
+# The chat allowlist is enforced in the script, not here: a run that receives an
+# update from any other chat records nothing and answers nothing.
+
+name: 'Telegram Bridge'
+
+on:
+  schedule:
+    # Every five minutes. The offset in Postgres makes overlapping or late runs
+    # harmless: an update is claimed once.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What to do in this run'
+        type: choice
+        options: [poll, remind, digest-planner, digest-implementer]
+        default: poll
+  workflow_run:
+    workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: read
+
+# One bridge at a time. `cancel-in-progress: false` because a cancelled poll
+# could consume an update without answering it.
+concurrency:
+  group: telegram-bridge
+  cancel-in-progress: false
+
+jobs:
+  bridge:
+    name: Poll and remind
+    if: github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Deliver due reminders
+        if: inputs.mode == 'remind' || inputs.mode == '' || inputs.mode == 'poll'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/telegram-bridge.mjs remind
+
+      - name: Read Telegram and file the work
+        if: inputs.mode == 'poll' || inputs.mode == ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/telegram-bridge.mjs poll
+
+      - name: Digest on demand — planner
+        if: inputs.mode == 'digest-planner'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Planner"
+
+      - name: Digest on demand — implementer
+        if: inputs.mode == 'digest-implementer'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Implementer"
+
+  digest:
+    name: Daily summary on completion
+    if: >-
+      github.event_name == 'workflow_run' &&
+      (github.event.workflow_run.name == 'Issue Planner' ||
+       github.event.workflow_run.name == 'Issue Implementer')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Summarise the last 24 hours
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+        run: node scripts/telegram-bridge.mjs digest --workflow "$WORKFLOW_NAME" --url "$WORKFLOW_URL"
+
+  alerts:
+    name: Alert on a red check
+    if: >-
+      github.event_name == 'workflow_run' &&
+      (github.event.workflow_run.name == 'Release Health' ||
+       github.event.workflow_run.name == 'Migration Drift')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Report a failure
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+        run: >-
+          node scripts/telegram-bridge.mjs alerts
+          --workflow "$WORKFLOW_NAME"
+          --conclusion "$WORKFLOW_CONCLUSION"
+          --url "$WORKFLOW_URL"
