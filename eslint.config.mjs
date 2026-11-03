@@ -30,6 +30,11 @@ export default [
       // and linting the intermediates only produces noise about Capacitor's
       // own generated bridge script.
       'android/',
+      // Supabase Edge Functions are Deno, not Node: they run with `Deno.serve`
+      // and the platform's globals, which this project's TypeScript and ESLint
+      // configurations do not declare. `supabase functions deploy` bundles them
+      // with esbuild, so nothing here is checked by the app's toolchain.
+      'supabase/functions/',
       // Hand-written service worker: global function declarations are required
       // by the SW scope, so `no-implicit-globals` / `array-callback-return` false-positive.
       'public/sw.js',

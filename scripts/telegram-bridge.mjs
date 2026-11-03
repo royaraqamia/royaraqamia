@@ -15,23 +15,24 @@
  * model call - a chat completion with no tools and no repository access, which
  * is also why it cannot do anything to the repo by accident.
  *
- * Why polling and not a webhook: a webhook needs a public HTTPS endpoint, which
- * means Vercel - and this project's Vercel Hobby account already exceeded its
- * Fluid Active CPU cap once (docs/vercel-usage.md). The repository is public, so
- * Actions minutes are free, and `getUpdates` with a stored offset gives the same
- * guarantee without touching a Vercel meter. Latency is one polling interval
- * (five minutes), inside the owner's tolerance for asynchronous work.
+ * Why the webhook and not polling: a poll pays its interval whether or not
+ * anybody wrote anything - five minutes of latency, 288 workflow runs a day - and
+ * the owner wanted seconds. Telegram now pushes each update to
+ * `supabase/functions/telegram`, which stores it and dispatches this workflow.
+ * Runs scale with messages instead of with the clock, and a quiet day costs
+ * nothing. Vercel is still untouched: the endpoint is a Supabase Edge Function
+ * (ADR 0122).
  *
- * Why the offset and the message log live in Postgres: Actions has no memory
- * between runs. `update_id` is unique in `telegram_messages` because Telegram
- * redelivers an update whenever a run dies after receiving it, and a redelivery
- * must not file a second issue. The row is written *before* the issue is filed,
- * so the constraint is the deduplication, not a check that races it.
+ * Why the message log lives in Postgres: Actions has no memory between runs, and
+ * the function stores the update *before* it dispatches. A dispatch that never
+ * starts leaves an unprocessed row, which `drain` picks up - that is the whole
+ * backstop. `update_id` is unique because Telegram retries an update it could not
+ * deliver, and a retry must not file a second issue.
  *
  * Usage:
- *   node scripts/telegram-bridge.mjs poll
+ *   node scripts/telegram-bridge.mjs drain
  *   node scripts/telegram-bridge.mjs remind
- *   node scripts/telegram-bridge.mjs digest --workflow "Issue Planner" --conclusion success --url ...
+ *   node scripts/telegram-bridge.mjs digest --workflow "Issue Planner" --url ...
  *   node scripts/telegram-bridge.mjs alerts --workflow "Migration Drift" --conclusion failure --url ...
  *
  * Required env:
@@ -362,23 +363,6 @@ async function github(path, init = {}) {
 
 // ------------------------------------------------------------------- state
 
-async function readOffset() {
-  const rows = await db('telegram_state?key=eq.update_offset&select=value');
-  return rows?.[0]?.value ? Number(rows[0].value) : 0;
-}
-
-async function writeOffset(offset) {
-  await db('telegram_state', {
-    method: 'POST',
-    headers: { prefer: 'resolution=merge-duplicates' },
-    body: JSON.stringify({
-      key: 'update_offset',
-      value: String(offset),
-      updated_at: new Date().toISOString(),
-    }),
-  });
-}
-
 async function ensureChat(chatId, title) {
   await db('telegram_chats', {
     method: 'POST',
@@ -394,22 +378,28 @@ async function ensureChat(chatId, title) {
 }
 
 /**
- * Writes the inbound row first and reports whether it is new. Telegram
- * redelivers an update after a failed run; the unique `update_id` is what turns
- * that redelivery into a no-op instead of a second issue.
+ * Marks one inbound row as taken, and reports whether this run got it. The
+ * filter is the compare-and-set: two overlapping runs - the webhook's dispatch
+ * and the fifteen-minute backstop - cannot both handle one message.
  */
-async function claimUpdate(update, chatId, body) {
-  const inserted = await db('telegram_messages?on_conflict=update_id', {
-    method: 'POST',
-    headers: { prefer: 'resolution=ignore-duplicates,return=representation' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      update_id: update.update_id,
-      direction: 'in',
-      body,
-    }),
-  });
-  return Boolean(inserted?.length);
+async function claimRow(row) {
+  const claimed = await db(
+    `telegram_messages?id=eq.${row.id}&direction=eq.in&processed_at=is.null`,
+    {
+      method: 'PATCH',
+      headers: { prefer: 'return=representation' },
+      body: JSON.stringify({ processed_at: new Date().toISOString() }),
+    }
+  );
+  return Boolean(claimed?.length);
+}
+
+/** Gives a claimed row back after a failure, so the next run retries it. */
+async function releaseRow(row) {
+  await db(`telegram_messages?id=eq.${row.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ processed_at: null }),
+  }).catch(() => {});
 }
 
 async function recordOutbound(chatId, body, repo) {
@@ -592,24 +582,15 @@ const HELP = [
   'أي رسالة عادية أجيب عليها فقط، بلا issue وبلا تغيير في المستودع.',
 ].join('\n');
 
-async function handleUpdate(update) {
-  const message = update.message ?? update.edited_message;
-  if (!message?.chat) return;
-  const chat = message.chat.id;
+async function handleMessage({ chat, text }) {
   if (String(chat) !== String(allowedChat())) return;
 
-  const text = (message.text ?? '').trim();
-  if (!text) return;
+  const trimmed = (text ?? '').trim();
+  if (!trimmed) return;
 
-  // Claimed before anything acts: a redelivered update stops here.
-  if (!(await claimUpdate(update, chat, text))) {
-    process.stdout.write(`telegram: update ${update.update_id} already claimed, skipped\n`);
-    return;
-  }
-
-  const chatRow = await ensureChat(chat, message.chat.title ?? message.chat.username ?? null);
+  const chatRow = await ensureChat(chat, null);
   const offset = chatRow.tz_offset_minutes ?? DEFAULT_TZ_MINUTES;
-  const { command, args } = parseCommand(text);
+  const { command, args } = parseCommand(trimmed);
 
   if (command === 'help') {
     await sendMessage(chat, HELP);
@@ -630,45 +611,36 @@ async function handleUpdate(update) {
     return handleTask({ text: args, chat, fast: command === 'now' });
   }
 
-  return handleAnswer({ text, chat });
+  return handleAnswer({ text: trimmed, chat });
 }
 
 /**
- * A bot with a webhook registered cannot be polled: Telegram answers `getUpdates`
- * with `409 Conflict` and the bridge reads nothing. The webhook is a leftover from
- * whatever the bot did before it was wired here, and nothing in this design uses
- * one, so the bridge clears it - without dropping pending updates, so a message
- * that arrived while the webhook was dead is still delivered.
+ * Handles what the webhook stored and could not finish, and retries what a
+ * previous run failed on. The webhook is the fast path; this is the one that
+ * makes a GitHub outage, a rotated token or a slow dispatch survivable.
  */
-async function ensurePolling() {
-  const info = await telegram('getWebhookInfo', {});
-  if (info?.url) {
-    await telegram('deleteWebhook', { drop_pending_updates: false });
-  }
-}
+async function drain() {
+  const rows =
+    (await db(
+      'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body&order=id.asc&limit=20'
+    )) ?? [];
 
-async function poll() {
-  await ensurePolling();
-  let offset = await readOffset();
-  const updates =
-    (await telegram('getUpdates', { offset, timeout: 0, allowed_updates: ['message'] })) ?? [];
+  process.stdout.write(`telegram: ${rows.length} unprocessed message(s)\n`);
 
-  process.stdout.write(`telegram: ${updates.length} update(s) from offset ${offset}\n`);
-
-  for (const update of updates) {
+  for (const row of rows) {
+    if (!(await claimRow(row))) continue;
     try {
-      await handleUpdate(update);
+      await handleMessage({ chat: row.chat_id, text: row.body });
     } catch (error) {
-      const chat = update.message?.chat?.id;
-      if (chat && String(chat) === String(allowedChat())) {
+      await releaseRow(row);
+      const chat = row.chat_id;
+      if (String(chat) === String(allowedChat())) {
         await sendMessage(
           chat,
           `⚠️ تعذّر تنفيذ الرسالة: ${escapeHtml(String(error.message).slice(0, 300))}`
-        );
+        ).catch(() => {});
       }
     }
-    offset = Math.max(offset, update.update_id + 1);
-    await writeOffset(offset);
   }
 }
 
@@ -746,7 +718,7 @@ function arg(name) {
 
 async function main() {
   const mode = process.argv[2];
-  if (mode === 'poll') return poll();
+  if (mode === 'drain') return drain();
   if (mode === 'remind') return remind();
   if (mode === 'digest') {
     return digest({

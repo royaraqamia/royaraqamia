@@ -1,15 +1,27 @@
 # Telegram bridge
 
 The owner's phone, wired to the autonomous issue pipeline. One workflow
-(`.github/workflows/telegram.yml`), one script (`scripts/telegram-bridge.mjs`), one migration
-(`supabase/migrations/20261113120000_telegram_bridge.sql`). Design and reasoning:
-[ADR 0121](../adr/0121-telegram-is-a-door-not-an-agent.md).
+(`.github/workflows/telegram.yml`), one script (`scripts/telegram-bridge.mjs`), one Edge Function
+(`supabase/functions/telegram`), and two migrations. Design and reasoning:
+[ADR 0121](../adr/0121-telegram-is-a-door-not-an-agent.md) (why it is a dispatcher) and
+[ADR 0122](../adr/0122-the-webhook-replaces-the-poll-because-the-poll-was-a-clock.md) (why the door is
+a webhook).
+
+## How a message travels
+
+1. Telegram `POST`s the update to `https://<ref>.supabase.co/functions/v1/telegram`.
+2. The function verifies the `X-Telegram-Bot-Api-Secret-Token` header, ignores anything that is not a
+   text message from `TELEGRAM_CHAT_ID`, and stores the update in `telegram_messages`.
+3. It dispatches `telegram.yml` through `dispatch_github_workflow` (Vault PAT, no new credential).
+4. The workflow drains unprocessed rows, routes them, and replies — ~20–40 seconds end to end.
+5. Every five minutes a pg_cron function (`wake_telegram_bridge`) asks Postgres whether anything is
+   pending — an undispatched update, or a due reminder — and dispatches the workflow only when the
+   answer is yes. An idle day therefore starts **zero** runs.
 
 ## What it is
 
 A dispatcher. A message becomes an issue; the workflow that owns that kind of work runs; the result
-comes back to the chat. It never calls a model, never checks out a repository and cannot push code
-by itself.
+comes back to the chat. It never checks out a repository and cannot push code by itself.
 
 ## Commands
 
@@ -50,31 +62,37 @@ Repository secrets, none of which are in the repo:
 | --------------------------- | ----------------------------------------------------------- |
 | `TELEGRAM_BOT_TOKEN`        | BotFather                                                   |
 | `TELEGRAM_CHAT_ID`          | your own chat id; the only chat the bridge answers          |
+| `TELEGRAM_WEBHOOK_SECRET`   | any long random string; Telegram echoes it on every call    |
+| `SUPABASE_ACCESS_TOKEN`     | already present; deploys the function                       |
+| `SUPABASE_PROJECT_REF`      | already present                                             |
 | `SUPABASE_SERVICE_ROLE_KEY` | already present for the other workflows                     |
 | `SUPABASE_URL`              | optional — `SUPABASE_PROJECT_REF` is used when it is absent |
 
-Apply the migration (`supabase db push`), then send `/tz` once. The first poll runs within five
-minutes; a `workflow_dispatch` run with mode `poll` does it immediately.
+Then merge a change under `supabase/functions/telegram/**`: the workflow writes the function's
+secrets, deploys it, and calls `setWebhook` with the secret. All three steps are idempotent, so a
+re-run is harmless. Finally send `/tz +3` once.
 
 ## Storage
 
-| Table                | Purpose                                        | Retention                         |
-| -------------------- | ---------------------------------------------- | --------------------------------- |
-| `telegram_chats`     | who may talk, and their offset                 | kept                              |
-| `telegram_messages`  | the transcript, `update_id` unique             | 90 days (`sweep_telegram_bridge`) |
-| `telegram_summaries` | rolling paragraph injected into a task's issue | kept                              |
-| `telegram_reminders` | what was asked and whether it was sent         | sent rows pruned at 90 days       |
-| `telegram_state`     | the `getUpdates` offset                        | one row                           |
+| Table                | Purpose                                            | Retention                         |
+| -------------------- | -------------------------------------------------- | --------------------------------- |
+| `telegram_chats`     | who may talk, and their offset                     | kept                              |
+| `telegram_messages`  | the transcript, `update_id` unique, `processed_at` | 90 days (`sweep_telegram_bridge`) |
+| `telegram_summaries` | rolling paragraph injected into a task's issue     | kept                              |
+| `telegram_reminders` | what was asked and whether it was sent             | sent rows pruned at 90 days       |
+| `telegram_state`     | unused since the webhook replaced polling          | —                                 |
 
 Row level security is on and there is no policy: only `service_role` reads or writes. There is no
 signed-in user behind a chat, so an anon key reads nothing.
 
 ## Troubleshooting
 
-- **No reply within ten minutes.** Check that the `telegram-bridge-poll` pg_cron job exists and is
-  running (`select * from cron.job where jobname = 'telegram-bridge-poll'`). GitHub's own `schedule`
-  is a backstop only — on 2026-11-03 it produced no run for 25 minutes while dispatches ran on time,
-  which is why the wake-up is pg_cron calling the Actions dispatch API (ADR 0032).
+- **No reply within a minute or two.** The webhook did not reach the function, or the dispatch failed.
+  Check the backstop: `select * from cron.job where jobname = 'telegram-bridge-wake'` should exist and
+  fire every five minutes, dispatching only when there is a row to work on. The backlog is
+  `select count(*) from telegram_messages where direction = 'in' and processed_at is null`.
+- **Every call answers 401.** `TELEGRAM_WEBHOOK_SECRET` differs between the function's secrets and the
+  value passed to `setWebhook`. Re-run the deploy job, which sets both.
 - **The bot stops answering.** Check the last `Telegram Bridge` run. A 401 means a rotated token; a
   400 from Telegram usually means a `chat_id` that is not the chat writing.
 - **A message was processed twice.** It cannot be: `update_id` is unique and the row is written
