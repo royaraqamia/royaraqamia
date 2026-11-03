@@ -1,39 +1,64 @@
 {
   "surface": "verify",
   "route": "/verify",
-  "origin": "title",
-  "capture": "card",
   "notes": "The page at rest: the title, the search card, the code field, the submit button and the line of hints under them. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card, because it is the region both clients draw identically; the raster around it is covered by the layout numbers. Widths are left out of the title deliberately: its width is the run of text, not a decision. Colours are left out deliberately too - they are what the raster proves. The states after a lookup (found, not found, rate-limited, unreachable) are separate recordings and are not part of this contract yet.",
-  "elements": [
+  "states": [
     {
-      "name": "title",
-      "web": { "selector": "[data-visual='title'] h1" },
-      "app": { "tag": "verify-title" },
-      "properties": ["top", "height", "fontSize", "fontWeight"]
-    },
-    {
-      "name": "card",
-      "web": { "selector": "[data-visual='card']" },
-      "app": { "tag": "verify-card" },
-      "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
-    },
-    {
-      "name": "code-input",
-      "web": { "selector": "[data-visual='input']" },
-      "app": { "tag": "verify-input" },
-      "properties": ["width", "height", "radius", "fontSize", "paddingLeft", "paddingRight"]
-    },
-    {
-      "name": "submit",
-      "web": { "selector": "[data-visual='submit']" },
-      "app": { "tag": "verify-submit" },
-      "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
-    },
-    {
-      "name": "hint",
-      "web": { "selector": "[data-visual='hint']" },
-      "app": { "tag": "verify-hint" },
-      "properties": ["top", "width", "height", "fontSize"]
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "verify-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='card']"
+          },
+          "app": {
+            "tag": "verify-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "code-input",
+          "web": {
+            "selector": "[data-visual='input']"
+          },
+          "app": {
+            "tag": "verify-input"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "submit",
+          "web": {
+            "selector": "[data-visual='submit']"
+          },
+          "app": {
+            "tag": "verify-submit"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "hint",
+          "web": {
+            "selector": "[data-visual='hint']"
+          },
+          "app": {
+            "tag": "verify-hint"
+          },
+          "properties": ["top", "width", "height", "fontSize"]
+        }
+      ]
     }
   ]
 }

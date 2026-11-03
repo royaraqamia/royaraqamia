@@ -1,45 +1,74 @@
 {
   "surface": "linksnap",
   "route": "/linksnap",
-  "origin": "title",
-  "capture": "card",
   "notes": "The page at rest, signed out: the title, and the shortener card with its field label, the empty field, the guest sentence and the one button. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card because it is the region both clients draw identically; the shadow the card casts is outside its own box and is covered by the raster. The radii of the field and the button are left out deliberately: the site draws both with Tailwind's `rounded-full`, which computes to `calc(infinity * 1px)`, and a number that is not a length cannot be compared - the raster is what proves the pill. The states after a short (ready, error, offline) are separate recordings and are not part of this contract yet.",
-  "elements": [
+  "states": [
     {
-      "name": "title",
-      "web": { "selector": "[data-visual='title'] h1" },
-      "app": { "tag": "linksnap-title" },
-      "properties": ["top", "height", "fontSize", "fontWeight"]
-    },
-    {
-      "name": "card",
-      "web": { "selector": "[data-visual='card']" },
-      "app": { "tag": "linksnap-card" },
-      "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
-    },
-    {
-      "name": "label",
-      "web": { "selector": "[data-visual='label']" },
-      "app": { "tag": "linksnap-label" },
-      "properties": ["top", "height", "fontSize", "fontWeight"]
-    },
-    {
-      "name": "input",
-      "web": { "selector": "[data-visual='input']" },
-      "app": { "tag": "linksnap-input" },
-      "properties": ["width", "height", "fontSize", "paddingLeft", "paddingRight"]
-    },
-    {
-      "name": "hint",
-      "web": { "selector": "[data-visual='hint']" },
-      "app": { "tag": "linksnap-hint" },
-      "properties": ["top", "width", "height", "fontSize"]
-    },
-    {
-      "name": "submit",
-      "web": { "selector": "[data-visual='submit']" },
-      "app": { "tag": "linksnap-submit" },
-      "properties": ["width", "height", "fontSize", "fontWeight"]
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "linksnap-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='card']"
+          },
+          "app": {
+            "tag": "linksnap-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "label",
+          "web": {
+            "selector": "[data-visual='label']"
+          },
+          "app": {
+            "tag": "linksnap-label"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "input",
+          "web": {
+            "selector": "[data-visual='input']"
+          },
+          "app": {
+            "tag": "linksnap-input"
+          },
+          "properties": ["width", "height", "fontSize", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "hint",
+          "web": {
+            "selector": "[data-visual='hint']"
+          },
+          "app": {
+            "tag": "linksnap-hint"
+          },
+          "properties": ["top", "width", "height", "fontSize"]
+        },
+        {
+          "name": "submit",
+          "web": {
+            "selector": "[data-visual='submit']"
+          },
+          "app": {
+            "tag": "linksnap-submit"
+          },
+          "properties": ["width", "height", "fontSize", "fontWeight"]
+        }
+      ]
     }
   ]
 }

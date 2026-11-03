@@ -1,34 +1,60 @@
 {
   "schemaVersion": 1,
-  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when this file carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the elements and properties both clients must agree on), the test that draws the app side, and the tolerances: tolerance.length is the CSS-pixel drift allowed on a box, and tolerance.pixels is the surface's recorded raster baseline - the share of the capture that differs at the best alignment, measured from the pair that passed, with the date it was recorded. The layout contract is the exact half; the baseline is what the two rasterisers (Chromium and Skia) make of the same boxes, and it fails a regression beyond it. Evidence lives in e2e/__visual__/<surface>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen).",
+  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when every state this file declares for that surface carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the states, and for each state the elements and properties both clients must agree on), the test that draws the app side, and, per state, its tolerances: tolerance.length is the CSS-pixel drift allowed on a box, and tolerance.pixels is that state's recorded raster baseline - the share of the capture that differs at the best alignment, measured from the pair that passed, with the date it was recorded. Evidence lives in e2e/__visual__/<surface>/<state>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen).",
   "surfaces": [
     {
       "surface": "verify",
-      "web": { "route": "/verify" },
+      "web": {
+        "route": "/verify"
+      },
       "contract": "shared/visual/verify.json",
       "app": {
         "test": "android/app/src/test/kotlin/com/royaraqamia/app/verify/VerifyScreenVisualTest.kt"
       },
-      "tolerance": { "pixels": 0.227, "length": 0.5 },
-      "baseline": {
-        "recorded": "2026-11-03",
-        "measured": 0.2261,
-        "alignment": { "dx": 0, "dy": 2 }
-      }
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.227,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-03",
+            "measured": 0.2261,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
     },
     {
       "surface": "linksnap",
-      "web": { "route": "/linksnap" },
+      "web": {
+        "route": "/linksnap"
+      },
       "contract": "shared/visual/linksnap.json",
       "app": {
         "test": "android/app/src/test/kotlin/com/royaraqamia/app/linksnap/LinksnapScreenVisualTest.kt"
       },
-      "tolerance": { "pixels": 0.055, "length": 0.5 },
-      "baseline": {
-        "recorded": "2026-11-03",
-        "measured": 0.0539,
-        "alignment": { "dx": 0, "dy": -1 }
-      }
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.055,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-03",
+            "measured": 0.0539,
+            "alignment": {
+              "dx": 0,
+              "dy": -1
+            }
+          }
+        }
+      ]
     }
   ]
 }

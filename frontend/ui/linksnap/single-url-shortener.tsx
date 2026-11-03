@@ -145,6 +145,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <div>
             <label
               htmlFor="original-url"
+              data-visual="label"
               className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
             >
               الرَّابط
@@ -159,12 +160,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               placeholder="https://example.com/very-long-url-path"
               autoFocus
               aria-describedby="single-url-error"
+              data-visual="input"
               className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
             />
           </div>
 
           {!token && (
-            <p className="text-xs text-muted-foreground font-medium">
+            <p data-visual="hint" className="text-xs text-muted-foreground font-medium">
               سجِّل الدُّخول لاستخدام رمزٍ مخصَّص وكلمة مرور وتتبُّع النَّقرات.{' '}
               <NextLink
                 href="/auth/login?redirect=%2Flinksnap"
@@ -284,6 +286,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <HeroCtaButton
             id="btn-shorten-url"
             type="submit"
+            data-visual="submit"
             className="w-full"
             disabled={loading || !originalUrl}
           >

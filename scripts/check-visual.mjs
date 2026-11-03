@@ -352,39 +352,52 @@ function rebase(elements, origin) {
   );
 }
 
-/** The contract's own rules: named elements, known properties, no duplicates. */
+/** The contract's own rules: named states, each with named elements and known properties. */
 export function validateContract(contract, surface) {
   const errors = [];
-  if (!Array.isArray(contract.elements) || contract.elements.length === 0) {
-    return [`"${surface}": the contract lists no elements`];
+  const states = contract?.states;
+  if (!Array.isArray(states) || states.length === 0) {
+    return [`"${surface}": the contract lists no states`];
   }
 
-  const names = new Set((contract.elements ?? []).map((element) => element.name));
-  if (contract.origin !== undefined && !names.has(contract.origin)) {
-    errors.push(`"${surface}": origin "${contract.origin}" is not one of the contract elements`);
-  }
+  const seenStates = new Set();
+  for (const state of states) {
+    if (!state?.name) {
+      errors.push(`"${surface}": a contract state has no "name"`);
+      continue;
+    }
+    const where = `"${surface}/${state.name}"`;
+    if (seenStates.has(state.name)) errors.push(`${where}: the contract names the state twice`);
+    seenStates.add(state.name);
 
-  const seen = new Set();
-  for (const element of contract.elements) {
-    if (!element.name) {
-      errors.push(`"${surface}": a contract element has no "name"`);
+    if (!Array.isArray(state.elements) || state.elements.length === 0) {
+      errors.push(`${where}: the state lists no elements`);
       continue;
     }
-    if (seen.has(element.name)) {
-      errors.push(`"${surface}": the contract names ${element.name} twice`);
+
+    const names = new Set(state.elements.map((element) => element.name));
+    if (state.origin !== undefined && !names.has(state.origin)) {
+      errors.push(`${where}: origin "${state.origin}" is not one of the state's elements`);
     }
-    seen.add(element.name);
-    if (!element.web?.selector) errors.push(`"${surface}": ${element.name} has no web selector`);
-    if (!element.app?.tag) errors.push(`"${surface}": ${element.name} has no app test tag`);
-    if (!Array.isArray(element.properties) || element.properties.length === 0) {
-      errors.push(`"${surface}": ${element.name} measures nothing`);
-      continue;
-    }
-    for (const property of element.properties) {
-      if (!PROPERTIES.has(property)) {
-        errors.push(
-          `"${surface}": ${element.name} asks for "${property}", which is not a property`
-        );
+
+    const seen = new Set();
+    for (const element of state.elements) {
+      if (!element.name) {
+        errors.push(`${where}: an element has no "name"`);
+        continue;
+      }
+      if (seen.has(element.name)) errors.push(`${where}: the state names ${element.name} twice`);
+      seen.add(element.name);
+      if (!element.web?.selector) errors.push(`${where}: ${element.name} has no web selector`);
+      if (!element.app?.tag) errors.push(`${where}: ${element.name} has no app test tag`);
+      if (!Array.isArray(element.properties) || element.properties.length === 0) {
+        errors.push(`${where}: ${element.name} measures nothing`);
+        continue;
+      }
+      for (const property of element.properties) {
+        if (!PROPERTIES.has(property)) {
+          errors.push(`${where}: ${element.name} asks for "${property}", which is not a property`);
+        }
       }
     }
   }
@@ -392,9 +405,9 @@ export function validateContract(contract, surface) {
   return errors;
 }
 
-/** Where a surface's evidence lives. */
-export function evidenceFiles(surface, root = EVIDENCE) {
-  const dir = join(root, surface);
+/** Where one state's evidence lives. */
+export function evidenceFiles(surface, state, root = EVIDENCE) {
+  const dir = join(root, surface, state);
   return {
     dir,
     web: join(dir, 'web.json'),
@@ -436,22 +449,6 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     if (!surface.web?.route) errors.push(`"${id}": a gated surface names its web route`);
     if (!surface.app?.test) errors.push(`"${id}": a gated surface names the test that draws it`);
 
-    const pixels = surface.tolerance?.pixels;
-    // A ceiling, not a standard: a text-bearing card reaches a fifth of its pixels
-    // through rasterisation alone. The number that matters is the one the pair
-    // recorded, and a run above it fails; this only refuses a baseline so wide it
-    // could hide a different screen.
-    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
-      errors.push(`"${id}": tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
-    }
-    if (surface.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(surface.baseline.recorded ?? '')) {
-      errors.push(`"${id}": baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
-    }
-    const length = surface.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
-    if (typeof length !== 'number' || length < 0 || length > 2) {
-      errors.push(`"${id}": tolerance.length is a CSS-pixel allowance from 0 to 2`);
-    }
-
     const contractPath = surface.contract && resolve(repoRoot, surface.contract);
     let contract = null;
     if (!contractPath || !existsSync(contractPath)) {
@@ -465,82 +462,129 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
       }
     }
 
-    const files = evidenceFiles(id, evidenceRoot);
-    const present = [files.web, files.app, files.webPng, files.appPng].filter((path) =>
-      existsSync(path)
-    );
-
-    // Half a pair is worse than none: it looks like evidence and cannot be compared.
-    if (present.length > 0 && present.length < 4) {
-      const missing = Object.entries(files)
-        .filter(([name]) => name !== 'dir' && !existsSync(files[name]))
-        .map(([name]) => name);
-      errors.push(`"${id}": the evidence is half there; missing ${missing.join(', ')}`);
-      continue;
-    }
-    if (present.length === 0) {
-      if (enabled.has(id)) {
-        errors.push(`"${id}" is switched on in screens.json with no evidence recorded`);
+    // The gate and the contract are two halves of one list: a state the contract
+    // describes and the gate does not measure is a screen nobody checked, and a
+    // state the gate measures with no contract is a number with nothing behind it.
+    const described = new Map((contract?.states ?? []).map((state) => [state.name, state]));
+    const measured = new Map();
+    for (const state of surface.states ?? []) {
+      if (!state?.name) {
+        errors.push(`"${id}": a gate state has no "name"`);
+        continue;
       }
-      continue;
+      if (measured.has(state.name)) errors.push(`"${id}": the gate names "${state.name}" twice`);
+      measured.set(state.name, state);
+    }
+    if (measured.size === 0) errors.push(`"${id}": the gate entry declares no states`);
+    for (const name of measured.keys()) {
+      if (contract && !described.has(name)) {
+        errors.push(`"${id}": the gate measures the state "${name}" and the contract does not`);
+      }
+    }
+    for (const name of described.keys()) {
+      if (!measured.has(name)) {
+        errors.push(
+          `"${id}/${name}": the contract describes this state and the gate does not measure it`
+        );
+      }
     }
 
-    let web;
-    let app;
-    try {
-      web = JSON.parse(readFileSync(files.web, 'utf8'));
-      app = JSON.parse(readFileSync(files.app, 'utf8'));
-    } catch (error) {
-      errors.push(`"${id}": a recording is not JSON (${error.message})`);
-      continue;
-    }
+    for (const [name, state] of measured) {
+      const spec = described.get(name) ?? null;
+      const where = `"${id}/${name}"`;
+      const pixels = state.tolerance?.pixels;
+      // A ceiling, not a standard: a text-bearing card reaches a fifth of its
+      // pixels through rasterisation alone. The number that matters is the one the
+      // pair recorded, and a run above it fails; this only refuses a baseline so
+      // wide it could hide a different screen.
+      if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
+        errors.push(`${where}: tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
+      }
+      if (state.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(state.baseline.recorded ?? '')) {
+        errors.push(`${where}: baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
+      }
+      const length = state.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
+      if (typeof length !== 'number' || length < 0 || length > 2) {
+        errors.push(`${where}: tolerance.length is a CSS-pixel allowance from 0 to 2`);
+      }
 
-    for (const problem of compareLayout(web, app, {
-      surface: id,
-      lengthTolerance: length,
-      origin: contract?.origin,
-    })) {
-      errors.push(problem);
-    }
+      const files = evidenceFiles(id, name, evidenceRoot);
+      const present = [files.web, files.app, files.webPng, files.appPng].filter((path) =>
+        existsSync(path)
+      );
 
-    // The contract names what has to be measured; a recording that measures less
-    // than the contract asks for is a port that quietly stopped drawing a part.
-    const recorded = { web: elementsOf(web, id), app: elementsOf(app, id) };
-    for (const element of contract?.elements ?? []) {
-      for (const side of ['web', 'app']) {
-        const props = recorded[side]?.get(element.name);
-        if (!props) {
-          errors.push(`"${id}": ${element.name} is in the contract and not in ${side}.json`);
-          continue;
+      // Half a pair is worse than none: it looks like evidence and cannot be compared.
+      if (present.length > 0 && present.length < 4) {
+        const missing = Object.entries(files)
+          .filter(([key, path]) => key !== 'dir' && !existsSync(path))
+          .map(([key]) => key);
+        errors.push(`${where}: the evidence is half there; missing ${missing.join(', ')}`);
+        continue;
+      }
+      if (present.length === 0) {
+        if (enabled.has(id)) {
+          errors.push(`${where} is switched on in screens.json with no evidence recorded`);
         }
-        for (const property of element.properties ?? []) {
-          if (!(property in props)) {
-            errors.push(
-              `"${id}": ${element.name}.${property} is in the contract and not in ${side}.json`
-            );
+        continue;
+      }
+
+      let web;
+      let app;
+      try {
+        web = JSON.parse(readFileSync(files.web, 'utf8'));
+        app = JSON.parse(readFileSync(files.app, 'utf8'));
+      } catch (error) {
+        errors.push(`${where}: a recording is not JSON (${error.message})`);
+        continue;
+      }
+
+      for (const problem of compareLayout(web, app, {
+        surface: id,
+        lengthTolerance: length,
+        origin: spec?.origin,
+      })) {
+        errors.push(problem);
+      }
+
+      // The contract names what has to be measured; a recording that measures less
+      // than the contract asks for is a port that quietly stopped drawing a part.
+      const recorded = { web: elementsOf(web, id), app: elementsOf(app, id) };
+      for (const element of spec?.elements ?? []) {
+        for (const side of ['web', 'app']) {
+          const props = recorded[side]?.get(element.name);
+          if (!props) {
+            errors.push(`${where}: ${element.name} is in the contract and not in ${side}.json`);
+            continue;
+          }
+          for (const property of element.properties ?? []) {
+            if (!(property in props)) {
+              errors.push(
+                `${where}: ${element.name}.${property} is in the contract and not in ${side}.json`
+              );
+            }
           }
         }
       }
-    }
 
-    try {
-      const { ratio, dx, dy } = pixelDifference(
-        decodePng(readFileSync(files.webPng)),
-        decodePng(readFileSync(files.appPng))
-      );
-      if (ratio > pixels) {
-        errors.push(
-          `"${id}": ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
-            (surface.baseline?.recorded ? ` from ${surface.baseline.recorded}` : '')
+      try {
+        const { ratio, dx, dy } = pixelDifference(
+          decodePng(readFileSync(files.webPng)),
+          decodePng(readFileSync(files.appPng))
         );
+        if (ratio > pixels) {
+          errors.push(
+            `${where}: ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
+              (state.baseline?.recorded ? ` from ${state.baseline.recorded}` : '')
+          );
+        }
+        if (!state.baseline) {
+          errors.push(
+            `${where}: the state has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
+          );
+        }
+      } catch (error) {
+        errors.push(`${where}: the captures cannot be compared (${error.message})`);
       }
-      if (!surface.baseline) {
-        errors.push(
-          `"${id}": the surface has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
-        );
-      }
-    } catch (error) {
-      errors.push(`"${id}": the captures cannot be compared (${error.message})`);
     }
   }
 
@@ -573,13 +617,20 @@ export function main() {
   }
 
   const surfaces = gate.surfaces ?? [];
-  const recorded = surfaces.filter((surface) =>
-    Object.entries(evidenceFiles(surface.surface))
-      .filter(([name]) => name !== 'dir')
-      .every(([, path]) => existsSync(path))
-  );
+  let states = 0;
+  let recorded = 0;
+  for (const surface of surfaces) {
+    for (const state of surface.states ?? []) {
+      states += 1;
+      const files = evidenceFiles(surface.surface, state.name);
+      const complete = [files.web, files.app, files.webPng, files.appPng].every((path) =>
+        existsSync(path)
+      );
+      if (complete) recorded += 1;
+    }
+  }
   console.log(
-    `  ok ${recorded.length} surface(s) with evidence, ${surfaces.length - recorded.length} declared and not yet captured`
+    `  ok ${surfaces.length} surface(s), ${states} state(s): ${recorded} with evidence, ${states - recorded} declared and not yet captured`
   );
   return 0;
 }

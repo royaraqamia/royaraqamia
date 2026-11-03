@@ -124,7 +124,7 @@ class VerifyScreenVisualTest {
             }
             """.trimIndent()
 
-        val dir = File("../../e2e/__visual__/verify").apply { mkdirs() }
+        val dir = File("../../e2e/__visual__/verify/at-rest").apply { mkdirs() }
         File(dir, "app.json").writeText(json)
         // The capture is Roborazzi's: it is what settles the frame clock under
         // Robolectric (see CaptureSmokeTest). It writes only in record mode, so
