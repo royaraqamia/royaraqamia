@@ -62,6 +62,7 @@ export function TopNav({
               width={48}
               height={48}
               priority
+              data-visual="chrome-mark"
               className="h-8 w-8 rounded-full transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
             />
           </div>
@@ -76,6 +77,7 @@ export function TopNav({
           link={servicesLink}
           isActive={isServicesActive}
           handleHashClick={handleHashClick}
+          visual="chrome-services"
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         />
       )}

@@ -1,0 +1,58 @@
+{
+  "surface": "chrome",
+  "state": "at-rest",
+  "route": "/",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "topbar": {
+      "height": 64
+    },
+    "mark": {
+      "top": 16,
+      "left": 339,
+      "width": 32,
+      "height": 32
+    },
+    "services": {
+      "top": 12,
+      "height": 40,
+      "fontSize": 14,
+      "fontWeight": 500
+    },
+    "bell": {
+      "top": 12,
+      "left": 16,
+      "width": 40,
+      "height": 40
+    },
+    "tabbar": {
+      "top": 795,
+      "height": 57
+    },
+    "tab-home": {
+      "width": 131,
+      "height": 56,
+      "radius": 12,
+      "fontSize": 11,
+      "fontWeight": 700
+    },
+    "tab-community": {
+      "width": 131,
+      "height": 56,
+      "radius": 12,
+      "fontSize": 11,
+      "fontWeight": 700
+    },
+    "tab-account": {
+      "width": 131,
+      "height": 56,
+      "radius": 12,
+      "fontSize": 11,
+      "fontWeight": 700
+    }
+  }
+}

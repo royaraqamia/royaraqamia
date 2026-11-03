@@ -158,9 +158,14 @@ android {
     // The visual gate records its app-side capture with
     // `-Proborazzi.record=true` on the ordinary test task (#874, ADR-0118): the
     // plugin's own record task skips a test whose outputs it considers current,
-    // which is exactly the state a re-recording starts from.
+    // which is exactly the state a re-recording starts from. Roborazzi 1.77 wants
+    // both names - `roborazzi.record` alone left the capture unwritten, which is
+    // how the frame's first recording came back with its numbers and no image
+    // (#902) - so the one gradle property sets both.
     tasks.withType(Test).configureEach { test ->
-        test.systemProperty 'roborazzi.record', providers.gradleProperty('roborazzi.record').getOrElse('false')
+        def record = providers.gradleProperty('roborazzi.record').getOrElse('false')
+        test.systemProperty 'roborazzi.record', record
+        test.systemProperty 'roborazzi.test.record', record
     }
 
     testOptions {

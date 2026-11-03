@@ -23,15 +23,28 @@ import { inflateSync } from 'node:zlib';
  *
  * The files are the evidence, and this script refuses a port that has none:
  *
- *   docs/mobile/visual-gate.json          the surfaces under the gate
- *   shared/visual/<surface>.json          the contract: elements and properties
- *   e2e/__visual__/<surface>/web.json     the page's measurements
- *   e2e/__visual__/<surface>/app.json     the composed screen's measurements
- *   e2e/__visual__/<surface>/web.png      the page at the app's viewport
- *   e2e/__visual__/<surface>/app.png      the composed screen
+ *   docs/mobile/visual-gate.json          the states under the gate, and its frame
+ *   shared/visual/<surface>.json          the contract: states, and their elements
+ *   e2e/__visual__/<surface>/<state>/web.json   the page's measurements
+ *   e2e/__visual__/<surface>/<state>/app.json   the composed screen's measurements
+ *   e2e/__visual__/<surface>/<state>/web.png    the page at the app's viewport
+ *   e2e/__visual__/<surface>/<state>/app.png    the composed screen
  *
  * `docs/mobile/screens.json` decides what is switched on (`enabled`); this decides
  * whether it may be.
+ *
+ * The gate also carries one optional `frame` (#902): the chrome the shell draws
+ * around every primary screen - the top bar and the tab bar - measured against
+ * the site's own. It is not a surface: `perf/surfaces.json` gives each route an
+ * owner and the chrome owns no route, so a frame row there would claim `/`,
+ * `/community` and `/account` a second time, which `check:surfaces` refuses.
+ *
+ * A frame is measured by its contract and cannot be measured by a raster, which
+ * is why it says so (`"raster": "none"` and a `why`) instead of leaving the gap
+ * to be discovered: the site's bars are glass over the page's content, so their
+ * pixels are the page's hero, an avatar the page floats over the tab bar, and a
+ * `backdrop-filter` Compose has no equivalent for. A frame that does not say
+ * `raster: "none"` is measured like a surface - a baseline or it does not pass.
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -379,6 +392,9 @@ export function validateContract(contract, surface) {
     if (state.origin !== undefined && !names.has(state.origin)) {
       errors.push(`${where}: origin "${state.origin}" is not one of the state's elements`);
     }
+    if (state.capture !== undefined && !names.has(state.capture)) {
+      errors.push(`${where}: capture "${state.capture}" is not one of the state's elements`);
+    }
 
     const seen = new Set();
     for (const element of state.elements) {
@@ -417,6 +433,172 @@ export function evidenceFiles(surface, state, root = EVIDENCE) {
   };
 }
 
+/** The contract file, or null with the reason recorded. */
+function readContract({ id, entry, errors, repoRoot }) {
+  const contractPath = entry.contract && resolve(repoRoot, entry.contract);
+  if (!contractPath || !existsSync(contractPath)) {
+    errors.push(`"${id}": contract ${entry.contract ?? '(none)'} does not exist`);
+    return null;
+  }
+  try {
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+    for (const problem of validateContract(contract, id)) errors.push(problem);
+    return contract;
+  } catch (error) {
+    errors.push(`"${id}": ${entry.contract} is not JSON (${error.message})`);
+    return null;
+  }
+}
+
+/**
+ * The gate and the contract are two halves of one list: a state the contract
+ * describes and the gate does not measure is a screen nobody checked, and a
+ * state the gate measures with no contract is a number with nothing behind it.
+ */
+function pairStates({ id, contract, entry, errors }) {
+  const described = new Map((contract?.states ?? []).map((state) => [state.name, state]));
+  const measured = new Map();
+  for (const state of entry.states ?? []) {
+    if (!state?.name) {
+      errors.push(`"${id}": a gate state has no "name"`);
+      continue;
+    }
+    if (measured.has(state.name)) errors.push(`"${id}": the gate names "${state.name}" twice`);
+    measured.set(state.name, state);
+  }
+  if (measured.size === 0) errors.push(`"${id}": the gate entry declares no states`);
+  for (const name of measured.keys()) {
+    if (contract && !described.has(name)) {
+      errors.push(`"${id}": the gate measures the state "${name}" and the contract does not`);
+    }
+  }
+  for (const name of described.keys()) {
+    if (!measured.has(name)) {
+      errors.push(
+        `"${id}/${name}": the contract describes this state and the gate does not measure it`
+      );
+    }
+  }
+  return { measured, described };
+}
+
+/**
+ * One state's recordings, compared: boxes by name and length, the raster by share
+ * of pixels. `rasterless` is the frame's exception and nothing else's - a frame
+ * whose pixels are the page's content is measured by its contract, and its gate
+ * entry says why.
+ */
+function checkState({
+  id,
+  name,
+  state,
+  spec,
+  errors,
+  evidenceRoot,
+  enabled = false,
+  rasterless = false,
+}) {
+  const where = `"${id}/${name}"`;
+  const pixels = state.tolerance?.pixels;
+  if (!rasterless) {
+    // A ceiling, not a standard: a text-bearing card reaches a fifth of its pixels
+    // through rasterisation alone. The number that matters is the one the pair
+    // recorded, and a run above it fails; this only refuses a baseline so wide it
+    // could hide a different screen.
+    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
+      errors.push(`${where}: tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
+    }
+    if (state.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(state.baseline.recorded ?? '')) {
+      errors.push(`${where}: baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
+    }
+  }
+  const length = state.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
+  if (typeof length !== 'number' || length < 0 || length > 2) {
+    errors.push(`${where}: tolerance.length is a CSS-pixel allowance from 0 to 2`);
+  }
+
+  const files = evidenceFiles(id, name, evidenceRoot);
+  const required = rasterless
+    ? [files.web, files.app]
+    : [files.web, files.app, files.webPng, files.appPng];
+  const present = required.filter((path) => existsSync(path));
+
+  // Half a pair is worse than none: it looks like evidence and cannot be compared.
+  if (present.length > 0 && present.length < required.length) {
+    const missing = Object.entries(files)
+      .filter(([key, path]) => key !== 'dir' && required.includes(path) && !existsSync(path))
+      .map(([key]) => key);
+    errors.push(`${where}: the evidence is half there; missing ${missing.join(', ')}`);
+    return;
+  }
+  if (present.length === 0) {
+    if (enabled) {
+      errors.push(`${where} is switched on in screens.json with no evidence recorded`);
+    }
+    return;
+  }
+
+  let web;
+  let app;
+  try {
+    web = JSON.parse(readFileSync(files.web, 'utf8'));
+    app = JSON.parse(readFileSync(files.app, 'utf8'));
+  } catch (error) {
+    errors.push(`${where}: a recording is not JSON (${error.message})`);
+    return;
+  }
+
+  for (const problem of compareLayout(web, app, {
+    surface: id,
+    lengthTolerance: length,
+    origin: spec?.origin,
+  })) {
+    errors.push(problem);
+  }
+
+  // The contract names what has to be measured; a recording that measures less
+  // than the contract asks for is a port that quietly stopped drawing a part.
+  const recorded = { web: elementsOf(web, id), app: elementsOf(app, id) };
+  for (const element of spec?.elements ?? []) {
+    for (const side of ['web', 'app']) {
+      const props = recorded[side]?.get(element.name);
+      if (!props) {
+        errors.push(`${where}: ${element.name} is in the contract and not in ${side}.json`);
+        continue;
+      }
+      for (const property of element.properties ?? []) {
+        if (!(property in props)) {
+          errors.push(
+            `${where}: ${element.name}.${property} is in the contract and not in ${side}.json`
+          );
+        }
+      }
+    }
+  }
+
+  if (rasterless) return;
+
+  try {
+    const { ratio, dx, dy } = pixelDifference(
+      decodePng(readFileSync(files.webPng)),
+      decodePng(readFileSync(files.appPng))
+    );
+    if (ratio > pixels) {
+      errors.push(
+        `${where}: ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
+          (state.baseline?.recorded ? ` from ${state.baseline.recorded}` : '')
+      );
+    }
+    if (!state.baseline) {
+      errors.push(
+        `${where}: the state has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
+      );
+    }
+  } catch (error) {
+    errors.push(`${where}: the captures cannot be compared (${error.message})`);
+  }
+}
+
 /**
  * Everything wrong with the gate, as messages. Returns an object rather than
  * throwing so the caller can report every problem, not the first.
@@ -449,141 +631,62 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     if (!surface.web?.route) errors.push(`"${id}": a gated surface names its web route`);
     if (!surface.app?.test) errors.push(`"${id}": a gated surface names the test that draws it`);
 
-    const contractPath = surface.contract && resolve(repoRoot, surface.contract);
-    let contract = null;
-    if (!contractPath || !existsSync(contractPath)) {
-      errors.push(`"${id}": contract ${surface.contract ?? '(none)'} does not exist`);
-    } else {
-      try {
-        contract = JSON.parse(readFileSync(contractPath, 'utf8'));
-        for (const problem of validateContract(contract, id)) errors.push(problem);
-      } catch (error) {
-        errors.push(`"${id}": ${surface.contract} is not JSON (${error.message})`);
-      }
-    }
-
-    // The gate and the contract are two halves of one list: a state the contract
-    // describes and the gate does not measure is a screen nobody checked, and a
-    // state the gate measures with no contract is a number with nothing behind it.
-    const described = new Map((contract?.states ?? []).map((state) => [state.name, state]));
-    const measured = new Map();
-    for (const state of surface.states ?? []) {
-      if (!state?.name) {
-        errors.push(`"${id}": a gate state has no "name"`);
-        continue;
-      }
-      if (measured.has(state.name)) errors.push(`"${id}": the gate names "${state.name}" twice`);
-      measured.set(state.name, state);
-    }
-    if (measured.size === 0) errors.push(`"${id}": the gate entry declares no states`);
-    for (const name of measured.keys()) {
-      if (contract && !described.has(name)) {
-        errors.push(`"${id}": the gate measures the state "${name}" and the contract does not`);
-      }
-    }
-    for (const name of described.keys()) {
-      if (!measured.has(name)) {
-        errors.push(
-          `"${id}/${name}": the contract describes this state and the gate does not measure it`
-        );
-      }
-    }
-
+    const contract = readContract({ id, entry: surface, errors, repoRoot });
+    const { measured, described } = pairStates({ id, contract, entry: surface, errors });
     for (const [name, state] of measured) {
-      const spec = described.get(name) ?? null;
-      const where = `"${id}/${name}"`;
-      const pixels = state.tolerance?.pixels;
-      // A ceiling, not a standard: a text-bearing card reaches a fifth of its
-      // pixels through rasterisation alone. The number that matters is the one the
-      // pair recorded, and a run above it fails; this only refuses a baseline so
-      // wide it could hide a different screen.
-      if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
-        errors.push(`${where}: tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
-      }
-      if (state.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(state.baseline.recorded ?? '')) {
-        errors.push(`${where}: baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
-      }
-      const length = state.tolerance?.length ?? DEFAULT_LENGTH_TOLERANCE;
-      if (typeof length !== 'number' || length < 0 || length > 2) {
-        errors.push(`${where}: tolerance.length is a CSS-pixel allowance from 0 to 2`);
-      }
+      checkState({
+        id,
+        name,
+        state,
+        spec: described.get(name) ?? null,
+        errors,
+        evidenceRoot,
+        enabled: enabled.has(id),
+      });
+    }
+  }
 
-      const files = evidenceFiles(id, name, evidenceRoot);
-      const present = [files.web, files.app, files.webPng, files.appPng].filter((path) =>
-        existsSync(path)
-      );
-
-      // Half a pair is worse than none: it looks like evidence and cannot be compared.
-      if (present.length > 0 && present.length < 4) {
-        const missing = Object.entries(files)
-          .filter(([key, path]) => key !== 'dir' && !existsSync(path))
-          .map(([key]) => key);
-        errors.push(`${where}: the evidence is half there; missing ${missing.join(', ')}`);
-        continue;
+  // The frame (#902): the chrome every primary screen wears. It has no row in
+  // screens.json because it is not a surface - nothing routes to it - so it has
+  // no `enabled` to flip. Its rule is instead: a raster if one can be recorded,
+  // and the reason when one cannot.
+  const frame = gate.frame;
+  if (frame) {
+    const id = frame.id;
+    if (!id) {
+      errors.push('docs/mobile/visual-gate.json: the frame has no "id"');
+    } else {
+      if (gated.has(id)) {
+        errors.push(`"${id}" is a gated surface and the frame; they need different ids`);
       }
-      if (present.length === 0) {
-        if (enabled.has(id)) {
-          errors.push(`${where} is switched on in screens.json with no evidence recorded`);
+      if (!frame.web?.route) errors.push(`"${id}": the frame names its web route`);
+      if (!frame.app?.test) errors.push(`"${id}": the frame names the test that draws it`);
+
+      const rasterless = frame.raster === 'none';
+      if (rasterless) {
+        if (typeof frame.why !== 'string' || frame.why.trim().length === 0) {
+          errors.push(
+            `"${id}": the frame is measured without a raster, so "why" says what the page's pixels are that the app cannot draw`
+          );
         }
-        continue;
-      }
-
-      let web;
-      let app;
-      try {
-        web = JSON.parse(readFileSync(files.web, 'utf8'));
-        app = JSON.parse(readFileSync(files.app, 'utf8'));
-      } catch (error) {
-        errors.push(`${where}: a recording is not JSON (${error.message})`);
-        continue;
-      }
-
-      for (const problem of compareLayout(web, app, {
-        surface: id,
-        lengthTolerance: length,
-        origin: spec?.origin,
-      })) {
-        errors.push(problem);
-      }
-
-      // The contract names what has to be measured; a recording that measures less
-      // than the contract asks for is a port that quietly stopped drawing a part.
-      const recorded = { web: elementsOf(web, id), app: elementsOf(app, id) };
-      for (const element of spec?.elements ?? []) {
-        for (const side of ['web', 'app']) {
-          const props = recorded[side]?.get(element.name);
-          if (!props) {
-            errors.push(`${where}: ${element.name} is in the contract and not in ${side}.json`);
-            continue;
-          }
-          for (const property of element.properties ?? []) {
-            if (!(property in props)) {
-              errors.push(
-                `${where}: ${element.name}.${property} is in the contract and not in ${side}.json`
-              );
-            }
-          }
-        }
-      }
-
-      try {
-        const { ratio, dx, dy } = pixelDifference(
-          decodePng(readFileSync(files.webPng)),
-          decodePng(readFileSync(files.appPng))
+      } else if (frame.raster !== undefined) {
+        errors.push(
+          `"${id}": raster is either "none" with a reason, or absent and measured like a surface`
         );
-        if (ratio > pixels) {
-          errors.push(
-            `${where}: ${(ratio * 100).toFixed(3)}% of pixels differ at the best alignment (${dx}, ${dy}), above the recorded baseline of ${(pixels * 100).toFixed(3)}%` +
-              (state.baseline?.recorded ? ` from ${state.baseline.recorded}` : '')
-          );
-        }
-        if (!state.baseline) {
-          errors.push(
-            `${where}: the state has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded`
-          );
-        }
-      } catch (error) {
-        errors.push(`${where}: the captures cannot be compared (${error.message})`);
+      }
+
+      const contract = readContract({ id, entry: frame, errors, repoRoot });
+      const { measured, described } = pairStates({ id, contract, entry: frame, errors });
+      for (const [name, state] of measured) {
+        checkState({
+          id,
+          name,
+          state,
+          spec: described.get(name) ?? null,
+          errors,
+          evidenceRoot,
+          rasterless,
+        });
       }
     }
   }
@@ -629,8 +732,12 @@ export function main() {
       if (complete) recorded += 1;
     }
   }
+  const frame = gate.frame?.id ? gate.frame : null;
+  const frameNote = frame
+    ? `, frame "${frame.id}" gated${frame.raster === 'none' ? ' by its contract (no raster)' : ''}`
+    : '';
   console.log(
-    `  ok ${surfaces.length} surface(s), ${states} state(s): ${recorded} with evidence, ${states - recorded} declared and not yet captured`
+    `  ok ${surfaces.length} surface(s), ${states} state(s): ${recorded} with evidence, ${states - recorded} declared and not yet captured${frameNote}`
   );
   return 0;
 }

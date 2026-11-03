@@ -26,10 +26,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /** The test handle for a tab, so a check can find one slot without its label. */
 fun tabTestTag(tab: ShellTab): String = "shell-tab-${Routes.normalize(tab.route).trimStart('/').ifEmpty { "home" }}"
+
+/** The site's slot radius, `rounded-xl` (#902). */
+internal val TabRadius = 12.dp
+
+/** The site's `text-[11px] font-bold` label step (#902). */
+internal val TabLabelSize = 11.sp
+internal val TabLabelWeight = FontWeight.Bold
 
 /**
  * The app's own tab bar (#647): the three primary destinations, at every width,
@@ -50,7 +58,7 @@ fun tabTestTag(tab: ShellTab): String = "shell-tab-${Routes.normalize(tab.route)
 fun ShellTabBar(currentRoute: String, onSelect: (ShellTab) -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
 
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth().testTag(ChromeTags.TAB_BAR)) {
         // The site's `border-t border-neutral-800/80`, in the token's outline.
         Box(
             Modifier.fillMaxWidth()
@@ -95,10 +103,14 @@ private fun TabSlot(
     Column(
         modifier =
             modifier.testTag(tabTestTag(tab))
-                .clip(RoundedCornerShape(12.dp))
+                // The site's slot: `min-h-14 px-2` with `gap-1` and the label at
+                // `text-[11px]`, so the box is 56 tall whatever the label is (#902).
+                .heightIn(min = 56.dp)
+                .clip(RoundedCornerShape(TabRadius))
                 .selectable(selected = active, role = Role.Tab, onClick = onClick)
-                .padding(vertical = 8.dp),
+                .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
     ) {
         Icon(
             imageVector = icon,
@@ -108,7 +120,11 @@ private fun TabSlot(
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontSize = TabLabelSize,
+                    fontWeight = TabLabelWeight,
+                ),
             color = tint,
             maxLines = 1,
         )
