@@ -65,6 +65,10 @@ on:
         description: 'Run even if a successful implementer run already happened today (UTC)'
         type: boolean
         default: false
+      rounds:
+        description: 'How many issues this run may take. The daily run takes 6; lower it to debug one round.'
+        type: string
+        default: '6'
 
 permissions:
   id-token: write
@@ -82,6 +86,10 @@ jobs:
     name: Round ${{ matrix.round }} of the day
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    # The daily run takes six; a manual dispatch can ask for fewer (the `rounds` input)
+    # without editing the matrix, which is how a change to this file gets exercised on one
+    # issue before it is trusted with six.
+    if: ${{ matrix.round <= fromJSON(github.event.inputs.rounds || '6') }}
     # One at a time on purpose: two rounds would cut their branches from the same
     # `main`, claim the same issue in the seconds before the first pull request exists,
     # and conflict on the visual baselines both touch.
@@ -564,10 +572,16 @@ jobs:
         # One repair, not a loop: a second failure usually means the issue needs a
         # decision, not another patch, and an unbounded retry is how a green check gets
         # negotiated instead of earned. A second red run hands the issue to a person.
+        #
+        # This runs the CLI (`opencode run`) rather than the GitHub action on purpose: the
+        # action cuts a fresh `opencode/<session>` branch and opens a pull request for it,
+        # so a second invocation would land the fix on a second PR instead of this one.
+        # Here the branch is the pull request's own, checked out first, and the commit is
+        # made by this workflow.
         if: steps.guard.outputs.run == 'true' && steps.checks.outputs.status == 'red' && steps.checks.outputs.pr != ''
         timeout-minutes: 45
-        uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -577,23 +591,47 @@ jobs:
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          PR: ${{ steps.checks.outputs.pr }}
+          REASON: ${{ steps.checks.outputs.reason }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
-        with:
-          model: opencode-go/deepseek-v4.1-flash
-          variant: high
-          share: 'false'
-          prompt: |
-            You are the Issue Implementer, on the one repair attempt for issue #${{ steps.select.outputs.issue_number }}. Your pull request is open and a check on it did not pass:
+        run: |
+          set -euo pipefail
 
-            <failing-checks>
-            ${{ steps.checks.outputs.reason }}
-            </failing-checks>
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          gh pr checkout "$PR"
 
-            Re-run the gate that failed in this working tree to see the failure for yourself, load `diagnosing-bugs` if the cause is not obvious from it, and fix the cause. The CI infrastructure commits and pushes to the same branch; do not run git commands and do not open a second pull request.
+          cat > /tmp/repair-prompt.txt <<PROMPT
+          You are the Issue Implementer, on the one repair attempt for this pull request. A check on it did not pass:
 
-            Never make a check pass by weakening it: no skipped or deleted test, no widened tolerance, no `--no-verify`, no `.only`, no commented assertion, no gate removed from a script. A check that is wrong for a reason you can state is a `cannot` with that reason, not a deleted check.
+          <failing-checks>
+          ${REASON}
+          </failing-checks>
 
-            Then run the same gates step 4 of the first run names, scoped to your change, and write /tmp/result.json: `{"status":"implemented"}` when the fix is in, or `{"status":"cannot","reason":"<one sentence>"}` when the failure is not yours to fix.
+          Re-run the gate that failed in this working tree to see the failure for yourself, load the diagnosing-bugs skill if the cause is not obvious, and fix the cause. The workflow commits and pushes for you: do not run git commands and do not open a pull request.
+
+          Never make a check pass by weakening it: no skipped or deleted test, no widened tolerance, no --no-verify, no .only, no commented assertion, no gate removed from a script. A check that is wrong for a reason you can state is reported, not deleted.
+
+          Then run the gates the issue's own instructions name, scoped to your change. Reply with one sentence naming what you fixed.
+          PROMPT
+
+          set +e
+          opencode run --model opencode-go/deepseek-v4.1-flash "$(cat /tmp/repair-prompt.txt)"
+          status=$?
+          set -e
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "The repair run changed nothing; leaving #$PR for a person."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "fix: repair the failing checks on #$PR"
+          git push origin "HEAD:$(gh pr view "$PR" --json headRefName --jq .headRefName)"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::warning title=Repair run failed::The repair changed files but exited $status; the checks will decide."
+          fi
 
       - name: Watch the repaired pull request, then merge it
         id: recheck

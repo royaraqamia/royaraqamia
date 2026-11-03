@@ -72,6 +72,19 @@ describe('the issue implementer merges what it watched go green', () => {
   it('runs six rounds one after another, so each branch is cut from the merge before it', () => {
     expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
     expect(workflow).toContain('max-parallel: 1');
+    // Six by default, and a manual run can ask for fewer without editing the matrix.
+    expect(workflow).toContain("default: '6'");
+    expect(workflow).toContain('matrix.round <= fromJSON(github.event.inputs.rounds');
+  });
+
+  it('repairs on the pull request branch with the CLI, not with a second action run', () => {
+    const repairAt = workflow.indexOf('Repair the failing checks');
+    const recheckAt = workflow.indexOf('Watch the repaired pull request');
+    const repair = workflow.slice(repairAt, recheckAt);
+    expect(repair).toContain('gh pr checkout');
+    expect(repair).toContain('opencode run --model');
+    expect(repair).not.toContain('anomalyco/opencode/github@');
+    expect(repair).toContain('git push origin "HEAD:');
   });
 
   it('normalizes the pull request title first, so repo-checks is green when it watches', () => {
