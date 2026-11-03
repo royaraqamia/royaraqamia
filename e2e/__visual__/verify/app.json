@@ -1,0 +1,40 @@
+{
+  "surface": "verify",
+  "elements": {
+    "title": {
+      "top": 0.0,
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800
+    },
+    "card": {
+      "top": 78.545456,
+      "width": 360.72726,
+      "height": 259.2727,
+      "radius": 24.0,
+      "paddingTop": 4.0,
+      "paddingLeft": 4.0
+    },
+    "code-input": {
+      "width": 310.54544,
+      "height": 52.000008,
+      "radius": 16.0,
+      "fontSize": 16.0,
+      "paddingLeft": 44.0,
+      "paddingRight": 44.0
+    },
+    "submit": {
+      "width": 310.54544,
+      "height": 52.0,
+      "radius": 16.0,
+      "fontSize": 16.0,
+      "fontWeight": 700
+    },
+    "hint": {
+      "top": 235.63637,
+      "width": 310.54544,
+      "height": 77.0909,
+      "fontSize": 12.0
+    }
+  }
+}

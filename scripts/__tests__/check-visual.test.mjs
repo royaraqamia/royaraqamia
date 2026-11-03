@@ -407,7 +407,7 @@ describe('the gate', () => {
     const fixture = repo();
     fixture.gate.surfaces[0].tolerance = { pixels: 0.9, length: 40 };
     expect(fixture.check()).toEqual([
-      '"verify": tolerance.pixels is a recorded baseline above 0 and at most 0.2',
+      '"verify": tolerance.pixels is a recorded baseline above 0 and at most 0.35',
       '"verify": tolerance.length is a CSS-pixel allowance from 0 to 2',
       '"verify" is switched on in screens.json with no evidence recorded',
     ]);

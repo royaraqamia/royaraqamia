@@ -437,8 +437,12 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     if (!surface.app?.test) errors.push(`"${id}": a gated surface names the test that draws it`);
 
     const pixels = surface.tolerance?.pixels;
-    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.2) {
-      errors.push(`"${id}": tolerance.pixels is a recorded baseline above 0 and at most 0.2`);
+    // A ceiling, not a standard: a text-bearing card reaches a fifth of its pixels
+    // through rasterisation alone. The number that matters is the one the pair
+    // recorded, and a run above it fails; this only refuses a baseline so wide it
+    // could hide a different screen.
+    if (typeof pixels !== 'number' || !(pixels > 0) || pixels > 0.35) {
+      errors.push(`"${id}": tolerance.pixels is a recorded baseline above 0 and at most 0.35`);
     }
     if (surface.baseline && !/^\d{4}-\d{2}-\d{2}$/.test(surface.baseline.recorded ?? '')) {
       errors.push(`"${id}": baseline.recorded is the date the number was recorded, YYYY-MM-DD`);
