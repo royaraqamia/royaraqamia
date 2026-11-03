@@ -2650,6 +2650,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      chat_direct_peer: {
+        Args: { p_conversation_id: string };
+        Returns: string | null;
+      };
       list_chat_threads: {
         Args: Record<string, never>;
         Returns: {

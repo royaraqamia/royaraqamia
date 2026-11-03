@@ -524,14 +524,13 @@ export class ChatService {
       throw new ChatError(409, 'هذه المحادثة ليست مغلقة');
     }
 
-    const participants = await this.repo.findParticipants(conversationId);
-    const peer = participants.find((participant) => participant.userId !== userId);
-    if (!peer) {
+    const peerId = await this.repo.findDirectPeer(conversationId);
+    if (!peerId) {
       throw new ChatError(403, 'أنت لست عضواً في هذه المحادثة');
     }
 
     if (await this.repo.requestThread(conversationId)) {
-      await this.notifyRequest(userId, peer.userId, conversationId);
+      await this.notifyRequest(userId, peerId, conversationId);
     }
   }
 

@@ -125,6 +125,12 @@ export interface ChatRepository {
   listThreads(): Promise<ChatThreadRow[]>;
   findConversation(id: string): Promise<ChatConversationRecord | null>;
   findParticipants(conversationId: string): Promise<ChatParticipantRecord[]>;
+  /**
+   * The other side of a direct thread, as an id and nothing else (#888). The
+   * roster policy hides a peer's row from a member who left, so a reopen that
+   * asked `findParticipants` for it answered with the caller's row alone.
+   */
+  findDirectPeer(conversationId: string): Promise<string | null>;
   findThreadIdByDirectKey(key: string): Promise<string | null>;
   createConversation(input: CreateConversationInput): Promise<ChatConversationRecord>;
   addParticipant(input: AddParticipantInput): Promise<void>;

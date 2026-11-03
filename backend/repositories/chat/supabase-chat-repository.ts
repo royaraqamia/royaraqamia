@@ -152,6 +152,15 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
       return (data ?? []).map(toParticipant);
     },
 
+    async findDirectPeer(conversationId) {
+      const { data, error } = await supabase.rpc('chat_direct_peer', {
+        p_conversation_id: conversationId,
+      });
+
+      if (error) throw repositoryFailure('chat.findDirectPeer', error);
+      return (data as string | null) ?? null;
+    },
+
     async findThreadIdByDirectKey(key) {
       const { data, error } = await supabase
         .from('chat_conversations')
