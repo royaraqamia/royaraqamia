@@ -124,13 +124,16 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - A member cannot add somebody else as `active`, a non-member cannot invite at all, and a
   non-member reads no roster row.
 
-`chat_attachments_test.sql` (#815, ADR-0113):
+`chat_attachments_test.sql` (#815, #887, ADR-0113):
 
 - A row whose `storage_path` names another conversation, or skips the thread folder, is refused
   with `42501` — the path guard, so a signed URL can never be minted for a path the row invented.
 - A member reads and uploads inside their own thread's folder; a non-member reads nothing there
   and cannot upload into it.
 - The row is deletable by its uploader only, which is what a tombstone needs.
+- The object is deletable by its uploader only too (#887): another member's delete removes nothing
+  and the peer's object is still there to sign, while an uploader removes their own object —
+  including one whose row was never written, the failed-send cleanup's path.
 - The composer's allowance (`chat_attachment_bytes_used()`) answers the caller's own bytes.
 
 `chat_attachment_allowances_test.sql` (#852, ADR-0113):
