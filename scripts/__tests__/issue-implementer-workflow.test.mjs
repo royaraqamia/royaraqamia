@@ -73,8 +73,10 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
     expect(workflow).toContain('max-parallel: 1');
     // Six by default, and a manual run can ask for fewer without editing the matrix.
+    // The gate is in the guard step because a job-level `if` cannot read `matrix`.
     expect(workflow).toContain("default: '6'");
-    expect(workflow).toContain('matrix.round <= fromJSON(github.event.inputs.rounds');
+    expect(workflow).toContain('REQUESTED_ROUNDS: ${{ github.event.inputs.rounds }}');
+    expect(workflow).toContain('round > requested');
   });
 
   it('repairs on the pull request branch with the CLI, not with a second action run', () => {

@@ -86,10 +86,6 @@ jobs:
     name: Round ${{ matrix.round }} of the day
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    # The daily run takes six; a manual dispatch can ask for fewer (the `rounds` input)
-    # without editing the matrix, which is how a change to this file gets exercised on one
-    # issue before it is trusted with six.
-    if: ${{ matrix.round <= fromJSON(github.event.inputs.rounds || '6') }}
     # One at a time on purpose: two rounds would cut their branches from the same
     # `main`, claim the same issue in the seconds before the first pull request exists,
     # and conflict on the visual baselines both touch.
@@ -110,8 +106,21 @@ jobs:
         # suppress it.
         id: guard
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          # The round gate lives here, not on the job: a job-level `if` cannot read the
+          # `matrix` context (actionlint refuses it, and GitHub cannot evaluate it), while
+          # a step can. Every later step is already gated on `steps.guard.outputs.run`.
+          ROUND: ${{ matrix.round }}
+          REQUESTED_ROUNDS: ${{ github.event.inputs.rounds }}
         with:
           script: |
+            const round = Number(process.env.ROUND || '1');
+            const requested = Number(process.env.REQUESTED_ROUNDS || '6');
+            if (round > requested) {
+              core.notice('Round ' + round + ' is past the ' + requested + ' this run asked for; skipping.');
+              core.setOutput('run', 'false');
+              return;
+            }
             const force = context.eventName === 'workflow_dispatch' && String((context.payload.inputs || {}).force) === 'true';
             const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
               owner: context.repo.owner,
