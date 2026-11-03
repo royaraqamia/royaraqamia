@@ -330,6 +330,176 @@ export type ChatAddParticipantsInput = z.infer<typeof ChatAddParticipantsSchema>
 export type ChatReportInput = z.infer<typeof ChatReportSchema>;
 export type ChatReadInput = z.infer<typeof ChatReadSchema>;
 
+/**
+ * The response bodies, as Zod schemas (#819).
+ *
+ * The shapes above are what the site's own components read, and a TypeScript
+ * interface is not something the app can decode. A port therefore needs the same
+ * body written as a schema: it is the source `npm run contracts:generate` turns
+ * into the Kotlin the app reads, so the two clients cannot word a thread
+ * differently (ADR-0098, ADR-0103).
+ *
+ * Two fields of the interfaces are deliberately absent here, and neither is a
+ * narrower read of the route:
+ *
+ * - `replyTo` is a quote of another message, so the schema would be recursive
+ *   for a feature neither client can compose yet (no reply control exists);
+ * - `actions` is the assistant's proposal list, and the assistant's thread is
+ *   the document in the app until its own stage lands.
+ */
+export const ChatPeerSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  name: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  verified: z.boolean(),
+});
+
+export const ChatParticipantSchema = z.object({
+  userId: z.string(),
+  role: z.enum(['owner', 'member']),
+  status: z.enum(['requested', 'invited', 'active', 'declined', 'left']),
+  lastReadAt: z.string().nullable(),
+  joinedAt: z.string().nullable(),
+  peer: ChatPeerSchema.nullable(),
+});
+
+export const ChatAttachmentSchema = z.object({
+  id: z.string(),
+  fileName: z.string(),
+  mimeType: z.string(),
+  byteSize: z.number(),
+});
+
+export const ChatAttachmentQuotaSchema = z.object({
+  fileBytes: z.number(),
+  today: z.object({ usedBytes: z.number(), limitBytes: z.number() }),
+  total: z.object({ usedBytes: z.number(), limitBytes: z.number() }),
+  project: z.object({ usedBytes: z.number(), limitBytes: z.number() }),
+});
+
+export const ChatMessageSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  senderId: z.string().nullable(),
+  senderKind: z.enum(['user', 'agent', 'system']),
+  body: z.string().nullable(),
+  replyToId: z.string().nullable(),
+  editedAt: z.string().nullable(),
+  deletedAt: z.string().nullable(),
+  createdAt: z.string(),
+  attachments: z.array(ChatAttachmentSchema),
+});
+
+export const ChatConversationSummarySchema = z.object({
+  id: z.string(),
+  kind: z.enum(['direct', 'group', 'agent']),
+  status: z.enum(['requested', 'active', 'declined', 'archived']),
+  title: z.string(),
+  counterpart: ChatPeerSchema.nullable(),
+  myStatus: z.enum(['requested', 'invited', 'active', 'declined', 'left']),
+  lastMessage: z
+    .object({
+      body: z.string().nullable(),
+      senderKind: z.enum(['user', 'agent', 'system']),
+      createdAt: z.string(),
+      hasAttachments: z.boolean(),
+    })
+    .nullable(),
+  unreadCount: z.number(),
+  lastMessageAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const ChatThreadSchema = ChatConversationSummarySchema.extend({
+  participants: z.array(ChatParticipantSchema),
+  me: ChatParticipantSchema.nullable(),
+  blockedByMe: z.boolean(),
+  canWrite: z.boolean(),
+  attachmentQuota: ChatAttachmentQuotaSchema,
+});
+
+export const ChatMessagePageSchema = z.object({
+  messages: z.array(ChatMessageSchema),
+  nextCursor: z.string().nullable(),
+});
+
+export const ChatAssistantAllowanceSchema = z.object({
+  plan: z.string(),
+  member: z.object({ used: z.number(), cap: z.number() }),
+  project: z.object({ used: z.number(), limit: z.number() }),
+  resetsAt: z.string(),
+});
+
+export const ChatAssistantStateSchema = z.object({
+  available: z.boolean(),
+  allowance: ChatAssistantAllowanceSchema,
+});
+
+/**
+ * The envelopes. A route answers `{ success, …payload }` or `{ success: false,
+ * error }`, and the app decodes that shape rather than a bare payload, because a
+ * refusal's sentence is rendered rather than thrown (ADR-0031).
+ */
+export const ChatThreadsResponseSchema = z.object({
+  success: z.boolean(),
+  threads: z.array(ChatConversationSummarySchema).optional(),
+  error: z.string().optional(),
+});
+
+export const ChatThreadResponseSchema = z.object({
+  success: z.boolean(),
+  thread: ChatThreadSchema.optional(),
+  error: z.string().optional(),
+});
+
+export const ChatMessagePageResponseSchema = z.object({
+  success: z.boolean(),
+  messages: z.array(ChatMessageSchema).optional(),
+  nextCursor: z.string().nullable().optional(),
+  error: z.string().optional(),
+});
+
+export const ChatMessageResponseSchema = z.object({
+  success: z.boolean(),
+  message: ChatMessageSchema.optional(),
+  error: z.string().optional(),
+});
+
+export const ChatOkResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+});
+
+export const ChatStartResponseSchema = z.object({
+  success: z.boolean(),
+  conversationId: z.string().optional(),
+  error: z.string().optional(),
+});
+
+/** One conversation's members, for the picker a new thread starts from. */
+export const ChatMembersResponseSchema = z.object({
+  success: z.boolean(),
+  members: z.array(ChatPeerSchema).optional(),
+  error: z.string().optional(),
+});
+
+export const ChatAssistantStateResponseSchema = z.object({
+  success: z.boolean(),
+  available: z.boolean().optional(),
+  allowance: ChatAssistantAllowanceSchema.optional(),
+  error: z.string().optional(),
+});
+
+/** One attachment's short-lived signed URL, and whether it is drawn inline. */
+export const ChatAttachmentUrlResponseSchema = z.object({
+  success: z.boolean(),
+  url: z.string().optional(),
+  fileName: z.string().optional(),
+  inline: z.boolean().optional(),
+  error: z.string().optional(),
+});
+
 /** A body as stored: digits normalised, ends trimmed, hard-capped. */
 export function normalizeChatBody(value: string): string {
   return toLatinDigits(value).trim().slice(0, CHAT_BODY_MAX);

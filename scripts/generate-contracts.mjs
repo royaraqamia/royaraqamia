@@ -171,6 +171,27 @@ export const CONTRACTS = [
     file: 'CommunityContracts.kt',
     schemas: ['CommunityIndexResponseSchema'],
   },
+  // Chats (#819): the list's rows, the open thread, the page of messages and the
+  // writes the two screens make. The four reads are the routes the tab and the
+  // thread read (`/api/chats`, `/api/chats/[id]`, `/api/chats/[id]/messages`,
+  // `/api/chats/assistant`), so the app cannot decode a body the site never
+  // sees. The envelopes are here with the payloads because a refusal is a
+  // sentence the screen draws (ADR-0031), not a thrown error.
+  {
+    module: 'shared/contracts/chat',
+    file: 'ChatContracts.kt',
+    schemas: [
+      'ChatThreadsResponseSchema',
+      'ChatThreadResponseSchema',
+      'ChatMessagePageResponseSchema',
+      'ChatMessageResponseSchema',
+      'ChatOkResponseSchema',
+      'ChatStartResponseSchema',
+      'ChatMembersResponseSchema',
+      'ChatAssistantStateResponseSchema',
+      'ChatAttachmentUrlResponseSchema',
+    ],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([
