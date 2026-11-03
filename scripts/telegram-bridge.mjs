@@ -618,7 +618,22 @@ async function handleUpdate(update) {
   return handleAnswer({ text, chat });
 }
 
+/**
+ * A bot with a webhook registered cannot be polled: Telegram answers `getUpdates`
+ * with `409 Conflict` and the bridge reads nothing. The webhook is a leftover from
+ * whatever the bot did before it was wired here, and nothing in this design uses
+ * one, so the bridge clears it - without dropping pending updates, so a message
+ * that arrived while the webhook was dead is still delivered.
+ */
+async function ensurePolling() {
+  const info = await telegram('getWebhookInfo', {});
+  if (info?.url) {
+    await telegram('deleteWebhook', { drop_pending_updates: false });
+  }
+}
+
 async function poll() {
+  await ensurePolling();
   let offset = await readOffset();
   const updates =
     (await telegram('getUpdates', { offset, timeout: 0, allowed_updates: ['message'] })) ?? [];
