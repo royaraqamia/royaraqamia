@@ -155,79 +155,108 @@ async function measure(page: Page, elements: Measured[]) {
   }, elements);
 }
 
+/**
+ * What a state does to the page before it is measured.
+ *
+ * A state is not a second page: it is the same route with something open, a
+ * selection made, or a session behind it. Each routine is named by the contract,
+ * so a state with no routine fails by name instead of silently recording the page
+ * at rest under another state's name.
+ */
+const PREPARE: Record<string, (page: Page, spec: { name: string }) => Promise<void>> = {
+  'at-rest': async () => {},
+};
+
 test.describe('the visual gate', () => {
   test.skip(surfaces.length === 0, 'no surface is under the gate yet (#874)');
 
   for (const surface of surfaces) {
-    test(`${surface.surface}: the page is measured and captured`, async ({ page }) => {
-      const contract = JSON.parse(readFileSync(join(ROOT, surface.contract), 'utf8'));
-      const elements: Measured[] = (contract.elements ?? []).map(
-        (element: { name: string; web: { selector: string }; properties: string[] }) => ({
-          name: element.name,
-          selector: element.web.selector,
-          properties: element.properties,
-        })
-      );
+    for (const state of surface.states ?? []) {
+      test(`${surface.surface}/${state.name}: the page is measured and captured`, async ({
+        page,
+      }) => {
+        const contract = JSON.parse(readFileSync(join(ROOT, surface.contract), 'utf8'));
+        const spec = (contract.states ?? []).find(
+          (candidate: { name: string }) => candidate.name === state.name
+        );
+        if (!spec) throw new Error(`${surface.contract} describes no state "${state.name}"`);
 
-      await page.setViewportSize(VIEWPORT);
-      await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-      await page.goto(surface.web.route, { waitUntil: 'networkidle' });
+        const elements: Measured[] = (spec.elements ?? []).map(
+          (element: { name: string; web: { selector: string }; properties: string[] }) => ({
+            name: element.name,
+            selector: element.web.selector,
+            properties: element.properties,
+          })
+        );
 
-      // The measurement is only the same measurement if the faces are the ones
-      // both clients ship; a fallback font moves every box it draws.
-      await page.evaluate(() => document.fonts.ready);
-      await expect(page.locator('body')).toBeVisible();
+        await page.setViewportSize(VIEWPORT);
+        await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+        await page.goto(surface.web.route, { waitUntil: 'networkidle' });
 
-      // Motion and a blinking caret would make two recordings of one page differ.
-      await page.addStyleTag({
-        content:
-          '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
-      });
+        // The measurement is only the same measurement if the faces are the ones
+        // both clients ship; a fallback font moves every box it draws.
+        await page.evaluate(() => document.fonts.ready);
+        await expect(page.locator('body')).toBeVisible();
 
-      const measured = await measure(page, elements);
-      for (const element of elements) {
-        expect(
-          measured[element.name],
-          `${surface.surface}: ${element.name} (${element.selector})`
-        ).toBeTruthy();
-      }
-
-      const dir = join(ROOT, 'e2e', '__visual__', surface.surface);
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(
-        join(dir, 'web.json'),
-        `${JSON.stringify(
-          {
-            surface: surface.surface,
-            route: surface.web.route,
-            viewport: { ...VIEWPORT, deviceScaleFactor: DEVICE_SCALE },
-            elements: measured,
-          },
-          null,
-          2
-        )}\n`,
-        'utf8'
-      );
-
-      // The raster compares the region both clients draw identically. The page's
-      // frame and the app's are not the same height, so a viewport capture would
-      // compare the site's chrome with the app's; the contract names the element.
-      const region = contract.capture
-        ? elements.find((element) => element.name === contract.capture)
-        : null;
-      if (region) {
-        await page
-          .locator(region.selector)
-          .first()
-          .screenshot({ path: join(dir, 'web.png'), animations: 'disabled', caret: 'hide' });
-      } else {
-        await page.screenshot({
-          path: join(dir, 'web.png'),
-          fullPage: false,
-          animations: 'disabled',
-          caret: 'hide',
+        // Motion and a blinking caret would make two recordings of one page differ.
+        await page.addStyleTag({
+          content:
+            '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
         });
-      }
-    });
+
+        // The state is reached the same way a person reaches it: the routine is
+        // named by the contract, so a state nobody can record fails here rather
+        // than recording the page at rest under another name.
+        const prepare = PREPARE[state.name];
+        if (!prepare) throw new Error(`no routine records the state "${state.name}"`);
+        await prepare(page, spec);
+
+        const measured = await measure(page, elements);
+        for (const element of elements) {
+          expect(
+            measured[element.name],
+            `${surface.surface}/${state.name}: ${element.name} (${element.selector})`
+          ).toBeTruthy();
+        }
+
+        const dir = join(ROOT, 'e2e', '__visual__', surface.surface, state.name);
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(
+          join(dir, 'web.json'),
+          `${JSON.stringify(
+            {
+              surface: surface.surface,
+              state: state.name,
+              route: surface.web.route,
+              viewport: { ...VIEWPORT, deviceScaleFactor: DEVICE_SCALE },
+              elements: measured,
+            },
+            null,
+            2
+          )}\n`,
+          'utf8'
+        );
+
+        // The raster compares the region both clients draw identically. The page's
+        // frame and the app's are not the same height, so a viewport capture would
+        // compare the site's chrome with the app's; the contract names the element.
+        const region = spec.capture
+          ? elements.find((element) => element.name === spec.capture)
+          : null;
+        if (region) {
+          await page
+            .locator(region.selector)
+            .first()
+            .screenshot({ path: join(dir, 'web.png'), animations: 'disabled', caret: 'hide' });
+        } else {
+          await page.screenshot({
+            path: join(dir, 'web.png'),
+            fullPage: false,
+            animations: 'disabled',
+            caret: 'hide',
+          });
+        }
+      });
+    }
   }
 });

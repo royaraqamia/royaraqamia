@@ -1,5 +1,6 @@
 {
   "surface": "linksnap",
+  "state": "at-rest",
   "route": "/linksnap",
   "viewport": {
     "width": 393,

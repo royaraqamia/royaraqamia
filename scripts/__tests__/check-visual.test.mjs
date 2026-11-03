@@ -67,18 +67,24 @@ const opaque = (width, height) => {
 };
 
 const CONTRACT = {
-  elements: [
+  states: [
     {
-      name: 'submit',
-      web: { selector: '#submit' },
-      app: { tag: 'submit' },
-      properties: ['width', 'height', 'radius', 'color'],
+      name: 'at-rest',
+      elements: [
+        {
+          name: 'submit',
+          web: { selector: '#submit' },
+          app: { tag: 'submit' },
+          properties: ['width', 'height', 'radius', 'color'],
+        },
+      ],
     },
   ],
 };
 
 const RECORD = (width = 100) => ({
   surface: 'verify',
+  state: 'at-rest',
   elements: {
     submit: { width, height: 44, radius: 9999, color: 'rgb(255, 255, 255)' },
   },
@@ -99,15 +105,20 @@ function repo({ contract = CONTRACT, web, app, pixels = 0.002 } = {}) {
         web: { route: '/verify' },
         contract: 'shared/visual/verify.json',
         app: { test: 'VerifyScreenVisualTest.kt' },
-        tolerance: { pixels, length: 0.5 },
-        baseline: { recorded: '2026-11-03' },
+        states: [
+          {
+            name: 'at-rest',
+            tolerance: { pixels, length: 0.5 },
+            baseline: { recorded: '2026-11-03' },
+          },
+        ],
       },
     ],
   };
 
   const evidence = join(root, 'e2e', '__visual__');
   if (web || app) {
-    const dir = join(evidence, 'verify');
+    const dir = join(evidence, 'verify', 'at-rest');
     mkdirSync(dir, { recursive: true });
     if (web) {
       writeFileSync(join(dir, 'web.json'), JSON.stringify(web));
@@ -279,9 +290,12 @@ describe('the layout contract', () => {
   });
 
   it('refuses a contract whose origin is not an element it measures', () => {
-    expect(validateContract({ origin: 'header', elements: CONTRACT.elements }, 'verify')).toEqual([
-      '"verify": origin "header" is not one of the contract elements',
-    ]);
+    expect(
+      validateContract(
+        { states: [{ name: 'at-rest', origin: 'header', elements: CONTRACT.states[0].elements }] },
+        'verify'
+      )
+    ).toEqual(['"verify/at-rest": origin "header" is not one of the state\'s elements']);
   });
 
   it('reports a property nobody measured', () => {
@@ -298,44 +312,89 @@ describe('the contract itself', () => {
     expect(validateContract(CONTRACT, 'verify')).toEqual([]);
   });
 
-  it('refuses nothing to measure, a duplicate, an unknown property, a missing selector or tag', () => {
+  it('refuses a contract with no states', () => {
     expect(validateContract({ elements: [] }, 'verify')).toEqual([
-      '"verify": the contract lists no elements',
+      '"verify": the contract lists no states',
+    ]);
+  });
+
+  it('refuses nothing to measure, a duplicate, an unknown property, a missing selector or tag', () => {
+    expect(validateContract({ states: [{ name: 'at-rest', elements: [] }] }, 'verify')).toEqual([
+      '"verify/at-rest": the state lists no elements',
     ]);
     expect(
       validateContract(
         {
-          elements: [
-            { name: 'a', web: { selector: '#a' }, app: { tag: 'a' }, properties: ['width'] },
-            { name: 'a', web: { selector: '#b' }, app: { tag: 'b' }, properties: ['height'] },
+          states: [
+            {
+              name: 'at-rest',
+              elements: [
+                { name: 'a', web: { selector: '#a' }, app: { tag: 'a' }, properties: ['width'] },
+                { name: 'a', web: { selector: '#b' }, app: { tag: 'b' }, properties: ['height'] },
+              ],
+            },
           ],
         },
         'verify'
       )
-    ).toEqual(['"verify": the contract names a twice']);
+    ).toEqual(['"verify/at-rest": the state names a twice']);
     expect(
       validateContract(
         {
-          elements: [
-            { name: 'a', web: { selector: '#a' }, app: { tag: 'a' }, properties: ['boxShadow'] },
+          states: [
+            {
+              name: 'at-rest',
+              elements: [
+                {
+                  name: 'a',
+                  web: { selector: '#a' },
+                  app: { tag: 'a' },
+                  properties: ['boxShadow'],
+                },
+              ],
+            },
           ],
         },
         'verify'
       )
-    ).toEqual(['"verify": a asks for "boxShadow", which is not a property']);
+    ).toEqual(['"verify/at-rest": a asks for "boxShadow", which is not a property']);
     expect(
       validateContract(
-        { elements: [{ name: 'a', web: {}, app: {}, properties: ['width'] }] },
+        {
+          states: [
+            {
+              name: 'at-rest',
+              elements: [{ name: 'a', web: {}, app: {}, properties: ['width'] }],
+            },
+          ],
+        },
         'verify'
       )
-    ).toEqual(['"verify": a has no web selector', '"verify": a has no app test tag']);
+    ).toEqual([
+      '"verify/at-rest": a has no web selector',
+      '"verify/at-rest": a has no app test tag',
+    ]);
+  });
+
+  it('refuses the same state twice', () => {
+    expect(
+      validateContract(
+        {
+          states: [
+            { name: 'at-rest', elements: CONTRACT.states[0].elements },
+            { name: 'at-rest', elements: CONTRACT.states[0].elements },
+          ],
+        },
+        'verify'
+      )
+    ).toEqual(['"verify/at-rest": the contract names the state twice']);
   });
 });
 
 describe('the gate', () => {
   it('refuses a port switched on with no evidence', () => {
     expect(repo().check()).toEqual([
-      '"verify" is switched on in screens.json with no evidence recorded',
+      '"verify/at-rest" is switched on in screens.json with no evidence recorded',
     ]);
   });
 
@@ -345,7 +404,7 @@ describe('the gate', () => {
 
   it('refuses half a pair', () => {
     expect(repo({ web: RECORD() }).check()).toEqual([
-      '"verify": the evidence is half there; missing app, appPng',
+      '"verify/at-rest": the evidence is half there; missing app, appPng',
     ]);
   });
 
@@ -359,12 +418,12 @@ describe('the gate', () => {
     const app = { surface: 'verify', elements: { submit: { width: 100 } } };
     const web = { surface: 'verify', elements: { submit: { width: 100 } } };
     expect(repo({ web, app }).check()).toEqual([
-      '"verify": submit.height is in the contract and not in web.json',
-      '"verify": submit.radius is in the contract and not in web.json',
-      '"verify": submit.color is in the contract and not in web.json',
-      '"verify": submit.height is in the contract and not in app.json',
-      '"verify": submit.radius is in the contract and not in app.json',
-      '"verify": submit.color is in the contract and not in app.json',
+      '"verify/at-rest": submit.height is in the contract and not in web.json',
+      '"verify/at-rest": submit.radius is in the contract and not in web.json',
+      '"verify/at-rest": submit.color is in the contract and not in web.json',
+      '"verify/at-rest": submit.height is in the contract and not in app.json',
+      '"verify/at-rest": submit.radius is in the contract and not in app.json',
+      '"verify/at-rest": submit.color is in the contract and not in app.json',
     ]);
   });
 
@@ -376,9 +435,9 @@ describe('the gate', () => {
     ]);
   });
 
-  it('refuses a capture whose pixels differ above the surface tolerance', () => {
+  it('refuses a capture whose pixels differ above the state tolerance', () => {
     const fixture = repo({ web: RECORD(), app: RECORD(), pixels: 0.05 });
-    const dir = join(fixture.evidence, 'verify');
+    const dir = join(fixture.evidence, 'verify', 'at-rest');
     // Half the card repainted: no offset makes that the same screen, which is what
     // the gate has to refuse.
     const changed = opaque(20, 20);
@@ -399,17 +458,47 @@ describe('the gate', () => {
     fixture.gate.surfaces[0].contract = 'shared/visual/gone.json';
     expect(fixture.check()).toEqual([
       '"verify": contract shared/visual/gone.json does not exist',
-      '"verify" is switched on in screens.json with no evidence recorded',
+      '"verify/at-rest" is switched on in screens.json with no evidence recorded',
     ]);
   });
 
   it('refuses tolerances that would pass anything', () => {
     const fixture = repo();
-    fixture.gate.surfaces[0].tolerance = { pixels: 0.9, length: 40 };
+    fixture.gate.surfaces[0].states[0].tolerance = { pixels: 0.9, length: 40 };
     expect(fixture.check()).toEqual([
-      '"verify": tolerance.pixels is a recorded baseline above 0 and at most 0.35',
-      '"verify": tolerance.length is a CSS-pixel allowance from 0 to 2',
-      '"verify" is switched on in screens.json with no evidence recorded',
+      '"verify/at-rest": tolerance.pixels is a recorded baseline above 0 and at most 0.35',
+      '"verify/at-rest": tolerance.length is a CSS-pixel allowance from 0 to 2',
+      '"verify/at-rest" is switched on in screens.json with no evidence recorded',
+    ]);
+  });
+
+  it('refuses a surface whose gate entry declares no states', () => {
+    const fixture = repo();
+    fixture.gate.surfaces[0].states = [];
+    expect(fixture.check()).toEqual([
+      '"verify": the gate entry declares no states',
+      '"verify/at-rest": the contract describes this state and the gate does not measure it',
+    ]);
+  });
+
+  it('refuses a state the contract describes and the gate does not measure', () => {
+    const fixture = repo({ web: RECORD(), app: RECORD() });
+    fixture.gate.surfaces[0].states.push({
+      name: 'bulk-bar',
+      tolerance: { pixels: 0.05, length: 0.5 },
+      baseline: { recorded: '2026-11-03' },
+    });
+    expect(fixture.check()).toEqual([
+      '"verify": the gate measures the state "bulk-bar" and the contract does not',
+      '"verify/bulk-bar" is switched on in screens.json with no evidence recorded',
+    ]);
+  });
+
+  it('refuses a state with evidence and no recorded baseline', () => {
+    const fixture = repo({ web: RECORD(), app: RECORD() });
+    delete fixture.gate.surfaces[0].states[0].baseline;
+    expect(fixture.check()).toEqual([
+      '"verify/at-rest": the state has evidence and no recorded baseline; run the gate, then record tolerance.pixels and baseline.recorded',
     ]);
   });
 });

@@ -1,5 +1,6 @@
 {
   "surface": "verify",
+  "state": "at-rest",
   "route": "/verify",
   "viewport": {
     "width": 393,

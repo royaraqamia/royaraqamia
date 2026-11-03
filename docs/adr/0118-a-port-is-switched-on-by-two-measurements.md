@@ -1,5 +1,9 @@
 # A port is switched on by two measurements
 
+> Amended by [ADR-0119](0119-a-gate-measures-states-not-screens.md): a surface is measured state by
+> state, and every state it declares must have its pair before the surface is switched on. The two
+> measurements below are unchanged; they are now taken per state.
+
 [#872](https://github.com/royaraqamia/royaraqamia/issues/872) switched every native port off, because
 the app was drawing a second design: a services sheet that filled the screen where the page stops at
 85dvh, rows without the site's per-row grips, a bare Material card where the page has its glass one.
