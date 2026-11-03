@@ -15,6 +15,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 
 /**
+ * The visual gate's handles on the frame (#902, `shared/visual/chrome.json`).
+ *
+ * The tags are what the gate measures each box by, and they sit on the box the
+ * contract names rather than on a copy the test draws: what is measured is what
+ * the app ships. The bar's type sizes and weights are read from the objects the
+ * bars draw with, because Compose does not expose resolved typography through
+ * the semantics tree.
+ */
+object ChromeTags {
+    const val TOP_BAR = "shell-top-bar"
+    const val MARK = "shell-top-bar-mark"
+    const val SERVICES = "shell-top-bar-services"
+    const val BELL = "shell-top-bar-bell"
+    const val TAB_BAR = "shell-tab-bar"
+}
+
+/**
  * The frame the app draws before it is anything else (#647).
  *
  * A surface, the top bar, the destination's content, and the tab bar. It is drawn

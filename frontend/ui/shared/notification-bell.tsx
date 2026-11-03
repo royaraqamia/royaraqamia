@@ -27,6 +27,7 @@ export const NotificationBell = memo(function NotificationBell() {
   return (
     <Link
       href="/notifications"
+      data-visual="chrome-bell"
       aria-label={
         unreadCount > 0
           ? NOTIFICATION_BELL_COPY.unread.replace('{count}', String(unreadCount))

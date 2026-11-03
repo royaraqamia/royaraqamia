@@ -392,6 +392,115 @@ describe('the contract itself', () => {
 });
 
 describe('the gate', () => {
+  /** A throwaway repo whose gate carries the frame instead of a surface. */
+  function frameRepo({
+    contract = CONTRACT,
+    web,
+    app,
+    why = 'the bars are glass over the page',
+    raster = 'none',
+  } = {}) {
+    const root = mkdtempSync(join(tmpdir(), 'visual-frame-'));
+    const shared = join(root, 'shared', 'visual');
+    mkdirSync(shared, { recursive: true });
+    writeFileSync(join(shared, 'chrome.json'), JSON.stringify(contract));
+
+    const gate = {
+      schemaVersion: 1,
+      surfaces: [],
+      frame: {
+        id: 'chrome',
+        web: { route: '/' },
+        contract: 'shared/visual/chrome.json',
+        app: { test: 'ShellFrameVisualTest.kt' },
+        ...(raster === 'none' ? { raster: 'none', why } : {}),
+        states: [
+          {
+            name: 'at-rest',
+            tolerance: raster === 'none' ? { length: 0.5 } : { pixels: 0.01, length: 0.5 },
+          },
+        ],
+      },
+    };
+
+    const evidence = join(root, 'e2e', '__visual__');
+    // The fixture records name the surface they were written for; a frame's
+    // recordings name the frame.
+    const asChrome = (record) => (record ? { ...record, surface: 'chrome' } : record);
+    if (web || app) {
+      const dir = join(evidence, 'chrome', 'at-rest');
+      mkdirSync(dir, { recursive: true });
+      if (web) writeFileSync(join(dir, 'web.json'), JSON.stringify(asChrome(web)));
+      if (app) writeFileSync(join(dir, 'app.json'), JSON.stringify(asChrome(app)));
+    }
+
+    return {
+      gate,
+      screens: { screens: [] },
+      check(overrides = {}) {
+        return validate({
+          gate,
+          screens: this.screens,
+          repoRoot: root,
+          evidenceRoot: evidence,
+          ...overrides,
+        });
+      },
+    };
+  }
+
+  it('accepts a frame whose numbers agree and which says why it has no raster', () => {
+    expect(frameRepo({ web: RECORD(), app: RECORD() }).check()).toEqual([]);
+  });
+
+  it('refuses a frame measured without a raster and without the reason', () => {
+    const fixture = frameRepo({ web: RECORD(), app: RECORD(), why: '  ' });
+    expect(fixture.check()).toEqual([
+      '"chrome": the frame is measured without a raster, so "why" says what the page\'s pixels are that the app cannot draw',
+    ]);
+  });
+
+  it('refuses a frame whose boxes moved, by name and both values', () => {
+    expect(frameRepo({ web: RECORD(), app: RECORD(120) }).check()).toEqual([
+      '"chrome": submit.width is 120 in the app and 100 on the page',
+    ]);
+  });
+
+  it('refuses half a frame recording', () => {
+    expect(frameRepo({ web: RECORD() }).check()).toEqual([
+      '"chrome/at-rest": the evidence is half there; missing app',
+    ]);
+  });
+
+  it('refuses a frame that shares its id with a gated surface', () => {
+    const fixture = frameRepo({ web: RECORD(), app: RECORD() });
+    fixture.gate.surfaces = [
+      {
+        surface: 'chrome',
+        web: { route: '/verify' },
+        contract: 'shared/visual/chrome.json',
+        app: { test: 'x.kt' },
+        states: [
+          {
+            name: 'at-rest',
+            tolerance: { pixels: 0.01, length: 0.5 },
+            baseline: { recorded: '2026-11-03' },
+          },
+        ],
+      },
+    ];
+    expect(fixture.check()).toContain(
+      '"chrome" is a gated surface and the frame; they need different ids'
+    );
+  });
+
+  it('refuses a frame that claims a raster and records no raster for it', () => {
+    const fixture = frameRepo({ web: RECORD(), app: RECORD(), raster: 'on' });
+    expect(fixture.check()).toContain(
+      '"chrome/at-rest": the evidence is half there; missing webPng, appPng'
+    );
+  });
+
   it('refuses a port switched on with no evidence', () => {
     expect(repo().check()).toEqual([
       '"verify/at-rest" is switched on in screens.json with no evidence recorded',

@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -77,30 +78,39 @@ fun ShellTopBar(
 ) {
     val spacing = LocalRoySpacing.current
 
-    Box(
-        modifier =
-            modifier.fillMaxWidth()
-                .statusBarsPadding()
-                .height(TopBarHeight)
-                .padding(horizontal = spacing.containerPadding),
-    ) {
-        Image(
-            painter = painterResource(R.mipmap.ic_launcher_foreground),
-            contentDescription = null,
+    Box(modifier.fillMaxWidth().statusBarsPadding()) {
+        Box(
             modifier =
-                Modifier.align(Alignment.CenterStart)
-                    .size(MarkSize)
-                    .clip(RoundedCornerShape(percent = 50)),
-        )
-        if (showServices) {
-            ServicesTrigger(onOpen = onOpenServices, modifier = Modifier.align(Alignment.Center))
-        }
-        if (unreadCount != null) {
-            NotificationBell(
-                unreadCount = unreadCount,
-                onOpen = onOpenNotifications,
-                modifier = Modifier.align(Alignment.CenterEnd),
+                Modifier.fillMaxWidth()
+                    .height(TopBarHeight)
+                    .padding(horizontal = spacing.containerPadding)
+                    .testTag(ChromeTags.TOP_BAR),
+        ) {
+            Image(
+                painter = painterResource(R.mipmap.ic_launcher_foreground),
+                contentDescription = null,
+                modifier =
+                    Modifier.align(Alignment.CenterStart)
+                        // The site wraps the mark in a link with `px-1.5`, so the disc
+                        // sits six pixels inside the bar's own padding (#902).
+                        .padding(start = 6.dp)
+                        .size(MarkSize)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .testTag(ChromeTags.MARK),
             )
+            if (showServices) {
+                ServicesTrigger(
+                    onOpen = onOpenServices,
+                    modifier = Modifier.align(Alignment.Center).testTag(ChromeTags.SERVICES),
+                )
+            }
+            if (unreadCount != null) {
+                NotificationBell(
+                    unreadCount = unreadCount,
+                    onOpen = onOpenNotifications,
+                    modifier = Modifier.align(Alignment.CenterEnd).testTag(ChromeTags.BELL),
+                )
+            }
         }
     }
 }

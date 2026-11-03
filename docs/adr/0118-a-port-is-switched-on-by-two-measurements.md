@@ -62,3 +62,28 @@ it "is the same screen", and left that as a judgement. This makes it a measureme
   is on a 852px-tall screen.
 - **A human comparing two phones.** It is what shipped 1.1.0, and it is not evidence anyone else can
   re-run.
+
+## Amendment: the frame is gated by its contract (#902)
+
+The gate gated screens, and the shell's chrome was not one of them. `/verify` is the case that
+showed it: the page wears no bar, and the app drew a 64dp one around it - a difference nothing
+measured, because every capture was the screen's content. The chrome - the top bar and the tab bar -
+is now a `frame` entry in `docs/mobile/visual-gate.json`.
+
+It is not a surface, because `perf/surfaces.json` gives every route exactly one owner and the chrome
+owns none: a row for it would claim `/`, `/community` and `/account` a second time, which
+`check:surfaces` refuses, and `docs/mobile/screens.json` would need a Kotlin screen that routes
+nowhere. So the frame is recorded once, on `/`, and its evidence lives in
+`e2e/__visual__/chrome/at-rest/`, beside the states of every other surface.
+
+**It is measured by its contract, and says so.** The site's bars are glass over the page's own
+content (`bg-neutral-950/40` with `backdrop-filter`), and the account tab carries the member's
+floating avatar over it, so a capture of the frame is a capture of the hero and of whoever is signed
+in - not of the chrome. A baseline wide enough to pass that would pass a different bar. The entry
+therefore declares `"raster": "none"` and a `why`, which `check:visual` requires: the reason cannot
+be silently dropped, and a frame that does claim a raster is measured exactly like a surface - a
+baseline, or it does not pass.
+
+What this costs: a whole-window capture of a native screen on a _primary_ route still cannot pass,
+because the frame's pixels belong to the page's content; its content-only capture stays. A secondary
+route has no bar at all (#913), and that is where a screen can be captured whole.

@@ -1,0 +1,61 @@
+{
+  "surface": "chrome",
+  "route": "/",
+  "notes": "The shell's frame (#902): the top bar the page's `Navbar` draws and the bottom bar `BottomTabBar` draws, measured against `ShellTopBar` and `ShellTabBar` at 393. The page draws the chrome only on its primary routes - `/`, `/community`, `/account` - so it is recorded on `/`, the one every member can reach with no session. `origin` is the top bar because the two clients' windows are not the same height: the design is the bars' own boxes and the gap the frame leaves between them, not where the frame starts. There is no `capture`: the page's bars are glass over the page's content, and the account tab has the member's avatar floated over it, so a raster of the frame is a raster of the hero and of the session - the gate entry's `why` says why the frame is contract-only. Colours - the active tab's violet, the bar's tint - are not measured for the same reason: they are composited against content the app does not draw. The services sheet is a state of its own (it opens over the frame), not the frame at rest.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "topbar",
+      "elements": [
+        {
+          "name": "topbar",
+          "web": { "selector": "[data-visual='chrome-topbar']" },
+          "app": { "tag": "shell-top-bar" },
+          "properties": ["height"]
+        },
+        {
+          "name": "mark",
+          "web": { "selector": "[data-visual='chrome-mark']" },
+          "app": { "tag": "shell-top-bar-mark" },
+          "properties": ["top", "left", "width", "height"]
+        },
+        {
+          "name": "services",
+          "web": { "selector": "[data-visual='chrome-services']" },
+          "app": { "tag": "shell-top-bar-services" },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "bell",
+          "web": { "selector": "[data-visual='chrome-bell']" },
+          "app": { "tag": "shell-top-bar-bell" },
+          "properties": ["top", "left", "width", "height"]
+        },
+        {
+          "name": "tabbar",
+          "web": { "selector": "[data-visual='chrome-tabbar']" },
+          "app": { "tag": "shell-tab-bar" },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "tab-home",
+          "web": { "selector": "[data-visual='chrome-tab-home']" },
+          "app": { "tag": "shell-tab-home" },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "tab-community",
+          "web": { "selector": "[data-visual='chrome-tab-community']" },
+          "app": { "tag": "shell-tab-community" },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "tab-account",
+          "web": { "selector": "[data-visual='chrome-tab-account']" },
+          "app": { "tag": "shell-tab-account" },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    }
+  ]
+}

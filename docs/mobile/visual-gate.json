@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when every state this file declares for that surface carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the states, and for each state the elements and properties both clients must agree on), the test that draws the app side, and, per state, its tolerances: tolerance.length is the CSS-pixel drift allowed on a box, and tolerance.pixels is that state's recorded raster baseline - the share of the capture that differs at the best alignment, measured from the pair that passed, with the date it was recorded. Evidence lives in e2e/__visual__/<surface>/<state>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen).",
+  "notes": "Every surface whose native port is under the visual gate (#874, ADR-0118). A surface appears here before it is switched on, and docs/mobile/screens.json may only set \"enabled\": true when every state this file declares for that surface carries its evidence. Each entry names the web route, the contract (shared/visual/<surface>.json - the states, and for each state the elements and properties both clients must agree on), the test that draws the app side, and, per state, its tolerances: tolerance.length is the CSS-pixel drift allowed on a box, and tolerance.pixels is that state's recorded raster baseline - the share of the capture that differs at the best alignment, measured from the pair that passed, with the date it was recorded. Evidence lives in e2e/__visual__/<surface>/<state>/ and is recorded by `npm run visual:capture` (page) and the app's own visual test (screen). `frame` is the chrome every primary screen wears (#902): not a surface, because nothing routes to it and perf/surfaces.json gives each route one owner, so it is recorded once on `/` and gated by its contract - with \"raster\": \"none\" and a `why` when the page pixels are the page content rather than the chrome.",
   "surfaces": [
     {
       "surface": "verify",
@@ -56,5 +56,25 @@
         }
       ]
     }
-  ]
+  ],
+  "frame": {
+    "id": "chrome",
+    "web": {
+      "route": "/"
+    },
+    "contract": "shared/visual/chrome.json",
+    "app": {
+      "test": "android/app/src/test/kotlin/com/royaraqamia/app/shell/ShellFrameVisualTest.kt"
+    },
+    "raster": "none",
+    "why": "The site's bars are glass over the page's own content (`bg-neutral-950/40` with `backdrop-filter`), and the account tab carries the member's avatar floated over it, so a capture of the frame is a capture of the page's hero and of whoever is signed in - not of the chrome. Compose has no `backdrop-filter` (ADR-0118 already records that), so the frame is gated by its contract, and the reason it has no raster is written here rather than hidden in a baseline wide enough to pass a different bar.",
+    "states": [
+      {
+        "name": "at-rest",
+        "tolerance": {
+          "length": 0.5
+        }
+      }
+    ]
+  }
 }

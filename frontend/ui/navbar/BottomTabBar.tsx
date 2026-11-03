@@ -13,6 +13,8 @@ interface BottomTab {
   label: string;
   icon: LucideIcon;
   isActive: (pathname: string) => boolean;
+  /** The visual gate's name for this slot, so the frame is measured by tab. */
+  visual: string;
 }
 
 const TABS: BottomTab[] = [
@@ -21,18 +23,21 @@ const TABS: BottomTab[] = [
     label: BOTTOM_TAB_BAR_COPY.homeLabel,
     icon: House,
     isActive: (pathname) => pathname === '/',
+    visual: 'chrome-tab-home',
   },
   {
     href: '/community',
     label: BOTTOM_TAB_BAR_COPY.communityLabel,
     icon: Users,
     isActive: (pathname) => pathname === '/community' || pathname.startsWith('/community/'),
+    visual: 'chrome-tab-community',
   },
   {
     href: '/account',
     label: BOTTOM_TAB_BAR_COPY.accountLabel,
     icon: UserRound,
     isActive: (pathname) => pathname.startsWith('/account'),
+    visual: 'chrome-tab-account',
   },
 ];
 
@@ -54,6 +59,7 @@ export function BottomTabBar() {
   return (
     <nav
       data-bottom-tabbar
+      data-visual="chrome-tabbar"
       aria-label={BOTTOM_TAB_BAR_COPY.navLabel}
       className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-full lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
     >
@@ -66,6 +72,7 @@ export function BottomTabBar() {
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
+                data-visual={tab.visual}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'group relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 pt-2 pb-1.5 text-[11px] font-bold leading-none transition-safe duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-inset',

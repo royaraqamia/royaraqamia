@@ -28,7 +28,10 @@ const GATE = join(ROOT, 'docs', 'mobile', 'visual-gate.json');
  */
 
 const gate = JSON.parse(readFileSync(GATE, 'utf8'));
-const surfaces = gate.surfaces ?? [];
+// The frame (#902) is the chrome the shell draws around a screen rather than a
+// screen: same recording per state, same evidence shape, no row in screens.json.
+const frame = gate.frame?.id ? [{ ...gate.frame, surface: gate.frame.id }] : [];
+const surfaces = [...(gate.surfaces ?? []), ...frame];
 
 /** The app's phone: 393 x 852 CSS px at DPR 2.75, dark, Arabic, RTL. */
 const VIEWPORT = { width: 393, height: 852 };
@@ -285,10 +288,14 @@ test.describe('the visual gate', () => {
         // The raster compares the region both clients draw identically. The page's
         // frame and the app's are not the same height, so a viewport capture would
         // compare the site's chrome with the app's; the contract names the element.
+        // A frame that declares `raster: "none"` records no image at all: its gate
+        // entry's `why` says what the page's pixels are that the app cannot draw.
         const region = spec.capture
           ? elements.find((element) => element.name === spec.capture)
           : null;
-        if (region) {
+        if (surface.raster === 'none') {
+          // Nothing to capture: the layout numbers are the whole recording.
+        } else if (region) {
           await page
             .locator(region.selector)
             .first()

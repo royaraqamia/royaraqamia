@@ -39,6 +39,8 @@ interface NavDropdownProps {
   handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
   /** Positioning classes for the trigger, e.g. centring it inside the top bar. */
   className?: string;
+  /** The visual gate's handle on this control, when the frame is being recorded. */
+  visual?: string;
 }
 
 /**
@@ -52,7 +54,13 @@ interface NavDropdownProps {
  * `aria-haspopup`, `aria-expanded`, `aria-controls` and `data-state` — so the
  * styles and the accessible role read the same as before.
  */
-export function NavDropdown({ link, isActive, handleHashClick, className = '' }: NavDropdownProps) {
+export function NavDropdown({
+  link,
+  isActive,
+  handleHashClick,
+  className = '',
+  visual,
+}: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSheetMounted, setIsSheetMounted] = useState(false);
   const hasPrefetched = useRef(false);
@@ -76,6 +84,7 @@ export function NavDropdown({ link, isActive, handleHashClick, className = '' }:
       <button
         id={triggerId}
         type="button"
+        data-visual={visual}
         aria-label={link.label}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
