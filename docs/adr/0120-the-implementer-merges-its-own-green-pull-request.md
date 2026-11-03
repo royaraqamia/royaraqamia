@@ -19,8 +19,24 @@ mechanical:
 
 The merge stays a squash, because that is the only merge `main` accepts; `--delete-branch` is still
 never passed, so a later conflict resolution can still push to the branch that the pull request
-points at. On a red run the implementer hands the issue to a person with `ready-for-human`, exactly
-as before.
+points at.
+
+A red run gets **one** repair attempt: the workflow hands the failing check names to a second agent
+run on the same branch, waits for its push, watches again, and merges if that is green. One attempt,
+not a loop — a second failure usually means the issue needs a decision rather than another patch, and
+an unbounded retry is how a green check gets negotiated instead of earned. The repair is also told,
+in the prompt, that no check may be made to pass by weakening it: no skipped test, no widened
+tolerance, no removed gate. After the second red the issue goes to a person with `ready-for-human`,
+exactly as before.
+
+## The evidence the merge rests on
+
+The merge is only as good as what the checks can see, so the job installs the toolchain the issues
+actually need before the agent runs: Chromium for the Playwright specs, and JDK 21 with the Android
+SDK and a warm Gradle cache so `npm run check:visual` runs here rather than only in CI. Without the
+second the agent would be asked to switch a ported surface on (ADR-0118) while unable to run the
+measurement that decides it. The agent runs the specs and the gate its own change reaches — never the
+whole suite — and the pull request body has to say which of them it ran.
 
 ## Why not GitHub's auto-merge
 

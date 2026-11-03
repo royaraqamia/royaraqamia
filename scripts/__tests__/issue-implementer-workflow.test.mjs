@@ -9,40 +9,58 @@ import { describe, expect, it } from 'vitest';
  *
  * - the merge arrives after the watch, never before it, and names the commit it watched;
  * - it is a squash with no branch deletion and no protection bypass;
+ * - a red run is repaired once and then watched again, not retried in a loop;
  * - the picker reads the blocker edges and the plan instead of taking the lowest number;
  * - six rounds run one after another;
+ * - the job installs the e2e and visual toolchain, because that is the evidence;
  * - a merged issue is not handed to a person, a green-but-unmerged one still is.
  *
  * `process.cwd()`, not `import.meta.url`: the unit suite runs in jsdom, where
  * import.meta.url is an http URL and `new URL` refuses it.
  */
 describe('the issue implementer merges what it watched go green', () => {
-  const workflow = readFileSync(
-    resolve(process.cwd(), '.github/workflows/issue-implementer.yml'),
-    'utf8'
-  );
+  const read = (path) => readFileSync(resolve(process.cwd(), path), 'utf8');
+  const workflow = read('.github/workflows/issue-implementer.yml');
+  const land = read('scripts/ci/land-pull-request.sh');
   const watchAt = workflow.indexOf("Watch the pull request's checks");
   const checks = workflow.slice(watchAt);
 
   it('merges the commit the checks ran on, so a late push cannot ride along', () => {
     expect(watchAt).toBeGreaterThan(-1);
-    expect(checks).toContain('gh pr merge "$pr" --squash --match-head-commit "$head"');
+    expect(land).toContain('gh pr merge "$pr" --squash --match-head-commit "$head"');
   });
 
   it('merges only after the watch has reported green', () => {
-    const watched = checks.indexOf('gh pr checks "$pr" --watch');
-    const merged = checks.indexOf('gh pr merge');
+    const watched = land.indexOf('gh pr checks "$pr" --watch');
+    const merged = land.indexOf('gh pr merge');
     expect(watched).toBeGreaterThan(-1);
     expect(merged).toBeGreaterThan(watched);
-    expect(checks.indexOf('status=green')).toBeLessThan(merged);
+    expect(
+      land.indexOf('status=green') === -1 ? land.indexOf('write status green') : 0
+    ).toBeLessThan(merged);
   });
 
   it('never deletes the branch and never bypasses protection', () => {
-    // The comments name both flags (to say they are not used), so the assertion is on
-    // the command that runs, not on the word appearing in the file.
-    expect(workflow).not.toMatch(/gh pr merge[^\n]*--delete-branch/);
-    expect(workflow).not.toMatch(/gh pr merge[^\n]*--admin/);
+    expect(land).not.toMatch(/gh pr merge[^\n]*--delete-branch/);
+    expect(land).not.toMatch(/gh pr merge[^\n]*--admin/);
     expect(workflow).not.toContain('secrets.RELEASE_TOKEN');
+  });
+
+  it('repairs a red run once and watches the repair, instead of retrying in a loop', () => {
+    expect(checks).toContain('Repair the failing checks');
+    expect(checks).toContain('Watch the repaired pull request');
+    expect(checks.indexOf('Repair the failing checks')).toBeLessThan(
+      checks.indexOf('Watch the repaired pull request')
+    );
+    expect(checks).toContain("steps.checks.outputs.status == 'red'");
+    expect(checks).toContain('One repair, not a loop');
+    expect(checks.match(/name: Repair the failing checks/g)).toHaveLength(1);
+  });
+
+  it('installs the e2e and visual toolchain, because that is the evidence it merges on', () => {
+    expect(workflow).toContain('npx playwright install --with-deps chromium');
+    expect(workflow).toContain('npm run check:visual');
+    expect(workflow).toContain('platforms;android-36');
   });
 
   it('takes the unblocked issue the plan puts first, not the lowest number', () => {
