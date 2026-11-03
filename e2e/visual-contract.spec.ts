@@ -65,7 +65,6 @@ async function measure(page: Page, elements: Measured[]) {
     const color = (value: string): string => {
       if (!context) return value;
       context.clearRect(0, 0, 1, 1);
-      context.fillStyle = '#000';
       context.fillStyle = value;
       context.fillRect(0, 0, 1, 1);
       const data = context.getImageData(0, 0, 1, 1).data;
