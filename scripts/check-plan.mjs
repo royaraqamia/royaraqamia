@@ -151,7 +151,6 @@ function routesOf(surfaces, id) {
 
 /** The markdown the repository commits and the tracking issue carries. */
 export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = false } = {}) {
-  const phaseTitle = new Map((plan.phases ?? []).map((phase) => [phase.id, phase.title]));
   const byId = new Map((plan.surfaces ?? []).map((row) => [row.surface, row]));
 
   const header = issue

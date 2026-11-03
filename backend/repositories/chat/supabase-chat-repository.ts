@@ -336,7 +336,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         if (attachError) {
           const code = underlyingCode(attachError);
           const message =
-            typeof attachError === 'object' && attachError !== null && 'message' in attachError
+            typeof attachError === 'object' && 'message' in attachError
               ? String((attachError as { message: unknown }).message)
               : null;
 
