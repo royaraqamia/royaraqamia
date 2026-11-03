@@ -3,6 +3,7 @@ import babelParser from '@babel/eslint-parser';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
 import heavyEffects from './eslint-rules/no-heavy-effects.mjs';
+import layering from './eslint-rules/layering.mjs';
 import noNonNfc from './eslint-rules/no-non-nfc.mjs';
 
 // Formatting is owned by Prettier (`prettier --check .` in CI), so
@@ -50,6 +51,7 @@ export default [
     plugins: {
       'react-hooks': reactHooksPlugin,
       local: heavyEffects,
+      layers: layering,
       unicode: noNonNfc,
     },
     languageOptions: {
@@ -70,6 +72,7 @@ export default [
       'no-unused-vars': 'off',
       'no-undef': 'off',
       'local/no-heavy-effects': 'error',
+      'layers/no-cross-layer-import': 'error',
       'unicode/no-non-nfc': 'error',
 
       // Ported from the retired .eslintrc.json (rules that are real and

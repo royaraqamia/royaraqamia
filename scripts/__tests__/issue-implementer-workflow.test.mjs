@@ -73,8 +73,10 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
     expect(workflow).toContain('max-parallel: 1');
     // Six by default, and a manual run can ask for fewer without editing the matrix.
+    // The gate is in the guard step because a job-level `if` cannot read `matrix`.
     expect(workflow).toContain("default: '6'");
-    expect(workflow).toContain('matrix.round <= fromJSON(github.event.inputs.rounds');
+    expect(workflow).toContain('REQUESTED_ROUNDS: ${{ github.event.inputs.rounds }}');
+    expect(workflow).toContain('round > requested');
   });
 
   it('repairs on the pull request branch with the CLI, not with a second action run', () => {
@@ -96,6 +98,24 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(normalizeAt).toBeGreaterThan(-1);
     expect(workflow.slice(normalizeAt, watchAt)).toContain('reRunWorkflowFailedJobs');
     expect(workflow).toMatch(/actions:\s*write/);
+  });
+
+  it('loads the design skills only when the issue draws a screen, and never the port database', () => {
+    expect(workflow).toContain('`codebase-design`');
+    expect(workflow).toContain('Do NOT load `ui-ux-pro-max` for a port');
+    expect(workflow).toContain('`web-design-guidelines`');
+  });
+
+  it('runs only the gates the diff reaches, and the check that owns each generated source', () => {
+    expect(workflow).toContain('The suite is never run in full');
+    expect(workflow).toContain('`npm run check:copy`');
+    expect(workflow).toContain('`npm run check:parity`');
+    expect(workflow).toContain('`npm run check:tokens`');
+  });
+
+  it('asks the pull request body for what was checked on each screen', () => {
+    expect(workflow).toContain('keyboard and focus');
+    expect(workflow).toContain('the empty state, the error state and the loading state');
   });
 
   it('records the merge and hands nothing to a person when it landed', () => {
