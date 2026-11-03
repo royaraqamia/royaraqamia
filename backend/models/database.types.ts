@@ -267,6 +267,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_agent_actions: {
+        Row: {
+          args: Json;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          message_id: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          result: Json | null;
+          status: string;
+          tool: string;
+        };
+        Insert: {
+          args?: Json;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          message_id: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          result?: Json | null;
+          status?: string;
+          tool: string;
+        };
+        Update: {
+          args?: Json;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          message_id?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          result?: Json | null;
+          status?: string;
+          tool?: string;
+        };
+        Relationships: [];
+      };
       chat_conversations: {
         Row: {
           accepted_at: string | null;

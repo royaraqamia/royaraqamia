@@ -25,7 +25,10 @@ export const ASSISTANT_COPY = {
   failure: 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.',
   /** `{remaining}` and `{cap}` are filled from the server's own numbers. */
   remaining: 'المتبقي اليوم: {remaining} من {cap}',
-  /** `{time}` is the Damascus reset instant, formatted for the reader. */
+  /** The sentence a spent day shows: `{time}` is the Damascus reset instant. */
   limitReached: 'وصلت إلى حد اليوم. يعود الحد بعد {time}.',
   midnight: 'منتصف الليل',
+  /** The proposal card's two answers (#818). */
+  confirmAction: 'تأكيد',
+  cancelAction: 'إلغاء',
 } as const;

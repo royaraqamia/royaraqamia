@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import type { ChatMessage, ChatPeer, ChatThread } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
 // The header is under test, not Next's optimizer or the member's picture.
 vi.mock('next/image', () => ({
@@ -39,16 +40,19 @@ const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
 /** The hook is under test elsewhere; here its writes are the seams. */
 const hook = vi.hoisted(() => ({
   messages: { current: [] as ChatMessage[] },
+  actions: { current: [] as ChatAgentAction[] },
   send: vi.fn(),
   edit: vi.fn(),
   remove: vi.fn(),
   invite: vi.fn(),
+  resolveAction: vi.fn(),
 }));
 
 vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
   useChatThread: () => ({
     thread: thread.current,
     messages: hook.messages.current,
+    actions: hook.actions.current,
     isLoading: false,
     isSending: false,
     error: null,
@@ -63,6 +67,7 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
     request: vi.fn(),
     unblock: vi.fn(),
     invite: hook.invite,
+    resolveAction: hook.resolveAction,
   }),
 }));
 
@@ -394,5 +399,92 @@ describe('ChatThreadView assistant', () => {
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));
+  });
+});
+
+/**
+ * The assistant proposes, the member confirms (#818). The card is the whole
+ * surface: the tool in the member's words, the two answers, and — once
+ * resolved — what the service said, including a refusal's own sentence.
+ */
+describe('ChatThreadView proposals', () => {
+  function proposalFor(action: Partial<ChatAgentAction> = {}): ChatAgentAction {
+    return {
+      id: 'action-1',
+      conversationId: 'c-1',
+      messageId: 'm-1',
+      tool: 'record_expense',
+      args: { amount: 12.5, currency: 'USD' },
+      status: 'proposed',
+      result: null,
+      createdAt: '2026-11-02T08:00:00.000Z',
+      resolvedAt: null,
+      resolvedBy: null,
+      ...action,
+    };
+  }
+
+  beforeEach(() => {
+    const base = makeThread('agent');
+    thread.current = { ...base, title: 'المساعد الذكي', counterpart: null };
+    hook.messages.current = [
+      {
+        id: 'm-1',
+        conversationId: 'c-1',
+        senderId: null,
+        senderKind: 'agent',
+        body: 'تسجيل مصروف — 12.5 USD',
+        replyToId: null,
+        editedAt: null,
+        deletedAt: null,
+        createdAt: '2026-11-02T08:00:00.000Z',
+        attachments: [],
+        replyTo: null,
+      },
+    ];
+    hook.actions.current = [proposalFor()];
+    hook.resolveAction.mockReset().mockResolvedValue(null);
+  });
+
+  it('draws the proposal and asks the server on تأكيد', async () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByText('تسجيل مصروف — 12.5 USD')).toBeInTheDocument();
+    expect(screen.getByText('بانتظار تأكيدك')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'تأكيد' }));
+
+    await waitFor(() => expect(hook.resolveAction).toHaveBeenCalledWith('action-1', 'confirm'));
+  });
+
+  it('declines without confirming', async () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+
+    await waitFor(() => expect(hook.resolveAction).toHaveBeenCalledWith('action-1', 'reject'));
+  });
+
+  it('draws a resolved action with what became of it', () => {
+    hook.actions.current = [
+      proposalFor({ status: 'applied', result: { result: { expense_id: 'e-1' } } }),
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByText('نُفِّذ')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'تأكيد' })).toBeNull();
+  });
+
+  it('draws a refusal as the service’s reason', () => {
+    hook.actions.current = [
+      proposalFor({ status: 'failed', result: { error: 'بلغت حدّ الخطة لهذا الشهر' } }),
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByText('لم يُنفَّذ')).toBeInTheDocument();
+    expect(screen.getByText('بلغت حدّ الخطة لهذا الشهر')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'تأكيد' })).toBeNull();
   });
 });

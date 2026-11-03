@@ -1,34 +1,50 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import type { ChatAgentActionService } from '@/backend/services/chat/chat-agent-action-service';
+import {
+  chatAgentTool,
+  chatAgentToolDefinitions,
+  type ChatAgentTool,
+} from '@/backend/services/chat/chat-agent-tools';
 import type { ChatService } from '@/backend/services/chat/chat-service';
+import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
 import {
   AiChatProviderError,
   type AiChatClient,
   type AiChatMessage,
+  type AiChatToolCall,
+  type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import { logger } from '@/backend/shared/logger';
 import {
   CHAT_AGENT_HISTORY_MAX,
+  CHAT_AGENT_MAX_ROUNDS,
   CHAT_AGENT_TOKEN_BUDGET,
+  CHAT_AGENT_TURN_TIMEOUT_MS,
   normalizeChatBody,
   type ChatAgentAllowance,
   type ChatAgentEvent,
   type ChatMessage,
 } from '@/shared/contracts/chat';
+import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 
 /**
- * The assistant's turn (ADR-0113, #817).
+ * The assistant's turn (ADR-0113, #817, #818).
  *
- * It composes four things the surface already has — the thread, the member's
- * own message, the counted allowance and one provider call — and decides the
- * two states the composer draws: a Free member's locked assistant, and an
- * allowance that is spent for today. Neither is an error: the thread stays
- * readable and the composer says which sentence applies.
+ * It composes the thread, the member's own message, the counted allowance and
+ * the provider's stream, and decides the two states the composer draws: a Free
+ * member's locked assistant, and an allowance that is spent for today. Neither
+ * is an error: the thread stays readable and the composer says which sentence
+ * applies.
  *
- * No tool calls, no account data, no write the model proposes: the request is
- * text in and text out, and the only row written on the member's behalf is the
- * assistant's own reply.
+ * A turn may call the assistant's **read** tools, whose answers reach the model
+ * inside the same turn. It never calls a **write** tool: a write is proposed —
+ * a line in the thread and a `chat_agent_actions` row — and runs only when the
+ * member confirms it, on their own session (ADR-0113, #818). The number of tool
+ * rounds is bounded, so a model that keeps asking answers with what it has.
  */
 
 export class ChatAgentError extends Error {
@@ -44,10 +60,15 @@ export class ChatAgentError extends Error {
 /** The system prompt, kept apart from the history the member wrote. */
 const SYSTEM_PROMPT = [
   'أنت «المساعد الذكي» في تطبيق رؤى رقمية، تجيب بالعربية الفصحى المبسطة وبإيجاز.',
-  'أجب بنص فقط. لا تستخدم أدوات، ولا تدّعِ أنك قرأت حساب المستخدم أو نفّذت أي إجراء.',
+  'لديك أدوات تقرأ بيانات العضو نفسه؛ استخدمها عندما يسأل عن بياناته بدل التخمين.',
+  'كل أداة كتابة لا تنفّذ شيئاً الآن: تُعرض على العضو كاقتراح، ولا تُنفَّذ إلا بعد أن يؤكّدها بنفسه. قل ذلك بوضوح ولا تدّعِ أنك نفّذت شيئاً.',
+  'لا تطلب من العضو معرّف حسابه ولا تكتب معرّف عضو في أي أداة؛ الخادم يعرف من أنت.',
   'إن سُئلت عن شيء خارج معرفتك، قل ذلك بوضوح بدل التخمين.',
   'الأرقام تُكتب دائماً بالأرقام اللاتينية (0-9).',
 ].join('\n');
+
+/** What a turn answers when the model asked for tools until the rounds ran out. */
+const ROUNDS_EXHAUSTED = 'لم أستطع إكمال ما طلبته الآن. أعد صياغة الطلب أو أكمل ما تريده بنفسك.';
 
 /** The sentence a spent allowance answers with, naming when it comes back. */
 export function allowanceSpentSentence(resetsAt: string): string {
@@ -119,6 +140,16 @@ export interface ChatAgentServiceDeps {
   reserve(userId: string): Promise<Reservation>;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
+  /** The proposals a write tool leaves, and the member's own resolution. */
+  actions: Pick<ChatAgentActionService, 'propose'>;
+  /** The registry, overridable so a test can pin the loop without a service. */
+  resolveTool?: (name: string) => ChatAgentTool | null;
+}
+
+/** What a turn's tools need from the request: the caller's session and address. */
+export interface ChatAgentTurnContext {
+  supabase: SupabaseClient<Database>;
+  ip: string;
 }
 
 export class ChatAgentService {
@@ -132,6 +163,11 @@ export class ChatAgentService {
     };
   }
 
+  /** The tool registry, unless a test pinned its own. */
+  private toolOf(name: string): ChatAgentTool | null {
+    return (this.deps.resolveTool ?? chatAgentTool)(name);
+  }
+
   /**
    * One turn, streamed. The member's message is written first (so the thread
    * shows it immediately and the answer lands beneath it), the count is taken
@@ -142,7 +178,8 @@ export class ChatAgentService {
   async *turn(
     userId: string,
     conversationId: string,
-    body: string
+    body: string,
+    context: ChatAgentTurnContext
   ): AsyncGenerator<ChatAgentEvent, void, void> {
     const question = normalizeChatBody(body);
     if (!question) throw new ChatAgentError(400, 'اكتب سؤالك');
@@ -181,18 +218,104 @@ export class ChatAgentService {
       await this.deps.chats.sendMessage(userId, conversationId, { body: question });
 
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
-      const messages: AiChatMessage[] = [
+      const messages: AiChatWireMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...trimHistory(page.messages),
       ];
 
-      const timeout = AbortSignal.timeout(55_000);
+      const tools = chatAgentToolDefinitions();
+      const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
       let answer = '';
+      let rounds = 0;
 
       try {
-        for await (const delta of client.streamReply(messages, timeout)) {
-          answer += delta;
-          yield { type: 'delta', text: delta };
+        for (;;) {
+          const calls: AiChatToolCall[] = [];
+          let roundText = '';
+
+          const signal = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
+          for await (const event of client.streamWithTools(messages, tools, signal)) {
+            if (event.type === 'text') {
+              roundText += event.text;
+              yield { type: 'delta', text: event.text };
+            } else {
+              calls.push(event.call);
+            }
+          }
+          answer += roundText;
+
+          // Text with no calls is the answer, and it is the one that is kept.
+          if (calls.length === 0) break;
+          rounds += 1;
+          if (rounds > CHAT_AGENT_MAX_ROUNDS) break;
+
+          messages.push({
+            role: 'assistant',
+            content: roundText || null,
+            tool_calls: calls.map((call) => ({
+              id: call.id,
+              type: 'function' as const,
+              function: { name: call.name, arguments: call.arguments },
+            })),
+          });
+
+          for (const call of calls) {
+            const tool = this.toolOf(call.name);
+            if (!tool) {
+              messages.push(toolAnswer(call.id, { error: 'أداة غير معروفة' }));
+              continue;
+            }
+
+            const args = parseToolArgs(call.arguments);
+
+            // A write is proposed, never run here: the member confirms it.
+            if (tool.kind === 'write') {
+              const proposal = await this.deps.actions.propose(
+                conversationId,
+                tool.name,
+                args ?? {}
+              );
+              yield { type: 'proposal', message: proposal.message, action: proposal.action };
+              messages.push(
+                toolAnswer(call.id, {
+                  status: 'proposed',
+                  note: 'الاقتراح معروض على العضو، ولم يُنفَّذ بعد.',
+                })
+              );
+              continue;
+            }
+
+            const parsed = tool.schema.safeParse(args);
+            if (!parsed.success) {
+              messages.push(
+                toolAnswer(call.id, {
+                  error: parsed.error.issues[0]?.message ?? 'بيانات الأداة غير صالحة',
+                })
+              );
+              continue;
+            }
+
+            try {
+              const result = await tool.run(parsed.data, {
+                userId,
+                supabase: context.supabase,
+                ip: context.ip,
+              });
+              yield {
+                type: 'tool',
+                name: tool.name,
+                label: CHAT_AGENT_TOOLS[tool.name].label,
+              };
+              messages.push(toolAnswer(call.id, result));
+            } catch (error) {
+              logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
+              messages.push(
+                toolAnswer(call.id, {
+                  error: error instanceof Error ? error.message : 'تعذّر تنفيذ الأداة',
+                })
+              );
+            }
+          }
         }
       } catch (error) {
         logger.warn('Assistant turn failed', { error: String(error) });
@@ -204,8 +327,7 @@ export class ChatAgentService {
         );
       }
 
-      const text = answer.trim();
-      if (!text) throw new ChatAgentError(502, COULD_NOT_ANSWER);
+      const text = answer.trim() || ROUNDS_EXHAUSTED;
 
       const record = await this.deps.agent.insertAgentMessage(conversationId, text);
       yield {
@@ -228,5 +350,29 @@ export class ChatAgentService {
       await reservation.release();
       throw error;
     }
+  }
+}
+
+/** A tool's answer as the provider reads it: JSON, bounded so it fits the window. */
+function toolAnswer(callId: string, value: unknown): AiChatWireMessage {
+  let content: string;
+  try {
+    content = JSON.stringify(value ?? null);
+  } catch {
+    content = '{"error":"تعذّر تمثيل نتيجة الأداة"}';
+  }
+  return { role: 'tool', tool_call_id: callId, content: content.slice(0, 4_000) };
+}
+
+/** The model's arguments, as an object. Anything else is refused downstream. */
+function parseToolArgs(raw: string): Record<string, unknown> | null {
+  if (!raw.trim()) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
   }
 }

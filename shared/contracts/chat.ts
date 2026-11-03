@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { PlanId } from '@/shared/contracts/plans.constants';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { toLatinDigits } from '@/shared/contracts/text';
 
 /** A message body's ceiling. Long enough for a real answer, still one row. */
@@ -16,6 +17,12 @@ export const CHAT_AGENT_HISTORY_MAX = 20;
 export const CHAT_AGENT_TOKEN_BUDGET = 6_000;
 /** A turn ends inside the platform's 60-second function ceiling. */
 export const CHAT_AGENT_TURN_TIMEOUT_MS = 55_000;
+/**
+ * How many times a turn may call tools before it answers with what it has. A
+ * model that loops is bounded rather than allowed to spend the allowance on
+ * itself (#818).
+ */
+export const CHAT_AGENT_MAX_ROUNDS = 3;
 
 /** A group's name, and the ceiling on its members (ADR-0113). */
 export const CHAT_GROUP_TITLE_MAX = 80;
@@ -200,6 +207,8 @@ export interface ChatMessagePage {
   messages: ChatMessage[];
   /** Opaque `created_at` cursor for the next page, or null at the start. */
   nextCursor: string | null;
+  /** The assistant's proposals drawn under this page's lines (#818). */
+  actions: ChatAgentAction[];
 }
 
 /**
@@ -234,6 +243,10 @@ export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;
 /** The frames the turn's stream carries, one JSON object per SSE `data:` line. */
 export type ChatAgentEvent =
   | { type: 'delta'; text: string }
+  /** A read tool ran: the member sees which one, in their own language. */
+  | { type: 'tool'; name: string; label: string }
+  /** A write tool was proposed; the card is drawn from `action` (#818). */
+  | { type: 'proposal'; message: ChatMessage; action: ChatAgentAction }
   | { type: 'done'; message: ChatMessage }
   | { type: 'error'; error: string };
 

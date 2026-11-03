@@ -1,4 +1,8 @@
-import { createSupabaseChatAgentService, createSupabaseChatService } from '@/backend/config/chat';
+import {
+  createSupabaseChatAgentActionService,
+  createSupabaseChatAgentService,
+  createSupabaseChatService,
+} from '@/backend/config/chat';
 import { createPlanGate } from '@/backend/config/plans';
 import { planRefusalResult } from '@/backend/middleware/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
@@ -6,7 +10,7 @@ import {
   withAuthenticatedStream,
   withAuthenticatedUser,
 } from '@/backend/transport/session-handler';
-import { isSameOrigin } from '@/backend/transport/http';
+import { isSameOrigin, getClientIpFromHeaders } from '@/backend/transport/http';
 import { jsonResult, toNextResponse, type HttpResult } from '@/backend/transport/http-result';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { ChatError } from '@/backend/services/chat/chat-service';
@@ -28,6 +32,7 @@ import {
   type ChatPreview,
   type ChatThread,
 } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
 /**
  * The chats surface: what the notifications page's second tab and `/chats/[id]`
@@ -619,7 +624,12 @@ export async function streamChatAgentTurn(
         };
 
         try {
-          for await (const event of service.turn(userId, id, parsed.data.body)) write(event);
+          for await (const event of service.turn(userId, id, parsed.data.body, {
+            supabase,
+            ip: getClientIpFromHeaders(headers),
+          })) {
+            write(event);
+          }
         } catch (error) {
           write({ type: 'error', error: agentTurnFailure(error) });
         } finally {
@@ -645,4 +655,101 @@ export async function streamChatAgentTurn(
 function agentTurnFailure(error: unknown): string {
   if (error instanceof ChatAgentError) return error.message;
   return 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
+}
+
+/**
+ * The member's answer to a proposal (ADR-0113, #818).
+ *
+ * Confirming runs the write — on the member's own session, through the
+ * product's own service — and answers the row as it now stands. A refusal is
+ * not an HTTP failure: it is the `failed` row with the reason the card draws,
+ * which is what makes a plan cap read as a sentence instead of a broken screen.
+ * A replay (`already resolved`) is a 409, because the row is a record of one
+ * resolution and the caller asked for a second.
+ */
+export async function confirmChatAgentAction(
+  id: string,
+  actionId: string,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      const action = await createSupabaseChatAgentActionService(supabase).confirm(
+        userId,
+        id,
+        actionId,
+        { supabase, ip: getClientIpFromHeaders(headers) }
+      );
+
+      return jsonResult(
+        200,
+        {
+          success: true,
+          action,
+          error: action.status === 'failed' ? reasonOf(action) : undefined,
+        } satisfies {
+          success: true;
+          action: ChatAgentAction;
+          error?: string;
+        },
+        { headers: NO_STORE }
+      );
+    },
+    {
+      mapError: (error) =>
+        error instanceof ChatAgentError
+          ? jsonResult(
+              error.status,
+              { success: false, error: error.message },
+              { headers: NO_STORE }
+            )
+          : chatFailure('تعذّر تنفيذ الإجراء')(error),
+    }
+  );
+}
+
+/** Declining writes `rejected` and nothing else happens. */
+export async function rejectChatAgentAction(
+  id: string,
+  actionId: string,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' }, { headers: NO_STORE });
+      }
+
+      const action = await createSupabaseChatAgentActionService(supabase).reject(
+        userId,
+        id,
+        actionId
+      );
+
+      return jsonResult(
+        200,
+        { success: true, action } satisfies { success: true; action: ChatAgentAction },
+        { headers: NO_STORE }
+      );
+    },
+    {
+      mapError: (error) =>
+        error instanceof ChatAgentError
+          ? jsonResult(
+              error.status,
+              { success: false, error: error.message },
+              { headers: NO_STORE }
+            )
+          : chatFailure('تعذّر إلغاء الإجراء')(error),
+    }
+  );
+}
+
+function reasonOf(action: ChatAgentAction): string | undefined {
+  const error = action.result?.error;
+  return typeof error === 'string' ? error : undefined;
 }
