@@ -90,7 +90,7 @@ jobs:
           npx --yes supabase@latest secrets set \
             "TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET" \
             "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" \
-            --remote "$SUPABASE_PROJECT_REF" \
+            "--remote=$SUPABASE_PROJECT_REF" \
             --yes
 
       - name: Deploy the function
@@ -99,9 +99,11 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         # --yes: `supabase` refuses to change a hosted project without a terminal
         # to ask, and a runner is not one.
+        # --remote=<ref> with the equals sign: the newer argument parser reads a
+        # space-separated value as an operand and rejects the command.
         # --no-verify-jwt: Telegram sends no Supabase JWT. The function verifies
         # Telegram's own secret header instead, and answers 401 without it.
-        run: npx --yes supabase@latest functions deploy telegram --remote "$SUPABASE_PROJECT_REF" --no-verify-jwt --yes
+        run: npx --yes supabase@latest functions deploy telegram "--remote=$SUPABASE_PROJECT_REF" --no-verify-jwt --yes
 
       - name: Point Telegram at it
         env:
