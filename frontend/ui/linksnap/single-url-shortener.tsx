@@ -185,11 +185,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             >
               <label
                 htmlFor="custom-code"
+                data-visual="custom-label"
                 className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
               >
                 رمز مُخصَّص (اختياري)
               </label>
               <div
+                data-visual="custom-field"
                 className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full transition-safe"
                 dir="ltr"
               >
@@ -208,7 +210,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground placeholder:text-muted-foreground"
                 />
               </div>
-              <p className="text-xs text-muted-foreground font-medium">
+              <p data-visual="custom-hint" className="text-xs text-muted-foreground font-medium">
                 3-16 حرفًا (أحرف، أرقام، - و _)
               </p>
               {slugStatus !== 'idle' && (
@@ -253,12 +255,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               <div className="pt-2">
                 <label
                   htmlFor="link-password"
+                  data-visual="password-label"
                   className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
                 >
                   كلمة مرور (اختياري)
                 </label>
                 <input
                   id="link-password"
+                  data-visual="password-field"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

@@ -147,3 +147,21 @@ export const LinksnapUnlockRequestSchema = z.object({
 export const LinksnapUnlockResponseSchema = z.object({
   originalUrl: z.string(),
 });
+
+/**
+ * Whether a custom code can be taken (#654).
+ *
+ * The site asks this while a signed-in member types a code, and the answer is
+ * `{ availability: { code, available, error? } }` rather than a bare boolean:
+ * a code the server refuses for its shape comes back with the sentence to show,
+ * which is why `error` exists and is optional.
+ */
+export const LinksnapAvailabilitySchema = z.object({
+  code: z.string(),
+  available: z.boolean(),
+  error: z.string().optional(),
+});
+
+export const LinksnapAvailabilityResponseSchema = z.object({
+  availability: LinksnapAvailabilitySchema,
+});
