@@ -1,58 +1,61 @@
 # The owner's phone, wired to the autonomous issue pipeline.
 #
-# One file, three triggers, one script (`scripts/telegram-bridge.mjs`) and one
-# storage (the Telegram tables in `supabase/migrations/20261113120000_telegram_bridge.sql`).
+# Telegram pushes each message to a Supabase Edge Function
+# (`supabase/functions/telegram`), which stores it and dispatches this workflow.
+# The workflow does the work: it files an issue and lets the workflows that own
+# that job do it. `/now` comments `/oc`, which stops at an open pull request
+# (ADR 0066); `/task` is labelled `ready-for-agent`, and the implementer merges
+# that one when its checks are green (ADR 0120). Plain text is answered by the
+# one model call in the bridge, with no tools and no repository.
 #
-#   - `schedule` every five minutes is the door: `getUpdates` with an offset kept
-#     in Postgres, so a message becomes an issue within one interval. GitHub's
-#     `schedule` is best-effort and can land minutes late; that is affordable
-#     because the offset makes a late run process a batch instead of missing one.
-#   - `workflow_dispatch` exists so the owner (or the pg_cron dispatcher that
-#     already wakes the planner) can ask for a digest immediately.
-#   - `workflow_run` is what makes the daily summary *not* a clock. The planner
-#     and the implementer finish whenever they finish, so their completion is the
-#     trigger, and a late run can never cost the day its summary (ADR 0121).
+# Why a webhook now: polling paid its interval whether or not anybody wrote
+# anything - five minutes of latency and 288 runs a day. The owner asked for
+# seconds, so the door is the function and the workflow is only woken when there
+# is something to do. Vercel is still untouched; the endpoint is Supabase
+# (ADR 0122).
 #
-# This is a dispatcher, not an agent: it files an issue and lets the workflows
-# that own the work do it. `/now` comments `/oc`, which stops at an open pull
-# request (ADR 0066); `/task` is labelled `ready-for-agent`, and the implementer
-# merges that one when its checks are green (ADR 0120).
-#
-# Plain text is answered, not filed. The answer is the bridge's only model call
-# (`OPENCODE_API_KEY`, DeepSeek V4.1 Flash, no tools, no repository), so a
-# sentence that is not a task never becomes an issue.
-#
-# Why not a Vercel webhook: it needs a public endpoint, and this project's Hobby
-# account has already exceeded its Fluid Active CPU cap once
-# (docs/vercel-usage.md). A public repository's Actions minutes are free, so the
-# poll costs nothing that is metered.
+# Triggers:
+#   - `push` to `supabase/functions/**` deploys the function, writes its secrets
+#     and points Telegram at it. That is the only setup step, and it is
+#     idempotent: `setWebhook` on the same URL and secret is a no-op.
+#   - `workflow_dispatch` is what the function calls (through the Vault PAT), and
+#     what the owner can run by hand.
+#   - `schedule` every fifteen minutes is the dead-man's switch: it drains
+#     messages the function stored but could not dispatch, and sends due
+#     reminders. Not the latency mechanism - the backstop.
+#   - `workflow_run` on completion is what makes the daily summary a reaction
+#     instead of a clock; the planner and the implementer finish when they finish.
 #
 # Setup (repository secrets):
-#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — the bot and the one chat allowed to use it
-#   OPENCODE_API_KEY                    — already present for the agent workflows
-#   SUPABASE_SERVICE_ROLE_KEY           — already present for the other workflows
-#   SUPABASE_URL                        — optional; SUPABASE_PROJECT_REF is used when absent
-#
-# The chat allowlist is enforced in the script, not here: a run that receives an
-# update from any other chat records nothing and answers nothing.
+#   TELEGRAM_BOT_TOKEN        — BotFather
+#   TELEGRAM_CHAT_ID          — the one chat allowed to use the bot
+#   TELEGRAM_WEBHOOK_SECRET   — any long random string; verified per request
+#   OPENCODE_API_KEY          — already present for the agent workflows
+#   SUPABASE_ACCESS_TOKEN     — already present; deploys the function
+#   SUPABASE_PROJECT_REF      — already present
+#   SUPABASE_SERVICE_ROLE_KEY — already present
+#   SUPABASE_URL              — optional; derived from SUPABASE_PROJECT_REF
 
 name: 'Telegram Bridge'
 
 on:
   schedule:
-    # Every five minutes. The offset in Postgres makes overlapping or late runs
-    # harmless: an update is claimed once.
-    - cron: '*/5 * * * *'
+    # Backstop only: drains stored-but-undispatched messages and sends due
+    # reminders. The webhook is the fast path.
+    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       mode:
         description: 'What to do in this run'
         type: choice
-        options: [poll, remind, digest-planner, digest-implementer]
-        default: poll
+        options: [drain, remind, digest-planner, digest-implementer]
+        default: drain
   workflow_run:
     workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
     types: [completed]
+  push:
+    branches: [main]
+    paths: ['supabase/functions/telegram/**']
 
 permissions:
   contents: read
@@ -60,34 +63,63 @@ permissions:
   pull-requests: read
   actions: read
 
-# One bridge at a time. `cancel-in-progress: false` because a cancelled poll
-# could consume an update without answering it.
+# One bridge at a time: two runs draining the same rows would fight over the
+# claim, and a cancelled run could leave a message claimed but unanswered.
 concurrency:
   group: telegram-bridge
   cancel-in-progress: false
 
 jobs:
-  bridge:
-    name: Poll and remind
-    if: github.event_name != 'workflow_run'
+  deploy:
+    name: Deploy the webhook
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Deliver due reminders
-        if: inputs.mode == 'remind' || inputs.mode == '' || inputs.mode == 'poll'
+      - name: Write the function's secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          npx --yes supabase@latest secrets set \
+            "TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET" \
+            "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" \
+            --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy the function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        # --no-verify-jwt: Telegram sends no Supabase JWT. The function verifies
+        # Telegram's own secret header instead, and answers 401 without it.
+        run: npx --yes supabase@latest functions deploy telegram --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
+      - name: Point Telegram at it
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node scripts/telegram-bridge.mjs remind
+        run: |
+          curl --fail --silent --show-error \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
+            --data-urlencode "url=https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/telegram" \
+            --data-urlencode "secret_token=${TELEGRAM_WEBHOOK_SECRET}" \
+            --data-urlencode 'allowed_updates=["message"]'
 
-      - name: Read Telegram and file the work
-        if: inputs.mode == 'poll' || inputs.mode == ''
+  bridge:
+    name: Drain and remind
+    if: github.event_name != 'workflow_run' && github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Handle what the webhook stored
+        if: inputs.mode == 'drain' || inputs.mode == ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -97,7 +129,18 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node scripts/telegram-bridge.mjs poll
+        run: node scripts/telegram-bridge.mjs drain
+
+      - name: Deliver due reminders
+        if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remind'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/telegram-bridge.mjs remind
 
       - name: Digest on demand — planner
         if: inputs.mode == 'digest-planner'
