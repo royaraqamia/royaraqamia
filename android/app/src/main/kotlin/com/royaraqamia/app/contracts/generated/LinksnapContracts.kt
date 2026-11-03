@@ -119,3 +119,15 @@ data class LinksnapUnlockRequest(
 data class LinksnapUnlockResponse(
     val originalUrl: String,
 )
+
+@Serializable
+data class LinksnapAvailabilityResponse(
+    val availability: LinksnapAvailabilityResponseAvailability,
+)
+
+@Serializable
+data class LinksnapAvailabilityResponseAvailability(
+    val code: String,
+    val available: Boolean,
+    val error: String? = null,
+)

@@ -133,6 +133,7 @@ export const CONTRACTS = [
       'LinksnapDeleteWriteSchema',
       'LinksnapUnlockRequestSchema',
       'LinksnapUnlockResponseSchema',
+      'LinksnapAvailabilityResponseSchema',
     ],
   },
   // The app's own failure report (#667): the body an installed APK sends when it

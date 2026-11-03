@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { test, expect, type Page } from '@playwright/test';
 
+import { signIn } from './sign-in';
+
 const ROOT = process.cwd();
 const GATE = join(ROOT, 'docs', 'mobile', 'visual-gate.json');
 
@@ -163,8 +165,27 @@ async function measure(page: Page, elements: Measured[]) {
  * so a state with no routine fails by name instead of silently recording the page
  * at rest under another state's name.
  */
-const PREPARE: Record<string, (page: Page, spec: { name: string }) => Promise<void>> = {
-  'at-rest': async () => {},
+const PREPARE: Record<
+  string,
+  (page: Page, visit: (origin?: string) => Promise<void>) => Promise<void>
+> = {
+  'at-rest': async (_page, visit) => {
+    await visit();
+  },
+  // The signed-in shortener: the same route with a session behind it, so the
+  // custom code and password blocks are drawn. The account is the e2e user the
+  // other specs sign in with; the capture is a recording, not a write.
+  'signed-in': async (page, visit) => {
+    // The cookie is set for the site's own host (`NEXT_PUBLIC_SITE_URL`), so the
+    // sign-in and the navigation must share it: a `127.0.0.1` login leaves the
+    // session on a host the page never asks for.
+    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
+    await signIn(page.context(), baseURL);
+    await visit(baseURL);
+    // The session lands after the first paint, and the state is the signed-in form
+    // or nothing: waiting for its first field is what makes the recording that state.
+    await page.locator('[data-visual="custom-label"]').waitFor({ timeout: 20_000 });
+  },
 };
 
 test.describe('the visual gate', () => {
@@ -191,25 +212,49 @@ test.describe('the visual gate', () => {
 
         await page.setViewportSize(VIEWPORT);
         await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-        await page.goto(surface.web.route, { waitUntil: 'networkidle' });
 
-        // The measurement is only the same measurement if the faces are the ones
-        // both clients ship; a fallback font moves every box it draws.
-        await page.evaluate(() => document.fonts.ready);
-        await expect(page.locator('body')).toBeVisible();
-
-        // Motion and a blinking caret would make two recordings of one page differ.
-        await page.addStyleTag({
-          content:
-            '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
-        });
+        // Reaching the state is the routine's job, navigation included, so a state
+        // that needs a session can sign in before the page is drawn.
+        //
+        // The wait is the capture region, not `networkidle`: this page holds a
+        // development socket open, so `networkidle` settles long after the paint -
+        // or never - and a state that arrives once the session lands was being
+        // measured as the guest one.
+        const regionSelector = spec.capture
+          ? elements.find((element) => element.name === spec.capture)?.selector
+          : null;
+        const visit = async (origin?: string) => {
+          await page.goto(
+            origin ? new URL(surface.web.route, origin).toString() : surface.web.route,
+            {
+              waitUntil: 'domcontentloaded',
+            }
+          );
+          if (regionSelector) {
+            await page.locator(regionSelector).first().waitFor({ timeout: 30_000 });
+          }
+          // The card enters with a scale animation (`initial: scale(0.95)`), so the
+          // first frame after it exists is a box five percent too small. Waiting for
+          // the frame clock to settle is what makes the box the design's own size.
+          await page.waitForTimeout(600);
+          // The measurement is only the same measurement if the faces are the ones
+          // both clients ship; a fallback font moves every box it draws.
+          await page.evaluate(() => document.fonts.ready);
+          await expect(page.locator('body')).toBeVisible();
+        };
 
         // The state is reached the same way a person reaches it: the routine is
         // named by the contract, so a state nobody can record fails here rather
         // than recording the page at rest under another name.
         const prepare = PREPARE[state.name];
         if (!prepare) throw new Error(`no routine records the state "${state.name}"`);
-        await prepare(page, spec);
+        await prepare(page, visit);
+
+        // Motion and a blinking caret would make two recordings of one page differ.
+        await page.addStyleTag({
+          content:
+            '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
+        });
 
         const measured = await measure(page, elements);
         for (const element of elements) {
