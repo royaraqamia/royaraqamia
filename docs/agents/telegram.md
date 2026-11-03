@@ -71,6 +71,10 @@ signed-in user behind a chat, so an anon key reads nothing.
 
 ## Troubleshooting
 
+- **No reply within ten minutes.** Check that the `telegram-bridge-poll` pg_cron job exists and is
+  running (`select * from cron.job where jobname = 'telegram-bridge-poll'`). GitHub's own `schedule`
+  is a backstop only — on 2026-11-03 it produced no run for 25 minutes while dispatches ran on time,
+  which is why the wake-up is pg_cron calling the Actions dispatch API (ADR 0032).
 - **The bot stops answering.** Check the last `Telegram Bridge` run. A 401 means a rotated token; a
   400 from Telegram usually means a `chat_id` that is not the chat writing.
 - **A message was processed twice.** It cannot be: `update_id` is unique and the row is written
