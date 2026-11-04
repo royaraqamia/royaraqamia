@@ -218,6 +218,22 @@ class ApiClient(
         publicAfter("POST", path, body, serializer)
 
     /**
+     * One public write, answered as its raw body (#929).
+     *
+     * The lead forms are public and anonymous: the Outbox must be able to replay
+     * one with no session at all, and it reads the reference code out of the body
+     * itself rather than turning a delivered lead into a retried one because a
+     * field the app no longer expects appeared in the answer.
+     */
+    suspend fun sendPublic(method: String, path: String, body: String? = null): ApiResult<String> =
+        withContext(Dispatchers.IO) {
+            when (val answer = publicExchange(method, path, body)) {
+                is ApiResult.Success -> ApiResult.Success(answer.value.body)
+                is ApiResult.Failure -> answer
+            }
+        }
+
+    /**
      * The public exchange: no token, no retry, the same status handling and decode.
      *
      * A `426` is published to the update channel exactly as the bearer path does,
@@ -230,6 +246,19 @@ class ApiClient(
         body: String?,
         serializer: KSerializer<T>,
     ): ApiResult<T> =
+        withContext(Dispatchers.IO) {
+            when (val answer = publicExchange(method, path, body)) {
+                is ApiResult.Success -> ContractCodec.decode(answer.value.body, serializer)
+                is ApiResult.Failure -> answer
+            }
+        }
+
+    /** The public exchange itself: no token, no retry, the same status split. */
+    private suspend fun publicExchange(
+        method: String,
+        path: String,
+        body: String?,
+    ): ApiResult<HttpResponse> =
         withContext(Dispatchers.IO) {
             val answered =
                 try {
@@ -256,7 +285,7 @@ class ApiClient(
                 )
             }
 
-            ContractCodec.decode(answered.body, serializer)
+            ApiResult.Success(answered)
         }
 
     /** [getPublic] with the serializer taken from the type the caller asked for. */

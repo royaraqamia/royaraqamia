@@ -47,6 +47,7 @@ import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.linksnap.LinksnapScreen
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
+import com.royaraqamia.app.leads.LeadsScreen
 import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
@@ -342,6 +343,17 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // The three public lead forms (#929): the page's own
+                            // steps, validation and confirmations, with an
+                            // anonymous Outbox. Ported and off until the visual
+                            // gate passes (ADR-0117), so the document still
+                            // opens on top of it.
+                            "/training/apply", "/request-project", "/hire" ->
+                                LeadsScreen(
+                                    route = Routes.normalize(current),
+                                    repository = graph.leads,
+                                    onCopy = ::copyToClipboard,
+                                )
                             // The community feed (#658): public like the page, so
                             // a guest reads it, and the last page read is painted
                             // with the banner that says it is one when the radio is
@@ -442,8 +454,11 @@ class ShellActivity : ComponentActivity() {
                         // The menu is drawn before the queue drains, so it is
                         // right on the first open rather than after a sync.
                         refreshHiddenRoutes()
-                        graph.drainOutbox()
                     }
+                    // The lead queue is anonymous, so a guest's unsent lead drains
+                    // too; the owned queues inside return early when there is no
+                    // session to send with (#929).
+                    graph.drainOutbox()
                 }
 
                 // A screen that reached a `426` publishes the floor here (#503),

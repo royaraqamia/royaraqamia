@@ -221,6 +221,23 @@ export const CONTRACTS = [
       'ChatAttachmentUrlResponseSchema',
     ],
   },
+  // The lead forms (#929): the open cohorts the training form picks from and
+  // the envelope the three submit routes answer. Both are the site's own reads
+  // and writes, so the app decodes them through generated types rather than
+  // retyping `referenceCode` in Kotlin. The submit bodies stay hand-built in
+  // `LeadsWriteTransport` because their Zod schemas carry refinements the
+  // generator does not model as a Kotlin type; the field names it writes are
+  // pinned by the app's own suite.
+  {
+    module: 'shared/contracts/training',
+    file: 'TrainingCohortsContracts.kt',
+    schemas: ['TrainingCohortsResponseSchema'],
+  },
+  {
+    module: 'shared/contracts/leads',
+    file: 'LeadsContracts.kt',
+    schemas: ['LeadSubmitResponseSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

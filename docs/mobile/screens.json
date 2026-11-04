@@ -179,8 +179,9 @@
     },
     {
       "surface": "leads",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/leads/LeadsScreen.kt",
+      "reason": "The three lead forms, their validation and their anonymous Outbox are ported (#929), and switched off until they are the pages pixel for pixel: the shell hands the routes to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "consultation",

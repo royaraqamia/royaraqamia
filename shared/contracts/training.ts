@@ -98,6 +98,28 @@ export interface TrainingCohort {
   updated_at: string;
 }
 
+/**
+ * The open-cohort list `GET /api/training/cohorts` answers. The response is a
+ * contract because the app's apply form picks a cohort from it (#929) — the
+ * shape the site's `getOpenTrainingCohorts` reads, emitted to Kotlin from here
+ * rather than retyped in the app.
+ */
+export const TrainingCohortSchema = z.object({
+  id: z.string(),
+  course_slug: z.string(),
+  label: z.string(),
+  starts_at: z.string(),
+  capacity: z.number().int(),
+  seats_taken: z.number().int(),
+  status: z.enum(TRAINING_COHORT_STATUSES),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const TrainingCohortsResponseSchema = z.object({
+  cohorts: z.array(TrainingCohortSchema),
+});
+
 /** Seats still available in a Cohort. Never negative, even if a counter drifts. */
 export function trainingCohortSeatsLeft(cohort: Pick<TrainingCohort, 'capacity' | 'seats_taken'>) {
   return Math.max(cohort.capacity - cohort.seats_taken, 0);
