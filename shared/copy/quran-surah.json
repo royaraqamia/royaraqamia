@@ -1,0 +1,22 @@
+{
+  "surface": "quran",
+  "component": "quran-surah",
+  "web": {
+    "file": "frontend/ui/quran/quran-surah-copy.ts",
+    "export": "QURAN_SURAH_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranSurahCopy.kt",
+    "object": "QuranSurahCopy"
+  },
+  "strings": {
+    "revelationMeccan": "مكِّيَّة",
+    "revelationMedinan": "مدنيَّة",
+    "ayahCount": "آيات",
+    "boundaryPage": "صفحة",
+    "boundaryJuz": "الجزء",
+    "boundaryHizb": "الحزب",
+    "sajdaObligatory": "سجدة واجبة",
+    "sajdaRecommended": "سجدة مستحبة"
+  }
+}

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 
 import { loadSearchCorpus } from '@/frontend/api/quran/search';
+import { QURAN_INDEX_COPY } from './quran-index-copy';
 import { SurahIndexList } from './surah-index-list';
 import {
   QURAN_SEARCH_MIN_QUERY,
@@ -21,10 +22,51 @@ import type { SurahSummary } from '@/shared/contracts/quran';
 /** What the field is doing about the index, which is a fact the reader is owed. */
 type CorpusState = 'idle' | 'loading' | 'ready' | 'failed';
 
+export interface QuranSearchCopy {
+  placeholder: string;
+  label: string;
+  cancel: string;
+  loading: string;
+  failed: string;
+  unavailable: string;
+  count: string;
+  noResults: string;
+  showMore: string;
+  resultsLabel: string;
+  retry: string;
+  surahLabel: string;
+  ayahLabel: string;
+  emptyList: string;
+  revelationMeccan: string;
+  revelationMedinan: string;
+  ayahCount: string;
+}
+
+const DEFAULT_COPY: QuranSearchCopy = {
+  placeholder: QURAN_INDEX_COPY.searchPlaceholder,
+  label: QURAN_INDEX_COPY.searchLabel,
+  cancel: QURAN_INDEX_COPY.cancelSearch,
+  loading: QURAN_INDEX_COPY.searchLoading,
+  failed: QURAN_INDEX_COPY.searchFailed,
+  unavailable: QURAN_INDEX_COPY.searchUnavailable,
+  count: QURAN_INDEX_COPY.searchCount,
+  noResults: QURAN_INDEX_COPY.searchNoResults,
+  showMore: QURAN_INDEX_COPY.searchShowMore,
+  resultsLabel: QURAN_INDEX_COPY.searchResultsLabel,
+  retry: QURAN_INDEX_COPY.searchRetry,
+  surahLabel: QURAN_INDEX_COPY.surahLabel,
+  ayahLabel: QURAN_INDEX_COPY.ayahLabel,
+  emptyList: QURAN_INDEX_COPY.emptyList,
+  revelationMeccan: QURAN_INDEX_COPY.revelationMeccan,
+  revelationMedinan: QURAN_INDEX_COPY.revelationMedinan,
+  ayahCount: QURAN_INDEX_COPY.ayahCount,
+};
+
 interface QuranSearchProps {
   surahs: readonly SurahSummary[];
   /** Null when this build has no search asset: the name filter still answers. */
   search: QuranSearchRef | null;
+  copy?: QuranSearchCopy;
 }
 
 /**
@@ -45,7 +87,7 @@ interface QuranSearchProps {
  * load, never «لا نتائج»: a reader must not be told the text does not contain what
  * it could not read.
  */
-export function QuranSearch({ surahs, search }: QuranSearchProps) {
+export function QuranSearch({ surahs, search, copy = DEFAULT_COPY }: QuranSearchProps) {
   const [query, setQuery] = useState('');
   const [corpusState, setCorpusState] = useState<CorpusState>('idle');
   const [corpus, setCorpus] = useState<Awaited<ReturnType<typeof loadSearchCorpus>> | null>(null);
@@ -124,11 +166,13 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
 
   const status = (() => {
     if (!longEnough) return '';
-    if (!search) return 'البحث في الآيات غير متاح حاليًا.';
-    if (corpusState === 'loading') return 'جاري البحث في الآيات…';
-    if (corpusState === 'failed') return 'تعذّر تحميل البحث في الآيات.';
+    if (!search) return copy.unavailable;
+    if (corpusState === 'loading') return copy.loading;
+    if (corpusState === 'failed') return copy.failed;
     if (corpusState === 'ready') {
-      return `${matchedSurahs.length} سورة، و${total} آية مطابقة`;
+      return copy.count
+        .replace('{surahs}', String(matchedSurahs.length))
+        .replace('{ayahs}', String(total));
     }
     return '';
   })();
@@ -142,6 +186,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
         />
         <input
           type="text"
+          name="q"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -149,8 +194,9 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
             ensureCorpus();
           }}
           onFocus={ensureCorpus}
-          placeholder="ابحث عن سُورة أو آية"
-          aria-label="ابحث في القرآن"
+          data-visual="quran-search"
+          placeholder={copy.placeholder}
+          aria-label={copy.label}
           autoComplete="off"
           // Arabic is the input, so the keyboard should be Arabic; the text is not
           // a name, so no browser autofill.
@@ -166,7 +212,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
               setShown(QURAN_SEARCH_PAGE_SIZE);
             }}
             className="absolute inset-e-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
-            aria-label="إلغاء البحث"
+            aria-label={copy.cancel}
           >
             <X className="size-3" />
           </button>
@@ -180,23 +226,31 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
       {longEnough && corpusState === 'failed' ? (
         <p className="rounded-2xl border border-border/60 bg-card/60 p-4 text-center text-sm text-muted-foreground">
           <button type="button" onClick={ensureCorpus} className="quran-search-retry">
-            إعادة المحاولة
+            {copy.retry}
           </button>
         </p>
       ) : null}
 
-      <SurahIndexList surahs={matchedSurahs} />
+      <SurahIndexList
+        surahs={matchedSurahs}
+        copy={{
+          emptyList: copy.emptyList,
+          revelationMeccan: copy.revelationMeccan,
+          revelationMedinan: copy.revelationMedinan,
+          ayahCount: copy.ayahCount,
+        }}
+      />
 
       {groups.length > 0 ? (
         <section
-          aria-label="نتائج البحث في الآيات"
+          aria-label={copy.resultsLabel}
           className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/40 p-4"
         >
           {groups.map((group) => (
             <div key={group.surah} className="flex flex-col gap-2">
               <p className="text-xs font-bold text-muted-foreground">
-                سورة {nameOf(group.surah)} ·{' '}
-                <span className="font-heading">{group.hits.length}</span> آية
+                {copy.surahLabel} {nameOf(group.surah)} ·{' '}
+                <span className="font-heading">{group.hits.length}</span> {copy.ayahCount}
               </p>
               <ul className="flex flex-col gap-2">
                 {group.hits.map((hit) => (
@@ -206,7 +260,7 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
                       className="flex flex-col gap-1 rounded-xl border border-border/50 bg-background/60 px-3 py-2.5 transition-safe hover:border-border/90 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                     >
                       <span className="text-[11px] text-muted-foreground">
-                        الآية <span className="font-heading">{hit.ayah}</span>
+                        {copy.ayahLabel} <span className="font-heading">{hit.ayah}</span>
                       </span>
                       <span className="font-quran text-xl leading-[2] text-foreground">
                         {hit.body}
@@ -224,14 +278,14 @@ export function QuranSearch({ surahs, search }: QuranSearchProps) {
               onClick={() => setShown((current) => current + QURAN_SEARCH_PAGE_SIZE)}
               className="self-center rounded-full border border-border/60 px-4 py-1.5 text-xs font-bold text-muted-foreground transition-safe hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
             >
-              عرض المزيد
+              {copy.showMore}
             </button>
           ) : null}
         </section>
       ) : null}
 
       {longEnough && corpusState === 'ready' && total === 0 ? (
-        <p className="text-center text-sm text-muted-foreground">لا نتائج في الآيات.</p>
+        <p className="text-center text-sm text-muted-foreground">{copy.noResults}</p>
       ) : null}
     </div>
   );

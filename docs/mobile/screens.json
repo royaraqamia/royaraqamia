@@ -54,8 +54,8 @@
     },
     {
       "surface": "quran",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranIndexScreen.kt",
+      "enabled": true
     },
     {
       "surface": "notes",
@@ -64,8 +64,8 @@
     },
     {
       "surface": "quran-surah",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranSurahScreen.kt",
+      "enabled": true
     },
     {
       "surface": "athkar",

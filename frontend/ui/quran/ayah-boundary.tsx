@@ -1,3 +1,4 @@
+import { QURAN_SURAH_COPY } from './quran-surah-copy';
 import type { QuranAyahMarks } from '@/shared/contracts/quran-pages';
 
 /**
@@ -12,10 +13,25 @@ import type { QuranAyahMarks } from '@/shared/contracts/quran-pages';
  * A sajdah is the one mark that changes what a reader does, so it says whether the
  * prostration is owed or offered rather than naming it ambiguously.
  */
-export function AyahBoundary({ marks }: { marks: QuranAyahMarks }) {
+export function AyahBoundary({
+  marks,
+  pageLabel = QURAN_SURAH_COPY.boundaryPage,
+  juzLabel = QURAN_SURAH_COPY.boundaryJuz,
+  hizbLabel = QURAN_SURAH_COPY.boundaryHizb,
+  sajdaObligatory = QURAN_SURAH_COPY.sajdaObligatory,
+  sajdaRecommended = QURAN_SURAH_COPY.sajdaRecommended,
+}: {
+  marks: QuranAyahMarks;
+  pageLabel?: string;
+  juzLabel?: string;
+  hizbLabel?: string;
+  sajdaObligatory?: string;
+  sajdaRecommended?: string;
+}) {
   return (
     <div
       className="ayah-boundary"
+      data-visual="quran-boundary"
       data-ayah-page={marks.page}
       data-ayah-juz={marks.juz}
       data-ayah-hizb={marks.hizb}
@@ -23,22 +39,22 @@ export function AyahBoundary({ marks }: { marks: QuranAyahMarks }) {
     >
       {marks.page ? (
         <span className="ayah-boundary-page">
-          صفحة <span className="ayah-boundary-number">{marks.page}</span>
+          {pageLabel} <span className="ayah-boundary-number">{marks.page}</span>
         </span>
       ) : null}
       {marks.juz ? (
         <span>
-          الجزء <span className="ayah-boundary-number">{marks.juz}</span>
+          {juzLabel} <span className="ayah-boundary-number">{marks.juz}</span>
         </span>
       ) : null}
       {marks.hizb ? (
         <span>
-          الحزب <span className="ayah-boundary-number">{marks.hizb}</span>
+          {hizbLabel} <span className="ayah-boundary-number">{marks.hizb}</span>
         </span>
       ) : null}
       {marks.sajda ? (
         <span className="ayah-boundary-sajda">
-          {marks.sajda === 'obligatory' ? 'سجدة واجبة' : 'سجدة مستحبة'}
+          {marks.sajda === 'obligatory' ? sajdaObligatory : sajdaRecommended}
         </span>
       ) : null}
     </div>

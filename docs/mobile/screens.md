@@ -18,9 +18,9 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` (off) | Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | `BlogpressScreen.kt` (off) | The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page. |
 | `blogpress-editor` | `/blogpress/editor/[id]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
-| `quran` | `/quran` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
+| `quran` | `/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
-| `quran-surah` | `/quran/[surah]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
+| `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948); the profile card (#946) and the allowance card (#947) are still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` (off) | The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |

@@ -1,0 +1,122 @@
+{
+  "surface": "quran",
+  "route": "/quran",
+  "notes": "The index at rest: the title, the search field, the first sura row and its number, name and meta, and the page-jump card. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes. `capture` is the first row, because it is the region both clients draw identically; the search field's glyph and the page's chrome are covered by the layout numbers. Widths of the name and meta are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "first-row",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='quran-title'] h1"
+          },
+          "app": {
+            "tag": "quran-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "search",
+          "web": {
+            "selector": "[data-visual='quran-search']"
+          },
+          "app": {
+            "tag": "quran-search"
+          },
+          "properties": [
+            "top",
+            "width",
+            "height",
+            "radius",
+            "fontSize",
+            "paddingLeft",
+            "paddingRight"
+          ]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='quran-list']"
+          },
+          "app": {
+            "tag": "quran-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "first-row",
+          "web": {
+            "selector": "[data-visual='quran-row-0']"
+          },
+          "app": {
+            "tag": "quran-row-0"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "first-row-number",
+          "web": {
+            "selector": "[data-visual='quran-row-number-0']"
+          },
+          "app": {
+            "tag": "quran-row-number-0"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-row-name",
+          "web": {
+            "selector": "[data-visual='quran-row-name-0']"
+          },
+          "app": {
+            "tag": "quran-row-name-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-row-meta",
+          "web": {
+            "selector": "[data-visual='quran-row-meta-0']"
+          },
+          "app": {
+            "tag": "quran-row-meta-0"
+          },
+          "properties": ["height", "fontSize"]
+        },
+        {
+          "name": "page-jump",
+          "web": {
+            "selector": "[data-visual='quran-page-jump']"
+          },
+          "app": {
+            "tag": "quran-page-jump"
+          },
+          "properties": ["width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "page-jump-field",
+          "web": {
+            "selector": "[data-visual='quran-page-jump-field']"
+          },
+          "app": {
+            "tag": "quran-page-jump-field"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "page-jump-submit",
+          "web": {
+            "selector": "[data-visual='quran-page-jump-submit']"
+          },
+          "app": {
+            "tag": "quran-page-jump-submit"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    }
+  ]
+}

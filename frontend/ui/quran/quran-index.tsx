@@ -1,4 +1,5 @@
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { QURAN_INDEX_COPY } from './quran-index-copy';
 import { PageJump } from './page-jump';
 import { ReadingPanel } from './reading-panel';
 import { QuranSearch } from './search';
@@ -15,6 +16,10 @@ import type { QuranSearchRef } from '@/shared/contracts/quran-search';
  *
  * `ReadingPanel` shows a returning reader where they stopped; nothing else here
  * depends on it.
+ *
+ * The words come from `shared/copy/quran-index.json` and are handed to the
+ * children as props, so the native screen draws the same strings from the same
+ * generated source (ADR-0098).
  */
 export function QuranIndexPage({
   index,
@@ -30,16 +35,52 @@ export function QuranIndexPage({
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:py-14">
       <header className="flex flex-col items-center gap-3 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>القرآن الكريم</SectionTitleHighlight>
-        </SectionTitle>
+        <div data-visual="quran-title">
+          <SectionTitle as="h1">
+            <SectionTitleHighlight>{QURAN_INDEX_COPY.pageTitle}</SectionTitleHighlight>
+          </SectionTitle>
+        </div>
       </header>
 
-      <ReadingPanel names={index.surahs.map((surah) => surah.name)} />
+      <ReadingPanel
+        names={index.surahs.map((surah) => surah.name)}
+        resumeLabel={QURAN_INDEX_COPY.resumeReading}
+        ayahLabel={QURAN_INDEX_COPY.resumeAyah}
+      />
 
-      <QuranSearch surahs={index.surahs} search={search} />
+      <QuranSearch
+        surahs={index.surahs}
+        search={search}
+        copy={{
+          placeholder: QURAN_INDEX_COPY.searchPlaceholder,
+          label: QURAN_INDEX_COPY.searchLabel,
+          cancel: QURAN_INDEX_COPY.cancelSearch,
+          loading: QURAN_INDEX_COPY.searchLoading,
+          failed: QURAN_INDEX_COPY.searchFailed,
+          unavailable: QURAN_INDEX_COPY.searchUnavailable,
+          count: QURAN_INDEX_COPY.searchCount,
+          noResults: QURAN_INDEX_COPY.searchNoResults,
+          showMore: QURAN_INDEX_COPY.searchShowMore,
+          retry: QURAN_INDEX_COPY.searchRetry,
+          resultsLabel: QURAN_INDEX_COPY.searchResultsLabel,
+          surahLabel: QURAN_INDEX_COPY.surahLabel,
+          ayahLabel: QURAN_INDEX_COPY.ayahLabel,
+          emptyList: QURAN_INDEX_COPY.emptyList,
+          revelationMeccan: QURAN_INDEX_COPY.revelationMeccan,
+          revelationMedinan: QURAN_INDEX_COPY.revelationMedinan,
+          ayahCount: QURAN_INDEX_COPY.ayahCount,
+        }}
+      />
 
-      {pages.length > 0 ? <PageJump pages={pages} /> : null}
+      {pages.length > 0 ? (
+        <PageJump
+          pages={pages}
+          label={QURAN_INDEX_COPY.pageJumpLabel}
+          placeholder={QURAN_INDEX_COPY.pageJumpPlaceholder}
+          submit={QURAN_INDEX_COPY.pageJumpSubmit}
+          error={QURAN_INDEX_COPY.pageJumpError}
+        />
+      ) : null}
     </div>
   );
 }

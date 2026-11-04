@@ -88,4 +88,8 @@
     -->
     <string name="quran_channel_name">تلاوة القرآن</string>
     <string name="quran_channel_description">مُشغِّل التِّلاوة وأدواته، يعمل والتِّطبيق في الخلفية.</string>
+
+    <!-- The reader's own failure face (#955): the vendored files are in the APK,
+         so this is a build that lost them, not a network that went away. -->
+    <string name="quran_load_failed">تعذّر فتح القرآن.</string>
 </resources>

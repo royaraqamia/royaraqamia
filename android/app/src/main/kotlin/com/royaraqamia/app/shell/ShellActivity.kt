@@ -51,6 +51,9 @@ import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.profile.ProfileRoutes
+import com.royaraqamia.app.quran.QuranIndexRoute
+import com.royaraqamia.app.quran.QuranRoutes
+import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.sync.SyncScheduler
@@ -248,6 +251,17 @@ class ShellActivity : ComponentActivity() {
                                     onOpenCategories = { openRoute("/spendtrack/categories") },
                                 )
                             "/account/faq" -> AccountFaqScreen()
+                            // The Quran reader (#955): the sura index, the
+                            // reader's last place, and the vendored text. The
+                            // surah itself is the dynamic route below.
+                            "/quran" ->
+                                QuranIndexRoute(
+                                    repository = graph.quran,
+                                    onOpenSurah = { surah -> openRoute(QuranRoutes.routeOf(surah)) },
+                                    onOpenAyah = { surah, ayah ->
+                                        openRoute(QuranRoutes.routeOf(surah, ayah))
+                                    },
+                                )
                             "/account/plan" ->
                                 PlanScreen(
                                     repository = graph.usage,
@@ -352,7 +366,19 @@ class ShellActivity : ComponentActivity() {
                             else -> {
                                 val conversationId = ChatRoutes.idOf(current)
                                 val unlock = LinksnapRoutes.codeOf(current)
+                                val quranSurah = QuranRoutes.surahOf(current)
                                 when {
+                                    quranSurah != null ->
+                                        QuranSurahRoute(
+                                            repository = graph.quran,
+                                            number = quranSurah,
+                                            targetAyah = QuranRoutes.ayahOf(current),
+                                            onSavePosition = { ayah ->
+                                                lifecycleScope.launch(Dispatchers.IO) {
+                                                    graph.quran.savePosition(quranSurah, ayah)
+                                                }
+                                            },
+                                        )
                                     ChatRoutes.isChatsTab(current) ->
                                         ChatsScreen(
                                             repository = graph.chats,

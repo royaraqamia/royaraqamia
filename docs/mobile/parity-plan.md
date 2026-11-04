@@ -64,8 +64,8 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **linksnap** `/linksnap` — native
 - [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #952
 - [ ] **blogpress-editor** `/blogpress/editor/[id]` — todo · #954
-- [ ] **quran** `/quran` — todo · #955
-- [ ] **quran-surah** `/quran/[surah]` — todo · #955
+- [x] **quran** `/quran` — native · #955
+- [x] **quran-surah** `/quran/[surah]` — native · #955
 - [ ] **notes** `/notes` — todo
 
 ## Requests and bookings
@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 44 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 47 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [ ] `habit-list` on **habitflow** · #649
 - [ ] `sync-status-pill` on **habitflow** · #649
@@ -130,7 +130,9 @@ A component is finished when the surface that draws it is native: 44 ported comp
 - [ ] `account-news-private` on **account-news** · #950
 - [ ] `account-news-request` on **account-news** · #950
 - [ ] `blogpress-list` on **blogpress** · #952
+- [x] `quran-index` on **quran** · #955
+- [x] `quran-surah` on **quran** · #955
 
 ## Where this stands
 
-3 native · 35 to do · 1 blocked of 39 surfaces.
+5 native · 33 to do · 1 blocked of 39 surfaces.

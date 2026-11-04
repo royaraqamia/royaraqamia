@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { BookMarked, BookOpenCheck, X } from 'lucide-react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
+import { QURAN_INDEX_COPY } from './quran-index-copy';
 import { QuranSyncStatus } from './sync-status';
 
 interface ReadingPanelProps {
@@ -14,6 +15,10 @@ interface ReadingPanelProps {
    * second copy of it would be a second copy of the record.
    */
   names: readonly string[];
+  /** «أكمل القراءة», from `shared/copy/quran-index.json`. */
+  resumeLabel?: string;
+  /** «الآية», the word before the number. */
+  ayahLabel?: string;
 }
 
 /**
@@ -23,7 +28,11 @@ interface ReadingPanelProps {
  * (#495) and replaces it when the store answers, rather than rendering nothing
  * for the first frame.
  */
-export function ReadingPanel({ names }: ReadingPanelProps) {
+export function ReadingPanel({
+  names,
+  resumeLabel = QURAN_INDEX_COPY.resumeReading,
+  ayahLabel = QURAN_INDEX_COPY.resumeAyah,
+}: ReadingPanelProps) {
   const reader = useQuranReader();
   const { ready, readingPosition, bookmarks, removeBookmark } = reader;
   if (!readingPosition && bookmarks.length === 0) return null;
@@ -40,9 +49,9 @@ export function ReadingPanel({ names }: ReadingPanelProps) {
         >
           <BookOpenCheck aria-hidden="true" className="size-5 shrink-0 text-primary" />
           <span className="flex min-w-0 flex-col">
-            <span className="text-[11px] text-muted-foreground">أكمل القراءة</span>
+            <span className="text-[11px] text-muted-foreground">{resumeLabel}</span>
             <span className="truncate font-bold text-foreground">
-              {nameOf(readingPosition.surah)} · الآية{' '}
+              {nameOf(readingPosition.surah)} · {ayahLabel}{' '}
               <span className="font-heading">{readingPosition.ayah}</span>
             </span>
           </span>

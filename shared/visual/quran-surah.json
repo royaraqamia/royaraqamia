@@ -1,0 +1,64 @@
+{
+  "surface": "quran-surah",
+  "route": "/quran/108",
+  "notes": "One sura at rest: the header, the first two Ayah cards and the first Ayah's text and number. Surah 108 is the smallest complete sura and its first Ayah opens no page, juz or hizb, so the card is the reader's ordinary shape rather than a boundary's. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes. `capture` is the first card, because it is the region both clients draw identically; the raster proves the vendored face landed. The printed boundaries are the same component on both sides and are covered by the app's unit tests rather than this still frame.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "first-ayah",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='quran-surah-title'] h1"
+          },
+          "app": {
+            "tag": "quran-surah-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "meta",
+          "web": {
+            "selector": "[data-visual='quran-surah-meta']"
+          },
+          "app": {
+            "tag": "quran-surah-meta"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "first-card",
+          "web": {
+            "selector": "[data-ayah-card='1']"
+          },
+          "app": {
+            "tag": "quran-ayah-card-1"
+          },
+          "properties": ["top", "width", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "first-ayah",
+          "web": {
+            "selector": "[data-ayah='1']"
+          },
+          "app": {
+            "tag": "quran-ayah-1"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "first-marker",
+          "web": {
+            "selector": "[data-ayah-marker='1']"
+          },
+          "app": {
+            "tag": "quran-ayah-marker-1"
+          },
+          "properties": ["width", "height"]
+        }
+      ]
+    }
+  ]
+}

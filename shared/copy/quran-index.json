@@ -1,0 +1,38 @@
+{
+  "surface": "quran",
+  "component": "quran-index",
+  "web": {
+    "file": "frontend/ui/quran/quran-index-copy.ts",
+    "export": "QURAN_INDEX_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranIndexCopy.kt",
+    "object": "QuranIndexCopy"
+  },
+  "strings": {
+    "pageTitle": "القرآن الكريم",
+    "resumeReading": "أكمل القراءة",
+    "resumeAyah": "الآية",
+    "searchPlaceholder": "ابحث عن سُورة أو آية",
+    "searchLabel": "ابحث في القرآن",
+    "cancelSearch": "إلغاء البحث",
+    "searchLoading": "جاري البحث في الآيات…",
+    "searchFailed": "تعذّر تحميل البحث في الآيات.",
+    "searchUnavailable": "البحث في الآيات غير متاح حاليًا.",
+    "searchCount": "{surahs} سورة، و{ayahs} آية مطابقة",
+    "searchNoResults": "لا نتائج في الآيات.",
+    "searchShowMore": "عرض المزيد",
+    "searchResultsLabel": "نتائج البحث في الآيات",
+    "surahLabel": "سورة",
+    "ayahLabel": "الآية",
+    "emptyList": "لا توجد سُورة بهذا الاسم.",
+    "revelationMeccan": "مكِّيَّة",
+    "revelationMedinan": "مدنيَّة",
+    "ayahCount": "آيات",
+    "pageJumpLabel": "انتقل إلى صفحة",
+    "pageJumpPlaceholder": "1 – {max}",
+    "pageJumpSubmit": "انتقال",
+    "pageJumpError": "الصفحة من 1 إلى {max}.",
+    "searchRetry": "إعادة المحاولة"
+  }
+}
