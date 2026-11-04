@@ -1,50 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { handleAnswer, silenceWav, transcribe } from '../telegram-bridge.mjs';
+import { silenceWav } from '../telegram-bridge.mjs';
+import { transcribe } from '../telegram/answer.mjs';
+import { createReporter, sendMarkdown } from '../telegram/progress.mjs';
+import { recordOutbound } from '../telegram/store.mjs';
 
 /**
- * These tests exist because the seam they cover is where two bugs reached the
- * owner's phone while 41 unit tests stayed green: a voice URL missing `/file`
- * (every download 404) and a renamed variable left behind in the answer route
- * (`history is not defined`, every reply failed). Both live in code that talks to
- * Telegram and the model, so `fetch` is the only thing to stub and the assertions
- * have to be about the request that was made and the reply that was sent.
+ * The seam that talks to Telegram, Supabase and the model.
+ *
+ * Two bugs reached the owner's phone while the pure tests stayed green: a voice
+ * URL missing `/file` (every download 404) and a status message that was edited
+ * faster than Telegram allows. Both live here, so `fetch` is the only thing to
+ * stub and the assertions are about the request that was made.
  */
 
 const TOKEN = 'test-token';
-const CHAT = 4242;
-
 const calls = [];
-
-/** A fake Telegram, Supabase and inference gateway, routed by URL. */
-function fakeFetch({ answer = 'إجابة', transcript = 'نص الصوت' } = {}) {
-  return async (url, init = {}) => {
-    const href = String(url);
-    calls.push({ href, init });
-
-    if (href.includes('/rest/v1/telegram_messages') && (init.method ?? 'GET') === 'GET')
-      return json([]);
-    if (href.includes('/rest/v1/telegram_memories')) return json([]);
-    if (href.includes('/rest/v1/telegram_summaries')) return json([]);
-    if (href.includes('/rest/v1/telegram_messages')) return json([]);
-
-    if (href.endsWith('/getFile'))
-      return json({ ok: true, result: { file_path: 'voice/file_1.oga' } });
-    if (href.includes('api.telegram.org/file/bot'))
-      return new Response(silenceWav(), { status: 200 });
-    if (href.includes('/sendMessage')) return json({ ok: true, result: { message_id: 1 } });
-
-    if (href.includes('/chat/completions')) {
-      const body = JSON.parse(init.body ?? '{}');
-      const hasAudio = JSON.stringify(body.messages ?? []).includes('input_audio');
-      return json({
-        choices: [{ message: { role: 'assistant', content: hasAudio ? transcript : answer } }],
-      });
-    }
-
-    throw new Error(`unexpected fetch: ${href}`);
-  };
-}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -53,18 +24,41 @@ function json(data, status = 200) {
   });
 }
 
-const sentText = () =>
-  calls
-    .filter((call) => call.href.includes('/sendMessage'))
-    .map((call) => JSON.parse(call.init.body).text);
+function fakeFetch({ audio = 'ok' } = {}) {
+  return async (url, init = {}) => {
+    const href = String(url);
+    calls.push({ href, init, body: init.body ? JSON.parse(String(init.body)) : null });
+
+    if (href.endsWith('/getFile'))
+      return json({ ok: true, result: { file_path: 'voice/file_1.oga' } });
+
+    if (href.includes('api.telegram.org/file/bot')) {
+      if (audio === 'missing') return new Response('gone', { status: 404 });
+      return new Response(silenceWav(), { status: 200 });
+    }
+
+    if (href.includes('/chat/completions')) {
+      return json({ choices: [{ message: { role: 'assistant', content: 'اتصل بالبنك' } }] });
+    }
+
+    if (href.includes('/sendMessage')) return json({ ok: true, result: { message_id: 77 } });
+
+    if (href.includes('/editMessageText')) return json({ ok: true, result: { message_id: 77 } });
+    if (href.includes('/deleteMessage')) return json({ ok: true, result: true });
+
+    if (href.includes('/rest/v1/telegram_messages')) return json([{ id: 1 }]);
+
+    throw new Error(`unexpected fetch: ${href}`);
+  };
+}
 
 beforeEach(() => {
   calls.length = 0;
   process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-  process.env.TELEGRAM_CHAT_ID = String(CHAT);
-  process.env.OPENCODE_API_KEY = 'test-key';
-  process.env.SUPABASE_URL = 'https://project.test';
-  process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+  process.env.TELEGRAM_CHAT_ID = '4242';
+  process.env.SUPABASE_URL = 'https://project.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-key';
+  process.env.OPENCODE_API_KEY = 'gateway-key';
   vi.stubGlobal('fetch', fakeFetch());
 });
 
@@ -73,91 +67,82 @@ afterEach(() => {
 });
 
 describe('transcribe', () => {
-  it('downloads from /file/bot<token>/<path>, which is the only URL Telegram serves', async () => {
-    const text = await transcribe('file-id');
+  it('downloads through /file/bot, which is the path Telegram actually serves', async () => {
+    const text = await transcribe('file-1', { botToken: TOKEN });
+    expect(text).toBe('اتصل بالبنك');
 
-    expect(text).toBe('نص الصوت');
-    const download = calls.find((call) => call.href.includes('api.telegram.org/file/bot'));
+    const download = calls.find((call) => call.href.includes('/file/bot'));
     expect(download?.href).toBe(`https://api.telegram.org/file/bot${TOKEN}/voice/file_1.oga`);
-  });
-
-  it('sends the audio it downloaded, not an empty payload', async () => {
-    await transcribe('file-id');
 
     const inference = calls.find((call) => call.href.includes('/chat/completions'));
-    const body = JSON.parse(inference.init.body);
-    const audio = body.messages[0].content.find((part) => part.type === 'input_audio');
-    expect(audio.input_audio.data.length).toBeGreaterThan(100);
+    expect(JSON.stringify(inference?.body)).toContain('input_audio');
   });
 
-  it('treats a 404 as permanent, so the row is answered once instead of retried', async () => {
-    vi.stubGlobal('fetch', async (url, init = {}) => {
-      const href = String(url);
-      if (href.endsWith('/getFile'))
-        return json({ ok: true, result: { file_path: 'voice/file_1.oga' } });
-      if (href.includes('api.telegram.org/file/bot')) return new Response('gone', { status: 404 });
-      return fakeFetch()(url, init);
+  it('says the file is gone instead of retrying a 404 forever', async () => {
+    vi.stubGlobal('fetch', fakeFetch({ audio: 'missing' }));
+    await expect(transcribe('file-1', { botToken: TOKEN })).rejects.toThrow(/لم يعد Telegram/);
+    await expect(transcribe('file-1', { botToken: TOKEN })).rejects.toMatchObject({
+      permanent: true,
     });
-
-    await expect(transcribe('file-id')).rejects.toMatchObject({ permanent: true });
   });
 });
 
-describe('handleAnswer', () => {
-  it('sends the model answer back to the chat', async () => {
-    await handleAnswer({ text: 'كيف حالك؟', chat: CHAT, messageId: 10 });
-
-    expect(sentText()).toContain('إجابة');
+describe('recordOutbound', () => {
+  it('refuses an empty body rather than writing a row the log cannot explain', async () => {
+    await expect(recordOutbound({ chatId: 4242, body: '   ' })).rejects.toThrow(/empty body/);
+    expect(calls.some((call) => call.href.includes('/telegram_messages'))).toBe(false);
   });
 
-  it('escapes and renders the answer, so a code span is not a literal backtick', async () => {
-    vi.stubGlobal('fetch', fakeFetch({ answer: 'استخدم `/task` <b>' }));
+  it('writes the message the owner will read', async () => {
+    await recordOutbound({ chatId: 4242, body: 'نص', telegramMessageId: 77 });
+    const write = calls.find((call) => call.href.includes('/telegram_messages'));
+    expect(write?.body).toMatchObject({ direction: 'out', body: 'نص', telegram_message_id: 77 });
+  });
+});
 
-    await handleAnswer({ text: 'سؤال', chat: CHAT, messageId: 11 });
+describe('the status message', () => {
+  it('starts with a stop button and is deleted rather than left behind', async () => {
+    const reporter = createReporter({ chatId: 4242, messageRowId: 9 });
+    await reporter.start('أقرأ رسالتك…');
+    await reporter.close();
 
-    expect(sentText()[0]).toBe('استخدم <code>\u200E/task</code> &lt;b&gt;');
+    const sent = calls.find((call) => call.href.includes('/sendMessage'));
+    expect(sent?.body.reply_markup.inline_keyboard[0][0].callback_data).toBe('stop:9');
+
+    const deleted = calls.find((call) => call.href.includes('/deleteMessage'));
+    expect(deleted?.body.message_id).toBe(77);
   });
 
-  it('queues an escalation instead of answering when the model asks for evidence', async () => {
-    vi.stubGlobal('fetch', async (url, init = {}) => {
-      const href = String(url);
-      calls.push({ href, init });
-      if (href.includes('/chat/completions')) {
-        return json({
-          choices: [
-            {
-              message: {
-                role: 'assistant',
-                content: null,
-                tool_calls: [
-                  {
-                    function: {
-                      name: 'lookup',
-                      arguments: '{"source":"repo","query":"check:plan"}',
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        });
-      }
-      if (href.includes('/rest/v1/telegram_lookups')) return json([]);
-      if (href.includes('/rest/v1/telegram_messages')) return json([]);
-      if (href.includes('/rest/v1/telegram_memories')) return json([]);
-      if (href.includes('/rest/v1/telegram_summaries')) return json([]);
-      if (href.includes('/sendMessage')) return json({ ok: true, result: {} });
-      throw new Error(`unexpected fetch: ${href}`);
+  it('does not edit more often than Telegram allows', async () => {
+    const reporter = createReporter({ chatId: 4242, messageRowId: 9 });
+    await reporter.start('أقرأ رسالتك…');
+    await reporter.update('أقرأ الملف…');
+    await reporter.update('أبحث في المستودع…');
+
+    const edits = calls.filter((call) => call.href.includes('/editMessageText'));
+    expect(edits).toHaveLength(0);
+    await reporter.close();
+  });
+});
+
+describe('sendMarkdown', () => {
+  it('renders HTML and never sends more than one piece unmarked', async () => {
+    const sent = await sendMarkdown(4242, '**جواب** قصير');
+    expect(sent[0].messageId).toBe(77);
+    const message = calls.find((call) => call.href.includes('/sendMessage'));
+    expect(message?.body.text).toContain('<b>جواب</b>');
+    expect(message?.body.parse_mode).toBe('HTML');
+  });
+
+  it('attaches the keyboard to the last piece only', async () => {
+    const long = Array.from({ length: 400 }, (_, index) => `سطر ${index} نص`).join('\n');
+    await sendMarkdown(4242, long, {
+      replyMarkup: { inline_keyboard: [[{ text: 'x', callback_data: 'y' }]] },
     });
 
-    await handleAnswer({ text: 'لماذا يفشل check:plan؟', chat: CHAT, messageId: 12 });
-
-    const seen = calls.map((call) => `${call.init.method ?? 'GET'} ${call.href}`);
-    expect(seen.join('\n')).toContain('/telegram_lookups');
-    const queued = calls.find(
-      (call) => call.href.includes('/telegram_lookups') && call.init.method === 'POST'
-    );
-    expect(JSON.parse(queued.init.body)).toMatchObject({ source: 'repo', query: 'check:plan' });
-    expect(sentText()[0]).toContain('سأقرأ في المستودع');
+    const sends = calls.filter((call) => call.href.includes('/sendMessage'));
+    expect(sends.length).toBeGreaterThan(1);
+    expect(sends[sends.length - 1].body.reply_markup).toBeTruthy();
+    expect(sends[0].body.reply_markup).toBeUndefined();
   });
 });

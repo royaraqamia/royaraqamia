@@ -36,6 +36,7 @@
     "check:arabic": "node scripts/check-arabic-order.mjs",
     "fix:arabic": "node scripts/check-arabic-order.mjs --fix",
     "check:digits": "node scripts/check-digits.mjs",
+    "check:fusha": "node scripts/check-fusha.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:surfaces": "node scripts/check-surfaces.mjs",
     "check:screens": "node scripts/check-screens.mjs",
