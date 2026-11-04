@@ -26,15 +26,16 @@
 | `npm run android:crash-drill`               | Crashes a debug build on purpose, then reads the report it queued back over adb - see `docs/mobile/crash-reports.md`                                                                                                                                                                               |
 | `npm run android:profile`                   | Regenerates the shell's own baseline profile on the managed emulator and copies it into `android/app/src/release/generated/baselineProfiles/`; commit the result — see `docs/mobile/native-app.md`                                                                                                 |
 | `npm run android:shell-version`             | Read the shell's version; `-- --bump [--major\|--minor\|--patch]` writes one by hand, `-- --check <ref>` is what CI runs (ADR-0043, ADR-0090)                                                                                                                                                      |
-| `npm run android:release-plan`              | What the weekly Android train would release now, and why — read-only (ADR-0090)                                                                                                                                                                                                                    |
+| `npm run android:release-plan`              | What the next Android cut would release now, and why — read-only (ADR-0090)                                                                                                                                                                                                                        |
 | `npm run android:release`                   | Signed release APK                                                                                                                                                                                                                                                                                 |
 | `npm run android:publish`                   | The release APK + `public/android/latest.json` stamped from the file itself, uploaded to the storage bucket the site serves from and to its own release `android-<version>`; `--verdict` asks whether there is anything to publish, `--json` is how `Shell Release` runs it (ADR-0044 to ADR-0047) |
 | `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                                                                                                                                                                                                                |
 
-`Android Release` (`.github/workflows/android-release.yml`) publishes on a weekly schedule — one
-APK for the whole batch of native changes — or on a manual dispatch that cuts the batch now: grade,
-notes, JVM tests, signed build, asset, re-download check, release, and one commit carrying the version,
-the notes, the changelog and the manifest. A week with no native change publishes nothing. See
+`Android Release` (`.github/workflows/android-release.yml`) publishes one APK for the whole batch of
+native changes, and only when it is dispatched by hand — it has no schedule (ADR-0090 amendment). It
+grades the batch, folds the notes, runs the JVM tests, builds and signs, uploads the asset, downloads
+and hashes it, creates the release, and commits the version, the notes, the changelog and the manifest
+together. With no native change since the last release a dispatch publishes nothing. See
 `docs/mobile/android-shell.md`.
 
 `News Source Smoke` (`.github/workflows/news-source-smoke.yml`) is the one job that writes to the
@@ -96,7 +97,9 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 **Primary path:** Push to `main` → CI runs code-quality checks → Vercel's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**The Android train is watched:** `.github/workflows/release-health.yml` asks `scripts/android-release.mjs --health` daily whether native changes have sat unreleased past the weekly cadence — and opens (or closes) one `release:alert` issue if they have. A release that never started, or failed on a build or a missing note, is what that catches (ADR-0090).
+**The Android cut is manual, and unwatched:** nothing opens an issue about releases. The owner
+dispatches `Android Release` when the batch should ship; a dispatch with no native change publishes
+nothing, and a failed run is re-runnable from the Actions page (ADR-0090 amendment).
 
 **Manual override:** `vercel deploy --prod` (production). There are no preview deployments to produce, so a bare `vercel deploy` is not part of the flow.
 
@@ -114,8 +117,8 @@ weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
   count on the branch, the sha the commit. `backend/config/generated/app-version.ts` is regenerated
   by `prebuild`/`predev` on CI and Vercel only; do not hand-edit it, and Sentry names its release
   after the same generated string.
-- **Android:** the shell's version is `1.<minor>.<patch>`, graded from the batch the weekly train
-  releases (`!` → major, `feat` → minor, else patch). Its `versionCode` is
+- **Android:** the shell's version is `1.<minor>.<patch>`, graded from the batch the cut releases
+  (`!` → major, `feat` → minor, else patch). Its `versionCode` is
   `20000 + (major-1)*10000 + minor*100 + patch`, so it only ever goes up. Both lines live in
   `android/shell-version.properties` and are written by the cut, never by a pull request;
   `scripts/android-shell-version.mjs` owns the arithmetic and fails a hand-edited file.

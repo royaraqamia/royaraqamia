@@ -3,9 +3,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The Android train is weekly, not per merge (ADR-0089). What these pin is the
- * shape that makes that true: the trigger, the order of the steps, and the fact
- * that the version, the notes, the changelog and the manifest land together.
+ * The Android cut grades a batch and is dispatched by hand (ADR-0090, and its
+ * 2026-11-04 amendment). What these pin is the shape that makes that true: no
+ * clock starts it, the order of the steps, and the fact that the version, the
+ * notes, the changelog and the manifest land together.
  *
  * `process.cwd()`, not `import.meta.url`: the unit suite runs in jsdom, where
  * import.meta.url is an http URL and `new URL` refuses it.
@@ -16,40 +17,37 @@ const workflow = readFileSync(
 );
 
 describe('the Android release train', () => {
-  it('runs on a weekly schedule and on a manual dispatch — not on a push', () => {
-    expect(workflow).toMatch(/schedule:/);
-    expect(workflow).toContain("cron: '0 6 * * 1'");
+  it('is dispatched by hand, and never by a clock', () => {
     expect(workflow).toMatch(/workflow_dispatch:/);
+    // A top-level `schedule:` key is the thing that was removed; a comment
+    // naming it is not a trigger, so the guard matches the key at its indent.
+    expect(workflow).not.toMatch(/^ {2}schedule:/m);
     // A push trigger is what shipped an APK per commit.
     expect(workflow).not.toMatch(/^\s{2}push:/m);
   });
 
   it('asks whether a release is due before it touches a toolchain', () => {
-    const planAt = workflow.indexOf('node scripts/android-release.mjs "${args[@]}"');
+    const planAt = workflow.indexOf('node scripts/android-release.mjs --plan --json');
     expect(planAt).toBeGreaterThan(-1);
     expect(planAt).toBeLessThan(workflow.indexOf('Setup Build Environment'));
-    // A dispatch ships now; a scheduled run keeps the cadence.
-    expect(workflow).toContain('if [ "${{ github.event_name }}" = \'workflow_dispatch\' ]');
-    expect(workflow).toContain('args+=(--force)');
+    // No cadence to be forced past: every run is a person asking for the batch.
+    expect(workflow).not.toContain('--force');
+    expect(workflow).not.toContain('--min-age-days');
   });
 
   it('cuts the version and the notes before it builds', () => {
-    const cutAt = workflow.indexOf('cut=$(node scripts/android-release.mjs "${args[@]}")');
+    const cutAt = workflow.indexOf('cut=$(node scripts/android-release.mjs --apply --json)');
     const publishAt = workflow.indexOf('Build or adopt, sign and stamp');
     expect(cutAt).toBeGreaterThan(-1);
     expect(cutAt).toBeLessThan(publishAt);
   });
 
-  it('forces the cut on a dispatch, so it cannot refuse the cadence the plan was forced past', () => {
-    // Run 41488339972: the plan was forced, the cut was not, so `--apply` printed
-    // "nothing to release", exited 0, and the build shipped the previous number.
-    const cutArgsAt = workflow.indexOf('args=(--apply --json)');
-    const forcedAt = workflow.indexOf('args+=(--force)', cutArgsAt);
-    const cutAt = workflow.indexOf('cut=$(node scripts/android-release.mjs "${args[@]}")');
-    expect(cutArgsAt).toBeGreaterThan(-1);
-    expect(forcedAt).toBeGreaterThan(cutArgsAt);
-    expect(forcedAt).toBeLessThan(cutAt);
-    expect(workflow).toContain('if [ "${{ github.event_name }}" = \'workflow_dispatch\' ]');
+  it('takes the cut it planned, without a cadence flag either step could disagree about', () => {
+    // Run 41488339972: the plan was forced past the cadence, the cut was not, so
+    // `--apply` printed "nothing to release", exited 0, and the build shipped the
+    // previous number. No flag to remember now: both steps ask the same question.
+    expect(workflow).toContain('node scripts/android-release.mjs --plan --json');
+    expect(workflow).toContain('node scripts/android-release.mjs --apply --json');
     // A cut that disagrees with the plan is a broken release, not a number to carry on with.
     expect(workflow).toContain('The cut disagreed with the plan');
   });

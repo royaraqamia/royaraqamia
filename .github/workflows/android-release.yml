@@ -1,11 +1,11 @@
 name: 'Android Release'
 
-# One update a week, not one per commit (ADR-0090).
+# One update per batch, cut by hand, not one per commit (ADR-0090).
 #
 # What used to happen: every push to `main` that touched the shell published its
 # own APK and prompted every installed app — twenty-one releases in the shell's
 # first weeks, most of them a sentence apart. A native app does not ship that way.
-# This workflow is the train instead:
+# This workflow is the cut instead:
 #
 #   1. grade everything native since the last `android-*` release — one batch,
 #      one version, `!`→major, `feat`→minor, else patch
@@ -18,9 +18,11 @@ name: 'Android Release'
 #   6. commit the version, the notes, the changelog and the manifest together, so
 #      the site announces exactly the bytes that were verified
 #
-# A week with no native change publishes nothing: the first step says so in ten
-# seconds and the rest of the job never runs. A manual dispatch cuts the batch
-# now, ignoring the cadence, for a crash or security fix that cannot wait.
+# Nothing starts this workflow on a clock: it is dispatched by hand, and only by
+# hand (ADR-0090's 2026-11-04 amendment). The owner decides when the batch ships;
+# there is no weekly train, and no reminder workflow counting the days since the
+# last one. A dispatch with no native change since the last release publishes
+# nothing: the first step says so in ten seconds and the rest of the job never runs.
 #
 # Failing at 3–5 leaves the published channel exactly as it was. Failing at 6
 # leaves the asset published and the manifest stale — the safe direction, because
@@ -30,10 +32,8 @@ name: 'Android Release'
 # ADR-0069), and the manifest commit lands.
 
 on:
-  schedule:
-    # Mondays, 06:00 UTC. A fixed weekly train is what makes the version, the
-    # notes and the user's update prompt line up.
-    - cron: '0 6 * * 1'
+  # Manual only. No `schedule`: a train that runs itself is a clock nobody asked
+  # for, and the release is the owner's call (ADR-0090 amendment, 2026-11-04).
   workflow_dispatch:
     inputs:
       dry_run:
@@ -66,24 +66,14 @@ jobs:
           fetch-tags: true
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
-      # First, and before any toolchain: a week with no native change has nothing
-      # to publish, and it should cost ten seconds rather than a Gradle build.
-      #
-      # A dispatch is a person saying "cut it now", so it bypasses the cadence;
-      # the scheduled run keeps it, which is what stops a re-run from shipping a
-      # second update the same week.
+      # First, and before any toolchain: a dispatch with no native change has
+      # nothing to publish, and it should cost ten seconds rather than a Gradle
+      # build.
       - name: Is a release due?
         id: plan
         run: |
           set -euo pipefail
-          # A dispatch is a person saying "cut it now", so it bypasses the cadence;
-          # the scheduled run keeps it, which is what stops a re-run from shipping a
-          # second update the same week.
-          args=(--plan --json)
-          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
-            args+=(--force)
-          fi
-          plan=$(node scripts/android-release.mjs "${args[@]}")
+          plan=$(node scripts/android-release.mjs --plan --json)
           echo "$plan"
           {
             echo "release=$(echo "$plan" | jq -r .release)"
@@ -101,16 +91,7 @@ jobs:
         if: steps.plan.outputs.release == 'true'
         run: |
           set -euo pipefail
-          # A dispatch is a person saying "cut it now", and the plan above was
-          # forced past the cadence; the cut has to be told the same thing. Without
-          # it `--apply` refuses the same cadence, prints "nothing to release" and
-          # exits 0, and the build then keeps the previous version's number - which
-          # is how run 41488339972 tried to republish 1.1.0 with different bytes.
-          args=(--apply --json)
-          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
-            args+=(--force)
-          fi
-          cut=$(node scripts/android-release.mjs "${args[@]}")
+          cut=$(node scripts/android-release.mjs --apply --json)
           echo "$cut"
           # The plan and the cut are the same decision asked twice, so a
           # disagreement is a broken release, not a number to carry on with.

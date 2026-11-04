@@ -316,7 +316,7 @@ $env:CAPACITOR_SERVER_URL = 'http://10.0.2.2:3000'; npm run android:apk
 `versionName`/`versionCode`: both come from `android/shell-version.properties`.
 `shellVersionName` is the semantic name a user reads (`1.1.0`), graded from the release batch;
 `versionCode` is derived from it (`20000 + (major-1)*10000 + minor*100 + patch`) and is what the
-update check compares against `public/android/latest.json`. It moves at the weekly release, not in a
+update check compares against `public/android/latest.json`. It moves at the cut, not in a
 pull request (ADR-0090): `node scripts/android-shell-version.mjs` reads it, `-- --bump` writes one by
 hand, and `.github/workflows/shell-version.yml` fails a pull request that edits it.
 
@@ -976,7 +976,7 @@ app buckets a device deterministically by `Android ID + versionCode`, so a stage
 same cohort on every check and a later release is a fresh cohort. The page does not claim a partial
 release, because it cannot know the device's bucket; the native prompt does. A device below the floor
 ignores the percentage — its update is not optional. `npm run android:publish -- --rollout 10` stages
-one; the weekly train publishes at 100.
+one; the release cut publishes at 100.
 
 **Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
 under the app's own internal files directory, hashing as it writes, and renames it into place only when
@@ -1066,16 +1066,17 @@ Two defects were found by that drill rather than by a test, and both would other
 layout took its direction from the phone, so on this en-US image the percentage and the size swapped
 ends, and the percentage shared the headline's line, which wrapped the headline on a screen this narrow.
 
-**Publishing releases itself.** `.github/workflows/android-release.yml` runs every Monday at 06:00 UTC,
-and on a manual dispatch. It is a weekly train, not a per-merge pipeline (ADR-0090): a batch of native
+**Publishing releases itself.** `.github/workflows/android-release.yml` is dispatched by hand, and only
+by hand: nothing starts it on a clock, and nothing reminds anyone that a release is due (ADR-0090 and
+its 2026-11-04 amendment). It is a batch cut, not a per-merge pipeline (ADR-0090): a batch of native
 changes earns one version, one APK and one update prompt, because twenty-one releases in the shell's
 first weeks — one per commit — is not how an app ships.
 
 1. **Grade the batch.** `scripts/android-release.mjs --plan` asks whether anything native changed since
    the last `android-*` release (`android/**`, `capacitor.config.ts`, or a Capacitor plugin dependency)
-   and grades every commit since: `!`/BREAKING → major, `feat` → minor, anything else → patch. A week
-   with no native change stops here in ten seconds with `release=false`. A scheduled run also waits out
-   its own cadence; a dispatch cuts the batch immediately.
+   and grades every commit since: `!`/BREAKING → major, `feat` → minor, anything else → patch. A
+   dispatch with no native change stops here in ten seconds with `release=false`; there is no cadence
+   to wait out.
 2. **Cut the version and collect the notes.** `--apply` writes `android/shell-version.properties` as
    `1.<minor>.<patch>` plus its derived code, folds the Arabic fragments in
    `android/release-notes/unreleased/` into this release's notes, freezes them in
@@ -1107,12 +1108,12 @@ Failing at 2–5 leaves the published channel exactly as it was. Failing at 7 le
 and the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
 verified, and re-running finishes it by adopting the bytes already in storage instead of rebuilding
 them (ADR-0069). Only `main` publishes; a dispatch on a branch can rehearse with `dry_run` (grade, build
-and sign, publish nothing). A failed week raises one `release:alert` issue from
-`.github/workflows/release-health.yml`.
+and sign, publish nothing). A failed cut is re-run from the Actions page — it is not watched by a
+workflow, and nothing opens an issue about it.
 
 **The version, and where a user sees it.** `shellVersionName` is semantic and the counter is _derived_
 from it — `versionCode = 20000 + (major-1)*10000 + minor*100 + patch`, so `1.0.21` is 20021 and
-`1.1.0` is 20100 — which means the train writes one name and both numbers agree by construction.
+`1.1.0` is 20100 — which means the cut writes one name and both numbers agree by construction.
 The name is graded from what the batch contains (`!` → major, `feat` → minor, else patch), so `1.1.0`
 means the release added something and `1.0.22` means it fixed something; the code only ever goes up.
 `--check` fails a tree where the two disagree and a pull request that hand-edits them; the cut writes
@@ -1152,7 +1153,7 @@ a backup decision as much as a convenience one. Rotating it means updating `ANDR
 cannot be talked out of: it would have to be reinstalled by hand.
 
 The local path still exists, and is the right one for a dry run or an emergency. It follows the same
-steps the train takes, so a hand-published version is not a different shape:
+steps the workflow takes, so a hand-published version is not a different shape:
 
 ```powershell
 node scripts/android-release.mjs --plan             # what would ship, and why

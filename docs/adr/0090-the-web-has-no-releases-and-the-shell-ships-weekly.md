@@ -33,9 +33,10 @@ workflow are deleted. `next.config.js` reads its Sentry release from the generat
 composing `v<package.json version>`, because a sourcemap named one string and an event reporting
 another is worse than no sourcemap at all.
 
-**2. The shell ships on a graded weekly train, and its notes are written by people.** Once a week
-(Monday 06:00 UTC) `.github/workflows/android-release.yml` grades everything native that accumulated
-since the last `android-*` release and publishes **one** version for it:
+**2. The shell ships in graded batches, cut by hand, and its notes are written by people.**
+`.github/workflows/android-release.yml` grades everything native that accumulated since the last
+`android-*` release and publishes **one** version for it when a person dispatches it (since the
+2026-11-04 amendment; it ran on a Monday schedule before that):
 
 | Commit type in the batch | Component |
 | ------------------------ | --------- |
@@ -43,8 +44,8 @@ since the last `android-*` release and publishes **one** version for it:
 | `feat`                   | minor     |
 | anything else            | patch     |
 
-A week with no native change publishes nothing. A manual dispatch cuts the batch immediately, for a
-crash or security fix that cannot wait.
+A dispatch with no native change publishes nothing. There is no cadence to wait out: the cut runs only
+when someone asks for it, for whatever the batch holds.
 
 The version file is written by the cut, not by a pull request. Each change that ships carries an
 Arabic note under `android/release-notes/unreleased/`; the pull-request check refuses a shell change
@@ -78,7 +79,7 @@ something.
 
 Staged rollout is the other half of how big native apps ship, and it is unavailable here: the shell
 installs itself from our own origin (ADR-0044, ADR-0047) and is not in a store with percentage-based
-staging. The weekly train is the part of that practice the project can actually implement — batching,
+staging. The batch cut is the part of that practice the project can actually implement — batching,
 grading, and release notes written for the people receiving them.
 
 ## What still has to hold
@@ -91,11 +92,9 @@ grading, and release notes written for the people receiving them.
 - A cut that fails between publishing the APK and committing the manifest is resumed, not re-graded:
   the tag ahead of the manifest is what the next run reads (`scripts/android-release.mjs`).
 - The release's own bookkeeping — the version file, the notes, the manifest, the changelog — does not
-  count as a shell change, or every release would earn itself another one the following Monday.
-- `release-health.yml` raises one issue when native changes have sat unreleased past the cadence
-  (nine days), which is the only way a train that never started becomes visible.
-- That switch reports its own failure: an issue of its own when it cannot read the train at all
-  (amendment below), because a watcher that goes quiet is indistinguishable from a train on time.
+  count as a shell change, or every release would earn itself another one at the next cut.
+- Nothing watches the shell for an overdue release. The cut is the owner's call, so a backlog is a
+  decision rather than a fault, and there is no reminder workflow (amendment below).
 
 Supersedes ADR-0046's web half and the release-train machinery of ADR-0051, ADR-0052 and ADR-0068.
 ADR-0043, ADR-0044, ADR-0047 and ADR-0069 still stand, amended only in when a version is written.
@@ -117,3 +116,29 @@ Two halves now hold separately, so neither failure mode hides the other.
   issue, `Release health cannot read the train`, linked to the run that broke; the run that reads
   the train again closes it. A red run in Actions is only loud if someone is looking, and the point
   of a dead-man's switch is that nobody is.
+
+## Amendment (2026-11-04): the shell is cut by hand, and nothing reminds anyone
+
+The Monday schedule is gone. The owner decides when the shell ships, and a release is a decision
+rather than a deadline; a clock that publishes a batch nobody asked for — or that fails on a Monday
+because a note is missing — serves the pipeline, not the users it was meant to protect. The batching,
+grading and written notes this decision introduced all still stand. Only the trigger changed.
+
+What that removed, and why it had to go with it:
+
+- **The cadence.** `scripts/android-release.mjs` gated a cut on the last release being seven days old,
+  and every dispatch passed `--force` to step over it. With no schedule, that gate could only ever
+  say no to a person who had just asked for a release, so it is deleted along with `--force` and
+  `--min-age-days`. The rule that matters is untouched: nothing native since the last `android-*` tag
+  means there is nothing to publish, so a second dispatch the same day is a no-op rather than a
+  second update.
+- **The dead-man's switch.** `release-health.yml` existed to notice that the weekly train never
+  started or failed. With no train and no cadence, its only remaining behaviour was to open an issue
+  saying a release had not happened — a reminder, which is the one thing this project does not want.
+  The workflow, `scripts/android-release.mjs --health`, `healthReport`, `STALE_DAYS` and their tests
+  are deleted. A failed cut is visible where it ran: in the Actions run the owner started, and a
+  re-run finishes it by adopting the bytes already in storage (ADR-0069).
+
+The title above is historical: the shell no longer ships "weekly". `docs/commands.md`,
+`docs/mobile/android-shell.md` and `README.md` say manual, and `shell-release-workflow.test.mjs`
+fails if a `schedule:` trigger comes back.
