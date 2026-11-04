@@ -445,7 +445,7 @@ function permanent(message) {
 }
 
 /** Turns a voice note into text. `deepseek-v4.1-flash` takes no audio; this one does. */
-async function transcribe(fileId) {
+export async function transcribe(fileId) {
   const file = await telegram('getFile', { file_id: fileId });
   if (!file?.file_path) throw permanent('Telegram returned no file path for this voice note');
 
@@ -833,7 +833,7 @@ async function handleTimezone({ args, chat }) {
  * what keeps a chatty message from touching anything. The last few exchanges are
  * the only context it gets, so a long conversation costs a paragraph.
  */
-async function handleAnswer({ text, chat, messageId }) {
+export async function handleAnswer({ text, chat, messageId }) {
   if (!env('OPENCODE_API_KEY')) {
     const line = `الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم ${commandSpan('/task')} للمهام.`;
     await sendMessage(chat, line);
