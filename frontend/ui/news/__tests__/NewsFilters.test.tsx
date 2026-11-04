@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NewsFilters } from '../NewsFilters';
-import type { NewsCategory } from '@/shared/contracts/news';
+import { formatDigestDayShort } from '@/shared/contracts/news';
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -11,7 +11,6 @@ vi.mock('next/navigation', () => ({
 }));
 
 const DATES = ['2026-10-26', '2026-10-25'];
-const CATEGORIES: NewsCategory[] = ['tech', 'politics'];
 
 function renderFilters(overrides: Partial<Parameters<typeof NewsFilters>[0]> = {}) {
   return render(
@@ -21,7 +20,6 @@ function renderFilters(overrides: Partial<Parameters<typeof NewsFilters>[0]> = {
       query=""
       view="mine"
       dates={DATES}
-      categories={CATEGORIES}
       isSearching={false}
       {...overrides}
     />
@@ -33,28 +31,26 @@ describe('NewsFilters', () => {
     replace.mockReset();
   });
 
-  it('pushes the picked category', async () => {
-    renderFilters();
+  it('pushes the picked day', async () => {
+    renderFilters({ date: '2026-10-25' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'تقنية' }));
+    fireEvent.click(screen.getByRole('button', { name: formatDigestDayShort('2026-10-26') }));
 
     await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith('/news?category=tech', { scroll: false })
+      expect(replace).toHaveBeenCalledWith('/news?date=2026-10-26', { scroll: false })
     );
   });
 
-  it('keeps the shared view when a category changes (#639)', async () => {
-    renderFilters({ view: 'public' });
+  it('returns to the latest day', async () => {
+    renderFilters({ date: '2026-10-25' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'تقنية' }));
+    fireEvent.click(screen.getByRole('button', { name: 'الأحدث' }));
 
-    await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith('/news?category=tech&view=public', { scroll: false })
-    );
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/news', { scroll: false }));
   });
 
   it('keeps the shared view, the query and the category when the day changes (#639)', async () => {
-    renderFilters({ view: 'public', query: 'اتفاق', category: 'politics' });
+    renderFilters({ view: 'public', query: 'اتفاق', category: 'politics', date: '2026-10-26' });
 
     fireEvent.click(screen.getByRole('button', { name: 'الأحدث' }));
 
@@ -66,42 +62,34 @@ describe('NewsFilters', () => {
     );
   });
 
-  it('drops the day while a search spans every retained day', async () => {
-    renderFilters({ date: '2026-10-25', query: 'اتفاق' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'تقنية' }));
-
-    await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith('/news?q=%D8%A7%D8%AA%D9%81%D8%A7%D9%82&category=tech', {
-        scroll: false,
-      })
-    );
-  });
-
   it('does not navigate while a snapshot is on screen', () => {
-    renderFilters({ disabled: true });
+    renderFilters({ disabled: true, date: '2026-10-25' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'تقنية' }));
+    fireEvent.click(screen.getByRole('button', { name: 'الأحدث' }));
 
     expect(replace).not.toHaveBeenCalled();
   });
 
   /**
-   * Seven chips wrapped onto two lines on a phone, which read as a block rather
-   * than a strip and pushed the archive down. The categories are now one
-   * scrolling row, the same treatment the day strip already had.
+   * The chips read as a second navigation above a digest that is read top to
+   * bottom, so the strip is gone. `?category=` is still honoured from a shared
+   * link, which the test above pins.
    */
-  it('keeps the categories on one scrolling row, like the day strip', () => {
+  it('draws no categories strip', () => {
     const { container } = renderFilters();
 
-    const row = container.querySelector('nav[aria-label="الأقسام"]');
+    expect(container.querySelector('nav[aria-label="الأقسام"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'كل الأقسام' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'تقنية' })).toBeNull();
+  });
+
+  it('keeps the day strip on one scrolling row', () => {
+    const { container } = renderFilters();
+
+    const row = container.querySelector('nav[aria-label="أرشيف الأيام"]');
     expect(row).not.toBeNull();
     expect(row?.className).toContain('overflow-x-auto');
     expect(row?.className).toContain('scrollbar-none');
     expect(row?.className).not.toContain('flex-wrap');
-
-    const chips = Array.from(row?.querySelectorAll('button') ?? []);
-    expect(chips).toHaveLength(CATEGORIES.length + 1);
-    for (const chip of chips) expect(chip.className).toContain('shrink-0');
   });
 });

@@ -221,7 +221,6 @@ export function NewsBoard() {
         query={query.q}
         view={digestView}
         dates={view.dates}
-        categories={view.categories}
         isSearching={view.search !== null}
         disabled={readOnly}
       />

@@ -81,6 +81,14 @@ const FALLBACK_LIMITS: PlanLimit[] = [
     sortOrder: 110,
   },
   { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 5, proCap: 50, sortOrder: 115 },
+  {
+    key: 'chat_groups',
+    label: 'المحادثات الجماعية',
+    visitorCap: 0,
+    freeCap: 5,
+    proCap: 50,
+    sortOrder: 120,
+  },
 ];
 
 /** The per-plan numbers that are neither a row nor an action. */

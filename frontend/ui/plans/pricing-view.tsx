@@ -38,7 +38,9 @@ function capOf(catalog: PlanCatalog, key: string, plan: typeof FREE | typeof PRO
  * `plan_limits` is seeded (5 free / 50 pro, MCP apart) and what
  * `pricing-view.test.tsx` pins. If a catalog row ever breaks that, the smallest
  * cap is printed: understating a limit is a stale sentence, overstating it is a
- * promise the database refuses.
+ * promise the database refuses. That rule is why the group cap had to move onto
+ * the same step (`20261113200000_chat_groups_cap_five.sql`): a single 3 / 20 row
+ * quietly became the number the page printed for every service.
  */
 export function itemCapOf(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): number {
   const caps = catalog.limits

@@ -95,6 +95,19 @@ notifications page, ADR-0097) show what that costs.
 - The group cap (3 free / 20 Pro) belongs to the groups pull request, where the
   owned-item counter learns the new key.
 
+## Amendment — the group cap is 5 free / 50 Pro
+
+The 3 / 20 step above was picked before the pricing page learned to read the
+catalogue. That page prints one "عناصر من كل خدمة" number, and it prints the
+smallest non-MCP cap so it can never overstate what the database enforces
+(ADR-0093). A single lower row therefore rewrote the headline allowance for
+every service: the page said 3 and 20 while habits, notes, links and the rest
+were 5 and 50.
+
+`20261113200000_chat_groups_cap_five.sql` moves `plan_limits.chat_groups` onto
+the same step as the other owned items. The enforcement layers do not change:
+the trigger, `private.owned_item_count` and the Node pre-check read the row.
+
 ## Alternatives considered
 
 - **A request table beside conversations.** Two sources of truth for "is this
