@@ -628,10 +628,16 @@ export async function streamChatAgentTurn(
         };
 
         try {
-          for await (const event of service.turn(userId, id, parsed.data.body, {
-            supabase,
-            ip: getClientIpFromHeaders(headers),
-          })) {
+          for await (const event of service.turn(
+            userId,
+            id,
+            parsed.data.body ?? '',
+            {
+              supabase,
+              ip: getClientIpFromHeaders(headers),
+            },
+            parsed.data.attachment
+          )) {
             write(event);
           }
         } catch (error) {

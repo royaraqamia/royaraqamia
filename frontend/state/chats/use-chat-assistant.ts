@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getChatAssistant, streamChatAgentTurn } from '@/frontend/api/chats';
+import { uploadChatAttachment } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
 import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 
@@ -28,7 +29,8 @@ export interface ChatAssistantState {
    */
   toolsUsed: string[];
   error: string | null;
-  ask: (body: string) => Promise<boolean>;
+  /** Ask a question. A `file` is a voice note, uploaded before the turn starts. */
+  ask: (body: string, file?: File) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -69,9 +71,9 @@ export function useChatAssistant(
   }, [enabled, refresh]);
 
   const ask = useCallback(
-    async (body: string) => {
+    async (body: string, file?: File) => {
       const question = body.trim();
-      if (!question || isStreaming) return false;
+      if ((!question && !file) || isStreaming) return false;
 
       setIsStreaming(true);
       setStreamingText('');
@@ -83,18 +85,27 @@ export function useChatAssistant(
       let partial = '';
 
       try {
-        await streamChatAgentTurn(conversationId, question, (event: ChatAgentEvent) => {
-          if (event.type === 'delta') {
-            partial += event.text;
-            setStreamingText((current) => current + event.text);
-          } else if (event.type === 'error') failure = event.error;
-          else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
-          else if (event.type === 'proposal')
-            setToolsUsed((current) => [
-              ...current,
-              chatAgentActionSentence(event.action.tool, event.action.args),
-            ]);
-        });
+        // The recording is uploaded before the turn so the thread can show it and
+        // the server can read its bytes back for transcription.
+        const attachment = file ? await uploadChatAttachment(conversationId, file) : null;
+
+        await streamChatAgentTurn(
+          conversationId,
+          question,
+          (event: ChatAgentEvent) => {
+            if (event.type === 'delta') {
+              partial += event.text;
+              setStreamingText((current) => current + event.text);
+            } else if (event.type === 'error') failure = event.error;
+            else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
+            else if (event.type === 'proposal')
+              setToolsUsed((current) => [
+                ...current,
+                chatAgentActionSentence(event.action.tool, event.action.args),
+              ]);
+          },
+          attachment
+        );
       } catch (caught) {
         failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
       } finally {

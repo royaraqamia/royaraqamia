@@ -101,6 +101,9 @@ export function createSupabaseChatAgentService(
     chats: createSupabaseChatService(supabase),
     reserve: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.chatAgentTurns),
     client: createAiChatClient(),
+    // The voice note's bytes are read back through the member's own session, so
+    // the bucket's policy is what decides whether a turn may hear it.
+    attachments: createChatAttachmentStorage(supabase),
     // The assistant writes the proposal with the service role (a member must
     // not be able to forge one); the member's own confirmation is a separate
     // service, on their own session.

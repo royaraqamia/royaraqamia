@@ -234,12 +234,6 @@ export interface ChatAssistantState {
 }
 
 /** One assistant turn: the question, and nothing else (no tools, no files). */
-export const ChatAgentTurnSchema = z.object({
-  body: z.string().trim().min(1, 'اكتب سؤالك').max(CHAT_BODY_MAX, 'السؤال طويل جداً'),
-});
-
-export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;
-
 /** The frames the turn's stream carries, one JSON object per SSE `data:` line. */
 export type ChatAgentEvent =
   | { type: 'delta'; text: string }
@@ -277,6 +271,25 @@ export const ChatAttachmentInputSchema = z.object({
     .positive()
     .max(CHAT_ATTACHMENT_MAX_BYTES, 'حجم الملف يتجاوز 25 ميغابايت'),
 });
+
+/**
+ * A turn is text, a voice note, or both. A voice note is transcribed before the
+ * model sees it, which is why the audio is an attachment rather than a body: the
+ * recording stays in the thread, and the transcript is what the turn answers.
+ */
+export const ChatAgentTurnSchema = z
+  .object({
+    body: z.string().trim().max(CHAT_BODY_MAX, 'السؤال طويل جداً').optional(),
+    attachment: ChatAttachmentInputSchema.optional(),
+  })
+  .refine((value) => Boolean(value.body) || Boolean(value.attachment), {
+    message: 'اكتب سؤالك أو أرسل رسالة صوتية',
+  })
+  .refine((value) => !value.attachment || value.attachment.mimeType.startsWith('audio/'), {
+    message: 'الملف المرفق ليس تسجيلاً صوتياً',
+  });
+
+export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;
 
 /**
  * A message is its text or its attachments — never neither. The body is

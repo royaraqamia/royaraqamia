@@ -75,6 +75,8 @@ export interface ChatAgentRepository {
   insertAgentMessage(conversationId: string, body: string): Promise<ChatMessageRecord>;
   /** Opens the record of one turn and answers its id. */
   startTurn(conversationId: string, memberId: string, question: string): Promise<string>;
+  /** The words a voice note turned out to hold, written once it is transcribed. */
+  setTurnQuestion(turnId: string, question: string): Promise<void>;
   /** Counts a retry the turn is about to take. */
   recordAttempt(turnId: string, attempts: number): Promise<void>;
   /** The answer landed. */
@@ -131,6 +133,12 @@ export function createSupabaseChatAgentRepository(
 
       if (error) throw repositoryFailure('chat.agent.startTurn', error);
       return data.id;
+    },
+
+    async setTurnQuestion(turnId, question) {
+      const { error } = await supabase.from('agent_turns').update({ question }).eq('id', turnId);
+
+      if (error) throw repositoryFailure('chat.agent.setTurnQuestion', error);
     },
 
     async dueTurns(limit) {

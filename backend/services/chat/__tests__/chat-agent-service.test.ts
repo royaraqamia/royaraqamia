@@ -94,6 +94,7 @@ function scriptedClient(rounds: AiChatStreamEvent[][]): AiChatClient & {
     calls,
 
     async *streamReply() {},
+    transcribe: async () => null,
     async *streamWithTools(messages) {
       calls.push(messages);
       const round = rounds[calls.length - 1] ?? [];
@@ -125,6 +126,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
       createdAt: '2026-11-02T08:01:00.000Z',
     })),
     startTurn: vi.fn(async () => 'turn-1'),
+    setTurnQuestion: vi.fn(async () => undefined),
     recordAttempt: vi.fn(async () => undefined),
     settleTurn: vi.fn(async () => undefined),
     failTurn: vi.fn(async () => undefined),
@@ -144,6 +146,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
 
   const release = vi.fn(async () => undefined);
   const reserve = vi.fn(async () => ({ eventId: 'event-1', release }));
+  const attachments = { download: vi.fn(async () => new Uint8Array([1, 2, 3])) };
 
   const actions = {
     propose: vi.fn(async () => ({
@@ -155,13 +158,14 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
   const service = new ChatAgentService({
     agent,
     chats,
+    attachments,
     reserve,
     client: scriptedClient([textStream('مرحبا ', 'بك')]),
     actions,
     ...overrides,
   });
 
-  return { service, agent, chats, reserve, release, actions };
+  return { service, agent, chats, reserve, release, actions, attachments };
 }
 
 async function collect(events: AsyncGenerator<ChatAgentEvent>) {
@@ -240,6 +244,7 @@ describe('the assistant turn', () => {
         insertAgentMessage: vi.fn(),
       } as unknown as ChatAgentRepository,
       chats,
+      attachments: { download: vi.fn(async () => new Uint8Array()) },
       reserve,
       client: scriptedClient([textStream('x')]),
       actions: { propose: vi.fn() },
@@ -277,6 +282,7 @@ describe('the assistant turn', () => {
         model: 'deepseek-v4.1-flash',
 
         async *streamReply() {},
+        transcribe: async () => null,
         // eslint-disable-next-line require-yield -- the failure is the point of this fixture
         async *streamWithTools() {
           throw new Error('socket closed');
@@ -296,6 +302,7 @@ describe('the assistant turn', () => {
       client: {
         model: 'deepseek-v4.1-flash',
         async *streamReply() {},
+        transcribe: async () => null,
         async *streamWithTools() {
           attempts += 1;
           if (attempts === 1) throw new AiChatProviderError(429);
@@ -318,6 +325,7 @@ describe('the assistant turn', () => {
     const client: AiChatClient = {
       model: 'deepseek-v4.1-flash',
       async *streamReply() {},
+      transcribe: async () => null,
       async *streamWithTools() {
         yield { type: 'text' as const, text: 'بدأت أشرح' };
         throw new AiChatProviderError(500);
@@ -337,6 +345,65 @@ describe('the assistant turn', () => {
       partialText: 'بدأت أشرح',
     });
     expect(agent.settleTurn).not.toHaveBeenCalled();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers a voice note with its transcript, and keeps the recording attached', async () => {
+    const transcribe = vi.fn(async () => 'اشتريت قهوة');
+    const { service, chats, agent, attachments } = makeService({
+      client: {
+        model: 'deepseek-v4.1-flash',
+        async *streamReply() {},
+        transcribe,
+        async *streamWithTools() {
+          yield { type: 'text' as const, text: 'تم.' };
+        },
+      },
+    });
+
+    const voice = {
+      storagePath: 'conversation-1/voice/note.wav',
+      fileName: 'note.wav',
+      mimeType: 'audio/wav',
+      byteSize: 12,
+    };
+
+    await collect(service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, voice));
+
+    expect(attachments.download).toHaveBeenCalledWith('conversation-1/voice/note.wav');
+    expect(transcribe).toHaveBeenCalledWith(expect.any(Uint8Array), 'audio/wav');
+    // The recording stays in the thread, and the words are what the message says.
+    expect(chats.sendMessage).toHaveBeenCalledWith('user-1', 'conversation-1', {
+      body: 'اشتريت قهوة',
+      attachments: [voice],
+    });
+    expect(agent.setTurnQuestion).toHaveBeenCalledWith('turn-1', 'اشتريت قهوة');
+  });
+
+  it('answers a note it could not transcribe with a sentence, and gives the count back', async () => {
+    const { service, chats, release } = makeService({
+      client: {
+        model: 'deepseek-v4.1-flash',
+        async *streamReply() {},
+        transcribe: async () => null,
+        async *streamWithTools() {
+          yield { type: 'text' as const, text: 'unreachable' };
+        },
+      },
+    });
+
+    await expect(
+      collect(
+        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, {
+          storagePath: 'conversation-1/voice/note.wav',
+          fileName: 'note.wav',
+          mimeType: 'audio/wav',
+          byteSize: 12,
+        })
+      )
+    ).rejects.toMatchObject({ status: 422 });
+
+    expect(chats.sendMessage).not.toHaveBeenCalled();
     expect(release).toHaveBeenCalledTimes(1);
   });
 
