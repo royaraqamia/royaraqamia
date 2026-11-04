@@ -48,3 +48,24 @@ where the policy already is, and a turn is diagnostics rather than surface.
   member would quote a sentence the model never finished.
 - **A queue in front of every turn now.** The right shape eventually, but it needs minted sessions and
   a worker before it earns its keep; a row and a retry capture most of the reliability loss today.
+
+## Amendment: the worker, and how it is allowed to act
+
+The row was written to be claimed later, and it now is. A turn whose request died is finished by
+`/api/internal/agent-turns/run`, woken once a minute by `wake_agent_turns()` (pg_cron → `net.http_post`,
+the same door the habit reminders use). Nothing runs when there is nothing abandoned, and the
+doorbell no-ops until its two Vault secrets exist.
+
+Three rules keep the worker honest:
+
+1. **The lease is the claim.** `claim_agent_turn` is one conditional update — `running`, fewer than
+   three resumes, and its lease expired — so two wakes cannot write two answers. A worker that dies
+   mid-answer leaves a lease that expires, and the next wake retries it; after three it stops.
+2. **The session is minted, not borrowed.** `openAgentTurnSession` mints an independent Supabase
+   session for the member (the MCP server's own magic-link pattern), runs the turn under RLS with it,
+   and signs it out afterwards. Nothing is persisted, which is why the table has no session column.
+3. **It takes nothing.** The member's message is already in the thread and the count was already
+   reserved; a resumed turn only writes the answer and settles the row.
+
+One turn per invocation, because a turn caps at 55 seconds and the route's ceiling is 60; a backlog
+therefore drains one turn a minute, which is the only situation that produces a backlog.

@@ -11,6 +11,11 @@ import {
   ChatAgentActionService,
   type ChatAgentActionServiceDeps,
 } from '@/backend/services/chat/chat-agent-action-service';
+import {
+  ChatAgentResumeService,
+  type ChatAgentResumeDeps,
+} from '@/backend/services/chat/chat-agent-resume-service';
+import { openAgentTurnSession } from '@/backend/services/chat/agent-turn-session';
 import { createChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import { createChatAttachmentSweepRepository } from '@/backend/repositories/chat/chat-attachment-sweep-repository';
 import { ChatService, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
@@ -100,6 +105,23 @@ export function createSupabaseChatAgentService(
     // not be able to forge one); the member's own confirmation is a separate
     // service, on their own session.
     actions: createSupabaseChatAgentActionService(supabase),
+    ...deps,
+  });
+}
+
+/**
+ * The worker's wiring.
+ *
+ * The session is minted per turn and never stored, the row is the claim, and the
+ * assistant runs over the minted session so every read is still RLS-shaped.
+ */
+export function createChatAgentResumeService(
+  deps: Partial<ChatAgentResumeDeps> = {}
+): ChatAgentResumeService {
+  return new ChatAgentResumeService({
+    turns: createSupabaseChatAgentRepository(getAdminSupabase()),
+    openSession: (userId) => openAgentTurnSession(userId),
+    service: (supabase) => createSupabaseChatAgentService(supabase),
     ...deps,
   });
 }

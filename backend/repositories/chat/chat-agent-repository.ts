@@ -6,6 +6,16 @@ import { repositoryFailure } from '@/backend/shared/repository-error';
 import type { ChatAgentAllowance } from '@/shared/contracts/chat';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
+type TurnRow = Database['public']['Tables']['agent_turns']['Row'];
+
+/** What a worker needs to finish a turn: who asked, in which thread, and what. */
+export interface AgentTurnRow {
+  id: string;
+  conversationId: string;
+  memberId: string;
+  question: string;
+  resumes: number;
+}
 
 /** The allowance row `public.chat_agent_allowance(p_user_id)` answers. */
 interface AllowanceRow {
@@ -28,6 +38,16 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
+  };
+}
+
+function toTurn(row: TurnRow): AgentTurnRow {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    memberId: row.member_id,
+    question: row.question ?? '',
+    resumes: row.resumes,
   };
 }
 
@@ -54,13 +74,17 @@ export interface ChatAgentRepository {
   /** Writes the assistant's reply. The conversation is the caller's own thread. */
   insertAgentMessage(conversationId: string, body: string): Promise<ChatMessageRecord>;
   /** Opens the record of one turn and answers its id. */
-  startTurn(conversationId: string, memberId: string): Promise<string>;
+  startTurn(conversationId: string, memberId: string, question: string): Promise<string>;
   /** Counts a retry the turn is about to take. */
   recordAttempt(turnId: string, attempts: number): Promise<void>;
   /** The answer landed. */
   settleTurn(turnId: string): Promise<void>;
   /** The turn ended without an answer; what streamed and why are kept. */
   failTurn(turnId: string, failure: { error: string; partialText: string }): Promise<void>;
+  /** Turns whose request is gone, oldest first. */
+  dueTurns(limit: number): Promise<string[]>;
+  /** The lease: null when another worker won the turn, or it is not abandoned. */
+  claimTurn(turnId: string): Promise<AgentTurnRow | null>;
 }
 
 export function createSupabaseChatAgentRepository(
@@ -98,15 +122,29 @@ export function createSupabaseChatAgentRepository(
       return toMessage(data);
     },
 
-    async startTurn(conversationId, memberId) {
+    async startTurn(conversationId, memberId, question) {
       const { data, error } = await supabase
         .from('agent_turns')
-        .insert({ conversation_id: conversationId, member_id: memberId })
+        .insert({ conversation_id: conversationId, member_id: memberId, question })
         .select('id')
         .single();
 
       if (error) throw repositoryFailure('chat.agent.startTurn', error);
       return data.id;
+    },
+
+    async dueTurns(limit) {
+      const { data, error } = await supabase.rpc('agent_turns_due', { p_limit: limit });
+      if (error) throw repositoryFailure('chat.agent.dueTurns', error);
+      return (data ?? []).map((row) => row.id);
+    },
+
+    async claimTurn(turnId) {
+      const { data, error } = await supabase.rpc('claim_agent_turn', { p_turn_id: turnId });
+      if (error) throw repositoryFailure('chat.agent.claimTurn', error);
+
+      const row = (Array.isArray(data) ? data[0] : null) as TurnRow | null;
+      return row ? toTurn(row) : null;
     },
 
     async recordAttempt(turnId, attempts) {

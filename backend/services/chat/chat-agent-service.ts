@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import type {
+  ChatAgentRepository,
+  AgentTurnRow,
+} from '@/backend/repositories/chat/chat-agent-repository';
 import type { ChatAgentActionService } from '@/backend/services/chat/chat-agent-action-service';
 import {
   chatAgentTool,
@@ -215,188 +218,235 @@ export class ChatAgentService {
     }
 
     // The record exists before the provider is called, so a turn that dies has
-    // somewhere to say so — and the retry below has a row to count itself on.
-    // Best-effort on purpose: the deploy that introduces this lands before the
-    // migration that creates the table, and a diagnostics row must never be able
-    // to refuse the member an answer (or leak their allowance).
+    // somewhere to say so — and a retry has a row to count itself on. Best-effort
+    // on purpose: the deploy that introduces this lands before the migration that
+    // creates the table, and a diagnostics row must never be able to refuse the
+    // member an answer (or leak their allowance).
     const turnId = await this.deps.agent
-      .startTurn(conversationId, userId)
+      .startTurn(conversationId, userId, question)
       .catch((error: unknown) => {
         logger.warn('Assistant turn record could not be opened', { error: String(error) });
         return null;
       });
-    let answer = '';
 
     try {
       await this.deps.chats.sendMessage(userId, conversationId, { body: question });
 
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
-      const messages: AiChatWireMessage[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...trimHistory(page.messages),
-      ];
-
-      const tools = chatAgentToolDefinitions();
-      const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
-      let rounds = 0;
-      let retried = false;
-
-      try {
-        for (;;) {
-          const calls: AiChatToolCall[] = [];
-          let roundText = '';
-          let streamed = false;
-
-          try {
-            const signal = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
-            for await (const event of client.streamWithTools(messages, tools, signal)) {
-              if (event.type === 'text') {
-                roundText += event.text;
-                streamed = true;
-                answer += event.text;
-                yield { type: 'delta', text: event.text };
-              } else {
-                calls.push(event.call);
-              }
-            }
-          } catch (error) {
-            // One clean retry, and only when repeating the call cannot duplicate
-            // anything: no text shown, no tool run, nothing proposed yet. A busy
-            // provider is the case this exists for.
-            if (
-              !retried &&
-              !streamed &&
-              answer === '' &&
-              calls.length === 0 &&
-              rounds === 0 &&
-              retryable(error)
-            ) {
-              retried = true;
-              if (turnId) await this.deps.agent.recordAttempt(turnId, 1);
-              await sleep(RETRY_DELAY_MS);
-              continue;
-            }
-            throw error;
-          }
-
-          // Text with no calls is the answer, and it is the one that is kept.
-          if (calls.length === 0) break;
-          rounds += 1;
-          if (rounds > CHAT_AGENT_MAX_ROUNDS) break;
-
-          messages.push({
-            role: 'assistant',
-            content: roundText || null,
-            tool_calls: calls.map((call) => ({
-              id: call.id,
-              type: 'function' as const,
-              function: { name: call.name, arguments: call.arguments },
-            })),
-          });
-
-          for (const call of calls) {
-            const tool = this.toolOf(call.name);
-            if (!tool) {
-              messages.push(toolAnswer(call.id, { error: 'أداة غير معروفة' }));
-              continue;
-            }
-
-            const args = parseToolArgs(call.arguments);
-
-            // A write is proposed, never run here: the member confirms it.
-            if (tool.kind === 'write') {
-              const proposal = await this.deps.actions.propose(
-                conversationId,
-                tool.name,
-                args ?? {}
-              );
-              yield { type: 'proposal', message: proposal.message, action: proposal.action };
-              messages.push(
-                toolAnswer(call.id, {
-                  status: 'proposed',
-                  note: 'الاقتراح معروض على العضو، ولم يُنفَّذ بعد.',
-                })
-              );
-              continue;
-            }
-
-            const parsed = tool.schema.safeParse(args);
-            if (!parsed.success) {
-              messages.push(
-                toolAnswer(call.id, {
-                  error: parsed.error.issues[0]?.message ?? 'بيانات الأداة غير صالحة',
-                })
-              );
-              continue;
-            }
-
-            try {
-              const result = await tool.run(parsed.data, {
-                userId,
-                supabase: context.supabase,
-                ip: context.ip,
-              });
-              yield {
-                type: 'tool',
-                name: tool.name,
-                label: CHAT_AGENT_TOOLS[tool.name].label,
-              };
-              messages.push(toolAnswer(call.id, result));
-            } catch (error) {
-              logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
-              messages.push(
-                toolAnswer(call.id, {
-                  error: error instanceof Error ? error.message : 'تعذّر تنفيذ الأداة',
-                })
-              );
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn('Assistant turn failed', { error: String(error), turn: turnId });
-        throw new ChatAgentError(
-          502,
-          error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
-            ? 'المساعد مشغول الآن، حاول بعد قليل.'
-            : COULD_NOT_ANSWER
-        );
-      }
-
-      const text = answer.trim() || ROUNDS_EXHAUSTED;
-
-      const record = await this.deps.agent.insertAgentMessage(conversationId, text);
-      if (turnId) await this.deps.agent.settleTurn(turnId);
-      yield {
-        type: 'done',
-        message: {
-          id: record.id,
-          conversationId: record.conversationId,
-          senderId: null,
-          senderKind: 'agent',
-          body: record.body,
-          replyToId: record.replyToId,
-          editedAt: record.editedAt,
-          deletedAt: record.deletedAt,
-          createdAt: record.createdAt,
-          attachments: [],
-          replyTo: null,
-        },
-      };
+      yield* this.answer({
+        userId,
+        conversationId,
+        turnId,
+        context,
+        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
+      });
     } catch (error) {
-      // The row keeps what the member already read, so a half-written answer is
-      // visible to whoever looks rather than discarded with the request.
-      if (turnId) {
-        await this.deps.agent
-          .failTurn(turnId, {
-            error: error instanceof Error ? error.message : String(error),
-            partialText: answer,
-          })
-          .catch(() => undefined);
-      }
       await reservation.release();
       throw error;
     }
   }
+
+  /**
+   * The same answer, for a turn whose request is gone.
+   *
+   * Nothing is taken twice: the member's message is already in the thread, and the
+   * allowance was reserved by the request that started the turn. The caller has
+   * claimed the row, and it acts as the member through a session this server
+   * minted for them — never a copy of the browser's (`docs/security.md`).
+   */
+  async *resume(
+    turn: AgentTurnRow,
+    context: ChatAgentTurnContext
+  ): AsyncGenerator<ChatAgentEvent, void, void> {
+    if (!this.deps.client) throw new ChatAgentError(503, UNAVAILABLE);
+
+    const page = await this.deps.chats.listMessages(turn.memberId, turn.conversationId, null);
+    yield* this.answer({
+      userId: turn.memberId,
+      conversationId: turn.conversationId,
+      turnId: turn.id,
+      context,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
+    });
+  }
+
+  /**
+   * The rounds, the retry and the row's ending, shared by both entries so a
+   * resumed turn behaves exactly like one the member is watching.
+   */
+  private async *answer({
+    userId,
+    conversationId,
+    turnId,
+    messages,
+    context,
+  }: {
+    userId: string;
+    conversationId: string;
+    turnId: string | null;
+    messages: AiChatWireMessage[];
+    context: ChatAgentTurnContext;
+  }): AsyncGenerator<ChatAgentEvent, void, void> {
+    const client = this.deps.client;
+    if (!client) throw new ChatAgentError(503, UNAVAILABLE);
+
+    const tools = chatAgentToolDefinitions();
+    const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
+    let answerText = '';
+    let rounds = 0;
+    let retried = false;
+
+    try {
+      for (;;) {
+        const calls: AiChatToolCall[] = [];
+        let roundText = '';
+        let streamed = false;
+
+        try {
+          const signal = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
+          for await (const event of client.streamWithTools(messages, tools, signal)) {
+            if (event.type === 'text') {
+              roundText += event.text;
+              streamed = true;
+              answerText += event.text;
+              yield { type: 'delta', text: event.text };
+            } else {
+              calls.push(event.call);
+            }
+          }
+        } catch (error) {
+          // One clean retry, and only when repeating the call cannot duplicate
+          // anything: no text shown, no tool run, nothing proposed yet. A busy
+          // provider is the case this exists for.
+          if (
+            !retried &&
+            !streamed &&
+            answerText === '' &&
+            calls.length === 0 &&
+            rounds === 0 &&
+            retryable(error)
+          ) {
+            retried = true;
+            if (turnId) await this.deps.agent.recordAttempt(turnId, 1);
+            await sleep(RETRY_DELAY_MS);
+            continue;
+          }
+          throw error;
+        }
+
+        // Text with no calls is the answer, and it is the one that is kept.
+        if (calls.length === 0) break;
+        rounds += 1;
+        if (rounds > CHAT_AGENT_MAX_ROUNDS) break;
+
+        messages.push({
+          role: 'assistant',
+          content: roundText || null,
+          tool_calls: calls.map((call) => ({
+            id: call.id,
+            type: 'function' as const,
+            function: { name: call.name, arguments: call.arguments },
+          })),
+        });
+
+        for (const call of calls) {
+          const tool = this.toolOf(call.name);
+          if (!tool) {
+            messages.push(toolAnswer(call.id, { error: 'أداة غير معروفة' }));
+            continue;
+          }
+
+          const args = parseToolArgs(call.arguments);
+
+          // A write is proposed, never run here: the member confirms it.
+          if (tool.kind === 'write') {
+            const proposal = await this.deps.actions.propose(conversationId, tool.name, args ?? {});
+            yield { type: 'proposal', message: proposal.message, action: proposal.action };
+            messages.push(
+              toolAnswer(call.id, {
+                status: 'proposed',
+                note: 'الاقتراح معروض على العضو، ولم يُنفَّذ بعد.',
+              })
+            );
+            continue;
+          }
+
+          const parsed = tool.schema.safeParse(args);
+          if (!parsed.success) {
+            messages.push(
+              toolAnswer(call.id, {
+                error: parsed.error.issues[0]?.message ?? 'بيانات الأداة غير صالحة',
+              })
+            );
+            continue;
+          }
+
+          try {
+            const result = await tool.run(parsed.data, {
+              userId,
+              supabase: context.supabase,
+              ip: context.ip,
+            });
+            yield {
+              type: 'tool',
+              name: tool.name,
+              label: CHAT_AGENT_TOOLS[tool.name].label,
+            };
+            messages.push(toolAnswer(call.id, result));
+          } catch (error) {
+            logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
+            messages.push(
+              toolAnswer(call.id, {
+                error: error instanceof Error ? error.message : 'تعذّر تنفيذ الأداة',
+              })
+            );
+          }
+        }
+      }
+    } catch (error) {
+      const failure = classifiedFailure(error);
+      logger.warn('Assistant turn failed', { error: String(error), turn: turnId });
+      // The row keeps what the member already read, so a half-written answer is
+      // visible to whoever looks rather than discarded with the request.
+      if (turnId) {
+        await this.deps.agent
+          .failTurn(turnId, { error: failure.message, partialText: answerText })
+          .catch(() => undefined);
+      }
+      throw failure;
+    }
+
+    const text = answerText.trim() || ROUNDS_EXHAUSTED;
+    const record = await this.deps.agent.insertAgentMessage(conversationId, text);
+    if (turnId) await this.deps.agent.settleTurn(turnId);
+
+    yield {
+      type: 'done',
+      message: {
+        id: record.id,
+        conversationId: record.conversationId,
+        senderId: null,
+        senderKind: 'agent',
+        body: record.body,
+        replyToId: record.replyToId,
+        editedAt: record.editedAt,
+        deletedAt: record.deletedAt,
+        createdAt: record.createdAt,
+        attachments: [],
+        replyTo: null,
+      },
+    };
+  }
+}
+
+/** A failed turn, in the one sentence its stream carries to the composer. */
+function classifiedFailure(error: unknown): ChatAgentError {
+  return new ChatAgentError(
+    502,
+    error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
+      ? 'المساعد مشغول الآن، حاول بعد قليل.'
+      : COULD_NOT_ANSWER
+  );
 }
 
 /** How long a clean retry waits before asking the provider again. */
