@@ -1035,6 +1035,38 @@
       ]
     },
     {
+      "id": "linksnap-shortener",
+      "surface": "linksnap",
+      "issue": "#916",
+      "web": {
+        "route": "app/linksnap/(app)/page.tsx",
+        "component": "frontend/ui/linksnap/single-url-shortener.tsx",
+        "copyModule": "frontend/ui/linksnap/single-url-shortener-copy.ts",
+        "copyExport": "SINGLE_URL_SHORTENER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerCopy.kt",
+        "copyObject": "LinksnapShortenerCopy"
+      },
+      "copySource": "shared/copy/linksnap-shortener.json",
+      "states": [
+        {
+          "name": "Guest",
+          "copy": "guestHint"
+        },
+        {
+          "name": "SignedIn",
+          "copy": "customLabel"
+        },
+        {
+          "name": "Ready",
+          "copy": "readyTitle"
+        }
+      ]
+    },
+    {
       "id": "linksnap-empty",
       "surface": "linksnap",
       "issue": "#654",

@@ -12,6 +12,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.royaraqamia.app.contracts.ApiError
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import java.io.File
 import org.junit.Rule
@@ -22,17 +24,18 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The app's half of the visual gate for `/linksnap` (#654, ADR-0118).
+ * The app's half of the visual gate for `/linksnap` (#654, #916, ADR-0118).
  *
  * It draws the screen at the viewport the page was recorded at - 393 x 852 CSS px,
  * Arabic, RTL, dark - writes every contract element's numbers to
- * `e2e/__visual__/linksnap/app.json` and the card's own pixels to `app.png`, and
- * `check:visual` compares them with the page's recording. A number that differs is
- * a failure that names the element and both values.
+ * `e2e/__visual__/linksnap/<state>/app.json` and the card's own pixels to
+ * `app.png`, and `check:visual` compares them with the page's recording. A number
+ * that differs is a failure that names the element and both values.
  *
- * The screen is composed signed out, which is the page at rest: the site's
- * `/linksnap` is the shortener for a visitor with no session too, and the guest
- * sentence is part of the card rather than a gate in front of it.
+ * Two states: the screen signed out, which is the page at rest, and the same
+ * screen with a session behind it, which draws the page's custom-code and
+ * password fields. The success block is reached by pressing the button and is not
+ * part of this contract.
  *
  * The boxes are measured; the type sizes and weights are read from
  * [LinksnapMetrics], the object the screen draws with, because Compose does not
@@ -60,7 +63,8 @@ class LinksnapScreenVisualTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     Box(Modifier.width(393.dp).fillMaxHeight()) {
                         LinksnapShortenerScreen(
-                            shorten = { ShortenOutcome.Failed("") },
+                            shorten = { _, _, _ -> ShortenOutcome.Failed("") },
+                            checkAvailability = { ApiResult.Failure(ApiError.Network("offline")) },
                             siteUrl = "https://royaraqamia.com",
                             signedIn = false,
                         )
@@ -134,6 +138,112 @@ class LinksnapScreenVisualTest {
         // The capture is Roborazzi's: it is what settles the frame clock under
         // Robolectric (see CaptureSmokeTest). It writes only in record mode, so
         // the evidence is produced by `-Proborazzi.record=true`.
+        compose.onNodeWithTag(LinksnapMetrics.CARD).captureRoboImage(File(dir, "app.png").path)
+    }
+
+    @Test
+    fun `the signed-in screen records the same numbers as the page`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        LinksnapShortenerScreen(
+                            shorten = { _, _, _ -> ShortenOutcome.Failed("") },
+                            checkAvailability = { ApiResult.Failure(ApiError.Network("offline")) },
+                            siteUrl = "https://royaraqamia.com",
+                            signedIn = true,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun top(tag: String) = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot().top.value
+
+        fun width(tag: String): Float {
+            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            return (box.right - box.left).value
+        }
+
+        fun height(tag: String): Float {
+            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            return (box.bottom - box.top).value
+        }
+
+        val json =
+            """
+            {
+              "surface": "linksnap",
+              "elements": {
+                "title": {
+                  "top": ${top(LinksnapMetrics.TITLE)},
+                  "height": ${height(LinksnapMetrics.TITLE)},
+                  "fontSize": ${LinksnapMetrics.titleSize.value},
+                  "fontWeight": ${LinksnapMetrics.titleWeight.weight}
+                },
+                "card": {
+                  "top": ${top(LinksnapMetrics.CARD)},
+                  "width": ${width(LinksnapMetrics.CARD)},
+                  "height": ${height(LinksnapMetrics.CARD)},
+                  "radius": ${LinksnapMetrics.cardRadius.value},
+                  "paddingTop": ${LinksnapMetrics.cardPadding.value},
+                  "paddingLeft": ${LinksnapMetrics.cardPadding.value}
+                },
+                "label": {
+                  "top": ${top(LinksnapMetrics.LABEL)},
+                  "height": ${height(LinksnapMetrics.LABEL)},
+                  "fontSize": ${LinksnapMetrics.labelSize.value},
+                  "fontWeight": ${LinksnapMetrics.labelWeight.weight}
+                },
+                "input": {
+                  "width": ${width(LinksnapMetrics.INPUT)},
+                  "height": ${height(LinksnapMetrics.INPUT)},
+                  "fontSize": ${LinksnapMetrics.fieldTextSize.value},
+                  "paddingLeft": ${LinksnapMetrics.fieldPadding.value},
+                  "paddingRight": ${LinksnapMetrics.fieldPadding.value}
+                },
+                "customLabel": {
+                  "top": ${top(LinksnapMetrics.CUSTOM_LABEL)},
+                  "height": ${height(LinksnapMetrics.CUSTOM_LABEL)},
+                  "fontSize": ${LinksnapMetrics.labelSize.value},
+                  "fontWeight": ${LinksnapMetrics.labelWeight.weight}
+                },
+                "customField": {
+                  "top": ${top(LinksnapMetrics.CUSTOM_FIELD)},
+                  "width": ${width(LinksnapMetrics.CUSTOM_FIELD)},
+                  "height": ${height(LinksnapMetrics.CUSTOM_FIELD)}
+                },
+                "customHint": {
+                  "top": ${top(LinksnapMetrics.CUSTOM_HINT)},
+                  "width": ${width(LinksnapMetrics.CUSTOM_HINT)},
+                  "height": ${height(LinksnapMetrics.CUSTOM_HINT)},
+                  "fontSize": ${LinksnapMetrics.hintSize.value}
+                },
+                "passwordLabel": {
+                  "top": ${top(LinksnapMetrics.PASSWORD_LABEL)},
+                  "height": ${height(LinksnapMetrics.PASSWORD_LABEL)},
+                  "fontSize": ${LinksnapMetrics.labelSize.value},
+                  "fontWeight": ${LinksnapMetrics.labelWeight.weight}
+                },
+                "passwordField": {
+                  "width": ${width(LinksnapMetrics.PASSWORD_FIELD)},
+                  "height": ${height(LinksnapMetrics.PASSWORD_FIELD)},
+                  "fontSize": ${LinksnapMetrics.fieldTextSize.value},
+                  "paddingLeft": ${LinksnapMetrics.fieldPadding.value},
+                  "paddingRight": ${LinksnapMetrics.fieldPadding.value}
+                },
+                "submit": {
+                  "width": ${width(LinksnapMetrics.SUBMIT)},
+                  "height": ${height(LinksnapMetrics.SUBMIT)},
+                  "fontSize": ${LinksnapMetrics.buttonTextSize.value},
+                  "fontWeight": ${LinksnapMetrics.buttonWeight.weight}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/linksnap/signed-in").apply { mkdirs() }
+        File(dir, "app.json").writeText(json)
         compose.onNodeWithTag(LinksnapMetrics.CARD).captureRoboImage(File(dir, "app.png").path)
     }
 }

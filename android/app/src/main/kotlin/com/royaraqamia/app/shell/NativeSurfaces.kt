@@ -32,7 +32,7 @@ object NativeSurfaces {
      * pull request that makes its port indistinguishable from the page, never
      * before it (#874, ADR-0118).
      */
-    private val routes: Set<String> = setOf("/verify", "/account/faq")
+    private val routes: Set<String> = setOf("/verify", "/account/faq", "/linksnap")
 
     /**
      * The routes a signed-out visitor reads.

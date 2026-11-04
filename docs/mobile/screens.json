@@ -32,9 +32,8 @@
     },
     {
       "surface": "linksnap",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerScreen.kt",
-      "reason": "The shortener is the page at rest and passes the visual gate (#654, #874); the signed-in form's custom code and password fields are still the document, so the surface stays off until they are drawn."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerScreen.kt"
     },
     {
       "surface": "linksnap-unlock",

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { SINGLE_URL_SHORTENER_COPY } from './single-url-shortener-copy';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -45,7 +46,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     setQrDataUrl(null);
 
     if (!isValidUrl(originalUrl)) {
-      setError('يرجى إدخال رابط صحيح يبدأ بـ http:// أو https://');
+      setError(SINGLE_URL_SHORTENER_COPY.invalidUrl);
       return;
     }
 
@@ -74,11 +75,11 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     try {
       await navigator.clipboard.writeText(shortenedUrl);
       setCopied(true);
-      toast.success('تم نسخ الرَّابط!');
+      toast.success(SINGLE_URL_SHORTENER_COPY.copySuccessToast);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       logger.error('Failed to copy text', { error: String(err) });
-      toast.error('فشل نسخ الرَّابط');
+      toast.error(SINGLE_URL_SHORTENER_COPY.copyFailedToast);
     }
   };
 
@@ -86,8 +87,11 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     if (!shortenedUrl) return;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'رابط مُختصَر من LinkSnap', url: shortenedUrl });
-        toast.success('تمت المشاركة!');
+        await navigator.share({
+          title: SINGLE_URL_SHORTENER_COPY.shareTitle,
+          url: shortenedUrl,
+        });
+        toast.success(SINGLE_URL_SHORTENER_COPY.shareSuccessToast);
       } else {
         copyToClipboard();
       }
@@ -148,7 +152,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               data-visual="label"
               className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
             >
-              الرَّابط
+              {SINGLE_URL_SHORTENER_COPY.urlLabel}
             </label>
             <input
               id="original-url"
@@ -157,7 +161,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               required
               value={originalUrl}
               onChange={(e) => setOriginalUrl(e.target.value)}
-              placeholder="https://example.com/very-long-url-path"
+              placeholder={SINGLE_URL_SHORTENER_COPY.urlPlaceholder}
               autoFocus
               aria-describedby="single-url-error"
               data-visual="input"
@@ -167,12 +171,12 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           {!token && (
             <p data-visual="hint" className="text-xs text-muted-foreground font-medium">
-              سجِّل الدُّخول لاستخدام رمزٍ مخصَّص وكلمة مرور وتتبُّع النَّقرات.{' '}
+              {SINGLE_URL_SHORTENER_COPY.guestHint}{' '}
               <NextLink
                 href="/auth/login?redirect=%2Flinksnap"
                 className="font-bold text-primary hover:underline"
               >
-                تسجيل الدُّخول
+                {SINGLE_URL_SHORTENER_COPY.guestSignIn}
               </NextLink>
             </p>
           )}
@@ -188,7 +192,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 data-visual="custom-label"
                 className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
               >
-                رمز مُخصَّص (اختياري)
+                {SINGLE_URL_SHORTENER_COPY.customLabel}
               </label>
               <div
                 data-visual="custom-field"
@@ -205,13 +209,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   onChange={(e) =>
                     setCustomCode(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
                   }
-                  placeholder="my-promo"
+                  placeholder={SINGLE_URL_SHORTENER_COPY.customPlaceholder}
                   maxLength={16}
                   className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               <p data-visual="custom-hint" className="text-xs text-muted-foreground font-medium">
-                3-16 حرفًا (أحرف، أرقام، - و _)
+                {SINGLE_URL_SHORTENER_COPY.customHint}
               </p>
               {slugStatus !== 'idle' && (
                 <div
@@ -231,22 +235,22 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                         className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"
                         aria-hidden="true"
                       />
-                      <span>جاري التحقق من التوفر...</span>
+                      <span>{SINGLE_URL_SHORTENER_COPY.checking}</span>
                     </>
                   ) : slugStatus === 'available' ? (
                     <>
                       <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>هذا الرمز متاح!</span>
+                      <span>{SINGLE_URL_SHORTENER_COPY.available}</span>
                     </>
                   ) : slugStatus === 'offline' ? (
                     <>
                       <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>يتطلَّب الاتصال للتحقق من التوفُّر؛ سيُتحقَّق عند المزامنة.</span>
+                      <span>{SINGLE_URL_SHORTENER_COPY.offline}</span>
                     </>
                   ) : (
                     <>
                       <span aria-hidden="true">✕</span>
-                      <span>{slugError}</span>
+                      <span>{slugError ?? SINGLE_URL_SHORTENER_COPY.takenFallback}</span>
                     </>
                   )}
                 </div>
@@ -258,7 +262,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   data-visual="password-label"
                   className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
                 >
-                  كلمة مرور (اختياري)
+                  {SINGLE_URL_SHORTENER_COPY.passwordLabel}
                 </label>
                 <input
                   id="link-password"
@@ -266,7 +270,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="يُطلَب من الزَّائر قبل فتح الرَّابط"
+                  placeholder={SINGLE_URL_SHORTENER_COPY.passwordPlaceholder}
                   autoComplete="new-password"
                   className="w-full px-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
                 />
@@ -300,10 +304,10 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"
                   role="status"
                 />
-                <span>جاري الاختصار...</span>
+                <span>{SINGLE_URL_SHORTENER_COPY.busySubmit}</span>
               </>
             ) : (
-              <span>اختصار الرَّابط</span>
+              <span>{SINGLE_URL_SHORTENER_COPY.submit}</span>
             )}
           </HeroCtaButton>
         </m.form>
@@ -329,15 +333,16 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               </svg>
             </div>
             <h3 className="text-xl font-display font-bold text-foreground">
-              رابطك المُختصَر جاهز!
+              {SINGLE_URL_SHORTENER_COPY.readyTitle}
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm truncate">
-              يُعيد التَّوجيه إلى: <span className="text-primary">{originalUrl}</span>
+              {SINGLE_URL_SHORTENER_COPY.redirectLead}{' '}
+              <span className="text-primary">{originalUrl}</span>
             </p>
             {password && (
               <p className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
                 <LockOpen aria-hidden="true" className="w-3.5 h-3.5" />
-                محمي بكلمة مرور
+                {SINGLE_URL_SHORTENER_COPY.protectedBadge}
               </p>
             )}
           </div>
@@ -359,12 +364,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               {copied ? (
                 <>
                   <Check aria-hidden="true" className="w-4 h-4 text-success" />
-                  <span className="text-success font-bold">تمَّ النَّسخ!</span>
+                  <span className="text-success font-bold">
+                    {SINGLE_URL_SHORTENER_COPY.copiedAction}
+                  </span>
                 </>
               ) : (
                 <>
                   <Copy aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
-                  <span>نسخ الرَّابط</span>
+                  <span>{SINGLE_URL_SHORTENER_COPY.copyAction}</span>
                 </>
               )}
             </button>
@@ -374,7 +381,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-safe flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               <Share2 aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
-              <span>مشاركة الرَّابط</span>
+              <span>{SINGLE_URL_SHORTENER_COPY.shareAction}</span>
             </button>
 
             <button
@@ -389,7 +396,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 aria-hidden="true"
                 className={`w-4 h-4 ${showQr ? 'text-primary' : 'text-muted-foreground'}`}
               />
-              <span>رمز الاستجابة السَّريعة</span>
+              <span>{SINGLE_URL_SHORTENER_COPY.qrAction}</span>
             </button>
           </div>
 
@@ -404,14 +411,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 {qrDataUrl && (
                   <img
                     src={qrDataUrl}
-                    alt="QR code for shortened URL"
+                    alt={SINGLE_URL_SHORTENER_COPY.qrImageAlt}
                     width={180}
                     height={180}
                     className="w-44 h-44 bg-background p-2 rounded-full shadow-inner border border-primary/20"
                   />
                 )}
                 <p className="text-xs text-primary font-bold mt-2.5">
-                  امسح لعرض الرَّابط المُختصَر
+                  {SINGLE_URL_SHORTENER_COPY.qrHint}
                 </p>
               </m.div>
             )}
@@ -422,7 +429,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-bold rounded-full transition-safe flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" />
-            <span>اختصار رابط آخر</span>
+            <span>{SINGLE_URL_SHORTENER_COPY.againAction}</span>
           </button>
         </m.div>
       )}

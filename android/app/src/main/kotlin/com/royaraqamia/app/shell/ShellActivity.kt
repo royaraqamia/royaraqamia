@@ -290,6 +290,7 @@ class ShellActivity : ComponentActivity() {
                                     siteUrl = BuildConfig.SITE_URL,
                                     signedIn = signedIn,
                                     onCopy = ::copyToClipboard,
+                                    onShare = ::shareText,
                                     onSignIn = ::showSignIn,
                                 )
                             "/account/links" ->
@@ -613,6 +614,20 @@ class ShellActivity : ComponentActivity() {
     private fun copyToClipboard(text: String) {
         val clipboard = getSystemService(ClipboardManager::class.java) ?: return
         clipboard.setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, text))
+    }
+
+    /**
+     * The shortener's share action (#916): the platform sheet, the way the page's
+     * `navigator.share` hands the same URL to the device. The screen takes it as a
+     * callback so it can be drawn without an activity.
+     */
+    private fun shareText(text: String) {
+        val send =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+        runCatching { startActivity(Intent.createChooser(send, null)) }
     }
 
     /**
