@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chunkMessage,
   commandSpan,
+  escapeHtml,
   formatAlert,
   formatDigest,
   formatContext,
@@ -183,6 +184,28 @@ describe('formatDigest', () => {
     });
 
     expect(text).toContain('&lt;b&gt;x&lt;/b&gt;');
+  });
+
+  it('escapes a quote in a link, so a URL cannot break out of the attribute', () => {
+    const text = formatDigest({
+      workflow: 'Issue Implementer',
+      runs: [{ conclusion: 'failure', html_url: 'https://example.com/r" onclick="alert(1)' }],
+      items: [],
+    });
+
+    expect(text).toContain('href="https://example.com/r&quot; onclick=&quot;alert(1)"');
+    expect(text).not.toContain('onclick="');
+  });
+});
+
+describe('escapeHtml', () => {
+  it('escapes the quotes an attribute value needs, not just the tag characters', () => {
+    expect(escapeHtml(`a"b'c<d>e&f`)).toBe('a&quot;b&#39;c&lt;d&gt;e&amp;f');
+  });
+
+  it('treats a missing value as empty rather than printing the word undefined', () => {
+    expect(escapeHtml(undefined)).toBe('');
+    expect(escapeHtml(null)).toBe('');
   });
 });
 
