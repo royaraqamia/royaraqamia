@@ -272,7 +272,7 @@ jobs:
 
           if [ "$HAS_PUSH_TOKEN" != 'true' ]; then
             echo "::warning title=AGENT_PUSH_TOKEN is missing::A repair cannot be measured without it."
-            gh pr comment "$PR" --body "A repair is needed, but this repository has no \`AGENT_PUSH_TOKEN\` secret. A push made with \`GITHUB_TOKEN\` starts no workflow, so the repaired head would never be measured. Add a fine-grained PAT (contents: write, pull requests: write) as \`AGENT_PUSH_TOKEN\`."
+            gh pr comment "$PR" --body "A repair is needed, but this repository has no \`AGENT_PUSH_TOKEN\` secret. A push made with \`GITHUB_TOKEN\` starts no workflow, so the repaired head would never be measured. Add a fine-grained PAT with \`Contents: Read and write\` as \`AGENT_PUSH_TOKEN\`."
             exit 0
           fi
 
