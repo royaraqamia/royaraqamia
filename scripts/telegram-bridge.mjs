@@ -51,6 +51,9 @@ const DEFAULT_TZ_MINUTES = 180;
 const INFERENCE_URL = 'https://opencode.ai/inference/go/openai/v1/chat/completions';
 const MODEL = 'deepseek-v4.1-flash';
 const TRANSCRIBE_MODELS = ['mimo-v2.6-flash', 'gemini-4-argon'];
+// A voice note that cannot be transcribed is not retried forever: after this many
+// attempts the row is answered once and left alone.
+const MAX_VOICE_ATTEMPTS = 3;
 const SYSTEM_PROMPT = [
   'أنت صديق مقرّب ومستشار موثوق لأيهم، تكتب بالعربية الطبيعية بلا تكلّف ولا نبرة رسمية.',
   'أجب عن أي شيء يسأله: الكود، العمل، الحياة، الأفكار، الآراء، التخطيط — كما يفعل صديق ذكي وصريح.',
@@ -436,43 +439,86 @@ async function transcribe(fileId) {
   const file = await telegram('getFile', { file_id: fileId });
   if (!file?.file_path) throw new Error('Telegram returned no file path');
 
-  const audio = await fetch(`https://api.telegram.org/file/bot${botToken()}/${file.file_path}`);
+  const audio = await fetch(`https://api.telegram.org/bot${botToken()}/${file.file_path}`);
   if (!audio.ok) throw new Error(`downloading the voice note failed: ${audio.status}`);
 
-  const data = Buffer.from(await audio.arrayBuffer()).toString('base64');
+  const ogg = Buffer.from(await audio.arrayBuffer());
 
-  // Two models, cheapest first. The second exists because the first answered
-  // 200 with no text on the first real voice note (2026-11-04) and then 503
-  // "endpoint is unavailable" on the next: a failed attempt must not stop the
-  // fallback from being tried.
+  // Telegram voice notes are OGG/OPUS. The probe (2026-11-04) showed the audio
+  // model receiving audio tokens, so the container is worth converting before
+  // asking it to listen: a 16 kHz mono WAV is the form every audio path accepts.
+  const wav = toWav(ogg);
+  const candidates = [
+    ...(wav ? [{ data: wav.toString('base64'), format: 'wav' }] : []),
+    { data: ogg.toString('base64'), format: 'ogg' },
+  ];
+
+  // Cheapest first, and a failure steps over instead of ending the attempt.
+  // `gemini-4-argon` answered 503 twice in a row, so it is tried last.
   let lastError;
   for (const model of TRANSCRIBE_MODELS) {
-    try {
-      const message = await askModel(
-        [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
-              { type: 'input_audio', input_audio: { data, format: 'ogg' } },
-            ],
-          },
-        ],
-        { model }
-      );
+    for (const candidate of candidates) {
+      try {
+        const message = await askModel(
+          [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة. إن لم تسمع صوتاً فاكتب: صمت.',
+                },
+                { type: 'input_audio', input_audio: candidate },
+              ],
+            },
+          ],
+          { model }
+        );
 
-      const text = String(message.content ?? message.audio_transcript ?? '').trim();
-      if (text) return text;
-      process.stdout.write(`telegram: ${model} returned no transcript\n`);
-    } catch (error) {
-      lastError = error;
-      process.stdout.write(`telegram: ${model} failed: ${String(error.message).slice(0, 200)}\n`);
+        const text = String(message.content ?? message.audio_transcript ?? '').trim();
+        if (text) {
+          process.stdout.write(`telegram: ${model} transcribed the ${candidate.format}\n`);
+          return text;
+        }
+        process.stdout.write(`telegram: ${model} returned no transcript (${candidate.format})\n`);
+      } catch (error) {
+        lastError = error;
+        process.stdout.write(
+          `telegram: ${model} failed on ${candidate.format}: ${String(error.message).slice(0, 160)}\n`
+        );
+      }
     }
   }
 
   throw new Error(
     `لم أستطع تحويل الصوت إلى نص${lastError ? ` (${String(lastError.message).slice(0, 120)})` : ''}`
   );
+}
+
+/** Telegram's OGG/OPUS to 16 kHz mono WAV, when the runner has ffmpeg. */
+export function toWav(input) {
+  try {
+    return execFileSync(
+      'ffmpeg',
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-i',
+        'pipe:0',
+        '-ar',
+        '16000',
+        '-ac',
+        '1',
+        '-f',
+        'wav',
+        'pipe:1',
+      ],
+      { input, maxBuffer: 40_000_000 }
+    );
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -571,14 +617,6 @@ async function claimRow(row) {
     }
   );
   return Boolean(claimed?.length);
-}
-
-/** Gives a claimed row back after a failure, so the next run retries it. */
-async function releaseRow(row) {
-  await db(`telegram_messages?id=eq.${row.id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ processed_at: null }),
-  }).catch(() => {});
 }
 
 async function recordOutbound(chatId, body, repo) {
@@ -881,7 +919,7 @@ async function drain() {
 
   const rows =
     (await db(
-      'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body,voice_file_id&order=id.asc&limit=20'
+      'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body,voice_file_id,attempts&order=id.asc&limit=20'
     )) ?? [];
 
   process.stdout.write(`telegram: ${rows.length} unprocessed message(s)\n`);
@@ -907,16 +945,34 @@ async function drain() {
       }
       await handleMessage({ chat: row.chat_id, text, messageId: row.id });
     } catch (error) {
-      await releaseRow(row);
-      const chat = row.chat_id;
-      if (String(chat) === String(allowedChat())) {
-        await sendMessage(
-          chat,
-          `⚠️ تعذّر تنفيذ الرسالة: ${escapeHtml(String(error.message).slice(0, 300))}`
-        ).catch(() => {});
-      }
+      await handleFailure(row, error);
     }
   }
+}
+
+/**
+ * One apology per message, not one every five minutes. A row is released for
+ * another attempt while its count is below the limit, and afterwards it stays
+ * processed - the chat is told once, and the loop terminates.
+ */
+async function handleFailure(row, error) {
+  const attempts = Number(row.attempts ?? 0) + 1;
+  const final = attempts >= MAX_VOICE_ATTEMPTS;
+
+  await db(`telegram_messages?id=eq.${row.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ attempts, processed_at: final ? new Date().toISOString() : null }),
+  }).catch(() => {});
+
+  process.stdout.write(
+    `telegram: message ${row.id} failed (attempt ${attempts}): ${String(error.message).slice(0, 200)}\n`
+  );
+
+  if (!final || String(row.chat_id) !== String(allowedChat())) return;
+
+  const line = `⚠️ تعذّر تنفيذ الرسالة: ${escapeHtml(String(error.message).slice(0, 300))}`;
+  await sendMessage(row.chat_id, line).catch(() => {});
+  await recordOutbound(row.chat_id, line, null).catch(() => {});
 }
 
 /**
