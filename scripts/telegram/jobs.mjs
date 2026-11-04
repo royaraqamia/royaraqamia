@@ -295,10 +295,21 @@ export async function remember() {
     return;
   }
 
-  const message = await askModel([
-    { role: 'system', content: REMEMBER_PROMPT },
-    { role: 'user', content: formatHistory(window) },
-  ]);
+  const message = await askModel(
+    [
+      { role: 'system', content: REMEMBER_PROMPT },
+      { role: 'user', content: formatHistory(window) },
+    ],
+    { model: MODEL }
+  ).catch((error) => {
+    // Distillation is a background nicety: a failure here must not turn a
+    // delivered answer into a red run. The cursor stays where it is, so the same
+    // window is tried again next time.
+    log(`remember skipped: ${String(error.message).slice(0, 200)}`);
+    return null;
+  });
+  if (!message) return;
+
   const { summary, memories } = parseMemory(message.content);
 
   if (summary) {
