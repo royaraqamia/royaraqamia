@@ -64,7 +64,10 @@ convenience. Four properties are now enforced by code, and each one is testable 
   paying a second model.
 - **The bot writes the pull request, not just the issue.** The issue stays as the record - labelled
   `telegram`, deliberately not `ready-for-agent`, so the unattended pipeline does not merge the bot's
-  work without the two taps. ADR 0120 keeps governing the issues the pipeline files itself.
+  work without the two taps. ADR 0120 keeps governing the issues the pipeline files itself. The merge
+  job closes the issue the body names: GitHub recorded the cross-reference for #1049 and left the
+  issue open when the merge arrived through the API, so the keyword is a request and the close is the
+  guarantee.
 - **One repository.** `GITHUB_TOKEN` reaches exactly one, and the bot refuses a sentence that names
   another rather than guessing at a credential it does not have.
 - **The memory is visible.** `telegram_memories` rows are numbered in the context the agent receives,

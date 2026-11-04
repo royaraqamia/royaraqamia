@@ -286,6 +286,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # The issue the pull request names with `Closes #N` is closed here, because
+      # GitHub did not honour the keyword when the merge came through the API.
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

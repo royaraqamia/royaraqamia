@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * the assertion is "was the merge asked for", which is the thing being guaranteed.
  */
 
-const state = { row: null, pull: null, merged: [] };
+const state = { row: null, pull: null, merged: [], patched: [] };
 
 vi.mock('../telegram/store.mjs', () => ({
   findConfirmation: async () => state.row,
@@ -28,6 +28,10 @@ vi.mock('../telegram/http.mjs', () => ({
       state.merged.push({ path, body: JSON.parse(init.body) });
       return { merged: true, sha: 'abc' };
     }
+    if (path.includes('/issues/')) {
+      state.patched.push(path);
+      return { state: 'closed' };
+    }
     if (path.includes('/git/refs')) return null;
     return state.pull;
   },
@@ -42,6 +46,7 @@ beforeEach(() => {
   state.row = null;
   state.pull = null;
   state.merged.length = 0;
+  state.patched.length = 0;
   mergedOutcomes.length = 0;
 });
 
@@ -104,6 +109,38 @@ describe('mergeConfirmed', () => {
     expect(state.merged[0].body.merge_method).toBe('squash');
     expect(state.merged[0].body.commit_title).toBe('عنوان (#12)');
     expect(mergedOutcomes).toContain('merged');
+  });
+
+  it('closes the issue the body says it closes, because GitHub may not', async () => {
+    state.row = { id: 1, kind: 'merge', step: 2, target: '12', expires_at: future() };
+    state.pull = {
+      number: 12,
+      merged: false,
+      state: 'open',
+      title: 't',
+      body: 'Closes #99\n\n## Why\n\nx',
+      head: { ref: 'telegram/1-fix' },
+    };
+
+    const result = await mergeConfirmed({ confirmationId: 1 });
+    expect(result.closedIssue).toBe(99);
+    expect(state.patched.some((path) => path.endsWith('/issues/99'))).toBe(true);
+  });
+
+  it('closes nothing when the body names no issue', async () => {
+    state.row = { id: 1, kind: 'merge', step: 2, target: '12', expires_at: future() };
+    state.pull = {
+      number: 12,
+      merged: false,
+      state: 'open',
+      title: 't',
+      body: 'no reference here',
+      head: { ref: 'telegram/1-fix' },
+    };
+
+    const result = await mergeConfirmed({ confirmationId: 1 });
+    expect(result.closedIssue).toBeNull();
+    expect(state.patched).toHaveLength(0);
   });
 });
 

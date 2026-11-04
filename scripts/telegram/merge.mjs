@@ -76,5 +76,16 @@ export async function mergeConfirmed({ confirmationId, onLog = () => {} }) {
     method: 'DELETE',
   }).catch(() => {});
 
-  return { ok: true, pull, already: false };
+  // `Closes #N` in the body is a request, not a guarantee: GitHub recorded the
+  // cross-reference for #1049 and left the issue open when the merge came through
+  // the API. Closing it here makes the record true whichever way it merged.
+  const linked = /closes\s+#(\d+)/i.exec(String(pull.body ?? ''));
+  if (linked) {
+    await github(`/repos/${owner}/${repo}/issues/${linked[1]}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ state: 'closed' }),
+    }).catch((error) => onLog(`closing #${linked[1]} failed: ${error.message}`));
+  }
+
+  return { ok: true, pull, already: false, closedIssue: linked ? Number(linked[1]) : null };
 }
