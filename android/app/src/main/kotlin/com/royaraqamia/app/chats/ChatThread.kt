@@ -544,6 +544,15 @@ private fun ThreadHeader(
         horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // The site's header carries its own back control, and the shell's floating
+        // one is skipped on an open conversation, so the two clients hold one each.
+        Icon(
+            imageVector = LucideVectors.ArrowRight,
+            contentDescription = null,
+            tint = RoyColors.mutedForeground,
+            modifier = Modifier.size(Recipes.Glyph.md),
+        )
+
         if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
             Box(
                 modifier =
