@@ -49,8 +49,15 @@ export const NEWS_REGION_LABELS: Record<NewsRegion, string> = {
 export const NEWS_DIGEST_MIN_STORIES = 8;
 export const NEWS_DIGEST_MAX_STORIES = 12;
 
-/** How long a digest survives; the sweep in 20261023130200 enforces it. */
-export const NEWS_RETENTION_DAYS = 30;
+/**
+ * How long a digest survives; the sweeps in `20261023130200` and
+ * `20261024160000` enforce it, and the seven-day form of both is in
+ * `20261104120000` (ADR-0076's 2026-11-04 amendment). The owner's decision: a
+ * digest older than a week is history nobody reads, and keeping third-party
+ * summaries past the point they serve is a liability rather than an archive.
+ * Search covers the same window by construction, because the rows stop existing.
+ */
+export const NEWS_RETENTION_DAYS = 7;
 
 /** One story's stored shape, camelCased for the client boundary. */
 export interface NewsStory {
@@ -138,6 +145,20 @@ export interface NewsPersonalView {
   available: boolean;
   /** The page is showing it rather than the shared digest. */
   active: boolean;
+  /**
+   * The feeds only this reader holds (`news_user_sources`), and how many of them
+   * a story reached the digest on screen (ADR-0106). Null when they hold none.
+   *
+   * It is the page's only way to say "your own sources produced nothing" instead
+   * of leaving a reader to assume a source is broken when the day simply had no
+   * story from it.
+   */
+  ownSources: NewsOwnSources | null;
+}
+
+export interface NewsOwnSources {
+  total: number;
+  contributed: number;
 }
 
 /**

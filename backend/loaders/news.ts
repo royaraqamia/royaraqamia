@@ -15,6 +15,8 @@ import { logger } from '@/backend/shared/logger';
 import {
   newsQuerySchema,
   type NewsBoard,
+  type NewsDay,
+  type NewsOwnSources,
   type NewsPersonalView,
   type NewsQuery,
   type NewsSearchHit,
@@ -84,6 +86,8 @@ interface Reader {
   userId: string;
   client: SupabaseClient<Database>;
   preferences: NewsSourcePreferences;
+  /** The feeds only this reader holds (`news_user_sources`), for the own-source notice. */
+  ownSourceIds: string[];
 }
 
 /** The reader a request already resolved, so the page does not resolve twice. */
@@ -102,21 +106,59 @@ export interface NewsViewer {
  */
 async function readReader(viewer?: NewsViewer | null): Promise<Reader | null> {
   try {
+    let resolved: NewsViewer | null;
     if (viewer !== undefined) {
-      if (viewer === null) return null;
-      const preferences = await createNewsPreferencesServiceFor(viewer.client).get(viewer.userId);
-      return { userId: viewer.userId, client: viewer.client, preferences };
+      resolved = viewer;
+    } else {
+      const { user, client } = await identity.resolveOptional();
+      resolved = user && client ? { userId: user.id, client } : null;
     }
+    if (!resolved) return null;
 
-    const { user, client } = await identity.resolveOptional();
-    if (!user || !client) return null;
-
-    const preferences = await createNewsPreferencesServiceFor(client).get(user.id);
-    return { userId: user.id, client, preferences };
+    const preferences = await createNewsPreferencesServiceFor(resolved.client).get(resolved.userId);
+    return {
+      userId: resolved.userId,
+      client: resolved.client,
+      preferences,
+      ownSourceIds: await readOwnSourceIds(resolved),
+    };
   } catch (error) {
     logger.warn("Failed to read the reader's news preferences", { error: String(error) });
     return null;
   }
+}
+
+/**
+ * The reader's own feeds, read for the notice the page shows when none of them
+ * reached the digest.
+ *
+ * A failure is "none": the notice is an explanation, never a reason to lose the
+ * page, and the same read already answers on the account page.
+ */
+async function readOwnSourceIds(reader: NewsViewer): Promise<string[]> {
+  try {
+    return await createNewsPersonalDigestServiceFor(reader.client).ownSourceIds(reader.userId);
+  } catch (error) {
+    logger.warn("Failed to read the reader's own news sources", { error: String(error) });
+    return [];
+  }
+}
+
+/**
+ * How many of the reader's own feeds put a story in the digest on screen.
+ *
+ * A private source's id is a uuid and a catalogue source's is a slug, so the
+ * digest's own `sourceId` is enough to answer it. `day` is null when nothing is
+ * on screen, which is also zero contributions.
+ */
+function summariseOwnSources(ownSourceIds: string[], day: NewsDay | null): NewsOwnSources | null {
+  if (ownSourceIds.length === 0) return null;
+
+  const shown = new Set((day?.stories ?? []).map((story) => story.sourceId));
+  return {
+    total: ownSourceIds.length,
+    contributed: ownSourceIds.filter((id) => shown.has(id)).length,
+  };
 }
 
 async function loadSharedBoard(
@@ -155,12 +197,19 @@ export async function loadNewsBoard(
   if (!reader.preferences.personalEnabled) {
     return {
       ...shared,
-      personal: { enabled: false, available: false, active: false },
+      personal: {
+        enabled: false,
+        available: false,
+        active: false,
+        // Nothing is generated for a reader who has not asked, so nothing of
+        // theirs can be in the digest either.
+        ownSources: summariseOwnSources(reader.ownSourceIds, null),
+      },
     };
   }
 
   const personalService = createNewsPersonalDigestServiceFor(reader.client);
-  // A search is the retained month as published, so it never answers with a
+  // A search is the retained window as published, so it never answers with a
   // personal digest; the personal read is skipped rather than filtered.
   const personalDay = shared.search
     ? null
@@ -177,11 +226,16 @@ export async function loadNewsBoard(
       shared.day === null ||
       personalDay.digest.date === shared.day.digest.date);
   const active = personalMatchesDay && view !== 'public';
+  // What the page is actually showing: the reader's digest when it is active,
+  // the shared one otherwise. The own-source notice describes the digest a reader
+  // can see, not the one that exists behind a "show mine" link.
+  const shownDay = active ? personalDay : shared.day;
 
   const personal: NewsPersonalView = {
     enabled: true,
     available: personalMatchesDay,
     active,
+    ownSources: summariseOwnSources(reader.ownSourceIds, shownDay),
   };
 
   return {

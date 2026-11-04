@@ -81,14 +81,21 @@ export function NewsFilters({
       aria-busy={isPending}
       aria-disabled={disabled}
     >
-      <div className="flex flex-wrap gap-2">
+      {/*
+        One row, like the day strip below it: seven chips wrapped onto a second
+        line on a phone, which made the categories read as a block rather than a
+        strip and pushed the archive and the digest down. The row scrolls
+        instead, and every chip keeps its own width (`shrink-0`) so a narrow
+        screen cuts the row rather than the labels.
+      */}
+      <nav aria-label="الأقسام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
         <button
           type="button"
           aria-pressed={category === null}
           disabled={disabled}
           onClick={() => navigate({ category: null })}
           className={cn(
-            'rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+            'shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
             category === null
               ? 'border-primary/40 bg-primary/15 text-primary'
               : 'border-border/60 bg-card/70 text-muted-foreground hover:text-foreground'
@@ -107,7 +114,7 @@ export function NewsFilters({
               disabled={disabled}
               onClick={() => navigate({ category: selected ? null : value })}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
+                'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
                 selected
                   ? 'border-primary/40 bg-primary/15 text-primary'
                   : 'border-border/60 bg-card/70 text-muted-foreground hover:text-foreground'
@@ -118,7 +125,7 @@ export function NewsFilters({
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {!isSearching && dates.length > 0 ? (
         <nav aria-label="أرشيف الأيام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">

@@ -323,7 +323,7 @@ describe('NewsBoard digest toggle', () => {
       response('no-store', {
         board: {
           ...BOARD,
-          personal: { enabled: true, available: true, active: false },
+          personal: { enabled: true, available: true, active: false, ownSources: null },
         },
       })
     );
@@ -350,7 +350,7 @@ describe('NewsBoard digest toggle', () => {
       response('no-store', {
         board: {
           ...BOARD,
-          personal: { enabled: true, available: true, active: true },
+          personal: { enabled: true, available: true, active: true, ownSources: null },
         },
       })
     );
@@ -369,6 +369,75 @@ describe('NewsBoard digest toggle', () => {
 });
 
 /**
+ * A reader's own feeds (ADR-0106's 2026-11-04 amendment). Silence used to read
+ * like a broken source, so the page names the two states that are not one: a day
+ * the reader's sources did not reach, and a digest that is switched off.
+ */
+describe('NewsBoard own sources', () => {
+  function withPersonal(overrides: {
+    enabled?: boolean;
+    available?: boolean;
+    active?: boolean;
+    ownSources?: { total: number; contributed: number } | null;
+  }): NewsBoardData {
+    return {
+      ...BOARD,
+      personal: { enabled: true, available: true, active: true, ownSources: null, ...overrides },
+    };
+  }
+
+  it('says nothing when one of them reached the digest', async () => {
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: withPersonal({ ownSources: { total: 2, contributed: 1 } }),
+      })
+    );
+
+    render(<NewsBoard />);
+
+    await expect(screen.findByText('خبر اليوم')).resolves.toBeTruthy();
+    expect(screen.queryByText(/لم يُنشَر شيء من مصادرك/)).toBeNull();
+  });
+
+  it('names the empty day when none of them did', async () => {
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: withPersonal({ ownSources: { total: 2, contributed: 0 } }),
+      })
+    );
+
+    render(<NewsBoard />);
+
+    expect(await screen.findByText('لم يُنشَر شيء من مصادرك الخاصّة اليوم.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'إدارة المصادر' }).getAttribute('href')).toBe(
+      '/account/news'
+    );
+  });
+
+  it('points at the switch when the digest that would read them is off', async () => {
+    fetchMock.mockResolvedValue(
+      response('no-store', {
+        board: withPersonal({
+          enabled: false,
+          available: false,
+          active: false,
+          ownSources: { total: 2, contributed: 0 },
+        }),
+      })
+    );
+
+    render(<NewsBoard />);
+
+    expect(
+      await screen.findByText('مصادرك الخاصّة لا تصل إلى المُلخَّص حتى تُفعّل مُلخَّصك الخاص.')
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'تفعيل المُلخَّص الخاص' }).getAttribute('href')).toBe(
+      '/account/news'
+    );
+  });
+});
+
+/**
  * A board belongs to the URL that asked for it (#640).
  *
  * The read effect depended on the URL but the board it produced did not, so a
@@ -381,7 +450,10 @@ describe('NewsBoard and the URL a read answers', () => {
   it("never paints a previous URL's digest after the filters change", async () => {
     fetchMock.mockResolvedValueOnce(
       response('public, max-age=0, must-revalidate', {
-        board: { ...BOARD, personal: { enabled: true, available: true, active: true } },
+        board: {
+          ...BOARD,
+          personal: { enabled: true, available: true, active: true, ownSources: null },
+        },
       })
     );
 

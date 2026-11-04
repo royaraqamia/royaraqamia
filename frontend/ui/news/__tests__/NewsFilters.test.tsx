@@ -85,4 +85,23 @@ describe('NewsFilters', () => {
 
     expect(replace).not.toHaveBeenCalled();
   });
+
+  /**
+   * Seven chips wrapped onto two lines on a phone, which read as a block rather
+   * than a strip and pushed the archive down. The categories are now one
+   * scrolling row, the same treatment the day strip already had.
+   */
+  it('keeps the categories on one scrolling row, like the day strip', () => {
+    const { container } = renderFilters();
+
+    const row = container.querySelector('nav[aria-label="الأقسام"]');
+    expect(row).not.toBeNull();
+    expect(row?.className).toContain('overflow-x-auto');
+    expect(row?.className).toContain('scrollbar-none');
+    expect(row?.className).not.toContain('flex-wrap');
+
+    const chips = Array.from(row?.querySelectorAll('button') ?? []);
+    expect(chips).toHaveLength(CATEGORIES.length + 1);
+    for (const chip of chips) expect(chip.className).toContain('shrink-0');
+  });
 });

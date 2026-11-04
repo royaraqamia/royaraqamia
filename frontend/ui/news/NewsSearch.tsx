@@ -13,6 +13,7 @@ import { newsHref, type NewsView } from '@/frontend/ui/news/news-url';
 import { request } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORY_LABELS,
+  NEWS_RETENTION_DAYS,
   formatDigestDayShort,
   sanitizeNewsQuery,
   type NewsCategory,
@@ -207,7 +208,7 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
         onChange={(event) => setValue(event.target.value)}
         onFocus={() => value.trim() && setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="ابحث في أخبار آخر 30 يومًا"
+        placeholder={`ابحث في أخبار آخر ${NEWS_RETENTION_DAYS} أيام`}
         aria-label="ابحث في الأخبار"
         role="combobox"
         aria-expanded={showPanel}

@@ -122,6 +122,26 @@ describe('news digest contract parity', () => {
     expect(listed(categories[1])).toEqual(CATEGORIES);
     expect(listed(regions[1])).toEqual(REGIONS);
   });
+
+  /**
+   * The window is one number in three places — the page's copy, the shared sweep
+   * and the personal sweep — and a reader must not see a day the database has
+   * already deleted, or miss one it still holds (ADR-0076's 2026-11-04
+   * amendment).
+   */
+  it('keeps one seven-day window in the contract and in both sweeps', () => {
+    const contract = readFileSync(resolve(ROOT, 'shared', 'contracts', 'news.ts'), 'utf8');
+    expect(contract).toMatch(/NEWS_RETENTION_DAYS = 7;/);
+
+    const migration = readFileSync(
+      resolve(ROOT, 'supabase', 'migrations', '20261104120000_news_seven_day_retention.sql'),
+      'utf8'
+    );
+    // The two one-time purges and the two sweeps, all at seven days.
+    expect(
+      migration.match(/digest_date <= \(now\(\) at time zone 'Asia\/Damascus'\)::date - 7/g)
+    ).toHaveLength(4);
+  });
 });
 
 describe('news sources', () => {
@@ -598,6 +618,44 @@ describe('private sources', () => {
     expect(items).toHaveLength(1);
     expect(items[0].url).toBe('https://t.me/ch/1');
   });
+
+  it('reads an own source over a week, not the shared 48 hours', async () => {
+    // A channel that posts twice a week is the normal case for a personal
+    // source; the shared window dropped it, which is why two of one reader's
+    // three channels contributed nothing (ADR-0106's 2026-11-04 amendment).
+    const fiveDaysOld = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><item>
+  <title>منشور قبل خمسة أيام</title>
+  <link>https://example.com/older</link>
+  <pubDate>Sun, 18 Oct 2026 05:00:00 +0000</pubDate>
+</item></channel></rss>`;
+
+    const { items } = await collectPrivateCandidates({
+      sources: [SOURCE],
+      fetchImpl: async () => fiveDaysOld,
+      now: NOW,
+    });
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe('https://example.com/older');
+  });
+
+  it('still drops an own source item older than the week', async () => {
+    const eightDaysOld = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><item>
+  <title>منشور قديم</title>
+  <link>https://example.com/ancient</link>
+  <pubDate>Thu, 15 Oct 2026 05:00:00 +0000</pubDate>
+</item></channel></rss>`;
+
+    const { items } = await collectPrivateCandidates({
+      sources: [SOURCE],
+      fetchImpl: async () => eightDaysOld,
+      now: NOW,
+    });
+
+    expect(items).toEqual([]);
+  });
 });
 
 describe('a reader’s candidate list', () => {
@@ -669,6 +727,93 @@ describe('personal digests', () => {
     // A skip rotates too: leaving a skipped reader at the head would starve
     // everyone behind them, which is the bug this queue exists to fix.
     expect(served).toEqual(['u-empty', 'u-thin', 'u-ok']);
+  });
+
+  /**
+   * The first production reader had three Telegram channels, all `ready`, and a
+   * personal digest with none of them in it: the shared candidates outnumbered
+   * them and won every tie on the prompt's priority order (ADR-0106's 2026-11-04
+   * amendment).
+   */
+  it('lists the reader’s own sources first and reserves a slot for each', async () => {
+    const out = join(await mkdtemp(join(tmpdir(), 'news-personal-')), 'run');
+    const ownItems = [
+      {
+        id: 'own-1:1',
+        title: 'منشور القناة',
+        url: 'https://t.me/own/1',
+        excerpt: 'منشور',
+        publishedAt: '2026-10-22T10:00:00.000Z',
+        sourceId: 'own-1',
+        sourceName: 'قناة القارئ',
+        category: 'other',
+        region: 'world',
+        tier: 2,
+        userId: 'u-own',
+      },
+      {
+        id: 'own-2:1',
+        title: 'منشور آخر',
+        url: 'https://t.me/other/1',
+        excerpt: 'منشور',
+        publishedAt: '2026-10-22T11:00:00.000Z',
+        sourceId: 'own-2',
+        sourceName: 'قناة ثانية',
+        category: 'other',
+        region: 'world',
+        tier: 2,
+        userId: 'u-own',
+      },
+      // Another reader's own source must not reach this list at all.
+      {
+        id: 'own-3:1',
+        title: 'منشور لغيره',
+        url: 'https://t.me/other-reader/1',
+        sourceId: 'own-3',
+        sourceName: 'قناة غيره',
+        category: 'other',
+        region: 'world',
+        tier: 2,
+        userId: 'u-someone-else',
+      },
+    ];
+    const shared = [
+      { ...items[0], sourceName: 'Source a' },
+      { ...items[1], sourceName: 'Source a' },
+      { ...items[2], sourceName: 'Source a' },
+      { ...items[3], sourceName: 'Source b' },
+    ];
+
+    const manifest = await preparePersonalDigests({
+      readers: [{ userId: 'u-own', sourceIds: [] }],
+      candidates: {
+        digestDate: '2026-10-23',
+        items: shared,
+        privateItems: ownItems,
+      },
+      out,
+      log: () => {},
+      onServed: async () => {},
+    });
+
+    expect(manifest.users.map((user) => user.userId)).toEqual(['u-own']);
+
+    const written = JSON.parse(await readFile(join(out, 'u-own', 'candidates.json'), 'utf8'));
+    // The two own items lead the list, and the other reader's never appears.
+    expect(written.items.slice(0, 2).map((item) => item.id)).toEqual(['own-1:1', 'own-2:1']);
+    expect(written.items.map((item) => item.id)).not.toContain('own-3:1');
+
+    const prompt = await readFile(join(out, 'u-own', 'prompt.txt'), 'utf8');
+    expect(prompt).toContain("THE READER'S OWN SOURCES");
+    expect(prompt).toContain('"قناة القارئ"');
+    expect(prompt).toContain('"قناة ثانية"');
+    expect(prompt).not.toContain('قناة غيره');
+    // The candidates the rule talks about are marked, so the model can find them.
+    expect(prompt).toContain('"own": true');
+    // The rule comes before the list it qualifies.
+    expect(prompt.indexOf("THE READER'S OWN SOURCES")).toBeLessThan(
+      prompt.indexOf('"id": "own-1:1"')
+    );
   });
 
   it('reaches all 25 readers across two runs of 20, never serving one twice', async () => {

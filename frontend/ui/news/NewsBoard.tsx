@@ -252,6 +252,32 @@ export function NewsBoard() {
         </div>
       ) : null}
 
+      {view.search === null && personal?.ownSources ? (
+        personal.enabled ? (
+          personal.ownSources.contributed === 0 ? (
+            <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+              <span>لم يُنشَر شيء من مصادرك الخاصّة اليوم.</span>
+              <Link
+                href="/account/news"
+                className="font-bold text-primary underline-offset-4 hover:underline"
+              >
+                إدارة المصادر
+              </Link>
+            </p>
+          ) : null
+        ) : (
+          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+            <span>مصادرك الخاصّة لا تصل إلى المُلخَّص حتى تُفعّل مُلخَّصك الخاص.</span>
+            <Link
+              href="/account/news"
+              className="font-bold text-primary underline-offset-4 hover:underline"
+            >
+              تفعيل المُلخَّص الخاص
+            </Link>
+          </p>
+        )
+      ) : null}
+
       <div className="mt-8">
         {view.search ? (
           <section aria-labelledby="news-search-heading">
@@ -270,7 +296,7 @@ export function NewsBoard() {
               </div>
             ) : (
               <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-                لا نتائج مطابقة في أخبار آخر {NEWS_RETENTION_DAYS} يومًا.
+                لا نتائج مطابقة في أخبار آخر {NEWS_RETENTION_DAYS} أيام.
               </p>
             )}
 
@@ -299,7 +325,7 @@ export function NewsBoard() {
             <h2 className="text-xl font-extrabold">لا يوجد مُلخَّص لهذا اليوم</h2>
             <p className="mt-3 text-sm leading-7 text-muted-foreground">
               {view.hasAnyDigest
-                ? 'قد يكون هذا اليوم خارج مدة الاحتفاظ (30 يومًا) أو لم يُنشَر فيه مُلخَّص بعد.'
+                ? `قد يكون هذا اليوم خارج مدة الاحتفاظ (${NEWS_RETENTION_DAYS} أيام) أو لم يُنشَر فيه مُلخَّص بعد.`
                 : 'لم يُنشَر أي مُلخَّص بعد. يُنشَر المُلخَّص كل صباح بعد السَّاعة السَّادسة بتوقيت دمشق.'}
             </p>
             {view.hasAnyDigest ? (

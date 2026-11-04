@@ -48,6 +48,18 @@ material, and third-party summaries should not be kept past the point they serve
 covers the retained month by construction, using a trigram index because Postgres has no Arabic
 text-search configuration.
 
+### Seven days instead of thirty (2026-11-04)
+
+The owner narrowed the window to seven Damascus days, for every plan and for an Admin alike
+(`20261104120000`). Both sweeps — the shared digest's and the personal one's — keep their schedules
+and only change the window, and the migration deletes what is already outside it, so the rows stop
+existing rather than merely stopping being shown. Search, the archive strip and the digest therefore
+all describe the same week: `NEWS_RETENTION_DAYS` is seven, and the copy that named thirty days
+(mobile search placeholder, the empty day, the no-results line) names seven.
+
+What did not change: a digest is still deleted, never archived, and the page never renders a
+"too old" state. `on delete cascade` still takes a day's stories with it.
+
 ## Video sources (2026-10-23)
 
 Six YouTube channels join the list as ordinary Atom feeds (`youtube.com/feeds/videos.xml?channel_id=…`,
