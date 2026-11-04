@@ -2609,6 +2609,7 @@ export type Database = {
           email: string;
           id: string;
           is_admin: boolean;
+          is_hidden: boolean;
           name: string | null;
           username: string;
           verified: boolean;
@@ -2620,6 +2621,7 @@ export type Database = {
           email: string;
           id: string;
           is_admin?: boolean;
+          is_hidden?: boolean;
           name?: string | null;
           username: string;
           verified?: boolean;
@@ -2631,6 +2633,7 @@ export type Database = {
           email?: string;
           id?: string;
           is_admin?: boolean;
+          is_hidden?: boolean;
           name?: string | null;
           username?: string;
           verified?: boolean;

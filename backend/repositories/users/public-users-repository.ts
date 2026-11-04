@@ -1,10 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
 
 const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio, verified';
+
+/** The single-row profile read also carries the flag the route has to judge. */
+const MEMBER_PROFILE_COLUMNS = `${PUBLIC_USER_COLUMNS}, is_hidden`;
 
 /**
  * Read access to the public member directory.
@@ -15,20 +18,29 @@ const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio, verified';
  * the returned shape. Directory reads are scoped to verified members so
  * unconfirmed signups never surface; `getByUsername` stays unfiltered because it
  * also backs the handle-uniqueness check.
+ *
+ * Every listing also skips hidden rows (ADR-0127): the E2E fixture account is a
+ * real confirmed member, and an internal row must not be named by the roster,
+ * the member search, the sitemap or the chat picker. The row itself stays
+ * readable in the single-id and by-handle reads on purpose — a chat thread that
+ * already has it must still resolve its name, and a new signup claiming that
+ * handle must still be refused as taken.
  */
 export interface PublicUsersRepository {
-  /** Newest verified members first — the community page's "who's here" list. */
+  /** Newest visible members first — the community page's "who's here" list. */
   list(limit: number): Promise<PublicUser[]>;
-  /** Total members, for the roster badge. Independent of how many are shown. */
+  /** Total listed members, for the roster badge. Independent of the page size. */
   count(): Promise<number>;
   /**
-   * Every verified handle, for `sitemap.ts`. One column and no profile payload:
-   * the roster's own page size (`list`) is a display cap, not the directory.
+   * Every visible verified handle, for `sitemap.ts`. One column and no profile
+   * payload: the roster's own page size (`list`) is a display cap, not the
+   * directory.
    */
   listVerifiedHandles(limit: number): Promise<string[]>;
-  /** Verified members matching the term. */
+  /** Visible verified members matching the term. */
   search(query: string, limit: number): Promise<PublicUser[]>;
-  getByUsername(username: string): Promise<PublicUser | null>;
+  /** Any member by handle, hidden or not, with the flag the caller judges. */
+  getByUsername(username: string): Promise<MemberProfile | null>;
   getById(id: string): Promise<PublicUser | null>;
   /** Several members in one read, for a chat thread's roster. */
   getMany(ids: string[]): Promise<PublicUser[]>;
@@ -43,6 +55,7 @@ export function createPublicUsersRepository(
         .from('users')
         .select(PUBLIC_USER_COLUMNS)
         .eq('verified', true)
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -53,7 +66,8 @@ export function createPublicUsersRepository(
     async count(): Promise<number> {
       const { count, error } = await supabase
         .from('users')
-        .select('id', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true })
+        .eq('is_hidden', false);
 
       if (error) throw error;
       return count ?? 0;
@@ -64,6 +78,7 @@ export function createPublicUsersRepository(
         .from('users')
         .select('username')
         .eq('verified', true)
+        .eq('is_hidden', false)
         .order('username', { ascending: true })
         .limit(limit);
 
@@ -80,6 +95,7 @@ export function createPublicUsersRepository(
         .select(PUBLIC_USER_COLUMNS)
         .or(`name.ilike.%${term}%,username.ilike.%${term}%`)
         .eq('verified', true)
+        .eq('is_hidden', false)
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);
 
@@ -87,17 +103,17 @@ export function createPublicUsersRepository(
       return (data ?? []) as PublicUser[];
     },
 
-    async getByUsername(username): Promise<PublicUser | null> {
+    async getByUsername(username): Promise<MemberProfile | null> {
       const { data, error } = await supabase
         .from('users')
-        .select(PUBLIC_USER_COLUMNS)
+        .select(MEMBER_PROFILE_COLUMNS)
         .eq('username', username.toLowerCase())
         .maybeSingle();
 
       // Only PostgREST's no-rows code means absence; anything else is an outage
       // and must not render as `/u/[username]` not-found.
       if (error && !isNotFoundError(error)) throw error;
-      return (data as PublicUser | null) ?? null;
+      return (data as MemberProfile | null) ?? null;
     },
 
     async getById(id): Promise<PublicUser | null> {

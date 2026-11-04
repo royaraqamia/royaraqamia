@@ -42,3 +42,12 @@ globalThis.IntersectionObserver = class IntersectionObserver {
     return [];
   }
 } as unknown as typeof IntersectionObserver;
+
+// `cmdk` — the command list behind every combobox — measures its container with
+// `ResizeObserver`, which jsdom does not implement. Without this a suite that
+// opens a picker dies on mount rather than on its assertion.
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;

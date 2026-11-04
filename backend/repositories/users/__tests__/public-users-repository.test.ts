@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPublicUsersRepository } from '@/backend/repositories/users/public-users-repository';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
 import { RepositoryError } from '@/backend/shared/repository-error';
 
 const { loggerError, captureException } = vi.hoisted(() => ({
@@ -26,6 +26,7 @@ function createClient(options: {
 }) {
   const orFilters: string[] = [];
   const eqFilters: Array<[string, unknown]> = [];
+  const inFilters: Array<[string, unknown]> = [];
   const builder = {
     select: vi.fn(() => builder),
     or: vi.fn((filter: string) => {
@@ -34,6 +35,10 @@ function createClient(options: {
     }),
     eq: vi.fn((column: string, value: unknown) => {
       eqFilters.push([column, value]);
+      return builder;
+    }),
+    in: vi.fn((column: string, value: unknown) => {
+      inFilters.push([column, value]);
       return builder;
     }),
     order: vi.fn(() => builder),
@@ -54,7 +59,7 @@ function createClient(options: {
       }),
   };
   const supabase = { from: vi.fn(() => builder) };
-  return { supabase, orFilters, eqFilters };
+  return { supabase, orFilters, eqFilters, inFilters };
 }
 
 const member: PublicUser = {
@@ -78,16 +83,26 @@ describe('createPublicUsersRepository', () => {
     expect(eqFilters).toContainEqual(['verified', true]);
   });
 
+  it('never lists a hidden member (ADR-0127)', async () => {
+    const { supabase, eqFilters } = createClient({ list: [member] });
+    const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
+
+    await repo.list(8);
+
+    expect(eqFilters).toContainEqual(['is_hidden', false]);
+  });
+
   it('returns the exact roster total, independent of the page size', async () => {
-    const { supabase } = createClient({ list: [member], count: 11 });
+    const { supabase, eqFilters } = createClient({ list: [member], count: 11 });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
 
     const total = await repo.count();
 
     expect(total).toBe(11);
+    expect(eqFilters).toContainEqual(['is_hidden', false]);
   });
 
-  it('lists every verified handle for the sitemap, not just the roster page', async () => {
+  it('lists every visible verified handle for the sitemap, not just the roster page', async () => {
     const { supabase, eqFilters } = createClient({ list: [member] });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
 
@@ -95,6 +110,7 @@ describe('createPublicUsersRepository', () => {
 
     expect(handles).toEqual(['ahmad']);
     expect(eqFilters).toContainEqual(['verified', true]);
+    expect(eqFilters).toContainEqual(['is_hidden', false]);
   });
 
   it('sanitizes the search term before it reaches the or() filter', async () => {
@@ -105,6 +121,7 @@ describe('createPublicUsersRepository', () => {
 
     expect(orFilters).toContain('name.ilike.%ahmad admin test%,username.ilike.%ahmad admin test%');
     expect(eqFilters).toContainEqual(['verified', true]);
+    expect(eqFilters).toContainEqual(['is_hidden', false]);
   });
 
   it('returns nothing for a term made only of delimiters', async () => {
@@ -117,14 +134,29 @@ describe('createPublicUsersRepository', () => {
     expect(orFilters).toHaveLength(0);
   });
 
-  it('lower-cases the handle when resolving a profile', async () => {
-    const { supabase, eqFilters } = createClient({ single: member });
+  it('lower-cases the handle when resolving a profile, hidden or not', async () => {
+    const hidden: MemberProfile = { ...member, is_hidden: true };
+    const { supabase, eqFilters } = createClient({ single: hidden });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
 
     const result = await repo.getByUsername('Ahmad');
 
-    expect(result).toEqual(member);
+    expect(result).toEqual(hidden);
     expect(eqFilters).toContainEqual(['username', 'ahmad']);
+    // The uniqueness check and the profile route decide for themselves; this
+    // read must still find a hidden row rather than report the handle is free.
+    expect(eqFilters).not.toContainEqual(['is_hidden', false]);
+  });
+
+  it('resolves a hidden member in the by-id and batch reads an existing thread needs', async () => {
+    const { supabase, eqFilters, inFilters } = createClient({ list: [member], single: member });
+    const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
+
+    await repo.getById('u-1');
+    await repo.getMany(['u-1']);
+
+    expect(eqFilters).not.toContainEqual(['is_hidden', false]);
+    expect(inFilters).toContainEqual(['id', ['u-1']]);
   });
 
   describe('read failures (#404)', () => {

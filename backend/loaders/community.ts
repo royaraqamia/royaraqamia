@@ -8,7 +8,7 @@ import {
 } from '@/backend/config/blogpress';
 import { createPublicUsersRepositoryServer } from '@/backend/config/users';
 import type { Post, PostAuthor, PostTag, PostSummary } from '@/shared/contracts/blogpress';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
 import type { CommunitySearchResult } from '@/shared/contracts/community';
 import { COMMUNITY_TAGS } from '@/backend/shared/community-cache-tags';
 
@@ -135,7 +135,7 @@ export async function loadCommunitySearch(query: string): Promise<CommunitySearc
 }
 
 export interface CommunityMemberPage {
-  member: PublicUser;
+  member: MemberProfile;
   posts: PostSummary[];
   nextCursor: string | null;
 }

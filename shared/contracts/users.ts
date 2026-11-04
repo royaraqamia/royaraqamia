@@ -5,6 +5,8 @@ export interface AdminUser {
   name: string | null;
   email: string;
   avatar_url: string | null;
+  /** Internal row (ADR-0127); the picker labels it so nobody wonders where it went. */
+  is_hidden: boolean;
 }
 
 export const UserIdsSchema = z
@@ -33,6 +35,18 @@ export interface PublicUser {
   bio: string | null;
   /** Mirrors auth `email_confirmed_at`; only verified members are listed. */
   verified: boolean;
+}
+
+/**
+ * A member as the profile route reads them: the public identity plus the one
+ * flag that decides whether the viewer may see the page at all (ADR-0127).
+ *
+ * The list shapes stay `PublicUser` — a hidden row is never in them, so nothing
+ * that renders a roster can leak the flag. Only the single-row read carries it,
+ * because only that read has a viewer to ask.
+ */
+export interface MemberProfile extends PublicUser {
+  is_hidden: boolean;
 }
 
 /**

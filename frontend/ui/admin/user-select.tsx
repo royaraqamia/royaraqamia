@@ -145,12 +145,19 @@ export function UserSelect({
                       onSelect={() => toggle(user.id)}
                       className="flex items-center justify-between gap-3"
                     >
-                      <span className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-bold">{userLabel(user)}</span>
+                      <div className="flex min-w-0 flex-col">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-sm font-bold">{userLabel(user)}</span>
+                          {user.is_hidden && (
+                            <Badge variant="warning" size="sm" className="shrink-0">
+                              مخفي
+                            </Badge>
+                          )}
+                        </div>
                         <span className="text-muted-foreground truncate text-xs">
                           {user.name ? user.email : ''}
                         </span>
-                      </span>
+                      </div>
                       {selected && <Check className="text-primary size-4 shrink-0" />}
                     </CommandItem>
                   );

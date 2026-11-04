@@ -1,13 +1,39 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { FileText } from 'lucide-react';
-import { loadCommunityMember } from '@/backend/loaders/community';
+import { loadCommunityMember, type CommunityMemberPage } from '@/backend/loaders/community';
+import { identity } from '@/backend/config/identity';
+import { env } from '@/backend/config/env';
+import { isAdmin } from '@/backend/shared/admin-validator';
+import { canViewMember } from '@/backend/shared/member-visibility';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
 
-export const revalidate = 300;
+/**
+ * The profile a viewer is allowed to see, or null when there is none to show.
+ *
+ * A hidden member (ADR-0127) is a normal member to itself and to an Admin, and
+ * a missing one to everybody else — the same answer the roster, the search and
+ * the sitemap already give by not listing the row. The viewer is only resolved
+ * for a hidden row, but the route itself is per-request: whether a handle may
+ * be opened depends on who asked, so the answer cannot be cached for everyone
+ * (the member data under it still comes from the tag-invalidated loader).
+ */
+async function loadVisibleMember(handle: string): Promise<CommunityMemberPage | null> {
+  const page = await loadCommunityMember(handle);
+  if (!page) return null;
+  if (!page.member.is_hidden) return page;
+
+  const { user } = await identity.resolveOptional();
+  const viewer = {
+    id: user?.id ?? null,
+    isAdmin: isAdmin(user?.email ?? '', env.adminEmails),
+  };
+
+  return canViewMember(page.member, viewer) ? page : null;
+}
 
 function displayName(member: { name: string | null; username: string }): string {
   return member.name?.trim() || `@${member.username}`;
@@ -26,7 +52,7 @@ export async function generateMetadata(props: {
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await props.params;
-  const page = await loadCommunityMember(decodeHandle(username));
+  const page = await loadVisibleMember(decodeHandle(username));
 
   if (!page) {
     return { title: 'الملف غير موجود' };
@@ -42,7 +68,7 @@ export async function generateMetadata(props: {
 
 export default async function MemberProfilePage(props: { params: Promise<{ username: string }> }) {
   const { username } = await props.params;
-  const page = await loadCommunityMember(decodeHandle(username));
+  const page = await loadVisibleMember(decodeHandle(username));
 
   if (!page) notFound();
 

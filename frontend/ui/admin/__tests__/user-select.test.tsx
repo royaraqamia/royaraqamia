@@ -9,7 +9,13 @@ vi.mock('@/frontend/api/admin/users', () => mocks);
 
 import { UserSelect } from '../user-select';
 
-const USER = { id: 'user-1', name: 'سارة', email: 'sara@example.com', avatar_url: null };
+const USER = {
+  id: 'user-1',
+  name: 'سارة',
+  email: 'sara@example.com',
+  avatar_url: null,
+  is_hidden: false,
+};
 
 describe('UserSelect', () => {
   beforeEach(() => {
@@ -49,5 +55,15 @@ describe('UserSelect', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('غير مصرح');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('labels a hidden member so the row is not mistaken for an ordinary one', async () => {
+    mocks.searchUsers.mockResolvedValue([{ ...USER, is_hidden: true }]);
+
+    render(<UserSelect id="audience" value={[]} onChange={() => {}} />);
+    fireEvent.click(screen.getAllByRole('button')[0]!);
+
+    expect(await screen.findByText('مخفي')).toBeInTheDocument();
+    expect(screen.getByText('سارة')).toBeInTheDocument();
   });
 });
