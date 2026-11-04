@@ -12,7 +12,8 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { GUARDED_TOOLS } from './guard-decision.mjs';
@@ -41,8 +42,11 @@ function realBinary(tool, excludedDir) {
  * would turn "not installed" into "refused", which is a different and worse
  * answer.
  */
-export function installGuards({ dir, log = () => {} }) {
-  mkdirSync(dir, { recursive: true });
+export function installGuards({ log = () => {} } = {}) {
+  // `mkdtemp` rather than a predictable path: the directory is random and
+  // owner-only, so nothing else on the runner can pre-create it or read the
+  // shims. CodeQL's `js/insecure-temporary-file` is right about the old shape.
+  const dir = mkdtempSync(join(tmpdir(), 'telegram-guards-'));
   const decisionModule = new URL('./guard-decision.mjs', import.meta.url).href;
 
   for (const tool of GUARDED_TOOLS) {

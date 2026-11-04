@@ -8,8 +8,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { DEFAULT_TZ_MINUTES, MODEL, TRANSCRIBE_MODELS, workflowRunUrl } from './config.mjs';
 import { runAgent, agentWorkdir } from './agent.mjs';
@@ -25,15 +26,8 @@ import {
   failureLine,
 } from './prompt.mjs';
 import { createReporter, sendMarkdown } from './progress.mjs';
-import {
-  contextFor,
-  ensureChat,
-  forgetMemory,
-  memoriesFor,
-  patchMessage,
-  recordOutbound,
-} from './store.mjs';
-import { formatOffset, languageOf } from './text.mjs';
+import { contextFor, ensureChat, memoriesFor, patchMessage, recordOutbound } from './store.mjs';
+import { formatOffset, languageOf, safeFileName } from './text.mjs';
 
 /** Telegram's OGG/OPUS to 16 kHz mono WAV, when the runner has ffmpeg. */
 export function toWav(input) {
@@ -130,18 +124,29 @@ export async function transcribe(fileId, { botToken }) {
   );
 }
 
-async function downloadTelegramFile(fileId, suffix, botToken) {
+/**
+ * Downloads an attachment into a private directory of our own making.
+ *
+ * The name comes from Telegram, which is untrusted input: `mkdtemp` creates the
+ * directory with a random name and owner-only mode, and `safeFileName` keeps the
+ * last segment of the path only, so a `file_path` of `../../x` cannot choose where
+ * the bytes land.
+ */
+async function downloadTelegramFile(fileId, prefix, botToken, dir) {
   const file = await telegram('getFile', { file_id: fileId });
   if (!file?.file_path) return null;
 
   const response = await fetch(`https://api.telegram.org/file/bot${botToken}/${file.file_path}`);
   if (!response.ok) return null;
 
-  const dir = '/tmp/telegram-attachments';
-  mkdirSync(dir, { recursive: true });
-  const path = join(dir, `${suffix}-${basename(file.file_path)}`);
-  writeFileSync(path, Buffer.from(await response.arrayBuffer()));
+  const path = join(dir, `${prefix}-${safeFileName(file.file_path)}`);
+  writeFileSync(path, Buffer.from(await response.arrayBuffer()), { mode: 0o600 });
   return path;
+}
+
+/** One private directory per message, so nothing overwrites an earlier download. */
+export function attachmentDir() {
+  return mkdtempSync(join(tmpdir(), 'telegram-att-'));
 }
 
 /** The owner's own words for "forget that one". Deliberately narrow. */
@@ -239,13 +244,21 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
   if (await forgetIfAsked(text, chatId)) return { ok: true, handled: 'memory' };
 
   const attachments = [];
-  if (row.photo_file_id) {
-    const path = await downloadTelegramFile(row.photo_file_id, `photo-${row.id}`, botToken);
-    if (path) attachments.push({ kind: 'صورة', path });
-  }
-  if (row.document_file_id) {
-    const path = await downloadTelegramFile(row.document_file_id, `file-${row.id}`, botToken);
-    if (path) attachments.push({ kind: 'ملف', path });
+  if (row.photo_file_id || row.document_file_id) {
+    const dir = attachmentDir();
+    if (row.photo_file_id) {
+      const path = await downloadTelegramFile(row.photo_file_id, `photo-${row.id}`, botToken, dir);
+      if (path) attachments.push({ kind: 'صورة', path });
+    }
+    if (row.document_file_id) {
+      const path = await downloadTelegramFile(
+        row.document_file_id,
+        `file-${row.id}`,
+        botToken,
+        dir
+      );
+      if (path) attachments.push({ kind: 'ملف', path });
+    }
   }
 
   const context = await contextFor(chatId, row.id);
@@ -263,7 +276,6 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
   // The shims are the guarantee; the prompt is the explanation. Created per
   // message so the PATH the agent inherits is the guarded one and nothing else.
   const guardedPath = installGuards({
-    dir: `/tmp/telegram-guards-${row.id}`,
     log: (line) => process.stdout.write(`telegram: ${line}\n`),
   });
 

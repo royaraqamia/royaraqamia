@@ -259,6 +259,26 @@ export function parseOffset(input) {
   return { minutes: sign * (hours * 60 + minutes), name: text };
 }
 
+/**
+ * A file name that is ours to write.
+ *
+ * Telegram hands back a ile_path and a document name, and both are data from
+ * outside: a value like ../../etc/passwd or /b must not decide where a file
+ * lands. The last segment survives, everything that is not a plain name becomes
+ * an underscore, and an empty result gets a fallback.
+ */
+export function safeFileName(value, fallback = 'file') {
+  const base =
+    String(value ?? '')
+      .split(/[\\/]/)
+      .pop() ?? '';
+  const cleaned = base
+    .replace(/[^A-Za-z0-9._-]/g, '_')
+    .replace(/^\.+/, '')
+    .slice(0, 120);
+  return cleaned || fallback;
+}
+
 /** Renders an offset the way a person writes it: +03:00. */
 export function formatOffset(minutes) {
   const sign = minutes < 0 ? '-' : '+';

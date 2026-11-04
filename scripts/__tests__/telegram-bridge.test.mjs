@@ -196,6 +196,17 @@ describe('the branch name', () => {
   });
 });
 
+describe('safeFileName', () => {
+  it('keeps the last segment and never lets a path decide where a file lands', async () => {
+    const { safeFileName } = await import('../telegram/text.mjs');
+    expect(safeFileName('voice/file_1.oga')).toBe('file_1.oga');
+    expect(safeFileName('../../etc/passwd')).toBe('passwd');
+    expect(safeFileName('..')).toBe('file');
+    expect(safeFileName('a b:c?.jpg')).toBe('a_b_c_.jpg');
+    expect(safeFileName('')).toBe('file');
+  });
+});
+
 describe('parseForget', () => {
   it('accepts the short sentence it documents', () => {
     expect(parseForget('احذف رقم 3')).toBe(3);
