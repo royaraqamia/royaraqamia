@@ -249,6 +249,7 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
   }
 
   const context = await contextFor(chatId, row.id);
+  const language = languageOf(text);
   const isCancelled = canceller(row.id);
   const reporter = createReporter({
     chatId,
@@ -269,7 +270,7 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
   let result;
   try {
     result = await runAgent({
-      prompt: buildUserMessage({ text, context, attachments }),
+      prompt: buildUserMessage({ text, context, attachments, language }),
       cwd,
       model: MODEL,
       files: attachments.map((item) => item.path),

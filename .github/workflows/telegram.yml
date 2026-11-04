@@ -163,9 +163,10 @@ jobs:
           node-version: 22
 
       - name: Install the agent
-        # Pinned: the bot's behaviour is a prompt against one CLI's event stream,
-        # and a floating version would change both without a commit.
-        run: npm install --global opencode-ai@2.1.2
+        # Pinned to the version this file's event stream and prompt were tested
+        # against: `@opencode/cli` 2.1.2. The older `opencode-ai` package is v1
+        # and speaks a different stream, so the name matters as much as the pin.
+        run: npm install --global @opencode/cli@2.1.2
 
       - name: OpenCode Runner Setup
         uses: ./.github/actions/opencode-runner

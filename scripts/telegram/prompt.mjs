@@ -17,13 +17,17 @@ export function buildSystemPrompt({ tz, now = new Date(), runUrl, language = 'ar
   }).format(new Date(now.getTime() + (tz?.offsetMinutes ?? 0) * 60_000));
 
   // The mirror rule is decided before the model sees the message, so an Arabic
-  // message cannot be answered in English because the prompt was ambiguous.
+  // message cannot be answered in English because the prompt was ambiguous. It
+  // is stated first and last: the context is often in the other language, and a
+  // rule that appears only once gets averaged with it.
   const answerIn =
     language === 'en'
-      ? 'لغة هذه الرسالة إنجليزية: اكتب الجواب بالإنجليزية.'
-      : 'لغة هذه الرسالة عربية: اكتب الجواب بالعربية الفصحى.';
+      ? 'Write every reply in English. This message is in English.'
+      : 'اكتب كل ردودك بالعربية الفصحى. هذه الرسالة بالعربية.';
 
   return [
+    answerIn,
+    '',
     'أنت مساعد أيهم الشخصي داخل تيليجرام، وهو صاحب هذا المستودع. تكتب إليه وحده، وأنت تعمل على جهازه:',
     'أمامك المستودع نفسه، وطرفية، وأدوات بحث، ومهارات جاهزة، واتصال بقاعدة بيانات المشروع.',
     '',
@@ -66,9 +70,15 @@ export function buildSystemPrompt({ tz, now = new Date(), runUrl, language = 'ar
     .filter(Boolean)
     .join('\n');
 }
+/** The last line of every prompt, because recency is where a language rule sticks. */
+export function languageDirective(language) {
+  return language === 'en'
+    ? 'Answer him now, in English.'
+    : 'أجب أيهم الآن بالعربية الفصحى، بلا لهجة.';
+}
 
 /** The message the agent receives: what it knows, then what was said. */
-export function buildUserMessage({ text, context, attachments = [] }) {
+export function buildUserMessage({ text, context, attachments = [], language = 'ar' }) {
   const parts = [];
   if (context) parts.push(`<السياق>\n${context}\n</السياق>`);
   if (attachments.length) {
@@ -79,7 +89,7 @@ export function buildUserMessage({ text, context, attachments = [] }) {
     );
   }
   parts.push(`<رسالة أيهم>\n${text}\n</رسالة أيهم>`);
-  parts.push('أجب أيهم الآن.');
+  parts.push(languageDirective(language));
   return parts.join('\n\n');
 }
 

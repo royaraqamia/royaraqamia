@@ -26,18 +26,28 @@ export function progressLine(part) {
   if (!part || part.type !== 'tool') return '';
   const tool = String(part.tool ?? '');
   const input = part.state?.input ?? {};
-  const file = typeof input.path === 'string' ? input.path.split('/').pop() : '';
+  const file = typeof input.path === 'string' ? input.path.split(/[/\\]/).pop() : '';
 
   if (tool === 'read' && file) return `أقرأ ${file}…`;
   if ((tool === 'edit' || tool === 'write' || tool === 'patch') && file) return `أعدّل ${file}…`;
   if (tool === 'grep' || tool === 'glob' || tool === 'search') return 'أبحث في المستودع…';
-  if (tool === 'bash') {
+  // The CLI named this tool `bash` before v2 and `shell` after it; both are the
+  // shell, and the log should not tell the owner two different stories.
+  if (tool === 'bash' || tool === 'shell') {
     const command = String(input.command ?? '')
       .trim()
       .split(/\s+/)
       .slice(0, 2)
       .join(' ');
     return command ? `أشغّل ${command}…` : 'أشغّل أمراً…';
+  }
+  if (tool === 'execute') {
+    const command = String(input.command ?? input.code ?? '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .join(' ');
+    return command ? `أنفّذ ${command}…` : 'أنفّذ خطوة…';
   }
   if (tool === 'webfetch' || tool === 'fetch') {
     try {
