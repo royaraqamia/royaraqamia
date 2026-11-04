@@ -73,6 +73,43 @@ Within what is unblocked, `docs/mobile/parity-plan.json` is the order: the surfa
 issue number. The plan is already the work order for the port (ADR 0118's switch-on sequence), and
 the number order inside a phase is the order the slices were written in.
 
+## Amendment (2026-11-04): the repair can run, and nothing leaves the queue
+
+The first run of this workflow (2026-11-04) showed that the repair described above had
+never executed. Three defects, and one rule that changes with them:
+
+- **The repair had no git credential.** `Checkout` runs with `persist-credentials: false`
+  because the opencode action needs a remote with no stored credential, and `GH_TOKEN`
+  authenticates `gh` but not `git`. Every repair therefore died on its first command,
+  `gh pr checkout`, with `Invalid username or token`, three rounds in a row, and the
+  failing checks were never touched. The repair now runs `gh auth setup-git` in its own
+  step, after the action has finished, so the action's token is still the only one it
+  sees.
+- **A conflicted pull request was reported green.** GitHub cannot build the merge ref a
+  pull-request workflow runs against when the branch conflicts with `main`, so no workflow
+  runs at all: the rollup holds only the skipped Supabase integration check, `gh pr checks`
+  exits zero on it, and the merge is refused minutes later with "the merge commit cannot be
+  cleanly created". `land-pull-request.sh` now asks `mergeable` first and names the
+  conflict, requires at least one non-skipped check before it will call anything green,
+  asks `mergeable` again immediately before merging, and reports the merge's own error
+  instead of the symptom.
+- **Each round was cut from the dispatch's `main`.** `max-parallel: 1` orders the rounds;
+  it does not move the base. Round 4's branch descended from the commit the run was
+  dispatched on, not from the `main` round 2 had merged into, and one merge that touches
+  `docs/mobile/parity-plan.md` - every port does - is enough to conflict. A step now
+  fetches `main` with the token inline and resets the tree to it before the agent runs, so
+  no credential is left behind for the action.
+- **Nothing is handed to a person any more.** The paragraph above says a second red round
+  goes to a person with `ready-for-human`. It does not: this queue has one reader and that
+  is the implementer, so a label naming a person is a label nothing picks up. An issue
+  whose round did not land keeps `ready-for-agent`, its pull request stays open, and a
+  later round takes the issue again. The claim label (`opencode:in-progress`) is the only
+  one the workflow removes on failure.
+
+The one repair attempt per round stands. What changed is that the attempt can now run, and
+that a conflict counts as the failure it is rather than as a check that quietly never
+happened.
+
 ## Considered options
 
 - **Keep the merge manual and run more issues a day.** Rejected: six pull requests waiting for one

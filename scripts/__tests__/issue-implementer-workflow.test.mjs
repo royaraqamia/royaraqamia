@@ -9,11 +9,14 @@ import { describe, expect, it } from 'vitest';
  *
  * - the merge arrives after the watch, never before it, and names the commit it watched;
  * - it is a squash with no branch deletion and no protection bypass;
- * - a red run is repaired once and then watched again, not retried in a loop;
+ * - a red round is repaired once and then watched again, not retried in a loop;
+ * - the repair can authenticate, cut its branch from the live base, and is asked for the
+ *   conflict first - a conflicted pull request is never measured at all;
+ * - an unmeasured pull request is not called green;
  * - the picker reads the blocker edges and the plan instead of taking the lowest number;
  * - six rounds run one after another;
  * - the job installs the e2e and visual toolchain, because that is the evidence;
- * - a merged issue is not handed to a person, a green-but-unmerged one still is.
+ * - nothing is ever handed to a person: the queue is the implementer's.
  *
  * `process.cwd()`, not `import.meta.url`: the unit suite runs in jsdom, where
  * import.meta.url is an http URL and `new URL` refuses it.
@@ -120,14 +123,62 @@ describe('the issue implementer merges what it watched go green', () => {
 
   it('records the merge and hands nothing to a person when it landed', () => {
     const merged = workflow.indexOf('The Issue Implementer merged pull request #');
-    const handed = workflow.indexOf("labels: ['ready-for-human']");
+    const next = workflow.indexOf("if (result.status === 'implemented' && prNumber)", merged);
     expect(merged).toBeGreaterThan(-1);
-    expect(handed).toBeGreaterThan(merged);
-    expect(workflow.slice(merged, handed)).not.toContain('ready-for-human');
+    expect(next).toBeGreaterThan(merged);
+    // The merged path closes the issue: no readiness label comes back and nothing is kept
+    // in the queue.
+    expect(workflow.slice(merged, next)).not.toContain('keepForTheAgent');
   });
 
-  it('still hands over a green pull request the merge was refused for', () => {
-    expect(workflow).toContain('It is ready for a human to merge.');
-    expect(workflow).toContain('ready-for-human');
+  it('keeps an issue that did not land in the agent queue, and never labels it for a person', () => {
+    // ADR 0120's amendment: the implementer reads this queue, so `ready-for-human` is a
+    // label nothing would ever pick up. An unmerged round leaves the issue as it found it
+    // and the next round takes it again.
+    expect(workflow).not.toContain('ready-for-human');
+    expect(workflow).toContain('keepForTheAgent');
+    expect(workflow).toContain("labels: ['ready-for-agent']");
+  });
+
+  it('gives the repair a git credential, because checkout deliberately stores none', () => {
+    const repairAt = workflow.indexOf('Repair the failing checks');
+    const recheckAt = workflow.indexOf('Watch the repaired pull request');
+    const repair = workflow.slice(repairAt, recheckAt);
+    expect(repair).toContain('gh auth setup-git');
+    expect(repair.indexOf('gh auth setup-git')).toBeLessThan(repair.indexOf('gh pr checkout'));
+  });
+
+  it('resolves the conflict with main before it looks for a failing check', () => {
+    const repairAt = workflow.indexOf('Repair the failing checks');
+    const recheckAt = workflow.indexOf('Watch the repaired pull request');
+    const repair = workflow.slice(repairAt, recheckAt);
+    expect(repair).toContain('git merge --no-edit FETCH_HEAD');
+    expect(repair).toContain('resolving-merge-conflicts');
+    // An unresolved conflict must never be staged and pushed as markers.
+    expect(repair).toContain('git merge --abort');
+  });
+
+  it('cuts every round from the live main, because the checkout is the dispatch commit', () => {
+    expect(workflow).toContain('Cut the branch from the current main');
+    const cutAt = workflow.indexOf('Cut the branch from the current main');
+    expect(workflow.slice(cutAt, workflow.indexOf('name: Implement '))).toContain(
+      'git reset --hard'
+    );
+  });
+
+  it('does not call a pull request nothing measured green', () => {
+    expect(land).toContain('substantive_checks');
+    expect(land).toContain('No check ran on');
+    // The skipped Supabase integration check is not a measurement.
+    expect(land).toContain('SKIPPED|NEUTRAL');
+  });
+
+  it('names a conflict with main instead of watching it for checks it can never get', () => {
+    expect(land).toContain('CONFLICTING');
+    expect(land).toContain('conflicts with main');
+  });
+
+  it('reports why the merge was refused, not just that it was', () => {
+    expect(land).toContain('The merge of #$pr was refused');
   });
 });
