@@ -585,12 +585,62 @@ async function recentHistory(chatId, beforeId) {
   return rows.reverse();
 }
 
+async function memoriesFor(chatId) {
+  return (
+    (await db(`telegram_memories?chat_id=eq.${chatId}&select=content&order=id.desc&limit=40`)) ?? []
+  );
+}
+
+async function summaryFor(chatId) {
+  const rows = await db(`telegram_summaries?chat_id=eq.${chatId}&select=summary`);
+  return rows?.[0]?.summary ?? '';
+}
+
+/** What the answer route knows before it reads the message. */
+async function contextFor(chatId, messageId) {
+  const [history, memories, summary] = await Promise.all([
+    recentHistory(chatId, messageId),
+    memoriesFor(chatId),
+    summaryFor(chatId),
+  ]);
+  return formatContext({
+    summary,
+    memories: formatMemories(memories),
+    history: formatHistory(history),
+  });
+}
+
 /** Renders history the way a person reads it: what they said, what came back. */
 export function formatHistory(rows) {
   return rows
     .filter((row) => row?.body)
     .map((row) => `${row.direction === 'in' ? 'المستخدم' : 'المساعد'}: ${row.body}`)
     .join('\n');
+}
+
+/** The distilled memory, one bullet per fact, bounded so it cannot become a prompt. */
+export function formatMemories(rows, limit = 40) {
+  const seen = new Set();
+  const lines = [];
+  for (const row of rows) {
+    const content = String(row?.content ?? '').trim();
+    if (!content || seen.has(content)) continue;
+    seen.add(content);
+    lines.push(`• ${content}`);
+    if (lines.length >= limit) break;
+  }
+  return lines.join('\n');
+}
+
+/** Everything the answer route knows before it reads the message itself. */
+export function formatContext({ summary, memories, history }) {
+  return [
+    memories ? `ما تعرفه عن أيهم من قبل:\n${memories}` : '',
+    summary ? `ملخّص المحادثات السابقة:\n${summary}` : '',
+    history ? `آخر الرسائل:\n${history}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 let reposOfPromise = null;
@@ -628,7 +678,7 @@ async function handleTask({ text, chat, fast, messageId }) {
   const repo = parsed.repo && repos.has(parsed.repo) ? parsed.repo : DEFAULT_REPO;
   const task = repo === parsed.repo ? parsed.body : text;
   const { title, body } = titleAndBody(task);
-  const context = formatHistory(await recentHistory(chat, messageId));
+  const context = await contextFor(chat, messageId);
 
   const issue = await createIssue(
     owner,
@@ -715,7 +765,7 @@ async function handleAnswer({ text, chat, messageId }) {
     return;
   }
 
-  const history = formatHistory(await recentHistory(chat, messageId));
+  const context = await contextFor(chat, messageId);
   const message = await askModel(
     [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -806,6 +856,10 @@ async function handleMessage({ chat, text, messageId }) {
  * makes a GitHub outage, a rotated token or a slow dispatch survivable.
  */
 async function drain() {
+  // A digest a trigger missed is reported before anything else: a failed agent
+  // run is the thing worth knowing first.
+  await catchUpDigests().catch(() => {});
+
   const rows =
     (await db(
       'telegram_messages?direction=eq.in&processed_at=is.null&select=id,chat_id,body,voice_file_id&order=id.asc&limit=20'
@@ -894,6 +948,106 @@ async function lookups() {
   }
 }
 
+/**
+ * What "it learns what I like" honestly means: the model reads the exchanges it
+ * has not distilled yet, keeps a rolling summary and the durable facts, and
+ * advances the cursor. The weights never change; the context does, and every row
+ * is readable and deletable in `telegram_memories`.
+ */
+const REMEMBER_PROMPT = [
+  'اقرأ هذه المحادثة بين أيهم والمساعد، وأعد كائن JSON فقط بلا أي نص آخر، بالشكل:',
+  '{"summary": "...", "memories": [{"kind": "preference|fact|project", "content": "..."}]}',
+  'الملخّص: فقرة قصيرة تصف ما جرى وما يهم في المحادثة، بالعربية.',
+  'الذكريات: حقائق دائمة فقط تستحق التذكّر لاحقاً — تفضيلات أيهم، طريقة عمله، قرارات اتخذها، تفاصيل عن مشروعه أو وقته.',
+  'كل ذكرى جملة واحدة قصيرة ≤ 200 حرف. لا تخترع شيئاً لم يُقل. لا تكرّر ما هو واضح من السياق.',
+  'إن لم يوجد ما يستحق التذكّر فأعد {"summary": "...", "memories": []}.',
+].join('\n');
+
+/** Reads a JSON object out of a model answer that may be wrapped in a code fence. */
+export function parseMemory(text) {
+  const raw = String(text ?? '');
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start < 0 || end <= start) return { summary: '', memories: [] };
+
+  try {
+    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const memories = Array.isArray(parsed.memories)
+      ? parsed.memories
+          .filter((row) => row && typeof row.content === 'string')
+          .map((row) => ({
+            kind: ['preference', 'fact', 'project'].includes(row.kind) ? row.kind : 'fact',
+            content: row.content.trim().slice(0, 200),
+          }))
+          .filter((row) => row.content.length > 3)
+          .slice(0, 6)
+      : [];
+    return {
+      summary: String(parsed.summary ?? '')
+        .trim()
+        .slice(0, 2000),
+      memories,
+    };
+  } catch {
+    return { summary: '', memories: [] };
+  }
+}
+
+async function remember() {
+  const chat = allowedChat();
+  if (!chat) return;
+
+  const cursorRows = await db('telegram_state?key=eq.memory_cursor&select=value');
+  const cursor = Number(cursorRows?.[0]?.value ?? 0);
+
+  const rows =
+    (await db(
+      `telegram_messages?chat_id=eq.${chat}&id=gt.${cursor}&select=id,direction,body&order=id.asc&limit=100`
+    )) ?? [];
+
+  // Six is where a distillation starts to beat reading the messages themselves.
+  if (rows.length < 6) return;
+
+  const message = await askModel([
+    { role: 'system', content: REMEMBER_PROMPT },
+    { role: 'user', content: formatHistory(rows) },
+  ]);
+  const { summary, memories } = parseMemory(message.content);
+
+  process.stdout.write(`telegram: remembered ${memories.length} fact(s)\n`);
+
+  if (summary) {
+    await db('telegram_summaries', {
+      method: 'POST',
+      headers: { prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        chat_id: chat,
+        summary,
+        covers_until: rows[rows.length - 1].id,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  }
+
+  for (const row of memories) {
+    await db('telegram_memories', {
+      method: 'POST',
+      headers: { prefer: 'resolution=ignore-duplicates' },
+      body: JSON.stringify({ chat_id: chat, kind: row.kind, content: row.content }),
+    });
+  }
+
+  await db('telegram_state', {
+    method: 'POST',
+    headers: { prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({
+      key: 'memory_cursor',
+      value: String(rows[rows.length - 1].id),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+}
+
 // ------------------------------------------------------------------ summaries
 
 async function remind() {
@@ -915,7 +1069,7 @@ async function remind() {
   }
 }
 
-async function digest({ workflow, url }) {
+async function digest({ workflow, url, runId }) {
   const { owner, repo } = githubTarget();
   const chat = allowedChat();
   if (!chat) throw new Error('TELEGRAM_CHAT_ID is not set');
@@ -948,6 +1102,44 @@ async function digest({ workflow, url }) {
   const text = formatDigest({ workflow, runs, items, url });
   await sendMessage(chat, text);
   await recordOutbound(chat, text, repo);
+  if (runId) {
+    await db('telegram_digests', {
+      method: 'POST',
+      headers: { prefer: 'resolution=ignore-duplicates' },
+      body: JSON.stringify({ run_id: runId, workflow }),
+    });
+  }
+}
+
+/**
+ * Sends any digest a trigger missed. `workflow_run` is the fast path and it
+ * failed for the implementer on 2026-11-04, so a run that finds itself wide
+ * awake (the thirty-minute tick) also looks back six hours and reports what has
+ * no receipt.
+ */
+async function catchUpDigests() {
+  const { owner, repo } = githubTarget();
+  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const receipts =
+    (await db(`telegram_digests?select=run_id&sent_at=gte.${encodeURIComponent(since)}`)) ?? [];
+  const seen = new Set(receipts.map((row) => Number(row.run_id)));
+
+  for (const [workflow, file] of [
+    ['Issue Planner', 'issue-planner.yml'],
+    ['Issue Implementer', 'issue-implementer.yml'],
+  ]) {
+    const runs =
+      (await github(
+        `/repos/${owner}/${repo}/actions/workflows/${file}/runs?per_page=5&created=${encodeURIComponent(
+          `>=${since}`
+        )}`
+      ).then((data) => data?.workflow_runs ?? [])) ?? [];
+
+    for (const run of runs) {
+      if (run.status !== 'completed' || seen.has(Number(run.id))) continue;
+      await digest({ workflow, url: run.html_url, runId: run.id });
+    }
+  }
 }
 
 async function alerts({ workflow, conclusion, url }) {
@@ -971,6 +1163,7 @@ async function main() {
   const mode = process.argv[2];
   if (mode === 'drain') return drain();
   if (mode === 'lookup') return lookups();
+  if (mode === 'remember') return remember();
   if (mode === 'remind') return remind();
   if (mode === 'digest') {
     return digest({
