@@ -347,6 +347,22 @@ data class ChatMembersResponseMembersItem(
 )
 
 @Serializable
+data class ChatBlockedMembersResponse(
+    val success: Boolean,
+    val blocked: List<ChatBlockedMembersResponseBlockedItem>? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class ChatBlockedMembersResponseBlockedItem(
+    val id: String,
+    val username: String,
+    val name: String?,
+    val avatarUrl: String?,
+    val verified: Boolean,
+)
+
+@Serializable
 data class ChatAssistantStateResponse(
     val success: Boolean,
     val available: Boolean? = null,

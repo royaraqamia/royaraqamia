@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
+import com.royaraqamia.app.account.BlockedMembersScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.account.ChangelogScreen
@@ -248,6 +249,16 @@ class ShellActivity : ComponentActivity() {
                                     // guide, which the app has no screen for yet: it
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
+                                )
+                            // The members this account blocked (#977): the
+                            // page's own read and unblock, drawn natively and
+                            // off until its gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/account/blocked" ->
+                                BlockedMembersScreen(
+                                    repository = graph.blockedMembers,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
                                 )
                             // The changelog (#951): the static file the weekly
                             // train writes, drawn as the page's list. Ported and

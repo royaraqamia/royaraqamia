@@ -179,34 +179,6 @@
       ]
     },
     {
-      "id": "account-rows",
-      "surface": "account",
-      "issue": "#948",
-      "web": {
-        "route": "app/account/page.tsx",
-        "component": "frontend/ui/account/account-rows.tsx",
-        "copyModule": "frontend/ui/account/account-rows-copy.ts",
-        "copyExport": "ACCOUNT_ROWS_COPY"
-      },
-      "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRows.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRowsCopy.kt",
-        "copyObject": "AccountRowsCopy"
-      },
-      "copySource": "shared/copy/account-rows.json",
-      "states": [
-        {
-          "name": "Guest",
-          "copy": "navLabel"
-        },
-        {
-          "name": "Member",
-          "copy": "signOut"
-        }
-      ]
-    },
-    {
       "id": "shell-tab-bar",
       "surface": "home",
       "issue": "#647",
@@ -1151,30 +1123,66 @@
       ]
     },
     {
-      "id": "account-changelog",
-      "surface": "account-changelog",
-      "issue": "#951",
+      "id": "account-blocked",
+      "surface": "account-blocked",
+      "issue": "#977",
       "web": {
-        "route": "app/account/changelog/page.tsx",
-        "component": "frontend/ui/account/changelog-view.tsx",
-        "copyModule": "frontend/ui/account/changelog-copy.ts",
-        "copyExport": "CHANGELOG_COPY"
+        "route": "app/account/blocked/page.tsx",
+        "component": "frontend/ui/account/blocked-members-view.tsx",
+        "copyModule": "frontend/ui/account/blocked-members-copy.ts",
+        "copyExport": "BLOCKED_MEMBERS_COPY"
       },
       "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogScreen.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogCopy.kt",
-        "copyObject": "ChangelogCopy"
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersCopy.kt",
+        "copyObject": "BlockedMembersCopy"
       },
-      "copySource": "shared/copy/account-changelog.json",
+      "copySource": "shared/copy/account-blocked.json",
       "states": [
         {
           "name": "Loading",
           "copy": "loadingLabel"
         },
         {
+          "name": "SignedOut",
+          "copy": "signedOutTitle"
+        },
+        {
+          "name": "Failed",
+          "copy": "loadFailed"
+        },
+        {
           "name": "Ready",
-          "copy": "releaseTitle"
+          "copy": "unblock"
+        }
+      ]
+    },
+    {
+      "id": "account-rows",
+      "surface": "account",
+      "issue": "#948",
+      "web": {
+        "route": "app/account/page.tsx",
+        "component": "frontend/ui/account/account-rows.tsx",
+        "copyModule": "frontend/ui/account/account-rows-copy.ts",
+        "copyExport": "ACCOUNT_ROWS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRows.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRowsCopy.kt",
+        "copyObject": "AccountRowsCopy"
+      },
+      "copySource": "shared/copy/account-rows.json",
+      "states": [
+        {
+          "name": "Guest",
+          "copy": "navLabel"
+        },
+        {
+          "name": "Member",
+          "copy": "signOut"
         }
       ]
     },
@@ -1303,6 +1311,34 @@
         {
           "name": "Submitted",
           "copy": "received"
+        }
+      ]
+    },
+    {
+      "id": "account-changelog",
+      "surface": "account-changelog",
+      "issue": "#951",
+      "web": {
+        "route": "app/account/changelog/page.tsx",
+        "component": "frontend/ui/account/changelog-view.tsx",
+        "copyModule": "frontend/ui/account/changelog-copy.ts",
+        "copyExport": "CHANGELOG_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogCopy.kt",
+        "copyObject": "ChangelogCopy"
+      },
+      "copySource": "shared/copy/account-changelog.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "Ready",
+          "copy": "releaseTitle"
         }
       ]
     }

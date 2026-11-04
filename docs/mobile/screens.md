@@ -32,7 +32,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-news` | `/account/news` | `NewsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-services` | `/account/services` | _web only_ | The switches are a server preference read on the client; the screen lands with the rest of the account area (#799). |
 | `account-changelog` | `/account/changelog` | `ChangelogScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `account-blocked` | `/account/blocked` | _web only_ | The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799). |
+| `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | `CommunityFeedScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `community-post` | `/community/[slug]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

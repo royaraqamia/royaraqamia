@@ -484,6 +484,19 @@ export const ChatMembersResponseSchema = z.object({
   error: z.string().optional(),
 });
 
+/**
+ * The members the caller has blocked (`GET /api/chats/blocks`).
+ *
+ * The site's view reads `blocked` from this body and the app decodes the same
+ * one, so `/account/blocked` cannot list a different set on the two clients
+ * (ADR-0098). The field is optional because a refusal is `{ success: false }`.
+ */
+export const ChatBlockedMembersResponseSchema = z.object({
+  success: z.boolean(),
+  blocked: z.array(ChatPeerSchema).optional(),
+  error: z.string().optional(),
+});
+
 export const ChatAssistantStateResponseSchema = z.object({
   success: z.boolean(),
   available: z.boolean().optional(),
