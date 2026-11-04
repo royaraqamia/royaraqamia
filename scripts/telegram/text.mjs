@@ -177,24 +177,51 @@ export function toLatinDigits(text) {
  * Which language to answer in.
  *
  * The owner's rule is a mirror: Arabic in, Arabic out; English in, English out;
- * a mixed message follows its first full sentence. Nothing here guesses at a
- * third language - an answer in the language of the message is the whole point.
+ * a mixed message follows its first full sentence.
+ *
+ * The first version counted letters on the raw message and was wrong the first
+ * time it mattered: "اقرأ AGENTS.md واذكر…" is Arabic, but the dot in the file
+ * name split off a "first sentence" whose Latin characters outnumbered the
+ * Arabic, and the bot answered in English. Code spans, URLs and file names are
+ * therefore removed before anything is counted - they are names, not the
+ * language somebody is writing in.
  */
 export function languageOf(text) {
   const source = toLatinDigits(String(text ?? '')).trim();
   if (!source) return 'ar';
 
-  const arabic = (source.match(/[\u0600-\u06ff]/g) ?? []).length;
-  const latin = (source.match(/[A-Za-z]/g) ?? []).length;
-  if (!arabic && !latin) return 'ar';
-  if (!latin) return 'ar';
-  if (!arabic) return 'en';
+  const count = (value) => ({
+    arabic: (value.match(/[\u0600-\u06ff]/g) ?? []).length,
+    latin: (value.match(/[A-Za-z]/g) ?? []).length,
+  });
 
-  const firstSentence = source.split(/[.!?؟\n]/)[0] ?? source;
-  const firstArabic = (firstSentence.match(/[\u0600-\u06ff]/g) ?? []).length;
-  const firstLatin = (firstSentence.match(/[A-Za-z]/g) ?? []).length;
-  if (firstArabic !== firstLatin) return firstArabic > firstLatin ? 'ar' : 'en';
-  return arabic >= latin ? 'ar' : 'en';
+  // Names, not prose: `AGENTS.md`, `scripts/telegram/answer.mjs`, `https://…`,
+  // and anything in backticks.
+  const cleaned = source
+    .replace(/`[^`\n]*`/g, ' ')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/\b[\w.-]*[./\\][\w./\\-]*\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const whole = count(cleaned);
+  if (!whole.arabic && !whole.latin) {
+    const raw = count(source);
+    if (!raw.arabic && !raw.latin) return 'ar';
+    return raw.latin > raw.arabic ? 'en' : 'ar';
+  }
+  if (!whole.latin) return 'ar';
+  if (!whole.arabic) return 'en';
+
+  const firstSentence = (cleaned.split(/[.!?؟\n]/)[0] ?? '').trim();
+  const first = count(firstSentence);
+  if (first.arabic && first.latin && first.arabic !== first.latin) {
+    return first.arabic > first.latin ? 'ar' : 'en';
+  }
+
+  // A tie goes to Arabic: the owner writes Arabic, and an Arabic answer to a
+  // mixed message is the safer mistake.
+  return whole.arabic >= whole.latin ? 'ar' : 'en';
 }
 
 /** `+3`, `-5.5`, `UTC+3`, `03:00`, `Asia/Damascus`, `دمشق` -> minutes east of UTC. */

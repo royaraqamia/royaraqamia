@@ -88,6 +88,12 @@ describe('languageOf', () => {
     expect(languageOf('أصلح صفحة الدخول')).toBe('ar');
   });
 
+  it('ignores file names, paths and code spans, which are names not prose', () => {
+    expect(languageOf('اقرأ AGENTS.md واذكر أول قاعدتين في العقد')).toBe('ar');
+    expect(languageOf('اقرأ `package.json` وأخبرني بالإصدار')).toBe('ar');
+    expect(languageOf('read scripts/telegram/answer.mjs and explain it')).toBe('en');
+  });
+
   it('follows the first sentence of a mixed message', () => {
     expect(languageOf('fix the login page. أيضاً أضف زراً')).toBe('en');
     expect(languageOf('أصلح صفحة الدخول. Also add a button')).toBe('ar');
