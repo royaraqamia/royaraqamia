@@ -168,7 +168,9 @@ export function PushNotificationToggle() {
           <p className="text-sm font-bold text-foreground">إشعارات الجهاز</p>
           {blocked ? (
             <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
-              الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.
+              {native
+                ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
+                : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
             </p>
           ) : null}
           {state.kind === 'unreachable' ? (
