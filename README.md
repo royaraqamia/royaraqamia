@@ -395,7 +395,7 @@ workflow watches for an overdue release.
 
 The newest APK is always at <https://github.com/royaraqamia/royaraqamia/releases/latest>: the Android release is the one that claims "Latest", so it resolves to the current `android-X.Y.Z` tag with `royaraqamia-<version>.apk` attached.
 
-A device does not use that URL. It downloads the same bytes from our own origin, at `https://royaraqamia.com/android/royaraqamia-<version>.apk`, because `release-assets.githubusercontent.com` is not reachable from everywhere the app has users ([ADR-0047](docs/adr/0047-the-apk-is-served-from-our-own-origin.md)). The changelog those users read is `public/android/changelog.json`, served from the same origin and shown at `/account/changelog` inside the app.
+A device does not use that URL. It downloads the same bytes from our own origin, at `https://royaraqamia.com/android/royaraqamia-<version>.apk`, because `release-assets.githubusercontent.com` is not reachable from everywhere the app has users ([ADR-0047](docs/adr/0047-the-apk-is-served-from-our-own-origin.md)). The notes those users read come from `public/android/latest.json`, served from the same origin and drawn by the app's update card; the site has no release-notes page ([ADR-0124](docs/adr/0124-the-release-notes-page-is-gone.md)).
 
 ### Where the version is shown
 

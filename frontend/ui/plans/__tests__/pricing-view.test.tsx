@@ -23,7 +23,9 @@ import { PricingView } from '../pricing-view';
 
 /**
  * A catalog that matches nothing in the seeded migration, so a number showing
- * up here proves the page reads the catalog instead of its own copy.
+ * up here proves the page reads the catalog instead of its own copy. The item
+ * caps are uniform (6 free / 66 pro) because the card states one number for
+ * every service; MCP keeps its own line at 1 / 12.
  */
 const catalog: PlanCatalog = {
   settings: {
@@ -32,32 +34,24 @@ const catalog: PlanCatalog = {
     durationDays: 30,
   },
   limits: [
-    { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 7, proCap: 77, sortOrder: 10 },
-    { key: 'expenses', label: 'المصروفات', visitorCap: 1, freeCap: 2, proCap: 22, sortOrder: 20 },
-    { key: 'budgets', label: 'الميزانيات', visitorCap: 1, freeCap: 1, proCap: 11, sortOrder: 30 },
+    { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 6, proCap: 66, sortOrder: 10 },
+    { key: 'expenses', label: 'المصروفات', visitorCap: 1, freeCap: 6, proCap: 66, sortOrder: 20 },
+    { key: 'budgets', label: 'الميزانيات', visitorCap: 1, freeCap: 6, proCap: 66, sortOrder: 30 },
     {
       key: 'short_links',
       label: 'الروابط المختصرة',
       visitorCap: 1,
-      freeCap: 9,
-      proCap: 99,
+      freeCap: 6,
+      proCap: 66,
       sortOrder: 40,
     },
     {
       key: 'community_published',
       label: 'المنشورات المنشورة',
       visitorCap: 0,
-      freeCap: 4,
-      proCap: 44,
+      freeCap: 6,
+      proCap: 66,
       sortOrder: 50,
-    },
-    {
-      key: 'community_drafts',
-      label: 'مسودات المنشورات',
-      visitorCap: 0,
-      freeCap: 3,
-      proCap: 33,
-      sortOrder: 60,
     },
     {
       key: 'quran_bookmarks',
@@ -67,13 +61,13 @@ const catalog: PlanCatalog = {
       proCap: 66,
       sortOrder: 70,
     },
-    { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 8, proCap: 88, sortOrder: 80 },
+    { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 6, proCap: 66, sortOrder: 80 },
     {
       key: 'mcp_connected_apps',
       label: 'تطبيقات MCP المتصلة',
       visitorCap: 0,
-      freeCap: 2,
-      proCap: 22,
+      freeCap: 1,
+      proCap: 12,
       sortOrder: 90,
     },
   ],
@@ -87,24 +81,6 @@ const catalog: PlanCatalog = {
       proCap: 55,
       sortOrder: 10,
     },
-    {
-      key: 'scanner.scan',
-      label: 'مسح رمز',
-      window: 'daily',
-      visitorCap: 1,
-      freeCap: 5,
-      proCap: 55,
-      sortOrder: 30,
-    },
-    {
-      key: 'quran.surah.read',
-      label: 'قراءة سورة في اليوم',
-      window: 'daily',
-      visitorCap: 1,
-      freeCap: 5,
-      proCap: 55,
-      sortOrder: 40,
-    },
   ],
   quotas: [
     {
@@ -114,14 +90,6 @@ const catalog: PlanCatalog = {
       freeCap: 6,
       proCap: 66,
       sortOrder: 10,
-    },
-    {
-      key: 'news.sources',
-      label: 'مصادر أخبار مختارة',
-      visitorCap: 0,
-      freeCap: 4,
-      proCap: 44,
-      sortOrder: 20,
     },
   ],
 };
@@ -146,18 +114,62 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PricingView', () => {
-  it('renders every number from the catalog', () => {
+  it('states the free plan in two lines, both from the catalog', () => {
     render(<PricingView catalog={catalog} />);
 
-    expect(screen.getByText('$12')).toBeInTheDocument();
+    expect(screen.getByText('6 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
+    expect(screen.getByText('تطبيق MCP واحد كحد أقصى.')).toBeInTheDocument();
+  });
 
-    // Each allowance comes from the same cap and counter rows.
-    expect(screen.getByText(/حتى 77 عادة/)).toBeInTheDocument();
-    expect(screen.getByText(/88 ملاحظة/)).toBeInTheDocument();
-    expect(screen.getByText(/حتى 22 تطبيقات MCP/)).toBeInTheDocument();
-    expect(screen.getByText(/55 تنزيلًا/)).toBeInTheDocument();
-    // The one-line summary under the price is gone; the bullets carry it.
-    expect(screen.queryByText(/من كل نوع/)).not.toBeInTheDocument();
+  it('states the paid plan in three lines, both caps from the catalog', () => {
+    render(<PricingView catalog={catalog} />);
+
+    expect(screen.getByText('حتَّى 66 عنصر من كل خدمة.')).toBeInTheDocument();
+    expect(screen.getByText('حتَّى 12 تطبيقات MCP.')).toBeInTheDocument();
+    expect(
+      screen.getByText('خصم 20% على التَّدريب والاستشارات وبناء المشاريع والتَّعاقُد الشَّهري.')
+    ).toBeInTheDocument();
+  });
+
+  it('prints the smallest item cap when the catalog stops being uniform', () => {
+    // One row below the others: the card states one number for every service, and
+    // overstating it is a promise the database would refuse.
+    const drifted: PlanCatalog = {
+      ...catalog,
+      limits: catalog.limits.map((limit) =>
+        limit.key === 'notes' ? { ...limit, freeCap: 3 } : limit
+      ),
+    };
+
+    render(<PricingView catalog={drifted} />);
+
+    expect(screen.getByText('3 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
+  });
+
+  it('writes a plural MCP line when the free cap is above one', () => {
+    const twoApps: PlanCatalog = {
+      ...catalog,
+      limits: catalog.limits.map((limit) =>
+        limit.key === 'mcp_connected_apps' ? { ...limit, freeCap: 2 } : limit
+      ),
+    };
+
+    render(<PricingView catalog={twoApps} />);
+
+    expect(screen.getByText('حتَّى 2 تطبيقات MCP.')).toBeInTheDocument();
+  });
+
+  it('stops listing the counted actions it no longer promises in numbers', () => {
+    render(<PricingView catalog={catalog} />);
+
+    // The bullets are gone on purpose: the plan page states the allowance a member
+    // is actually consuming, and a refusal names what is left.
+    expect(screen.queryByText(/تنزيلات/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/عمليات مسح/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/سور/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/بطاقات في/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/دعم مباشر عبر واتساب/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/تحسين خدمات Google/)).not.toBeInTheDocument();
   });
 
   it('sends a guest to sign-in with the price in the WhatsApp message', () => {
@@ -196,14 +208,6 @@ describe('PricingView', () => {
     expect(screen.getByText('الخطَّة الحاليَّة')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByRole('link', { name: 'اشترِك الآن' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'ابدأ مجَّانًا' })).not.toBeInTheDocument();
-  });
-
-  it('tells the reader the paid plan discounts the four services', () => {
-    render(<PricingView catalog={catalog} />);
-
-    expect(
-      screen.getByText('خصم 20% على التَّدريب والاستشارات وبناء المشاريع والتَّعاقُد الشَّهري.')
-    ).toBeInTheDocument();
   });
 
   it('sells the two plans and nothing else', () => {

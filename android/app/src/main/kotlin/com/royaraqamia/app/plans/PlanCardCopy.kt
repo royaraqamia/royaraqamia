@@ -18,6 +18,7 @@ object PlanCardCopy {
     const val UNLIMITED = "غير محدود"
     const val CARD_TITLE = "خطتك الحالية"
     const val CARD_LABEL = "خطتك الحالية"
+    const val USAGE_LABEL = "نسبة الاستهلاك"
     const val EXPIRES = "تنتهي الخطَّة في {date}، ثم تعود إلى الخطَّة المجَّانيَّة بحدودها."
     const val LOADING_LABEL = "جاري تحميل الاشتراك"
     const val FAILED = "تعذّر تحميل بيانات اشتراكك."

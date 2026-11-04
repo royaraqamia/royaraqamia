@@ -56,6 +56,41 @@
     font-family: var(--font-digits);
     direction: ltr;
   }
+  /* The plan's consumption: a pill track, filled from its start by the share used. */
+  .roy-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--element-gap-sm);
+  }
+  .roy-progress-track {
+    flex: 1 1 auto;
+    overflow: hidden;
+    height: 8px;
+    border-radius: 9999px;
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  .roy-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: hsl(var(--primary));
+    transform-origin: right;
+    transform: scaleX(0);
+    transition: transform 400ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .roy-progress-fill {
+      transition: none;
+    }
+  }
+  .roy-progress-value {
+    flex-shrink: 0;
+    font-size: var(--type-xs-size);
+    line-height: var(--type-xs-leading);
+    font-weight: 700;
+    color: hsl(var(--foreground));
+    font-family: var(--font-digits);
+    direction: ltr;
+  }
   /* The site's pill badge: geometry here, tones below, interaction in the component. */
   .roy-badge {
     display: inline-flex;

@@ -9,6 +9,12 @@ import type { PlanCatalog } from '@/shared/contracts/plans';
 const FREE = 'free' as const;
 const PRO = 'pro' as const;
 
+/**
+ * MCP is the one cap the page states on its own line, so the "every service"
+ * sentence leaves it out: its allowance is three numbers, not the plan's width.
+ */
+const MCP_KEY = 'mcp_connected_apps';
+
 function priceLabel(cents: number, currency: string): string {
   const amount = cents / 100;
   const formatted = amount.toLocaleString('en-US', {
@@ -24,26 +30,28 @@ function capOf(catalog: PlanCatalog, key: string, plan: typeof FREE | typeof PRO
   return plan === PRO ? limit.proCap : limit.freeCap;
 }
 
-function counterCapOf(
-  catalog: PlanCatalog,
-  key: string,
-  plan: typeof FREE | typeof PRO | 'visitor'
-): number {
-  const limit = catalog.counters.find((entry) => entry.key === key);
-  if (!limit) return 0;
-  if (plan === 'visitor') return limit.visitorCap;
-  return plan === PRO ? limit.proCap : limit.freeCap;
+/**
+ * The one number every owned-item cap shares — the value the "every service"
+ * sentence prints.
+ *
+ * The sentence is only true while the catalogue's caps are uniform, which is how
+ * `plan_limits` is seeded (5 free / 50 pro, MCP apart) and what
+ * `pricing-view.test.tsx` pins. If a catalog row ever breaks that, the smallest
+ * cap is printed: understating a limit is a stale sentence, overstating it is a
+ * promise the database refuses.
+ */
+export function itemCapOf(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): number {
+  const caps = catalog.limits
+    .filter((limit) => limit.key !== MCP_KEY)
+    .map((limit) => (plan === PRO ? limit.proCap : limit.freeCap));
+
+  return caps.length === 0 ? 0 : Math.min(...caps);
 }
 
-function quotaCapOf(
-  catalog: PlanCatalog,
-  key: string,
-  plan: typeof FREE | typeof PRO | 'visitor'
-): number {
-  const quota = catalog.quotas.find((entry) => entry.key === key);
-  if (!quota) return 0;
-  if (plan === 'visitor') return quota.visitorCap;
-  return plan === PRO ? quota.proCap : quota.freeCap;
+/** MCP's own line: one app is a singular, and its cap comes from the catalogue. */
+function mcpLine(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): string {
+  const cap = capOf(catalog, MCP_KEY, plan);
+  return cap === 1 ? 'تطبيق MCP واحد كحد أقصى.' : `حتَّى ${formatCount(cap)} تطبيقات MCP.`;
 }
 
 /**
@@ -51,10 +59,11 @@ function quotaCapOf(
  * (`plan_settings`, `plan_limits`, `usage_limits`), so the page cannot promise an
  * allowance the database does not enforce (ADR-0093).
  *
- * Two kinds of allowance are stated apart, because they behave differently: an
- * owned-item cap frees a slot when the item is deleted, a counted action is a
- * number of times (never refilling for a download, resetting at Damascus
- * midnight for a digest, a scan or a surah).
+ * The card is deliberately two lines for the free plan and three for the paid
+ * one: what the account can hold, MCP's own cap, and the service discount. The
+ * counted actions (downloads, scans, surahs, the assistant) and the news quotas
+ * are enforced by the same catalogue and stated where a member meets them — the
+ * refusal that names what is left — rather than as nine bullets above the price.
  *
  * It is deliberately reachable without an account: the account row links here
  * for guests too, and the visitor allowance is stated where a visitor meets it —
@@ -90,37 +99,9 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'habits', FREE))} عادات، و
-                {formatCount(capOf(catalog, 'expenses', FREE))} مصروفًا، و
-                {formatCount(capOf(catalog, 'budgets', FREE))} ميزانيات، و
-                {formatCount(capOf(catalog, 'notes', FREE))} ملاحظة.
+                {formatCount(itemCapOf(catalog, FREE))} عناصر كحد أقصى من كل خدمة.
               </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'short_links', FREE))} رابطًا مختصرًا، و
-                {formatCount(capOf(catalog, 'quran_bookmarks', FREE))} علامة في القرآن.
-              </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'community_published', FREE))} منشورًا في المجتمع، و
-                {formatCount(capOf(catalog, 'community_drafts', FREE))} مسودّات.
-              </PlanPoint>
-              <PlanPoint>
-                {formatCount(counterCapOf(catalog, 'downloader.job.create', FREE))} تنزيلات، لا
-                تتجدَّد أبدًا.
-              </PlanPoint>
-              <PlanPoint>
-                يوميًّا: {formatCount(counterCapOf(catalog, 'scanner.scan', FREE))} عمليات مسح، و
-                {formatCount(counterCapOf(catalog, 'quran.surah.read', FREE))} سور.
-              </PlanPoint>
-              <PlanPoint>
-                أخبار: {formatCount(quotaCapOf(catalog, 'news.story.cards', FREE))} بطاقات في
-                الصفحة، و{formatCount(quotaCapOf(catalog, 'news.sources', FREE))} مصادر مختارة.
-              </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'mcp_connected_apps', FREE))} تطبيق MCP متَّصل.
-              </PlanPoint>
-              <PlanPoint>
-                قراءة غير محدودة: المجتمع، القرآن، أسعار الصرف، التحقُّق من الشَّهادات.
-              </PlanPoint>
+              <PlanPoint>{mcpLine(catalog, FREE)}</PlanPoint>
             </ul>
 
             <FreePlanCta />
@@ -143,42 +124,12 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
             </p>
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'habits', PRO))} عادة، و
-                {formatCount(capOf(catalog, 'expenses', PRO))} مصروفًا، و
-                {formatCount(capOf(catalog, 'budgets', PRO))} ميزانيّة، و
-                {formatCount(capOf(catalog, 'notes', PRO))} ملاحظة.
-              </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'short_links', PRO))} رابطًا مختصرًا، و
-                {formatCount(capOf(catalog, 'quran_bookmarks', PRO))} علامة في القرآن.
-              </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'community_published', PRO))} منشورًا في المجتمع، و
-                {formatCount(capOf(catalog, 'community_drafts', PRO))} مسودّة.
-              </PlanPoint>
-              <PlanPoint>
-                {formatCount(counterCapOf(catalog, 'downloader.job.create', PRO))} تنزيلًا، لا
-                يتجدَّد أبدًا.
-              </PlanPoint>
-              <PlanPoint>
-                يوميًّا: {formatCount(counterCapOf(catalog, 'scanner.scan', PRO))} عملية مسح، و
-                {formatCount(counterCapOf(catalog, 'quran.surah.read', PRO))} سورة، و
-                {formatCount(counterCapOf(catalog, 'chat.agent.turn', PRO))} سؤالًا للمساعد الذكي.
-              </PlanPoint>
-              <PlanPoint>الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.</PlanPoint>
-              <PlanPoint>
-                أخبار: {formatCount(quotaCapOf(catalog, 'news.story.cards', PRO))} بطاقة في الصفحة،
-                و{formatCount(quotaCapOf(catalog, 'news.sources', PRO))} مصدرًا مختارًا.
-              </PlanPoint>
-              <PlanPoint>
-                حتى {formatCount(capOf(catalog, 'mcp_connected_apps', PRO))} تطبيقات MCP متَّصلة.
-              </PlanPoint>
+              <PlanPoint>حتَّى {formatCount(itemCapOf(catalog, PRO))} عنصر من كل خدمة.</PlanPoint>
+              <PlanPoint>حتَّى {formatCount(capOf(catalog, MCP_KEY, PRO))} تطبيقات MCP.</PlanPoint>
               <PlanPoint>
                 خصم {PRO_SERVICE_DISCOUNT_PERCENT}% على التَّدريب والاستشارات وبناء المشاريع
                 والتَّعاقُد الشَّهري.
               </PlanPoint>
-              <PlanPoint>دعم مباشر عبر واتساب.</PlanPoint>
             </ul>
 
             <PaidPlanCta message={subscribeMessage} />

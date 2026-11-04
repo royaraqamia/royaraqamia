@@ -252,17 +252,6 @@
       "issue": "#493"
     },
     {
-      "id": "account-changelog",
-      "routes": ["/account/changelog"],
-      "owner": "static",
-      "read": "swr",
-      "write": "none",
-      "shell": "swr",
-      "bundle": "remote",
-      "specs": [],
-      "issue": "#663"
-    },
-    {
       "id": "notifications",
       "routes": ["/notifications"],
       "owner": "server",

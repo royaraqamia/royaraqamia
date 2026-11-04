@@ -145,6 +145,13 @@ const nextConfig = {
         destination: '/community/:path*',
         permanent: true,
       },
+      // The release-notes page is gone: an installed shell and an old bookmark
+      // both land on the account page instead of a 404 (ADR-0124).
+      {
+        source: '/account/changelog',
+        destination: '/account',
+        permanent: true,
+      },
       ...productAppRedirects,
     ];
   },

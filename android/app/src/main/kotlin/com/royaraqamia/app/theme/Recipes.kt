@@ -52,6 +52,18 @@ object Recipes {
         val valueColor: Color get() = RoyColors.foreground
     }
 
+    /** The plan's consumption: a pill track, filled from its start by the share used. */
+    object Progress {
+        val radius: Shape get() = RoyShape.pill
+        val height: Dp = 8f.dp
+        fun gap(spacing: RoySpacing): Dp = spacing.elementGapSm
+        val track: Color get() = RoyColors.muted.copy(alpha = 0.5f)
+        val fill: Color get() = RoyColors.primary
+        fun value(scale: RoyTypeScale): TextStyle =
+            scale.xs.copy(fontWeight = FontWeight(700)).let { scale.digits(it) }
+        val valueColor: Color get() = RoyColors.foreground
+    }
+
     /** The site's pill badge: geometry here, tones below, interaction in the component. */
     object Badge {
         val radius: Shape get() = RoyShape.pill

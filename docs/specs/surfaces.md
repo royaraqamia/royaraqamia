@@ -31,7 +31,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-faq` | `/account/faq` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
 | `account-services` | `/account/services` | server | needs-connection | none | swr | bundled | _ungated_ |  |  |
 | `account-news` | `/account/news` | server | needs-connection | none | precached | bundled | _ungated_ |  | #493 |
-| `account-changelog` | `/account/changelog` | static | swr | none | swr | remote | _ungated_ |  | #663 |
 | `notifications` | `/notifications` | server | needs-connection | none | swr | remote | _ungated_ |  |  |
 | `chats` | `/chats/[id]`<br>`/chats/new` | server | needs-connection | none | swr | remote | _ungated_ |  |  |
 | `community` | `/community` | server | snapshot | none | precached | remote | `public-offline.spec.ts` |  | #555 |

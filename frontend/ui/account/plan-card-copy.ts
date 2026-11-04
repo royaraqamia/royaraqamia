@@ -16,6 +16,7 @@ export const PLAN_CARD_COPY = {
   unlimited: 'غير محدود',
   cardTitle: 'خطتك الحالية',
   cardLabel: 'خطتك الحالية',
+  usageLabel: 'نسبة الاستهلاك',
   expires: 'تنتهي الخطَّة في {date}، ثم تعود إلى الخطَّة المجَّانيَّة بحدودها.',
   loadingLabel: 'جاري تحميل الاشتراك',
   failed: 'تعذّر تحميل بيانات اشتراكك.',

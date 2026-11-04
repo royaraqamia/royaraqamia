@@ -223,6 +223,55 @@ export function renderCss(recipes, tokens) {
     );
   }
 
+  const progress = recipes.primitives?.progress;
+  if (progress) {
+    step(tokens, progress.value.step);
+    lines.push(
+      "/* The plan's consumption: a pill track, filled from its start by the share used. */",
+      '.roy-progress {',
+      '  display: flex;',
+      '  align-items: center;',
+      `  gap: ${spaceProperty(tokens, progress.gap)};`,
+      '}',
+      '',
+      '.roy-progress-track {',
+      '  flex: 1 1 auto;',
+      '  overflow: hidden;',
+      `  height: ${lengthToPx(progress.height)}px;`,
+      `  border-radius: ${radiusProperty(progress.radius)};`,
+      `  background-color: ${colorValue(tokens, progress.track)};`,
+      '}',
+      '',
+      '.roy-progress-fill {',
+      '  height: 100%;',
+      `  border-radius: ${radiusProperty(progress.radius)};`,
+      `  background-color: ${colorValue(tokens, progress.fill)};`,
+      // The page is RTL, so the track's start edge is its right one: a fill that
+      // grows from `left` would read as emptying.
+      '  transform-origin: right;',
+      '  transform: scaleX(0);',
+      '  transition: transform 400ms ease-out;',
+      '}',
+      '',
+      '@media (prefers-reduced-motion: reduce) {',
+      '  .roy-progress-fill {',
+      '    transition: none;',
+      '  }',
+      '}',
+      '',
+      '.roy-progress-value {',
+      '  flex-shrink: 0;',
+      `  font-size: var(--type-${progress.value.step}-size);`,
+      `  line-height: var(--type-${progress.value.step}-leading);`,
+      progress.value.weight === undefined ? '' : `  font-weight: ${progress.value.weight};`,
+      `  color: ${colorValue(tokens, progress.value)};`,
+      progress.value.digits ? '  font-family: var(--font-digits);' : '',
+      progress.value.direction ? `  direction: ${progress.value.direction};` : '',
+      '}',
+      ''
+    );
+  }
+
   const badge = recipes.primitives?.badge;
   if (badge) {
     step(tokens, badge.type.step);
@@ -434,6 +483,25 @@ export function renderKotlin(recipes, tokens) {
       `            scale.${row.value.step}.copy(fontWeight = FontWeight(${row.value.weight ?? 400}))` +
         (row.value.digits ? '.let { scale.digits(it) }' : ''),
       `        val valueColor: Color get() = RoyColors.${camelCase(row.value.color)}`,
+      '    }',
+      ''
+    );
+  }
+
+  const progress = recipes.primitives?.progress;
+  if (progress) {
+    lines.push(
+      "    /** The plan's consumption: a pill track, filled from its start by the share used. */",
+      '    object Progress {',
+      `        val radius: Shape get() = ${radiusShape(progress.radius)}`,
+      `        val height: Dp = ${float(lengthToPx(progress.height))}.dp`,
+      `        fun gap(spacing: RoySpacing): Dp = spacing.${camelCase(progress.gap)}`,
+      `        val track: Color get() = RoyColors.${camelCase(progress.track.color)}.copy(alpha = ${float(progress.track.alpha ?? 1)})`,
+      `        val fill: Color get() = RoyColors.${camelCase(progress.fill.color)}`,
+      `        fun value(scale: RoyTypeScale): TextStyle =`,
+      `            scale.${progress.value.step}.copy(fontWeight = FontWeight(${progress.value.weight ?? 400}))` +
+        (progress.value.digits ? '.let { scale.digits(it) }' : ''),
+      `        val valueColor: Color get() = RoyColors.${camelCase(progress.value.color)}`,
       '    }',
       ''
     );

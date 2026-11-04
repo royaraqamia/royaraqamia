@@ -211,15 +211,6 @@ export const CONTRACTS = [
       'ChatAttachmentUrlResponseSchema',
     ],
   },
-  // The Android changelog (#951): the app draws the release notes the weekly
-  // train publishes, from the same `public/android/changelog.json` the page
-  // reads. The shape is generated so a release field the file stops carrying is
-  // a compile error rather than a card that draws nothing.
-  {
-    module: 'shared/contracts/android-changelog',
-    file: 'AndroidChangelogContracts.kt',
-    schemas: ['AndroidChangelogSchema'],
-  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

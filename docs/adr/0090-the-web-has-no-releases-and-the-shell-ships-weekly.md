@@ -55,6 +55,10 @@ inside the app. Notes are curated by a person, in the language the app's users r
 generated from commit subjects says `fix(android): regenerate the plugin lists`, which is not a
 sentence anybody outside this repository should have to parse.
 
+_Amended by [ADR-0124](0124-the-release-notes-page-is-gone.md): the notes still ship in the GitHub
+release and in `public/android/latest.json`, which the app's own update card draws, and
+`/account/changelog` is gone — the route redirects to `/account`._
+
 ## The version scheme
 
 `versionName` is semantic and `versionCode` is derived from it:

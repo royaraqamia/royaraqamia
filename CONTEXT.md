@@ -434,9 +434,9 @@ own origin —
 bucket, because GitHub's release assets are not reachable everywhere this app has users (ADR-0047). Each
 version is also its own release — `android-1.1.0`, holding `royaraqamia-1.1.0.apk` as the permanent
 archive and the Arabic notes its pull requests wrote — because a tag that gets reused can be repointed
-at other bytes. The same notes are served as `public/android/changelog.json` and shown at
-`/account/changelog` inside the app. `Shell version` is that name; the `1.1.0` is what a user reads in
-the app's info screen, in the account footer, and in the changelog.
+at other bytes. The same notes are served as `public/android/latest.json` and shown by the update card
+inside the app. `Shell version` is that name; the `1.1.0` is what a user reads in the app's info
+screen and in the account footer.
 _Avoid_: app update, force update
 
 **Tombstone**:

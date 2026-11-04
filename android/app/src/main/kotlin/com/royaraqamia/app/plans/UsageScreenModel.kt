@@ -8,10 +8,10 @@ import com.royaraqamia.app.contracts.generated.MyPlanResponseStatePlan
  * The plan card's model (#647, #648, ADR-0098).
  *
  * Built from the body `GET /api/me/plan` returns — the same route the site's
- * `/account/plan` reads, so the card cannot show fewer rows than the page it
- * mirrors. [rows] is the one list the card draws: counted actions first, then the
- * owned-item caps, because a member reads "what is left" in one place rather than
- * guessing which of two lists a number belongs to (ADR-0093).
+ * `/account/plan` reads, so the card cannot show fewer numbers than the page it
+ * mirrors. The card draws one bar ([share]) over the standing owned-item caps
+ * ([used] of [cap]); the counted actions the same body carries are enforced
+ * where they happen, not summed into a standing total (ADR-0093).
  *
  * The generated type is what makes "a contract change breaks the app build" true:
  * remove or rename `state.plan` or `limits[].remaining` in
@@ -21,17 +21,14 @@ data class UsageScreenModel(
     val plan: String,
     val unlimited: Boolean,
     val expiresAt: String?,
-    val rows: List<Row>,
+    /** The owned-item slots the account holds, summed. */
+    val used: Long,
+    /** The owned-item slots the plan allows, summed. */
+    val cap: Long,
+    /** [used] as a whole percentage of [cap]: the one bar the card draws. */
+    val share: Int,
     val activations: List<Activation>,
 ) {
-    /** One label and the numbers beside it, in the site's own words. */
-    data class Row(
-        val key: String,
-        val label: String,
-        val used: Long,
-        val cap: Long,
-    )
-
     /**
      * One payment behind the plan, as the page's history lists it: what it cost,
      * how it was paid, when it started and when it runs out, and the note the
@@ -49,28 +46,22 @@ data class UsageScreenModel(
     )
 
     companion object {
-        fun from(response: MyPlanResponse): UsageScreenModel =
-            UsageScreenModel(
+        fun from(response: MyPlanResponse): UsageScreenModel {
+            // The bar counts the standing owned-item caps only: a counted action
+            // (a download, a scan, a surah) is a number of times that resets, and
+            // folding a daily count into a standing one would make the bar drop at
+            // midnight without the member having given anything up. The site's
+            // `usageShare` derives the same share from the same `limits` body.
+            val used = response.limits.sumOf { it.used }
+            val cap = response.limits.sumOf { it.cap }
+
+            return UsageScreenModel(
                 plan = response.state.plan.id(),
                 unlimited = response.state.unlimited,
                 expiresAt = response.state.expiresAt,
-                rows =
-                    response.state.counters.map { counter ->
-                        Row(
-                            key = counter.key,
-                            label = counter.label,
-                            used = counter.used,
-                            cap = counter.cap,
-                        )
-                    } +
-                        response.limits.map { limit ->
-                            Row(
-                                key = limit.key,
-                                label = limit.label,
-                                used = limit.used,
-                                cap = limit.cap,
-                            )
-                        },
+                used = used,
+                cap = cap,
+                share = if (cap <= 0L) 0 else minOf(100, Math.round(100.0 * used / cap).toInt()),
                 activations =
                     response.activations.map { activation ->
                         Activation(
@@ -84,6 +75,7 @@ data class UsageScreenModel(
                         )
                     },
             )
+        }
 
         /**
          * The plan's contract id, which is what the copy is looked up by. An

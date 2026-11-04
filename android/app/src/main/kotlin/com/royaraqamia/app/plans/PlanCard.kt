@@ -246,31 +246,14 @@ private fun Counters(model: UsageScreenModel) {
         Badge(model)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(Recipes.Row.gap)) {
-        for (row in model.rows) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = row.label,
-                    style = Recipes.Row.label(type),
-                    color = Recipes.Row.labelColor,
-                )
-                Text(
-                    text =
-                        if (model.unlimited) PlanCardCopy.UNLIMITED
-                        else "${UsageCopy.count(row.used)} / ${UsageCopy.count(row.cap)}",
-                    // A count never reads right-to-left, whatever the screen's
-                    // direction is: `1,200 / 5,000` in an RTL paragraph would put
-                    // the cap first.
-                    style = Recipes.Row.value(type),
-                    color = Recipes.Row.valueColor,
-                )
-            }
-        }
+    if (model.unlimited) {
+        Text(
+            text = PlanCardCopy.UNLIMITED,
+            style = type.small.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    } else {
+        UsageProgress(model)
     }
 
     if (model.plan == "pro" && model.expiresAt != null) {
@@ -278,6 +261,52 @@ private fun Counters(model: UsageScreenModel) {
             text = UsageCopy.expires(PlanDates.label(model.expiresAt)),
             style = Recipes.Row.label(type),
             color = Recipes.Row.labelColor,
+        )
+    }
+}
+
+/**
+ * The page's one bar: the standing owned-item caps summed, and how much of them
+ * the account is holding. The track is [Recipes.Progress] on both clients, and
+ * the fill grows from the track's start, which is its right edge in the app's
+ * right-to-left layout — the site's `transform-origin: right` is the same edge.
+ *
+ * The percentage is drawn in the digits face ([Recipes.Progress.value]), so an
+ * Arabic-locale phone shows ASCII figures, as the site does.
+ */
+@Composable
+private fun UsageProgress(model: UsageScreenModel) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                // The site's progressbar carries the same name, so a screen reader
+                // announces what the bar is before the number it reads.
+                .semantics { contentDescription = PlanCardCopy.USAGE_LABEL },
+        horizontalArrangement = Arrangement.spacedBy(Recipes.Progress.gap(spacing)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier.weight(1f)
+                    .height(Recipes.Progress.height)
+                    .clip(Recipes.Progress.radius)
+                    .background(Recipes.Progress.track),
+        ) {
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth(model.share / 100f)
+                        .height(Recipes.Progress.height)
+                        .clip(Recipes.Progress.radius)
+                        .background(Recipes.Progress.fill)
+            )
+        }
+        Text(
+            text = UsageCopy.percent(model.share),
+            style = Recipes.Progress.value(type),
+            color = Recipes.Progress.valueColor,
         )
     }
 }

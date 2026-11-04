@@ -19,7 +19,9 @@ class UsageUiStateTest {
             plan = "free",
             unlimited = false,
             expiresAt = null,
-            rows = emptyList(),
+            used = 0L,
+            cap = 0L,
+            share = 0,
             activations = emptyList(),
         )
 
