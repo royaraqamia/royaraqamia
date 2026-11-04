@@ -31,6 +31,7 @@ import { ReadFailureNotice } from '@/frontend/ui/shared/read-failure';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ReportChatDialog } from './report-chat-dialog';
+import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { MemberPicker } from './member-picker';
 import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
@@ -304,7 +305,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
+    <div className="overflow-x-clip border-y border-border/70 bg-card/60 sm:overflow-hidden sm:rounded-2xl sm:border sm:shadow-xs">
       <ThreadHeader
         thread={thread}
         counterpart={counterpart}
@@ -347,7 +348,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         </p>
       )}
 
-      <div className="flex max-h-[60vh] min-h-[18rem] flex-col gap-2 overflow-y-auto px-3 py-4">
+      {/*
+        On a phone the thread is the screen, the way it is in WhatsApp: the card
+        has no side border and the message area takes the height the chrome
+        leaves instead of a 60vh box. From `sm` up it is the centred panel it has
+        always been (#1021).
+      */}
+      <div className="flex min-h-[62dvh] flex-col gap-2 overflow-y-auto px-3 py-4 sm:max-h-[60vh] sm:min-h-[18rem]">
         {hasOlder && (
           <button
             type="button"
@@ -567,7 +574,9 @@ function ThreadHeader({
 }) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      {thread.kind === 'group' ? (
+      {thread.kind === 'agent' ? (
+        <AssistantMark className="size-9" />
+      ) : thread.kind === 'group' ? (
         // A group is a room, not one member's face: the roster below names who.
         <span
           aria-hidden
@@ -838,14 +847,16 @@ function ThreadIntro({
 
   return (
     <div className="m-auto flex max-w-sm flex-col items-center gap-3 px-4 text-center">
-      {counterpart && (
+      {thread.kind === 'agent' ? (
+        <AssistantMark className="size-12" glyphClassName="size-[52%]" />
+      ) : counterpart ? (
         <MemberAvatar
           name={counterpart.name ?? counterpart.username}
           avatarUrl={counterpart.avatarUrl}
           size="lg"
           ring={false}
         />
-      )}
+      ) : null}
       <p className="text-sm font-bold text-foreground">{thread.title}</p>
       <p className="text-xs leading-relaxed text-muted-foreground/80">
         {note ?? (thread.kind === 'agent' ? ASSISTANT_COPY.intro : CHAT_THREAD_COPY.emptyThread)}
@@ -913,7 +924,7 @@ function ThreadFooter({
           event.preventDefault();
           onSend();
         }}
-        className="space-y-2 border-t border-border/40 p-3"
+        className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3"
       >
         <ChatComposeAttachments
           files={files}
@@ -965,7 +976,7 @@ function ThreadFooter({
 
   if (state === 'answer') {
     return (
-      <div className="space-y-2 border-t border-border/40 p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
         <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
           <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
@@ -981,7 +992,7 @@ function ThreadFooter({
 
   if (state === 'waiting') {
     return (
-      <div className="space-y-2 border-t border-border/40 p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.waitingComposer.replace('{title}', thread.title)}
         </p>
@@ -996,7 +1007,7 @@ function ThreadFooter({
 
   if (state === 'blocked') {
     return (
-      <div className="space-y-2 border-t border-border/40 p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.blockedComposer}
         </p>
@@ -1011,7 +1022,7 @@ function ThreadFooter({
 
   if (state === 'closed' && thread.kind === 'direct' && counterpart) {
     return (
-      <div className="space-y-2 border-t border-border/40 p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
         <p className="text-center text-xs text-muted-foreground">
           {thread.status === 'declined'
             ? CHAT_THREAD_COPY.closedDeclined

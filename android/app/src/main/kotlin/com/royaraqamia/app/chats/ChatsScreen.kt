@@ -244,12 +244,19 @@ private fun ChatsList(
             it.myStatus == ChatThreadsResponseThreadsItemMyStatus.REQUESTED ||
                 it.myStatus == ChatThreadsResponseThreadsItemMyStatus.INVITED
         }
+    /**
+     * The assistant is the list's first row, always (chats-panel.tsx and
+     * `list_chat_threads` carry the same rule): it is what the product is sold
+     * on, and `last_message_at` order buried it under every newer conversation.
+     */
+    val assistant = threads.firstOrNull { it.kind == ChatThreadsResponseThreadsItemKind.AGENT }
     val open =
         threads.filter {
-            it.myStatus == ChatThreadsResponseThreadsItemMyStatus.ACTIVE ||
-                it.myStatus == ChatThreadsResponseThreadsItemMyStatus.DECLINED
+            it.kind != ChatThreadsResponseThreadsItemKind.AGENT &&
+                (it.myStatus == ChatThreadsResponseThreadsItemMyStatus.ACTIVE ||
+                    it.myStatus == ChatThreadsResponseThreadsItemMyStatus.DECLINED)
         }
-    val hasAssistant = threads.any { it.kind == ChatThreadsResponseThreadsItemKind.AGENT }
+    val hasAssistant = assistant != null
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -306,6 +313,26 @@ private fun ChatsList(
                 }
             }
 
+            if (assistant != null) {
+                item {
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .border(
+                                    1.dp,
+                                    RoyColors.primary.copy(alpha = 0.25f),
+                                    Recipes.Card.radius,
+                                )
+                                .background(
+                                    RoyColors.primary.copy(alpha = 0.05f),
+                                    Recipes.Card.radius,
+                                ),
+                    ) {
+                        ThreadRow(thread = assistant, onOpen = onOpenThread)
+                    }
+                }
+            }
+
             if (pending.isNotEmpty()) {
                 item {
                     SectionLabel(text = ChatsListCopy.REQUESTS_LABEL)
@@ -331,7 +358,7 @@ private fun ChatsList(
                         }
                     }
                 }
-            } else if (pending.isEmpty()) {
+            } else if (pending.isEmpty() && assistant == null) {
                 item { EmptyChats() }
             }
         }
@@ -381,21 +408,10 @@ private fun AssistantRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier =
-                Modifier.size(36.dp)
-                    .background(
-                        if (locked) RoyColors.muted.copy(alpha = 0.6f)
-                        else RoyColors.primary.copy(alpha = 0.1f),
-                        CircleShape,
-                    ),
+            modifier = Modifier.size(36.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = LucideVectors.Sparkles,
-                contentDescription = null,
-                tint = if (locked) RoyColors.mutedForeground else RoyColors.primary,
-                modifier = Modifier.size(Recipes.Glyph.sm),
-            )
+            AssistantMark(size = 36.dp, dimmed = locked)
         }
 
         Column(modifier = Modifier.weight(1f)) {
@@ -526,7 +542,11 @@ private fun ThreadRow(
         horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         verticalAlignment = Alignment.Top,
     ) {
-        GroupMark(dimmed = thread.kind != ChatThreadsResponseThreadsItemKind.GROUP)
+        if (thread.kind == ChatThreadsResponseThreadsItemKind.AGENT) {
+            AssistantMark(size = 36.dp)
+        } else {
+            GroupMark(dimmed = thread.kind != ChatThreadsResponseThreadsItemKind.GROUP)
+        }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
