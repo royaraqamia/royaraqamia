@@ -1159,6 +1159,42 @@
       ]
     },
     {
+      "id": "account-services",
+      "surface": "account-services",
+      "issue": "#978",
+      "web": {
+        "route": "app/account/services/page.tsx",
+        "component": "frontend/ui/account/hidden-services-view.tsx",
+        "copyModule": "frontend/ui/account/hidden-services-copy.ts",
+        "copyExport": "HIDDEN_SERVICES_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesCopy.kt",
+        "copyObject": "AccountServicesCopy"
+      },
+      "copySource": "shared/copy/account-services.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signIn"
+        },
+        {
+          "name": "Failed",
+          "copy": "offline"
+        },
+        {
+          "name": "Ready",
+          "copy": "shown"
+        }
+      ]
+    },
+    {
       "id": "account-rows",
       "surface": "account",
       "issue": "#948",

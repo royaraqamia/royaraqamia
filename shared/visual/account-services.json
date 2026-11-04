@@ -1,0 +1,101 @@
+{
+  "surface": "account-services",
+  "route": "/account/services",
+  "notes": "The page's hidden-services switches, at rest and with every service hidden (#978). `origin` is the title in both states, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first row at rest and the page's all-hidden sentence when every service is off, because those are the regions both clients draw identically. The page has no separate sentence for an empty *hidden set*: a member who has hidden nothing sees the whole list with every switch on, so \"empty\" here is the state the page calls all-hidden. The list needs a session, so a recording has to sign in as the fixture account. The surface is declared here and not yet under `docs/mobile/visual-gate.json`, which is why it is ported and switched off (#978, ADR-0117). Widths of the row text are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "first-row",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='services-title'] h1"
+          },
+          "app": {
+            "tag": "services-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='services-list']"
+          },
+          "app": {
+            "tag": "services-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "first-row",
+          "web": {
+            "selector": "[data-visual='services-row-0']"
+          },
+          "app": {
+            "tag": "services-row-0"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "first-name",
+          "web": {
+            "selector": "[data-visual='services-name-0']"
+          },
+          "app": {
+            "tag": "services-name-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-state",
+          "web": {
+            "selector": "[data-visual='services-state-0']"
+          },
+          "app": {
+            "tag": "services-state-0"
+          },
+          "properties": ["height", "fontSize"]
+        },
+        {
+          "name": "first-switch",
+          "web": {
+            "selector": "[data-visual='services-switch-0']"
+          },
+          "app": {
+            "tag": "services-switch-0"
+          },
+          "properties": ["width", "height", "radius"]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "origin": "title",
+      "capture": "all-hidden",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='services-title'] h1"
+          },
+          "app": {
+            "tag": "services-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "all-hidden",
+          "web": {
+            "selector": "[data-visual='services-all-hidden']"
+          },
+          "app": {
+            "tag": "services-all-hidden"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize"]
+        }
+      ]
+    }
+  ]
+}
