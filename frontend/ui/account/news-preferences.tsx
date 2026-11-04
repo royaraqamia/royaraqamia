@@ -9,16 +9,50 @@ import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORIES,
-  NEWS_CATEGORY_LABELS,
   NEWS_PERSONAL_DIGEST_COST,
   NEWS_PERSONAL_DIGEST_MIN_STORIES,
-  NEWS_REGION_LABELS,
+  type NewsCategory,
+  type NewsRegion,
   type NewsSource,
 } from '@/shared/contracts/news';
+
+import { ACCOUNT_NEWS_PREFERENCES_COPY } from './account-news-preferences-copy';
+
+const CATEGORY_LABELS: Record<NewsCategory, string> = {
+  tech: ACCOUNT_NEWS_PREFERENCES_COPY.categoryTech,
+  politics: ACCOUNT_NEWS_PREFERENCES_COPY.categoryPolitics,
+  religion: ACCOUNT_NEWS_PREFERENCES_COPY.categoryReligion,
+  economy: ACCOUNT_NEWS_PREFERENCES_COPY.categoryEconomy,
+  world: ACCOUNT_NEWS_PREFERENCES_COPY.categoryWorld,
+  other: ACCOUNT_NEWS_PREFERENCES_COPY.categoryOther,
+};
+
+const REGION_LABELS: Record<NewsRegion, string> = {
+  arab: ACCOUNT_NEWS_PREFERENCES_COPY.regionArab,
+  islamic: ACCOUNT_NEWS_PREFERENCES_COPY.regionIslamic,
+  world: ACCOUNT_NEWS_PREFERENCES_COPY.regionWorld,
+};
+
+function personalBody(): string {
+  return ACCOUNT_NEWS_PREFERENCES_COPY.personalBody
+    .replace('{min}', String(NEWS_PERSONAL_DIGEST_MIN_STORIES))
+    .replace('{cost}', String(NEWS_PERSONAL_DIGEST_COST));
+}
+
+function PageHeading() {
+  return (
+    <header data-visual="title" className="mb-10 text-center">
+      <SectionTitle as="h1">
+        <SectionTitleHighlight>{ACCOUNT_NEWS_PREFERENCES_COPY.pageTitle}</SectionTitleHighlight>
+      </SectionTitle>
+    </header>
+  );
+}
 
 /**
  * The reader's source checklist for `/news`.
@@ -56,7 +90,7 @@ export function NewsPreferences() {
       setSelected(new Set(kept));
     } catch (error) {
       setLoadError(
-        error instanceof ApiError ? error.message : 'تعذّر تحميل مصادر الأخبار. أعد المحاولة.'
+        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PREFERENCES_COPY.loadFailed
       );
     } finally {
       setLoading(false);
@@ -70,25 +104,37 @@ export function NewsPreferences() {
 
   if (sessionLoading) {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label="جاري تحميل المصادر">
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+      <div className="space-y-6">
+        <PageHeading />
+        <div
+          className="space-y-3"
+          aria-busy="true"
+          aria-label={ACCOUNT_NEWS_PREFERENCES_COPY.loadingLabel}
+        >
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <section className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-          <Lock size={20} aria-hidden="true" />
-        </div>
-        <p className="text-sm leading-7 text-muted-foreground">
-          اختيار المصادر يتبع حسابك. سجِّل الدُّخول لاختيار ما تقرأه من المصادر على صفحة الأخبار.
-        </p>
-        <SignInCta href="/auth/login?redirect=/account/news" />
-      </section>
+      <div className="space-y-6">
+        <PageHeading />
+        <section className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
+            <Lock size={20} aria-hidden="true" />
+          </div>
+          <p className="text-sm leading-7 text-muted-foreground">
+            {ACCOUNT_NEWS_PREFERENCES_COPY.signInBody}
+          </p>
+          <SignInCta href="/auth/login?redirect=/account/news">
+            {ACCOUNT_NEWS_PREFERENCES_COPY.signIn}
+          </SignInCta>
+        </section>
+      </div>
     );
   }
 
@@ -117,13 +163,15 @@ export function NewsPreferences() {
       await saveNewsSourceSelection(allSelected ? [] : [...selected], personalEnabled);
       toast.success(
         personalEnabled
-          ? 'حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.'
+          ? ACCOUNT_NEWS_PREFERENCES_COPY.savedPersonal
           : allSelected
-            ? 'سترى كل المصادر من الآن.'
-            : 'حفظنا اختيارك. ستعرض الأخبار هذه المصادر.'
+            ? ACCOUNT_NEWS_PREFERENCES_COPY.savedAll
+            : ACCOUNT_NEWS_PREFERENCES_COPY.savedSelected
       );
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'تعذّر حفظ اختيارك. أعد المحاولة.');
+      toast.error(
+        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PREFERENCES_COPY.saveFailed
+      );
     } finally {
       setSaving(false);
     }
@@ -131,31 +179,43 @@ export function NewsPreferences() {
 
   if (loading) {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label="جاري تحميل المصادر">
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
-        <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+      <div className="space-y-6">
+        <PageHeading />
+        <div
+          className="space-y-3"
+          aria-busy="true"
+          aria-label={ACCOUNT_NEWS_PREFERENCES_COPY.loadingLabel}
+        >
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+          <div className="h-10 rounded-2xl bg-muted/50 animate-pulse" />
+        </div>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-        {loadError}{' '}
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="font-bold text-primary underline-offset-4 hover:underline"
-        >
-          إعادة المحاولة
-        </button>
-      </p>
+      <div className="space-y-6">
+        <PageHeading />
+        <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
+          {loadError}{' '}
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="rounded font-bold text-primary underline-offset-4 hover:underline focus-ring"
+          >
+            {ACCOUNT_NEWS_PREFERENCES_COPY.retry}
+          </button>
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <PageHeading />
+
       {NEWS_CATEGORIES.map((category) => {
         const group = (sources ?? []).filter((source) => source.category === category);
         if (group.length === 0) return null;
@@ -167,11 +227,11 @@ export function NewsPreferences() {
               className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground"
             >
               <Newspaper className="size-4 text-primary" aria-hidden="true" />
-              {NEWS_CATEGORY_LABELS[category]}
+              {CATEGORY_LABELS[category]}
             </h2>
 
             <div className="flex flex-col gap-2">
-              {group.map((source) => {
+              {group.map((source, index) => {
                 const checked = selected.has(source.id);
 
                 return (
@@ -179,9 +239,10 @@ export function NewsPreferences() {
                     key={source.id}
                     type="button"
                     aria-pressed={checked}
+                    data-visual={index === 0 ? 'source-row' : undefined}
                     onClick={() => toggle(source.id)}
                     className={cn(
-                      'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-start transition-safe',
+                      'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-start transition-safe focus-ring',
                       checked
                         ? 'border-primary/40 bg-primary/10 text-foreground'
                         : 'border-border/50 bg-card/60 text-muted-foreground hover:border-border'
@@ -190,7 +251,7 @@ export function NewsPreferences() {
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-bold">{source.name}</span>
                       <span className="text-[11px] text-muted-foreground">
-                        {NEWS_REGION_LABELS[source.region]}
+                        {REGION_LABELS[source.region]}
                       </span>
                     </span>
 
@@ -215,7 +276,7 @@ export function NewsPreferences() {
 
       <div className="flex flex-wrap items-center gap-3">
         <HeroCtaButton type="button" onClick={() => void save()} disabled={saving}>
-          {saving ? 'جاري الحفظ…' : 'حفظ الاختيار'}
+          {saving ? ACCOUNT_NEWS_PREFERENCES_COPY.saveBusy : ACCOUNT_NEWS_PREFERENCES_COPY.save}
         </HeroCtaButton>
 
         <Button
@@ -226,26 +287,24 @@ export function NewsPreferences() {
           disabled={saving || allSelected}
         >
           <Check aria-hidden="true" />
-          اختيار كل المصادر
+          {ACCOUNT_NEWS_PREFERENCES_COPY.selectAll}
         </Button>
       </div>
 
       <section className="rounded-2xl border border-border/50 bg-card/60 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">مُلخَّص خاص بي</p>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              مُلخَّص يومي من مصادرك وحدها، يُنشأ صباحًا بعد المُلخَّص العام. يكفي أن يوفّر{' '}
-              {NEWS_PERSONAL_DIGEST_MIN_STORIES} أخبار على الأقل، ويُخصم من رصيدك{' '}
-              {NEWS_PERSONAL_DIGEST_COST} اعتمادات عند إنشائه.
+            <p className="text-sm font-bold text-foreground">
+              {ACCOUNT_NEWS_PREFERENCES_COPY.personalTitle}
             </p>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">{personalBody()}</p>
           </div>
 
           <button
             type="button"
             role="switch"
             aria-checked={personalEnabled}
-            aria-label="مُلخَّص خاص بي"
+            aria-label={ACCOUNT_NEWS_PREFERENCES_COPY.personalTitle}
             onClick={() => setPersonalEnabled((current) => !current)}
             dir="ltr"
             className={cn(

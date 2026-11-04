@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
+import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
@@ -231,6 +232,15 @@ class ShellActivity : ComponentActivity() {
                                     // guide, which the app has no screen for yet: it
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
+                                )
+                            // The account news page (#950): the checklist, the
+                            // private feeds and the proposal form. Ported and
+                            // switched off until the visual gate passes.
+                            "/account/news" ->
+                                NewsScreen(
+                                    repository = graph.news,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
                                 )
                             // LinkSnap (#654): the page is the shortener and
                             // nothing else. The owned list is the account

@@ -112,8 +112,9 @@
     },
     {
       "surface": "account-news",
-      "native": null,
-      "reason": "The news preferences read and write the news contract; the screens land in #799."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "account-services",
