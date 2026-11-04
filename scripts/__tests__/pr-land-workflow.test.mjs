@@ -65,11 +65,16 @@ describe('the landing workflow keeps no pull request unattended', () => {
 
   it('gives the repair a credential whose push CI will actually run on', () => {
     // `GITHUB_TOKEN` pushes start no workflow, so a repair under it would never be
-    // measured. The PAT is the difference between a repair and a comment.
-    expect(workflow).toContain('secrets.AGENT_PUSH_TOKEN || secrets.GITHUB_TOKEN');
+    // measured. The PAT is the difference between a repair and a comment - and it is a
+    // push credential only: every read, comment, label and merge stays on GITHUB_TOKEN,
+    // so the PAT can be scoped to `Contents: Read and write` alone.
+    expect(workflow).toContain('AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}');
     expect(workflow).toContain('HAS_PUSH_TOKEN');
     expect(workflow).toContain('AGENT_PUSH_TOKEN is missing');
-    expect(implementer).toContain('secrets.AGENT_PUSH_TOKEN || secrets.GITHUB_TOKEN');
+    expect(workflow).toContain('x-access-token:${AGENT_PUSH_TOKEN}@github.com');
+    expect(workflow).toContain('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
+    expect(implementer).toContain('AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}');
+    expect(implementer).toContain('x-access-token:${AGENT_PUSH_TOKEN}@github.com');
   });
 
   it('stops after a bounded number of attempts instead of spending every agent run', () => {

@@ -661,9 +661,11 @@ jobs:
         timeout-minutes: 45
         env:
           # A push made with `GITHUB_TOKEN` starts no workflow, so the repaired head would
-          # never be measured and the rewatch would see nothing. With no PAT the repair is
-          # skipped and the pull request is left to the scheduled landing run.
-          GH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+          # never be measured and the rewatch would see nothing. The PAT below is used for
+          # the push alone; with no PAT the repair is skipped and the pull request is left
+          # to the scheduled landing run.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}
           HAS_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN != '' }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -746,7 +748,10 @@ jobs:
 
           git add -A
           git commit -m "fix: repair the failing checks on #$PR"
-          git push origin "HEAD:$(gh pr view "$PR" --json headRefName --jq .headRefName)"
+          # The one push that must start CI, so it carries the PAT in the URL: a
+          # `GITHUB_TOKEN` push starts no workflow and the rewatch would measure nothing.
+          git push "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:$(gh pr view "$PR" --json headRefName --jq .headRefName)"
           printf 'pushed=true\n' >> "$GITHUB_OUTPUT"
 
           if [ "$status" -ne 0 ]; then

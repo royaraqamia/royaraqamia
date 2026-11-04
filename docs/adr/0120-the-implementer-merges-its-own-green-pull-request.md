@@ -133,9 +133,11 @@ unbounded agent is how a green check gets negotiated instead of earned.
 One credential rule is load-bearing and was wrong in both workflows until this amendment:
 **a push made with `GITHUB_TOKEN` starts no workflow**, so a repaired head is never
 measured, and the rewatch can only report that nothing ran. Repairs therefore push with
-`AGENT_PUSH_TOKEN` (a fine-grained PAT: contents write, pull requests write). When the
-secret is absent both workflows say so on the pull request instead of pretending the
-repair worked.
+`AGENT_PUSH_TOKEN` (a fine-grained PAT with `Contents: Read and write` and nothing else).
+The token is a push credential only: the checkout, the watch, the comment, the label and
+the merge all stay on `GITHUB_TOKEN`, so a leaked PAT cannot comment, label or merge
+anything. When the secret is absent both workflows say so on the pull request instead of
+pretending the repair worked.
 
 ## Considered options
 

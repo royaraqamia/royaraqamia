@@ -24,10 +24,12 @@
 # removing the label puts it back in the queue.
 #
 # The repair pushes a commit, and a push made with `GITHUB_TOKEN` starts no workflow: the
-# new head would never be measured, and every repair would look like a failure. So the
-# landing run pushes with `AGENT_PUSH_TOKEN` (a fine-grained PAT: contents write, pull
-# requests write, workflows read) and only falls back to `GITHUB_TOKEN` when that secret is
-# absent - in which case it says so instead of pretending the repair worked.
+# new head would never be measured, and every repair would look like a failure. So the push
+# itself is authenticated with `AGENT_PUSH_TOKEN` (a fine-grained PAT with `Contents: Read
+# and write` and nothing else), while every read, comment, label and merge stays on
+# `GITHUB_TOKEN` - the PAT is only ever a push credential and is never written to the git
+# config. When the secret is absent the run says so on the pull request instead of
+# pretending the repair worked.
 #
 # Setup (repo secrets), shared with the other OpenCode workflows:
 #   OPENCODE_API_KEY      - the agent that repairs a red landing
@@ -127,9 +129,10 @@ jobs:
     timeout-minutes: 150
     env:
       PR: ${{ github.event.inputs.pr }}
-      # A push from GITHUB_TOKEN starts no workflow, so a repair commit would never be
-      # measured. The PAT is what makes the second watch mean something.
-      GH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+      # Everything `gh` does here - checkout, watch, comment, label, merge - stays on the
+      # scoped token. The PAT below is a push credential and nothing else, so a leak of it
+      # cannot comment, label or merge anything.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       HAS_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN != '' }}
     steps:
       - name: Check this is a pull request we land
@@ -240,6 +243,7 @@ jobs:
         if: steps.gate.outputs.skip != 'true' && steps.land.outputs.status == 'red'
         timeout-minutes: 60
         env:
+          AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -317,7 +321,11 @@ jobs:
 
           git add -A
           git commit -m "fix: repair the failing checks on #$PR"
-          git push origin "HEAD:${{ steps.gate.outputs.head }}"
+          # The one push in this workflow that must start CI, so it carries the PAT in the
+          # URL rather than through the credential helper: a `GITHUB_TOKEN` push starts no
+          # workflow, and the new head would never be measured.
+          git push "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:${{ steps.gate.outputs.head }}"
           printf 'pushed=true\n' >> "$GITHUB_OUTPUT"
 
           if [ "$status" -ne 0 ]; then
