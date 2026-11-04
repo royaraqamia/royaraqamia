@@ -1,18 +1,26 @@
-# The owner's phone, wired to the autonomous issue pipeline.
+# The owner's phone, wired to an agent that has the repository.
 #
-# Telegram pushes each message to a Supabase Edge Function
+# Telegram pushes each update to a Supabase Edge Function
 # (`supabase/functions/telegram`), which stores it and dispatches this workflow.
-# The workflow does the work: it files an issue and lets the workflows that own
-# that job do it. `/now` comments `/oc`, which stops at an open pull request
-# (ADR 0066); `/task` is labelled `ready-for-agent`, and the implementer merges
-# that one when its checks are green (ADR 0120). Plain text is answered by the
-# one model call in the bridge, with no tools and no repository.
+# A message is then answered by `opencode run` in the `bridge` job: one process
+# with the checkout, the skills (`.agents/skills`), a shell, the web, the
+# Supabase MCP server and the Vercel CLI. No command, no mode, no `/task` -
+# the sentence is the instruction (ADR 0129, which supersedes ADR 0121).
 #
-# Why a webhook now: polling paid its interval whether or not anybody wrote
-# anything - five minutes of latency and 288 runs a day. The owner asked for
-# seconds, so the door is the function and the workflow is only woken when there
-# is something to do. Vercel is still untouched; the endpoint is Supabase
-# (ADR 0122).
+# Three things are code rather than prompt, because a prompt is a request and
+# these are guarantees:
+#
+#   - the agent cannot push or merge. The `bridge` job's own token is read-only
+#     for contents and pull requests, the push uses `AGENT_PUSH_TOKEN` from a
+#     step that runs *after* the agent, and the child process is handed an
+#     environment without it. A merge happens in the `merge` job, which exists
+#     only for a second button tap.
+#   - a message is claimed before it is answered (`telegram_messages.
+#     processed_at`), so two runs cannot both answer it - or both open a pull
+#     request for it.
+#   - the merge needs two taps: `merge:<id>` moves the confirmation to step 2,
+#     and `merge2:<id>` dispatches the `merge` job, which refuses anything that
+#     is not step 2 and still inside its thirty minutes.
 #
 # Triggers:
 #   - `push` to `supabase/functions/**` deploys the function, writes its secrets
@@ -23,20 +31,16 @@
 #   - `workflow_run` on completion is what makes the daily summary a reaction
 #     instead of a clock; the planner and the implementer finish when they finish.
 #
-# There is no `schedule`. The backstop is a pg_cron function
-# (`wake_telegram_bridge`) that answers "is anything pending?" inside Postgres and
-# dispatches only when the answer is yes - so an idle day starts no run at all,
-# and GitHub's own unreliable scheduler is not part of the path.
-#
 # Setup (repository secrets):
-#   TELEGRAM_BOT_TOKEN        — BotFather
-#   TELEGRAM_CHAT_ID          — the one chat allowed to use the bot
-#   TELEGRAM_WEBHOOK_SECRET   — any long random string; verified per request
-#   OPENCODE_API_KEY          — already present for the agent workflows
-#   SUPABASE_ACCESS_TOKEN     — already present; deploys the function
-#   SUPABASE_PROJECT_REF      — already present
-#   SUPABASE_SERVICE_ROLE_KEY — already present
-#   SUPABASE_URL              — optional; derived from SUPABASE_PROJECT_REF
+#   TELEGRAM_BOT_TOKEN        - BotFather
+#   TELEGRAM_CHAT_ID          - the one chat allowed to use the bot
+#   TELEGRAM_WEBHOOK_SECRET   - any long random string; verified per request
+#   OPENCODE_API_KEY          - already present for the agent workflows
+#   SUPABASE_ACCESS_TOKEN     - already present; deploys the function
+#   SUPABASE_PROJECT_REF      - already present
+#   SUPABASE_SERVICE_ROLE_KEY - already present
+#   AGENT_PUSH_TOKEN          - a fine-grained PAT, so the bot's branch runs CI
+#   SUPABASE_URL              - optional; derived from SUPABASE_PROJECT_REF
 
 name: 'Telegram Bridge'
 
@@ -47,8 +51,13 @@ on:
         description: 'What to do in this run'
         type: choice
         options:
-          [drain, lookup, remember, remind, probe, agent-probe, digest-planner, digest-implementer]
+          [drain, merge, remember, remind, probe, agent-probe, digest-planner, digest-implementer]
         default: drain
+      confirmation:
+        description: 'The confirmation row a merge completes (mode=merge only)'
+        type: string
+        required: false
+        default: ''
   workflow_run:
     workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
     types: [completed]
@@ -59,12 +68,6 @@ on:
       # The workflow itself, so a change to the deploy steps re-runs them - the
       # secrets, the deploy and setWebhook are all idempotent.
       - '.github/workflows/telegram.yml'
-
-permissions:
-  contents: read
-  issues: write
-  pull-requests: read
-  actions: read
 
 # One bridge at a time: two runs draining the same rows would fight over the
 # claim, and a cancelled run could leave a message claimed but unanswered.
@@ -78,6 +81,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -87,10 +92,14 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # The function edits the message under a tapped button and dismisses
+          # the button's spinner, so it needs the bot token as well.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           npx --yes supabase@latest secrets set \
             "TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET" \
             "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" \
+            "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" \
             "--remote=$SUPABASE_PROJECT_REF" \
             --yes
 
@@ -111,110 +120,181 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        # callback_query is the buttons; message_reaction is the thumbs-down that
+        # records "this answer was wrong"; message is everything the owner says.
         run: |
           curl --fail --silent --show-error \
             "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
             --data-urlencode "url=https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/telegram" \
             --data-urlencode "secret_token=${TELEGRAM_WEBHOOK_SECRET}" \
-            --data-urlencode 'allowed_updates=["message"]'
+            --data-urlencode 'allowed_updates=["message","callback_query","message_reaction"]'
 
   bridge:
-    name: Drain and remind
-    if: github.event_name != 'workflow_run' && github.event_name != 'push'
+    name: Drain, answer and remind
+    # The button-driven merge has its own job with the one permission it needs.
+    if: >-
+      github.event_name != 'workflow_run' &&
+      github.event_name != 'push' &&
+      inputs.mode != 'merge'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # An agent turn is allowed to take as long as the work needs. The owner asked
+    # for quality over promptness; the status message is what makes the wait
+    # readable, and this ceiling is what stops a runaway.
+    timeout-minutes: 60
+    # Contents read-only, pull requests read-only: the agent inherits this token,
+    # so a merge or a push attempted from inside the turn is refused by GitHub
+    # rather than trusted to behave.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The agent reads diffs and history; fifty commits is enough for that
+          # and cheap for a repository this size.
+          fetch-depth: 50
+          # The push is the publish step's, with AGENT_PUSH_TOKEN.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the agent
+        # Pinned: the bot's behaviour is a prompt against one CLI's event stream,
+        # and a floating version would change both without a commit.
+        run: npm install --global opencode-ai@2.1.2
+
+      - name: OpenCode Runner Setup
+        uses: ./.github/actions/opencode-runner
+        with:
+          supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Curate the agent's skills and tools
+        # The shared action writes the Supabase MCP server and the headless
+        # permission block; this adds what is specific to the bot. The skill list
+        # is a deny-all followed by allows, so a new skill in `.agents/skills`
+        # cannot widen the agent's reach without a change here.
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { homedir } from 'node:os';
+          import { join } from 'node:path';
+
+          const path = join(homedir(), '.config', 'opencode', 'opencode.json');
+          const config = JSON.parse(readFileSync(path, 'utf8'));
+
+          const skills = [
+            'code-review',
+            'diagnosing-bugs',
+            'research',
+            'implement',
+            'implement-spec',
+            'pr',
+            'codebase-design',
+            'improve-codebase-architecture',
+            'domain-modeling',
+            'tdd',
+            'triage',
+            'frontend-design',
+            'ui-ux-pro-max',
+            'design-system',
+            'banner-design',
+            'brand',
+            'slides',
+            'supabase',
+            'supabase-postgres-best-practices',
+            'deploy-to-vercel',
+            'vercel-cli-with-tokens',
+            'vercel-optimize',
+            'security-review',
+            'find-skills',
+          ];
+
+          config.permissions = [
+            { action: 'skill', resource: '*', effect: 'deny' },
+            ...skills.map((skill) => ({ action: 'skill', resource: skill, effect: 'allow' })),
+          ];
+
+          writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
+          NODE
 
       - name: Handle what the webhook stored
         if: inputs.mode == 'drain' || inputs.mode == ''
-        env:
+        env: &agent-env
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          # absent from the agent's own environment; see `agentEnvironment`
+          AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: node scripts/telegram-bridge.mjs drain
-
-      - name: Answer what the chat escalated
-        if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'lookup'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        # The repository is already checked out by the step above, so `repo`
-        # lookups grep the real tree instead of a summary of it.
-        run: node scripts/telegram-bridge.mjs lookup
 
       - name: Distil what is worth remembering
         if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remember'
-        env:
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        # One call, and only when six or more messages have arrived since the
-        # last distillation: the summary and the durable facts are written back,
-        # the cursor advances, and the next answer reads all three.
+        env: *agent-env
         run: node scripts/telegram-bridge.mjs remember
+
+      - name: Deliver due reminders
+        if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remind'
+        env: *agent-env
+        run: node scripts/telegram-bridge.mjs remind
 
       - name: Probe the transcription endpoint
         if: inputs.mode == 'probe'
-        env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+        env: *agent-env
         run: node scripts/telegram-bridge.mjs probe
 
-      # The product's assistant needs three things this bridge never asks for:
+      # The product's assistant needs three things this bot never asks for:
       # streamed text, streamed tool calls, and image input. Measured, not
       # assumed - a gateway that answers the first and fails the other two is
       # indistinguishable from a working one until a member presses send.
       - name: Probe the assistant gateway
         if: inputs.mode == 'agent-probe'
-        env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        env: *agent-env
         run: node scripts/agent-probe.mjs
 
-      - name: Deliver due reminders
-        if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remind'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node scripts/telegram-bridge.mjs remind
-
-      - name: Digest on demand — planner
+      - name: Digest on demand - planner
         if: inputs.mode == 'digest-planner'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+        env: *agent-env
         run: node scripts/telegram-bridge.mjs digest --workflow "Issue Planner"
 
-      - name: Digest on demand — implementer
+      - name: Digest on demand - implementer
         if: inputs.mode == 'digest-implementer'
+        env: *agent-env
+        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Implementer"
+
+  merge:
+    name: Merge a confirmed pull request
+    # The only job with write access, and the only one a second button tap can
+    # dispatch. It is not reachable from a message: nothing in the drain path
+    # dispatches it.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'merge'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Merge
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -223,7 +303,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Implementer"
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: node scripts/telegram-bridge.mjs merge --confirmation "$CONFIRMATION"
 
   digest:
     name: Daily summary on completion
@@ -233,6 +314,10 @@ jobs:
        github.event.workflow_run.name == 'Issue Implementer')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -247,7 +332,12 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
           WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
-        run: node scripts/telegram-bridge.mjs digest --workflow "$WORKFLOW_NAME" --url "$WORKFLOW_URL"
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: >-
+          node scripts/telegram-bridge.mjs digest
+          --workflow "$WORKFLOW_NAME"
+          --url "$WORKFLOW_URL"
+          --run-id "$WORKFLOW_RUN_ID"
 
   alerts:
     name: Alert on a red check
@@ -257,6 +347,8 @@ jobs:
        github.event.workflow_run.name == 'Migration Drift')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
