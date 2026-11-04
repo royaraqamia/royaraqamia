@@ -8,6 +8,42 @@ export type Database = {
   };
   public: {
     Tables: {
+      agent_turns: {
+        Row: {
+          attempts: number;
+          conversation_id: string;
+          created_at: string;
+          error: string | null;
+          id: string;
+          member_id: string;
+          partial_text: string | null;
+          settled_at: string | null;
+          state: string;
+        };
+        Insert: {
+          attempts?: number;
+          conversation_id: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          member_id: string;
+          partial_text?: string | null;
+          settled_at?: string | null;
+          state?: string;
+        };
+        Update: {
+          attempts?: number;
+          conversation_id?: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          member_id?: string;
+          partial_text?: string | null;
+          settled_at?: string | null;
+          state?: string;
+        };
+        Relationships: [];
+      };
       analytics_events: {
         Row: {
           clicked_at: string;

@@ -1,7 +1,12 @@
 ﻿import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { AiChatClient, AiChatStreamEvent, AiChatWireMessage } from '@/backend/clients/ai-chat';
+import {
+  AiChatProviderError,
+  type AiChatClient,
+  type AiChatStreamEvent,
+  type AiChatWireMessage,
+} from '@/backend/clients/ai-chat';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import {
   ChatAgentError,
@@ -119,6 +124,10 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
       deletedAt: null,
       createdAt: '2026-11-02T08:01:00.000Z',
     })),
+    startTurn: vi.fn(async () => 'turn-1'),
+    recordAttempt: vi.fn(async () => undefined),
+    settleTurn: vi.fn(async () => undefined),
+    failTurn: vi.fn(async () => undefined),
   } satisfies ChatAgentRepository;
 
   const chats = {
@@ -263,7 +272,7 @@ describe('the assistant turn', () => {
   it('gives the count back when the provider produced no answer', async () => {
     const { service, release } = makeService({
       client: {
-        model: 'gemini-3.8-flash',
+        model: 'deepseek-v4.1-flash',
 
         async *streamReply() {},
         // eslint-disable-next-line require-yield -- the failure is the point of this fixture
@@ -277,6 +286,85 @@ describe('the assistant turn', () => {
       collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
     ).rejects.toMatchObject({ status: 502 });
     expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a rate limit once when nothing has streamed yet, and answers', async () => {
+    let attempts = 0;
+    const { service, agent, release } = makeService({
+      client: {
+        model: 'deepseek-v4.1-flash',
+        async *streamReply() {},
+        async *streamWithTools() {
+          attempts += 1;
+          if (attempts === 1) throw new AiChatProviderError(429);
+          yield { type: 'text' as const, text: 'تم.' };
+        },
+      },
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(attempts).toBe(2);
+    expect(agent.recordAttempt).toHaveBeenCalledWith('turn-1', 1);
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'تم.');
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+    expect(release).not.toHaveBeenCalled();
+  });
+
+  it('does not retry once text has streamed, and keeps what was written', async () => {
+    const client: AiChatClient = {
+      model: 'deepseek-v4.1-flash',
+      async *streamReply() {},
+      async *streamWithTools() {
+        yield { type: 'text' as const, text: 'بدأت أشرح' };
+        throw new AiChatProviderError(500);
+      },
+    };
+
+    const { service, agent, release } = makeService({ client });
+
+    await expect(
+      collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
+    ).rejects.toMatchObject({ status: 502 });
+
+    // One call: repeating it would show the member the same paragraph twice.
+    expect(agent.recordAttempt).not.toHaveBeenCalled();
+    expect(agent.failTurn).toHaveBeenCalledWith('turn-1', {
+      error: expect.any(String),
+      partialText: 'بدأت أشرح',
+    });
+    expect(agent.settleTurn).not.toHaveBeenCalled();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles the turn row when the answer lands', async () => {
+    const { service, agent } = makeService();
+
+    await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(agent.startTurn).toHaveBeenCalledWith('conversation-1', 'user-1');
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(agent.failTurn).not.toHaveBeenCalled();
+  });
+
+  it('answers even when the turn record cannot be opened, and spends nothing extra', async () => {
+    // The window between the deploy and the migration: the table does not exist.
+    const { service, agent, release } = makeService({
+      agent: {
+        ...makeService().agent,
+        startTurn: vi.fn(async () => {
+          throw new Error('relation "agent_turns" does not exist');
+        }),
+      },
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+    expect(agent.settleTurn).not.toHaveBeenCalled();
+    expect(agent.failTurn).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
   });
 
   it('gives the count back when the ledger refuses the project ceiling', async () => {

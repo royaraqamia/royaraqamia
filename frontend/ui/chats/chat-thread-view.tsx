@@ -393,6 +393,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           </div>
         )}
 
+        {/* A turn that failed after writing something leaves that text on the
+            screen, named as unfinished rather than presented as an answer. */}
+        {!assistant.isStreaming && assistant.interrupted && (
+          <div className="flex w-full flex-col items-start gap-1">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
+              <p className="whitespace-pre-wrap break-words">{assistant.interrupted}</p>
+            </div>
+            <p className="text-[11px] italic text-muted-foreground">{ASSISTANT_COPY.interrupted}</p>
+          </div>
+        )}
+
         {/* What this turn read or proposed, so the member sees the tool that ran
             and the card that is waiting for them (#818). */}
         {assistant.toolsUsed.length > 0 && (
