@@ -42,3 +42,10 @@ WebM/Opus, the gateway transcribes WAV and OGG, and there is no ffmpeg on the ap
 - **Transcode on the server.** Needs ffmpeg, which the app's runtime does not have.
 - **Keep the transcript in the turn row only.** The thread would hold an audio clip nobody can read,
   and the next turn's history would lose the question.
+
+## Amendment (2026-11-04): the clip is heard too, and it is 24 kHz
+
+The note assumed the recording existed to be transcribed. It is also played — in the assistant's
+thread and, now, in a member's — so the clip is re-rendered at 24 kHz mono rather than 16 kHz, and
+the member's thread records one without a model at all. The rest of the decision stands: one WAV
+file, uploaded as an attachment, transcribed on the turn that reads it (ADR-0127).

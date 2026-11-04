@@ -23,7 +23,6 @@ import {
 import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
-import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
@@ -38,13 +37,15 @@ import { MemberPicker } from './member-picker';
 import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
 import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
-import { ChatComposeAttachments } from './chat-compose-attachments';
+import { ChatComposer } from './chat-composer';
+import { VoiceNotePlayer } from './voice-note-player';
+import { stageFiles } from './attachment-quota';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
 import { chatTimeAgo } from './chats-panel';
 import {
   canEditChatMessage,
-  CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
+  chatAttachmentIsAudio,
   CHAT_GROUP_MEMBERS_MAX,
   type ChatMessage,
   type ChatPeer,
@@ -187,53 +188,47 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const counterpart = counterpartOf(thread);
   const typing = typingLabel(thread, typers);
 
-  async function handleSend() {
+  async function sendWith(staged: File[]) {
     if (isSending) return;
-    if (await send(draft, files)) {
+    if (await send(draft, staged)) {
       setDraft('');
       setFiles([]);
       stopTyping();
     }
   }
 
+  async function handleSend() {
+    await sendWith(files);
+  }
+
+  /** A finished clip joins the staged files, and the message goes at once. */
+  function handleRecorded(clip: File) {
+    if (!thread) return;
+    const staged = stageFiles(files, [clip], thread.attachmentQuota);
+    if ('refusal' in staged) {
+      setNotice(staged.refusal);
+      return;
+    }
+    setNotice(null);
+    void sendWith(staged.files);
+  }
+
   /**
    * Files are checked before they are staged, so a refusal is immediate rather
    * than a wasted upload: the file cap, the five-per-message cap, then the three
-   * allowances — today, the caller's own, and the project's.
+   * allowances — today, the caller's own, and the project's. The same helper
+   * refuses the assistant's pick, so both composers word it identically.
    */
   function addFiles(picked: File[]) {
-    if (picked.length === 0) return;
+    if (picked.length === 0 || !thread) return;
 
-    const quota = thread?.attachmentQuota;
-    if (!quota) return;
-
-    if (picked.some((file) => isChatAttachmentTooLarge(file, quota.fileBytes))) {
-      setNotice(`حجم الملف يتجاوز ${formatAttachmentSize(quota.fileBytes)}، اختر ملفاً أصغر`);
+    const staged = stageFiles(files, picked, thread.attachmentQuota);
+    if ('refusal' in staged) {
+      setNotice(staged.refusal);
       return;
     }
-    if (files.length + picked.length > CHAT_ATTACHMENTS_PER_MESSAGE_MAX) {
-      setNotice('خمسة مرفقات في الرسالة الواحدة');
-      return;
-    }
-
-    const staged = [...files, ...picked];
-    const stagedBytes = staged.reduce((sum, file) => sum + file.size, 0);
-
-    if (quota.today.usedBytes + stagedBytes > quota.today.limitBytes) {
-      setNotice('بلغت حدّ المرفقات اليوم، يعود غداً');
-      return;
-    }
-    if (quota.total.usedBytes + stagedBytes > quota.total.limitBytes) {
-      setNotice('مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات');
-      return;
-    }
-    if (quota.project.usedBytes + stagedBytes > quota.project.limitBytes) {
-      setNotice('مساحة مرفقات الموقع ممتلئة، حاول لاحقاً');
-      return;
-    }
-
     setNotice(null);
-    setFiles(staged);
+    setFiles(staged.files);
   }
 
   /** A chip asks the server for a URL a minute long, then hands it to the browser. */
@@ -448,8 +443,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onAddFiles={addFiles}
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
-        onAsk={(body, file) => {
-          void assistant.ask(body, file).then((sent) => {
+        onRecorded={handleRecorded}
+        onAsk={(body, staged) => {
+          void assistant.ask(body, staged).then((sent) => {
             if (sent) setDraft('');
           });
         }}
@@ -886,6 +882,7 @@ function ThreadFooter({
   onAddFiles,
   onRemoveFile,
   onSend,
+  onRecorded,
   onAsk,
   onAccept,
   onDecline,
@@ -906,18 +903,26 @@ function ThreadFooter({
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
   onSend: () => void;
-  onAsk: (body: string, file?: File) => void;
+  onRecorded: (clip: File) => void;
+  onAsk: (body: string, files: File[]) => void;
   onAccept: () => void;
   onDecline: () => void;
   onWithdraw: () => void;
   onRequest: () => void;
   onUnblock: () => void;
 }) {
-  // The assistant owns its composer: no files, no reply-to, and a locked or
-  // spent state is a sentence rather than a disabled input with no reason.
+  // The assistant owns its composer: a locked or spent state is a sentence rather
+  // than a disabled input with no reason. Its row is the same `ChatComposer` the
+  // member thread draws (ADR-0127).
   if (thread.kind === 'agent') {
     return (
-      <AssistantComposer assistant={assistant} draft={draft} onDraft={onDraft} onAsk={onAsk} />
+      <AssistantComposer
+        assistant={assistant}
+        quota={thread.attachmentQuota}
+        draft={draft}
+        onDraft={onDraft}
+        onAsk={onAsk}
+      />
     );
   }
 
@@ -934,50 +939,29 @@ function ThreadFooter({
         }}
         className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
       >
-        <ChatComposeAttachments
+        <ChatComposer
+          value={draft}
+          onValueChange={onDraft}
+          onTyping={onTyping}
+          onSend={onSend}
           files={files}
+          onAddFiles={onAddFiles}
+          onRemoveFile={onRemoveFile}
+          onRecorded={onRecorded}
           disabled={isSending}
-          onAdd={onAddFiles}
-          onRemove={onRemoveFile}
+          placeholder={CHAT_THREAD_COPY.placeholder}
+          ariaLabel={CHAT_THREAD_COPY.messageLabel}
+          sendLabel={CHAT_THREAD_COPY.send}
+          sendIcon={<Send size={16} />}
         >
-          <textarea
-            value={draft}
-            onChange={(event) => {
-              onDraft(event.target.value);
-              // A draft that is being typed says so; a cleared one says nothing,
-              // and the reader's own five-second window closes it.
-              if (event.target.value.trim()) onTyping();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                onSend();
-              }
-            }}
-            rows={1}
-            maxLength={4000}
-            placeholder={CHAT_THREAD_COPY.placeholder}
-            aria-label={CHAT_THREAD_COPY.messageLabel}
-            className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
-          <Button
-            type="submit"
-            variant="hero"
-            size="icon-sm"
-            aria-label={CHAT_THREAD_COPY.send}
-            disabled={isSending || (draft.trim().length === 0 && files.length === 0)}
-          >
-            <Send size={16} />
-          </Button>
-        </ChatComposeAttachments>
-
-        <p className="text-[11px] text-muted-foreground/70">
-          {todayRemaining === 0
-            ? 'بلغت حدّ المرفقات اليوم، يعود غداً.'
-            : totalRemaining === 0
-              ? 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات.'
-              : `المتبقي اليوم: ${formatAttachmentSize(todayRemaining)} · إجمالاً: ${formatAttachmentSize(totalRemaining)}`}
-        </p>
+          <p className="text-[11px] text-muted-foreground/70">
+            {todayRemaining === 0
+              ? 'بلغت حدّ المرفقات اليوم، يعود غداً.'
+              : totalRemaining === 0
+                ? 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات.'
+                : `المتبقي اليوم: ${formatAttachmentSize(todayRemaining)} · إجمالاً: ${formatAttachmentSize(totalRemaining)}`}
+          </p>
+        </ChatComposer>
       </form>
     );
   }
@@ -1160,23 +1144,32 @@ function MessageRow({
             <ul className="mt-2 space-y-1">
               {message.attachments.map((attachment) => (
                 <li key={attachment.id}>
-                  {/* A chip, never a preview: no type is drawn inline (ADR-0113),
-                    and the download is the only action a file has. */}
-                  <button
-                    type="button"
-                    onClick={() => onDownload(attachment.id)}
-                    className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
-                    aria-label={CHAT_THREAD_COPY.downloadFile.replace(
-                      '{name}',
-                      attachment.fileName
-                    )}
-                  >
-                    <Download size={12} className="shrink-0" />
-                    <span className="max-w-48 truncate">{attachment.fileName}</span>
-                    <span className="shrink-0 opacity-70">
-                      {formatAttachmentSize(attachment.byteSize)}
-                    </span>
-                  </button>
+                  {/* A voice note is played where it sits; every other file stays
+                    a chip, because no type is drawn inline (ADR-0113, ADR-0127). */}
+                  {chatAttachmentIsAudio(attachment.mimeType) ? (
+                    <VoiceNotePlayer
+                      conversationId={message.conversationId}
+                      attachment={attachment}
+                      mine={mine}
+                      onDownload={onDownload}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onDownload(attachment.id)}
+                      className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
+                      aria-label={CHAT_THREAD_COPY.downloadFile.replace(
+                        '{name}',
+                        attachment.fileName
+                      )}
+                    >
+                      <Download size={12} className="shrink-0" />
+                      <span className="max-w-48 truncate">{attachment.fileName}</span>
+                      <span className="shrink-0 opacity-70">
+                        {formatAttachmentSize(attachment.byteSize)}
+                      </span>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

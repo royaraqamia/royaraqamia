@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getChatAssistant, streamChatAgentTurn } from '@/frontend/api/chats';
-import { uploadChatAttachment } from '@/frontend/transport/supabase/chat-attachments';
+import {
+  removeChatAttachmentObjects,
+  uploadChatAttachment,
+} from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
 import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 
@@ -29,8 +32,8 @@ export interface ChatAssistantState {
    */
   toolsUsed: string[];
   error: string | null;
-  /** Ask a question. A `file` is a voice note, uploaded before the turn starts. */
-  ask: (body: string, file?: File) => Promise<boolean>;
+  /** Ask a question. Files are uploaded before the turn starts. */
+  ask: (body: string, files: File[]) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -71,9 +74,9 @@ export function useChatAssistant(
   }, [enabled, refresh]);
 
   const ask = useCallback(
-    async (body: string, file?: File) => {
+    async (body: string, files: File[]) => {
       const question = body.trim();
-      if ((!question && !file) || isStreaming) return false;
+      if ((!question && files.length === 0) || isStreaming) return false;
 
       setIsStreaming(true);
       setStreamingText('');
@@ -85,27 +88,37 @@ export function useChatAssistant(
       let partial = '';
 
       try {
-        // The recording is uploaded before the turn so the thread can show it and
-        // the server can read its bytes back for transcription.
-        const attachment = file ? await uploadChatAttachment(conversationId, file) : null;
-
-        await streamChatAgentTurn(
-          conversationId,
-          question,
-          (event: ChatAgentEvent) => {
-            if (event.type === 'delta') {
-              partial += event.text;
-              setStreamingText((current) => current + event.text);
-            } else if (event.type === 'error') failure = event.error;
-            else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
-            else if (event.type === 'proposal')
-              setToolsUsed((current) => [
-                ...current,
-                chatAgentActionSentence(event.action.tool, event.action.args),
-              ]);
-          },
-          attachment
+        // Files go up before the turn so the thread can show them and the server
+        // can read their bytes back — a recording to transcribe, an image or a
+        // text file to hand the model (ADR-0126, ADR-0127).
+        const attachments = await Promise.all(
+          files.map((file) => uploadChatAttachment(conversationId, file))
         );
+
+        try {
+          await streamChatAgentTurn(
+            conversationId,
+            question,
+            (event: ChatAgentEvent) => {
+              if (event.type === 'delta') {
+                partial += event.text;
+                setStreamingText((current) => current + event.text);
+              } else if (event.type === 'error') failure = event.error;
+              else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
+              else if (event.type === 'proposal')
+                setToolsUsed((current) => [
+                  ...current,
+                  chatAgentActionSentence(event.action.tool, event.action.args),
+                ]);
+            },
+            attachments
+          );
+        } catch (caught) {
+          // The objects are already in the bucket and no message will ever name
+          // them, so they go back before the refusal is shown.
+          await removeChatAttachmentObjects(attachments.map((file) => file.storagePath));
+          throw caught;
+        }
       } catch (caught) {
         failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
       } finally {

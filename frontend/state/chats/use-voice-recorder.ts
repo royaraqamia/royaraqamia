@@ -1,114 +1,224 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import {
+  CHAT_VOICE_NOTE_MAX_MS,
+  CHAT_VOICE_NOTE_MIN_MS,
+  CHAT_VOICE_NOTE_SAMPLE_RATE,
+} from '@/shared/contracts/chat';
 
 /**
- * A voice note, recorded in the browser and handed over as a WAV file.
+ * A voice note, recorded in the browser and handed over as a WAV file
+ * (ADR-0126, ADR-0127).
  *
- * The gateway transcribes WAV natively, and the bridge learned that OGG is the
- * only fallback worth carrying — but the browser records WebM/Opus, and no
- * decoder here can read that back on the server. So the clip is decoded and
- * re-rendered at 16 kHz mono in the page: one speech-shaped file that every audio
- * model on the provider's list accepts, with no server-side ffmpeg.
+ * The gateway transcribes WAV natively, the bridge learned that OGG is the only
+ * fallback worth carrying, and the browser records WebM/Opus or MP4/AAC — so the
+ * clip is decoded and re-rendered at 24 kHz mono in the page: one file every
+ * audio path accepts, small enough to send, good enough to play. `MediaRecorder`'s
+ * own container is never uploaded.
  *
- * Browser-only by construction (`MediaRecorder`, `OfflineAudioContext`), so it is
- * not unit-tested; the turn's transcription path is.
+ * Browser-only by construction (`MediaRecorder`, `OfflineAudioContext`), so the
+ * recording itself is not unit-tested; the encoder and the peaks are, and the
+ * turn's transcription path is.
  */
 export interface VoiceRecorderState {
   /** Microphone is capturing. */
   isRecording: boolean;
   /** The clip is being decoded and re-rendered. */
   isPreparing: boolean;
+  /** How long the current capture has run, for the timer the bar draws. */
+  elapsedMs: number;
+  /** The last few loudness readings, 0–1, for the bar's live waveform. */
+  levels: number[];
   /** A sentence for the composer, or null. */
   error: string | null;
-  start(): Promise<void>;
-  /** Stops and answers the WAV, or null when nothing usable was captured. */
+  /** Opens the microphone. False when the device or the permission refused. */
+  start(): Promise<boolean>;
+  /**
+   * Stops and answers the WAV, or `null` when nothing usable was captured — a
+   * hold shorter than the minimum, or a stream that died. The sentence explaining
+   * it is already in `error`.
+   */
   stop(): Promise<File | null>;
+  /** Stops and throws the capture away. */
+  cancel(): void;
+  /** Drops the last error sentence, before the next attempt. */
   reset(): void;
 }
 
-const TARGET_RATE = 16_000;
-
+/** The sentence a refused microphone shows — the same on both composers. */
 export const VOICE_PERMISSION_ERROR = 'تعذّر التسجيل. تحقّق من إذن الميكروفون.';
+/** A tap, not a note: nothing is sent, and the bar says why. */
+export const VOICE_TOO_SHORT_ERROR = 'اضغط مطوّلاً للتسجيل، ثم اترك الزر للإرسال.';
+
+/** How often the timer and the level meter read the capture. */
+const TICK_MS = 100;
+/** Bars kept for the live waveform. */
+const LEVEL_BARS = 32;
 
 export function useVoiceRecorder(): VoiceRecorderState {
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [levels, setLevels] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const recorder = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
 
-  const reset = useCallback(() => {
-    setError(null);
+  const recorder = useRef<MediaRecorder | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const context = useRef<AudioContext | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const startedAt = useRef(0);
+  const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const reset = useCallback(() => setError(null), []);
+
+  /** Everything a capture opened, closed exactly once. */
+  const release = useCallback(() => {
+    if (ticker.current !== null) {
+      clearInterval(ticker.current);
+      ticker.current = null;
+    }
+    for (const track of stream.current?.getTracks() ?? []) track.stop();
+    stream.current = null;
+    analyser.current = null;
+    void context.current?.close().catch(() => undefined);
+    context.current = null;
   }, []);
+
+  useEffect(() => release, [release]);
 
   const start = useCallback(async () => {
     setError(null);
-    if (recorder.current) return;
+    if (recorder.current) return true;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const next = new MediaRecorder(stream);
-      chunks.current = [];
+      const captured = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const next = new MediaRecorder(captured, { mimeType: preferredMimeType() });
 
+      // The meter is what makes the bar move while the member speaks. A device
+      // without an analyser still records: the bars simply stay flat.
+      try {
+        const audio = new AudioContext();
+        const node = audio.createAnalyser();
+        node.fftSize = LEVEL_BARS * 2;
+        audio.createMediaStreamSource(captured).connect(node);
+        context.current = audio;
+        analyser.current = node;
+      } catch {
+        analyser.current = null;
+      }
+
+      chunks.current = [];
       next.addEventListener('dataavailable', (event) => {
         if (event.data.size > 0) chunks.current.push(event.data);
       });
-      next.addEventListener('stop', () => {
-        for (const track of stream.getTracks()) track.stop();
-      });
 
-      next.start();
+      next.start(TICK_MS);
       recorder.current = next;
+      stream.current = captured;
+      startedAt.current = Date.now();
+      setElapsedMs(0);
+      setLevels([]);
       setIsRecording(true);
+
+      ticker.current = setInterval(() => {
+        setElapsedMs(Date.now() - startedAt.current);
+        const node = analyser.current;
+        if (!node) return;
+        const bins = new Uint8Array(node.frequencyBinCount);
+        node.getByteFrequencyData(bins);
+        const loudness = bins.reduce((sum, value) => sum + value, 0) / bins.length / 255;
+        setLevels((current) => [...current, loudness].slice(-LEVEL_BARS));
+      }, TICK_MS);
+
+      return true;
     } catch {
+      release();
       setError(VOICE_PERMISSION_ERROR);
+      return false;
     }
-  }, []);
+  }, [release]);
 
-  const stop = useCallback(async (): Promise<File | null> => {
-    const active = recorder.current;
-    if (!active) return null;
+  const finish = useCallback(
+    async (keep: boolean): Promise<File | null> => {
+      const active = recorder.current;
+      if (!active) return null;
 
-    setIsPreparing(true);
-    try {
-      const recorded = await new Promise<Blob>((resolve) => {
-        active.addEventListener(
-          'stop',
-          () => resolve(new Blob(chunks.current, { type: active.mimeType })),
-          {
-            once: true,
-          }
-        );
-        active.stop();
-      });
-      recorder.current = null;
-      setIsRecording(false);
+      const held = Date.now() - startedAt.current;
+      setIsPreparing(true);
 
-      return await toWav(recorded);
-    } catch {
-      setError(VOICE_PERMISSION_ERROR);
-      return null;
-    } finally {
-      setIsPreparing(false);
-    }
-  }, []);
+      try {
+        const recorded = await new Promise<Blob>((resolve) => {
+          active.addEventListener(
+            'stop',
+            () => resolve(new Blob(chunks.current, { type: active.mimeType })),
+            { once: true }
+          );
+          active.stop();
+        });
+        recorder.current = null;
+        release();
+        setIsRecording(false);
+        setElapsedMs(0);
 
-  return { isRecording, isPreparing, error, start, stop, reset };
+        if (!keep || held < CHAT_VOICE_NOTE_MIN_MS) {
+          if (keep) setError(VOICE_TOO_SHORT_ERROR);
+          return null;
+        }
+
+        return await toWav(recorded);
+      } catch {
+        setError(VOICE_PERMISSION_ERROR);
+        return null;
+      } finally {
+        setIsPreparing(false);
+      }
+    },
+    [release]
+  );
+
+  const stop = useCallback(() => finish(true), [finish]);
+  const cancel = useCallback(() => {
+    void finish(false);
+  }, [finish]);
+
+  return {
+    isRecording,
+    isPreparing,
+    elapsedMs,
+    levels,
+    error,
+    start,
+    stop,
+    cancel,
+    reset,
+  };
 }
 
-/** Decode whatever the browser recorded, re-render it as 16 kHz mono, wrap in WAV. */
+/** The first container this browser will actually record. */
+export function preferredMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  for (const candidate of ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus']) {
+    if (MediaRecorder.isTypeSupported(candidate)) return candidate;
+  }
+  return '';
+}
+
+/** Decode whatever the browser recorded, re-render it at 24 kHz mono, wrap in WAV. */
 export async function toWav(recorded: Blob): Promise<File> {
   const decoded = await decode(recorded);
-  const frames = Math.max(1, Math.ceil(decoded.duration * TARGET_RATE));
-  const offline = new OfflineAudioContext(1, frames, TARGET_RATE);
+  const rate = CHAT_VOICE_NOTE_SAMPLE_RATE;
+  const frames = Math.max(1, Math.ceil(decoded.duration * rate));
+  const offline = new OfflineAudioContext(1, frames, rate);
   const source = offline.createBufferSource();
   source.buffer = decoded;
   source.connect(offline.destination);
   source.start();
 
   const rendered = await offline.startRendering();
-  const bytes = encodeWav(rendered.getChannelData(0), TARGET_RATE);
+  const bytes = encodeWav(rendered.getChannelData(0), rate);
   return new File([bytes], 'voice-note.wav', { type: 'audio/wav' });
 }
 
@@ -119,6 +229,31 @@ async function decode(recorded: Blob): Promise<AudioBuffer> {
   } finally {
     await context.close();
   }
+}
+
+/**
+ * A clip's shape, as bars: the peak of each slice, normalised so the loudest bar
+ * is full height. The player draws it, so a note is recognisable before it is
+ * played. Silence is flat rather than a division by zero.
+ */
+export function peaksOf(samples: Float32Array, bars: number): number[] {
+  if (bars <= 0) return [];
+  const size = Math.max(1, Math.floor(samples.length / bars));
+  const peaks: number[] = [];
+  let loudest = 0;
+
+  for (let bar = 0; bar < bars; bar += 1) {
+    let peak = 0;
+    const start = bar * size;
+    for (let index = start; index < Math.min(start + size, samples.length); index += 1) {
+      const value = Math.abs(samples[index] ?? 0);
+      if (value > peak) peak = value;
+    }
+    peaks.push(peak);
+    if (peak > loudest) loudest = peak;
+  }
+
+  return loudest === 0 ? peaks : peaks.map((peak) => peak / loudest);
 }
 
 /** A mono 16-bit PCM WAV: 44-byte header, then the samples little-endian. */
@@ -154,3 +289,6 @@ export function encodeWav(samples: Float32Array, sampleRate: number): ArrayBuffe
 
   return buffer;
 }
+
+/** The ceiling the bar counts towards, exported so the UI never re-states it. */
+export const VOICE_NOTE_MAX_MS = CHAT_VOICE_NOTE_MAX_MS;

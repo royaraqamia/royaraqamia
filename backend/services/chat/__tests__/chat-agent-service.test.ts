@@ -368,7 +368,7 @@ describe('the assistant turn', () => {
       byteSize: 12,
     };
 
-    await collect(service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, voice));
+    await collect(service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [voice]));
 
     expect(attachments.download).toHaveBeenCalledWith('conversation-1/voice/note.wav');
     expect(transcribe).toHaveBeenCalledWith(expect.any(Uint8Array), 'audio/wav');
@@ -394,14 +394,89 @@ describe('the assistant turn', () => {
 
     await expect(
       collect(
-        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, {
-          storagePath: 'conversation-1/voice/note.wav',
-          fileName: 'note.wav',
-          mimeType: 'audio/wav',
-          byteSize: 12,
-        })
+        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+          {
+            storagePath: 'conversation-1/voice/note.wav',
+            fileName: 'note.wav',
+            mimeType: 'audio/wav',
+            byteSize: 12,
+          },
+        ])
       )
     ).rejects.toMatchObject({ status: 422 });
+
+    expect(chats.sendMessage).not.toHaveBeenCalled();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands an image to the model as an image part', async () => {
+    const client = scriptedClient([textStream('أرى صورة.')]);
+    const { service, chats, attachments } = makeService({ client });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+        {
+          storagePath: 'conversation-1/img/a.png',
+          fileName: 'a.png',
+          mimeType: 'image/png',
+          byteSize: 3,
+        },
+      ])
+    );
+
+    expect(attachments.download).toHaveBeenCalledWith('conversation-1/img/a.png');
+    // The image travels as a part, not as an empty body the model cannot see.
+    expect(client.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: [{ type: 'image_url', image_url: { url: 'data:image/png;base64,AQID' } }],
+    });
+    expect(chats.sendMessage).toHaveBeenCalledWith('user-1', 'conversation-1', {
+      body: '',
+      attachments: [expect.objectContaining({ fileName: 'a.png' })],
+    });
+  });
+
+  it('hands a text file to the model as its words', async () => {
+    const client = scriptedClient([textStream('قرأت الملف.')]);
+    const download = vi.fn(async () => new TextEncoder().encode('مرحبا'));
+    const { service } = makeService({ client, attachments: { download } });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+        {
+          storagePath: 'conversation-1/text/notes.txt',
+          fileName: 'notes.txt',
+          mimeType: 'text/plain',
+          byteSize: 10,
+        },
+      ])
+    );
+
+    expect(download).toHaveBeenCalledWith('conversation-1/text/notes.txt');
+    expect(client.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: [{ type: 'text', text: '[notes.txt]\nمرحبا' }],
+    });
+  });
+
+  it('refuses a file no model can read with a sentence, and gives the count back', async () => {
+    const { service, chats, release } = makeService();
+
+    await expect(
+      collect(
+        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+          {
+            storagePath: 'conversation-1/docs/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 40,
+          },
+        ])
+      )
+    ).rejects.toMatchObject({
+      status: 422,
+      message: 'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو ملفاً نصياً أو رسالة صوتية.',
+    });
 
     expect(chats.sendMessage).not.toHaveBeenCalled();
     expect(release).toHaveBeenCalledTimes(1);

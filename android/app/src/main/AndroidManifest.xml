@@ -175,6 +175,22 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <!--
+      The voice note (ADR-0127) calls `getUserMedia({ audio: true })` from both
+      the member's thread and the assistant's. Capacitor maps the WebView's
+      `AUDIO_CAPTURE` request onto these two permissions
+      (`BridgeWebChromeClient.onPermissionRequest`), so without them the request
+      is refused before any dialog is drawn and the page can only report the
+      microphone as a browser setting — which is the sentence every shell before
+      this change showed. The camera above is the same shape of fix, for the
+      Scanner.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- A microphone is a voice note's input, not a requirement to install. -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <!--
       Installing the shell's own update (ADR-0044) means handing an APK to the
       platform installer, which Android only allows an app that holds this. It is
       not a Play-style updater: the shell distributes its APK directly, and the

@@ -60,12 +60,18 @@ export interface AiChatTool {
   function: { name: string; description: string; parameters: Record<string, unknown> };
 }
 
+/** One piece of a user turn: words, or an image the model can see. */
+export type AiChatContentPart =
+  { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } };
+
 /**
  * What a turn with tools is made of: the history, then the assistant's call and
- * the tool's answer, appended in the order the provider expects.
+ * the tool's answer, appended in the order the provider expects. A user turn is
+ * words or parts, because a file the member attached is not a string (ADR-0127).
  */
 export type AiChatWireMessage =
-  | { role: 'system' | 'user'; content: string }
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string | AiChatContentPart[] }
   | {
       role: 'assistant';
       content: string | null;
