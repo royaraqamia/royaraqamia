@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { QURAN_PAGE_COUNT } from '@/shared/contracts/quran-pages';
+import { QURAN_INDEX_COPY } from './quran-index-copy';
 import { toLatinDigits } from '@/shared/contracts/text';
 
 /**
@@ -22,7 +23,20 @@ import { toLatinDigits } from '@/shared/contracts/text';
  * `pages` is flat — `[surah, ayah, surah, ayah, …]` — because it crosses the
  * server/client boundary and 1,208 numbers are cheaper than 604 objects.
  */
-export function PageJump({ pages }: { pages: readonly number[] }) {
+export function PageJump({
+  pages,
+  label = QURAN_INDEX_COPY.pageJumpLabel,
+  placeholder = QURAN_INDEX_COPY.pageJumpPlaceholder,
+  submit: submitLabel = QURAN_INDEX_COPY.pageJumpSubmit,
+  error = QURAN_INDEX_COPY.pageJumpError,
+}: {
+  pages: readonly number[];
+  /** The four strings, from `shared/copy/quran-index.json`. */
+  label?: string;
+  placeholder?: string;
+  submit?: string;
+  error?: string;
+}) {
   const router = useRouter();
   const [value, setValue] = useState('');
   const [invalid, setInvalid] = useState(false);
@@ -52,13 +66,14 @@ export function PageJump({ pages }: { pages: readonly number[] }) {
     <form
       onSubmit={submit}
       className="page-jump"
-      aria-label="انتقل إلى صفحة"
+      data-visual="quran-page-jump"
+      aria-label={label}
       // The field's own message is Arabic and says the range; the browser's bubble
       // would speak the page's language and stop at the first control.
       noValidate
     >
       <label htmlFor="quran-page" className="page-jump-label">
-        انتقل إلى صفحة
+        {label}
       </label>
       <div className="page-jump-row">
         <input
@@ -71,18 +86,19 @@ export function PageJump({ pages }: { pages: readonly number[] }) {
             setValue(event.target.value);
             setInvalid(false);
           }}
-          placeholder={`1 – ${QURAN_PAGE_COUNT}`}
+          data-visual="quran-page-jump-field"
+          placeholder={placeholder.replace('{max}', String(QURAN_PAGE_COUNT))}
           aria-invalid={invalid}
           aria-describedby={invalid ? 'quran-page-error' : undefined}
           className="page-jump-field"
         />
-        <button type="submit" className="page-jump-submit">
-          انتقال
+        <button type="submit" data-visual="quran-page-jump-submit" className="page-jump-submit">
+          {submitLabel}
         </button>
       </div>
       {invalid ? (
         <p id="quran-page-error" className="page-jump-error" role="alert">
-          الصفحة من 1 إلى {QURAN_PAGE_COUNT}.
+          {error.replace('{max}', String(QURAN_PAGE_COUNT))}
         </p>
       ) : null}
     </form>

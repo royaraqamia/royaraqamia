@@ -1,0 +1,76 @@
+{
+  "surface": "quran",
+  "state": "at-rest",
+  "route": "/quran",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 120,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "search": {
+      "top": 198.5,
+      "width": 361,
+      "height": 44,
+      "radius": 12,
+      "fontSize": 14,
+      "paddingLeft": 40,
+      "paddingRight": 40
+    },
+    "list": {
+      "top": 274.5,
+      "width": 361,
+      "rowGap": 8
+    },
+    "first-row": {
+      "top": 274.5,
+      "width": 361,
+      "height": 64.5,
+      "radius": 12
+    },
+    "first-row-number": {
+      "width": 36,
+      "height": 36,
+      "radius": 8,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "first-row-name": {
+      "height": 24,
+      "fontSize": 16,
+      "fontWeight": 700
+    },
+    "first-row-meta": {
+      "height": 18.5,
+      "fontSize": 11
+    },
+    "page-jump": {
+      "width": 361,
+      "height": 60.19,
+      "radius": 16,
+      "paddingTop": 12,
+      "paddingLeft": 16
+    },
+    "page-jump-field": {
+      "width": 120,
+      "height": 34.19,
+      "radius": 9.6,
+      "fontSize": 14,
+      "paddingLeft": 9.6,
+      "paddingRight": 9.6
+    },
+    "page-jump-submit": {
+      "width": 60.78,
+      "height": 32.69,
+      "radius": 9.6,
+      "fontSize": 13,
+      "fontWeight": 700
+    }
+  }
+}

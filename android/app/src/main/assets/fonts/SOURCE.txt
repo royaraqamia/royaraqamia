@@ -1,0 +1,20 @@
+The two faces the native Quran reader sets its text in.
+
+KFGQPC HAFS Uthmanic Script, Regular, Version 0.18
+Copyright (c) 2010 King Fahd Glorious Quran Printing Complex.
+Vendored unmodified from the quran-data-kfgqpc mirror, the same source the
+site's WOFF2 copy records in `public/fonts/KFGQPC HAFS Uthmanic Script/SOURCE.txt`:
+https://raw.githubusercontent.com/thetruetruth/quran-data-kfgqpc/main/hafs/font/hafs.18.ttf
+sha256 a0636e68e375af9552470d67773936f54d536e6586ce2608311b2fe7f9cbec3a
+The licence is in KFGQPC-HAFS-Uthmani-EULA.txt beside this file. The file is
+copied, not converted or subset: Android needs the published TTF and the EULA
+permits use, copy and distribution.
+
+Amiri Quran, Regular, Version 1.003
+Copyright 2010-2022 The Amiri Quran Project Authors (https://github.com/aliftype/amiri).
+Vendored from Google Fonts' build of the family:
+https://raw.githubusercontent.com/google/fonts/main/ofl/amiriquran/AmiriQuran-Regular.ttf
+sha256 e2a47644762d16bdfb6d33e0d8db8c6ff30beae84150ef5a705316bbd829455c
+The licence is in Amiri-Quran-OFL.txt beside this file. Only its three
+silent-letter marks are used: the Uthmani face draws them as its ayah rosette,
+so the reader applies this face to U+06DF, U+06E3 and U+06EB (ADR 0067).

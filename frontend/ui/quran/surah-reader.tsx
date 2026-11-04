@@ -1,13 +1,13 @@
 import { Fragment } from 'react';
-import { Bookmark } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { QuranReadingClient } from './quran-reading-client';
 import { AyahAnchorHighlight } from './ayah-highlight';
 import { AyahBoundary } from './ayah-boundary';
+import { AyahMarkButton } from './ayah-mark-button';
 import { AyahTafsir, QuranTafsirProvider } from './ayah-tafsir';
-import { revelationLabel } from './format';
+import { QURAN_SURAH_COPY } from './quran-surah-copy';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 import type { QuranAyahMarks } from '@/shared/contracts/quran-pages';
 import type { SurahTafsirRef } from '@/shared/contracts/quran-tafsir';
@@ -48,6 +48,11 @@ interface SurahReaderProps {
  * a separate view of the same text (P5), not the base rendering.
  */
 export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReaderProps) {
+  const revelation =
+    summary.revelation === 'Meccan'
+      ? QURAN_SURAH_COPY.revelationMeccan
+      : QURAN_SURAH_COPY.revelationMedinan;
+
   return (
     <div
       className={cn(
@@ -69,13 +74,18 @@ export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReade
         </defs>
       </svg>
 
-      <header className="flex flex-col items-center gap-2 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>{summary.name}</SectionTitleHighlight>
-        </SectionTitle>
-        <p className="text-xs text-muted-foreground">
-          {revelationLabel(summary.revelation)} ·{' '}
-          <span className="font-heading">{summary.ayahCount}</span> آيات
+      <header
+        data-visual="quran-surah-header"
+        className="flex flex-col items-center gap-2 text-center"
+      >
+        <div data-visual="quran-surah-title">
+          <SectionTitle as="h1">
+            <SectionTitleHighlight>{summary.name}</SectionTitleHighlight>
+          </SectionTitle>
+        </div>
+        <p data-visual="quran-surah-meta" className="text-xs text-muted-foreground">
+          {revelation} · <span className="font-heading">{summary.ayahCount}</span>{' '}
+          {QURAN_SURAH_COPY.ayahCount}
         </p>
       </header>
 
@@ -95,7 +105,16 @@ export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReade
 
             return (
               <Fragment key={number}>
-                {mark ? <AyahBoundary marks={mark} /> : null}
+                {mark ? (
+                  <AyahBoundary
+                    marks={mark}
+                    pageLabel={QURAN_SURAH_COPY.boundaryPage}
+                    juzLabel={QURAN_SURAH_COPY.boundaryJuz}
+                    hizbLabel={QURAN_SURAH_COPY.boundaryHizb}
+                    sajdaObligatory={QURAN_SURAH_COPY.sajdaObligatory}
+                    sajdaRecommended={QURAN_SURAH_COPY.sajdaRecommended}
+                  />
+                ) : null}
                 <article
                   data-ayah-card={number}
                   className="rounded-2xl border border-border/60 bg-card/50 px-4 py-4 shadow-xs sm:px-5"
@@ -111,17 +130,7 @@ export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReade
                       <span className="ayah-marker" data-ayah-marker={number}>
                         <span className="ayah-marker-number">{number}</span>
                       </span>
-                      <button
-                        type="button"
-                        data-bookmark-ayah={number}
-                        aria-pressed="false"
-                        disabled
-                        aria-label={`علامة على الآية ${number}`}
-                        title="إضافة علامة أو إزالتها"
-                        className="ayah-mark"
-                      >
-                        <Bookmark aria-hidden="true" />
-                      </button>
+                      <AyahMarkButton number={number} />
                     </span>
                   </p>
 

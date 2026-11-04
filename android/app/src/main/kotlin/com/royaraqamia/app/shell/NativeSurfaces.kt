@@ -3,6 +3,7 @@ package com.royaraqamia.app.shell
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.profile.ProfileRoutes
+import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.verify.VerifyRoutes
 
 /**
@@ -46,7 +47,8 @@ object NativeSurfaces {
     private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
 
     /** Whether the shell can draw [route] without the document. */
-    fun isNative(route: String): Boolean = routes.contains(Routes.normalize(route))
+    fun isNative(route: String): Boolean =
+        routes.contains(Routes.normalize(route)) || QuranRoutes.matches(route)
 
     /** Whether [route] is readable with no session (the matrix's public rows). */
     fun isPublic(route: String): Boolean =
@@ -54,5 +56,6 @@ object NativeSurfaces {
             VerifyRoutes.matches(route) ||
             CommunityRoutes.matches(route) ||
             ProfileRoutes.matches(route) ||
+            QuranRoutes.matches(route) ||
             LinksnapRoutes.codeOf(route) != null
 }

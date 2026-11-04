@@ -97,6 +97,60 @@
           }
         }
       ]
+    },
+    {
+      "surface": "quran",
+      "web": {
+        "route": "/quran"
+      },
+      "contract": "shared/visual/quran.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/quran/QuranIndexScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.04,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-04",
+            "measured": 0.0234,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "surface": "quran-surah",
+      "web": {
+        "route": "/quran/108"
+      },
+      "contract": "shared/visual/quran-surah.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/quran/QuranSurahScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-04",
+            "measured": 0.0669,
+            "alignment": {
+              "dx": -3,
+              "dy": -1
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {

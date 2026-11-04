@@ -12,6 +12,9 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
+import com.royaraqamia.app.quran.AssetQuranRepository
+import com.royaraqamia.app.quran.PreferencesQuranPositionStore
+import com.royaraqamia.app.quran.QuranRepository
 import com.royaraqamia.app.rates.RatesRepository
 import com.royaraqamia.app.rates.RatesSnapshotStore
 import com.royaraqamia.app.shell.PreferencesServicesOrderStore
@@ -87,6 +90,8 @@ class AppGraph private constructor(
     val linksnap: LinksnapRepository,
     /** BlogPress's store and queue (#952). */
     val blogpress: BlogpressRepository,
+    /** The Quran reader's vendored text and the reader's last place (#955). */
+    val quran: QuranRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
@@ -228,6 +233,11 @@ class AppGraph private constructor(
                         CommunityFeedSnapshotStore(File(context.filesDir, "community")),
                     ),
                 chats = ChatsRepository(client),
+                quran =
+                    AssetQuranRepository(
+                        context = context,
+                        positions = PreferencesQuranPositionStore(context),
+                    ),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(

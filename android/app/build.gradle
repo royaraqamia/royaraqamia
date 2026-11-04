@@ -155,6 +155,16 @@ android {
         buildConfig true
         compose true
     }
+    // The Quran text is the site's own vendored asset, not a second copy: the
+    // build packages the exact files under `public/quran` that the page reads, so
+    // the app's text cannot drift from the site's (ADR-0057, #955). Only the
+    // index, the boundaries and the 114 suras are needed; the search, tafsir and
+    // audio assets stay with the web surface that uses them.
+    sourceSets {
+        main {
+            assets.srcDirs += file("$buildDir/generated/quranAssets")
+        }
+    }
     // The visual gate records its app-side capture with
     // `-Proborazzi.record=true` on the ordinary test task (#874, ADR-0118): the
     // plugin's own record task skips a test whose outputs it considers current,
@@ -184,6 +194,29 @@ android {
         }
     }
 }
+
+// The vendored Quran text, copied into the APK from the site's own directory
+// (#955). A copy task rather than a committed duplicate: the files are Tanzil's
+// verbatim text (ADR-0057), and two copies are two chances to normalise or edit
+// one of them. `preBuild` and every asset merge depend on it, so a debug build,
+// a release build and a Robolectric test all see the same bytes.
+def quranAssets =
+    tasks.register("copyQuranAssets", Copy) {
+        from(rootProject.file("../public/quran")) {
+            include "meta/index.json"
+            include "meta/pages.json"
+            include "meta/NOTICE.txt"
+            include "surah/*.json"
+            include "search/index.json"
+            into "quran"
+        }
+        into layout.buildDirectory.dir("generated/quranAssets")
+    }
+tasks.named("preBuild").configure { dependsOn(quranAssets) }
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(quranAssets)
+}
+tasks.withType(Test).configureEach { dependsOn(quranAssets) }
 
 // The exported schema is committed (#768): Room writes the shape of version N to
 // disk, so the migration from N-1 is reviewed beside the shape it migrates from,

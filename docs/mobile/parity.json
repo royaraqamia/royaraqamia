@@ -1409,6 +1409,54 @@
           "copy": "emptyTitle"
         }
       ]
+    },
+    {
+      "id": "quran-index",
+      "surface": "quran",
+      "issue": "#955",
+      "web": {
+        "route": "app/quran/page.tsx",
+        "component": "frontend/ui/quran/quran-index.tsx",
+        "copyModule": "frontend/ui/quran/quran-index-copy.ts",
+        "copyExport": "QURAN_INDEX_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranIndexScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranIndexState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranIndexCopy.kt",
+        "copyObject": "QuranIndexCopy"
+      },
+      "copySource": "shared/copy/quran-index.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
+        }
+      ]
+    },
+    {
+      "id": "quran-surah",
+      "surface": "quran",
+      "issue": "#955",
+      "web": {
+        "route": "app/quran/[surah]/page.tsx",
+        "component": "frontend/ui/quran/surah-reader.tsx",
+        "copyModule": "frontend/ui/quran/quran-surah-copy.ts",
+        "copyExport": "QURAN_SURAH_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranSurahScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranSurahState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranSurahCopy.kt",
+        "copyObject": "QuranSurahCopy"
+      },
+      "copySource": "shared/copy/quran-surah.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "revelationMeccan"
+        }
+      ]
     }
   ],
   "exempt": [
