@@ -30,6 +30,33 @@
       ]
     },
     {
+      "surface": "account-faq",
+      "web": {
+        "route": "/account/faq"
+      },
+      "contract": "shared/visual/account-faq.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/account/AccountFaqScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.07,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-04",
+            "measured": 0.0618,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
       "surface": "linksnap",
       "web": {
         "route": "/linksnap"

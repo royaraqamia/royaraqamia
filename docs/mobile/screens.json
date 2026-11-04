@@ -107,8 +107,8 @@
     },
     {
       "surface": "account-faq",
-      "native": null,
-      "reason": "The FAQ's content is shared by both clients first; the screen lands in #799."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountFaqScreen.kt"
     },
     {
       "surface": "account-news",

@@ -1,0 +1,34 @@
+{
+  "surface": "account-faq",
+  "component": "account-faq",
+  "web": {
+    "file": "frontend/ui/account/faq-copy.ts",
+    "export": "ACCOUNT_FAQ_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountFaqCopy.kt",
+    "object": "AccountFaqCopy"
+  },
+  "notes": {
+    "source": "The FAQ's questions and answers, in both clients (#949). The site's `frontend/ui/account/faq-view.tsx` is the reference: the list is the same one `faqSchema` builds the JSON-LD from, so an edited answer cannot leave the structured data stale (ADR-0098).",
+    "placeholders": "None: a question is a sentence, not a template.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "pageTitle": "الأسئلة الشَّائعة",
+    "question1": "أين أنتم؟",
+    "answer1": "في بلاد الشَّام، تحديدًا في مدينة حَلَب.",
+    "question2": "ما هي طرق الدَّفع المتاحة؟",
+    "answer2": "تطبيق ShamCash لِمَن هم داخل سوريا، أو تطبيق Efendim Pay لِمَن هم خارج سوريا.",
+    "question3": "ما العملات التي تقبلون الدَّفع بها؟",
+    "answer3": "الليرة السُّوريَّة أو الدُّولار أو اليورو.",
+    "question4": "متى يبدأ الاشتراك؟",
+    "answer4": "بعد تأكيد الدَّفعة مباشرة. ترتفع حدود حسابك (العناصر والتَّنزيلات والحدود اليوميّة) إلى حدود الخطَّة المدفوعة لمدة 30 يومًا.",
+    "question5": "ماذا يحدث عند انتهاء مدَّة الاشتراك؟",
+    "answer5": "تعود تلقائياً إلى الخطَّة المجانيَّة بحدودها. لا يوجد تجديد تلقائي، ولا تُحذف بياناتك، والتَّنزيلات التي استهلكتها لا تعود.",
+    "question6": "هل أفقد بياناتي إذا لم أجدِّد الاشتراك؟",
+    "answer6": "لا. تنخفض حدود الحفظ فقط، وتبقى كل العناصر التي أنشأتها؛ يمكنك التَّعديل والحذف، لكن لا يمكنك إضافة ما يتجاوز الحد حتَّى ترقّي الخطَّة أو تحذف.",
+    "question7": "هل يمكنني استخدام التَّطبيق دون حساب؟",
+    "answer7": "نعم، بحدود أصغر: تنزيل واحد، ومُلخَّص أخبار واحد يوميًّا، وعملية مسح واحدة، وسورة واحدة يوميًّا. الحساب المجَّاني يرفع هذه الحدود ويحفظ بياناتك على كل أجهزتك."
+  }
+}

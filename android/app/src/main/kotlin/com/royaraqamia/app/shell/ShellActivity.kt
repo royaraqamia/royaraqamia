@@ -27,6 +27,7 @@ import com.royaraqamia.app.AppGraph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
+import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.chats.ChatsScreen
@@ -216,6 +217,7 @@ class ShellActivity : ComponentActivity() {
                                     repository = graph.spendtrack,
                                     onOpenCategories = { openRoute("/spendtrack/categories") },
                                 )
+                            "/account/faq" -> AccountFaqScreen()
                             "/account/plan" ->
                                 PlanScreen(
                                     repository = graph.usage,
