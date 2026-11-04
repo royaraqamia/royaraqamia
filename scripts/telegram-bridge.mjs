@@ -931,11 +931,12 @@ async function digest({ workflow, url }) {
 
   let items = [];
   if (workflow.includes('Planner')) {
+    // `since` on the issues endpoint filters by *updated* time, so a comment on an
+    // old issue counted it as new - the first digest reported 16 where the
+    // planner files at most five. The list is fetched and filtered on creation.
     const issues =
-      (await github(
-        `/repos/${owner}/${repo}/issues?state=all&since=${encodeURIComponent(since)}&per_page=30`
-      )) ?? [];
-    items = issues.filter((issue) => !issue.pull_request);
+      (await github(`/repos/${owner}/${repo}/issues?state=all&sort=created&per_page=50`)) ?? [];
+    items = issues.filter((issue) => !issue.pull_request && issue.created_at >= since);
   } else {
     const pulls =
       (await github(
