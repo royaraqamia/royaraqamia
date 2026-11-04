@@ -34,6 +34,7 @@ import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
+import com.royaraqamia.app.account.ChangelogScreen
 import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityRoutes
@@ -259,6 +260,11 @@ class ShellActivity : ComponentActivity() {
                                     signedIn = signedIn,
                                     onSignIn = ::showSignIn,
                                 )
+                            // The changelog (#951): the static file the weekly
+                            // train writes, drawn as the page's list. Ported and
+                            // off, so the document still opens on top of it
+                            // (ADR-0117).
+                            "/account/changelog" -> ChangelogScreen(repository = graph.changelog)
                             // The account news page (#950): the checklist, the
                             // private feeds and the proposal form. Ported and
                             // switched off until the visual gate passes.

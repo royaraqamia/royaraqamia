@@ -84,7 +84,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 42 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 43 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [ ] `habit-list` on **habitflow** · #649
 - [ ] `sync-status-pill` on **habitflow** · #649
@@ -128,6 +128,7 @@ A component is finished when the surface that draws it is native: 42 ported comp
 - [ ] `account-news-preferences` on **account-news** · #950
 - [ ] `account-news-private` on **account-news** · #950
 - [ ] `account-news-request` on **account-news** · #950
+- [ ] `account-changelog` on **account-changelog** · #951
 
 ## Where this stands
 

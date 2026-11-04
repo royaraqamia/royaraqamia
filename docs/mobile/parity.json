@@ -1313,6 +1313,34 @@
           "copy": "received"
         }
       ]
+    },
+    {
+      "id": "account-changelog",
+      "surface": "account-changelog",
+      "issue": "#951",
+      "web": {
+        "route": "app/account/changelog/page.tsx",
+        "component": "frontend/ui/account/changelog-view.tsx",
+        "copyModule": "frontend/ui/account/changelog-copy.ts",
+        "copyExport": "CHANGELOG_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogCopy.kt",
+        "copyObject": "ChangelogCopy"
+      },
+      "copySource": "shared/copy/account-changelog.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "Ready",
+          "copy": "releaseTitle"
+        }
+      ]
     }
   ],
   "exempt": [
