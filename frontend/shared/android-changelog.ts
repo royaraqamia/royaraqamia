@@ -1,3 +1,5 @@
+import type { AndroidRelease } from '@/shared/contracts/android-changelog';
+
 import { logger } from './logger';
 
 /**
@@ -19,12 +21,7 @@ export const ANDROID_CHANGELOG_PATH = '/android/changelog.json';
 /** How many releases the page shows, even if the file ever carries more. */
 export const CHANGELOG_PAGE_LIMIT = 20;
 
-export interface AndroidRelease {
-  version: string;
-  versionCode: number;
-  releasedAt: string;
-  notes: string[];
-}
+export type { AndroidRelease };
 
 const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
