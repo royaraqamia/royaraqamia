@@ -50,7 +50,7 @@ const MAX_TELEGRAM = 4000;
 const DEFAULT_TZ_MINUTES = 180;
 const INFERENCE_URL = 'https://opencode.ai/inference/go/openai/v1/chat/completions';
 const MODEL = 'deepseek-v4.1-flash';
-const TRANSCRIBE_MODEL = 'mimo-v2.6-flash';
+const TRANSCRIBE_MODELS = ['mimo-v2.6-flash', 'gemini-4-argon'];
 const SYSTEM_PROMPT = [
   'أنت صديق مقرّب ومستشار موثوق لأيهم، تكتب بالعربية الطبيعية بلا تكلّف ولا نبرة رسمية.',
   'أجب عن أي شيء يسأله: الكود، العمل، الحياة، الأفكار، الآراء، التخطيط — كما يفعل صديق ذكي وصريح.',
@@ -440,20 +440,30 @@ async function transcribe(fileId) {
   if (!audio.ok) throw new Error(`downloading the voice note failed: ${audio.status}`);
 
   const data = Buffer.from(await audio.arrayBuffer()).toString('base64');
-  const message = await askModel(
-    [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
-          { type: 'input_audio', input_audio: { data, format: 'ogg' } },
-        ],
-      },
-    ],
-    { model: TRANSCRIBE_MODEL }
-  );
 
-  return String(message.content ?? '').trim();
+  // Two models, cheapest first. The second exists because the first answered
+  // 200 with no text on the first real voice note (2026-11-04), and a silent
+  // empty transcript is worse than a slower one.
+  for (const model of TRANSCRIBE_MODELS) {
+    const message = await askModel(
+      [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
+            { type: 'input_audio', input_audio: { data, format: 'ogg' } },
+          ],
+        },
+      ],
+      { model }
+    );
+
+    const text = String(message.content ?? message.audio_transcript ?? '').trim();
+    if (text) return text;
+    process.stdout.write(`telegram: ${model} returned no transcript\n`);
+  }
+
+  throw new Error('لم أستطع تحويل الصوت إلى نص');
 }
 
 /**
@@ -879,6 +889,13 @@ async function drain() {
           body: JSON.stringify({ body: `🎙️ ${text}` }),
         });
       }
+      // Silence is the worst answer: say the note arrived and was not understood.
+      if (!String(text ?? '').trim()) {
+        const line = '🎙️ وصلت الرسالة الصوتية لكن لم أستطع تحويلها إلى نص. أعد إرسالها أو اكتبها.';
+        await sendMessage(row.chat_id, line);
+        await recordOutbound(row.chat_id, line, null);
+        continue;
+      }
       await handleMessage({ chat: row.chat_id, text, messageId: row.id });
     } catch (error) {
       await releaseRow(row);
@@ -1048,6 +1065,63 @@ async function remember() {
   });
 }
 
+/**
+ * Measures, on demand, whether the gateway actually transcribes. A voice note
+ * that returns 200 with no text is indistinguishable from a model that ignored
+ * the audio, so this sends a known one-second tone to each candidate and prints
+ * the raw status and body. Run it with `workflow_dispatch` and read the log.
+ */
+export function silenceWav(seconds = 1, sampleRate = 8000) {
+  const samples = seconds * sampleRate;
+  const buffer = Buffer.alloc(44 + samples * 2);
+  buffer.write('RIFF', 0);
+  buffer.writeUInt32LE(36 + samples * 2, 4);
+  buffer.write('WAVE', 8);
+  buffer.write('fmt ', 12);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(sampleRate * 2, 28);
+  buffer.writeUInt16LE(2, 32);
+  buffer.writeUInt16LE(16, 34);
+  buffer.write('data', 36);
+  buffer.writeUInt32LE(samples * 2, 40);
+  return buffer;
+}
+
+async function probe() {
+  const key = env('OPENCODE_API_KEY');
+  if (!key) throw new Error('OPENCODE_API_KEY is not set');
+
+  const data = silenceWav().toString('base64');
+  for (const model of [...TRANSCRIBE_MODELS, MODEL]) {
+    const response = await fetch(INFERENCE_URL, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${key}`,
+        'content-type': 'application/json',
+        'user-agent': 'royaraqamia-telegram-bridge/1.0',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'اكتب أي كلمة تسمعها، أو اكتب: صمت.' },
+              { type: 'input_audio', input_audio: { data, format: 'wav' } },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const body = await response.text().catch(() => '');
+    process.stdout.write(`probe ${model}: ${response.status} ${body.slice(0, 600)}\n`);
+  }
+}
+
 // ------------------------------------------------------------------ summaries
 
 async function remind() {
@@ -1164,6 +1238,7 @@ async function main() {
   if (mode === 'drain') return drain();
   if (mode === 'lookup') return lookups();
   if (mode === 'remember') return remember();
+  if (mode === 'probe') return probe();
   if (mode === 'remind') return remind();
   if (mode === 'digest') {
     return digest({
