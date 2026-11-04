@@ -22,7 +22,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `notes` | `/notes` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `account` | `/account` | _web only_ | The page itself is the profile card and the sign-out, and lands in #798. |
+| `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948); the profile card (#946) and the allowance card (#947) are still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` (off) | The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |

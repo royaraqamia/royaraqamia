@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
+import com.royaraqamia.app.account.AccountScreen
+import com.royaraqamia.app.account.AccountUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
@@ -206,6 +208,17 @@ class ShellActivity : ComponentActivity() {
                         onOpenRoute = ::openRoute,
                     ) {
                         when (Routes.normalize(current)) {
+                            "/account" ->
+                                AccountScreen(
+                                    state = AccountUiState.of(signedIn),
+                                    // The app has no admin answer yet: the operator
+                                    // surfaces wait for their security review (#660,
+                                    // #974), so the row is drawn only when a later
+                                    // slice can verify it against the server.
+                                    isAdmin = false,
+                                    onOpenRoute = ::openRoute,
+                                    onSignOut = ::signOut,
+                                )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
                             // SpendTrack's two routes are one screen (#653): the
                             // total and list, and the categories that list files
@@ -511,6 +524,27 @@ class ShellActivity : ComponentActivity() {
         signedIn = false
         unreadCount = null
         openRoute("/auth/login")
+    }
+
+    /**
+     * The account screen's sign-out (#948): the graph drops the session and
+     * closes the stores, which keeps the rows on disk while unlinking them from
+     * an identity (ADR-0027). The next member opens their own namespace, so no
+     * previous account's row can be painted behind them.
+     *
+     * Home is where the site sends a member after signing out, so the shell
+     * starts its stack there rather than leaving the account page behind.
+     */
+    private fun signOut() {
+        lifecycleScope.launch {
+            graph.signOut()
+            signedIn = false
+            unreadCount = null
+            hiddenRoutes = emptySet()
+            stack.reset(Routes.HOME)
+            current = stack.route
+            handOver()
+        }
     }
 
     /**

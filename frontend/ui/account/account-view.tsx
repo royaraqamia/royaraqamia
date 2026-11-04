@@ -1,47 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import {
-  User,
-  ClipboardList,
-  FileText,
-  Link2,
-  Plug,
-  ShieldCheck,
-  Shield,
-  ShieldOff,
-  ScrollText,
-  LogOut,
-  HelpCircle,
-  MessageCircle,
-  Lock,
-  Sparkles,
-  Newspaper,
-  EyeOff,
-} from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 
-import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
-import { SUPPORT_USERNAME } from '@/frontend/shared/constants';
-import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import { AccountRow } from '@/frontend/ui/account/account-row';
 import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
 import { ShellChangelogRow } from '@/frontend/ui/account/shell-changelog-row';
-import { rowClasses } from '@/frontend/ui/account/row-classes';
-
-/** The legal pages, public like the FAQ row — a plain link for guests and members. */
-const legalRows = [
-  { href: '/privacy', icon: Lock, label: 'سياسة الخصوصيَّة' },
-  { href: '/terms', icon: ScrollText, label: 'شروط الاستخدام' },
-  { href: '/security', icon: Shield, label: 'سياسة الأمان' },
-];
+import { AccountRows } from '@/frontend/ui/account/account-rows';
 
 function AccountSkeleton() {
   return (
@@ -55,8 +26,7 @@ function AccountSkeleton() {
 }
 
 export function AccountView() {
-  const { user, isLoading, isAdmin, profileName, profileAvatarUrl, signOut } = useSession();
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const { user, isLoading, profileName, profileAvatarUrl, signOut } = useSession();
   /** The destination a guest picked; also what the sign-in prompt returns them to. */
   const [promptHref, setPromptHref] = useState<string | null>(null);
 
@@ -85,7 +55,7 @@ export function AccountView() {
       {!user ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-            <User size={24} />
+            <User size={24} aria-hidden="true" />
           </div>
           <p className="text-base font-bold text-foreground sm:text-lg">سجِّل الدُّخول إلى حسابك</p>
           <SignInCta href="/auth/login?redirect=/account" className="mt-1 w-full sm:w-auto" />
@@ -103,156 +73,20 @@ export function AccountView() {
 
       {/* Account actions — every row is public; the ones behind a session open the
           sign-in prompt instead of navigating. */}
-      <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
-        <AccountRow
-          href="/account/submissions"
-          icon={ClipboardList}
-          label="الطَّلبات"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/posts"
-          icon={FileText}
-          label="المنشورات"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/news"
-          icon={Newspaper}
-          label="مصادر الأخبار"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/links"
-          icon={Link2}
-          label="الرَّوابط المختصَرة"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/connected-apps"
-          icon={Plug}
-          label="التَّطبيقات المتَّصلة بالـ MCP"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/services"
-          icon={EyeOff}
-          label="الخدمات الظَّاهرة"
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/blocked"
-          icon={ShieldOff}
-          label="الأعضاء المحظورون"
-          onRequireAuth={setPromptHref}
-        />
-
-        {/* Public: a visitor may read the plans without an account, so this is a
-            plain link rather than a row that opens the sign-in prompt. */}
-        <Link href="/pricing" className={rowClasses}>
-          <span className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 shrink-0 text-primary" />
-            <span>خطط التَّسعير</span>
-          </span>
-          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-            ←
-          </span>
-        </Link>
-
-        {isAdmin && (
-          <Link href="/admin" className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
-              <span>الإدارة</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        )}
-
+      <AccountRows
+        onRequireAuth={setPromptHref}
+        onSignOut={() => {
+          signOut().then(() => {
+            window.location.href = '/';
+          });
+        }}
+      >
         <InstallSection />
 
         {/* Only inside the shell: a browser visitor is not running an APK whose
             changelog this is (ADR-0090). */}
         <ShellChangelogRow />
-
-        {/* Public, so it is a plain link for guests and members alike — unlike
-            the rows above, it has nothing to gate. */}
-        <Link href="/account/faq" className={rowClasses}>
-          <span className="flex items-center gap-2.5">
-            <HelpCircle className="w-4 h-4 shrink-0 text-primary" />
-            <span>الأسئلة الشَّائعة</span>
-          </span>
-          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-            ←
-          </span>
-        </Link>
-
-        {/* Support is a chat with the site's own account, in the product rather
-            than on WhatsApp. A guest lands on the chat screen's sign-in prompt,
-            which returns them here after signing in. */}
-        <Link href={`/chats/new?to=${encodeURIComponent(SUPPORT_USERNAME)}`} className={rowClasses}>
-          <span className="flex items-center gap-2.5">
-            <MessageCircle className="w-4 h-4 shrink-0 text-primary" />
-            <span>تواصل معنا</span>
-          </span>
-          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-            ←
-          </span>
-        </Link>
-
-        {/* Legal pages — public, so plain links for guests and members alike. */}
-        {legalRows.map(({ href, icon: Icon, label }) => (
-          <Link key={href} href={href} className={rowClasses}>
-            <span className="flex items-center gap-2.5">
-              <Icon className="w-4 h-4 shrink-0 text-primary" />
-              <span>{label}</span>
-            </span>
-            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-              ←
-            </span>
-          </Link>
-        ))}
-
-        {user && (
-          <button
-            type="button"
-            onClick={() => setIsLogoutDialogOpen(true)}
-            className={cn(
-              rowClasses,
-              'text-destructive/90 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30'
-            )}
-          >
-            <span className="flex items-center gap-2.5">
-              <LogOut className="w-4 h-4 shrink-0 text-destructive" />
-              <span>تسجيل الخروج</span>
-            </span>
-          </button>
-        )}
-      </nav>
-
-      <ConfirmDialog
-        open={isLogoutDialogOpen}
-        title="تسجيل الخروج"
-        message="هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
-        confirmLabel="تسجيل الخروج"
-        cancelLabel="إلغاء"
-        onConfirm={() => {
-          setIsLogoutDialogOpen(false);
-          signOut().then(() => {
-            window.location.href = '/';
-          });
-        }}
-        onCancel={() => setIsLogoutDialogOpen(false)}
-        variant="danger"
-      />
+      </AccountRows>
 
       {/* Guest gate for the rows above — the same nudge the community FAB and the
           notification bell give, aimed at the page they picked. */}
@@ -265,7 +99,7 @@ export function AccountView() {
         <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-              <Lock size={24} />
+              <Lock size={24} aria-hidden="true" />
             </div>
             <DialogTitle className="leading-snug!">سجِّل الدُّخول للمتابعة</DialogTitle>
           </div>
