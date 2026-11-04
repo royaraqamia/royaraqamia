@@ -485,7 +485,12 @@ export async function transcribe(fileId) {
               content: [
                 {
                   type: 'text',
-                  text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة. إن لم تسمع صوتاً فاكتب: صمت.',
+                  text: [
+                    'حوّل هذا الصوت إلى نص عربي حرفياً كما قيل.',
+                    'لا تلخّص، لا تصحّح، لا تضف كلمات لم تُسمع.',
+                    'إن كانت كلمة غير واضحة فاكتب [غير واضح] بدل تخمينها.',
+                    'إن لم تسمع صوتاً فاكتب: صمت.',
+                  ].join(' '),
                 },
                 { type: 'input_audio', input_audio: candidate },
               ],
@@ -833,7 +838,7 @@ async function handleTimezone({ args, chat }) {
  * what keeps a chatty message from touching anything. The last few exchanges are
  * the only context it gets, so a long conversation costs a paragraph.
  */
-export async function handleAnswer({ text, chat, messageId }) {
+export async function handleAnswer({ text, chat, messageId, voice = false }) {
   if (!env('OPENCODE_API_KEY')) {
     const line = `الإجابات معطّلة: <code>OPENCODE_API_KEY</code> غير مضبوط. استخدم ${commandSpan('/task')} للمهام.`;
     await sendMessage(chat, line);
@@ -845,6 +850,17 @@ export async function handleAnswer({ text, chat, messageId }) {
   const message = await askModel(
     [
       { role: 'system', content: SYSTEM_PROMPT },
+      // Without this the model reads a transcript as if it were typed, and
+      // answers "you sent me text, not audio" - which is true and useless.
+      ...(voice
+        ? [
+            {
+              role: 'system',
+              content:
+                'الرسالة وصلت كتسجيل صوتي وفُرّغت إلى نص آلياً، وقد يحتمل التفريغ أخطاءً. لا تعلّق على أنها نص، وتعامل معها ككلامه.',
+            },
+          ]
+        : []),
       ...(context ? [{ role: 'system', content: context }] : []),
       { role: 'user', content: text },
     ],
@@ -894,7 +910,7 @@ const HELP = [
   'يمكنك إرسال رسالة صوتية وسأحوّلها إلى نص وأتعامل معها كرسالة عادية.',
 ].join('\n');
 
-async function handleMessage({ chat, text, messageId }) {
+async function handleMessage({ chat, text, messageId, voice = false }) {
   if (String(chat) !== String(allowedChat())) return;
 
   const trimmed = (text ?? '').trim();
@@ -923,7 +939,7 @@ async function handleMessage({ chat, text, messageId }) {
     return handleTask({ text: args, chat, fast: command === 'now', messageId });
   }
 
-  return handleAnswer({ text: trimmed, chat, messageId });
+  return handleAnswer({ text: trimmed, chat, messageId, voice });
 }
 
 /**
@@ -962,7 +978,12 @@ async function drain() {
         await recordOutbound(row.chat_id, line, null);
         continue;
       }
-      await handleMessage({ chat: row.chat_id, text, messageId: row.id });
+      await handleMessage({
+        chat: row.chat_id,
+        text,
+        messageId: row.id,
+        voice: Boolean(row.voice_file_id),
+      });
     } catch (error) {
       await handleFailure(row, error);
     }
