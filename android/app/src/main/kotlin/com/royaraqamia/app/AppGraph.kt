@@ -62,13 +62,10 @@ class AppGraph private constructor(
     val session: Session,
     val usage: UsageRepository,
     val connectedApps: ConnectedAppsRepository,
-<<<<<<< HEAD
     /** The account's blocked members (#977): the list and the unblock. */
     val blockedMembers: BlockedMembersRepository,
-=======
     /** The account news page (#950): the checklist, private feeds and proposals. */
     val news: NewsRepository,
->>>>>>> origin/main
     val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
@@ -211,11 +208,8 @@ class AppGraph private constructor(
                 session = session,
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
-<<<<<<< HEAD
                 blockedMembers = BlockedMembersRepository(client),
-=======
                 news = NewsRepository(client),
->>>>>>> origin/main
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
