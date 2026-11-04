@@ -267,7 +267,7 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
         head: branch,
         base: 'main',
         body: [
-          `Closes #${issue?.number ?? ''}`.trim(),
+          issue?.number ? `Closes #${issue.number}` : '',
           '',
           '## Why',
           '',
