@@ -123,9 +123,12 @@ issue, and a second dispatch with no input closes it.
 
 A file the project must never have goes into `KNOWN_LOCAL_ONLY`, and an
 intentional project-only version into `KNOWN_REMOTE_ONLY` — both at the top of the
-drift script, next to the reason. Neither list holds anything: the first run (PR #217,
-2026-10-14) compared 108 repo files against 108 recorded versions and found the
-two sides identical, the base-schema stub included. The check compares version ids
+drift script, next to the reason. `KNOWN_REMOTE_ONLY` holds one entry today:
+`20261113220000`, recorded on 2026-11-04 while the file that named it failed
+mid-apply, whose SQL now lives at `20261113250000_agent_turns_resume.sql`. Apart
+from that, the two sides are identical: the first run (PR #217, 2026-10-14)
+compared 108 repo files against 108 recorded versions and found no asymmetry, the
+base-schema stub included. The check compares version ids
 only, so editing an applied migration stays invisible to it: this is a detector,
 not a review. See ADR 0040 (the check) and ADR 0041 (the apply).
 
