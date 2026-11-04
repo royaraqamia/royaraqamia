@@ -46,7 +46,8 @@ on:
       mode:
         description: 'What to do in this run'
         type: choice
-        options: [drain, lookup, remember, remind, probe, digest-planner, digest-implementer]
+        options:
+          [drain, lookup, remember, remind, probe, agent-probe, digest-planner, digest-implementer]
         default: drain
   workflow_run:
     workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
@@ -178,6 +179,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/telegram-bridge.mjs probe
+
+      # The product's assistant needs three things this bridge never asks for:
+      # streamed text, streamed tool calls, and image input. Measured, not
+      # assumed - a gateway that answers the first and fails the other two is
+      # indistinguishable from a working one until a member presses send.
+      - name: Probe the assistant gateway
+        if: inputs.mode == 'agent-probe'
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: node scripts/agent-probe.mjs
 
       - name: Deliver due reminders
         if: inputs.mode == 'drain' || inputs.mode == '' || inputs.mode == 'remind'

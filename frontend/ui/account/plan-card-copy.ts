@@ -31,7 +31,6 @@ export const PLAN_CARD_COPY = {
   methodShamcash: 'ShamCash',
   methodEfendim: 'Efendim Pay',
   methodOther: 'أخرى',
-  assistantDisclosure: 'الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.',
 } as const;
 
 export type PlanCardCopyStrings = typeof PLAN_CARD_COPY;

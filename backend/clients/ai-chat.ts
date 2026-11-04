@@ -6,18 +6,23 @@ import { logger } from '@/backend/shared/logger';
  * completions API (ADR-0113, #817).
  *
  * The vendor is three environment variables and no code: `AI_CHAT_BASE_URL`,
- * `AI_CHAT_MODEL` and `AI_CHAT_API_KEY`. Gemini's compatibility endpoint and a
- * Flash model are the defaults, because its free tier needs no card; DeepSeek's
- * own base URL is the documented escape hatch. Nothing here knows which vendor
- * answered, which is the point.
+ * `AI_CHAT_MODEL` and `AI_CHAT_API_KEY`. OpenCode's gateway and
+ * `deepseek-v4.1-flash` are the defaults — the same endpoint and the same key
+ * the agent pipeline answers with — and any other OpenAI-compatible base URL is
+ * the escape hatch. Nothing here knows which vendor answered, which is the point.
+ *
+ * `x-opencode-session` is that gateway's own requirement: it answers
+ * `400 MissingSessionID` without the header, which is why every call sends one.
+ * Measured, not assumed: `scripts/agent-probe.mjs` streams a reply and a tool
+ * call through this exact endpoint.
  *
  * The reply is streamed (`stream: true`) and yielded as text deltas, so the
  * route can answer SSE and the member reads the answer as it is written. A turn
  * is capped below the platform's function ceiling by the caller's `AbortSignal`.
  */
 
-export const AI_CHAT_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/';
-export const AI_CHAT_DEFAULT_MODEL = 'gemini-3.8-flash';
+export const AI_CHAT_DEFAULT_BASE_URL = 'https://opencode.ai/inference/go/openai/v1';
+export const AI_CHAT_DEFAULT_MODEL = 'deepseek-v4.1-flash';
 
 export interface AiChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -238,6 +243,9 @@ export function createAiChatClient(): AiChatClient | null {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
+        // The gateway refuses a call without a session name; the pipeline's own
+        // helper sends one for the same reason.
+        'x-opencode-session': 'assistant',
       },
       body: JSON.stringify(body),
       signal,

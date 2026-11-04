@@ -186,15 +186,6 @@ function PlanBody() {
             {PLAN_CARD_COPY.expires.replace('{date}', formatHijriDate(state.expiresAt))}
           </p>
         )}
-
-        {/* The assistant's disclosure is stated where its allowance is (#817):
-            Gemini's free tier uses prompts to improve Google's products, so the
-            page that sells the assistant says so, in the generated copy. */}
-        {state.plan === 'pro' && (
-          <p className="text-fluid-xs text-muted-foreground">
-            {PLAN_CARD_COPY.assistantDisclosure}
-          </p>
-        )}
       </section>
 
       <section aria-label={PLAN_CARD_COPY.historyTitle} className="space-y-2">

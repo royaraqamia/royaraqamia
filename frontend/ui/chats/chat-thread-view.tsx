@@ -338,12 +338,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         />
       )}
 
-      {isAssistant && (
-        <p className="border-b border-border/40 bg-muted/30 px-4 py-2 text-[11px] leading-relaxed text-muted-foreground/80">
-          {ASSISTANT_COPY.disclosure}
-        </p>
-      )}
-
       {(notice || error) && (
         <p
           role="alert"

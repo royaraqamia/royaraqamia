@@ -33,5 +33,4 @@ object PlanCardCopy {
     const val METHOD_SHAMCASH = "ShamCash"
     const val METHOD_EFENDIM = "Efendim Pay"
     const val METHOD_OTHER = "أخرى"
-    const val ASSISTANT_DISCLOSURE = "الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google."
 }
