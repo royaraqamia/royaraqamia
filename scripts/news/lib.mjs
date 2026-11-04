@@ -38,16 +38,31 @@ const TRACKING_PARAM = /^(?:utm_|at_|traffic_|ito$|fbclid$|gclid$|mc_cid$|mc_eid
 /** Arabic diacritics and tatweel, which must not decide a duplicate. */
 const ARABIC_MARKS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
 
+/** The named entities a feed or a page writes, and what each one stands for. */
+const NAMED_ENTITIES = { nbsp: ' ', quot: '"', apos: "'", lt: '<', gt: '>', amp: '&' };
+
+/** One entity, whichever of the three spellings it uses. */
+const ENTITY = /&(?:#(\d+)|#x([0-9a-f]+)|([a-z][a-z0-9]*));/gi;
+
+/**
+ * Decodes a document's entities exactly once.
+ *
+ * One pass over the text, not one `replace` per entity kind: a chain decodes its
+ * own output, so `&amp;lt;` — the four characters `&lt;` in the document — came
+ * back as `<`, one level deeper than the document actually encoded. Text from a
+ * feed is a stranger's, and a title that decodes twice is how markup the source
+ * never wrote ends up where a plain name belongs.
+ *
+ * An entity this table does not know is left as it was written.
+ */
 export function decodeEntities(value) {
-  return value
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&quot;/gi, '"')
-    .replace(/&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&amp;/gi, '&');
+  return String(value ?? '').replace(ENTITY, (entity, decimal, hex, named) => {
+    if (named) return NAMED_ENTITIES[named.toLowerCase()] ?? entity;
+
+    const code = decimal ? Number(decimal) : parseInt(hex, 16);
+    if (!Number.isFinite(code) || code > 0x10ffff) return entity;
+    return String.fromCodePoint(code);
+  });
 }
 
 export function stripHtml(value) {
