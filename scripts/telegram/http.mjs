@@ -104,7 +104,7 @@ export async function github(path, init = {}, token = githubToken()) {
  * voice note into text, and distilling the conversation into memory. The agent
  * itself is a process (see `agent.mjs`), not an HTTP call.
  */
-export async function askModel(messages, { model, tools } = {}) {
+export async function askModel(messages, { model, tools, temperature = 0.4 } = {}) {
   const key = openCodeKey();
   if (!key) throw new Error('OPENCODE_API_KEY is not set');
 
@@ -118,7 +118,7 @@ export async function askModel(messages, { model, tools } = {}) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.4,
+      temperature,
       messages,
       ...(tools ? { tools, tool_choice: 'auto' } : {}),
     }),

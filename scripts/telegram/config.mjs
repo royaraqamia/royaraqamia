@@ -17,10 +17,16 @@ export const MAX_STATUS = 600;
 export const DEFAULT_TZ_MINUTES = 180;
 
 /**
- * The one model. Pinned here rather than in the workflow because the bridge and
- * the agent must agree: the bridge writes the prompt the agent reads.
+ * The model, in the two shapes the two callers need.
+ *
+ * `MODEL` is the bare id the gateway's chat-completions API expects; `AGENT_MODEL`
+ * is the same model as `opencode run --model` names it, provider first. Passing
+ * the prefixed form to the API answers `Model is unavailable`, which is how the
+ * title generator and the distiller would both have failed in production while
+ * the agent worked.
  */
-export const MODEL = 'opencode-go/deepseek-v4.1-flash';
+export const MODEL = 'deepseek-v4.1-flash';
+export const AGENT_MODEL = 'opencode-go/deepseek-v4.1-flash';
 
 /**
  * Cheapest first, and a failure steps over instead of ending the attempt.

@@ -17,7 +17,7 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
-import { MODEL } from './config.mjs';
+import { AGENT_MODEL } from './config.mjs';
 
 const MAX_CAPTURED_TEXT = 200_000;
 
@@ -84,7 +84,7 @@ export async function runAgent({
   preamble = '',
   files = [],
   cwd,
-  model = MODEL,
+  model = AGENT_MODEL,
   timeoutMs = 45 * 60_000,
   pollIntervalMs = 5_000,
   onProgress = () => {},

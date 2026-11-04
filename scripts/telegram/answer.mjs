@@ -12,7 +12,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DEFAULT_TZ_MINUTES, MODEL, TRANSCRIBE_MODELS, workflowRunUrl } from './config.mjs';
+import { AGENT_MODEL, DEFAULT_TZ_MINUTES, TRANSCRIBE_MODELS, workflowRunUrl } from './config.mjs';
 import { runAgent, agentWorkdir } from './agent.mjs';
 import { agentEnvironment, installGuards } from './guards.mjs';
 import { askModel, db, telegram } from './http.mjs';
@@ -284,7 +284,7 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
     result = await runAgent({
       prompt: buildUserMessage({ text, context, attachments, language }),
       cwd,
-      model: MODEL,
+      model: AGENT_MODEL,
       files: attachments.map((item) => item.path),
       env: agentEnvironment({ guardedPath }),
       onProgress: (line) => {
