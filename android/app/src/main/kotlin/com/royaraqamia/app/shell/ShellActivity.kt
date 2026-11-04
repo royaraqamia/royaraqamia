@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
+import com.royaraqamia.app.account.AccountServicesScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
@@ -259,6 +260,18 @@ class ShellActivity : ComponentActivity() {
                                     signedIn = signedIn,
                                     onSignIn = ::showSignIn,
                                 )
+                            // The services a member hid from `خدماتنا` (#978): the
+                            // page's own read and write, drawn natively and off
+                            // until its gate passes (ADR-0117), so the document
+                            // still opens on top of it. A switch also moves the
+                            // shell's menu, because both read the same set.
+                            "/account/services" ->
+                                AccountServicesScreen(
+                                    repository = graph.hiddenServices,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
+                                    onHiddenChanged = { hiddenRoutes = it },
+                                )
                             // The account news page (#950): the checklist, the
                             // private feeds and the proposal form. Ported and
                             // switched off until the visual gate passes.
@@ -387,11 +400,7 @@ class ShellActivity : ComponentActivity() {
                         lifecycleScope.launch { refreshUnreadCount() }
                         // The menu is drawn before the queue drains, so it is
                         // right on the first open rather than after a sync.
-                        hiddenRoutes =
-                            when (val hidden = graph.hiddenServices.list()) {
-                                is ApiResult.Success -> hidden.value
-                                is ApiResult.Failure -> emptySet()
-                            }
+                        refreshHiddenRoutes()
                         graph.drainOutbox()
                     }
                 }
@@ -485,7 +494,14 @@ class ShellActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
-        if (signedIn) lifecycleScope.launch { refreshUnreadCount() }
+        if (signedIn) {
+            lifecycleScope.launch {
+                refreshUnreadCount()
+                // The services page is still the document, so a switch there is
+                // the one change the frame underneath cannot hear otherwise (#978).
+                refreshHiddenRoutes()
+            }
+        }
         update.maybeCheck(false)
         update.resume()
     }
@@ -526,6 +542,19 @@ class ShellActivity : ComponentActivity() {
             when (val result = graph.notifications.unreadCount()) {
                 is ApiResult.Success -> result.value
                 is ApiResult.Failure -> null
+            }
+    }
+
+    /**
+     * The services this member hid, from the route the account screen writes
+     * (#978). A failed read answers the whole menu, the safe failure ADR-0112
+     * records: a network blip must not make the app look like it lost its rows.
+     */
+    private suspend fun refreshHiddenRoutes() {
+        hiddenRoutes =
+            when (val hidden = graph.hiddenServices.list()) {
+                is ApiResult.Success -> hidden.value
+                is ApiResult.Failure -> emptySet()
             }
     }
 

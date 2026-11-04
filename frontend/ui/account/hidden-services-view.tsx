@@ -8,6 +8,7 @@ import { cn } from '@/frontend/shared/cn';
 import { useHiddenServices } from '@/frontend/state/hidden-services-provider';
 import { useSession } from '@/frontend/state/session-provider';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
 import { SERVICE_ROUTES, type HiddenServiceKey } from '@/shared/contracts/hidden-services';
@@ -23,44 +24,15 @@ import { SERVICE_ROUTES, type HiddenServiceKey } from '@/shared/contracts/hidden
  *
  * Nothing here is a delete: the copy says so, because a member who reads "hide"
  * as "remove my notes" is one tap away from a wrong assumption.
+ *
+ * The page's heading lives here rather than in `page.tsx` so the app's screen can
+ * draw the same sentence from the same generated copy (ADR-0098).
  */
 export function HiddenServicesView() {
   const { user, isLoading } = useSession();
   const { hidden, status, reload, save } = useHiddenServices();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-2.5" aria-busy="true" aria-label={HIDDEN_SERVICES_COPY.loadingLabel}>
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <SignInCta href="/auth/login?redirect=/account/services">
-        {HIDDEN_SERVICES_COPY.signIn}
-      </SignInCta>
-    );
-  }
-
-  if (status === 'failed') {
-    return <NeedsConnection message={HIDDEN_SERVICES_COPY.offline} onRetry={() => void reload()} />;
-  }
-
-  if (status === 'loading') {
-    return (
-      <div className="space-y-2.5" aria-busy="true" aria-label={HIDDEN_SERVICES_COPY.loadingLabel}>
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-        <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
-      </div>
-    );
-  }
 
   const toggle = async (href: HiddenServiceKey) => {
     if (isSaving) return;
@@ -87,25 +59,50 @@ export function HiddenServicesView() {
     return item ? [{ ...item, href: route }] : [];
   });
 
-  return (
+  const loading = (
+    <div
+      data-visual="services-loading"
+      className="space-y-2.5"
+      aria-busy="true"
+      aria-label={HIDDEN_SERVICES_COPY.loadingLabel}
+    >
+      <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+      <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+      <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
+    </div>
+  );
+
+  const body = isLoading ? (
+    loading
+  ) : !user ? (
+    <SignInCta href="/auth/login?redirect=/account/services">
+      {HIDDEN_SERVICES_COPY.signIn}
+    </SignInCta>
+  ) : status === 'failed' ? (
+    <NeedsConnection message={HIDDEN_SERVICES_COPY.offline} onRetry={() => void reload()} />
+  ) : status === 'loading' ? (
+    loading
+  ) : (
     <div className="space-y-4">
       {saveError && (
         <p
           role="alert"
+          data-visual="services-error"
           className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive"
         >
           {saveError}
         </p>
       )}
 
-      <ul className="space-y-2.5">
-        {rows.map((item) => {
+      <ul className="space-y-2.5" data-visual="services-list">
+        {rows.map((item, index) => {
           const isShown = !hidden.has(item.href);
           const Icon = item.icon;
 
           return (
             <li
               key={item.href}
+              data-visual={`services-row-${index}`}
               className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -113,10 +110,16 @@ export function HiddenServicesView() {
                   <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
                 ) : null}
                 <div className="min-w-0 space-y-0.5">
-                  <p className="truncate text-sm font-bold text-foreground sm:text-base">
+                  <p
+                    data-visual={`services-name-${index}`}
+                    className="truncate text-sm font-bold text-foreground sm:text-base"
+                  >
                     {item.label}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p
+                    data-visual={`services-state-${index}`}
+                    className="text-xs text-muted-foreground"
+                  >
                     {isShown ? HIDDEN_SERVICES_COPY.shown : HIDDEN_SERVICES_COPY.hidden}
                   </p>
                 </div>
@@ -125,6 +128,7 @@ export function HiddenServicesView() {
               <button
                 type="button"
                 role="switch"
+                data-visual={`services-switch-${index}`}
                 aria-checked={isShown}
                 aria-label={(isShown
                   ? HIDDEN_SERVICES_COPY.hideAria
@@ -154,10 +158,25 @@ export function HiddenServicesView() {
       </ul>
 
       {allHidden && (
-        <p className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground">
+        <p
+          data-visual="services-all-hidden"
+          className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground"
+        >
           {HIDDEN_SERVICES_COPY.allHidden}
         </p>
       )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <header className="mb-10 text-center" data-visual="services-title">
+        <SectionTitle as="h1">
+          <SectionTitleHighlight>{HIDDEN_SERVICES_COPY.title}</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+
+      {body}
     </div>
   );
 }

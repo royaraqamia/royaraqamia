@@ -1,0 +1,29 @@
+{
+  "surface": "account-services",
+  "component": "account-services",
+  "web": {
+    "file": "frontend/ui/account/hidden-services-copy.ts",
+    "export": "HIDDEN_SERVICES_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesCopy.kt",
+    "object": "AccountServicesCopy"
+  },
+  "notes": {
+    "source": "The hidden-services page's words, in both clients (#978). The site's `frontend/ui/account/hidden-services-view.tsx` is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098). The row labels are not here: they are the `خدماتنا` menu's own, generated from `shared/copy/shell-services.json`, so the switch and the menu cannot name a service differently.",
+    "placeholders": "`{name}` is the service's menu label, used only for the switch's accessible label. Each client substitutes it itself, so the sentence around it stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "الخدمات الظَّاهرة",
+    "shown": "ظاهرة",
+    "hidden": "مخفيَّة",
+    "hideAria": "إخفاء {name}",
+    "showAria": "إظهار {name}",
+    "hideFailed": "تعذَّر حفظ التَّغيير. أعد المحاولة.",
+    "allHidden": "أخفيت كل الخدمات. أظهر واحدة على الأقل لتظهر في القائمة من جديد.",
+    "loadingLabel": "جاري تحميل الخدمات…",
+    "offline": "تعذَّر تحميل حالة الخدمات: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة.",
+    "signIn": "سجِّل الدُّخول لتخصيص الخدمات الظَّاهرة."
+  }
+}

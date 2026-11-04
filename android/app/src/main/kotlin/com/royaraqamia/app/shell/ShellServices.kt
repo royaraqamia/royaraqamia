@@ -456,7 +456,7 @@ internal fun labelOf(entry: ServicesEntry): String =
     }
 
 /** The site's own glyph for a row, from its `lucide-react` imports. */
-private fun iconOf(entry: ServicesEntry): ImageVector =
+internal fun iconOf(entry: ServicesEntry): ImageVector =
     when (entry) {
         ServicesEntry.Trigger -> LucideVectors.Package
         ServicesEntry.RequestProject -> LucideVectors.Rocket
