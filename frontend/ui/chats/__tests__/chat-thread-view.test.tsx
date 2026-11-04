@@ -310,7 +310,7 @@ describe('ChatThreadView refused writes', () => {
 /**
  * The assistant (#817): one thread, a text-only composer, and three states that
  * are sentences rather than failures — no provider key, a Free member, and a day
- * whose allowance is spent. The disclosure is drawn in the thread itself.
+ * whose allowance is spent.
  */
 describe('ChatThreadView assistant', () => {
   const PRO_ALLOWANCE = {
@@ -338,12 +338,9 @@ describe('ChatThreadView assistant', () => {
     api.getChatAssistant.mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
   });
 
-  it('draws the disclosure and a text-only composer', async () => {
+  it('gives the assistant a text-only composer', async () => {
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(
-      screen.getByText('الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.')
-    ).toBeInTheDocument();
     expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'إرفاق ملف' })).toBeNull();
   });

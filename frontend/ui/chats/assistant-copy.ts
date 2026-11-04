@@ -9,11 +9,6 @@
  * one file, not a search.
  */
 export const ASSISTANT_COPY = {
-  /**
-   * The disclosure (#817). Gemini's free tier uses prompts to improve Google's
-   * products, which is said where it is true and only while it is true.
-   */
-  disclosure: 'الحوارات مع المساعد قد تُستخدم لتحسين خدمات Google.',
   intro: 'اسأل المساعد أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك...',
   send: 'إرسال السؤال',

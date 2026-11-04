@@ -277,9 +277,9 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `DOWNLOADER_PROVIDER_TOKEN` | **Secret.** Bearer token the app sends to the provider host | `change-me` | Media Downloader only |
 | `DOWNLOADER_CALLBACK_SECRET` | **Secret.** Shared secret the provider sends to `/api/downloader/callback` | `change-me` (random 32 bytes) | Media Downloader only |
 
-| `AI_CHAT_BASE_URL` | OpenAI-compatible base URL of the assistant's provider (empty = Gemini's compatibility endpoint) | `https://generativelanguage.googleapis.com/v1beta/openai/` | Chats assistant only |
-| `AI_CHAT_MODEL` | The model id the assistant asks for (empty = `gemini-3.8-flash`) | `gemini-3.8-flash` | Chats assistant only |
-| `AI_CHAT_API_KEY` | **Secret.** Provider key for the assistant's turns; empty means the assistant is off, not broken | `change-me` | Chats assistant only |
+| `AI_CHAT_BASE_URL` | OpenAI-compatible base URL of the assistant's provider (empty = the OpenCode gateway) | `https://opencode.ai/inference/go/openai/v1` | Chats assistant only |
+| `AI_CHAT_MODEL` | The model id the assistant asks for (empty = `deepseek-v4.1-flash`) | `deepseek-v4.1-flash` | Chats assistant only |
+| `AI_CHAT_API_KEY` | **Secret.** Provider key for the assistant's turns; empty falls back to `OPENCODE_API_KEY`, and neither means the assistant is off, not broken | `change-me` | Chats assistant only |
 
 > **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 

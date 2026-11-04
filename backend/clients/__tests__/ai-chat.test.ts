@@ -48,19 +48,30 @@ describe('the assistant provider', () => {
 
   it('is off when no key is configured', () => {
     vi.stubEnv('AI_CHAT_API_KEY', '');
+    vi.stubEnv('OPENCODE_API_KEY', '');
     expect(createAiChatClient()).toBeNull();
   });
 
-  it('uses the documented Gemini defaults when nothing else is set', async () => {
+  it('reads the pipeline key when the dedicated one is absent', () => {
+    vi.stubEnv('AI_CHAT_API_KEY', '');
+    vi.stubEnv('OPENCODE_API_KEY', 'key');
+    expect(createAiChatClient()).not.toBeNull();
+  });
+
+  it('uses the documented gateway defaults when nothing else is set', async () => {
     vi.stubEnv('AI_CHAT_API_KEY', 'key');
     vi.stubEnv('AI_CHAT_BASE_URL', '');
     vi.stubEnv('AI_CHAT_MODEL', '');
 
-    const calls: { url: string; body: unknown }[] = [];
+    const calls: { url: string; body: unknown; headers: Record<string, string> }[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string, init: RequestInit) => {
-        calls.push({ url, body: JSON.parse(String(init.body)) });
+        calls.push({
+          url,
+          body: JSON.parse(String(init.body)),
+          headers: init.headers as Record<string, string>,
+        });
         return new Response(sse('[DONE]\n\n'), { status: 200 });
       })
     );
@@ -72,10 +83,11 @@ describe('the assistant provider', () => {
       // The body carries no text, so nothing is yielded.
     }
 
-    expect(calls[0]?.url).toBe(
-      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-    );
+    expect(calls[0]?.url).toBe('https://opencode.ai/inference/go/openai/v1/chat/completions');
     expect((calls[0]?.body as { model: string }).model).toBe(AI_CHAT_DEFAULT_MODEL);
+    // Without a session name the gateway answers 400 MissingSessionID, so the
+    // header is part of the contract rather than a nicety.
+    expect(calls[0]?.headers['x-opencode-session']).toBe('assistant');
     expect(env.aiChatModel).toBe('');
   });
 

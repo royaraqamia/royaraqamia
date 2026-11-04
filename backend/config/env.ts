@@ -137,9 +137,11 @@ export const env = {
   },
   /**
    * The assistant's provider (ADR-0113, #817). Any OpenAI-compatible endpoint
-   * works, so switching vendor is these three values and nothing else: Gemini's
-   * compatibility URL and a Flash model are the documented defaults, and
-   * DeepSeek's own base URL is the escape hatch. A missing key means the
+   * works, so switching vendor is these three values and nothing else: OpenCode's
+   * gateway and `deepseek-v4.1-flash` are the defaults — the endpoint and key the
+   * agent pipeline already answers with — and another base URL is the escape
+   * hatch. `OPENCODE_API_KEY` is the same credential, so a deployment that has it
+   * for the workflows does not carry a second copy. A missing key means the
    * assistant is off — the thread stays readable and says so — not broken.
    */
   get aiChatBaseUrl(): string | undefined {
@@ -149,7 +151,9 @@ export const env = {
     return read('AI_CHAT_MODEL');
   },
   get aiChatApiKey(): string | undefined {
-    return read('AI_CHAT_API_KEY');
+    // `??` would stop at an empty value, which is exactly what a cleared
+    // variable and the test suite both produce.
+    return read('AI_CHAT_API_KEY')?.trim() || read('OPENCODE_API_KEY')?.trim() || undefined;
   },
   get pushEndpointAllowlist(): string[] {
     const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
