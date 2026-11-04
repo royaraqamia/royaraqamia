@@ -203,12 +203,24 @@ export async function preparePersonalDigests({
       return;
     }
 
-    const narrowed = { ...candidates, items };
+    // The reader's own feeds lead the list they are read from (ADR-0106): the
+    // shared candidates outnumber them ten to one, and a model reads a long list
+    // in order. The prompt's own-source rule is what reserves the slots; this is
+    // what makes those slots the first thing it sees.
+    const ownSourceIds = [...new Set(mine.map((item) => item.sourceId))];
+    const own = new Set(ownSourceIds);
+    const ordered = [
+      ...items.filter((item) => own.has(item.sourceId)),
+      ...items.filter((item) => !own.has(item.sourceId)),
+    ];
+
+    const narrowed = { ...candidates, items: ordered };
     const prompt = buildPrompt(narrowed, {
       minStories: MIN_CANDIDATES,
       targetStories: TARGET_STORIES,
       maxStories: MAX_STORIES,
       personal: true,
+      ownSourceIds,
     });
 
     const directory = join(out, reader.userId);

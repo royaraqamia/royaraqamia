@@ -39,6 +39,13 @@ const MAX_ITEMS_PER_SOURCE = 4;
 const MAX_TOTAL_ITEMS = 90;
 const MAX_PRIVATE_ITEMS = 60;
 const FRESH_HOURS = 48;
+/**
+ * A reader's own feed is read over a week, not two days (ADR-0106's 2026-11-04
+ * amendment). A Telegram channel or a quiet blog that posts twice a week would
+ * otherwise never reach the digest its owner asked for — and the digest itself
+ * only lives seven days, so nothing older can be published anywhere.
+ */
+const PRIVATE_FRESH_HOURS = 168;
 const DEDUPE_TITLE_SIMILARITY = 0.75;
 const MIN_CANDIDATES = 8;
 const FETCH_TIMEOUT_MS = 20_000;
@@ -238,7 +245,7 @@ export async function collectPrivateCandidates({
 
       const fresh = (parsed ?? [])
         .filter((item) => item.url && item.title && isPublishableUrl(item.url))
-        .filter((item) => isFresh(item.publishedAt, source.freshHours ?? FRESH_HOURS, now))
+        .filter((item) => isFresh(item.publishedAt, source.freshHours ?? PRIVATE_FRESH_HOURS, now))
         .sort(
           (a, b) => new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime()
         )

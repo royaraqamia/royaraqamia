@@ -42,10 +42,30 @@ function repository(overrides: Partial<NewsPersonalDigestRepository> = {}) {
   } satisfies NewsPersonalDigestRepository;
 }
 
+function userSources(ids: string[] = []) {
+  return {
+    list: vi.fn(async () =>
+      ids.map((id, index) => ({
+        id,
+        name: `مصدر ${index + 1}`,
+        url: `https://example.com/${id}`,
+        kind: 'telegram' as const,
+        category: 'other' as const,
+        region: 'world' as const,
+        status: 'ready' as const,
+        failureCount: 0,
+        lastError: null,
+        lastCheckedAt: null,
+        createdAt: '2026-10-23T00:00:00.000Z',
+      }))
+    ),
+  };
+}
+
 describe('personal digest service', () => {
   it('reads the latest digest when no day is asked for', async () => {
     const repo = repository();
-    const day = await createNewsPersonalDigestService(repo).get('user-1', {});
+    const day = await createNewsPersonalDigestService(repo, userSources()).get('user-1', {});
 
     expect(day).toEqual(DAY);
     expect(repo.getLatest).toHaveBeenCalledWith('user-1');
@@ -54,7 +74,7 @@ describe('personal digest service', () => {
 
   it('reads the requested day and filters it by category', async () => {
     const repo = repository();
-    const day = await createNewsPersonalDigestService(repo).get('user-1', {
+    const day = await createNewsPersonalDigestService(repo, userSources()).get('user-1', {
       date: '2026-10-20',
       category: 'tech',
     });
@@ -65,6 +85,15 @@ describe('personal digest service', () => {
 
   it('reports nothing for a reader with no digest, so the page falls back', async () => {
     const repo = repository({ getLatest: vi.fn(async () => null) });
-    expect(await createNewsPersonalDigestService(repo).get('user-1', {})).toBeNull();
+    expect(await createNewsPersonalDigestService(repo, userSources()).get('user-1', {})).toBeNull();
+  });
+
+  it('names the feeds only this reader holds, for the page’s own-source notice', async () => {
+    const own = userSources(['feed-1', 'feed-2']);
+
+    expect(await createNewsPersonalDigestService(repository(), own).ownSourceIds('user-1')).toEqual(
+      ['feed-1', 'feed-2']
+    );
+    expect(own.list).toHaveBeenCalledWith('user-1');
   });
 });

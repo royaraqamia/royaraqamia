@@ -37,7 +37,7 @@ function parseArgs(argv) {
   return options;
 }
 
-function compact(item) {
+function compact(item, own = false) {
   return {
     id: item.id,
     title: item.title,
@@ -47,6 +47,7 @@ function compact(item) {
     region: item.region,
     tier: item.tier,
     publishedAt: item.publishedAt,
+    ...(own ? { own: true } : {}),
   };
 }
 
@@ -59,17 +60,54 @@ function compact(item) {
  * list, so it reuses every rule and only moves the size window: the reader who
  * follows six feeds does not have ten stories, and padding with sources they
  * excluded would make their selection a lie.
+ *
+ * A reader's own feeds (ADR-0106) are the one thing the shared priorities do not
+ * cover: they are `other`/`world`/tier 2 by default and lose every tie against a
+ * front page, which is why a personal digest used to contain none of them. Their
+ * candidates carry `"own": true`, they are listed first, and the rule reserves a
+ * slot for each one before the window is filled from the general list.
  */
 export function buildPrompt(candidates, options = {}) {
-  const { minStories = 8, targetStories = 10, maxStories = 12, personal = false } = options;
-  const daily = candidates.items.map(compact);
+  const {
+    minStories = 8,
+    targetStories = 10,
+    maxStories = 12,
+    personal = false,
+    ownSourceIds = [],
+  } = options;
+  const ownIds = new Set(ownSourceIds);
+  const daily = candidates.items.map((item) => compact(item, ownIds.has(item.sourceId)));
+
+  // Names, not ids: the rule has to be readable, and a reader's channel names are
+  // what the model can recognise in the candidate list.
+  const ownNames = [];
+  for (const item of candidates.items) {
+    if (ownIds.has(item.sourceId) && !ownNames.includes(item.sourceName)) {
+      ownNames.push(item.sourceName);
+    }
+  }
+
+  const ownRule =
+    personal && ownNames.length > 0
+      ? `
+THE READER'S OWN SOURCES
+- This reader added ${ownNames.length === 1 ? 'a source' : `${ownNames.length} sources`} themselves: ${ownNames
+          .map((name) => `"${name}"`)
+          .join(', ')}. Their candidates carry "own": true, and they come first in the list.
+- This rule wins over the priority order below: reserve a slot for every own source that has a
+  candidate, one story each, before filling the rest of the window from the general list. That is
+  the reason this reader has a digest of their own; dropping them for a bigger headline defeats it.
+- An own source with no candidate today has nothing new: say nothing about it, and never pad it
+  from another source on its behalf.
+`
+      : '';
 
   return `You are the editor of a ${personal ? 'personal' : 'daily'} Arabic news digest published on a Syrian website (royaraqamia).
 Your job: select the day's most important stories from the candidate list below and write a short,
 factual Arabic digest. The digest should read like a careful morning briefing, not like a link dump.
 
 TODAY (Damascus): ${candidates.digestDate}
-
+${ownRule}
 HARD RULES
 1. Use ONLY the candidates below. Do not invent an event, a number, a name or a URL. If a fact is not in
    the candidate's title or excerpt, leave it out.

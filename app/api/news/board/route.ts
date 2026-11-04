@@ -103,7 +103,8 @@ async function resolveViewer(): Promise<NewsViewer | null> {
 /**
  * Whether this answer depends on who asked: a digest that exists for them
  * (`available`, even when the shared view is being shown), their own digest
- * (`active`), or the shared one narrowed to the sources they kept.
+ * (`active`), the shared one narrowed to the sources they kept, or the count of
+ * their own feeds that reached the digest on screen (`ownSources`, ADR-0106).
  *
  * `available` matters on its own: a reader who opted in and has a digest for
  * the day still gets `personal.available` on the shared view, and keeping that
@@ -114,6 +115,7 @@ function personalised(board: NewsBoard): boolean {
   return (
     board.personal?.available === true ||
     board.personal?.active === true ||
+    board.personal?.ownSources != null ||
     board.preferences !== null
   );
 }

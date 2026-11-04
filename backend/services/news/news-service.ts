@@ -24,7 +24,7 @@ export interface NewsService {
   getBoard(query: NewsQuery, options?: NewsBoardOptions): Promise<NewsBoard>;
 
   /**
-   * Story suggestions for the search combobox, over the retained month. The
+   * Story suggestions for the search combobox, over the retained window. The
    * term is sanitised here rather than trusted, so the route cannot hand raw
    * input to the repository's PostgREST filter.
    */
@@ -110,11 +110,11 @@ export function createNewsService(repository: NewsRepository): NewsService {
     async getBoard(query: NewsQuery, options: NewsBoardOptions = {}): Promise<NewsBoard> {
       // The archive strip is at most one per retained day, so this bound is the
       // retention window itself rather than a magic page size.
-      const dates = await repository.listDigestDates(NEWS_RETENTION_DAYS + 1);
+      const dates = await repository.listDigestDates(NEWS_RETENTION_DAYS);
       const term = query.q ? sanitizeNewsQuery(query.q) : '';
 
       if (term.length > 0) {
-        // Search is the retained month, not the reader's selection: a story they
+        // Search is the retained window, not the reader's selection: a story they
         // hid is still a story they searched for, and narrowing here would make
         // the search box quietly lie about what the site has published.
         return {

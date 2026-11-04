@@ -125,5 +125,8 @@ export function createDefaultNewsAdminService(): NewsSourceAdminService {
 export function createNewsPersonalDigestServiceFor(
   supabase: SupabaseClient<Database>
 ): NewsPersonalDigestService {
-  return createNewsPersonalDigestService(createNewsPersonalDigestRepository(supabase));
+  return createNewsPersonalDigestService(
+    createNewsPersonalDigestRepository(supabase),
+    createNewsUserSourcesRepository(supabase)
+  );
 }

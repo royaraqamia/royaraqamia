@@ -4,6 +4,7 @@ const mockResolveOptional = vi.fn();
 const mockPreferencesGet = vi.fn();
 const mockGetBoard = vi.fn();
 const mockPersonalGet = vi.fn();
+const mockOwnSourceIds = vi.fn();
 const mockSearchSuggestions = vi.fn();
 
 vi.mock('@/backend/config/identity', () => ({
@@ -24,6 +25,7 @@ vi.mock('@/backend/config/news', () => ({
   }),
   createNewsPersonalDigestServiceFor: () => ({
     get: (...args: unknown[]) => mockPersonalGet(...args),
+    ownSourceIds: (...args: unknown[]) => mockOwnSourceIds(...args),
   }),
 }));
 
@@ -87,6 +89,7 @@ beforeEach(() => {
   mockResolveOptional.mockResolvedValue(session());
   mockPreferencesGet.mockResolvedValue(READER_PREFERENCES);
   mockPersonalGet.mockResolvedValue(null);
+  mockOwnSourceIds.mockResolvedValue([]);
   mockSearchSuggestions.mockResolvedValue([]);
 });
 
@@ -109,7 +112,12 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(shared.day);
     expect(result.preferences).toEqual(PREFERENCES_EFFECT);
-    expect(result.personal).toEqual({ enabled: true, available: false, active: false });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: false,
+      active: false,
+      ownSources: null,
+    });
   });
 
   it('serves the personal digest when it is for the shared day', async () => {
@@ -121,7 +129,12 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(personal);
     expect(result.preferences).toBeNull();
-    expect(result.personal).toEqual({ enabled: true, available: true, active: true });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: true,
+      active: true,
+      ownSources: null,
+    });
   });
 
   it('keeps the personal digest for an explicit day', async () => {
@@ -133,7 +146,12 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(mockPersonalGet).toHaveBeenCalledWith('user-1', { date: '2026-10-20' });
     expect(result.day).toEqual(personal);
-    expect(result.personal).toEqual({ enabled: true, available: true, active: true });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: true,
+      active: true,
+      ownSources: null,
+    });
   });
 
   it('falls back to the shared digest for an explicit day without a personal one', async () => {
@@ -148,7 +166,12 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(shared.day);
     expect(result.preferences).toEqual(PREFERENCES_EFFECT);
-    expect(result.personal).toEqual({ enabled: true, available: false, active: false });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: false,
+      active: false,
+      ownSources: null,
+    });
   });
 
   it('may show the latest personal digest when there is no shared digest', async () => {
@@ -159,7 +182,12 @@ describe('loadNewsBoard personal digest selection', () => {
     const result = await loadNewsBoard({}, 'mine');
 
     expect(result.day).toEqual(personal);
-    expect(result.personal).toEqual({ enabled: true, available: true, active: true });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: true,
+      active: true,
+      ownSources: null,
+    });
   });
 
   it('reports a matching personal digest as available but not active in the public view', async () => {
@@ -170,7 +198,105 @@ describe('loadNewsBoard personal digest selection', () => {
     const result = await loadNewsBoard({}, 'public');
 
     expect(result.day).toEqual(shared.day);
-    expect(result.personal).toEqual({ enabled: true, available: true, active: false });
+    expect(result.personal).toEqual({
+      enabled: true,
+      available: true,
+      active: false,
+      ownSources: null,
+    });
+  });
+});
+
+/**
+ * A reader's own feeds are the one part of the digest the page has to explain:
+ * "nothing from them today" and "your digest is switched off" look identical to
+ * a reader who was promised their sources feed it (ADR-0106's 2026-11-04
+ * amendment).
+ */
+describe('loadNewsBoard own sources', () => {
+  const OWN_A = '11111111-1111-4111-8111-111111111111';
+  const OWN_B = '22222222-2222-4222-8222-222222222222';
+  const OWN = [OWN_A, OWN_B];
+
+  function withStories(entry: NewsDay, storySourceIds: string[]): NewsDay {
+    return {
+      ...entry,
+      stories: storySourceIds.map((sourceId, index) => ({
+        id: `story-${index + 1}`,
+        position: index + 1,
+        category: 'other',
+        region: 'world',
+        headline: `خبر ${index + 1}`,
+        summary: 'ملخص الخبر.',
+        whyItMatters: null,
+        sourceId,
+        sourceName: 'مصدر',
+        sourceUrl: 'https://example.com/1',
+        sourcePublishedAt: null,
+      })),
+    };
+  }
+
+  it('reports how many own sources reached the digest on screen', async () => {
+    mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockPersonalGet.mockResolvedValue(
+      withStories(day('2026-10-26', 'personal-26'), [OWN_A, 'aljazeera-ar'])
+    );
+    mockOwnSourceIds.mockResolvedValue(OWN);
+
+    const result = await loadNewsBoard({}, 'mine');
+
+    expect(result.personal?.ownSources).toEqual({ total: 2, contributed: 1 });
+  });
+
+  it('reports zero contributions when the digest has none of them', async () => {
+    mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockPersonalGet.mockResolvedValue(
+      withStories(day('2026-10-26', 'personal-26'), ['aljazeera-ar'])
+    );
+    mockOwnSourceIds.mockResolvedValue(OWN);
+
+    const result = await loadNewsBoard({}, 'mine');
+
+    expect(result.personal?.ownSources).toEqual({ total: 2, contributed: 0 });
+  });
+
+  it('counts what the shared digest shows when the reader asked for it', async () => {
+    const shared = board({
+      day: withStories(day('2026-10-26', 'shared-26'), [OWN_B, 'bbc-arabic']),
+    });
+    mockGetBoard.mockResolvedValue(shared);
+    mockPersonalGet.mockResolvedValue(withStories(day('2026-10-26', 'personal-26'), [OWN_A]));
+    mockOwnSourceIds.mockResolvedValue(OWN);
+
+    const result = await loadNewsBoard({}, 'public');
+
+    expect(result.personal?.ownSources).toEqual({ total: 2, contributed: 1 });
+  });
+
+  it('still reports them when the personal digest is switched off', async () => {
+    mockPreferencesGet.mockResolvedValue({ sourceIds: [], personalEnabled: false });
+    mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockOwnSourceIds.mockResolvedValue(OWN);
+
+    const result = await loadNewsBoard({}, 'mine');
+
+    expect(result.personal).toEqual({
+      enabled: false,
+      available: false,
+      active: false,
+      ownSources: { total: 2, contributed: 0 },
+    });
+  });
+
+  it('keeps the page when the reader’s own list cannot be read', async () => {
+    mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockOwnSourceIds.mockRejectedValue(new Error('database down'));
+
+    const result = await loadNewsBoard({}, 'mine');
+
+    expect(result.day?.digest.id).toBe('shared-26');
+    expect(result.personal?.ownSources).toBeNull();
   });
 });
 
