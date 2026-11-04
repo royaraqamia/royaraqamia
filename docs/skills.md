@@ -40,6 +40,10 @@ Use proactively when task matches. Load with the `skill` tool.
 - `supabase` — Database, Auth, Edge Functions, Realtime, Storage, Vectors, Cron, Queues, migrations, SSR
 - `supabase-postgres-best-practices` — Schema, RLS, indexes, migrations, pgvector, pg_cron, performance
 
+## Repo-specific
+
+- `security-review` — Audit a change against this repository's boundaries: RLS and grants, secrets, the MCP threat boundary, GitHub tokens, and the Telegram bot's write path
+
 ## UI/Design (ui-ux-pro-max)
 
 - `ui-ux-pro-max` — 84 styles, 192 palettes, 74 font pairings, UX guidelines
