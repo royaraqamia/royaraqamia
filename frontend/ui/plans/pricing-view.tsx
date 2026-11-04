@@ -15,7 +15,8 @@ const PRO = 'pro' as const;
  */
 const MCP_KEY = 'mcp_connected_apps';
 
-function priceLabel(cents: number, currency: string): string {
+/** The catalogue's price, as the plan cards and the subscribe form print it. */
+export function planPriceLabel(cents: number, currency: string): string {
   const amount = cents / 100;
   const formatted = amount.toLocaleString('en-US', {
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -74,11 +75,6 @@ function mcpLine(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): string {
 export function PricingView({ catalog }: { catalog: PlanCatalog }) {
   const { settings } = catalog;
 
-  const subscribeMessage = `أريد الاشتراك في الخطَّة المدفوعة: ${priceLabel(
-    settings.priceCents,
-    settings.currency
-  )} كل ${settings.durationDays} يومًا.`;
-
   return (
     <div className="space-y-10 pb-6 sm:space-y-12">
       <header className="text-center">
@@ -121,7 +117,7 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
 
             <p className="flex items-baseline gap-1.5 text-3xl font-black tracking-tight">
               <SectionTitleHighlight>
-                {priceLabel(settings.priceCents, settings.currency)}
+                {planPriceLabel(settings.priceCents, settings.currency)}
               </SectionTitleHighlight>
             </p>
 
@@ -134,7 +130,7 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               </PlanPoint>
             </ul>
 
-            <PaidPlanCta message={subscribeMessage} />
+            <PaidPlanCta />
           </div>
         </section>
       </PlanViewerProvider>

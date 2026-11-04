@@ -72,7 +72,7 @@ _The local-store products, where the app has a real reason to be native: offline
 
 _Forms that end in a server write, so a port has to bring the same validation and the same confirmation as the page._
 
-- [ ] **leads** `/training/apply` `/request-project` `/hire` — todo · #929
+- [ ] **leads** `/training/apply` `/request-project` `/hire` `/pricing/subscribe` — todo · #929
 - [ ] **consultation** `/consultation/book` — todo · #930
 
 ## Operator surfaces

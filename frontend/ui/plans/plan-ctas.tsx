@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 import { useMyUsage } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { cn } from '@/frontend/shared/cn';
 import type { PlanId } from '@/shared/contracts/plans';
 
@@ -74,8 +73,15 @@ export function FreePlanCta() {
   return <CurrentPlanPill className="h-12">{CURRENT_PLAN_LABEL}</CurrentPlanPill>;
 }
 
-/** The paid card's WhatsApp action, or the current-plan label for a member. */
-export function PaidPlanCta({ message }: { message: string }) {
+/**
+ * The paid card's action: the subscribe form, or the current-plan label for a
+ * member who already has the plan.
+ *
+ * It used to open a WhatsApp chat, which left the request with no row the Admin
+ * console could answer. `/pricing/subscribe` records it instead and answers with
+ * a reference code, and the Admin activates the plan from `/admin/plans`.
+ */
+export function PaidPlanCta() {
   const viewer = usePlanViewer();
 
   if (viewer.status === 'pending') return <PendingPill className="h-13 sm:h-14" />;
@@ -88,10 +94,10 @@ export function PaidPlanCta({ message }: { message: string }) {
 
   return (
     <HeroCtaButton asChild className="mt-6 w-full">
-      <a href={getWhatsAppUrl(message)} target="_blank" rel="noopener noreferrer">
+      <Link href="/pricing/subscribe">
         <HeroCtaSheen />
         <span className="relative z-10">اشترِك الآن</span>
-      </a>
+      </Link>
     </HeroCtaButton>
   );
 }

@@ -172,7 +172,7 @@ describe('PricingView', () => {
     expect(screen.queryByText(/تحسين خدمات Google/)).not.toBeInTheDocument();
   });
 
-  it('sends a guest to sign-in with the price in the WhatsApp message', () => {
+  it('sends a guest to sign-in, and the paid pill to the subscribe form', () => {
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByRole('link', { name: 'ابدأ مجَّانًا' })).toHaveAttribute(
@@ -180,12 +180,14 @@ describe('PricingView', () => {
       '/auth/login'
     );
 
-    const subscribe = screen
-      .getAllByRole('link')
-      .filter((link) => link.getAttribute('href')?.includes('wa.me'));
-
-    expect(subscribe.length).toBe(1);
-    expect(subscribe[0]?.getAttribute('href')).toContain(encodeURIComponent('$12'));
+    // No WhatsApp hand-off: the request becomes a row an Admin can answer.
+    expect(
+      screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.includes('wa.me'))
+    ).toHaveLength(0);
+    expect(screen.getByRole('link', { name: 'اشترِك الآن' })).toHaveAttribute(
+      'href',
+      '/pricing/subscribe'
+    );
   });
 
   it('closes the free card for a member who already has it', () => {

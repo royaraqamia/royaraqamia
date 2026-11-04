@@ -23,6 +23,7 @@ export const SUBMISSION_RECEIPT_KEYS = {
   training: 'rr:receipt:training',
   projectRequest: 'rr:receipt:project-request',
   retainer: 'rr:receipt:retainer',
+  subscription: 'rr:receipt:subscription',
 } as const;
 
 export type SubmissionKind = keyof typeof SUBMISSION_RECEIPT_KEYS;

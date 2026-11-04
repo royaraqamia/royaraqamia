@@ -39,6 +39,7 @@ describe('notificationTarget', () => {
     ['consultation_booking', '/admin/consultations/bookings'],
     ['project_request', '/admin/clients/project-requests'],
     ['retainer_request', '/admin/clients/retainers'],
+    ['subscription_request', '/admin/plans/requests'],
   ] as const)('sends %s to the surface it is about', (type, expected) => {
     expect(notificationTarget(notification(type))).toBe(expected);
   });

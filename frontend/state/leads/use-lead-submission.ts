@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TrainingApplicationInput } from '@/shared/contracts/training';
 import type { ProjectRequestInput } from '@/shared/contracts/project-requests';
 import type { RetainerInput } from '@/shared/contracts/retainers';
+import type { SubscriptionRequestInput } from '@/shared/contracts/subscriptions';
 import { submitTrainingApplication } from '@/frontend/api/training';
 import { submitProjectRequest } from '@/frontend/api/project-requests';
 import { submitRetainer } from '@/frontend/api/retainers';
+import { submitSubscriptionRequest } from '@/frontend/api/subscriptions';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
 import {
   LEAD_INTENT_TYPES,
@@ -26,7 +28,8 @@ import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-stora
 export type LeadSubmitInput =
   | { kind: 'training'; value: Omit<TrainingApplicationInput, 'client_id'> }
   | { kind: 'projectRequest'; value: Omit<ProjectRequestInput, 'client_id'> }
-  | { kind: 'retainer'; value: Omit<RetainerInput, 'client_id'> };
+  | { kind: 'retainer'; value: Omit<RetainerInput, 'client_id'> }
+  | { kind: 'subscription'; value: Omit<SubscriptionRequestInput, 'client_id'> };
 
 export type LeadSubmitOutcome =
   | { status: 'sent'; referenceCode: string }
@@ -76,6 +79,8 @@ function dispatch(input: LeadSubmitInput, clientId: string): Promise<SubmitResul
       return submitProjectRequest({ ...input.value, client_id: clientId });
     case 'retainer':
       return submitRetainer({ ...input.value, client_id: clientId });
+    case 'subscription':
+      return submitSubscriptionRequest({ ...input.value, client_id: clientId });
   }
 }
 

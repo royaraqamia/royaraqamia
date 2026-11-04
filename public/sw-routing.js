@@ -195,6 +195,7 @@
     '/api/training',
     '/api/project-requests',
     '/api/retainers',
+    '/api/subscriptions',
     '/api/consultation',
     '/habitflow/api',
     '/spendtrack/api',
