@@ -104,11 +104,6 @@ private fun Ready(
                     style = type.small.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    text = AccountNewsPrivateCopy.BODY,
-                    style = type.xs,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
 
             if (summary.limited) {

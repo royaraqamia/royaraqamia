@@ -24,6 +24,10 @@ export function SecondaryHeader() {
 
   if (isPrimaryRoute(pathname)) return null;
 
+  // An open conversation draws its own back control inside the thread's flat
+  // header: two of them in the same corner read as one broken control.
+  if (/^\/chats\/[^/]+$/.test(pathname)) return null;
+
   return (
     <>
       {/* Skip Navigation Link for Accessibility — the top nav owns this on primary pages */}

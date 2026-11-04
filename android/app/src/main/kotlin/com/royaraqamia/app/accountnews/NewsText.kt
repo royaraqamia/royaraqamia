@@ -28,11 +28,6 @@ object NewsText {
             else -> region
         }
 
-    fun personalBody(min: Int, cost: Int): String =
-        AccountNewsPreferencesCopy.PERSONAL_BODY
-            .replace("{min}", min.toString())
-            .replace("{cost}", cost.toString())
-
     fun privateStatusLabel(status: String): String =
         if (status == "broken") {
             AccountNewsPrivateCopy.STATUS_BROKEN

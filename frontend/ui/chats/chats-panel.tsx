@@ -232,10 +232,21 @@ export function ChatsPanel() {
           </button>
         ))}
 
-      {assistant ? (
-        <ul className="overflow-hidden rounded-2xl border border-primary/25 bg-primary/5 shadow-xs">
-          <ThreadRow thread={assistant} pinned />
+      {assistant || open.length > 0 ? (
+        <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
+          {assistant ? <ThreadRow thread={assistant} pinned /> : null}
+          {open.map((thread) => (
+            <ThreadRow key={thread.id} thread={thread} />
+          ))}
         </ul>
+      ) : pending.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
+          <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">
+            <MessagesSquare size={24} />
+          </div>
+          <p className="text-sm font-bold text-foreground">{CHATS_LIST_COPY.emptyTitle}</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">{CHATS_LIST_COPY.emptyBody}</p>
+        </div>
       ) : null}
 
       {pending.length > 0 && (
@@ -301,25 +312,6 @@ export function ChatsPanel() {
           onConfirm={() => void answer(answering.thread.id, answering.choice)}
         />
       )}
-
-      {open.length > 0 ? (
-        <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
-          {open.map((thread) => (
-            <ThreadRow key={thread.id} thread={thread} />
-          ))}
-        </ul>
-      ) : assistant ? null : (
-        pending.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
-            <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">
-              <MessagesSquare size={24} />
-            </div>
-            <p className="text-sm font-bold text-foreground">{CHATS_LIST_COPY.emptyTitle}</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">{CHATS_LIST_COPY.emptyBody}</p>
-          </div>
-        )
-      )}
-
       {/* The primary action floats, like the community composer: the list owns
           the screen, and starting a chat is never a row inside it. */}
       <FabButton

@@ -190,12 +190,14 @@ class NewsRepositoryTest {
                 )
             }
         val created =
-            (runBlocking { repository(writes).submitRequest("مصدر", "https://example.com") }
+            (runBlocking { repository(writes).submitRequest("https://example.com") }
                 as ApiResult.Success)
                 .value
         assertEquals("resolving", created.status)
         assertEquals("POST", writes.requests.single().method)
-        assertTrue(writes.requests.single().body.orEmpty().contains("\"name\":\"مصدر\""))
+        assertTrue(
+            writes.requests.single().body.orEmpty().contains("\"url\":\"https://example.com\"")
+        )
     }
 
     @Test
