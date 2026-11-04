@@ -128,6 +128,8 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
     recordAttempt: vi.fn(async () => undefined),
     settleTurn: vi.fn(async () => undefined),
     failTurn: vi.fn(async () => undefined),
+    dueTurns: vi.fn(async () => []),
+    claimTurn: vi.fn(async () => null),
   } satisfies ChatAgentRepository;
 
   const chats = {
@@ -343,9 +345,33 @@ describe('the assistant turn', () => {
 
     await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
 
-    expect(agent.startTurn).toHaveBeenCalledWith('conversation-1', 'user-1');
+    expect(agent.startTurn).toHaveBeenCalledWith('conversation-1', 'user-1', 'سؤال');
     expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
     expect(agent.failTurn).not.toHaveBeenCalled();
+  });
+
+  it('resumes a turn without writing the question again or taking a second count', async () => {
+    const { service, agent, chats, reserve, release } = makeService();
+
+    const events = await collect(
+      service.resume(
+        {
+          id: 'turn-1',
+          conversationId: 'conversation-1',
+          memberId: 'user-1',
+          question: 'سؤال',
+          resumes: 1,
+        },
+        TURN_CONTEXT
+      )
+    );
+
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+    expect(chats.sendMessage).not.toHaveBeenCalled();
+    expect(reserve).not.toHaveBeenCalled();
+    expect(agent.startTurn).not.toHaveBeenCalled();
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(release).not.toHaveBeenCalled();
   });
 
   it('answers even when the turn record cannot be opened, and spends nothing extra', async () => {

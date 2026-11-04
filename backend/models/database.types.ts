@@ -11,34 +11,43 @@ export type Database = {
       agent_turns: {
         Row: {
           attempts: number;
+          claimed_at: string | null;
           conversation_id: string;
           created_at: string;
           error: string | null;
           id: string;
           member_id: string;
           partial_text: string | null;
+          question: string | null;
+          resumes: number;
           settled_at: string | null;
           state: string;
         };
         Insert: {
           attempts?: number;
+          claimed_at?: string | null;
           conversation_id: string;
           created_at?: string;
           error?: string | null;
           id?: string;
           member_id: string;
           partial_text?: string | null;
+          question?: string | null;
+          resumes?: number;
           settled_at?: string | null;
           state?: string;
         };
         Update: {
           attempts?: number;
+          claimed_at?: string | null;
           conversation_id?: string;
           created_at?: string;
           error?: string | null;
           id?: string;
           member_id?: string;
           partial_text?: string | null;
+          question?: string | null;
+          resumes?: number;
           settled_at?: string | null;
           state?: string;
         };
@@ -2707,6 +2716,27 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      agent_turns_due: {
+        Args: { p_limit?: number };
+        Returns: { id: string }[];
+      };
+      claim_agent_turn: {
+        Args: { p_turn_id: string };
+        Returns: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          error: string | null;
+          id: string;
+          member_id: string;
+          partial_text: string | null;
+          question: string | null;
+          resumes: number;
+          settled_at: string | null;
+          state: string;
+        }[];
+      };
       chat_agent_allowance: {
         Args: { p_user_id: string };
         Returns: {

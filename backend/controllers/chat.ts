@@ -1,9 +1,13 @@
 import {
+  createChatAgentResumeService,
   createSupabaseChatAgentActionService,
   createSupabaseChatAgentService,
   createSupabaseChatService,
 } from '@/backend/config/chat';
+import * as Sentry from '@sentry/nextjs';
+
 import { createPlanGate } from '@/backend/config/plans';
+import { isCronAuthorized } from '@/backend/shared/cron-auth';
 import { planRefusalResult } from '@/backend/middleware/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
 import {
@@ -655,6 +659,35 @@ export async function streamChatAgentTurn(
 function agentTurnFailure(error: unknown): string {
   if (error instanceof ChatAgentError) return error.message;
   return 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
+}
+
+/**
+ * The worker: finishes a turn whose request is gone.
+ *
+ * Called by `wake_agent_turns()` through pg_cron, authenticated with `CRON_SECRET`
+ * — the same secret Vercel's cron calls use. One turn per call, because a turn is
+ * capped at 55 seconds and this function's ceiling is 60; a backlog drains one
+ * wake a minute, which is exactly the case it exists for.
+ */
+export async function runChatAgentTurns(headers: Headers): Promise<HttpResult> {
+  if (!isCronAuthorized(headers)) {
+    return jsonResult(401, { success: false, error: 'غير مصرح' }, { headers: NO_STORE });
+  }
+
+  try {
+    const result = await createChatAgentResumeService().run(1);
+    return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+  } catch (error) {
+    Sentry.captureException(error);
+    return jsonResult(
+      500,
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'تعذّر إكمال الدور',
+      },
+      { headers: NO_STORE }
+    );
+  }
 }
 
 /**
