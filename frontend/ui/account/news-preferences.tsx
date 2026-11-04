@@ -14,8 +14,6 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import {
   NEWS_CATEGORIES,
-  NEWS_PERSONAL_DIGEST_COST,
-  NEWS_PERSONAL_DIGEST_MIN_STORIES,
   type NewsCategory,
   type NewsRegion,
   type NewsSource,
@@ -37,12 +35,6 @@ const REGION_LABELS: Record<NewsRegion, string> = {
   islamic: ACCOUNT_NEWS_PREFERENCES_COPY.regionIslamic,
   world: ACCOUNT_NEWS_PREFERENCES_COPY.regionWorld,
 };
-
-function personalBody(): string {
-  return ACCOUNT_NEWS_PREFERENCES_COPY.personalBody
-    .replace('{min}', String(NEWS_PERSONAL_DIGEST_MIN_STORIES))
-    .replace('{cost}', String(NEWS_PERSONAL_DIGEST_COST));
-}
 
 function PageHeading() {
   return (
@@ -297,7 +289,6 @@ export function NewsPreferences() {
             <p className="text-sm font-bold text-foreground">
               {ACCOUNT_NEWS_PREFERENCES_COPY.personalTitle}
             </p>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">{personalBody()}</p>
           </div>
 
           <button

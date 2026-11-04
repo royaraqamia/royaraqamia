@@ -145,9 +145,6 @@ export function NewsPrivateSources() {
           <h2 id="news-private-sources-heading" className="text-base font-bold text-foreground">
             {ACCOUNT_NEWS_PRIVATE_COPY.heading}
           </h2>
-          <p className="mt-1 text-sm leading-7 text-muted-foreground">
-            {ACCOUNT_NEWS_PRIVATE_COPY.body}
-          </p>
         </div>
 
         {summary?.limited ? (

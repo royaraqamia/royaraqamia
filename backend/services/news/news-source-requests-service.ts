@@ -13,6 +13,7 @@ import { NewsPrivateSourcesLimitError } from '@/backend/services/news/news-priva
 import { isPublicHttpUrl } from '@/shared/network';
 import {
   canonicalNewsFeedUrl,
+  NEWS_SOURCE_NAME_MAX,
   type NewsSourceApprovalInput,
   type NewsSourceRequest,
   type NewsSourceRequestInput,
@@ -188,6 +189,20 @@ function slugForHost(hostname: string): string {
     .slice(0, 48);
 }
 
+/**
+ * The name a filed request starts with: the host as a reader recognises it
+ * (`aljazeera.net`), without `www.`. The resolver replaces it with the feed's own
+ * title the moment it has one, so this is only what the pending row shows while
+ * the reader waits.
+ */
+function nameFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '').slice(0, NEWS_SOURCE_NAME_MAX);
+  } catch {
+    return url.slice(0, NEWS_SOURCE_NAME_MAX);
+  }
+}
+
 export function createNewsSourceRequestsService({
   requests,
   sources,
@@ -224,7 +239,7 @@ export function createNewsSourceRequestsService({
       }
 
       try {
-        return await requests.insert({ userId, url, name: input.name.trim() });
+        return await requests.insert({ userId, url, name: nameFromUrl(url) });
       } catch (error) {
         submissionError(error);
       }

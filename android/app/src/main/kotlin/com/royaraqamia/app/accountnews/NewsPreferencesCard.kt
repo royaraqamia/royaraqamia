@@ -272,15 +272,6 @@ private fun PersonalDigest(enabled: Boolean, onToggle: () -> Unit) {
                     style = type.small.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    text =
-                        NewsText.personalBody(
-                            min = PERSONAL_MIN_STORIES,
-                            cost = PERSONAL_DIGEST_COST,
-                        ),
-                    style = type.xs,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
 
             Switch(

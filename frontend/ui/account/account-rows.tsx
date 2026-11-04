@@ -25,6 +25,7 @@ import { cn } from '@/frontend/shared/cn';
 import { SUPPORT_USERNAME } from '@/frontend/shared/constants';
 import { useSession } from '@/frontend/state/session-provider';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { PushNotificationToggle } from '@/frontend/ui/shared/push-notification-toggle';
 import { AccountRow } from './account-row';
 import { rowClasses } from './row-classes';
 import { ACCOUNT_ROWS_COPY } from './account-rows-copy';
@@ -56,6 +57,11 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
   return (
     <>
       <nav aria-label={ACCOUNT_ROWS_COPY.navLabel} className="flex flex-col gap-2.5">
+        {/* The device's notification switch is a setting, not a destination, so it
+            sits above the rows that navigate: it applies to the whole account and
+            decides whether the device alerts at all (#1023). */}
+        <PushNotificationToggle />
+
         <AccountRow
           href="/account/submissions"
           icon={ClipboardList}

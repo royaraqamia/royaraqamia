@@ -331,9 +331,14 @@ export function canonicalNewsFeedUrl(value: string): string | null {
   }
 }
 
+/**
+ * A proposal carries the link and nothing else: the name a reader used to type is
+ * derived from the source itself (the feed's own title, or its host until the
+ * resolver has read one), so the form asks for the one thing only the reader
+ * knows.
+ */
 export const newsSourceRequestSchema = z.object({
   url: z.string().trim().min(1).max(NEWS_SOURCE_URL_MAX),
-  name: z.string().trim().min(1).max(NEWS_SOURCE_NAME_MAX),
 });
 
 export type NewsSourceRequestInput = z.infer<typeof newsSourceRequestSchema>;

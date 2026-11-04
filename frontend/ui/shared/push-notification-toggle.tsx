@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { BellRing, BellOff, Ban } from 'lucide-react';
 import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
@@ -155,62 +154,59 @@ export function PushNotificationToggle() {
   // "unsupported" message never flashes inside the app.
   if (state.kind === 'checking') return null;
 
-  if (state.kind === 'unsupported') {
-    return (
-      <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/60">
-        <Ban size={14} className="shrink-0" />
-        <span>الإشعارات غير مدعومة في هذا المتصفِّح</span>
-      </div>
-    );
-  }
-
-  if (state.kind === 'denied') {
-    return (
-      <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/70">
-        <Ban size={14} className="shrink-0" />
-        <span>
-          {native
-            ? 'الإشعارات محظورة في النظام — فعِّلها من إعدادات التطبيق'
-            : 'الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع'}
-        </span>
-      </div>
-    );
-  }
+  // A browser with no push support has no switch to offer, and a dead row on the
+  // account page reads as a broken setting rather than as an absent feature.
+  if (state.kind === 'unsupported') return null;
 
   const isEnabled = state.kind === 'enabled';
+  const blocked = state.kind === 'denied';
 
   return (
-    <div className="flex flex-col">
-      {/* The toggle below is the retry: an unreachable server is the one failure
-          the user can fix by trying again (ADR-0031). */}
-      {state.kind === 'unreachable' && (
-        <p
-          role="status"
-          aria-live="polite"
-          className="px-3 pt-2.5 text-[11px] text-muted-foreground/70"
+    <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-foreground">إشعارات الجهاز</p>
+          {blocked ? (
+            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
+              الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.
+            </p>
+          ) : null}
+          {state.kind === 'unreachable' ? (
+            <p
+              role="status"
+              aria-live="polite"
+              className="mt-1 text-[11px] leading-6 text-muted-foreground"
+            >
+              تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isEnabled}
+          aria-label="إشعارات الجهاز"
+          disabled={busy || blocked}
+          onClick={() => void handleToggle()}
+          dir="ltr"
+          className={cn(
+            'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
+            'disabled:cursor-not-allowed disabled:opacity-60',
+            isEnabled
+              ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
+              : 'border-border/70 bg-muted'
+          )}
         >
-          تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
-        </p>
-      )}
-      <button
-        onClick={() => void handleToggle()}
-        disabled={busy}
-        aria-pressed={isEnabled}
-        className={cn(
-          'flex w-full items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-safe duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-          isEnabled
-            ? 'bg-primary/8 text-primary hover:bg-primary/[0.14] dark:bg-primary/10'
-            : 'bg-muted/60 text-foreground/80 hover:bg-muted'
-        )}
-      >
-        {isEnabled ? (
-          <BellRing size={15} className="shrink-0" />
-        ) : (
-          <BellOff size={15} className="shrink-0" />
-        )}
-        <span>{busy ? '...' : isEnabled ? 'إيقاف إشعارات الجهاز' : 'تفعيل إشعارات الجهاز'}</span>
-      </button>
+          <span
+            className={cn(
+              'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
+              isEnabled ? 'translate-x-0' : 'translate-x-[18px]'
+            )}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
     </div>
   );
 }
