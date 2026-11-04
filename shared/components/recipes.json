@@ -81,6 +81,21 @@
         "direction": "ltr"
       }
     },
+    "progress": {
+      "description": "The plan's consumption: a pill track filled from its start by the share used, and that share's percentage beside it in the digits face.",
+      "radius": "pill",
+      "height": "0.5rem",
+      "gap": "element-gap-sm",
+      "track": { "color": "muted", "alpha": 0.5 },
+      "fill": { "color": "primary" },
+      "value": {
+        "step": "xs",
+        "color": "foreground",
+        "weight": 700,
+        "digits": true,
+        "direction": "ltr"
+      }
+    },
     "glyph": {
       "description": "The size an icon is drawn at. The drawing itself is the site's own (ADR-0100).",
       "sizes": { "md": "1.5rem", "sm": "1rem" }

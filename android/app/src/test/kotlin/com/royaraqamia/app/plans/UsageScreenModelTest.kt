@@ -56,14 +56,30 @@ class UsageScreenModelTest {
     }
 
     @Test
-    fun `the caps share the list with the counted actions, counted first`() {
-        // The site builds one list the same way (ADR-0093): a member reads what is
-        // left in one place instead of guessing which list a number belongs to.
-        assertEquals(listOf("quran.surah.read", "notes"), model.rows.map { it.key })
-        assertEquals(4L, model.rows[0].used)
-        assertEquals(10L, model.rows[0].cap)
-        assertEquals(1L, model.rows[1].used)
-        assertEquals(5L, model.rows[1].cap)
+    fun `the bar counts the standing owned-item caps, not the counted actions`() {
+        // The site's `usageShare` sums the same `limits` body (ADR-0098): a daily
+        // count is a number of times that resets, and folding it into a standing
+        // total would make the bar drop at midnight on its own.
+        assertEquals(1L, model.used)
+        assertEquals(5L, model.cap)
+        assertEquals(20, model.share)
+    }
+
+    @Test
+    fun `a plan with no caps reads as empty rather than dividing by zero`() {
+        val empty =
+            UsageScreenModel.from(
+                (
+                    ContractCodec.decode<MyPlanResponse>(
+                        body.replace(
+                            """{ "key": "notes", "label": "notes", "cap": 5, "used": 1, "remaining": 4 }""",
+                            "",
+                        )
+                    ) as ApiResult.Success
+                ).value
+            )
+
+        assertEquals(0, empty.share)
     }
 
     @Test

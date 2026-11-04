@@ -78,6 +78,8 @@ async function styles(page: Page, selector: string) {
       backgroundImage: style.backgroundImage,
       direction: style.direction,
       fontFamily: style.fontFamily,
+      transform: style.transform,
+      transformOrigin: style.transformOrigin,
     };
   });
 }
@@ -124,7 +126,7 @@ test.describe('the plan card renders the recipe', () => {
     }
   });
 
-  test('a member gets the rows, the badge and the skeleton at the recipe values', async ({
+  test('a member gets the bar, the badge and the skeleton at the recipe values', async ({
     page,
     context,
   }) => {
@@ -152,21 +154,33 @@ test.describe('the plan card renders the recipe', () => {
       .evaluate((node) => getComputedStyle(node).rowGap);
     expect(parseFloat(skeletonGap)).toBeCloseTo(px(recipes.skeleton.gap), 0);
 
-    const rows = page.locator('.roy-rows > .roy-row');
-    await expect(rows.first()).toBeVisible();
+    const track = await styles(page, '.roy-progress-track');
+    expect(parseFloat(track.height)).toBe(px(recipes.progress.height));
+    expect(parseFloat(track.borderRadius)).toBe(radius(recipes.progress.radius));
 
-    const row = await styles(page, '.roy-row');
-    expect(parseFloat(row.columnGap)).toBeCloseTo(
-      clamp(tokens.space['element-gap-sm'], VIEWPORT.width),
-      0
-    );
+    // The fill grows from the track's start edge, which is the right one in RTL:
+    // the computed origin's x is the element's own width, not zero.
+    const fill = await styles(page, '.roy-progress-fill');
+    expect(parseFloat(fill.transformOrigin)).toBeCloseTo(parseFloat(fill.width), 0);
+    expect(parseFloat(fill.height)).toBe(px(recipes.progress.height));
 
-    // The rhythm between rows is the recipe's own value, not `space-y`'s.
-    const secondRowTop = await rows.nth(1).evaluate((node) => getComputedStyle(node).marginTop);
-    expect(parseFloat(secondRowTop)).toBeCloseTo(px(recipes.row.gap), 0);
+    // `hsl(var(--primary))` is the recipe's colour: resolve the token the way the
+    // stylesheet does and compare, rather than hard-coding an RGB triplet here.
+    const filled = await page
+      .locator('.roy-progress-fill')
+      .evaluate((node) => getComputedStyle(node).backgroundColor);
+    const expected = await page.evaluate((token) => {
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = `hsl(${token})`;
+      document.body.append(probe);
+      const resolved = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return resolved;
+    }, tokens.color.primary);
+    expect(filled).toBe(expected);
 
-    const value = await styles(page, '.roy-row-value');
-    expect(value.direction).toBe(recipes.row.value.direction);
+    const value = await styles(page, '.roy-progress-value');
+    expect(value.direction).toBe(recipes.progress.value.direction);
     expect(value.fontFamily).toContain('Aref Ruqaa');
 
     const badge = await styles(page, '.roy-badge');

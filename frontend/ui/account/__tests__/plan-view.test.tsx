@@ -23,7 +23,7 @@ vi.mock('@/frontend/state/plans/use-my-plan', () => ({
   useMyPlan: () => mocks.plan,
 }));
 
-import { PlanView } from '../plan-view';
+import { PlanView, usageShare } from '../plan-view';
 
 const freeState: UsageState = {
   plan: 'free',
@@ -68,6 +68,23 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+describe('usageShare', () => {
+  it('sums the standing caps and the slots they use', () => {
+    expect(usageShare(freeLimits)).toBe(17);
+    expect(usageShare([{ key: 'notes', label: 'الملاحظات', cap: 5, used: 5, remaining: 0 }])).toBe(
+      100
+    );
+  });
+
+  it('reads as empty when the plan holds nothing', () => {
+    expect(usageShare([])).toBe(0);
+    // A cap of zero is a division the page must not do.
+    expect(usageShare([{ key: 'notes', label: 'الملاحظات', cap: 0, used: 0, remaining: 0 }])).toBe(
+      0
+    );
+  });
+});
+
 describe('PlanView', () => {
   it('points a guest at sign-in instead of an empty history', () => {
     render(<PlanView />);
@@ -76,7 +93,7 @@ describe('PlanView', () => {
     expect(screen.queryByText('سجل الاشتراك')).not.toBeInTheDocument();
   });
 
-  it('renders the allowance and every activation behind it', () => {
+  it('draws one bar for the whole allowance, and every activation behind it', () => {
     mocks.session.user = { id: 'u1' };
     mocks.plan.plan = {
       state: { ...freeState, plan: 'pro', expiresAt: '2026-11-21T12:00:00.000Z' },
@@ -97,16 +114,21 @@ describe('PlanView', () => {
 
     render(<PlanView />);
 
-    expect(screen.getByText('2 / 5')).toBeInTheDocument();
+    // The owned-item caps only: the lifetime downloader count is not a slot.
+    const bar = screen.getByRole('progressbar', { name: 'نسبة الاستهلاك' });
+    expect(bar).toHaveAttribute('aria-valuenow', '17');
+    expect(bar).toHaveAttribute('aria-valuemax', '100');
+    expect(screen.getByText('17%')).toBeInTheDocument();
+
+    // The rows and their per-item numbers are gone; the bar is the section.
+    expect(screen.queryByText('الملاحظات')).not.toBeInTheDocument();
+    expect(screen.queryByText('1 / 5')).not.toBeInTheDocument();
+    expect(screen.queryByText('2 / 5')).not.toBeInTheDocument();
+
     expect(screen.getByText('الخطَّة المدفوعة')).toBeInTheDocument();
     expect(screen.getByText('$12')).toBeInTheDocument();
     expect(screen.getByText('ShamCash')).toBeInTheDocument();
     expect(screen.getByText('«تحويل»')).toBeInTheDocument();
-    // The owned-item caps share the same list as the counted actions.
-    expect(screen.getByText('الملاحظات')).toBeInTheDocument();
-    expect(screen.getByText('1 / 5')).toBeInTheDocument();
-    expect(screen.getByText('تطبيقات MCP المتصلة')).toBeInTheDocument();
-    expect(screen.getByText('0 / 1')).toBeInTheDocument();
   });
 
   it('keeps the payment note off the page', () => {
@@ -118,7 +140,7 @@ describe('PlanView', () => {
     expect(screen.queryByText(/يدويّ بعد تأكيد الدَّفعة/)).not.toBeInTheDocument();
   });
 
-  it('reports an Admin as unlimited', () => {
+  it('reports an Admin as unlimited, with no bar to fill', () => {
     mocks.session.user = { id: 'admin-1' };
     mocks.plan.plan = {
       state: { ...freeState, unlimited: true },
@@ -129,6 +151,7 @@ describe('PlanView', () => {
     render(<PlanView />);
 
     expect(screen.getAllByText('غير محدود').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(
       screen.getByText(
         'لا يوجد سجل اشتراك بعد. أنت على الخطَّة المجَّانيَّة، ويمكنك التَّرقية من صفحة الاشتراكات.'

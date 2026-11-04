@@ -64,11 +64,11 @@ class UsageRepositoryTest {
         assertTrue(result is ApiResult.Success)
         val model = (result as ApiResult.Success).value
         assertEquals("pro", model.plan)
-        assertEquals(4L, model.rows.first().used)
-        assertEquals(6L, model.rows.first().cap - model.rows.first().used)
-        // The owned-item caps arrive on the same body: the app used to read
-        // `/api/me/usage`, which carries counters only (ADR-0098).
-        assertEquals(listOf("quran.surah.read", "notes"), model.rows.map { it.key })
+        // The card's one bar counts the owned-item caps, so this body reads 1 of 5
+        // — the counted action above is not a slot (ADR-0093, ADR-0098).
+        assertEquals(1L, model.used)
+        assertEquals(5L, model.cap)
+        assertEquals(20, model.share)
 
         val request = transport.requests.single()
         assertEquals("GET", request.method)

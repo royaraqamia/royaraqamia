@@ -11,7 +11,7 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { useMyPlan } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { PlanActivationMethod } from '@/shared/contracts/plans';
+import type { OwnedItemState, PlanActivationMethod } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: PLAN_CARD_COPY.planFree, pro: PLAN_CARD_COPY.planPro } as const;
 
@@ -28,6 +28,28 @@ function formatMoney(cents: number, currency: string): string {
     maximumFractionDigits: 2,
   });
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
+}
+
+/**
+ * The share of the plan's standing allowance the account has filled, as a whole
+ * percentage.
+ *
+ * The page counts the owned-item caps and nothing else: a counted action
+ * (download, scan, surah, assistant question) is a number of times that resets,
+ * and folding a daily count into a standing one would make the bar drop back at
+ * midnight without the member having given anything up. The app's
+ * `UsageScreenModel` derives the same number from the same `limits` body, so the
+ * two clients draw one bar (ADR-0098).
+ *
+ * Every cap is a standing limit with a row per slot, so the sum of the caps is a
+ * number a member can read as "how full my plan is" — and a plan with no caps
+ * reads as empty rather than as a division by zero.
+ */
+export function usageShare(limits: OwnedItemState[]): number {
+  const cap = limits.reduce((total, item) => total + item.cap, 0);
+  if (cap <= 0) return 0;
+  const used = limits.reduce((total, item) => total + item.used, 0);
+  return Math.min(100, Math.round((used / cap) * 100));
 }
 
 /**
@@ -116,24 +138,16 @@ function PlanBody() {
   const { state, limits, activations } = plan;
 
   /**
-   * One list, counted actions first: the caps the plan enforces are stated
-   * together, because a member reads "what is left" in one place rather than
-   * guessing which of two lists a number belongs to (ADR-0093).
+   * One bar for the whole allowance. The page used to print one row per item and
+   * per counted action; a member had to read nineteen numbers to learn one thing —
+   * how much of the plan is in use — so the standing caps are summed into one
+   * share, and the plan page stops being a table.
+   *
+   * The bar is a div with a `transform` rather than a `<progress>`: the app fills
+   * the same track with `fillMaxWidth(fraction)`, and a recipe only both clients
+   * can draw is the point (ADR-0099).
    */
-  const rows = [
-    ...state.counters.map((counter) => ({
-      key: counter.key,
-      label: counter.label,
-      used: counter.used,
-      cap: counter.cap,
-    })),
-    ...limits.map((item) => ({
-      key: item.key,
-      label: item.label,
-      used: item.used,
-      cap: item.cap,
-    })),
-  ];
+  const share = usageShare(limits);
 
   return (
     <div className="space-y-4">
@@ -145,18 +159,27 @@ function PlanBody() {
           </Badge>
         </div>
 
-        <ul className="roy-rows">
-          {rows.map((row) => (
-            <li key={row.key} className="roy-row">
-              <span className="roy-row-label">{row.label}</span>
-              <span className="roy-row-value">
-                {state.unlimited
-                  ? PLAN_CARD_COPY.unlimited
-                  : `${formatCount(row.used)} / ${formatCount(row.cap)}`}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {state.unlimited ? (
+          <p className="text-fluid-small font-bold text-foreground">{PLAN_CARD_COPY.unlimited}</p>
+        ) : (
+          <div className="roy-progress">
+            <div
+              role="progressbar"
+              aria-label={PLAN_CARD_COPY.usageLabel}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={share}
+              className="roy-progress-track"
+            >
+              <div
+                className="roy-progress-fill"
+                style={{ transform: `scaleX(${share / 100})` }}
+                aria-hidden="true"
+              />
+            </div>
+            <span className="roy-progress-value">{formatCount(share)}%</span>
+          </div>
+        )}
 
         {state.plan === 'pro' && state.expiresAt && (
           <p className="text-fluid-xs text-muted-foreground">

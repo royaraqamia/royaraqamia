@@ -21,6 +21,13 @@ class UsageCopyTest {
     }
 
     @Test
+    fun `a share is a percentage in ASCII, whatever the phone's locale`() {
+        assertEquals("0%", UsageCopy.percent(0))
+        assertEquals("22%", UsageCopy.percent(22))
+        assertEquals("100%", UsageCopy.percent(100))
+    }
+
+    @Test
     fun `a plan id becomes the site's label`() {
         assertEquals(PlanCardCopy.PLAN_FREE, UsageCopy.planLabel("free"))
         assertEquals(PlanCardCopy.PLAN_PRO, UsageCopy.planLabel("pro"))
