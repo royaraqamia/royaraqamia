@@ -28,13 +28,27 @@ export function hasChanges(cwd) {
 }
 
 export function slug(text, limit = 40) {
+  // ASCII only: a branch name travels through URLs, refs and logs, and an Arabic
+  // sentence percent-encodes into something nobody can retype. The pull request
+  // title keeps the original words.
   const words = String(text ?? '')
-    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .replace(/[^A-Za-z0-9\s-]/g, ' ')
     .trim()
     .split(/\s+/)
     .slice(0, 6)
-    .join('-');
+    .join('-')
+    .toLowerCase();
   return (words || 'change').slice(0, limit).replace(/-+$/g, '') || 'change';
+}
+
+/** A publish failure that knows how far it got, so the chat message can be true. */
+export class PublishError extends Error {
+  constructor(message, { stage, branch, compareUrl } = {}) {
+    super(message);
+    this.stage = stage;
+    this.branch = branch;
+    this.compareUrl = compareUrl;
+  }
 }
 
 /**
@@ -85,6 +99,13 @@ export async function fileIssue({ owner, repo, title, body }) {
 /**
  * Publishes the working tree as a pull request and returns the message that
  * carries the two merge buttons.
+ *
+ * Three stages, and each failure says which one it reached: the issue is the
+ * record and is best-effort, the push is what makes the branch exist, and the
+ * pull request is what makes it reviewable. A failed pull request after a
+ * successful push used to be reported as "no branch was created", which was not
+ * true and would have made the owner retype a change that was already on the
+ * remote.
  */
 export async function publishWork({ cwd, messageRowId, requestText, answer, runUrl }) {
   const { owner, repo } = githubTarget();
@@ -95,6 +116,7 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
   const title = titleLine.slice(0, 120);
   const branch = `telegram/${messageRowId ?? Date.now()}-${slug(title)}`;
 
+  // The record is nice to have; a failure here must not cost the owner the work.
   const issue = await fileIssue({
     owner,
     repo,
@@ -109,7 +131,7 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
     ]
       .filter(Boolean)
       .join('\n'),
-  });
+  }).catch(() => null);
 
   git(cwd, ['checkout', '-B', branch]);
   git(cwd, ['add', '--all']);
@@ -129,8 +151,13 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
   // part of the remote for this one command - and it must be the PAT, or the
   // branch arrives without a single check running on it.
   const remote = `https://x-access-token:${pushToken()}@github.com/${owner}/${repo}.git`;
-  git(cwd, ['push', remote, `HEAD:refs/heads/${branch}`]);
+  try {
+    git(cwd, ['push', remote, `HEAD:refs/heads/${branch}`]);
+  } catch (error) {
+    throw new PublishError(String(error?.message ?? 'push failed'), { stage: 'push', branch });
+  }
 
+  const compareUrl = `https://github.com/${owner}/${repo}/compare/main...${branch}?expand=1`;
   const pull = await github(
     `/repos/${owner}/${repo}/pulls`,
     {
@@ -157,7 +184,13 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
       }),
     },
     pushToken()
-  );
+  ).catch((error) => {
+    throw new PublishError(String(error?.message ?? 'pull request failed'), {
+      stage: 'pull',
+      branch,
+      compareUrl,
+    });
+  });
 
   return { issue, pull, branch };
 }

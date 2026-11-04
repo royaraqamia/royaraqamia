@@ -351,7 +351,13 @@ export async function answerMessage({ row, cwd = agentWorkdir(), botToken }) {
       return { ok: true, handled: 'published', pull: published.pull.number };
     } catch (error) {
       const reference = failureId(`${row.id}:publish:${error?.message ?? ''}`);
-      const line = `غيّرت الملفات لكن تعذّر فتح طلب الدمج (المرجع \`${reference}\`). التغييرات في الشجرة وحدها، ولم يُنشأ فرع.`;
+      // Say what actually happened: a pushed branch that never became a pull
+      // request is recoverable, and telling the owner nothing was created would
+      // make them retype a change that is already on the remote.
+      const line =
+        error?.stage === 'pull'
+          ? `غيّرت الملفات ودفعت الفرع \`${error.branch}\`، لكن تعذّر فتح طلب الدمج (المرجع \`${reference}\`). يمكنك فتحه من ${error.compareUrl ?? 'صفحة المستودع'}.`
+          : `غيّرت الملفات لكن تعذّر دفع الفرع (المرجع \`${reference}\`)، فلم يُنشأ شيء على المستودع.`;
       process.stdout.write(`telegram: publish failed: ${String(error?.message).slice(0, 300)}\n`);
       await sendMarkdown(chatId, line).catch(() => {});
       await recordOutbound({ chatId, body: line }).catch(() => {});

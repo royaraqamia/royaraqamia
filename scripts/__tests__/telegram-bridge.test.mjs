@@ -185,12 +185,22 @@ describe('stripHtml', () => {
   });
 });
 
+describe('the branch name', () => {
+  it('is ASCII, so it survives a URL, a ref and a log', async () => {
+    const { slug } = await import('../telegram/publish.mjs');
+    expect(slug('أنشئ ملف docs/telegram-smoke-test.md فيه سطر')).toBe(
+      'docs-telegram-smoke-test-md'
+    );
+    expect(slug('fix the login page')).toBe('fix-the-login-page');
+    expect(slug('!!!')).toBe('change');
+  });
+});
+
 describe('parseForget', () => {
   it('accepts the short sentence it documents', () => {
     expect(parseForget('احذف رقم 3')).toBe(3);
     expect(parseForget('forget memory 12')).toBe(12);
   });
-
   it('refuses anything that is not that sentence', () => {
     expect(parseForget('احذف رقم 3 ثم أعد تشغيل الاختبارات وشغّل الفحص الكامل')).toBeNull();
     expect(parseForget('delete everything')).toBeNull();
