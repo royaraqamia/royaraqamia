@@ -38,15 +38,7 @@ const API_ROOT = 'https://api.supabase.com/v1/projects';
  * first run (PR #217, 2026-10-14) found 108 repo files against 108 recorded
  * versions, with nothing one-sided.
  */
-export const KNOWN_REMOTE_ONLY = [
-  // 2026-11-04: two pull requests picked 20261113220000 in the same hour. The
-  // version was recorded while the file that carried it failed mid-apply (a
-  // dollar-quote collision, fixed in #1025), so the record exists without a file
-  // that ever ran to completion. The SQL now lives — idempotent, so re-running it
-  // is safe — at 20261113250000_agent_turns_resume.sql, and production converges
-  // the next time `main` applies.
-  '20261113220000',
-];
+export const KNOWN_REMOTE_ONLY = [];
 
 /**
  * Files that are intentionally not applied to the project. Also empty, and also

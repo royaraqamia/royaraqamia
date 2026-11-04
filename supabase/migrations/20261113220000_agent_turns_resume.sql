@@ -1,0 +1,17 @@
+-- ============================================================
+-- Recorded, but carries no SQL (ADR-0125)
+--
+-- Two pull requests claimed the version 20261113220000 in the same hour on
+-- 2026-11-04. `schema_migrations` recorded the version while the file that
+-- carried it failed mid-apply, so the project is permanently "ahead" of the repo
+-- for this version: `supabase db push` refuses to run at all
+-- ("Remote migration versions not found in local migrations directory") until a
+-- local file with this version exists.
+--
+-- The statements themselves were never completed under this version, so they are
+-- not repeated here — they live, idempotent, in
+-- `20261113250000_agent_turns_resume.sql`, which is what applies them.
+--
+-- This file must stay: deleting it re-breaks every push. It adds no schema, so it
+-- is safe to read, to diff, and to skip.
+-- ============================================================
