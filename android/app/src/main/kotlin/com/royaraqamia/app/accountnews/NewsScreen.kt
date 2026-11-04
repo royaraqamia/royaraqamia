@@ -64,7 +64,6 @@ fun NewsScreen(
     var requestState by remember {
         mutableStateOf<NewsSourceRequestUiState>(NewsSourceRequestUiState.Idle)
     }
-    var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
 
     suspend fun readPreferences() {
@@ -200,10 +199,9 @@ fun NewsScreen(
         if (requestState is NewsSourceRequestUiState.Submitting) return
         scope.launch {
             requestState = NewsSourceRequestUiState.Submitting
-            when (val result = repository.submitRequest(name.trim(), url.trim())) {
+            when (val result = repository.submitRequest(url.trim())) {
                 is ApiResult.Success -> {
                     requests = listOf(result.value) + requests
-                    name = ""
                     url = ""
                     requestState = NewsSourceRequestUiState.Submitted
                 }
@@ -261,15 +259,8 @@ fun NewsScreen(
 
             NewsSourceRequestCard(
                 state = requestState,
-                name = name,
                 url = url,
                 requests = requests,
-                onNameChange = {
-                    name = it
-                    if (requestState is NewsSourceRequestUiState.Submitted) {
-                        requestState = NewsSourceRequestUiState.Idle
-                    }
-                },
                 onUrlChange = {
                     url = it
                     if (requestState is NewsSourceRequestUiState.Submitted) {

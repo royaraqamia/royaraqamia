@@ -10,6 +10,7 @@ import type {
   NewsSource,
   NewsSourceDestination,
   NewsSourceRequest,
+  NewsSourceRequestInput,
   NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
 
@@ -131,10 +132,9 @@ export async function deleteNewsPrivateSource(id: string): Promise<void> {
 }
 
 /** Files a link for resolution; the server answers before it reads the target. */
-export async function submitNewsSourceRequest(input: {
-  url: string;
-  name: string;
-}): Promise<NewsSourceRequest> {
+export async function submitNewsSourceRequest(
+  input: NewsSourceRequestInput
+): Promise<NewsSourceRequest> {
   const result = await request<{ success: boolean; request: NewsSourceRequest }>(
     '/api/me/news-source-requests',
     { method: 'POST', body: JSON.stringify(input) }

@@ -26,7 +26,6 @@ object AccountNewsPreferencesCopy {
     const val SAVED_SELECTED = "حفظنا اختيارك. ستعرض الأخبار هذه المصادر."
     const val SAVED_PERSONAL = "حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام."
     const val PERSONAL_TITLE = "مُلخَّص خاص بي"
-    const val PERSONAL_BODY = "مُلخَّص يومي من مصادرك وحدها، يُنشأ صباحًا بعد المُلخَّص العام. يكفي أن يوفّر {min} أخبار على الأقل، ويُخصم من رصيدك {cost} اعتمادات عند إنشائه."
     const val CATEGORY_TECH = "تقنية"
     const val CATEGORY_POLITICS = "سياسة"
     const val CATEGORY_RELIGION = "دين"

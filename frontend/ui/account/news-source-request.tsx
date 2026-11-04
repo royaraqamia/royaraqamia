@@ -10,7 +10,6 @@ import { Badge } from '@/frontend/ui/primitives/badge';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
-  NEWS_SOURCE_NAME_MAX,
   NEWS_SOURCE_URL_MAX,
   type NewsSourceRequest,
   type NewsSourceRequestFailure,
@@ -66,7 +65,6 @@ const STATUS_TONES = {
 export function NewsSourceRequestForm() {
   const { user } = useSession();
   const [requests, setRequests] = useState<NewsSourceRequest[]>([]);
-  const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -98,9 +96,8 @@ export function NewsSourceRequestForm() {
 
     setSubmitting(true);
     try {
-      const request = await submitNewsSourceRequest({ name: name.trim(), url: url.trim() });
+      const request = await submitNewsSourceRequest({ url: url.trim() });
       setRequests((current) => [request, ...current]);
-      setName('');
       setUrl('');
       toast.success(ACCOUNT_NEWS_REQUEST_COPY.received);
     } catch (error) {
@@ -120,9 +117,6 @@ export function NewsSourceRequestForm() {
         <h2 id="news-source-request-heading" className="text-base font-bold text-foreground">
           {ACCOUNT_NEWS_REQUEST_COPY.title}
         </h2>
-        <p className="mt-1 text-sm leading-7 text-muted-foreground">
-          {ACCOUNT_NEWS_REQUEST_COPY.body}
-        </p>
       </div>
 
       {open ? (
@@ -133,21 +127,7 @@ export function NewsSourceRequestForm() {
 
       <form onSubmit={submit} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-foreground">
-              {ACCOUNT_NEWS_REQUEST_COPY.nameLabel}
-            </span>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={NEWS_SOURCE_NAME_MAX}
-              placeholder={ACCOUNT_NEWS_REQUEST_COPY.namePlaceholder}
-              autoComplete="off"
-              required
-            />
-          </label>
-
-          <label className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="text-xs font-bold text-foreground">
               {ACCOUNT_NEWS_REQUEST_COPY.urlLabel}
             </span>

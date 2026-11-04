@@ -25,8 +25,6 @@ export const ACCOUNT_NEWS_PREFERENCES_COPY = {
   savedSelected: 'حفظنا اختيارك. ستعرض الأخبار هذه المصادر.',
   savedPersonal: 'حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.',
   personalTitle: 'مُلخَّص خاص بي',
-  personalBody:
-    'مُلخَّص يومي من مصادرك وحدها، يُنشأ صباحًا بعد المُلخَّص العام. يكفي أن يوفّر {min} أخبار على الأقل، ويُخصم من رصيدك {cost} اعتمادات عند إنشائه.',
   categoryTech: 'تقنية',
   categoryPolitics: 'سياسة',
   categoryReligion: 'دين',

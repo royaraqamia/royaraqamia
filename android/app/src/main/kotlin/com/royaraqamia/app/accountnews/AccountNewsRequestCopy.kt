@@ -13,10 +13,7 @@ package com.royaraqamia.app.accountnews
  */
 object AccountNewsRequestCopy {
     const val TITLE = "أضف مصدرًا"
-    const val BODY = "ألصق رابط أي مصدر تثق به: صفحة موقع، أو قناة يوتيوب، أو قناة تلغرام، أو خلاصة RSS. نبحث عن الخلاصة تلقائيًّا في الخلفية، ويصبح المصدر في قائمتك الخاصّة وحدك."
     const val PENDING = "أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز."
-    const val NAME_LABEL = "اسم المصدر"
-    const val NAME_PLACEHOLDER = "مثال: صحيفة محليَّة"
     const val URL_LABEL = "رابط المصدر"
     const val URL_PLACEHOLDER = "https://example.com"
     const val SUBMIT_BUSY = "جاري الإرسال…"

@@ -25,7 +25,6 @@ import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useSession } from '@/frontend/state/session-provider';
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
-import { PushNotificationToggle } from '@/frontend/ui/shared/push-notification-toggle';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { notificationTarget } from './notification-target';
 
@@ -256,14 +255,6 @@ export function NotificationsView() {
           </ul>
         )}
       </section>
-
-      {/* The OS-level push toggle belongs to the page, not to one tab: it
-          decides whether the device alerts at all, whichever list is open. */}
-      {user && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
-          <PushNotificationToggle />
-        </div>
-      )}
     </main>
   );
 }

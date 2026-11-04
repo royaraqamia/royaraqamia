@@ -13,7 +13,6 @@ package com.royaraqamia.app.accountnews
  */
 object AccountNewsPrivateCopy {
     const val HEADING = "مصادرك الخاصّة"
-    const val BODY = "روابط أضفتها أنت. لا يراها أحد غيرك، وتظهر في مُلخَّصك الخاص وحده."
     const val LOADING_LABEL = "جاري تحميل مصادرك"
     const val LOAD_FAILED = "تعذّر تحميل مصادرك الخاصّة. أعد المحاولة."
     const val RETRY = "إعادة المحاولة"

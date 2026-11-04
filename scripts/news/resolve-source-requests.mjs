@@ -22,7 +22,7 @@
 
 import { resolve } from 'node:path';
 
-import { resolveSourceUrl } from './resolve-source.mjs';
+import { resolveSourceUrl, USER_AGENT } from './resolve-source.mjs';
 
 const DEFAULT_LIMIT = 25;
 const BATCH_SIZE = 3;
@@ -108,6 +108,51 @@ export function answerFor(row, resolution) {
   };
 }
 
+/**
+ * The name a resolved source carries: the feed's own title, trimmed to the
+ * contract's ceiling.
+ *
+ * The form stopped asking for a name, so the row starts with its host
+ * (`aljazeera.net`) and this is what replaces it with the words the source calls
+ * itself. A feed with no usable title keeps the host, which is still derived from
+ * the source rather than typed by anyone.
+ */
+export function titleFromFeed(text) {
+  const match = /<title[^>]*>([\s\S]{1,300}?)<\/title>/i.exec(String(text ?? ''));
+  if (!match) return null;
+
+  const title = match[1]
+    .replace(/<!\[CDATA\[|\]\]>/g, '')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return title.length > 0 ? title.slice(0, 120) : null;
+}
+
+/** Writes the derived name before the acceptance, which reads it in its own transaction. */
+async function writeName(config, id, name) {
+  const endpoint =
+    `${config.url}/rest/v1/news_source_requests` +
+    `?id=eq.${encodeURIComponent(id)}&status=eq.resolving`;
+
+  const response = await fetch(endpoint, {
+    method: 'PATCH',
+    headers: headers(config, { prefer: 'return=minimal' }),
+    body: JSON.stringify({ name }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+  // A feed title is an improvement, never a reason to fail a row that resolved.
+  if (!response.ok) {
+    console.error(`  ${id} kept its host name: HTTP ${response.status}`);
+  }
+}
+
 /** PostgREST reports a refusal as `{ code, message, details, hint }` in the body. */
 async function rpcErrorCode(response) {
   try {
@@ -150,6 +195,24 @@ export async function acceptPrivateSource(config, id, resolution) {
   }
 
   throw new Error(`accepting the source failed: HTTP ${response.status}`);
+}
+
+/**
+ * The feed's own title, read once per row. A failure here is never a failed
+ * resolution: the row keeps the host name it was filed with.
+ */
+async function feedTitle(url) {
+  try {
+    const response = await fetch(url, {
+      headers: { 'user-agent': USER_AGENT },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+    if (!response.ok) return null;
+    const text = (await response.text()).slice(0, 256 * 1024);
+    return titleFromFeed(text);
+  } catch {
+    return null;
+  }
 }
 
 async function main() {
@@ -196,6 +259,9 @@ async function main() {
           answered += 1;
           continue;
         }
+
+        const title = await feedTitle(resolution.url);
+        if (title) await writeName(config, row.id, title);
 
         const accepted = await acceptPrivateSource(config, row.id, resolution);
 

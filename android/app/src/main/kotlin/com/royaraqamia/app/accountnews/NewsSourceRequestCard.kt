@@ -49,10 +49,8 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 @Composable
 fun NewsSourceRequestCard(
     state: NewsSourceRequestUiState,
-    name: String,
     url: String,
     requests: List<NewsRequest>,
-    onNameChange: (String) -> Unit,
     onUrlChange: (String) -> Unit,
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier,
@@ -61,7 +59,7 @@ fun NewsSourceRequestCard(
     val type = LocalRoyTypeScale.current
     val submitting = state is NewsSourceRequestUiState.Submitting
     val open = requests.any { it.status == "resolving" }
-    val canSubmit = !submitting && name.isNotBlank() && url.isNotBlank()
+    val canSubmit = !submitting && url.isNotBlank()
 
     Column(
         modifier = modifier.fillMaxWidth().testTag("account-news-request"),
@@ -72,12 +70,6 @@ fun NewsSourceRequestCard(
             style = type.small.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(
-            text = AccountNewsRequestCopy.BODY,
-            style = type.xs,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
         if (open) {
             Text(
                 text = AccountNewsRequestCopy.PENDING,
@@ -92,16 +84,6 @@ fun NewsSourceRequestCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = onNameChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(AccountNewsRequestCopy.NAME_LABEL, style = type.xs) },
-            placeholder = { Text(AccountNewsRequestCopy.NAME_PLACEHOLDER, style = type.xs) },
-            singleLine = true,
-            shape = Recipes.Card.radius,
-        )
 
         OutlinedTextField(
             value = url,

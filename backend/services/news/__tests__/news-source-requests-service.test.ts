@@ -50,7 +50,7 @@ function request(overrides: Partial<NewsSourceRequest> = {}): NewsSourceRequest 
   return {
     id: 'request-1',
     url: 'https://example.com/rss',
-    name: 'مثال',
+    name: 'example.com',
     status: 'ready',
     kind: 'feed',
     resolvedUrl: 'https://example.com/rss',
@@ -155,14 +155,15 @@ describe('news source requests service', () => {
     const repo = requests();
 
     const filed = await createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-      name: '  مثال  ',
       url: 'https://example.com/',
     });
 
+    // No name is typed: the row carries the source's own host until the resolver
+    // reads the feed's title.
     expect(repo.insert).toHaveBeenCalledWith({
       userId: 'user-1',
       url: 'https://example.com/',
-      name: 'مثال',
+      name: 'example.com',
     });
     expect(filed.status).toBe('resolving');
   });
@@ -171,8 +172,8 @@ describe('news source requests service', () => {
     const repo = requests();
     const service = createNewsSourceRequestsService(deps({ requests: repo }));
 
-    await service.submit('user-1', { name: 'صفحة', url: 'https://example.com/news' });
-    await service.submit('user-1', { name: 'قناة', url: 'https://t.me/example' });
+    await service.submit('user-1', { url: 'https://example.com/news' });
+    await service.submit('user-1', { url: 'https://t.me/example' });
 
     expect(repo.insert).toHaveBeenCalledTimes(2);
   });
@@ -182,7 +183,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: 'not-a-url',
       })
     ).rejects.toBeInstanceOf(NewsSourceUrlInvalidError);
@@ -199,7 +199,7 @@ describe('news source requests service', () => {
           requests: repo,
           sources: sources({ findIdByUrl: vi.fn(async () => 'example-com') }),
         })
-      ).submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
+      ).submit('user-1', { url: 'https://example.com/rss' })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
 
     expect(repo.insert).not.toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe('news source requests service', () => {
           requests: repo,
           privateSources: privateSources({ findIdByUrl: vi.fn(async () => 'source-1') }),
         })
-      ).submit('user-1', { name: 'مثال', url: 'https://example.com/rss' })
+      ).submit('user-1', { url: 'https://example.com/rss' })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyHeldError);
   });
 
@@ -223,7 +223,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
@@ -234,7 +233,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: shippedFeedUrl().toString(),
       })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyKnownError);
@@ -245,7 +243,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo, quota: oneSource })).submit('user-1', {
-        name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBeInstanceOf(NewsPrivateSourcesLimitError);
@@ -262,7 +259,7 @@ describe('news source requests service', () => {
         privateSources: privateSources({ count: vi.fn(async () => 0) }),
         quota: oneSource,
       })
-    ).submit('user-1', { name: 'مثال', url: 'https://example.com/rss' });
+    ).submit('user-1', { url: 'https://example.com/rss' });
 
     expect(repo.insert).toHaveBeenCalledTimes(1);
   });
@@ -276,7 +273,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
@@ -291,7 +287,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBeInstanceOf(NewsSourceAlreadyQueuedError);
@@ -307,7 +302,6 @@ describe('news source requests service', () => {
 
     await expect(
       createNewsSourceRequestsService(deps({ requests: repo })).submit('user-1', {
-        name: 'مثال',
         url: 'https://example.com/rss',
       })
     ).rejects.toBe(error);
@@ -316,6 +310,7 @@ describe('news source requests service', () => {
 
 describe('news admin service', () => {
   const approval = {
+    name: 'مثال',
     category: 'world',
     region: 'world',
     tier: 2,
@@ -343,7 +338,7 @@ describe('news admin service', () => {
     expect(repo.approve).toHaveBeenCalledWith({
       id: 'request-1',
       sourceId: 'example-com',
-      sourceName: 'مثال',
+      sourceName: 'example.com',
       sourceUrl: 'https://example.com/rss',
       kind: 'feed',
       category: 'world',

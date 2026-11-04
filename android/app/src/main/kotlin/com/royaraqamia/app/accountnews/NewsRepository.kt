@@ -184,13 +184,12 @@ class NewsRepository(private val client: ApiClient) {
             is ApiResult.Failure -> result
         }
 
-    suspend fun submitRequest(name: String, url: String): ApiResult<NewsRequest> =
+    suspend fun submitRequest(url: String): ApiResult<NewsRequest> =
         when (
             val result =
                 client.post<NewsSourceRequestResponse>(
                     REQUESTS_PATH,
                     buildJsonObject {
-                            put("name", name)
                             put("url", url)
                         }
                         .toString(),
