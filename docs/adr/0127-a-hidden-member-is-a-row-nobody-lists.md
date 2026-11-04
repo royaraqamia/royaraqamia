@@ -55,8 +55,10 @@ that exists and can sign in, and that no public surface names.
   unfiltered.
 - Nothing in the product needs the account's public page: the suite signs in and uses `/account`, and
   no spec visits `/u/<fixture>`.
-- If profile rendering ever needs to be cached for real, that is its own change — `generateStaticParams`
-  over the listed handles — and this flag must not be the thing that blocks it.
+- The profiles' own caching is a separate decision, and it has been taken: `generateStaticParams` over
+  the roster ([ADR-0128](0128-a-profile-is-prerendered-from-the-roster.md)) makes `/u/[username]` a
+  prerendered page with a 5-minute window, and a hidden member is simply not in the roster the build
+  draws from.
 - Nothing stops an Admin from unhiding by SQL, and nothing needs to: the flag is data, not a policy.
 
 ## Alternatives considered
