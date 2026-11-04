@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
-import { FAQAccordion } from '@/frontend/ui/FAQAccordion';
-import { faqSchema, faqs } from '@/frontend/ui/faq-data';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { ACCOUNT_FAQ_COPY } from '@/frontend/ui/account/faq-copy';
+import { faqSchema } from '@/frontend/ui/account/faq-schema';
+import { AccountFaqView } from '@/frontend/ui/account/faq-view';
 
 export const metadata: Metadata = {
-  title: 'الأسئلة الشَّائعة',
+  title: ACCOUNT_FAQ_COPY.pageTitle,
   description:
     'أجوبة عن طرق الدَّفع والعملات المقبولة والدَّفع بالتَّقسيط وشروط التَّدريب في رؤيَة رَقَميَّة.',
 };
@@ -21,19 +21,13 @@ export const metadata: Metadata = {
  */
 export default function AccountFaqPage() {
   return (
-    <div className="space-y-6">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <header className="mb-10 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>الأسئلة الشَّائعة</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
-
-      <FAQAccordion faqs={faqs} />
-    </div>
+      <AccountFaqView />
+    </>
   );
 }

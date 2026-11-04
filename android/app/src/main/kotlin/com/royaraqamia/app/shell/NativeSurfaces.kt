@@ -9,8 +9,8 @@ import com.royaraqamia.app.verify.VerifyRoutes
  * The routes the shell draws itself, the ones it hands to the document, and the
  * ones a guest may read (#647, #872).
  *
- * **The drawn set is empty on purpose.** A native screen is a second drawing of a
- * surface the site already draws, and the copies had drifted: a bare Material card
+ * **A port is drawn only after the gate.** A native screen is a second drawing of
+ * a surface the site already draws, and the copies had drifted: a bare Material card
  * where the site has its glass sign-in card, a bottom sheet without the site's
  * per-row grips, HabitFlow and SpendTrack in the app's own layout, and a feed that
  * arrived after the document was already the answer. One design was never what the
@@ -28,10 +28,11 @@ import com.royaraqamia.app.verify.VerifyRoutes
  */
 object NativeSurfaces {
     /**
-     * Nothing yet. A route arrives here with the pull request that makes its port
-     * indistinguishable from the page, never before it.
+     * The ports that have passed the visual gate. A route arrives here with the
+     * pull request that makes its port indistinguishable from the page, never
+     * before it (#874, ADR-0118).
      */
-    private val routes: Set<String> = setOf("/verify")
+    private val routes: Set<String> = setOf("/verify", "/account/faq")
 
     /**
      * The routes a signed-out visitor reads.

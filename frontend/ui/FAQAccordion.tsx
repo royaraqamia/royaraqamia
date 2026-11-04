@@ -12,18 +12,26 @@ export interface FAQItem {
 
 interface FAQAccordionProps {
   faqs: FAQItem[];
+  /**
+   * Namespace for the visual gate's hooks: `faq` draws `faq-list`, `faq-row-0`,
+   * `faq-question-0` and `faq-answer-0`, which `shared/visual/account-faq.json`
+   * measures. A caller that is not under the gate omits it.
+   */
+  visualPrefix?: string;
 }
 
-export function FAQAccordion({ faqs }: FAQAccordionProps) {
+export function FAQAccordion({ faqs, visualPrefix }: FAQAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const visual = (name: string) => (visualPrefix ? `${visualPrefix}-${name}` : undefined);
 
   return (
-    <div className="flex flex-col gap-3.5 sm:gap-4">
+    <div className="flex flex-col gap-3.5 sm:gap-4" data-visual={visual('list')}>
       {faqs.map((faq, index) => {
         const isOpen = openIndex === index;
         return (
           <ScrollAnimation key={index} animation="slide-up" delay={index * 0.05} duration={0.5}>
             <div
+              data-visual={visual(`row-${index}`)}
               className={`
                 group relative rounded-2xl transition-[background-color,border-color,box-shadow] duration-300 ease-out overflow-hidden border
                 ${
@@ -41,6 +49,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
               <button
                 type="button"
                 id={`faq-question-${index}`}
+                data-visual={visual(`question-${index}`)}
                 onClick={() => setOpenIndex(isOpen ? null : index)}
                 className="relative w-full px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4 text-right cursor-pointer outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl active:scale-[0.995]"
                 aria-expanded={isOpen}
@@ -53,6 +62,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
                     </span>
                   )}
                   <span
+                    data-visual={visual(`question-text-${index}`)}
                     className={`
                       text-base sm:text-lg font-bold leading-relaxed transition-colors duration-200 select-none
                       ${
@@ -76,12 +86,16 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
                     }
                   `}
                 >
-                  <ChevronDown className="w-5 h-5 transition-transform duration-300" />
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="w-5 h-5 transition-transform duration-300"
+                  />
                 </div>
               </button>
 
               <div
                 id={`faq-answer-${index}`}
+                data-visual={visual(`answer-${index}`)}
                 role="region"
                 aria-labelledby={`faq-question-${index}`}
                 className={`grid transition-[grid-template-rows] duration-300 ease-out ${

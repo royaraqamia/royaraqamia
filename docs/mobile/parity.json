@@ -1157,6 +1157,58 @@
           "copy": "unblock"
         }
       ]
+    },
+    {
+      "id": "account-rows",
+      "surface": "account",
+      "issue": "#948",
+      "web": {
+        "route": "app/account/page.tsx",
+        "component": "frontend/ui/account/account-rows.tsx",
+        "copyModule": "frontend/ui/account/account-rows-copy.ts",
+        "copyExport": "ACCOUNT_ROWS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRows.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRowsCopy.kt",
+        "copyObject": "AccountRowsCopy"
+      },
+      "copySource": "shared/copy/account-rows.json",
+      "states": [
+        {
+          "name": "Guest",
+          "copy": "navLabel"
+        },
+        {
+          "name": "Member",
+          "copy": "signOut"
+        }
+      ]
+    },
+    {
+      "id": "account-faq",
+      "surface": "account-faq",
+      "issue": "#949",
+      "web": {
+        "route": "app/account/faq/page.tsx",
+        "component": "frontend/ui/account/faq-view.tsx",
+        "copyModule": "frontend/ui/account/faq-copy.ts",
+        "copyExport": "ACCOUNT_FAQ_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountFaqScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountFaqState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountFaqCopy.kt",
+        "copyObject": "AccountFaqCopy"
+      },
+      "copySource": "shared/copy/account-faq.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
+        }
+      ]
     }
   ],
   "exempt": [

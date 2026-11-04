@@ -1,0 +1,84 @@
+{
+  "surface": "account-faq",
+  "route": "/account/faq",
+  "notes": "The page at rest: the title, the accordion, the open first question and its answer, and the closed second card. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first card, because it is the region both clients draw identically: the open row, its chevron and its answer. Widths of the question and answer text are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "first-row",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='faq-title'] h1"
+          },
+          "app": {
+            "tag": "faq-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='faq-list']"
+          },
+          "app": {
+            "tag": "faq-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "first-row",
+          "web": {
+            "selector": "[data-visual='faq-row-0']"
+          },
+          "app": {
+            "tag": "faq-row-0"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "first-question",
+          "web": {
+            "selector": "[data-visual='faq-question-0']"
+          },
+          "app": {
+            "tag": "faq-question-0"
+          },
+          "properties": ["height", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "first-question-text",
+          "web": {
+            "selector": "[data-visual='faq-question-text-0']"
+          },
+          "app": {
+            "tag": "faq-question-text-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-answer",
+          "web": {
+            "selector": "[data-visual='faq-answer-0']"
+          },
+          "app": {
+            "tag": "faq-answer-0"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "second-row",
+          "web": {
+            "selector": "[data-visual='faq-row-1']"
+          },
+          "app": {
+            "tag": "faq-row-1"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        }
+      ]
+    }
+  ]
+}
