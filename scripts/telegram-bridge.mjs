@@ -434,13 +434,32 @@ async function askModel(messages, { model = MODEL, tools } = {}) {
   return data?.choices?.[0]?.message ?? {};
 }
 
+/**
+ * Turns a voice note into text. `deepseek-v4.1-flash` takes no audio; this one
+ * does.
+ */
+function permanent(message) {
+  const error = new Error(message);
+  error.permanent = true;
+  return error;
+}
+
 /** Turns a voice note into text. `deepseek-v4.1-flash` takes no audio; this one does. */
 async function transcribe(fileId) {
   const file = await telegram('getFile', { file_id: fileId });
-  if (!file?.file_path) throw new Error('Telegram returned no file path');
+  if (!file?.file_path) throw permanent('Telegram returned no file path for this voice note');
 
-  const audio = await fetch(`https://api.telegram.org/bot${botToken()}/${file.file_path}`);
-  if (!audio.ok) throw new Error(`downloading the voice note failed: ${audio.status}`);
+  // `/file/bot<token>/<path>`: without `/file` this answers 404 every time, which
+  // is exactly what every voice note did before 2026-11-04.
+  const url = `https://api.telegram.org/file/bot${botToken()}/${file.file_path}`;
+  const audio = await fetch(url);
+  if (!audio.ok) {
+    const detail = `${audio.status} (${file.file_path})`;
+    // A 404 means the file is gone, and no retry brings it back.
+    throw audio.status === 404
+      ? permanent(`لم يعد Telegram يوفّر هذا الملف الصوتي: ${detail}`)
+      : new Error(`downloading the voice note failed: ${detail}`);
+  }
 
   const ogg = Buffer.from(await audio.arrayBuffer());
 
@@ -826,7 +845,7 @@ async function handleAnswer({ text, chat, messageId }) {
   const message = await askModel(
     [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...(history ? [{ role: 'system', content: `آخر ما جرى في المحادثة:\n${history}` }] : []),
+      ...(context ? [{ role: 'system', content: context }] : []),
       { role: 'user', content: text },
     ],
     { tools: [LOOKUP_TOOL] }
@@ -957,7 +976,9 @@ async function drain() {
  */
 async function handleFailure(row, error) {
   const attempts = Number(row.attempts ?? 0) + 1;
-  const final = attempts >= MAX_VOICE_ATTEMPTS;
+  // A permanent failure (a file Telegram no longer serves) is final on the first
+  // attempt; a transient one is retried.
+  const final = error?.permanent === true || attempts >= MAX_VOICE_ATTEMPTS;
 
   await db(`telegram_messages?id=eq.${row.id}`, {
     method: 'PATCH',
