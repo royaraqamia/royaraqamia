@@ -1,0 +1,23 @@
+{
+  "surface": "account-changelog",
+  "component": "account-changelog",
+  "web": {
+    "file": "frontend/ui/account/changelog-copy.ts",
+    "export": "CHANGELOG_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogCopy.kt",
+    "object": "ChangelogCopy"
+  },
+  "notes": {
+    "source": "The changelog's words, in both clients (#951). The site's view (`frontend/ui/account/changelog-view.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "placeholders": "`{version}` is the release's version line (`1.2.0`), which is ASCII in `public/android/changelog.json`; each client substitutes it itself, so the sentence around it stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "pageTitle": "ما الجديد",
+    "loadingLabel": "جاري التحميل...",
+    "empty": "لا توجد ملاحظات منشورة بعد. ستظهر هنا مع أوّل إصدار قادم.",
+    "releaseTitle": "الإصدار {version}"
+  }
+}

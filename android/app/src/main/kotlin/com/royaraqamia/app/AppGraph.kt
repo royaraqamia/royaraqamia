@@ -1,6 +1,7 @@
 package com.royaraqamia.app
 
 import android.content.Context
+import com.royaraqamia.app.account.ChangelogRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
@@ -70,6 +71,8 @@ class AppGraph private constructor(
     val community: CommunityFeedRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
     val chats: ChatsRepository,
+    /** The Android changelog (#951): the static file the weekly train writes. */
+    val changelog: ChangelogRepository,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -209,6 +212,7 @@ class AppGraph private constructor(
                         CommunityFeedSnapshotStore(File(context.filesDir, "community")),
                     ),
                 chats = ChatsRepository(client),
+                changelog = ChangelogRepository(client),
                 servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(

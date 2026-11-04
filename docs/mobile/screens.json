@@ -122,8 +122,9 @@
     },
     {
       "surface": "account-changelog",
-      "native": null,
-      "reason": "The app's release notes as a screen, from the weekly train's own list, land in #799."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/account/ChangelogScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "account-blocked",

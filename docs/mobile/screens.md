@@ -31,7 +31,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-faq` | `/account/faq` | _web only_ | The FAQ's content is shared by both clients first; the screen lands in #799. |
 | `account-news` | `/account/news` | _web only_ | The news preferences read and write the news contract; the screens land in #799. |
 | `account-services` | `/account/services` | _web only_ | The switches are a server preference read on the client; the screen lands with the rest of the account area (#799). |
-| `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
+| `account-changelog` | `/account/changelog` | `ChangelogScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-blocked` | `/account/blocked` | _web only_ | The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | `CommunityFeedScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |

@@ -24,7 +24,8 @@ vi.mock('@/frontend/shared/android-changelog', async (importOriginal) => {
   return { ...actual, fetchAndroidChangelog: vi.fn(async () => mocks.releases) };
 });
 
-import { ChangelogView, ShellChangelogRow } from '../changelog-view';
+import { ChangelogView } from '../changelog-view';
+import { ShellChangelogRow } from '../shell-changelog-row';
 
 function setUserAgent(value: string) {
   Object.defineProperty(navigator, 'userAgent', { value, configurable: true });

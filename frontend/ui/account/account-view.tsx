@@ -33,7 +33,7 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
-import { ShellChangelogRow } from '@/frontend/ui/account/changelog-view';
+import { ShellChangelogRow } from '@/frontend/ui/account/shell-changelog-row';
 import { rowClasses } from '@/frontend/ui/account/row-classes';
 
 /** The legal pages, public like the FAQ row — a plain link for guests and members. */

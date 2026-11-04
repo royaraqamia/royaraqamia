@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
+import com.royaraqamia.app.account.ChangelogScreen
 import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityRoutes
@@ -232,6 +233,11 @@ class ShellActivity : ComponentActivity() {
                                     // is a route the shell hands to the document.
                                     onConnectNew = { openRoute("/mcp/guide") },
                                 )
+                            // The changelog (#951): the static file the weekly
+                            // train writes, drawn as the page's list. Ported and
+                            // off, so the document still opens on top of it
+                            // (ADR-0117).
+                            "/account/changelog" -> ChangelogScreen(repository = graph.changelog)
                             // LinkSnap (#654): the page is the shortener and
                             // nothing else. The owned list is the account
                             // area's links page, which is its own route.
