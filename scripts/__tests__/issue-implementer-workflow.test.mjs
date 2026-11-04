@@ -89,7 +89,7 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(repair).toContain('gh pr checkout');
     expect(repair).toContain('opencode run --model');
     expect(repair).not.toContain('anomalyco/opencode/github@');
-    expect(repair).toContain('git push origin "HEAD:');
+    expect(repair).toContain('x-access-token:${AGENT_PUSH_TOKEN}@github.com');
   });
 
   it('normalizes the pull request title first, so repo-checks is green when it watches', () => {
