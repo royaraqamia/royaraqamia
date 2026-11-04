@@ -660,7 +660,11 @@ jobs:
         if: steps.guard.outputs.run == 'true' && steps.checks.outputs.status == 'red' && steps.checks.outputs.pr != ''
         timeout-minutes: 45
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A push made with `GITHUB_TOKEN` starts no workflow, so the repaired head would
+          # never be measured and the rewatch would see nothing. With no PAT the repair is
+          # skipped and the pull request is left to the scheduled landing run.
+          GH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN != '' }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -675,6 +679,15 @@ jobs:
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         run: |
           set -euo pipefail
+
+          if [ "$HAS_PUSH_TOKEN" != 'true' ]; then
+            # The same defect that made every repair of the first run invisible: a commit
+            # pushed with `GITHUB_TOKEN` triggers no workflow, so the checks never run on
+            # it and the rewatch can only report that nothing measured the branch. Leave it
+            # to the landing workflow, which says the same thing on the pull request.
+            echo "::warning title=AGENT_PUSH_TOKEN is missing::No repair can be measured; the landing workflow takes over."
+            exit 0
+          fi
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -841,7 +854,7 @@ jobs:
                   (checks === 'green'
                     ? 'its checks are green but the merge was refused'
                     : checkReason || 'a check on it did not pass') +
-                  '.\n\nThe pull request stays open and this issue stays with the implementer.',
+                  '.\n\nThe pull request stays open: a scheduled landing run keeps working on it until it is green, and this issue stays with the implementer.',
               });
               await keepForTheAgent();
               core.info(

@@ -110,6 +110,33 @@ The one repair attempt per round stands. What changed is that the attempt can no
 that a conflict counts as the failure it is rather than as a check that quietly never
 happened.
 
+## Amendment (2026-11-04, second): a pull request nobody lands is the workflow's problem
+
+The rule above is a gate on the pull request, not a promise about it. A round that ends
+red leaves the pull request open, and the picker skips an issue an open pull request names —
+so the issue is parked, and the pull request waits for someone to notice. That is exactly
+what happened to #996-#1000.
+
+`pr-land.yml` closes it. It is not a second implementer: while an implementer run is in
+flight, that run still owns landing its own pull request, and the sweep does nothing. Once
+the run ends — cleanly or not — the next sweep (every 30 minutes) owns whatever it left
+open, one landing run per pull request, so `concurrency` is per pull request and no two
+writers touch one branch.
+
+A landing run is one attempt: watch, merge when green; if red, repair once on the branch —
+the conflict with `main` included, since a conflicted pull request gets no checks at all —
+and watch again. Still red and the next sweep takes it again. After five attempts the
+pull request is labelled `opencode:stuck` and left alone; removing the label puts it back
+in the queue. That bound is deliberate: a check that cannot pass needs a decision, and an
+unbounded agent is how a green check gets negotiated instead of earned.
+
+One credential rule is load-bearing and was wrong in both workflows until this amendment:
+**a push made with `GITHUB_TOKEN` starts no workflow**, so a repaired head is never
+measured, and the rewatch can only report that nothing ran. Repairs therefore push with
+`AGENT_PUSH_TOKEN` (a fine-grained PAT: contents write, pull requests write). When the
+secret is absent both workflows say so on the pull request instead of pretending the
+repair worked.
+
 ## Considered options
 
 - **Keep the merge manual and run more issues a day.** Rejected: six pull requests waiting for one
