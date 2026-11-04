@@ -4,8 +4,8 @@
 -- Two numbers bound a group, and both are enforced in Postgres rather than in
 -- the request handler:
 --
---   * how many groups one member owns - `plan_limits.chat_groups`, 3 on Free and
---     20 on Pro, counted by `private.owned_item_count` as "created and not left"
+--   * how many groups one member owns - `plan_limits.chat_groups`, 5 on Free and
+--     50 on Pro, counted by `private.owned_item_count` as "created and not left"
 --     and enforced by `private.enforce_owned_item_cap` on chat_conversations;
 --   * how many members one group holds - 32, enforced by
 --     `private.enforce_chat_thread_size` on chat_participants.

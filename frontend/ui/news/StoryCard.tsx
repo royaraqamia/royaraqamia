@@ -27,6 +27,11 @@ function isSearchHit(story: NewsStory | NewsSearchHit): story is NewsSearchHit {
  * outbound link, so nothing needs to ship to the client. The summary is the
  * model's Arabic text as published — the page never rewrites it, and the source
  * link is the reader's way back to the original.
+ *
+ * One field the digest still carries is deliberately not drawn: `whyItMatters`.
+ * Two paragraphs of commentary on every card made the digest long enough that a
+ * reader scrolled past the stories themselves; the column and the generator keep
+ * producing it, so nothing downstream has to change when it comes back.
  */
 export function StoryCard({ story, digestDate }: StoryCardProps) {
   const CategoryIcon = NEWS_CATEGORY_ICONS[story.category];
@@ -52,13 +57,6 @@ export function StoryCard({ story, digestDate }: StoryCardProps) {
 
       <h3 className="mt-3 text-lg font-extrabold leading-snug text-foreground">{story.headline}</h3>
       <p className="mt-2 text-sm leading-7 text-muted-foreground">{story.summary}</p>
-
-      {story.whyItMatters ? (
-        <p className="mt-3 rounded-xl border border-border/50 bg-muted/50 px-3 py-2 text-xs leading-6 text-foreground/80">
-          <span className="font-bold">لماذا يهم: </span>
-          {story.whyItMatters}
-        </p>
-      ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="font-bold text-foreground/80">{story.sourceName}</span>

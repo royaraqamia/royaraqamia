@@ -4,17 +4,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
-import { NEWS_CATEGORY_ICONS } from './news-format';
 import { newsHref, type NewsView } from './news-url';
-import {
-  NEWS_CATEGORY_LABELS,
-  formatDigestDayShort,
-  type NewsCategory,
-} from '@/shared/contracts/news';
+import { formatDigestDayShort, type NewsCategory } from '@/shared/contracts/news';
 
 interface NewsFiltersProps {
   /** The selected day, or null for "latest". */
   date: string | null;
+  /** Read from the URL only: the chips that set it are gone, a shared link still carries it. */
   category: NewsCategory | null;
   /** The committed search term, kept across a chip or day change. */
   query: string;
@@ -22,8 +18,6 @@ interface NewsFiltersProps {
   view: NewsView;
   /** Every retained day, newest first, for the archive strip. */
   dates: string[];
-  /** The categories the selected day actually contains, so no chip filters to nothing. */
-  categories: NewsCategory[];
   /** Search results are site-wide, so the day strip is hidden while searching. */
   isSearching: boolean;
   /**
@@ -42,6 +36,11 @@ interface NewsFiltersProps {
  * long archive walk out of the history stack; the search box (`NewsSearch`) owns
  * the query itself and pushes, because a query is a destination a reader
  * returns to.
+ *
+ * The categories strip is gone: the digest is read top to bottom, and a row of
+ * chips above it read as a second navigation. `?category=` is still honoured, so
+ * a shared link from before the strip keeps filtering, and the day strip keeps
+ * carrying it across a day change.
  */
 export function NewsFilters({
   date,
@@ -49,7 +48,6 @@ export function NewsFilters({
   query,
   view,
   dates,
-  categories,
   isSearching,
   disabled = false,
 }: NewsFiltersProps) {
@@ -57,15 +55,13 @@ export function NewsFilters({
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
-  const navigate = (next: { category?: NewsCategory | null; date?: string | null }) => {
+  const navigate = (nextDate: string | null) => {
     if (disabled) return;
-    const nextCategory = next.category === undefined ? category : next.category;
-    const nextDate = next.date === undefined ? date : next.date;
 
     // A search spans every retained day, so it supersedes the selected one.
     const href = newsHref(pathname, {
       q: query,
-      category: nextCategory,
+      category,
       date: query ? null : nextDate,
       view,
     });
@@ -81,59 +77,13 @@ export function NewsFilters({
       aria-busy={isPending}
       aria-disabled={disabled}
     >
-      {/*
-        One row, like the day strip below it: seven chips wrapped onto a second
-        line on a phone, which made the categories read as a block rather than a
-        strip and pushed the archive and the digest down. The row scrolls
-        instead, and every chip keeps its own width (`shrink-0`) so a narrow
-        screen cuts the row rather than the labels.
-      */}
-      <nav aria-label="الأقسام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
-        <button
-          type="button"
-          aria-pressed={category === null}
-          disabled={disabled}
-          onClick={() => navigate({ category: null })}
-          className={cn(
-            'shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
-            category === null
-              ? 'border-primary/40 bg-primary/15 text-primary'
-              : 'border-border/60 bg-card/70 text-muted-foreground hover:text-foreground'
-          )}
-        >
-          كل الأقسام
-        </button>
-        {categories.map((value) => {
-          const Icon = NEWS_CATEGORY_ICONS[value];
-          const selected = category === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={selected}
-              disabled={disabled}
-              onClick={() => navigate({ category: selected ? null : value })}
-              className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors',
-                selected
-                  ? 'border-primary/40 bg-primary/15 text-primary'
-                  : 'border-border/60 bg-card/70 text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {NEWS_CATEGORY_LABELS[value]}
-            </button>
-          );
-        })}
-      </nav>
-
       {!isSearching && dates.length > 0 ? (
         <nav aria-label="أرشيف الأيام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             aria-pressed={date === null}
             disabled={disabled}
-            onClick={() => navigate({ date: null })}
+            onClick={() => navigate(null)}
             className={cn(
               'shrink-0 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors',
               date === null
@@ -149,7 +99,7 @@ export function NewsFilters({
               type="button"
               aria-pressed={date === value}
               disabled={disabled}
-              onClick={() => navigate({ date: value })}
+              onClick={() => navigate(value)}
               className={cn(
                 'shrink-0 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors',
                 date === value
