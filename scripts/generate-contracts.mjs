@@ -172,6 +172,16 @@ export const CONTRACTS = [
     file: 'CommunityContracts.kt',
     schemas: ['CommunityIndexResponseSchema'],
   },
+  // BlogPress (#952): the snapshot the app's store merges and the two bodies its
+  // Outbox replays — the delete and the restore of a tombstoned post. The read is
+  // `/api/blogpress/sync`, the same route the web's pull reads, tombstones
+  // included (ADR-0029), so a delete made on another device lands here rather
+  // than being invisible to the app.
+  {
+    module: 'shared/contracts/blogpress',
+    file: 'BlogpressContracts.kt',
+    schemas: ['BlogpressSyncSnapshotSchema', 'BlogpressDeleteSchema', 'RestorePostSnapshotSchema'],
+  },
   // The account news page (#950): the reader's source checklist, their private
   // feeds and their proposals. The app draws the same three islands the page
   // does, so it decodes the same envelopes the page's own API module reads. The

@@ -16,7 +16,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `linksnap` | `/linksnap` | `LinksnapShortenerScreen.kt` (off) | The shortener is the page at rest and passes the visual gate (#654, #874); the signed-in form's custom code and password fields are still the document, so the surface stays off until they are drawn. |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` (off) | Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `blogpress` | `/blogpress`<br>`/blogpress/calendar` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
+| `blogpress` | `/blogpress`<br>`/blogpress/calendar` | `BlogpressScreen.kt` (off) | The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page. |
 | `blogpress-editor` | `/blogpress/editor/[id]` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `quran` | `/quran` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
 | `notes` | `/notes` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |

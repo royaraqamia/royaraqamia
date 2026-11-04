@@ -7,13 +7,13 @@ import { useRouter } from 'next/navigation';
 
 import {
   FileText,
-  MoreHorizontal,
+  Ellipsis,
   Eye,
   EyeOff,
-  Trash2,
+  Trash,
   PenLine,
   Plus,
-  Loader2,
+  LoaderCircle,
   Search,
   X,
   ExternalLink,
@@ -24,7 +24,7 @@ import {
   FolderInput,
   CopyPlus,
   FileDown,
-  FileCode2,
+  FileCodeCorner,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -66,6 +66,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
+import { BLOGPRESS_COPY } from './blogpress-copy';
 
 interface PostListProps {
   posts: Post[];
@@ -74,17 +75,25 @@ interface PostListProps {
   tagsByPost?: Record<string, PostTag[]>;
 }
 
+/** `{name}` in a copy string, replaced by the value the caller supplies. */
+function fill(value: string, values: Record<string, string | number>): string {
+  return Object.entries(values).reduce(
+    (text, [key, replacement]) => text.split(`{${key}}`).join(String(replacement)),
+    value
+  );
+}
+
 const filters: { label: string; value: PostStatus | 'all' }[] = [
-  { label: 'الكل', value: 'all' },
-  { label: 'مسودَّة', value: 'draft' },
-  { label: 'مجدولة', value: 'scheduled' },
-  { label: 'منشور', value: 'published' },
+  { label: BLOGPRESS_COPY.filterAll, value: 'all' },
+  { label: BLOGPRESS_COPY.filterDraft, value: 'draft' },
+  { label: BLOGPRESS_COPY.filterScheduled, value: 'scheduled' },
+  { label: BLOGPRESS_COPY.filterPublished, value: 'published' },
 ];
 
 /** Publishing is online-only (ADR-0031); returns false and says so when offline. */
 function requireConnection(): boolean {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    toast.error('يتطلَّب النَّشر اتصالاً بالإنترنت');
+    toast.error(BLOGPRESS_COPY.needsConnection);
     return false;
   }
   return true;
@@ -142,8 +151,12 @@ export const PostList = memo(function PostList({
     setShowDeleteConfirm(false);
     toast.success(
       action === 'setCategory'
-        ? 'تم تحديث التصنيف'
-        : `تم ${action === 'delete' ? 'حذف' : action === 'publish' ? 'نشر' : 'إلغاء نشر'} ${affected} منشور`
+        ? BLOGPRESS_COPY.bulkUpdated
+        : action === 'delete'
+          ? fill(BLOGPRESS_COPY.bulkDeleted, { count: affected })
+          : action === 'publish'
+            ? fill(BLOGPRESS_COPY.bulkPublished, { count: affected })
+            : fill(BLOGPRESS_COPY.bulkUnpublished, { count: affected })
     );
     router.refresh();
   };
@@ -153,10 +166,11 @@ export const PostList = memo(function PostList({
       {categories.length > 0 && (
         <nav
           className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar -mx-1 px-1"
-          aria-label="تصفية حسب التَّصنيف"
+          aria-label={BLOGPRESS_COPY.categoryFilterAria}
+          data-visual="blogpress-categories"
         >
           <CategoryChip
-            label="كلّ التَّصنيفات"
+            label={BLOGPRESS_COPY.categoryAll}
             slug={undefined}
             active={!activeCategory}
             onSelect={(nextSlug) =>
@@ -210,7 +224,8 @@ export const PostList = memo(function PostList({
         <div
           className="inline-flex items-center p-1 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/80 border border-neutral-200/60 dark:border-neutral-800/60 shadow-2xs overflow-x-auto no-scrollbar max-w-full"
           role="tablist"
-          aria-label="تصفية المنشورات"
+          aria-label={BLOGPRESS_COPY.filterAria}
+          data-visual="blogpress-filters"
         >
           {filters.map((f) => (
             <button
@@ -244,15 +259,15 @@ export const PostList = memo(function PostList({
           ))}
         </div>
 
-        <div className="relative w-full sm:w-64 md:w-72 group">
+        <div className="relative w-full sm:w-64 md:w-72 group" data-visual="blogpress-search">
           <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-primary" />
           <input
             ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="بحث في المنشورات..."
-            aria-label="بحث في المنشورات"
+            placeholder={BLOGPRESS_COPY.searchPlaceholder}
+            aria-label={BLOGPRESS_COPY.searchAria}
             className="w-full h-9 ps-9 pe-9 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none transition-safe duration-200"
           />
           {searchQuery ? (
@@ -262,7 +277,7 @@ export const PostList = memo(function PostList({
                 searchRef.current?.focus();
               }}
               className="absolute inset-e-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-safe cursor-pointer"
-              aria-label="مسح البحث"
+              aria-label={BLOGPRESS_COPY.clearSearch}
             >
               <X className="size-3" />
             </button>
@@ -278,8 +293,8 @@ export const PostList = memo(function PostList({
         <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
           <span>
             {filteredPosts.length === 0
-              ? 'لا توجد نتائج للبحث'
-              : `عُثِرَ على ${filteredPosts.length} نتيجة`}
+              ? BLOGPRESS_COPY.searchNoResults
+              : fill(BLOGPRESS_COPY.searchFound, { count: filteredPosts.length })}
           </span>
         </div>
       )}
@@ -289,19 +304,20 @@ export const PostList = memo(function PostList({
         role="tabpanel"
         id="tabpanel-posts"
         aria-labelledby={`tab-${activeFilter}`}
+        data-visual="blogpress-list"
       >
         {filteredPosts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/20 p-8 text-center transition-safe">
             <EmptyState
               icon={FileText}
               className="py-12"
-              title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد منشورات بعد'}
+              title={searchQuery ? BLOGPRESS_COPY.searchNoResults : BLOGPRESS_COPY.emptyTitle}
               description={
                 searchQuery
-                  ? 'لم نعثر على منشورات تُطابق بحثك.'
+                  ? BLOGPRESS_COPY.emptySearchBody
                   : activeFilter === 'all'
-                    ? 'أنشِئ منشورك الأوَّل للبدء في الكتابة.'
-                    : 'لا توجد منشورات في هذا التَّصنيف.'
+                    ? BLOGPRESS_COPY.emptyAllBody
+                    : BLOGPRESS_COPY.emptyFilterBody
               }
               action={
                 !searchQuery && activeFilter === 'all' ? (
@@ -318,11 +334,11 @@ export const PostList = memo(function PostList({
                     aria-live="polite"
                   >
                     {pending ? (
-                      <Loader2 className="ms-2 size-4 animate-spin" />
+                      <LoaderCircle className="ms-2 size-4 animate-spin" />
                     ) : (
                       <Plus className="ms-2 size-4" />
                     )}
-                    {pending ? 'جاري الإنشاء...' : 'منشور جديد'}
+                    {pending ? BLOGPRESS_COPY.creatingPost : BLOGPRESS_COPY.newPost}
                   </Button>
                 ) : undefined
               }
@@ -343,11 +359,11 @@ export const PostList = memo(function PostList({
 
       <ConfirmDialog
         open={showDeleteConfirm}
-        title="حذف منشورات مختارة"
-        message={`هل أنت متأكد من حذف ${bulk.selectedCount} منشورات؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
-        icon={Trash2}
+        title={BLOGPRESS_COPY.bulkDeleteTitle}
+        message={fill(BLOGPRESS_COPY.bulkDeleteMessage, { count: bulk.selectedCount })}
+        confirmLabel={BLOGPRESS_COPY.bulkDelete}
+        cancelLabel={BLOGPRESS_COPY.cancel}
+        icon={Trash}
         variant="danger"
         onConfirm={() => runBulkAction('delete')}
         onCancel={() => setShowDeleteConfirm(false)}
@@ -369,7 +385,7 @@ const PostRow = memo(function PostRow({
   const router = useRouter();
   const wordCount = estimateWordCount(post.content);
   const readingTime = estimateReadingTime(post.content);
-  const label = postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان';
+  const label = postExcerpt(post.content, post.meta_desc ?? '') || BLOGPRESS_COPY.untitled;
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -380,13 +396,14 @@ const PostRow = memo(function PostRow({
           ? 'border-primary/50 ring-1 ring-primary/20 bg-primary/[0.03] dark:bg-primary/[0.04]'
           : 'border-neutral-200/70 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700/80 hover:shadow-md dark:hover:shadow-neutral-950/50'
       )}
+      data-visual="blogpress-row"
     >
       <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
         <button
           type="button"
           onClick={() => onToggleSelect(post.id)}
           aria-pressed={isSelected}
-          aria-label={isSelected ? 'إلغاء تحديد المنشور' : 'تحديد المنشور'}
+          aria-label={isSelected ? BLOGPRESS_COPY.deselectPost : BLOGPRESS_COPY.selectPost}
           className="shrink-0 size-5 rounded-md border flex items-center justify-center transition-safe duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
@@ -428,9 +445,9 @@ const PostRow = memo(function PostRow({
             {post.featured && (
               <span
                 className="inline-flex items-center shrink-0 p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20"
-                title="مُثبَّت"
+                title={BLOGPRESS_COPY.pinned}
               >
-                <Pin className="size-3 fill-amber-500/20" aria-label="مُثبَّت" />
+                <Pin className="size-3 fill-amber-500/20" aria-label={BLOGPRESS_COPY.pinned} />
               </span>
             )}
             <Link
@@ -448,8 +465,10 @@ const PostRow = memo(function PostRow({
             <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
             <span className="flex items-center gap-1 font-medium">
               <Clock className="size-3 text-neutral-400" />
-              {wordCount.toLocaleString('ar-u-nu-latn')} كلمة &bull;{' '}
-              {formatReadingTime(readingTime)}
+              {fill(BLOGPRESS_COPY.wordCount, {
+                count: wordCount.toLocaleString('ar-u-nu-latn'),
+              })}{' '}
+              &bull; {formatReadingTime(readingTime)}
             </span>
             <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
             <span className="flex items-center gap-1">
@@ -459,10 +478,37 @@ const PostRow = memo(function PostRow({
             <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
             <span className="text-neutral-500 dark:text-neutral-400">
               {post.status === 'published'
-                ? `نُشِرَ ${post.published_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
+                ? fill(BLOGPRESS_COPY.publishedOn, {
+                    date: post.published_at
+                      ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          calendar: 'islamic-umalqura',
+                        }).format(new Date(post.published_at))
+                      : '',
+                  })
                 : post.status === 'scheduled'
-                  ? `يُنشَر في ${post.publish_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.publish_at)) : ''}`
-                  : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
+                  ? fill(BLOGPRESS_COPY.scheduledFor, {
+                      date: post.publish_at
+                        ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            calendar: 'islamic-umalqura',
+                          }).format(new Date(post.publish_at))
+                        : '',
+                    })
+                  : fill(BLOGPRESS_COPY.lastModified, {
+                      date: new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        calendar: 'islamic-umalqura',
+                      }).format(new Date(post.updated_at)),
+                    })}
             </span>
           </div>
 
@@ -503,10 +549,10 @@ const PostRow = memo(function PostRow({
             )}
           />
           {post.status === 'published'
-            ? 'منشور'
+            ? BLOGPRESS_COPY.statusPublished
             : post.status === 'scheduled'
-              ? 'مجدولة'
-              : 'مسودَّة'}
+              ? BLOGPRESS_COPY.statusScheduled
+              : BLOGPRESS_COPY.statusDraft}
         </span>
 
         <DropdownMenu>
@@ -514,10 +560,10 @@ const PostRow = memo(function PostRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="إجراءات المنشور"
+              aria-label={BLOGPRESS_COPY.postActions}
               className="rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              <MoreHorizontal className="size-4" />
+              <Ellipsis className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -530,7 +576,7 @@ const PostRow = memo(function PostRow({
                 className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
               >
                 <PenLine className="size-4 text-neutral-500 me-2" />
-                <span>تعديل</span>
+                <span>{BLOGPRESS_COPY.actionEdit}</span>
               </Link>
             </DropdownMenuItem>
             {post.status === 'published' && (
@@ -541,7 +587,7 @@ const PostRow = memo(function PostRow({
                   className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
                 >
                   <ExternalLink className="size-4 text-neutral-500 me-2" />
-                  <span>عرض</span>
+                  <span>{BLOGPRESS_COPY.actionView}</span>
                 </Link>
               </DropdownMenuItem>
             )}
@@ -553,13 +599,13 @@ const PostRow = memo(function PostRow({
                     await publishPost(post.id);
                     router.refresh();
                   } catch {
-                    toast.error('فشل نشر المنشور');
+                    toast.error(BLOGPRESS_COPY.publishFailed);
                   }
                 }}
                 className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
               >
                 <Eye className="size-4 text-neutral-500 me-2" />
-                <span>نشر</span>
+                <span>{BLOGPRESS_COPY.actionPublish}</span>
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
@@ -574,7 +620,9 @@ const PostRow = memo(function PostRow({
                     router.refresh();
                   } catch {
                     toast.error(
-                      post.status === 'scheduled' ? 'فشل النَّشر الآن' : 'فشل إلغاء النَّشر'
+                      post.status === 'scheduled'
+                        ? BLOGPRESS_COPY.publishNowFailed
+                        : BLOGPRESS_COPY.unpublishFailed
                     );
                   }
                 }}
@@ -585,7 +633,11 @@ const PostRow = memo(function PostRow({
                 ) : (
                   <EyeOff className="size-4 text-neutral-500 me-2" />
                 )}
-                <span>{post.status === 'scheduled' ? 'نشر الآن' : 'إلغاء النَّشر'}</span>
+                <span>
+                  {post.status === 'scheduled'
+                    ? BLOGPRESS_COPY.actionPublishNow
+                    : BLOGPRESS_COPY.actionUnpublish}
+                </span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -594,7 +646,7 @@ const PostRow = memo(function PostRow({
                   await setPostFeatured(post.id, !post.featured);
                   router.refresh();
                 } catch {
-                  toast.error('فشل تحديث التَّثبيت');
+                  toast.error(BLOGPRESS_COPY.featureFailed);
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
@@ -604,50 +656,50 @@ const PostRow = memo(function PostRow({
               ) : (
                 <Pin className="size-4 text-neutral-500 me-2" />
               )}
-              <span>{post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}</span>
+              <span>{post.featured ? BLOGPRESS_COPY.actionUnpin : BLOGPRESS_COPY.actionPin}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
                 try {
                   await duplicatePost(post.id);
-                  toast.success('تم إنشاء نسخة من المنشور');
+                  toast.success(BLOGPRESS_COPY.duplicateDone);
                   router.refresh();
                 } catch {
-                  toast.error('فشل نسخ المنشور');
+                  toast.error(BLOGPRESS_COPY.duplicateFailed);
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
             >
               <CopyPlus className="size-4 text-neutral-500 me-2" />
-              <span>نسخ المنشور</span>
+              <span>{BLOGPRESS_COPY.actionDuplicate}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
                 try {
                   await downloadPostAsFile(label, post.content ?? '', 'markdown');
-                  toast.success('تم تصدير المنشور بصيغة Markdown');
+                  toast.success(BLOGPRESS_COPY.exportMarkdownDone);
                 } catch {
-                  toast.error('فشل تصدير المنشور');
+                  toast.error(BLOGPRESS_COPY.exportFailed);
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
             >
               <FileDown className="size-4 text-neutral-500 me-2" />
-              <span>تصدير Markdown</span>
+              <span>{BLOGPRESS_COPY.actionExportMarkdown}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
                 try {
                   await downloadPostAsFile(label, post.content ?? '', 'html');
-                  toast.success('تم تصدير المنشور بصيغة HTML');
+                  toast.success(BLOGPRESS_COPY.exportHtmlDone);
                 } catch {
-                  toast.error('فشل تصدير المنشور');
+                  toast.error(BLOGPRESS_COPY.exportFailed);
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
             >
-              <FileCode2 className="size-4 text-neutral-500 me-2" />
-              <span>تصدير HTML</span>
+              <FileCodeCorner className="size-4 text-neutral-500 me-2" />
+              <span>{BLOGPRESS_COPY.actionExportHtml}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -656,17 +708,17 @@ const PostRow = memo(function PostRow({
                   onSelect={(e) => e.preventDefault()}
                   className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/30"
                 >
-                  <Trash2 className="size-4 text-red-500 me-2" />
-                  <span>حذف</span>
+                  <Trash className="size-4 text-red-500 me-2" />
+                  <span>{BLOGPRESS_COPY.actionDelete}</span>
                 </DropdownMenuItem>
               </DialogTrigger>
               <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 max-w-md p-6">
                 <DialogHeader className="space-y-2 text-start">
                   <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                    حذف المنشور
+                    {BLOGPRESS_COPY.deleteTitle}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                    هل أنت متأكِّد من حذف &ldquo;{label}&rdquo;؟ لا يمكن التَّراجع عن هذا الإجراء.
+                    {fill(BLOGPRESS_COPY.deleteMessage, { label })}
                   </DialogDescription>
                 </DialogHeader>
                 <DialogActions onCancel={() => setDeleteOpen(false)} className="mt-6">
@@ -677,9 +729,9 @@ const PostRow = memo(function PostRow({
                       setDeleteOpen(false);
                       try {
                         await deletePost(post.id);
-                        toast('تم حذف المنشور', {
+                        toast(BLOGPRESS_COPY.deleted, {
                           action: {
-                            label: 'تراجع',
+                            label: BLOGPRESS_COPY.undo,
                             onClick: async () => {
                               try {
                                 await restorePost({
@@ -693,19 +745,19 @@ const PostRow = memo(function PostRow({
                                 });
                                 router.refresh();
                               } catch {
-                                toast.error('فشل استرجاع المنشور');
+                                toast.error(BLOGPRESS_COPY.restoreFailed);
                               }
                             },
                           },
                         });
                         router.refresh();
                       } catch {
-                        toast.error('فشل حذف المنشور');
+                        toast.error(BLOGPRESS_COPY.deleteFailed);
                       }
                     }}
                     className="w-full sm:w-auto"
                   >
-                    حذف
+                    {BLOGPRESS_COPY.delete}
                   </HeroCtaButton>
                 </DialogActions>
               </DialogContent>
@@ -794,11 +846,13 @@ const BulkActionBar = memo(function BulkActionBar({
         >
           <Check className="size-3" strokeWidth={3} />
         </span>
-        تحديد الكل
+        {BLOGPRESS_COPY.bulkSelectAll}
       </button>
 
       <span className="text-xs text-muted-foreground">
-        {hasSelection ? `${selectedCount} من ${total}` : `إجمالي ${total}`}
+        {hasSelection
+          ? fill(BLOGPRESS_COPY.bulkCount, { selected: selectedCount, total })
+          : fill(BLOGPRESS_COPY.bulkTotal, { total })}
       </span>
 
       <div className="flex-1" />
@@ -809,7 +863,7 @@ const BulkActionBar = memo(function BulkActionBar({
         disabled={!hasSelection || busy}
         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        مسح
+        {BLOGPRESS_COPY.bulkClear}
       </button>
 
       <button
@@ -819,7 +873,7 @@ const BulkActionBar = memo(function BulkActionBar({
         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Eye className="size-3.5" />
-        نشر
+        {BLOGPRESS_COPY.bulkPublish}
       </button>
 
       <button
@@ -829,7 +883,7 @@ const BulkActionBar = memo(function BulkActionBar({
         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <EyeOff className="size-3.5" />
-        إلغاء النَّشر
+        {BLOGPRESS_COPY.bulkUnpublish}
       </button>
 
       <button
@@ -839,7 +893,7 @@ const BulkActionBar = memo(function BulkActionBar({
         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <FolderInput className="size-3.5" />
-        تصنيف
+        {BLOGPRESS_COPY.bulkCategory}
       </button>
 
       {categoryOpen ? (
@@ -847,10 +901,10 @@ const BulkActionBar = memo(function BulkActionBar({
           <select
             value={categoryId}
             onChange={(e) => onCategoryChange(e.target.value)}
-            aria-label="اختر التصنيف"
+            aria-label={BLOGPRESS_COPY.bulkCategoryAria}
             className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary h-8"
           >
-            <option value="">اختر تصنيف...</option>
+            <option value="">{BLOGPRESS_COPY.bulkChooseCategory}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -863,7 +917,7 @@ const BulkActionBar = memo(function BulkActionBar({
             disabled={!categoryId || busy}
             className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {busy ? <Loader2 className="size-3.5 animate-spin" /> : 'تطبيق'}
+            {busy ? <LoaderCircle className="size-3.5 animate-spin" /> : BLOGPRESS_COPY.bulkApply}
           </button>
         </div>
       ) : null}
@@ -874,8 +928,8 @@ const BulkActionBar = memo(function BulkActionBar({
         disabled={!hasSelection || busy}
         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <Trash2 className="size-3.5" />
-        حذف
+        <Trash className="size-3.5" />
+        {BLOGPRESS_COPY.bulkDelete}
       </button>
     </div>
   );

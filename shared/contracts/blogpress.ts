@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PostSummarySchema } from '@/shared/contracts/community';
 
 export type PostStatus = 'draft' | 'published' | 'scheduled';
 
@@ -64,6 +65,33 @@ export interface PostAuthor {
 export interface BlogpressSyncSnapshot {
   posts: Post[];
 }
+
+/**
+ * `GET /api/blogpress/sync`, as the app decodes it (#952).
+ *
+ * The site's pull reads the same route; the app holds the rows it paints from
+ * this body, so the shape it holds them from is a schema rather than a retyped
+ * Kotlin class. The post projection is the feed's own (`PostSummarySchema`),
+ * tombstones included, so a delete made on another device lands in the app's
+ * store instead of looking like a row that never existed.
+ */
+export const BlogpressSyncSnapshotSchema = z.object({
+  posts: z.array(PostSummarySchema),
+});
+
+export type BlogpressSyncSnapshotBody = z.infer<typeof BlogpressSyncSnapshotSchema>;
+
+/**
+ * The delete an Outbox replay sends (#952): the row and the logical write time,
+ * so the tombstone keeps write order (ADR-0029). An online delete sends nothing
+ * and the server stamps it with its own clock.
+ */
+export const BlogpressDeleteSchema = z.object({
+  id: z.string(),
+  updatedAt: z.string(),
+});
+
+export type BlogpressDelete = z.infer<typeof BlogpressDeleteSchema>;
 
 /**
  * The content half of a deleted post, re-sent by the client to undo a delete.
