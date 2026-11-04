@@ -1,12 +1,13 @@
 import { cn } from '@/frontend/shared/cn';
 
 /**
- * The assistant's own mark: an orb with an orbit around it.
+ * The assistant's own mark: a lit orb.
  *
- * The list drew the assistant as the first letter of «المساعد الذكي» in the same
- * circle every other chat uses, so the product's one advertised feature looked
- * like a member whose name happened to start with «ا» — and the thread header
- * drew nothing at all.
+ * The first version drew an orbit ring with a satellite dot, and at 36px it read
+ * as a planet — a Saturn, not a brand mark. The ring is gone: one filled sphere,
+ * one highlight, sized to fill the tile. It is deliberately the only non-initial
+ * avatar in the app, so the assistant is recognisable at list size in a way a
+ * letter in a circle never is.
  *
  * It is an inline SVG rather than an image on purpose: `next/image` refuses an
  * SVG source unless `dangerouslyAllowSVG` is set, and this is a glyph that must
@@ -24,7 +25,7 @@ export function AssistantMark({
     <span
       aria-hidden="true"
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-600 via-fuchsia-500 to-indigo-600 text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,0.9)] ring-1 ring-white/25',
+        'inline-flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 via-fuchsia-500 to-indigo-600 text-white shadow-[0_6px_16px_-8px_rgba(139,92,246,0.9)]',
         'size-9',
         className
       )}
@@ -35,18 +36,9 @@ export function AssistantMark({
         className={cn('size-[58%]', glyphClassName)}
         aria-hidden="true"
       >
-        <ellipse
-          cx="12"
-          cy="12"
-          rx="9.4"
-          ry="4.1"
-          stroke="currentColor"
-          strokeOpacity="0.55"
-          strokeWidth="1.4"
-          transform="rotate(-28 12 12)"
-        />
-        <circle cx="12" cy="12" r="3.3" fill="currentColor" />
-        <circle cx="19.4" cy="8.2" r="1.5" fill="currentColor" />
+        {/* A crescent, not a sphere: at 36px a filled disc reads as a dot, and the
+            ringed version before it read as a planet. */}
+        <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
       </svg>
     </span>
   );

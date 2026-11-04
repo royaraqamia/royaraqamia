@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
+  ArrowRight,
   Check,
   Download,
   EllipsisVertical,
@@ -354,7 +355,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         leaves instead of a 60vh box. From `sm` up it is the centred panel it has
         always been (#1021).
       */}
-      <div className="flex min-h-[62dvh] flex-col gap-2 overflow-y-auto px-3 py-4 sm:max-h-[60vh] sm:min-h-[18rem]">
+      <div className="flex min-h-[62dvh] flex-col gap-2 overflow-y-auto px-4 py-4 pb-6 sm:max-h-[60vh] sm:min-h-[18rem]">
         {hasOlder && (
           <button
             type="button"
@@ -574,6 +575,13 @@ function ThreadHeader({
 }) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
+      <Link
+        href="/notifications?tab=chats"
+        aria-label="???? ??? ?????????"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
+      >
+        <ArrowRight className="size-5" aria-hidden="true" />
+      </Link>
       {thread.kind === 'agent' ? (
         <AssistantMark className="size-9" />
       ) : thread.kind === 'group' ? (
@@ -924,7 +932,7 @@ function ThreadFooter({
           event.preventDefault();
           onSend();
         }}
-        className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3"
+        className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
       >
         <ChatComposeAttachments
           files={files}
@@ -976,7 +984,7 @@ function ThreadFooter({
 
   if (state === 'answer') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
           <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
@@ -992,7 +1000,7 @@ function ThreadFooter({
 
   if (state === 'waiting') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.waitingComposer.replace('{title}', thread.title)}
         </p>
@@ -1007,7 +1015,7 @@ function ThreadFooter({
 
   if (state === 'blocked') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.blockedComposer}
         </p>
@@ -1022,7 +1030,7 @@ function ThreadFooter({
 
   if (state === 'closed' && thread.kind === 'direct' && counterpart) {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3">
+      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {thread.status === 'declined'
             ? CHAT_THREAD_COPY.closedDeclined
