@@ -1349,6 +1349,34 @@
           "copy": "received"
         }
       ]
+    },
+    {
+      "id": "blogpress-list",
+      "surface": "blogpress",
+      "issue": "#952",
+      "web": {
+        "route": "app/blogpress/(app)/page.tsx",
+        "component": "app/blogpress/_components/post-list.tsx",
+        "copyModule": "app/blogpress/_components/blogpress-copy.ts",
+        "copyExport": "BLOGPRESS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressCopy.kt",
+        "copyObject": "BlogpressCopy"
+      },
+      "copySource": "shared/copy/blogpress.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "filterAll"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
     }
   ],
   "exempt": [

@@ -25,6 +25,8 @@ import com.royaraqamia.app.session.SupabasePasswordGrant
 import com.royaraqamia.app.session.SupabaseTokenRefresher
 import com.royaraqamia.app.store.IdentityScopedStore
 import com.royaraqamia.app.store.PreferencesIdentityStorage
+import com.royaraqamia.app.store.blogpress.BlogpressRepository
+import com.royaraqamia.app.store.blogpress.BlogpressStores
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
@@ -83,9 +85,12 @@ class AppGraph private constructor(
     val spendtrack: SpendtrackRepository,
     /** LinkSnap's store and queue (#654). */
     val linksnap: LinksnapRepository,
+    /** BlogPress's store and queue (#952). */
+    val blogpress: BlogpressRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
+    private val blogpressDatabases: IdentityScopedStore<BlogpressStores>,
     private val grant: SupabasePasswordGrant,
 ) {
     /** Whether a request can be sent right now, without waiting on a refresh. */
@@ -115,10 +120,11 @@ class AppGraph private constructor(
         val habit = habitflow.drain()
         val spend = spendtrack.drain()
         val links = linksnap.drain()
+        val posts = blogpress.drain()
         return DrainReport(
-            replayed = habit.replayed + spend.replayed + links.replayed,
-            pending = habit.pending + spend.pending + links.pending,
-            failed = habit.failed + spend.failed + links.failed,
+            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed,
         )
     }
 
@@ -127,10 +133,11 @@ class AppGraph private constructor(
         val habit = habitflow.outboxStatus()
         val spend = spendtrack.outboxStatus()
         val links = linksnap.outboxStatus()
+        val posts = blogpress.outboxStatus()
         return DrainReport(
             replayed = 0,
-            pending = habit.pending + spend.pending + links.pending,
-            failed = habit.failed + spend.failed + links.failed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed,
         )
     }
 
@@ -153,6 +160,7 @@ class AppGraph private constructor(
         databases.close()
         spendtrackDatabases.close()
         linksnapDatabases.close()
+        blogpressDatabases.close()
     }
 
     /**
@@ -166,6 +174,7 @@ class AppGraph private constructor(
         databases.close()
         spendtrackDatabases.close()
         linksnapDatabases.close()
+        blogpressDatabases.close()
     }
 
     companion object {
@@ -194,6 +203,8 @@ class AppGraph private constructor(
                 IdentityScopedStore { identity -> SpendtrackStores.open(context, identity) }
             val linksnapDatabases =
                 IdentityScopedStore { identity -> LinksnapStores.open(context, identity) }
+            val blogpressDatabases =
+                IdentityScopedStore { identity -> BlogpressStores.open(context, identity) }
 
             // A guest's queue waits for a sign-in rather than being sent as
             // nobody (ADR-0027), and a drain with the radio off spends an attempt
@@ -242,9 +253,18 @@ class AppGraph private constructor(
                         signedIn = signedIn,
                         online = online,
                     ),
+                blogpress =
+                    BlogpressRepository(
+                        databases = blogpressDatabases,
+                        identity = { session.storeIdentity },
+                        client = client,
+                        signedIn = signedIn,
+                        online = online,
+                    ),
                 databases = databases,
                 spendtrackDatabases = spendtrackDatabases,
                 linksnapDatabases = linksnapDatabases,
+                blogpressDatabases = blogpressDatabases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
         }

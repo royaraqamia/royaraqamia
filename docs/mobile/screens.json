@@ -44,8 +44,9 @@
     },
     {
       "surface": "blogpress",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressScreen.kt",
+      "reason": "The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page.",
+      "enabled": false
     },
     {
       "surface": "blogpress-editor",

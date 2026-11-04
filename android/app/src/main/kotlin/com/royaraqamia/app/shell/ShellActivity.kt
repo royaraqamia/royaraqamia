@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.core.content.FileProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
@@ -28,11 +29,13 @@ import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
 import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
+import java.io.File
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.account.AccountServicesScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
+import com.royaraqamia.app.blogpress.BlogpressScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.chats.ChatsScreen
@@ -223,6 +226,17 @@ class ShellActivity : ComponentActivity() {
                                     onSignOut = ::signOut,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
+                            // BlogPress's posts list (#952), drawn from the
+                            // device and off until its gate passes (ADR-0117):
+                            // the document still opens on top of it.
+                            "/blogpress" ->
+                                BlogpressScreen(
+                                    repository = graph.blogpress,
+                                    signedIn = signedIn,
+                                    onOpenEditor = { id -> openRoute("/blogpress/editor/$id") },
+                                    onOpenPost = { slug -> openRoute("/community/$slug") },
+                                    onExport = ::sharePost,
+                                )
                             // SpendTrack's two routes are one screen (#653): the
                             // total and list, and the categories that list files
                             // against — the pair the site's surface matrix gives
@@ -621,6 +635,32 @@ class ShellActivity : ComponentActivity() {
      * URL to the platform, without putting the member's password anywhere in a
      * WebView.
      */
+    /**
+     * The page's Markdown/HTML export, as the app's share sheet (#952).
+     *
+     * The site downloads a file; the app has no Downloads folder it owns, so it
+     * writes the same file to its own cache and hands the platform a read grant
+     * on exactly that file. The words are the page's, and the file is the post's
+     * body, not a rendering of it.
+     */
+    private fun sharePost(label: String, content: String, format: String) {
+        runCatching {
+            val extension = if (format == "html") "html" else "md"
+            val mime = if (format == "html") "text/html" else "text/markdown"
+            val safe = label.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifEmpty { "post" }
+            val file = File(cacheDir, "$safe.$extension")
+            file.writeText(content)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val send =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = mime
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            startActivity(Intent.createChooser(send, label))
+        }
+    }
+
     private fun openExternal(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     }
