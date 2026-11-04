@@ -10,12 +10,105 @@
 
 import { execFileSync } from 'node:child_process';
 
-import { githubTarget } from './config.mjs';
-import { github } from './http.mjs';
+import { githubTarget, MODEL } from './config.mjs';
+import { askModel, github } from './http.mjs';
 import { openConfirmation } from './store.mjs';
 import { sendMarkdown } from './progress.mjs';
 
 const LABEL = 'telegram';
+
+/**
+ * A title a repository accepts.
+ *
+ * Everything in the repo is English: `git log`, a pull request, an issue and a
+ * branch are read by people and agents who were not in this conversation, and
+ * the repository gates the pull request title on this exact shape. The first
+ * live write produced «نظّف مفتاح update_offset الميت من telegram_state…» and
+ * failed `Conventional Commit Title` on the pull request it opened.
+ */
+export const CONVENTIONAL_TITLE =
+  /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9.-]+\))?!?: \S.{0,70}$/;
+
+const TYPES = ['feat', 'fix', 'chore', 'docs', 'test', 'refactor', 'perf', 'style', 'build', 'ci'];
+
+const TITLE_PROMPT = [
+  'Write one git commit title for the change described below, and nothing else.',
+  'Format: type(scope): summary',
+  'type is one of: feat, fix, chore, docs, test, refactor, perf, style, build, ci.',
+  'scope is the area, lowercase, one word where possible (telegram, chats, db, android, web).',
+  'summary is English, imperative, lowercase after the colon, at most 60 characters, no full stop.',
+  'Describe what actually changed, not what was asked.',
+  'Answer with the single line and no explanation.',
+].join('\n');
+
+/** `docs: …`, `chore(db): …` - a shape that passes even when the model does not. */
+export function fallbackTitle(files = []) {
+  const paths = files.length ? files : ['change'];
+  if (paths.every((path) => path.startsWith('docs/'))) {
+    return `docs: update ${slug(paths[0].replace(/^docs\//, '').replace(/\.md$/, ''), 40)}`;
+  }
+  if (paths.every((path) => path.startsWith('supabase/migrations/'))) {
+    return 'chore(db): apply a migration';
+  }
+  if (paths.every((path) => path.startsWith('android/'))) {
+    return 'chore(android): update the shell';
+  }
+  return 'chore(telegram): apply a change requested from the chat';
+}
+
+/**
+ * One small model call for the title, validated rather than trusted.
+ *
+ * `ask` is injected so the fallback is testable without a gateway. A title that
+ * does not match the shape - in the wrong language, too long, missing a type -
+ * is replaced, never repaired: guessing at a malformed title is how an Arabic
+ * sentence reached `main`'s history.
+ */
+export async function conventionalTitle({ request, answer, files, ask }) {
+  const asked = [
+    { role: 'system', content: TITLE_PROMPT },
+    {
+      role: 'user',
+      content: [
+        `<request>\n${request}\n</request>`,
+        `<changed files>\n${files.slice(0, 20).join('\n')}\n</changed files>`,
+        `<result>\n${String(answer).slice(0, 1500)}\n</result>`,
+      ].join('\n\n'),
+    },
+  ];
+
+  try {
+    const message = await ask(asked);
+    const line = String(message?.content ?? '')
+      .trim()
+      .split('\n')[0]
+      .replace(/^[-*\s]+/, '')
+      .replace(/\.$/, '')
+      // A model likes to wrap the title in backticks or quotes, and the trailing
+      // dot may sit outside them, so punctuation goes before the wrapper.
+      .replace(/^[`"']+|[`"']+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (CONVENTIONAL_TITLE.test(line)) return line;
+  } catch {
+    // A title is not worth failing a push over; the fallback is a valid one.
+  }
+
+  return fallbackTitle(files);
+}
+
+/** The files the turn changed, relative to the checkout. */
+export function changedFiles(cwd) {
+  try {
+    return execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' })
+      .split('\n')
+      .map((line) => line.slice(3).trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
 
 /** Any change at all, including a new file. */
 export function hasChanges(cwd) {
@@ -109,11 +202,16 @@ export async function fileIssue({ owner, repo, title, body }) {
  */
 export async function publishWork({ cwd, messageRowId, requestText, answer, runUrl }) {
   const { owner, repo } = githubTarget();
-  const titleLine =
-    String(requestText ?? '')
-      .trim()
-      .split('\n')[0] || 'تغيير من تيليجرام';
-  const title = titleLine.slice(0, 120);
+  const files = changedFiles(cwd);
+
+  // One small call for the title: the repository's history is English, and the
+  // pull request gate refuses anything that is not conventional.
+  const title = await conventionalTitle({
+    request: String(requestText ?? ''),
+    answer: String(answer ?? ''),
+    files,
+    ask: (messages) => askModel(messages, { model: MODEL, temperature: 0.2 }),
+  });
   const branch = `telegram/${messageRowId ?? Date.now()}-${slug(title)}`;
 
   // The record is nice to have; a failure here must not cost the owner the work.
@@ -122,12 +220,14 @@ export async function publishWork({ cwd, messageRowId, requestText, answer, runU
     repo,
     title,
     body: [
-      `الطلب كما وصل: ${requestText}`,
+      '## Requested from Telegram',
       '',
-      '## ما فعله المساعد',
+      `> ${String(requestText ?? '').replace(/\n/g, ' ')}`,
+      '',
+      '## What changed',
       '',
       answer,
-      runUrl ? `\n[سجل التشغيل](${runUrl})` : '',
+      runUrl ? `[Run log](${runUrl})` : '',
     ]
       .filter(Boolean)
       .join('\n'),

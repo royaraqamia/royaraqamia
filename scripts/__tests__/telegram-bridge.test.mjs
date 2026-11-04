@@ -196,6 +196,53 @@ describe('the branch name', () => {
   });
 });
 
+describe('the commit title', () => {
+  const title = (line, files = ['scripts/telegram/publish.mjs']) =>
+    import('../telegram/publish.mjs').then(({ conventionalTitle }) =>
+      conventionalTitle({
+        request: 'نظّف مفتاح update_offset الميت من telegram_state',
+        answer: 'حذفت المفتاح',
+        files,
+        ask: async () => ({ content: line }),
+      })
+    );
+
+  it('accepts a conventional line', async () => {
+    expect(await title('chore(db): drop the dead telegram poll offset')).toBe(
+      'chore(db): drop the dead telegram poll offset'
+    );
+  });
+
+  it('strips a bullet, a backtick and a trailing full stop', async () => {
+    expect(await title('- `fix(telegram): keep the answer in one chunk`.')).toBe(
+      'fix(telegram): keep the answer in one chunk'
+    );
+  });
+
+  it('rejects an Arabic title, a bare sentence and an unknown type', async () => {
+    const fallback = 'chore(telegram): apply a change requested from the chat';
+    expect(await title('نظّف مفتاح update_offset')).toBe(fallback);
+    expect(await title('Clean up the telegram state table')).toBe(fallback);
+    expect(await title('update: cleanup')).toBe(fallback);
+  });
+
+  it('falls back by area when the model fails', async () => {
+    const { conventionalTitle } = await import('../telegram/publish.mjs');
+    const failing = {
+      request: 'x',
+      answer: 'y',
+      files: ['supabase/migrations/20261114130000_x.sql'],
+      ask: async () => {
+        throw new Error('gateway down');
+      },
+    };
+    expect(await conventionalTitle(failing)).toBe('chore(db): apply a migration');
+    expect(await conventionalTitle({ ...failing, files: ['docs/agents/telegram.md'] })).toBe(
+      'docs: update agents-telegram'
+    );
+  });
+});
+
 describe('safeFileName', () => {
   it('keeps the last segment and never lets a path decide where a file lands', async () => {
     const { safeFileName } = await import('../telegram/text.mjs');
