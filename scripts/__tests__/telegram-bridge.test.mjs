@@ -15,6 +15,7 @@ import {
   parseMemory,
   parseWhen,
   renderAnswer,
+  silenceWav,
 } from '../telegram-bridge.mjs';
 
 describe('parseCommand', () => {
@@ -289,6 +290,17 @@ describe('parseMemory', () => {
     );
     expect(parsed.memories[0]).toEqual({ kind: 'fact', content: 'حقيقة' });
     expect(parsed.memories).toHaveLength(6);
+  });
+});
+
+describe('silenceWav', () => {
+  it('builds a valid 16-bit mono PCM header for the probe', () => {
+    const wav = silenceWav(1, 8000);
+    expect(wav.length).toBe(44 + 16_000);
+    expect(wav.toString('ascii', 0, 4)).toBe('RIFF');
+    expect(wav.toString('ascii', 8, 12)).toBe('WAVE');
+    expect(wav.readUInt32LE(24)).toBe(8000);
+    expect(wav.readUInt16LE(34)).toBe(16);
   });
 });
 
