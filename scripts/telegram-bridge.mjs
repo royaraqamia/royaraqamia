@@ -235,11 +235,20 @@ export function chunkMessage(text, limit = MAX_TELEGRAM) {
   return chunks.length ? chunks : [''];
 }
 
+/**
+ * The same escaping serves text nodes and attribute values (`<a href="…">`), so
+ * the quotes are escaped too: `&`, `<` and `>` alone leave a `"` in a URL free
+ * to close the attribute early and open an event handler in its place
+ * (`js/incomplete-html-attribute-sanitization`). Telegram's HTML parser resolves
+ * both entities, so an escaped quote still reads as a quote in the message.
+ */
 export function escapeHtml(text) {
   return String(text ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**
