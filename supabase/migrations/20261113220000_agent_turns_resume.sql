@@ -154,10 +154,14 @@ $$;
 
 revoke all on function public.wake_agent_turns() from public, anon, authenticated;
 
-do $$
+do $do$
 begin
   if not exists (select 1 from cron.job where jobname = 'agent-turns-wake') then
-    perform cron.schedule('agent-turns-wake', '* * * * *', $$select public.wake_agent_turns()$$);
+    perform cron.schedule(
+      'agent-turns-wake',
+      '* * * * *',
+      $$select public.wake_agent_turns()$$
+    );
   end if;
 end;
-$$;
+$do$;
