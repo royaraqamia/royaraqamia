@@ -100,13 +100,6 @@ export const DYNAMIC_BY_DESIGN = [
     route: '/training/apply',
     reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
   },
-  // The shell's changelog. It is inherently about the newest release, so a frozen
-  // document would show a stale list; it is also shell-only, and spending a
-  // precache slot on it would push a public page out of the cap.
-  {
-    route: '/account/changelog',
-    reason: 'shows the newest release notes — a precached shell would pin an old list',
-  },
   // The notification centre. Its document carries nothing: the feed is a client
   // read, so a precached shell would paint an empty frame with the radio off, and
   // the slot it costs evicts `/verify`'s shell from the tail. The page stays a

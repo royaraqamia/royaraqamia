@@ -21,8 +21,8 @@ ships an APK, so it still needs a line:
 Put the same lines in the pull request body under `## Release note`. The release
 workflow deletes the fragments it shipped and freezes them into
 `android/release-notes/<version>.md`; the same text goes into the GitHub release
-and `public/android/changelog.json`, which is what `/account/changelog` reads
-inside the app. `scripts/android-release.mjs --check-notes <base>` fails a pull
+and `public/android/changelog.json`, which the update card and the notes archive
+are read from. `scripts/android-release.mjs --check-notes <base>` fails a pull
 request that changes the shell without one.
 
 This file is not a note: the leading underscore keeps it out (ADR-0090).

@@ -65,7 +65,6 @@
     { "surface": "account-faq", "phase": "core", "state": "native" },
     { "surface": "account-services", "phase": "core", "state": "todo", "issue": "#978" },
     { "surface": "account-news", "phase": "core", "state": "todo", "issue": "#950" },
-    { "surface": "account-changelog", "phase": "core", "state": "todo", "issue": "#951" },
     { "surface": "notifications", "phase": "core", "state": "todo" },
     { "surface": "chats", "phase": "core", "state": "todo", "issue": "#937" },
     { "surface": "habitflow", "phase": "products", "state": "todo" },

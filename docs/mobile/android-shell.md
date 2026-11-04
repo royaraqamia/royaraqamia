@@ -1124,7 +1124,7 @@ script cannot drift. It reaches a user in three places, all only inside the app 
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Android's app info screen | the APK's `versionName`, so the platform shows it for free                                                                                                                                                            |
 | `/account`'s footer       | the shell's user agent, `RoyaraqamiaShell/1.0.3+20003` — the name alone, on the account area's front page only; a browser sends no token, and a shell built before it carried a name has none, so both render nothing |
-| `/account/changelog`      | «ما الجديد», the Arabic notes of every Android release, read from `public/android/changelog.json`; the row is rendered only inside the shell                                                                          |
+| the update card           | the version and its Arabic notes from `public/android/latest.json`, beside the prompt to install the newer APK (ADR-0114)                                                                                             |
 
 The user agent carries both facts on purpose: the counter is what the update check compares, and every shell
 already installed sends the older spelling (`RoyaraqamiaShell/20003`) and always will, because a phone can

@@ -11,7 +11,6 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
-import { ShellChangelogRow } from '@/frontend/ui/account/shell-changelog-row';
 import { AccountRows } from '@/frontend/ui/account/account-rows';
 
 function AccountSkeleton() {
@@ -82,10 +81,6 @@ export function AccountView() {
         }}
       >
         <InstallSection />
-
-        {/* Only inside the shell: a browser visitor is not running an APK whose
-            changelog this is (ADR-0090). */}
-        <ShellChangelogRow />
       </AccountRows>
 
       {/* Guest gate for the rows above — the same nudge the community FAB and the
