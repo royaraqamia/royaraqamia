@@ -13,7 +13,7 @@ import {
   resolveSourceUrl,
   youtubeChannelIdFromPage,
 } from '../news/resolve-source.mjs';
-import { answerFor } from '../news/resolve-source-requests.mjs';
+import { answerFor, titleFromFeed } from '../news/resolve-source-requests.mjs';
 
 /** A page that only advertises its feed — the shape the reader usually pastes. */
 const PAGE = `<!doctype html>
@@ -374,6 +374,31 @@ describe('resolving a source', () => {
       failure: 'unreachable',
       detail: 'ECONNREFUSED',
     });
+  });
+});
+
+describe('the name a resolved source carries', () => {
+  it('reads the words the source calls itself', () => {
+    expect(titleFromFeed('<title>Al Jazeera - أخبار</title>')).toBe('Al Jazeera - أخبار');
+    expect(titleFromFeed('<title type="text">  Spaced   out  </title>')).toBe('Spaced out');
+    expect(titleFromFeed('<title><![CDATA[Inside CDATA]]></title>')).toBe('Inside CDATA');
+  });
+
+  it('decodes the entities the document wrote, and only those', () => {
+    expect(titleFromFeed('<title>Q&amp;A &#8212; Caf&#233; &#x2192;</title>')).toBe(
+      'Q&A \u2014 Caf\u00e9 \u2192'
+    );
+
+    // `&amp;lt;` stands for the four characters `&lt;`, so a second decode would
+    // manufacture the markup the source never wrote.
+    expect(titleFromFeed('<title>&amp;lt;b&amp;gt;</title>')).toBe('&lt;b&gt;');
+    expect(titleFromFeed('<title>&#38;lt;b&#38;gt;</title>')).toBe('&lt;b&gt;');
+  });
+
+  it('keeps no name when the feed has no usable title', () => {
+    expect(titleFromFeed('<channel><item /></channel>')).toBeNull();
+    expect(titleFromFeed('<title>   </title>')).toBeNull();
+    expect(titleFromFeed('<title></title>')).toBeNull();
   });
 });
 

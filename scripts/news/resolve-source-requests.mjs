@@ -22,6 +22,7 @@
 
 import { resolve } from 'node:path';
 
+import { decodeEntities } from './lib.mjs';
 import { resolveSourceUrl, USER_AGENT } from './resolve-source.mjs';
 
 const DEFAULT_LIMIT = 25;
@@ -121,13 +122,7 @@ export function titleFromFeed(text) {
   const match = /<title[^>]*>([\s\S]{1,300}?)<\/title>/i.exec(String(text ?? ''));
   if (!match) return null;
 
-  const title = match[1]
-    .replace(/<!\[CDATA\[|\]\]>/g, '')
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+  const title = decodeEntities(match[1].replace(/<!\[CDATA\[|\]\]>/g, ''))
     .replace(/\s+/g, ' ')
     .trim();
 

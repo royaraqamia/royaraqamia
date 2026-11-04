@@ -27,6 +27,8 @@
 
 import { lookup } from 'node:dns/promises';
 
+import { decodeEntities } from './lib.mjs';
+
 export const USER_AGENT = 'royaraqamia-news-digest/1.0 (+https://royaraqamia.com)';
 
 const TIMEOUT_MS = 10_000;
@@ -402,14 +404,9 @@ export function looksLikeFeed(text) {
 }
 
 function decodeAttribute(value) {
-  // `&amp;` last: unescaping it first would turn `&amp;lt;` into `&lt;` and then
-  // into `<`, decoding one level more than the document actually had.
-  return value
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&amp;/gi, '&');
+  // One pass, so `&amp;lt;` (the text `&lt;`) stays encoded: decoding it again
+  // would turn it into `<`, one level more than the document had.
+  return decodeEntities(value);
 }
 
 /**
