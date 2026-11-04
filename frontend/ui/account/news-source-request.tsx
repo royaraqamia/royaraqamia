@@ -11,11 +11,41 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
   NEWS_SOURCE_NAME_MAX,
-  NEWS_SOURCE_REQUEST_FAILURE_LABELS,
-  NEWS_SOURCE_REQUEST_STATUS_LABELS,
   NEWS_SOURCE_URL_MAX,
   type NewsSourceRequest,
+  type NewsSourceRequestFailure,
+  type NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
+
+import { ACCOUNT_NEWS_REQUEST_COPY } from './account-news-request-copy';
+
+function statusLabel(status: NewsSourceRequestStatus): string {
+  switch (status) {
+    case 'resolving':
+      return ACCOUNT_NEWS_REQUEST_COPY.statusResolving;
+    case 'ready':
+      return ACCOUNT_NEWS_REQUEST_COPY.statusReady;
+    case 'needs_review':
+      return ACCOUNT_NEWS_REQUEST_COPY.statusNeedsReview;
+    case 'approved':
+      return ACCOUNT_NEWS_REQUEST_COPY.statusApproved;
+    case 'rejected':
+      return ACCOUNT_NEWS_REQUEST_COPY.statusRejected;
+  }
+}
+
+function failureLabel(failure: NewsSourceRequestFailure): string {
+  switch (failure) {
+    case 'unsupported':
+      return ACCOUNT_NEWS_REQUEST_COPY.failureUnsupported;
+    case 'no-feed':
+      return ACCOUNT_NEWS_REQUEST_COPY.failureNoFeed;
+    case 'unreachable':
+      return ACCOUNT_NEWS_REQUEST_COPY.failureUnreachable;
+    case 'quota':
+      return ACCOUNT_NEWS_REQUEST_COPY.failureQuota;
+  }
+}
 
 const STATUS_TONES = {
   resolving: 'secondary',
@@ -72,53 +102,64 @@ export function NewsSourceRequestForm() {
       setRequests((current) => [request, ...current]);
       setName('');
       setUrl('');
-      toast.success('استلمنا الرابط، وسيتحقّق منه النظام ويضيفه إلى مصادرك.');
+      toast.success(ACCOUNT_NEWS_REQUEST_COPY.received);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'تعذّر إرسال الطلب. أعد المحاولة.');
+      toast.error(error instanceof ApiError ? error.message : ACCOUNT_NEWS_REQUEST_COPY.sendFailed);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <section aria-labelledby="news-source-request-heading" className="space-y-4">
+    <section
+      aria-labelledby="news-source-request-heading"
+      data-visual="source-request"
+      className="space-y-4"
+    >
       <div>
         <h2 id="news-source-request-heading" className="text-base font-bold text-foreground">
-          أضف مصدرًا
+          {ACCOUNT_NEWS_REQUEST_COPY.title}
         </h2>
         <p className="mt-1 text-sm leading-7 text-muted-foreground">
-          ألصق رابط أي مصدر تثق به: صفحة موقع، أو قناة يوتيوب، أو قناة تلغرام، أو خلاصة RSS. نبحث عن
-          الخلاصة تلقائيًّا في الخلفية، ويصبح المصدر في قائمتك الخاصّة وحدك.
+          {ACCOUNT_NEWS_REQUEST_COPY.body}
         </p>
       </div>
 
       {open ? (
         <p className="rounded-2xl border border-border/60 bg-card/60 p-3 text-xs text-muted-foreground">
-          أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز.
+          {ACCOUNT_NEWS_REQUEST_COPY.pending}
         </p>
       ) : null}
 
       <form onSubmit={submit} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-foreground">اسم المصدر</span>
+            <span className="text-xs font-bold text-foreground">
+              {ACCOUNT_NEWS_REQUEST_COPY.nameLabel}
+            </span>
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={NEWS_SOURCE_NAME_MAX}
-              placeholder="مثال: صحيفة محليَّة"
+              placeholder={ACCOUNT_NEWS_REQUEST_COPY.namePlaceholder}
+              autoComplete="off"
               required
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-foreground">رابط المصدر</span>
+            <span className="text-xs font-bold text-foreground">
+              {ACCOUNT_NEWS_REQUEST_COPY.urlLabel}
+            </span>
             <Input
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               maxLength={NEWS_SOURCE_URL_MAX}
-              placeholder="https://example.com"
+              placeholder={ACCOUNT_NEWS_REQUEST_COPY.urlPlaceholder}
+              type="url"
               inputMode="url"
+              autoComplete="url"
+              spellCheck={false}
               dir="ltr"
               required
             />
@@ -126,7 +167,7 @@ export function NewsSourceRequestForm() {
         </div>
 
         <HeroCtaButton type="submit" disabled={submitting}>
-          {submitting ? 'جاري الإرسال…' : 'إرسال الطلب'}
+          {submitting ? ACCOUNT_NEWS_REQUEST_COPY.submitBusy : ACCOUNT_NEWS_REQUEST_COPY.submit}
         </HeroCtaButton>
       </form>
 
@@ -139,16 +180,14 @@ export function NewsSourceRequestForm() {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-bold text-foreground">{request.name}</span>
-                <Badge variant={STATUS_TONES[request.status]}>
-                  {NEWS_SOURCE_REQUEST_STATUS_LABELS[request.status]}
-                </Badge>
+                <Badge variant={STATUS_TONES[request.status]}>{statusLabel(request.status)}</Badge>
               </div>
               <p className="mt-1 truncate text-[11px] text-muted-foreground" dir="ltr">
                 {request.url}
               </p>
               {request.status === 'needs_review' && request.failure ? (
                 <p className="mt-1.5 text-xs leading-6 text-muted-foreground">
-                  {NEWS_SOURCE_REQUEST_FAILURE_LABELS[request.failure]}
+                  {failureLabel(request.failure)}
                 </p>
               ) : null}
               {request.resolvedUrl && request.resolvedUrl !== request.url ? (

@@ -2,6 +2,7 @@ package com.royaraqamia.app
 
 import android.content.Context
 import com.royaraqamia.app.account.ChangelogRepository
+import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
@@ -60,6 +61,8 @@ class AppGraph private constructor(
     val session: Session,
     val usage: UsageRepository,
     val connectedApps: ConnectedAppsRepository,
+    /** The account news page (#950): the checklist, private feeds and proposals. */
+    val news: NewsRepository,
     val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
@@ -202,6 +205,7 @@ class AppGraph private constructor(
                 session = session,
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
+                news = NewsRepository(client),
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),

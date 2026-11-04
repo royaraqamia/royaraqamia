@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link2, Trash2 } from 'lucide-react';
+import { Link2, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -15,9 +15,17 @@ import { ApiError } from '@/frontend/transport/http';
 import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
-  NEWS_PRIVATE_SOURCE_STATUS_LABELS,
+  type NewsPrivateSourceStatus,
   type NewsPrivateSourcesSummary,
 } from '@/shared/contracts/news';
+
+import { ACCOUNT_NEWS_PRIVATE_COPY } from './account-news-private-copy';
+
+function statusLabel(status: NewsPrivateSourceStatus): string {
+  return status === 'broken'
+    ? ACCOUNT_NEWS_PRIVATE_COPY.statusBroken
+    : ACCOUNT_NEWS_PRIVATE_COPY.statusReady;
+}
 
 /**
  * The feeds this account added for itself (ADR-0106).
@@ -43,7 +51,7 @@ export function NewsPrivateSources() {
       setSummary(await getMyNewsPrivateSources());
     } catch (error) {
       setLoadError(
-        error instanceof ApiError ? error.message : 'تعذّر تحميل مصادرك الخاصّة. أعد المحاولة.'
+        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.loadFailed
       );
     } finally {
       setLoading(false);
@@ -59,7 +67,11 @@ export function NewsPrivateSources() {
 
   if (loading) {
     return (
-      <div className="space-y-2" aria-busy="true" aria-label="جاري تحميل مصادرك">
+      <div
+        className="space-y-2"
+        aria-busy="true"
+        aria-label={ACCOUNT_NEWS_PRIVATE_COPY.loadingLabel}
+      >
         <div className="h-14 rounded-2xl bg-muted/50 animate-pulse" />
         <div className="h-14 rounded-2xl bg-muted/50 animate-pulse" />
       </div>
@@ -73,9 +85,9 @@ export function NewsPrivateSources() {
         <button
           type="button"
           onClick={() => void load()}
-          className="font-bold text-primary underline-offset-4 hover:underline"
+          className="rounded font-bold text-primary underline-offset-4 hover:underline focus-ring"
         >
-          إعادة المحاولة
+          {ACCOUNT_NEWS_PRIVATE_COPY.retry}
         </button>
       </p>
     );
@@ -89,10 +101,10 @@ export function NewsPrivateSources() {
     setEnablingDigest(true);
     try {
       setSummary(await enableMyPersonalDigest());
-      toast.success('شغّلنا مُلخَّصك الخاص؛ ستصل أخبار هذه المصادر صباحًا.');
+      toast.success(ACCOUNT_NEWS_PRIVATE_COPY.enableSucceeded);
     } catch (error) {
       toast.error(
-        error instanceof ApiError ? error.message : 'تعذّر تشغيل المُلخَّص. أعد المحاولة.'
+        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.enableFailed
       );
     } finally {
       setEnablingDigest(false);
@@ -112,23 +124,29 @@ export function NewsPrivateSources() {
             }
           : current
       );
-      toast.success('أزلنا المصدر من قائمتك.');
+      toast.success(ACCOUNT_NEWS_PRIVATE_COPY.removed);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'تعذّر إزالة المصدر. أعد المحاولة.');
+      toast.error(
+        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.removeFailed
+      );
     } finally {
       setRemovingId(null);
     }
   };
 
   return (
-    <section aria-labelledby="news-private-sources-heading" className="space-y-3">
+    <section
+      aria-labelledby="news-private-sources-heading"
+      data-visual="private-sources"
+      className="space-y-3"
+    >
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 id="news-private-sources-heading" className="text-base font-bold text-foreground">
-            مصادرك الخاصّة
+            {ACCOUNT_NEWS_PRIVATE_COPY.heading}
           </h2>
           <p className="mt-1 text-sm leading-7 text-muted-foreground">
-            روابط أضفتها أنت. لا يراها أحد غيرك، وتظهر في مُلخَّصك الخاص وحده.
+            {ACCOUNT_NEWS_PRIVATE_COPY.body}
           </p>
         </div>
 
@@ -144,8 +162,7 @@ export function NewsPrivateSources() {
       {sources.length > 0 && !summary?.personalEnabled ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
           <p className="text-xs leading-6 text-muted-foreground">
-            مصادرك جاهزة، لكن مُلخَّصك الخاص مُتوقّف — ومصادرك الخاصّة لا تظهر في غيره. شغّله لتصلك
-            أخبارها صباحًا.
+            {ACCOUNT_NEWS_PRIVATE_COPY.enableTitle}
           </p>
           <Button
             type="button"
@@ -153,14 +170,19 @@ export function NewsPrivateSources() {
             onClick={() => void enableDigest()}
             disabled={enablingDigest}
           >
-            {enablingDigest ? 'جاري التشغيل…' : 'شغّل مُلخَّصي الخاص'}
+            {enablingDigest
+              ? ACCOUNT_NEWS_PRIVATE_COPY.enableBusy
+              : ACCOUNT_NEWS_PRIVATE_COPY.enable}
           </Button>
         </div>
       ) : null}
 
       {sources.length === 0 ? (
-        <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
-          لا مصادر خاصّة بعد. ألصق رابطًا في الحقل أعلاه، وسيتحقّق منه النظام ويضيفه هنا.
+        <p
+          data-visual="private-empty"
+          className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground"
+        >
+          {ACCOUNT_NEWS_PRIVATE_COPY.empty}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -182,18 +204,18 @@ export function NewsPrivateSources() {
                   className={cn(source.status === 'broken' && 'cursor-help')}
                   title={source.status === 'broken' ? (source.lastError ?? undefined) : undefined}
                 >
-                  {NEWS_PRIVATE_SOURCE_STATUS_LABELS[source.status]}
+                  {statusLabel(source.status)}
                 </Badge>
 
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  aria-label={`إزالة ${source.name}`}
+                  aria-label={ACCOUNT_NEWS_PRIVATE_COPY.removeAria.replace('{name}', source.name)}
                   onClick={() => void remove(source.id)}
                   disabled={removingId === source.id}
                 >
-                  <Trash2 aria-hidden="true" />
+                  <Trash aria-hidden="true" />
                 </Button>
               </span>
             </li>
@@ -204,7 +226,7 @@ export function NewsPrivateSources() {
       {sources.some((source) => source.status === 'broken') ? (
         <p className="flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs leading-6 text-muted-foreground">
           <Link2 className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
-          لم نعد نستطيع قراءة أحد مصادرك، فأوقفنا جلبها. أضف الرابط من جديد أو أزلها من القائمة.
+          {ACCOUNT_NEWS_PRIVATE_COPY.brokenNotice}
         </p>
       ) : null}
     </section>

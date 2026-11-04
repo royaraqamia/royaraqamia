@@ -26,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
+import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
@@ -253,6 +254,15 @@ class ShellActivity : ComponentActivity() {
                             // off, so the document still opens on top of it
                             // (ADR-0117).
                             "/account/changelog" -> ChangelogScreen(repository = graph.changelog)
+                            // The account news page (#950): the checklist, the
+                            // private feeds and the proposal form. Ported and
+                            // switched off until the visual gate passes.
+                            "/account/news" ->
+                                NewsScreen(
+                                    repository = graph.news,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
+                                )
                             // LinkSnap (#654): the page is the shortener and
                             // nothing else. The owned list is the account
                             // area's links page, which is its own route.
