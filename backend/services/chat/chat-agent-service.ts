@@ -216,7 +216,15 @@ export class ChatAgentService {
 
     // The record exists before the provider is called, so a turn that dies has
     // somewhere to say so — and the retry below has a row to count itself on.
-    const turnId = await this.deps.agent.startTurn(conversationId, userId);
+    // Best-effort on purpose: the deploy that introduces this lands before the
+    // migration that creates the table, and a diagnostics row must never be able
+    // to refuse the member an answer (or leak their allowance).
+    const turnId = await this.deps.agent
+      .startTurn(conversationId, userId)
+      .catch((error: unknown) => {
+        logger.warn('Assistant turn record could not be opened', { error: String(error) });
+        return null;
+      });
     let answer = '';
 
     try {
@@ -264,7 +272,7 @@ export class ChatAgentService {
               retryable(error)
             ) {
               retried = true;
-              await this.deps.agent.recordAttempt(turnId, 1);
+              if (turnId) await this.deps.agent.recordAttempt(turnId, 1);
               await sleep(RETRY_DELAY_MS);
               continue;
             }
@@ -357,7 +365,7 @@ export class ChatAgentService {
       const text = answer.trim() || ROUNDS_EXHAUSTED;
 
       const record = await this.deps.agent.insertAgentMessage(conversationId, text);
-      await this.deps.agent.settleTurn(turnId);
+      if (turnId) await this.deps.agent.settleTurn(turnId);
       yield {
         type: 'done',
         message: {
@@ -377,12 +385,14 @@ export class ChatAgentService {
     } catch (error) {
       // The row keeps what the member already read, so a half-written answer is
       // visible to whoever looks rather than discarded with the request.
-      await this.deps.agent
-        .failTurn(turnId, {
-          error: error instanceof Error ? error.message : String(error),
-          partialText: answer,
-        })
-        .catch(() => undefined);
+      if (turnId) {
+        await this.deps.agent
+          .failTurn(turnId, {
+            error: error instanceof Error ? error.message : String(error),
+            partialText: answer,
+          })
+          .catch(() => undefined);
+      }
       await reservation.release();
       throw error;
     }

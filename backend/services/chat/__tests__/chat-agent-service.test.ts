@@ -348,6 +348,25 @@ describe('the assistant turn', () => {
     expect(agent.failTurn).not.toHaveBeenCalled();
   });
 
+  it('answers even when the turn record cannot be opened, and spends nothing extra', async () => {
+    // The window between the deploy and the migration: the table does not exist.
+    const { service, agent, release } = makeService({
+      agent: {
+        ...makeService().agent,
+        startTurn: vi.fn(async () => {
+          throw new Error('relation "agent_turns" does not exist');
+        }),
+      },
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+    expect(agent.settleTurn).not.toHaveBeenCalled();
+    expect(agent.failTurn).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
+  });
+
   it('gives the count back when the ledger refuses the project ceiling', async () => {
     const { service, chats } = makeService({
       reserve: vi.fn(async () => {
