@@ -49,7 +49,7 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 - [ ] **account-plan** `/account/plan` — todo
 - [ ] **account-connected-apps** `/account/connected-apps` — todo
 - [ ] **account-blocked** `/account/blocked` — todo · #977
-- [ ] **account-faq** `/account/faq` — todo · #949
+- [x] **account-faq** `/account/faq` — native
 - [ ] **account-services** `/account/services` — todo · #978
 - [ ] **account-news** `/account/news` — todo · #950
 - [ ] **account-changelog** `/account/changelog` — todo · #951
@@ -84,7 +84,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 40 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 41 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [ ] `habit-list` on **habitflow** · #649
 - [ ] `sync-status-pill` on **habitflow** · #649
@@ -126,7 +126,8 @@ A component is finished when the surface that draws it is native: 40 ported comp
 - [ ] `account-news-preferences` on **account-news** · #950
 - [ ] `account-news-private` on **account-news** · #950
 - [ ] `account-news-request` on **account-news** · #950
+- [x] `account-faq` on **account-faq** · #949
 
 ## Where this stands
 
-1 native · 38 to do · 1 blocked of 40 surfaces.
+2 native · 37 to do · 1 blocked of 40 surfaces.

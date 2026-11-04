@@ -5,11 +5,14 @@ import {
   commandSpan,
   formatAlert,
   formatDigest,
+  formatContext,
   formatHistory,
+  formatMemories,
   formatOffset,
   parseCommand,
   parseOffset,
   parseTarget,
+  parseMemory,
   parseWhen,
   renderAnswer,
 } from '../telegram-bridge.mjs';
@@ -227,6 +230,65 @@ describe('formatHistory', () => {
 
   it('is empty for an empty conversation', () => {
     expect(formatHistory([])).toBe('');
+  });
+});
+
+describe('formatMemories', () => {
+  it('renders one bullet per remembered fact', () => {
+    expect(formatMemories([{ content: 'يفضّل الردود المختصرة' }])).toBe('• يفضّل الردود المختصرة');
+  });
+
+  it('drops duplicates and blanks', () => {
+    expect(
+      formatMemories([{ content: 'أ' }, { content: 'أ' }, { content: '  ' }, { content: 'ب' }])
+    ).toBe('• أ\n• ب');
+  });
+
+  it('stops at the limit, so memory cannot become a prompt', () => {
+    const rows = Array.from({ length: 50 }, (_, index) => ({ content: `واقعة ${index}` }));
+    expect(formatMemories(rows).split('\n')).toHaveLength(40);
+  });
+});
+
+describe('formatContext', () => {
+  it('puts memories first, then the summary, then the recent messages', () => {
+    const text = formatContext({ memories: '• م', summary: 'مل', history: 'س' });
+    expect(text.indexOf('م')).toBeLessThan(text.indexOf('مل'));
+    expect(text.indexOf('مل')).toBeLessThan(text.indexOf('س'));
+  });
+
+  it('omits the parts it does not have', () => {
+    expect(formatContext({ memories: '', summary: '', history: 'س' })).toBe('آخر الرسائل:\nس');
+    expect(formatContext({})).toBe('');
+  });
+});
+
+describe('parseMemory', () => {
+  it('reads the JSON even when the model wraps it in a code fence', () => {
+    const parsed = parseMemory(
+      '```json\n{"summary":"ملخص","memories":[{"kind":"preference","content":"يحب الإيجاز"}]}\n```'
+    );
+    expect(parsed.summary).toBe('ملخص');
+    expect(parsed.memories).toEqual([{ kind: 'preference', content: 'يحب الإيجاز' }]);
+  });
+
+  it('falls back to no memory when the answer is not JSON', () => {
+    expect(parseMemory('عذراً، لم أفهم')).toEqual({ summary: '', memories: [] });
+  });
+
+  it('rejects an unknown kind, an empty content and anything past the cap', () => {
+    const parsed = parseMemory(
+      JSON.stringify({
+        summary: 'س',
+        memories: [
+          { kind: 'nonsense', content: 'حقيقة' },
+          { kind: 'fact', content: '  ' },
+          ...Array.from({ length: 10 }, (_, index) => ({ kind: 'fact', content: `ذكرى ${index}` })),
+        ],
+      })
+    );
+    expect(parsed.memories[0]).toEqual({ kind: 'fact', content: 'حقيقة' });
+    expect(parsed.memories).toHaveLength(6);
   });
 });
 

@@ -1,0 +1,42 @@
+{
+  "surface": "account-faq",
+  "elements": {
+    "title": {
+      "top": 24.0,
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 110.545456,
+      "width": 360.72726,
+      "rowGap": 14.0
+    },
+    "first-row": {
+      "top": 110.545456,
+      "width": 360.72726,
+      "height": 133.81818,
+      "radius": 16.0
+    },
+    "first-question": {
+      "height": 68.00001,
+      "paddingLeft": 20.0,
+      "paddingRight": 20.0
+    },
+    "first-question-text": {
+      "height": 26.181808,
+      "fontSize": 16.0,
+      "fontWeight": 700
+    },
+    "first-answer": {
+      "top": 179.63637,
+      "height": 63.636353
+    },
+    "second-row": {
+      "top": 258.54544,
+      "width": 360.72726,
+      "height": 70.18182,
+      "radius": 16.0
+    }
+  }
+}
