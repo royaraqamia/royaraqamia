@@ -8,8 +8,12 @@
 # `docs/mobile/parity-plan.json` puts its surface, and prefetches context; one DeepSeek
 # 4.1 Flash phase implements it and writes /tmp/result.json; the pull request title is
 # normalized, its checks are watched, and a green result is squash-merged with
-# `--match-head-commit`, so the merge lands on the commit the checks ran on. A final
-# script records the outcome on the issue.
+# `--match-head-commit`, so the merge lands on the commit the checks ran on. A red round is
+# repaired once on the pull request's own branch - the conflict with `main` included, since
+# a conflicted pull request is never measured at all - and watched again. A final script
+# records the outcome on the issue. Nothing in this pipeline is handed to a person: an
+# issue that did not land keeps `ready-for-agent`, because the implementer is the only
+# reader of this queue.
 #
 # The order is not "the lowest number". A slice that waits for its siblings, a screen
 # that waits for the security review, the last gated state of a surface waiting for the
@@ -17,8 +21,11 @@
 # `Blocked by: #12` is read as the fallback for the issues filed before the edges
 # existed. Within what is unblocked the plan's phase decides, then the number.
 #
-# Six rounds run as one matrix with `max-parallel: 1`, so each branch is cut from a
-# `main` that already carries the previous merge and no two rounds can claim one issue.
+# Six rounds run as one matrix with `max-parallel: 1`, so no two rounds can claim one
+# issue and each one starts from the merge the round before it landed. Ordering alone does
+# not move the base, though: this job's checkout is the commit the run was dispatched on, so
+# every round re-cuts its branch from the live `main` before the agent runs (one merge into
+# `docs/mobile/parity-plan.md` between two rounds is enough to conflict otherwise).
 #
 # Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
 # it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
@@ -46,7 +53,10 @@
 #   VERCEL_PROJECT_ID     - Vercel project id
 #
 # Checkout must NOT persist credentials — opencode injects its own app token
-# (persisted credentials cause a duplicate-Authorization failure on push). The
+# (persisted credentials cause a duplicate-Authorization failure on push). The consequence
+# is that a later step has no git credential of its own: `GH_TOKEN` authenticates `gh`, not
+# `git`, so a step that fetches or pushes has to say how it authenticates (`gh auth
+# setup-git`, or the token inline in the URL). The
 # permission block is load-bearing: `external_directory` defaults to "ask" and the
 # run hands off through /tmp/result.json, which is outside the workspace; in a
 # headless run nobody can answer that prompt, so /tmp is allowed explicitly and
@@ -385,6 +395,25 @@ jobs:
               body: 'The Issue Implementer picked this up. It will open a pull request and merge it once every check on it is green (ADR 0120). Any update will follow here.',
             });
 
+      # `max-parallel: 1` orders the rounds but does not move the base: this job's
+      # checkout is the commit the run was dispatched on, so without this step round 4
+      # would be cut from the `main` round 2 read, not the one round 2 merged into. The
+      # plan and `screens.json` that every port touches are enough to make that a
+      # conflict, and a conflicted pull request gets no checks at all - it cannot be
+      # watched, repaired or merged, so the round is lost before it starts. The token
+      # goes inline in the fetch URL rather than into a credential helper: nothing is
+      # persisted, so the opencode action's own token stays the only one it sees.
+      - name: Cut the branch from the current main
+        if: steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main
+          git reset --hard FETCH_HEAD
+          git log --oneline -1
+
       - name: Implement — DeepSeek 4.1 Flash
         id: implement
         if: steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
@@ -620,7 +649,8 @@ jobs:
         id: repair
         # One repair, not a loop: a second failure usually means the issue needs a
         # decision, not another patch, and an unbounded retry is how a green check gets
-        # negotiated instead of earned. A second red run hands the issue to a person.
+        # negotiated instead of earned. A second red round leaves the issue with the
+        # implementer for the next one - nothing here is handed to a person.
         #
         # This runs the CLI (`opencode run`) rather than the GitHub action on purpose: the
         # action cuts a fresh `opencode/<session>` branch and opens a pull request for it,
@@ -648,7 +678,24 @@ jobs:
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          # Checkout ran with `persist-credentials: false` (the opencode action needs a
+          # remote with no stored credential), so this step starts with no way to
+          # authenticate: `GH_TOKEN` is read by `gh`, not by `git`, and the first run of
+          # this step died on the very next line with "Invalid username or token". The
+          # helper is configured here, after the action has finished, so it cannot collide
+          # with the action's own token.
+          gh auth setup-git
           gh pr checkout "$PR"
+
+          # A pull request that conflicts with `main` gets no checks at all: GitHub cannot
+          # build the merge ref the workflows run against, so the watch steps above saw a
+          # rollup of skipped checks, called it green, and the merge was refused. The
+          # conflict is the failure, so resolve it here before looking for anything else.
+          git fetch origin main
+          if ! git merge --no-edit FETCH_HEAD >/dev/null; then
+            echo "::notice title=The base moved::The conflict with main is part of this repair."
+          fi
 
           cat > /tmp/repair-prompt.txt <<PROMPT
           You are the Issue Implementer, on the one repair attempt for this pull request. A check on it did not pass:
@@ -657,7 +704,9 @@ jobs:
           ${REASON}
           </failing-checks>
 
-          Re-run the gate that failed in this working tree to see the failure for yourself, load the diagnosing-bugs skill if the cause is not obvious, and fix the cause. The workflow commits and pushes for you: do not run git commands and do not open a pull request.
+          If the working tree has an unresolved merge, resolve it first (load the resolving-merge-conflicts skill): a pull request that conflicts with main gets no checks at all, so the conflict is the thing standing between this branch and a measurement. Keep both intents; never resolve a conflict by deleting the other side's work.
+
+          Then re-run the gate that failed in this working tree to see the failure for yourself, load the diagnosing-bugs skill if the cause is not obvious, and fix the cause. The workflow commits and pushes for you: do not run git commands and do not open a pull request.
 
           Never make a check pass by weakening it: no skipped or deleted test, no widened tolerance, no --no-verify, no .only, no commented assertion, no gate removed from a script. A check that is wrong for a reason you can state is reported, not deleted.
 
@@ -669,14 +718,23 @@ jobs:
           status=$?
           set -e
 
+          # A conflict left unresolved in the tree would be committed as conflict markers
+          # by the `git add -A` below, so check for it before staging anything.
+          if git grep -n -E '^(<<<<<<<|>>>>>>>)( |$)' >/dev/null 2>&1; then
+            git merge --abort >/dev/null 2>&1 || true
+            echo "The conflict with main was left unresolved; leaving #$PR for the next round."
+            exit 0
+          fi
+
           if [ -z "$(git status --porcelain)" ]; then
-            echo "The repair run changed nothing; leaving #$PR for a person."
+            echo "The repair run changed nothing; leaving #$PR for the next round."
             exit 0
           fi
 
           git add -A
           git commit -m "fix: repair the failing checks on #$PR"
           git push origin "HEAD:$(gh pr view "$PR" --json headRefName --jq .headRefName)"
+          printf 'pushed=true\n' >> "$GITHUB_OUTPUT"
 
           if [ "$status" -ne 0 ]; then
             echo "::warning title=Repair run failed::The repair changed files but exited $status; the checks will decide."
@@ -685,8 +743,10 @@ jobs:
       - name: Watch the repaired pull request, then merge it
         id: recheck
         # The same script, on the same pull request: the repair pushed a new head, so the
-        # watch has to run again before anything is merged (ADR 0120).
-        if: steps.guard.outputs.run == 'true' && steps.repair.outcome == 'success' && steps.checks.outputs.pr != ''
+        # watch has to run again before anything is merged (ADR 0120). `pushed` is the
+        # gate because a repair that resolved nothing changed no commit, and watching the
+        # same head again would only repeat the red it already reported.
+        if: steps.guard.outputs.run == 'true' && steps.repair.outputs.pushed == 'true' && steps.checks.outputs.pr != ''
         timeout-minutes: 50
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -696,8 +756,12 @@ jobs:
 
       - name: Record the outcome
         id: outcome
-        # `always()`: the check watch failing (a `gh` error) must still hand the issue to a
-        # person rather than leave it claimed forever.
+        # `always()`: the check watch failing (a `gh` error) must still release the claim
+        # rather than leave the issue stuck as in-progress.
+        #
+        # Nothing in this step is handed to a person. The queue is the implementer's, so an
+        # issue that did not land keeps `ready-for-agent` and the next round picks it up
+        # again; the only claim this workflow puts on is the one it takes off.
         if: always() && steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
@@ -730,10 +794,22 @@ jobs:
                 .removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number, name })
                 .catch(() => {});
 
+            // The issue stays the agent's. `ready-for-agent` is left in place (and re-added
+            // in case a human removed it mid-run) so the next round's picker still sees it;
+            // the claim label is the one that has to come off.
+            const keepForTheAgent = async () => {
+              await removeLabel('opencode:in-progress');
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                labels: ['ready-for-agent'],
+              });
+            };
+
             if (result.status === 'implemented' && checks === 'merged' && prNumber) {
-              // The merge landed, so `Closes #n` closed this issue on `main`. Nothing is
-              // handed to a person and no readiness label comes back: the slice is done
-              // and its dependents are unblocked by the edge closing with it.
+              // The merge landed, so `Closes #n` closed this issue on `main`. The slice is
+              // done and its dependents are unblocked by the edge closing with it.
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -750,9 +826,10 @@ jobs:
             }
 
             if (result.status === 'implemented' && prNumber) {
-              // Green but not merged (the merge was refused, or the pull request is
-              // older than this run). `Closes #n` still closes the issue when someone
-              // merges it, so the issue stays open with a person.
+              // Implemented, but the pull request did not land: the repair did not fix the
+              // failing check, the conflict was not resolved, or the merge was refused.
+              // `Closes #n` still closes the issue whenever that pull request lands, so the
+              // issue keeps `ready-for-agent` and no human is asked for anything.
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -760,24 +837,19 @@ jobs:
                 body:
                   'The Issue Implementer opened pull request #' +
                   prNumber +
-                  '.\n\n' +
+                  ' and could not land it.\n\nWhy: ' +
                   (checks === 'green'
-                    ? 'Its checks are green. It is ready for a human to merge.'
-                    : 'Its checks are not green: ' +
-                      (checkReason || 'see the pull request for the failing check') +
-                      '.') +
-                  '\n\nThe merge is a manual step; this issue stays open until the pull request is merged.',
+                    ? 'its checks are green but the merge was refused'
+                    : checkReason || 'a check on it did not pass') +
+                  '.\n\nThe pull request stays open and this issue stays with the implementer.',
               });
-              await removeLabel('ready-for-agent');
-              await removeLabel('opencode:in-progress');
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number,
-                labels: ['ready-for-human'],
-              });
+              await keepForTheAgent();
               core.info(
-                'Implemented issue #' + issue_number + ' and opened PR #' + prNumber + '; waiting for a human merge.'
+                'Implemented issue #' +
+                  issue_number +
+                  ' but PR #' +
+                  prNumber +
+                  ' did not land; the issue stays in the queue.'
               );
               return;
             }
@@ -791,17 +863,10 @@ jobs:
               repo: context.repo.repo,
               issue_number,
               body:
-                'The Issue Implementer could not complete this issue automatically.\n\nReason: ' +
+                'The Issue Implementer could not complete this issue on this attempt.\n\nReason: ' +
                 reason +
-                (prNumber ? '\n\nPull request #' + prNumber + ' is open for a person to look at.' : '') +
-                '\n\nHanding this to a human.',
+                (prNumber ? '\n\nPull request #' + prNumber + ' is open.' : '') +
+                '\n\nThe issue stays with the implementer and is taken up again by a later round.',
             });
-            await removeLabel('ready-for-agent');
-            await removeLabel('opencode:in-progress');
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number,
-              labels: ['ready-for-human'],
-            });
+            await keepForTheAgent();
             core.info('Could not land issue #' + issue_number + ': ' + reason);
