@@ -1,13 +1,33 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { FileText } from 'lucide-react';
-import { loadCommunityMember } from '@/backend/loaders/community';
+import { loadCommunityMember, loadCommunityMembers } from '@/backend/loaders/community';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
 
 export const revalidate = 300;
+
+/**
+ * Members the build draws up front: the roster itself, i.e. the profiles
+ * `/community` links to and the newest ones a visitor arrives from. It is a cap
+ * rather than "everyone" because build time grows with it, and a profile nobody
+ * has opened yet is worth one render, not a permanent build cost.
+ *
+ * `dynamicParams` stays on (the default, named here so the intent is not a
+ * default by accident): a handle outside this set — a member who joined after
+ * the build, or one past the roster — renders on its first visit and is cached
+ * from then on, so the page is real ISR rather than `ƒ` for the whole directory.
+ */
+export const dynamicParams = true;
+
+export async function generateStaticParams(): Promise<Array<{ username: string }>> {
+  const members = await loadCommunityMembers();
+  // Handles may be Arabic: the prerendered key is the percent-encoded path the
+  // site's own links and `sitemap.ts` use, which is the form the request carries.
+  return members.map((member) => ({ username: encodeURIComponent(member.username) }));
+}
 
 function displayName(member: { name: string | null; username: string }): string {
   return member.name?.trim() || `@${member.username}`;
