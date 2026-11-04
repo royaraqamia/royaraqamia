@@ -61,7 +61,7 @@ _The local-store products, where the app has a real reason to be native: offline
 
 - [ ] **habitflow** `/habitflow` — todo
 - [ ] **spendtrack** `/spendtrack` `/spendtrack/categories` — todo
-- [ ] **linksnap** `/linksnap` — todo · #916
+- [x] **linksnap** `/linksnap` — native
 - [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #952
 - [ ] **blogpress-editor** `/blogpress/editor/[id]` — todo · #954
 - [ ] **quran** `/quran` — todo · #955
@@ -117,8 +117,9 @@ A component is finished when the surface that draws it is native: 44 ported comp
 - [ ] `community-feed` on **community** · #658
 - [ ] `needs-connection` on **community** · #658
 - [ ] `read-failure` on **community** · #658
-- [ ] `linksnap-page` on **linksnap** · #654
-- [ ] `linksnap-empty` on **linksnap** · #654
+- [x] `linksnap-page` on **linksnap** · #654
+- [x] `linksnap-shortener` on **linksnap** · #916
+- [x] `linksnap-empty` on **linksnap** · #654
 - [ ] `chats-list` on **chats** · #819
 - [ ] `chat-thread` on **chats** · #819
 - [ ] `account-blocked` on **account-blocked** · #977
@@ -132,4 +133,4 @@ A component is finished when the surface that draws it is native: 44 ported comp
 
 ## Where this stands
 
-2 native · 36 to do · 1 blocked of 39 surfaces.
+3 native · 35 to do · 1 blocked of 39 surfaces.

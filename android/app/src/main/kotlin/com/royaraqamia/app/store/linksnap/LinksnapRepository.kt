@@ -3,6 +3,8 @@ package com.royaraqamia.app.store.linksnap
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.LinksnapAvailabilityResponse
+import com.royaraqamia.app.contracts.generated.LinksnapAvailabilityResponseAvailability
 import com.royaraqamia.app.contracts.generated.LinksnapShortenResponse
 import com.royaraqamia.app.contracts.generated.LinksnapSyncResponse
 import com.royaraqamia.app.contracts.generated.LinksnapSyncResponseLinksItem
@@ -19,6 +21,7 @@ import com.royaraqamia.app.store.outbox.SendOutcome
 import com.royaraqamia.app.store.outbox.SystemWriteClock
 import com.royaraqamia.app.store.outbox.WriteClock
 import java.net.URI
+import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -145,6 +148,26 @@ class LinksnapRepository(
             )
         when (val answer = client.postPublic<LinksnapShortenResponse>(SYNC_SHORTEN_PATH, body)) {
             is ApiResult.Success -> ApiResult.Success(answer.value.link.toRow())
+            is ApiResult.Failure -> answer
+        }
+    }
+
+    /**
+     * Whether a custom code can be taken (#916), answered by the site's own route.
+     *
+     * The query is the sanitized slug the member typed, the bearer is the
+     * session, and the answer is the generated contract rather than a guess: a
+     * slug uniqueness rule is server-owned (ADR-0031), so the app asks instead
+     * of duplicating it. The screen decides when to ask - after the debounce and
+     * never while the radio is off - so this stays one read.
+     */
+    suspend fun checkAvailability(
+        code: String
+    ): ApiResult<LinksnapAvailabilityResponseAvailability> = withContext(Dispatchers.IO) {
+        val slug = sanitizeCode(code)
+        val path = "$AVAILABILITY_PATH?code=${URLEncoder.encode(slug, "UTF-8")}"
+        when (val answer = client.get<LinksnapAvailabilityResponse>(path)) {
+            is ApiResult.Success -> ApiResult.Success(answer.value.availability)
             is ApiResult.Failure -> answer
         }
     }
@@ -447,6 +470,9 @@ class LinksnapRepository(
 
         /** The public unlock route. */
         const val UNLOCK_PATH = "/linksnap/api/unlock"
+
+        /** The custom-code check the signed-in form debounces (#916). */
+        const val AVAILABILITY_PATH = "/linksnap/api/availability"
 
         const val MIN_CODE_LENGTH = 3
         const val MAX_CODE_LENGTH = 16

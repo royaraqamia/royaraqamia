@@ -1,0 +1,48 @@
+{
+  "surface": "linksnap",
+  "component": "linksnap-shortener",
+  "web": {
+    "file": "frontend/ui/linksnap/single-url-shortener-copy.ts",
+    "export": "SINGLE_URL_SHORTENER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapShortenerCopy.kt",
+    "object": "LinksnapShortenerCopy"
+  },
+  "notes": {
+    "source": "The LinkSnap shortener's words, in both clients (#654, #916). The site's `frontend/ui/linksnap/single-url-shortener.tsx` is the reference: the guest form, the signed-in custom-code and password fields with their four availability answers, and the success block with its three actions. The app draws the same component natively, so neither client spells a string.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "urlLabel": "الرَّابط",
+    "urlPlaceholder": "https://example.com/very-long-url-path",
+    "invalidUrl": "يرجى إدخال رابط صحيح يبدأ بـ http:// أو https://",
+    "guestHint": "سجِّل الدُّخول لاستخدام رمزٍ مخصَّص وكلمة مرور وتتبُّع النَّقرات.",
+    "guestSignIn": "تسجيل الدُّخول",
+    "customLabel": "رمز مُخصَّص (اختياري)",
+    "customPlaceholder": "my-promo",
+    "customHint": "3-16 حرفًا (أحرف، أرقام، - و _)",
+    "checking": "جاري التحقق من التوفر...",
+    "available": "هذا الرمز متاح!",
+    "offline": "يتطلَّب الاتصال للتحقق من التوفُّر؛ سيُتحقَّق عند المزامنة.",
+    "takenFallback": "هذا الرمز مستخدم بالفعل.",
+    "passwordLabel": "كلمة مرور (اختياري)",
+    "passwordPlaceholder": "يُطلَب من الزَّائر قبل فتح الرَّابط",
+    "submit": "اختصار الرَّابط",
+    "busySubmit": "جاري الاختصار...",
+    "readyTitle": "رابطك المُختصَر جاهز!",
+    "redirectLead": "يُعيد التَّوجيه إلى:",
+    "protectedBadge": "محمي بكلمة مرور",
+    "copyAction": "نسخ الرَّابط",
+    "copiedAction": "تمَّ النَّسخ!",
+    "shareAction": "مشاركة الرَّابط",
+    "qrAction": "رمز الاستجابة السَّريعة",
+    "qrHint": "امسح لعرض الرَّابط المُختصَر",
+    "againAction": "اختصار رابط آخر",
+    "copySuccessToast": "تم نسخ الرَّابط!",
+    "copyFailedToast": "فشل نسخ الرَّابط",
+    "shareTitle": "رابط مُختصَر من LinkSnap",
+    "shareSuccessToast": "تمت المشاركة!",
+    "qrImageAlt": "QR code for shortened URL"
+  }
+}

@@ -69,7 +69,7 @@
     { "surface": "chats", "phase": "core", "state": "todo", "issue": "#937" },
     { "surface": "habitflow", "phase": "products", "state": "todo" },
     { "surface": "spendtrack", "phase": "products", "state": "todo" },
-    { "surface": "linksnap", "phase": "products", "state": "todo", "issue": "#916" },
+    { "surface": "linksnap", "phase": "products", "state": "native" },
     { "surface": "blogpress", "phase": "products", "state": "todo", "issue": "#952" },
     { "surface": "blogpress-editor", "phase": "products", "state": "todo", "issue": "#954" },
     { "surface": "quran", "phase": "products", "state": "todo", "issue": "#955" },
