@@ -127,8 +127,9 @@
     },
     {
       "surface": "account-blocked",
-      "native": null,
-      "reason": "The blocked list is the chat service's own read, lifted out of the account page so it can be undone without finding the thread again; the screen lands with the rest of the account area (#799)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersScreen.kt",
+      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "notifications",

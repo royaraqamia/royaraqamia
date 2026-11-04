@@ -1121,6 +1121,42 @@
           "copy": "loadFailed"
         }
       ]
+    },
+    {
+      "id": "account-blocked",
+      "surface": "account-blocked",
+      "issue": "#977",
+      "web": {
+        "route": "app/account/blocked/page.tsx",
+        "component": "frontend/ui/account/blocked-members-view.tsx",
+        "copyModule": "frontend/ui/account/blocked-members-copy.ts",
+        "copyExport": "BLOCKED_MEMBERS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersCopy.kt",
+        "copyObject": "BlockedMembersCopy"
+      },
+      "copySource": "shared/copy/account-blocked.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signedOutTitle"
+        },
+        {
+          "name": "Failed",
+          "copy": "loadFailed"
+        },
+        {
+          "name": "Ready",
+          "copy": "unblock"
+        }
+      ]
     }
   ],
   "exempt": [

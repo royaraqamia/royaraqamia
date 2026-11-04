@@ -189,6 +189,7 @@ export const CONTRACTS = [
       'ChatOkResponseSchema',
       'ChatStartResponseSchema',
       'ChatMembersResponseSchema',
+      'ChatBlockedMembersResponseSchema',
       'ChatAssistantStateResponseSchema',
       'ChatAttachmentUrlResponseSchema',
     ],

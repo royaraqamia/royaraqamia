@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
+import { BLOCKED_MEMBERS_COPY } from '@/frontend/ui/account/blocked-members-copy';
 import { BlockedMembersView } from '@/frontend/ui/account/blocked-members-view';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'الأعضاء المحظورون',
+  title: BLOCKED_MEMBERS_COPY.pageTitle,
   description: 'الأعضاء الذين حظرتهم على مجتمع رؤيَة رَقَميَّة، وإلغاء الحظر عنهم.',
 };
 
@@ -23,15 +23,5 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function AccountBlockedPage() {
-  return (
-    <div className="space-y-6">
-      <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>الأعضاء المحظورون</SectionTitleHighlight>
-        </SectionTitle>
-      </div>
-
-      <BlockedMembersView />
-    </div>
-  );
+  return <BlockedMembersView />;
 }

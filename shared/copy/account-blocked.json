@@ -1,0 +1,28 @@
+{
+  "surface": "account-blocked",
+  "component": "account-blocked",
+  "web": {
+    "file": "frontend/ui/account/blocked-members-copy.ts",
+    "export": "BLOCKED_MEMBERS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/BlockedMembersCopy.kt",
+    "object": "BlockedMembersCopy"
+  },
+  "notes": {
+    "source": "The blocked-members list's words, in both clients (#977). The site's view (`frontend/ui/account/blocked-members-view.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "placeholders": "`{name}` is the blocked member's display name, used only for the unblock control's accessible label. Each client substitutes it itself, so the sentence around it stays in one place.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "pageTitle": "الأعضاء المحظورون",
+    "loadingLabel": "جاري التَّحميل...",
+    "signedOutTitle": "سجِّل الدُّخول لمتابعة الأعضاء المحظورين",
+    "signIn": "تسجيل الدُّخول",
+    "loadFailed": "تعذّر تحميل القائمة",
+    "unblockFailed": "تعذّر إلغاء الحظر",
+    "empty": "لم تحظر أحداً.",
+    "unblock": "إلغاء الحظر",
+    "unblockAria": "إلغاء الحظر عن {name}"
+  }
+}
