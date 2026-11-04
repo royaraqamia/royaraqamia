@@ -95,6 +95,7 @@ function makeRepository(
     checkRateLimit: vi.fn(async () => true),
     attachments: {
       signedUrl: vi.fn(async () => 'https://storage.test/signed'),
+      download: vi.fn(async () => new Uint8Array()),
       remove: vi.fn(async () => undefined),
     },
     ...depOverrides,
@@ -897,7 +898,13 @@ describe('ChatService.deleteMessage attachments', () => {
         ]),
         tombstoneMessage: vi.fn(async () => true),
       },
-      { attachments: { signedUrl: vi.fn(async () => null), remove } }
+      {
+        attachments: {
+          signedUrl: vi.fn(async () => null),
+          download: vi.fn(async () => null),
+          remove,
+        },
+      }
     );
 
     await service.deleteMessage(me, 'm-1');
@@ -1026,7 +1033,13 @@ describe('ChatService.attachmentUrl', () => {
         findParticipants: vi.fn(async () => myMembership),
         findAttachmentInConversation: vi.fn(async () => attachmentRecord()),
       },
-      { attachments: { signedUrl, remove: vi.fn(async () => undefined) } }
+      {
+        attachments: {
+          signedUrl,
+          download: vi.fn(async () => null),
+          remove: vi.fn(async () => undefined),
+        },
+      }
     );
 
     const file = await service.attachmentUrl(me, 'c-1', 'a-1');
@@ -1043,7 +1056,13 @@ describe('ChatService.attachmentUrl', () => {
           attachmentRecord({ fileName: 'logo.svg', mimeType: 'image/svg+xml' })
         ),
       },
-      { attachments: { signedUrl, remove: vi.fn(async () => undefined) } }
+      {
+        attachments: {
+          signedUrl,
+          download: vi.fn(async () => null),
+          remove: vi.fn(async () => undefined),
+        },
+      }
     );
 
     const file = await service.attachmentUrl(me, 'c-1', 'a-1');

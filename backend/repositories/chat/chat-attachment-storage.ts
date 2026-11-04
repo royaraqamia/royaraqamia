@@ -18,6 +18,8 @@ export interface ChatAttachmentStorage {
    * drawing-safe image ever asks for.
    */
   signedUrl(path: string, download: string | null): Promise<string | null>;
+  /** The object's bytes, for a turn that has to read them (a voice note). */
+  download(path: string): Promise<Uint8Array | null>;
   /** Best-effort: a failed remove is logged, never rethrown over the row delete. */
   remove(paths: string[]): Promise<void>;
 }
@@ -40,6 +42,16 @@ export function createChatAttachmentStorage(
         return null;
       }
       return data?.signedUrl ?? null;
+    },
+
+    async download(path) {
+      const { data, error } = await supabase.storage.from(CHAT_ATTACHMENTS_BUCKET).download(path);
+
+      if (error || !data) {
+        logger.warn('chat attachment download failed', { path, cause: error?.message });
+        return null;
+      }
+      return new Uint8Array(await data.arrayBuffer());
     },
 
     async remove(paths) {

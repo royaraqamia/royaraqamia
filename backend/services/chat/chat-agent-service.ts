@@ -11,6 +11,7 @@ import {
   type ChatAgentTool,
 } from '@/backend/services/chat/chat-agent-tools';
 import type { ChatService } from '@/backend/services/chat/chat-service';
+import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
 import {
@@ -30,6 +31,7 @@ import {
   normalizeChatBody,
   type ChatAgentAllowance,
   type ChatAgentEvent,
+  type ChatAttachmentInput,
   type ChatMessage,
 } from '@/shared/contracts/chat';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
@@ -60,6 +62,22 @@ export class ChatAgentError extends Error {
   }
 }
 
+/**
+ * A turn that failed after it may already have written something. The text rides
+ * on the error so the row can keep it, and so the controller still reads it as
+ * the one sentence the stream carries.
+ */
+export class ChatAgentTurnFailure extends ChatAgentError {
+  constructor(
+    status: number,
+    message: string,
+    readonly partialText: string
+  ) {
+    super(status, message);
+    this.name = 'ChatAgentTurnFailure';
+  }
+}
+
 /** The system prompt, kept apart from the history the member wrote. */
 const SYSTEM_PROMPT = [
   'أنت «المساعد الذكي» في تطبيق رؤى رقمية، تجيب بالعربية الفصحى المبسطة وبإيجاز.',
@@ -72,6 +90,16 @@ const SYSTEM_PROMPT = [
 
 /** What a turn answers when the model asked for tools until the rounds ran out. */
 const ROUNDS_EXHAUSTED = 'لم أستطع إكمال ما طلبته الآن. أعد صياغة الطلب أو أكمل ما تريده بنفسك.';
+
+/**
+ * A transcript is a machine's reading of speech, and the model has to treat it as
+ * one — otherwise it answers "you sent me text, not audio", which is true and
+ * useless.
+ */
+const SPOKEN_NOTE = [
+  'الرسالة وصلت كتسجيل صوتي وفُرّغت إلى نص آلياً، وقد يحتمل التفريغ أخطاءً.',
+  'لا تعلّق على أنها نص، وتعامل معها ككلام العضو.',
+].join(' ');
 
 /** The sentence a spent allowance answers with, naming when it comes back. */
 export function allowanceSpentSentence(resetsAt: string): string {
@@ -139,6 +167,8 @@ export function trimHistory(
 export interface ChatAgentServiceDeps {
   agent: ChatAgentRepository;
   chats: ChatService;
+  /** The bucket, to read a voice note's bytes back for transcription. */
+  attachments: Pick<ChatAttachmentStorage, 'download'>;
   /** One counted action, held open until the answer is stored. */
   reserve(userId: string): Promise<Reservation>;
   /** The configured provider, or null when no key is set. */
@@ -182,10 +212,13 @@ export class ChatAgentService {
     userId: string,
     conversationId: string,
     body: string,
-    context: ChatAgentTurnContext
+    context: ChatAgentTurnContext,
+    attachment?: ChatAttachmentInput
   ): AsyncGenerator<ChatAgentEvent, void, void> {
-    const question = normalizeChatBody(body);
-    if (!question) throw new ChatAgentError(400, 'اكتب سؤالك');
+    const typed = normalizeChatBody(body);
+    // A voice note may carry the question alone; its transcript is checked below,
+    // once the recording has actually been read.
+    if (!typed && !attachment) throw new ChatAgentError(400, 'اكتب سؤالك');
 
     const client = this.deps.client;
     if (!client) throw new ChatAgentError(503, UNAVAILABLE);
@@ -223,14 +256,30 @@ export class ChatAgentService {
     // creates the table, and a diagnostics row must never be able to refuse the
     // member an answer (or leak their allowance).
     const turnId = await this.deps.agent
-      .startTurn(conversationId, userId, question)
+      .startTurn(conversationId, userId, typed)
       .catch((error: unknown) => {
         logger.warn('Assistant turn record could not be opened', { error: String(error) });
         return null;
       });
 
     try {
-      await this.deps.chats.sendMessage(userId, conversationId, { body: question });
+      // A voice note is transcribed first, and its transcript is what the message
+      // says. The recording stays attached, so the member still hears what they
+      // sent and the model still reads words rather than a container.
+      const question = attachment ? await this.spokenQuestion(attachment) : typed;
+      if (!question)
+        throw new ChatAgentError(422, 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.');
+
+      // A voice note's words are only known now, and the row should say what the
+      // turn actually answered. Best effort: the recording still runs the turn.
+      if (turnId && question !== typed) {
+        await this.deps.agent.setTurnQuestion(turnId, question).catch(() => undefined);
+      }
+
+      await this.deps.chats.sendMessage(userId, conversationId, {
+        body: question,
+        ...(attachment ? { attachments: [attachment] } : {}),
+      });
 
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
       yield* this.answer({
@@ -238,12 +287,36 @@ export class ChatAgentService {
         conversationId,
         turnId,
         context,
-        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...(attachment ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
+          ...trimHistory(page.messages),
+        ],
       });
     } catch (error) {
+      if (turnId) {
+        await this.deps.agent
+          .failTurn(turnId, {
+            error: error instanceof Error ? error.message : String(error),
+            partialText: error instanceof ChatAgentTurnFailure ? error.partialText : '',
+          })
+          .catch(() => undefined);
+      }
       await reservation.release();
       throw error;
     }
+  }
+
+  /** The words in a voice note, or `null` when no model would transcribe it. */
+  private async spokenQuestion(attachment: ChatAttachmentInput): Promise<string | null> {
+    const audio = await this.deps.attachments.download(attachment.storagePath);
+    if (!audio) throw new ChatAgentError(422, 'تعذّر قراءة التسجيل الصوتي. أعد إرساله.');
+
+    const client = this.deps.client;
+    if (!client) throw new ChatAgentError(503, UNAVAILABLE);
+
+    const transcript = await client.transcribe(audio, attachment.mimeType);
+    return transcript ? normalizeChatBody(transcript) : null;
   }
 
   /**
@@ -261,13 +334,23 @@ export class ChatAgentService {
     if (!this.deps.client) throw new ChatAgentError(503, UNAVAILABLE);
 
     const page = await this.deps.chats.listMessages(turn.memberId, turn.conversationId, null);
-    yield* this.answer({
-      userId: turn.memberId,
-      conversationId: turn.conversationId,
-      turnId: turn.id,
-      context,
-      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
-    });
+    try {
+      yield* this.answer({
+        userId: turn.memberId,
+        conversationId: turn.conversationId,
+        turnId: turn.id,
+        context,
+        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
+      });
+    } catch (error) {
+      await this.deps.agent
+        .failTurn(turn.id, {
+          error: error instanceof Error ? error.message : String(error),
+          partialText: error instanceof ChatAgentTurnFailure ? error.partialText : '',
+        })
+        .catch(() => undefined);
+      throw error;
+    }
   }
 
   /**
@@ -404,15 +487,8 @@ export class ChatAgentService {
         }
       }
     } catch (error) {
-      const failure = classifiedFailure(error);
+      const failure = classifiedFailure(error, answerText);
       logger.warn('Assistant turn failed', { error: String(error), turn: turnId });
-      // The row keeps what the member already read, so a half-written answer is
-      // visible to whoever looks rather than discarded with the request.
-      if (turnId) {
-        await this.deps.agent
-          .failTurn(turnId, { error: failure.message, partialText: answerText })
-          .catch(() => undefined);
-      }
       throw failure;
     }
 
@@ -440,12 +516,13 @@ export class ChatAgentService {
 }
 
 /** A failed turn, in the one sentence its stream carries to the composer. */
-function classifiedFailure(error: unknown): ChatAgentError {
-  return new ChatAgentError(
+function classifiedFailure(error: unknown, partialText: string): ChatAgentError {
+  return new ChatAgentTurnFailure(
     502,
     error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
       ? 'المساعد مشغول الآن، حاول بعد قليل.'
-      : COULD_NOT_ANSWER
+      : COULD_NOT_ANSWER,
+    partialText
   );
 }
 

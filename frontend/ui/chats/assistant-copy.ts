@@ -28,4 +28,10 @@ export const ASSISTANT_COPY = {
   /** The proposal card's two answers (#818). */
   confirmAction: 'تأكيد',
   cancelAction: 'إلغاء',
+  /** The composer's microphone, and the clip waiting to be sent. */
+  record: 'تسجيل رسالة صوتية',
+  stopRecording: 'إيقاف التسجيل',
+  voiceNote: 'رسالة صوتية',
+  removeRecording: 'إزالة التسجيل',
+  preparingRecording: 'جاري تجهيز التسجيل...',
 } as const;

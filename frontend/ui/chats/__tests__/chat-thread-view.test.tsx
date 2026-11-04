@@ -343,6 +343,8 @@ describe('ChatThreadView assistant', () => {
 
     expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'إرفاق ملف' })).toBeNull();
+    // A voice note is offered; a general file picker is not.
+    expect(screen.getByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeInTheDocument();
   });
 
   it('locks a Free member and points at the plans', async () => {
@@ -392,7 +394,8 @@ describe('ChatThreadView assistant', () => {
       expect(api.streamChatAgentTurn).toHaveBeenCalledWith(
         'c-1',
         'ما هو الذكاء الاصطناعي؟',
-        expect.any(Function)
+        expect.any(Function),
+        null
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));

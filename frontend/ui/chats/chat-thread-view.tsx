@@ -448,8 +448,8 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onAddFiles={addFiles}
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
-        onAsk={(body) => {
-          void assistant.ask(body).then((sent) => {
+        onAsk={(body, file) => {
+          void assistant.ask(body, file).then((sent) => {
             if (sent) setDraft('');
           });
         }}
@@ -906,7 +906,7 @@ function ThreadFooter({
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
   onSend: () => void;
-  onAsk: (body: string) => void;
+  onAsk: (body: string, file?: File) => void;
   onAccept: () => void;
   onDecline: () => void;
   onWithdraw: () => void;

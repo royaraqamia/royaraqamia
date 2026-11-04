@@ -7,6 +7,7 @@ import {
   type ChatMessage,
   type ChatMessagePage,
   type ChatMessageSendInput,
+  type ChatAttachmentInput,
   type ChatPeer,
   type ChatPreview,
   type ChatThread,
@@ -325,14 +326,15 @@ async function agentRefusal(response: Response): Promise<string> {
 export async function streamChatAgentTurn(
   id: string,
   body: string,
-  onEvent: (event: ChatAgentEvent) => void
+  onEvent: (event: ChatAgentEvent) => void,
+  attachment?: ChatAttachmentInput | null
 ): Promise<void> {
   let response: Response;
   try {
     response = await fetch(`/api/chats/${id}/assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body }),
+      body: JSON.stringify({ body, ...(attachment ? { attachment } : {}) }),
     });
   } catch (cause) {
     throw new ApiError('تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.', undefined, {

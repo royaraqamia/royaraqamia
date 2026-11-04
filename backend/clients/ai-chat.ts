@@ -24,6 +24,23 @@ import { logger } from '@/backend/shared/logger';
 export const AI_CHAT_DEFAULT_BASE_URL = 'https://opencode.ai/inference/go/openai/v1';
 export const AI_CHAT_DEFAULT_MODEL = 'deepseek-v4.1-flash';
 
+/**
+ * The models that take audio. `deepseek-v4.1-flash` answers text and images but
+ * not speech, so a voice note is transcribed first, cheapest model first.
+ */
+export const AI_CHAT_TRANSCRIBE_MODELS = ['mimo-v2.6-flash', 'gemini-4-argon'];
+
+/** What the gateway calls a container, from the type the browser reported. */
+export function audioFormatFor(mimeType: string): string {
+  const mime = mimeType.toLowerCase();
+  if (mime.includes('wav')) return 'wav';
+  if (mime.includes('ogg') || mime.includes('opus')) return 'ogg';
+  if (mime.includes('webm')) return 'webm';
+  if (mime.includes('mp4') || mime.includes('m4a') || mime.includes('aac')) return 'm4a';
+  if (mime.includes('mpeg') || mime.includes('mp3')) return 'mp3';
+  return 'wav';
+}
+
 export interface AiChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -92,6 +109,12 @@ export interface AiChatClient {
     tools: AiChatTool[],
     signal: AbortSignal
   ): AsyncGenerator<AiChatStreamEvent, void, void>;
+  /**
+   * A voice note, as the words said in it. `null` when no model on the list
+   * would transcribe it, which the caller answers with a sentence rather than a
+   * guessed transcript.
+   */
+  transcribe(audio: Uint8Array, mimeType: string): Promise<string | null>;
 }
 
 /** Whether a provider key is configured at all. No key means the assistant is off. */
@@ -279,6 +302,57 @@ export function createAiChatClient(): AiChatClient | null {
     async *streamWithTools(messages, tools, signal) {
       const response = await open({ model, messages, tools, stream: true }, signal);
       yield* readEvents(response.body as ReadableStream<Uint8Array>);
+    },
+
+    async transcribe(audio, mimeType) {
+      const data = Buffer.from(audio).toString('base64');
+      const format = audioFormatFor(mimeType);
+
+      // Cheapest first, and a refusal steps over instead of ending the attempt —
+      // the same rule the bridge's transcription list follows.
+      for (const candidate of AI_CHAT_TRANSCRIBE_MODELS) {
+        try {
+          const response = await open(
+            {
+              model: candidate,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: [
+                        'حوّل هذا الصوت إلى نص عربي حرفياً كما قيل.',
+                        'لا تلخّص، لا تصحّح، لا تضف كلمات لم تُسمع.',
+                        'إن كانت كلمة غير واضحة فاكتب [غير واضح] بدل تخمينها.',
+                        'إن لم تسمع صوتاً فاكتب: صمت.',
+                      ].join(' '),
+                    },
+                    { type: 'input_audio', input_audio: { data, format } },
+                  ],
+                },
+              ],
+            },
+            AbortSignal.timeout(60_000)
+          );
+
+          const payload = (await response.json().catch(() => null)) as {
+            choices?: Array<{ message?: { content?: unknown } }>;
+          } | null;
+          const text = String(payload?.choices?.[0]?.message?.content ?? '').trim();
+          if (text) return text;
+
+          logger.warn('Assistant transcription answered nothing', { model: candidate, format });
+        } catch (error) {
+          logger.warn('Assistant transcription model failed', {
+            model: candidate,
+            format,
+            error: String(error),
+          });
+        }
+      }
+
+      return null;
     },
   };
 }
