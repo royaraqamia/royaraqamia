@@ -91,6 +91,7 @@ A component is finished when the surface that draws it is native: 37 ported comp
 - [ ] `sign-in` on **auth** · #770
 - [ ] `plan-card` on **account-plan** · #647
 - [ ] `account-connected-apps` on **account-connected-apps** · #657
+- [ ] `account-rows` on **account** · #948
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
 - [ ] `shell-services-order` on **home** · #806

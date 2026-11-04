@@ -402,7 +402,7 @@ async function github(path, init = {}) {
  * One chat completion. `tools` is what lets the answer route ask for evidence
  * instead of inventing it.
  */
-async function chat(messages, { model = MODEL, tools } = {}) {
+async function askModel(messages, { model = MODEL, tools } = {}) {
   const key = env('OPENCODE_API_KEY');
   if (!key) throw new Error('OPENCODE_API_KEY is not set');
 
@@ -440,7 +440,7 @@ async function transcribe(fileId) {
   if (!audio.ok) throw new Error(`downloading the voice note failed: ${audio.status}`);
 
   const data = Buffer.from(await audio.arrayBuffer()).toString('base64');
-  const message = await chat(
+  const message = await askModel(
     [
       {
         role: 'user',
@@ -716,7 +716,7 @@ async function handleAnswer({ text, chat, messageId }) {
   }
 
   const history = formatHistory(await recentHistory(chat, messageId));
-  const message = await chat(
+  const message = await askModel(
     [
       { role: 'system', content: SYSTEM_PROMPT },
       ...(history ? [{ role: 'system', content: `آخر ما جرى في المحادثة:\n${history}` }] : []),
@@ -863,7 +863,7 @@ async function lookups() {
     try {
       const evidence =
         row.source === 'web' ? await webEvidence(row.query) : repoEvidence(row.query);
-      const message = await chat([
+      const message = await askModel([
         { role: 'system', content: SYSTEM_PROMPT },
         {
           role: 'system',
@@ -931,11 +931,12 @@ async function digest({ workflow, url }) {
 
   let items = [];
   if (workflow.includes('Planner')) {
+    // `since` on the issues endpoint filters by *updated* time, so a comment on an
+    // old issue counted it as new - the first digest reported 16 where the
+    // planner files at most five. The list is fetched and filtered on creation.
     const issues =
-      (await github(
-        `/repos/${owner}/${repo}/issues?state=all&since=${encodeURIComponent(since)}&per_page=30`
-      )) ?? [];
-    items = issues.filter((issue) => !issue.pull_request);
+      (await github(`/repos/${owner}/${repo}/issues?state=all&sort=created&per_page=50`)) ?? [];
+    items = issues.filter((issue) => !issue.pull_request && issue.created_at >= since);
   } else {
     const pulls =
       (await github(
