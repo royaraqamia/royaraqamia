@@ -29,7 +29,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-plan` | `/account/plan` | `PlanScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-faq` | `/account/faq` | `AccountFaqScreen.kt` |  |
-| `account-news` | `/account/news` | _web only_ | The news preferences read and write the news contract; the screens land in #799. |
+| `account-news` | `/account/news` | `NewsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-services` | `/account/services` | _web only_ | The switches are a server preference read on the client; the screen lands with the rest of the account area (#799). |
 | `account-changelog` | `/account/changelog` | _web only_ | The app's release notes as a screen, from the weekly train's own list, land in #799. |
 | `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |

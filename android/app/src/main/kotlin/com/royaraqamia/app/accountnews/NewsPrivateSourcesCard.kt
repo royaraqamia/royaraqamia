@@ -1,0 +1,412 @@
+package com.royaraqamia.app.accountnews
+
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.theme.LocalRoySpacing
+import com.royaraqamia.app.theme.LocalRoyTypeScale
+import com.royaraqamia.app.theme.Recipes
+import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.ui.vectors.LucideVectors
+
+/**
+ * The site's list of feeds this account added for itself (#950, ADR-0098).
+ *
+ * The second client of `frontend/ui/account/news-private-sources.tsx`: the same
+ * heading, ceiling badge, empty line, broken-feed notice and removal, from
+ * `shared/copy/account-news-private.json`. A guest sees nothing here, because
+ * the checklist above is where the page asks them to sign in.
+ */
+@Composable
+fun NewsPrivateSourcesCard(
+    state: NewsPrivateSourcesUiState,
+    removingId: String?,
+    enablingDigest: Boolean,
+    actionError: String?,
+    onRetry: () -> Unit,
+    onEnableDigest: () -> Unit,
+    onRemove: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (state) {
+        NewsPrivateSourcesUiState.Loading -> Skeleton(modifier)
+        NewsPrivateSourcesUiState.Failed -> Failed(onRetry, modifier)
+        is NewsPrivateSourcesUiState.Ready ->
+            Ready(
+                summary = state.summary,
+                removingId = removingId,
+                enablingDigest = enablingDigest,
+                actionError = actionError,
+                onEnableDigest = onEnableDigest,
+                onRemove = onRemove,
+                modifier = modifier,
+            )
+    }
+}
+
+@Composable
+private fun Ready(
+    summary: NewsPrivateSources,
+    removingId: String?,
+    enablingDigest: Boolean,
+    actionError: String?,
+    onEnableDigest: () -> Unit,
+    onRemove: (String) -> Unit,
+    modifier: Modifier,
+) {
+    val spacing = LocalRoySpacing.current
+    val type = LocalRoyTypeScale.current
+
+    Column(
+        modifier = modifier.fillMaxWidth().testTag("account-news-private"),
+        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = AccountNewsPrivateCopy.HEADING,
+                    style = type.small.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = AccountNewsPrivateCopy.BODY,
+                    style = type.xs,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (summary.limited) {
+                CountBadge(used = summary.used, cap = summary.cap)
+            }
+        }
+
+        if (actionError != null) Alert(actionError)
+
+        if (summary.sources.isNotEmpty() && !summary.personalEnabled) {
+            EnableDigest(
+                busy = enablingDigest,
+                onEnable = onEnableDigest,
+            )
+        }
+
+        if (summary.sources.isEmpty()) {
+            Text(
+                text = AccountNewsPrivateCopy.EMPTY,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("account-news-private-empty")
+                        .clip(Recipes.Card.radius)
+                        .background(Recipes.Card.container)
+                        .border(Recipes.Card.border, Recipes.Card.radius)
+                        .padding(Recipes.Card.padding(spacing)),
+                style = type.xs,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            for (source in summary.sources) {
+                PrivateRow(
+                    source = source,
+                    removing = removingId == source.id,
+                    onRemove = { onRemove(source.id) },
+                )
+            }
+        }
+
+        if (summary.sources.any { it.status == "broken" }) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(Recipes.Card.radius)
+                        .background(RoyColors.destructive.copy(alpha = 0.05f))
+                        .border(
+                            BorderStroke(1.dp, RoyColors.destructive.copy(alpha = 0.3f)),
+                            Recipes.Card.radius,
+                        )
+                        .padding(spacing.elementGapSm),
+                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Link2,
+                    contentDescription = null,
+                    tint = RoyColors.destructive,
+                    modifier = Modifier.size(Recipes.Glyph.sm),
+                )
+                Text(
+                    text = AccountNewsPrivateCopy.BROKEN_NOTICE,
+                    style = type.xs,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrivateRow(source: NewsPrivateSource, removing: Boolean, onRemove: () -> Unit) {
+    val spacing = LocalRoySpacing.current
+    val type = LocalRoyTypeScale.current
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = Recipes.Card.radius,
+        color = Recipes.Card.container,
+        border = Recipes.Card.border,
+    ) {
+        Row(
+            modifier = Modifier.padding(spacing.elementGapSm),
+            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = source.name,
+                    style = type.small.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = source.url,
+                    style = type.xs.copy(textDirection = TextDirection.Ltr),
+                    color = Recipes.Row.labelColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            StatusBadge(status = source.status)
+
+            TextButton(
+                onClick = onRemove,
+                enabled = !removing,
+                modifier =
+                    Modifier.semantics {
+                        contentDescription = NewsText.removeLabel(source.name)
+                    },
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Trash,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground,
+                    modifier = Modifier.size(Recipes.Glyph.sm),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(status: String) {
+    val type = LocalRoyTypeScale.current
+    val broken = status == "broken"
+    val tone =
+        if (broken) {
+            Recipes.Badge.Tone(
+                surface = RoyColors.destructive.copy(alpha = 0.1f),
+                border = RoyColors.destructive.copy(alpha = 0.3f),
+                content = RoyColors.destructive,
+            )
+        } else {
+            Recipes.Badge.success
+        }
+    val size = Recipes.Badge.default(type)
+
+    Surface(
+        shape = Recipes.Badge.radius,
+        color = tone.surface,
+        border = BorderStroke(Recipes.Badge.borderWidth, tone.border),
+    ) {
+        Text(
+            text = NewsText.privateStatusLabel(status),
+            modifier = Modifier.padding(horizontal = size.paddingX, vertical = size.paddingY),
+            style = size.text,
+            color = tone.content,
+        )
+    }
+}
+
+@Composable
+private fun CountBadge(used: Int, cap: Int) {
+    val type = LocalRoyTypeScale.current
+    val size = Recipes.Badge.default(type)
+
+    Surface(
+        shape = Recipes.Badge.radius,
+        color = Recipes.Badge.neutral.surface,
+        border = BorderStroke(Recipes.Badge.borderWidth, Recipes.Badge.neutral.border),
+    ) {
+        Text(
+            text = "$used / $cap",
+            modifier = Modifier.padding(horizontal = size.paddingX, vertical = size.paddingY),
+            style = size.text,
+            color = Recipes.Badge.neutral.content,
+        )
+    }
+}
+
+@Composable
+private fun EnableDigest(busy: Boolean, onEnable: () -> Unit) {
+    val spacing = LocalRoySpacing.current
+    val type = LocalRoyTypeScale.current
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = Recipes.Card.radius,
+        color = RoyColors.primary.copy(alpha = 0.05f),
+        border = BorderStroke(1.dp, RoyColors.primary.copy(alpha = 0.3f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(spacing.elementGapSm),
+            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = AccountNewsPrivateCopy.ENABLE_TITLE,
+                modifier = Modifier.weight(1f),
+                style = type.xs,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onEnable, enabled = !busy) {
+                Text(
+                    text =
+                        if (busy) {
+                            AccountNewsPrivateCopy.ENABLE_BUSY
+                        } else {
+                            AccountNewsPrivateCopy.ENABLE
+                        },
+                    style = type.xs,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Alert(message: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = Recipes.Card.radius,
+        color = RoyColors.destructive.copy(alpha = 0.05f),
+        border = BorderStroke(1.dp, RoyColors.destructive.copy(alpha = 0.3f)),
+    ) {
+        Text(
+            text = message,
+            modifier =
+                Modifier.padding(
+                    horizontal = LocalRoySpacing.current.elementGap,
+                    vertical = LocalRoySpacing.current.elementGapSm,
+                ),
+            style = LocalRoyTypeScale.current.small.copy(fontWeight = FontWeight.Bold),
+            color = RoyColors.destructive,
+        )
+    }
+}
+
+@Composable
+private fun Skeleton(modifier: Modifier) {
+    val transition = rememberInfiniteTransition(label = "news-private-skeleton")
+    val alpha by
+        transition.animateFloat(
+            initialValue = Recipes.Skeleton.pulseFrom,
+            targetValue = Recipes.Skeleton.pulseTo,
+            animationSpec = infiniteRepeatable(tween(Recipes.Skeleton.pulseMs), RepeatMode.Reverse),
+            label = "news-private-skeleton-alpha",
+        )
+
+    Column(
+        modifier =
+            modifier.fillMaxWidth().semantics {
+                contentDescription = AccountNewsPrivateCopy.LOADING_LABEL
+            },
+        verticalArrangement = Arrangement.spacedBy(Recipes.Skeleton.gap),
+    ) {
+        repeat(2) {
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(Recipes.Skeleton.blocks.last())
+                        .clip(Recipes.Skeleton.radius)
+                        .background(
+                            Recipes.Skeleton.fill.copy(alpha = Recipes.Skeleton.fill.alpha * alpha)
+                        )
+                        .border(Recipes.Skeleton.border, Recipes.Skeleton.radius)
+            )
+        }
+    }
+}
+
+@Composable
+private fun Failed(onRetry: () -> Unit, modifier: Modifier) {
+    val spacing = LocalRoySpacing.current
+    val type = LocalRoyTypeScale.current
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = Recipes.Card.radius,
+        color = RoyColors.destructive.copy(alpha = 0.05f),
+        border = BorderStroke(1.dp, RoyColors.destructive.copy(alpha = 0.3f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Recipes.Card.padding(spacing)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        ) {
+            Text(
+                text = AccountNewsPrivateCopy.LOAD_FAILED,
+                style = type.small.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.destructive,
+                textAlign = TextAlign.Center,
+            )
+            OutlinedButton(onClick = onRetry, shape = MaterialTheme.shapes.large) {
+                Icon(
+                    imageVector = LucideVectors.RefreshCw,
+                    contentDescription = null,
+                    modifier = Modifier.size(Recipes.Glyph.sm),
+                )
+                Text(
+                    text = AccountNewsPrivateCopy.RETRY,
+                    style = type.small,
+                    modifier = Modifier.padding(start = spacing.elementGapSm / 2f),
+                )
+            }
+        }
+    }
+}

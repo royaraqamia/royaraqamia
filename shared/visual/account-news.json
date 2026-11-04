@@ -1,0 +1,99 @@
+{
+  "surface": "account-news",
+  "route": "/account/news",
+  "notes": "The account news page at rest, and with an empty private list: the title, the first catalogue row, the private-sources section and the source-request form. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. The states after a save or a refused proposal are separate recordings and are not part of this contract yet.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "account-news-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "source-row",
+          "web": {
+            "selector": "[data-visual='source-row']"
+          },
+          "app": {
+            "tag": "account-news-source-row"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingLeft"]
+        },
+        {
+          "name": "private-sources",
+          "web": {
+            "selector": "[data-visual='private-sources']"
+          },
+          "app": {
+            "tag": "account-news-private"
+          },
+          "properties": ["top", "width", "fontSize"]
+        },
+        {
+          "name": "source-request",
+          "web": {
+            "selector": "[data-visual='source-request']"
+          },
+          "app": {
+            "tag": "account-news-request"
+          },
+          "properties": ["top", "width", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "origin": "title",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "account-news-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "private-sources",
+          "web": {
+            "selector": "[data-visual='private-sources']"
+          },
+          "app": {
+            "tag": "account-news-private"
+          },
+          "properties": ["top", "width", "fontSize"]
+        },
+        {
+          "name": "private-empty",
+          "web": {
+            "selector": "[data-visual='private-empty']"
+          },
+          "app": {
+            "tag": "account-news-private-empty"
+          },
+          "properties": ["top", "width", "height", "fontSize", "paddingLeft"]
+        },
+        {
+          "name": "source-request",
+          "web": {
+            "selector": "[data-visual='source-request']"
+          },
+          "app": {
+            "tag": "account-news-request"
+          },
+          "properties": ["top", "width", "fontSize"]
+        }
+      ]
+    }
+  ]
+}

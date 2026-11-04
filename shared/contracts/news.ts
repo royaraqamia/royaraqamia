@@ -534,3 +534,128 @@ export function formatDigestDayShort(date: string): string {
     month: 'long',
   }).format(parsed);
 }
+
+/**
+ * The bodies `/account/news` reads and writes, shaped for the app's decoder.
+ *
+ * The page's three islands consume these routes on the web already; the app
+ * draws the same three and therefore decodes the same envelopes rather than
+ * inventing narrower ones (ADR-0098). The refusal fields travel with every
+ * envelope because a sentence from the server is a state the screen draws, not
+ * an exception it throws (ADR-0031).
+ */
+export const newsSourcesResponseSchema = z.object({
+  success: z.boolean(),
+  sources: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      category: z.enum(NEWS_CATEGORIES),
+      region: z.enum(NEWS_REGIONS),
+      tier: z.number().int(),
+    })
+  ),
+  selected: z.array(z.string()),
+  personalEnabled: z.boolean(),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});
+
+/** The selection write answers what the server actually kept, not the request. */
+export const newsSourceSelectionResponseSchema = z.object({
+  success: z.boolean(),
+  selected: z.array(z.string()),
+  personalEnabled: z.boolean(),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});
+
+export const newsPrivateSourcesResponseSchema = z.object({
+  success: z.boolean(),
+  sources: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      url: z.string(),
+      kind: z.enum(NEWS_SOURCE_KINDS),
+      category: z.enum(NEWS_CATEGORIES),
+      region: z.enum(NEWS_REGIONS),
+      status: z.enum(NEWS_PRIVATE_SOURCE_STATUSES),
+      failureCount: z.number().int(),
+      lastError: z.string().nullable(),
+      lastCheckedAt: z.string().nullable(),
+      createdAt: z.string(),
+    })
+  ),
+  limited: z.boolean(),
+  cap: z.number().int(),
+  used: z.number().int(),
+  personalEnabled: z.boolean(),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});
+
+/** One proposal's audit row; the reader sees what the system made of their link. */
+export const newsSourceRequestsResponseSchema = z.object({
+  success: z.boolean(),
+  requests: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string(),
+      name: z.string(),
+      status: z.enum(NEWS_SOURCE_REQUEST_STATUSES),
+      kind: z.enum(NEWS_SOURCE_KINDS).nullable(),
+      resolvedUrl: z.string().nullable(),
+      failure: z.enum(NEWS_SOURCE_REQUEST_FAILURES).nullable(),
+      failureDetail: z.string().nullable(),
+      attempts: z.number().int(),
+      resolvedAt: z.string().nullable(),
+      category: z.enum(NEWS_CATEGORIES).nullable(),
+      region: z.enum(NEWS_REGIONS).nullable(),
+      tier: z.number().int().nullable(),
+      note: z.string().nullable(),
+      createdAt: z.string(),
+      reviewedAt: z.string().nullable(),
+      sourceId: z.string().nullable(),
+      userSourceId: z.string().nullable(),
+    })
+  ),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});
+
+/** The one row a submit answers, in the same shape the list carries. */
+export const newsSourceRequestResponseSchema = z.object({
+  success: z.boolean(),
+  request: z
+    .object({
+      id: z.string(),
+      url: z.string(),
+      name: z.string(),
+      status: z.enum(NEWS_SOURCE_REQUEST_STATUSES),
+      kind: z.enum(NEWS_SOURCE_KINDS).nullable(),
+      resolvedUrl: z.string().nullable(),
+      failure: z.enum(NEWS_SOURCE_REQUEST_FAILURES).nullable(),
+      failureDetail: z.string().nullable(),
+      attempts: z.number().int(),
+      resolvedAt: z.string().nullable(),
+      category: z.enum(NEWS_CATEGORIES).nullable(),
+      region: z.enum(NEWS_REGIONS).nullable(),
+      tier: z.number().int().nullable(),
+      note: z.string().nullable(),
+      createdAt: z.string(),
+      reviewedAt: z.string().nullable(),
+      sourceId: z.string().nullable(),
+      userSourceId: z.string().nullable(),
+    })
+    .optional(),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});
+
+/** A write whose only answer is “it landed”, or the sentence it was refused with. */
+export const newsOkResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+  code: z.string().optional(),
+});

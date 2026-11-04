@@ -172,6 +172,23 @@ export const CONTRACTS = [
     file: 'CommunityContracts.kt',
     schemas: ['CommunityIndexResponseSchema'],
   },
+  // The account news page (#950): the reader's source checklist, their private
+  // feeds and their proposals. The app draws the same three islands the page
+  // does, so it decodes the same envelopes the page's own API module reads. The
+  // refusal fields travel with each one because a server sentence is a state the
+  // screen paints (ADR-0031).
+  {
+    module: 'shared/contracts/news',
+    file: 'NewsContracts.kt',
+    schemas: [
+      'newsSourcesResponseSchema',
+      'newsSourceSelectionResponseSchema',
+      'newsPrivateSourcesResponseSchema',
+      'newsSourceRequestsResponseSchema',
+      'newsSourceRequestResponseSchema',
+      'newsOkResponseSchema',
+    ],
+  },
   // Chats (#819): the list's rows, the open thread, the page of messages and the
   // writes the two screens make. The four reads are the routes the tab and the
   // thread read (`/api/chats`, `/api/chats/[id]`, `/api/chats/[id]/messages`,

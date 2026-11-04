@@ -26,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
+import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
@@ -255,6 +256,15 @@ class ShellActivity : ComponentActivity() {
                             "/account/blocked" ->
                                 BlockedMembersScreen(
                                     repository = graph.blockedMembers,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
+                                )
+                            // The account news page (#950): the checklist, the
+                            // private feeds and the proposal form. Ported and
+                            // switched off until the visual gate passes.
+                            "/account/news" ->
+                                NewsScreen(
+                                    repository = graph.news,
                                     signedIn = signedIn,
                                     onSignIn = ::showSignIn,
                                 )

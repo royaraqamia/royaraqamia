@@ -442,28 +442,37 @@ async function transcribe(fileId) {
   const data = Buffer.from(await audio.arrayBuffer()).toString('base64');
 
   // Two models, cheapest first. The second exists because the first answered
-  // 200 with no text on the first real voice note (2026-11-04), and a silent
-  // empty transcript is worse than a slower one.
+  // 200 with no text on the first real voice note (2026-11-04) and then 503
+  // "endpoint is unavailable" on the next: a failed attempt must not stop the
+  // fallback from being tried.
+  let lastError;
   for (const model of TRANSCRIBE_MODELS) {
-    const message = await askModel(
-      [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
-            { type: 'input_audio', input_audio: { data, format: 'ogg' } },
-          ],
-        },
-      ],
-      { model }
-    );
+    try {
+      const message = await askModel(
+        [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'حوّل هذا الصوت إلى نص عربي كما قيل، بلا تعليق ولا إضافة.' },
+              { type: 'input_audio', input_audio: { data, format: 'ogg' } },
+            ],
+          },
+        ],
+        { model }
+      );
 
-    const text = String(message.content ?? message.audio_transcript ?? '').trim();
-    if (text) return text;
-    process.stdout.write(`telegram: ${model} returned no transcript\n`);
+      const text = String(message.content ?? message.audio_transcript ?? '').trim();
+      if (text) return text;
+      process.stdout.write(`telegram: ${model} returned no transcript\n`);
+    } catch (error) {
+      lastError = error;
+      process.stdout.write(`telegram: ${model} failed: ${String(error.message).slice(0, 200)}\n`);
+    }
   }
 
-  throw new Error('لم أستطع تحويل الصوت إلى نص');
+  throw new Error(
+    `لم أستطع تحويل الصوت إلى نص${lastError ? ` (${String(lastError.message).slice(0, 120)})` : ''}`
+  );
 }
 
 /**
@@ -1102,6 +1111,8 @@ async function probe() {
         authorization: `Bearer ${key}`,
         'content-type': 'application/json',
         'user-agent': 'royaraqamia-telegram-bridge/1.0',
+        // The gateway answers 400 MissingSessionID without this.
+        'x-opencode-session': 'probe',
       },
       body: JSON.stringify({
         model,

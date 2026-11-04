@@ -1,0 +1,43 @@
+{
+  "surface": "account-news",
+  "component": "account-news-preferences",
+  "web": {
+    "file": "frontend/ui/account/account-news-preferences-copy.ts",
+    "export": "ACCOUNT_NEWS_PREFERENCES_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/AccountNewsPreferencesCopy.kt",
+    "object": "AccountNewsPreferencesCopy"
+  },
+  "notes": {
+    "source": "The account news checklist's words, in both clients (#950). The page's view (`frontend/ui/account/news-preferences.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "placeholders": "`{min}` and `{cost}` are the personal digest's minimum story count and credit price, substituted by each client so the sentence has one owner.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "pageTitle": "مصادر الأخبار",
+    "loadingLabel": "جاري تحميل المصادر",
+    "loadFailed": "تعذّر تحميل مصادر الأخبار. أعد المحاولة.",
+    "retry": "إعادة المحاولة",
+    "signInBody": "اختيار المصادر يتبع حسابك. سجِّل الدُّخول لاختيار ما تقرأه من المصادر على صفحة الأخبار.",
+    "signIn": "تسجيل الدُّخول",
+    "saveBusy": "جاري الحفظ…",
+    "save": "حفظ الاختيار",
+    "selectAll": "اختيار كل المصادر",
+    "saveFailed": "تعذّر حفظ اختيارك. أعد المحاولة.",
+    "savedAll": "سترى كل المصادر من الآن.",
+    "savedSelected": "حفظنا اختيارك. ستعرض الأخبار هذه المصادر.",
+    "savedPersonal": "حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.",
+    "personalTitle": "مُلخَّص خاص بي",
+    "personalBody": "مُلخَّص يومي من مصادرك وحدها، يُنشأ صباحًا بعد المُلخَّص العام. يكفي أن يوفّر {min} أخبار على الأقل، ويُخصم من رصيدك {cost} اعتمادات عند إنشائه.",
+    "categoryTech": "تقنية",
+    "categoryPolitics": "سياسة",
+    "categoryReligion": "دين",
+    "categoryEconomy": "اقتصاد",
+    "categoryWorld": "العالم",
+    "categoryOther": "منوّع",
+    "regionArab": "العالم العربي",
+    "regionIslamic": "العالم الإسلامي",
+    "regionWorld": "العالم"
+  }
+}

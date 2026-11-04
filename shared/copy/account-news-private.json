@@ -1,0 +1,36 @@
+{
+  "surface": "account-news",
+  "component": "account-news-private",
+  "web": {
+    "file": "frontend/ui/account/account-news-private-copy.ts",
+    "export": "ACCOUNT_NEWS_PRIVATE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/AccountNewsPrivateCopy.kt",
+    "object": "AccountNewsPrivateCopy"
+  },
+  "notes": {
+    "source": "The account news private-sources list in both clients (#950), from the page's `frontend/ui/account/news-private-sources.tsx`.",
+    "placeholders": "`{name}` is the feed's own name, substituted by each client.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "heading": "مصادرك الخاصّة",
+    "body": "روابط أضفتها أنت. لا يراها أحد غيرك، وتظهر في مُلخَّصك الخاص وحده.",
+    "loadingLabel": "جاري تحميل مصادرك",
+    "loadFailed": "تعذّر تحميل مصادرك الخاصّة. أعد المحاولة.",
+    "retry": "إعادة المحاولة",
+    "empty": "لا مصادر خاصّة بعد. ألصق رابطًا في الحقل أعلاه، وسيتحقّق منه النظام ويضيفه هنا.",
+    "enableTitle": "مصادرك جاهزة، لكن مُلخَّصك الخاص مُتوقّف — ومصادرك الخاصّة لا تظهر في غيره. شغّله لتصلك أخبارها صباحًا.",
+    "enableBusy": "جاري التشغيل…",
+    "enable": "شغّل مُلخَّصي الخاص",
+    "enableSucceeded": "شغّلنا مُلخَّصك الخاص؛ ستصل أخبار هذه المصادر صباحًا.",
+    "enableFailed": "تعذّر تشغيل المُلخَّص. أعد المحاولة.",
+    "removed": "أزلنا المصدر من قائمتك.",
+    "removeFailed": "تعذّر إزالة المصدر. أعد المحاولة.",
+    "removeAria": "إزالة {name}",
+    "statusReady": "يعمل",
+    "statusBroken": "توقّف عن العمل",
+    "brokenNotice": "لم نعد نستطيع قراءة أحد مصادرك، فأوقفنا جلبها. أضف الرابط من جديد أو أزلها من القائمة."
+  }
+}
