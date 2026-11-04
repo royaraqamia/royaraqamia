@@ -1,0 +1,37 @@
+{
+  "surface": "account-rows",
+  "component": "account-rows",
+  "web": {
+    "file": "frontend/ui/account/account-rows-copy.ts",
+    "export": "ACCOUNT_ROWS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountRowsCopy.kt",
+    "object": "AccountRowsCopy"
+  },
+  "notes": {
+    "source": "The account page's action rows and sign-out, in both clients (#948). The site's `AccountRows` is the reference: a row label and the question before a sign-out are written there first, and the app reads the same source rather than retyping them (ADR-0098).",
+    "placeholders": "No string here carries a placeholder; the support row's destination is a route, not copy.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "navLabel": "إجراءات الحساب",
+    "submissions": "الطَّلبات",
+    "posts": "المنشورات",
+    "news": "مصادر الأخبار",
+    "links": "الرَّوابط المختصَرة",
+    "connectedApps": "التَّطبيقات المتَّصلة بالـ MCP",
+    "services": "الخدمات الظَّاهرة",
+    "blocked": "الأعضاء المحظورون",
+    "pricing": "خطط التَّسعير",
+    "admin": "الإدارة",
+    "faq": "الأسئلة الشَّائعة",
+    "contact": "تواصل معنا",
+    "privacy": "سياسة الخصوصيَّة",
+    "terms": "شروط الاستخدام",
+    "security": "سياسة الأمان",
+    "signOut": "تسجيل الخروج",
+    "signOutMessage": "هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟",
+    "cancel": "إلغاء"
+  }
+}
