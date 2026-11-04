@@ -3,8 +3,8 @@ name: 'Shell Version'
 # Two rules, both about the same file (ADR-0090).
 #
 # 1. `android/shell-version.properties` moves at the release cut, never in a pull
-#    request. A branch that bumps it publishes a version the weekly train never
-#    graded, and the train then grades the same commits again.
+#    request. A branch that bumps it publishes a version the release cut never
+#    graded, and the cut then grades the same commits again.
 # 2. A change to the shell ships to users, so it carries a release note — the
 #    Arabic sentence a person reads in the app's changelog. `android/release-notes/
 #    unreleased/` is where it goes; the cut folds it into the release.

@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * The Android changelog, as the release cut writes it (ADR-0090).
  *
- * `public/android/changelog.json` is a static file the weekly train prepends a
+ * `public/android/changelog.json` is a static file the release cut prepends a
  * release to, so both clients read one list: the page's view
  * (`frontend/ui/account/changelog-view.tsx`) and the app's `ChangelogScreen.kt`.
  * The schema is here rather than in the screen so a field the file stops

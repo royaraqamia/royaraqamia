@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CHANGELOG_LIMIT,
-  STALE_DAYS,
   archivePathFor,
   changelogWithRelease,
   composeReleaseNotes,
   gradeBump,
-  healthReport,
   isReleaseBookkeeping,
   notesFromArchive,
   notesFromFragments,
@@ -133,7 +131,6 @@ describe('planning a release', () => {
     publishedCode: 20021,
     committedCode: 20021,
     committedVersion: '1.0.21',
-    ageDays: 8,
   };
 
   it('publishes nothing when the shell did not change', () => {
@@ -143,14 +140,13 @@ describe('planning a release', () => {
     expect(plan.reason).toMatch(/no shell change/);
   });
 
-  it('waits out its own cadence unless it was forced', () => {
-    const early = planRelease({ ...base, ageDays: 2 });
-    expect(early.release).toBe(false);
-    expect(early.reason).toMatch(/waits/);
+  it('ships the batch whenever it is asked, with no cadence to wait out', () => {
+    // There is no clock any more: the cut is dispatched by hand, and an age is a
+    // number nothing reads (ADR-0090 amendment).
+    const plan = planRelease({ ...base, ageDays: 2 });
 
-    const forced = planRelease({ ...base, ageDays: 2, force: true });
-    expect(forced.release).toBe(true);
-    expect(forced.next).toBe('1.0.22');
+    expect(plan.release).toBe(true);
+    expect(plan.next).toBe('1.0.22');
   });
 
   it('grades the batch it accumulated', () => {
@@ -198,52 +194,12 @@ describe('planning a release', () => {
 describe('release bookkeeping', () => {
   it('does not count as a shell change', () => {
     // These land in the cut's own commit, after the release tag: counting them
-    // would give every release a follow-up release of its own, once a week.
+    // would give every release a follow-up release of its own at the next cut.
     expect(isReleaseBookkeeping('android/shell-version.properties')).toBe(true);
     expect(isReleaseBookkeeping('android/release-notes/1.1.0.md')).toBe(true);
     expect(isReleaseBookkeeping('public/android/latest.json')).toBe(true);
     expect(isReleaseBookkeeping('public/android/changelog.json')).toBe(true);
     expect(isReleaseBookkeeping('android/app/build.gradle')).toBe(false);
     expect(isReleaseBookkeeping('collector.ts')).toBe(false);
-  });
-});
-
-describe('the health report the workflow reads', () => {
-  const plan = {
-    release: true,
-    next: '1.1.0',
-    oldestChangeAgeDays: 5,
-    reason: 'a shell release is due',
-  };
-  /** The lines `main --health` writes to stdout, the stream `$GITHUB_OUTPUT` parses. */
-  const stdoutLines = (report) =>
-    Object.entries(report.outputs).map(([key, value]) => `${key}=${value}`);
-
-  it('sends a person the sentence, in prose the output parser would refuse', () => {
-    const report = healthReport({ plan, maxAgeDays: STALE_DAYS });
-    expect(report.prose).toBe('a shell release is due (1.1.0) but not yet overdue');
-    // The regression: this line reached `$GITHUB_OUTPUT`, and failed the step.
-    expect(stdoutLines(report)).not.toContain(report.prose);
-  });
-
-  it('keeps every stdout line a key=value pair', () => {
-    const lines = stdoutLines(healthReport({ plan, maxAgeDays: STALE_DAYS }));
-    expect(lines).toEqual(['stalled=false', 'release=true', 'next=1.1.0', 'age_days=5']);
-    for (const line of lines) expect(line).toMatch(/^[a-z_]+=/);
-  });
-
-  it('counts an overdue backlog as stalled, and a level train as neither', () => {
-    const overdue = healthReport({ plan: { ...plan, oldestChangeAgeDays: 10 }, maxAgeDays: 9 });
-    expect(overdue.outputs.stalled).toBe('true');
-    expect(overdue.prose).toMatch(/oldest change is 10 day/);
-
-    const level = healthReport({ plan: { release: false, reason: 'no shell change' } });
-    expect(level.outputs).toMatchObject({
-      stalled: 'false',
-      release: 'false',
-      next: '',
-      age_days: 0,
-    });
-    expect(level.prose).toBe('the train is level: no shell change');
   });
 });

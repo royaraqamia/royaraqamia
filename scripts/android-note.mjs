@@ -7,7 +7,7 @@
  * those users read in the app's changelog. This script is how that sentence is
  * written — one command, a correctly named file, and the same text ready to paste
  * into the pull request body. `shell-version.yml` fails the pull request without
- * it, and the weekly cut refuses to ship without one.
+ * it, and the release cut refuses to ship without one.
  *
  *   npm run android:note -- "ميزة: ..." ["إصلاح: ..."]
  *   npm run android:note -- --list
@@ -183,7 +183,7 @@ export function main(argv = process.argv.slice(2), log = console.log) {
   for (const bullet of bullets) log(`  - ${bullet}`);
   log('');
   log('Stage it with the change, and put the same lines in the pull request body under');
-  log('"## Release note". The weekly release folds them into the APK changelog.');
+  log('"## Release note". The release cut folds them into the APK changelog.');
   return 0;
 }
 

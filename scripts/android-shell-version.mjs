@@ -11,7 +11,7 @@
  *
  * **It moves at the release cut, never in a pull request.** A pull request used
  * to bump it, one APK per merge, and users were offered an update for every
- * commit, many of them invisible to them (ADR-0090). The weekly train now grades
+ * commit, many of them invisible to them (ADR-0090). The release cut now grades
  * everything that accumulated, computes one version, and writes this file as
  * part of the cut. `--check` is what CI runs on a pull request, and it fails two
  * things: a hand-edited counter, and a name that no longer matches the code.
@@ -221,7 +221,7 @@ export function changedCapacitorDependencies(baseText, headText) {
  * decide it, so a failure or a release plan can say what to look at.
  *
  * This is the one definition of "a new APK exists". Both the pull-request check
- * and the weekly train read it, so a release cannot be begged by a web change and
+ * and the release cut read it, so a release cannot be begged by a web change and
  * a native change cannot be forgotten by one.
  */
 export function shellChangeVerdict({ files, basePackageJson, headPackageJson }) {
@@ -296,7 +296,7 @@ export function main({
       (parseShellVersion(baseText) !== code || parseShellVersionName(baseText) !== name);
     if (moved) {
       log('android/shell-version.properties is moved by the release cut, not by a pull request.');
-      log('Revert it here: the weekly train grades everything that accumulated and writes it.');
+      log('Revert it here: the release cut grades everything that accumulated and writes it.');
       log('If this change needs to ship now, dispatch the release workflow after merging.');
       return 1;
     }

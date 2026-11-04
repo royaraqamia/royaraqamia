@@ -9,7 +9,7 @@
  * ships. This script is the alternative:
  *
  *   - **A batch, not a commit.** Everything native since the last `android-*`
- *     release is graded together, so a week of small fixes is one update.
+ *     release is graded together, so the fixes that accumulated are one update.
  *   - **A version that means something.** `!`/BREAKING → major, `feat` → minor,
  *     anything else → patch, graded over the batch only. The name is semantic,
  *     the code is derived from it (scripts/android-shell-version.mjs).
@@ -20,14 +20,16 @@
  *     writes.
  *
  * Usage:
- *   node scripts/android-release.mjs --plan [--min-age-days 6] [--force] [--json]
+ *   node scripts/android-release.mjs --plan [--json]
  *   node scripts/android-release.mjs --apply [--released-at YYYY-MM-DD] [--json]
  *   node scripts/android-release.mjs --check-notes <base>     # CI, on a pull request
- *   node scripts/android-release.mjs --health [--max-age-days 9]
  *
- * `--plan` is read-only and is the first thing the train asks. `--apply` writes
+ * `--plan` is read-only and is the first thing a cut asks. `--apply` writes
  * the version, the notes archive and `public/android/changelog.json`; the
  * workflow uploads the APK, and only then commits all of it together.
+ *
+ * The cut is dispatched by hand, and only by hand (ADR-0090 amendment): there is
+ * no cadence to wait out, so nothing here has to be told to ignore one.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -72,11 +74,6 @@ export function isReleaseBookkeeping(file) {
 
 /** How many releases the site's changelog keeps. */
 export const CHANGELOG_LIMIT = 20;
-
-/** The weekly cadence, with a day of slack for GitHub's best-effort schedule. */
-export const RELEASE_CADENCE_DAYS = 7;
-export const MIN_AGE_DAYS = RELEASE_CADENCE_DAYS - 1;
-export const STALE_DAYS = RELEASE_CADENCE_DAYS + 2;
 
 const BREAKING = /^[a-z]+(\(.*\))?!:/i;
 const BREAKING_BODY = /BREAKING CHANGE\s*:/;
@@ -181,11 +178,11 @@ export function changelogWithRelease(existing, release, limit = CHANGELOG_LIMIT)
 /**
  * Whether a release is due, and what it would be.
  *
- * Four answers matter, in this order: a cut that was written but never published
+ * Three answers matter, in this order: a cut that was written but never published
  * is resumed (its version is already committed, and re-grading would skip it); a
- * push with no native change has nothing to publish; the weekly train waits out
- * its own cadence unless it was dispatched by hand; and everything else is a
- * graded step from the last release.
+ * dispatch with no native change has nothing to publish; and everything else is a
+ * graded step from the last release. There is no cadence to check — the cut only
+ * ever runs because a person asked for it (ADR-0090 amendment).
  */
 export function planRelease({
   shellChanged,
@@ -195,9 +192,6 @@ export function planRelease({
   publishedCode = 0,
   committedCode = 0,
   committedVersion = null,
-  ageDays = 0,
-  minAgeDays = MIN_AGE_DAYS,
-  force = false,
 }) {
   if (committedCode > publishedCode) {
     return {
@@ -215,13 +209,6 @@ export function planRelease({
     return {
       release: false,
       reason: 'no shell change since the last Android release; nothing to publish',
-    };
-  }
-
-  if (!force && ageDays < minAgeDays) {
-    return {
-      release: false,
-      reason: `the last Android release is ${ageDays} day(s) old; the train waits ${minAgeDays}`,
     };
   }
 
@@ -296,30 +283,6 @@ function shellMessagesSince(base) {
     .filter(Boolean);
 }
 
-/** The oldest and newest shell commits since a base, as Unix seconds. */
-function shellCommitDates(base) {
-  if (!base) return [];
-  return git([
-    'log',
-    `${base}..HEAD`,
-    '--format=%ct',
-    '--',
-    'android/',
-    'capacitor.config.ts',
-    'package.json',
-  ])
-    .split('\n')
-    .map((line) => Number(line.trim()))
-    .filter((value) => Number.isFinite(value) && value > 0);
-}
-
-function releaseAgeDays(base) {
-  if (!base) return Number.POSITIVE_INFINITY;
-  const committed = Number(git(['log', '-1', '--format=%ct', base]) || 0);
-  if (!committed) return Number.POSITIVE_INFINITY;
-  return Math.floor((Date.now() / 1000 - committed) / 86400);
-}
-
 /** Fragments a pull request added or edited, newest files included. */
 export function fragmentFiles(cwd = ROOT) {
   const dir = join(cwd, UNRELEASED_DIR);
@@ -334,7 +297,7 @@ export function fragmentFiles(cwd = ROOT) {
 }
 
 /** The plan, from the repository as it stands. */
-export function planFromRepo({ minAgeDays = MIN_AGE_DAYS, force = false } = {}) {
+export function planFromRepo() {
   const published = readJson(MANIFEST_PATH, {});
   const versionText = readFileSync(join(ROOT, SHELL_VERSION_PATH), 'utf8');
   const committedCode = parseShellVersion(versionText);
@@ -370,7 +333,6 @@ export function planFromRepo({ minAgeDays = MIN_AGE_DAYS, force = false } = {}) 
     publishedVersionCode > (lastRelease?.code ?? 0)
       ? publishedVersion
       : (lastRelease?.version ?? committedVersion);
-  const ageDays = releaseAgeDays(base);
 
   const plan = planRelease({
     shellChanged: change.changesShell,
@@ -380,18 +342,12 @@ export function planFromRepo({ minAgeDays = MIN_AGE_DAYS, force = false } = {}) 
     publishedCode: Number(published?.versionCode ?? 0),
     committedCode: effectiveCode,
     committedVersion: effectiveVersion,
-    ageDays: Number.isFinite(ageDays) ? ageDays : 0,
-    minAgeDays,
-    force,
   });
 
-  const dates = shellCommitDates(base);
-  const oldest = dates.length > 0 ? Math.min(...dates) : null;
   return {
     ...plan,
     lastRelease: lastRelease?.version ?? null,
     lastReleaseTag: base,
-    oldestChangeAgeDays: oldest ? Math.floor((Date.now() / 1000 - oldest) / 86400) : 0,
     notes: plan.release ? resolveNotes(plan) : [],
   };
 }
@@ -413,44 +369,8 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * What the dead-man's switch reads (`.github/workflows/release-health.yml`), kept
- * pure so its other half holds without a checkout: the sentence a person reads
- * and the `key=value` pairs the workflow parses are two different streams.
- *
- * The workflow appends stdout to `$GITHUB_OUTPUT`, so one prose line there is an
- * `Invalid format` annotation and a step that never ran the alert at all — which
- * is how four daily runs reported nothing between 2026-10-29 and 2026-11-01.
- * `prose` goes to stderr; only `outputs` may reach stdout.
- */
-export function healthReport({ plan, maxAgeDays = STALE_DAYS }) {
-  const stalled = Boolean(plan.release) && plan.oldestChangeAgeDays > maxAgeDays;
-  const prose = stalled
-    ? `a shell release is due and its oldest change is ${plan.oldestChangeAgeDays} day(s) old`
-    : plan.release
-      ? `a shell release is due (${plan.next}) but not yet overdue`
-      : `the train is level: ${plan.reason}`;
-  return {
-    prose,
-    outputs: {
-      stalled: String(stalled),
-      release: String(Boolean(plan.release)),
-      next: plan.next ?? '',
-      age_days: plan.oldestChangeAgeDays ?? 0,
-    },
-  };
-}
-
 export function main(argv = process.argv.slice(2), log = console.log) {
   const json = argv.includes('--json');
-  // `--health` is a machine mode too: its stdout is a `$GITHUB_OUTPUT` payload,
-  // so a caller cannot be asked to remember a flag that keeps it parseable.
-  const machine = json || argv.includes('--health');
-  const note = machine ? (...parts) => console.error(...parts) : log;
-  const minAgeDays = argv.includes('--min-age-days')
-    ? Number(valueOf(argv, '--min-age-days'))
-    : MIN_AGE_DAYS;
-  const force = argv.includes('--force');
 
   if (argv.includes('--check-notes')) {
     const base = valueOf(argv, '--check-notes');
@@ -488,7 +408,7 @@ export function main(argv = process.argv.slice(2), log = console.log) {
       log(`Add a file under ${UNRELEASED_DIR}/ with the sentence a user reads, in Arabic:`);
       log('  echo "- إصلاح: ..." > android/release-notes/unreleased/<slug>.md');
       log('');
-      log("The weekly release folds every fragment into the APK's changelog (ADR-0090).");
+      log("The release cut folds every fragment into the APK's changelog (ADR-0090).");
       return 1;
     }
     log(
@@ -497,17 +417,7 @@ export function main(argv = process.argv.slice(2), log = console.log) {
     return 0;
   }
 
-  if (argv.includes('--health')) {
-    const maxAgeDays = argv.includes('--max-age-days')
-      ? Number(valueOf(argv, '--max-age-days'))
-      : STALE_DAYS;
-    const { prose, outputs } = healthReport({ plan: planFromRepo({ force: true }), maxAgeDays });
-    note(prose);
-    for (const [key, value] of Object.entries(outputs)) log(`${key}=${value}`);
-    return 0;
-  }
-
-  const plan = planFromRepo({ minAgeDays, force });
+  const plan = planFromRepo();
 
   if (argv.includes('--plan')) {
     if (json) {
@@ -598,7 +508,7 @@ export function main(argv = process.argv.slice(2), log = console.log) {
   }
 
   log(
-    'usage: node scripts/android-release.mjs (--plan [--min-age-days N] [--force] | --apply | --check-notes <ref> | --health) [--json]'
+    'usage: node scripts/android-release.mjs (--plan | --apply [--released-at YYYY-MM-DD] | --check-notes <ref>) [--json]'
   );
   return 0;
 }
