@@ -116,6 +116,20 @@ therefore reviewed) still lands in production without anyone driving it:
 - **Verify:** the drift check runs strictly afterwards, so "it applied" is not a claim: the project's
   recorded versions are read back and compared.
 
+**A branch that reads a new column is red until the project has it.** The build prerenders routes
+that read through the admin client (`/community`, for one), so a pull request whose code filters on a
+column the linked project does not have yet fails `Build` — and the offline suite too, on the pages
+those reads feed — with `column users.<name> does not exist` (`42703`). A pull-request drift run only
+notices the pending file. Apply it by hand before expecting green:
+
+```bash
+npx supabase db push --linked --dry-run   # what a merge would apply
+npx supabase db push --linked --yes
+```
+
+The merge is still what applies a migration nobody applied early; doing it on the branch only moves
+the same reviewed file earlier, and the `main` run finds nothing left to do.
+
 `workflow_dispatch` takes `project-ref` (compare against another project) and `apply` (apply now
 rather than wait for the next push). The alert path is drillable without touching production:
 `gh workflow run 'Migration Drift' -f project-ref=<a ref that does not exist>` opens the tracking
