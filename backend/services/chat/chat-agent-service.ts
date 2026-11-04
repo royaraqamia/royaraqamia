@@ -214,6 +214,11 @@ export class ChatAgentService {
       throw error;
     }
 
+    // The record exists before the provider is called, so a turn that dies has
+    // somewhere to say so — and the retry below has a row to count itself on.
+    const turnId = await this.deps.agent.startTurn(conversationId, userId);
+    let answer = '';
+
     try {
       await this.deps.chats.sendMessage(userId, conversationId, { body: question });
 
@@ -225,24 +230,46 @@ export class ChatAgentService {
 
       const tools = chatAgentToolDefinitions();
       const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
-      let answer = '';
       let rounds = 0;
+      let retried = false;
 
       try {
         for (;;) {
           const calls: AiChatToolCall[] = [];
           let roundText = '';
+          let streamed = false;
 
-          const signal = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
-          for await (const event of client.streamWithTools(messages, tools, signal)) {
-            if (event.type === 'text') {
-              roundText += event.text;
-              yield { type: 'delta', text: event.text };
-            } else {
-              calls.push(event.call);
+          try {
+            const signal = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()));
+            for await (const event of client.streamWithTools(messages, tools, signal)) {
+              if (event.type === 'text') {
+                roundText += event.text;
+                streamed = true;
+                answer += event.text;
+                yield { type: 'delta', text: event.text };
+              } else {
+                calls.push(event.call);
+              }
             }
+          } catch (error) {
+            // One clean retry, and only when repeating the call cannot duplicate
+            // anything: no text shown, no tool run, nothing proposed yet. A busy
+            // provider is the case this exists for.
+            if (
+              !retried &&
+              !streamed &&
+              answer === '' &&
+              calls.length === 0 &&
+              rounds === 0 &&
+              retryable(error)
+            ) {
+              retried = true;
+              await this.deps.agent.recordAttempt(turnId, 1);
+              await sleep(RETRY_DELAY_MS);
+              continue;
+            }
+            throw error;
           }
-          answer += roundText;
 
           // Text with no calls is the answer, and it is the one that is kept.
           if (calls.length === 0) break;
@@ -318,7 +345,7 @@ export class ChatAgentService {
           }
         }
       } catch (error) {
-        logger.warn('Assistant turn failed', { error: String(error) });
+        logger.warn('Assistant turn failed', { error: String(error), turn: turnId });
         throw new ChatAgentError(
           502,
           error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
@@ -330,6 +357,7 @@ export class ChatAgentService {
       const text = answer.trim() || ROUNDS_EXHAUSTED;
 
       const record = await this.deps.agent.insertAgentMessage(conversationId, text);
+      await this.deps.agent.settleTurn(turnId);
       yield {
         type: 'done',
         message: {
@@ -347,10 +375,38 @@ export class ChatAgentService {
         },
       };
     } catch (error) {
+      // The row keeps what the member already read, so a half-written answer is
+      // visible to whoever looks rather than discarded with the request.
+      await this.deps.agent
+        .failTurn(turnId, {
+          error: error instanceof Error ? error.message : String(error),
+          partialText: answer,
+        })
+        .catch(() => undefined);
       await reservation.release();
       throw error;
     }
   }
+}
+
+/** How long a clean retry waits before asking the provider again. */
+const RETRY_DELAY_MS = 600;
+
+/**
+ * Whether a retry can plausibly succeed. A billing wall (402) or a refusal the
+ * provider phrased itself will answer the same way twice; a rate limit (429), a
+ * 5xx or a socket that died is worth one more ask.
+ */
+function retryable(error: unknown): boolean {
+  if (error instanceof AiChatProviderError) {
+    return error.status === 429 || error.status >= 500;
+  }
+  // Not the provider's own status: a timeout, a reset, DNS. Worth one retry.
+  return true;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** A tool's answer as the provider reads it: JSON, bounded so it fits the window. */

@@ -16,6 +16,12 @@ export interface ChatAssistantState {
   /** The answer as it is written, then dropped once the stored message arrives. */
   streamingText: string;
   /**
+   * What had already arrived when a turn failed. It stays on screen, because the
+   * text the member read is theirs even when the answer did not finish — the
+   * server keeps the same thing on the turn row.
+   */
+  interrupted: string;
+  /**
    * What this turn read or proposed, in the member's words: a read tool ran, or
    * a proposal is waiting for its card. It is this turn's own record, dropped
    * when the next one starts (#818).
@@ -43,6 +49,7 @@ export function useChatAssistant(
   const [allowance, setAllowance] = useState<ChatAgentAllowance | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [interrupted, setInterrupted] = useState('');
   const [toolsUsed, setToolsUsed] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,15 +75,19 @@ export function useChatAssistant(
 
       setIsStreaming(true);
       setStreamingText('');
+      setInterrupted('');
       setToolsUsed([]);
       setError(null);
 
       let failure: string | null = null;
+      let partial = '';
 
       try {
         await streamChatAgentTurn(conversationId, question, (event: ChatAgentEvent) => {
-          if (event.type === 'delta') setStreamingText((current) => current + event.text);
-          else if (event.type === 'error') failure = event.error;
+          if (event.type === 'delta') {
+            partial += event.text;
+            setStreamingText((current) => current + event.text);
+          } else if (event.type === 'error') failure = event.error;
           else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
           else if (event.type === 'proposal')
             setToolsUsed((current) => [
@@ -89,6 +100,10 @@ export function useChatAssistant(
       } finally {
         setIsStreaming(false);
         setStreamingText('');
+        // A turn that failed after it had written something keeps that text: the
+        // member already read it, and dropping it made the error look like the
+        // whole answer never existed.
+        if (failure && partial.trim()) setInterrupted(partial);
       }
 
       setError(failure);
@@ -102,5 +117,15 @@ export function useChatAssistant(
     [conversationId, isStreaming, onAnswered, refresh]
   );
 
-  return { available, allowance, isStreaming, streamingText, toolsUsed, error, ask, refresh };
+  return {
+    available,
+    allowance,
+    isStreaming,
+    streamingText,
+    interrupted,
+    toolsUsed,
+    error,
+    ask,
+    refresh,
+  };
 }

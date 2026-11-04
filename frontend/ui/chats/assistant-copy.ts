@@ -18,6 +18,8 @@ export const ASSISTANT_COPY = {
   upgrade: 'ترقية الخطة',
   unavailable: 'المساعد غير متاح حالياً.',
   failure: 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.',
+  /** Under text that arrived before a turn failed, so it is not read as whole. */
+  interrupted: 'توقّف الرد قبل أن يكتمل.',
   /** `{remaining}` and `{cap}` are filled from the server's own numbers. */
   remaining: 'المتبقي اليوم: {remaining} من {cap}',
   /** The sentence a spent day shows: `{time}` is the Damascus reset instant. */
