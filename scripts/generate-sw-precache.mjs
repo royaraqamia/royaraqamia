@@ -100,6 +100,11 @@ export const DYNAMIC_BY_DESIGN = [
     route: '/training/apply',
     reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
   },
+  {
+    route: '/pricing/subscribe',
+    reason:
+      'the plan, the price and the account (guest, already subscribed, or an open request) are all decided per request',
+  },
   // The notification centre. Its document carries nothing: the feed is a client
   // read, so a precached shell would paint an empty frame with the radio off, and
   // the slot it costs evicts `/verify`'s shell from the tail. The page stays a

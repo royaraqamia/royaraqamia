@@ -5,26 +5,32 @@ import {
 } from '@/frontend/shared/local-store/sync-transport';
 import { writeSubmissionReceipt, type SubmissionKind } from '@/frontend/shared/submission-receipt';
 
-/** The three non-inventory lead forms that queue offline (ticket #169). */
-export type LeadFormKind = Extract<SubmissionKind, 'training' | 'projectRequest' | 'retainer'>;
+/** The non-inventory lead forms that queue offline (ticket #169). */
+export type LeadFormKind = Extract<
+  SubmissionKind,
+  'training' | 'projectRequest' | 'retainer' | 'subscription'
+>;
 
 /** Outbox intent type per lead form. */
 export const LEAD_INTENT_TYPES: Record<LeadFormKind, string> = {
   training: 'training.submit',
   projectRequest: 'project-request.submit',
   retainer: 'retainer.submit',
+  subscription: 'subscription.submit',
 };
 
 const INTENT_ENDPOINTS: Record<string, string> = {
   [LEAD_INTENT_TYPES.training]: '/api/training/applications',
   [LEAD_INTENT_TYPES.projectRequest]: '/api/project-requests',
   [LEAD_INTENT_TYPES.retainer]: '/api/retainers',
+  [LEAD_INTENT_TYPES.subscription]: '/api/me/subscriptions',
 };
 
 const INTENT_KINDS: Record<string, LeadFormKind> = {
   [LEAD_INTENT_TYPES.training]: 'training',
   [LEAD_INTENT_TYPES.projectRequest]: 'projectRequest',
   [LEAD_INTENT_TYPES.retainer]: 'retainer',
+  [LEAD_INTENT_TYPES.subscription]: 'subscription',
 };
 
 /** The lead form an Outbox intent belongs to, or `null` for an unknown type. */

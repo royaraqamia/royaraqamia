@@ -25,6 +25,7 @@ const FIXED_TARGETS: Partial<Record<NotificationType, string>> = {
   consultation_booking: '/admin/consultations/bookings',
   project_request: '/admin/clients/project-requests',
   retainer_request: '/admin/clients/retainers',
+  subscription_request: '/admin/plans/requests',
 };
 
 /** A metadata value as a path segment, or `null` when there is nothing usable. */

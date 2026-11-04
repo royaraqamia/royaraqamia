@@ -362,7 +362,7 @@
     },
     {
       "id": "leads",
-      "routes": ["/training/apply", "/request-project", "/hire"],
+      "routes": ["/training/apply", "/request-project", "/hire", "/pricing/subscribe"],
       "owner": "server",
       "read": "needs-connection",
       "write": "outbox",

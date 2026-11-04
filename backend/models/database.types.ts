@@ -2356,6 +2356,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      subscription_requests: {
+        Row: {
+          client_id: string | null;
+          created_at: string;
+          email: string | null;
+          full_name: string;
+          id: string;
+          note: string | null;
+          notes: string | null;
+          phone_whatsapp: string;
+          plan: string;
+          reference_code: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          created_at?: string;
+          email?: string | null;
+          full_name: string;
+          id?: string;
+          note?: string | null;
+          notes?: string | null;
+          phone_whatsapp: string;
+          plan?: string;
+          reference_code: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          client_id?: string | null;
+          created_at?: string;
+          email?: string | null;
+          full_name?: string;
+          id?: string;
+          note?: string | null;
+          notes?: string | null;
+          phone_whatsapp?: string;
+          plan?: string;
+          reference_code?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       training_applications: {
         Row: {
           client_id: string | null;

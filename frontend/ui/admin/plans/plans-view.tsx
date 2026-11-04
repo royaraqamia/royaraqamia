@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Inbox, Search, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -56,6 +57,15 @@ export function PlansView() {
 
   return (
     <div className="space-y-5">
+      <Link
+        href="/admin/plans/requests"
+        className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/40"
+      >
+        <Inbox className="size-3.5 text-primary" aria-hidden="true" />
+        طلبات الاشتراك الواردة
+        <ChevronLeft className="size-3.5" aria-hidden="true" />
+      </Link>
+
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
           label="سعر الخطَّة المدفوعة"

@@ -13,6 +13,7 @@ export type NotificationType =
   | 'consultation_booking'
   | 'project_request'
   | 'retainer_request'
+  | 'subscription_request'
   | 'chat_request';
 
 /**

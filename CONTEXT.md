@@ -494,6 +494,13 @@ source selection. The subject is a first-party cookie plus a salted IP hash, nev
 two identify one allowance. When it runs out the site offers sign-in — the free Plan.
 _Avoid_: Guest quota, trial, rate limit
 
+**Subscription request**:
+A signed-in member's request to buy the paid Plan, filed from `/pricing/subscribe` with a
+Reference Code. It is a lead, not a payment: an operator answers it and activates the Plan from the
+console, and the row records what the member submitted (ADR-0006).
+_Sold as_: اشترِك الآن
+_Avoid_: Order, invoice, checkout, purchase, subscription record
+
 **Activation**:
 An operator's deliberate grant of the paid Plan for 30 days, recorded with amount, method, note and
 expiry in `plan_activations`. It raises every cap; expiry lowers them again. Nothing is trimmed to

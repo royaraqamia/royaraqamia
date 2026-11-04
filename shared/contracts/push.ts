@@ -69,6 +69,7 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   consultation_booking: '/admin/consultations/bookings',
   project_request: '/admin/clients/project-requests',
   retainer_request: '/admin/clients/retainers',
+  subscription_request: '/admin/plans/requests',
   chat_request: '/notifications?tab=chats',
 };
 
