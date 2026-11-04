@@ -42,9 +42,11 @@ import { createClient } from '@supabase/supabase-js';
  * is deliberately not what the job runs, because two offline jobs can run at
  * once against this one account.
  *
- * Note: a verified `public.users` row is a member, so this account is visible
- * in the community directory. It is an ordinary confirmed account; the name
- * below is the only thing marking it as internal.
+ * Note: a verified `public.users` row is a member, so this account would be
+ * listed in the community directory, the member search and the sitemap.
+ * `hideProfile` sets the `is_hidden` flag (ADR-0127) on every run, so it is an
+ * ordinary confirmed account the suite signs in as, and a row no public surface
+ * names.
  */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -91,6 +93,34 @@ async function ensureProfile(id: string, email: string) {
     console.error(`Failed to create the public.users row for ${email}: ${error.message}`);
     process.exit(1);
   }
+
+  await hideProfile(id);
+}
+
+/**
+ * Keep the account out of every public listing (ADR-0127).
+ *
+ * The row is a real, confirmed member, so without this flag the roster, the
+ * member search, the sitemap and the chat picker name it. It is set on every
+ * run, so the flag survives a re-provisioned account. On a branch whose
+ * migration is not applied yet the column does not exist; that is a warning
+ * rather than a failure, because the merge applies the migration and a
+ * bootstrap that cannot run is worse than no bootstrap (the same rule
+ * `isMissingFunction` follows).
+ */
+async function hideProfile(id: string) {
+  const { error } = await supabase.from('users').update({ is_hidden: true }).eq('id', id);
+  if (!error) return;
+
+  if (isMissingColumn(error)) {
+    console.warn(
+      `users.is_hidden is not in this project yet (${error.message}); the merge applies the migration.`
+    );
+    return;
+  }
+
+  console.error(`Failed to hide the test account's profile row: ${error.message} (${error.code})`);
+  process.exit(1);
 }
 
 /**
@@ -106,6 +136,15 @@ function isMissingFunction(error: { code?: string; message: string }): boolean {
     error.code === 'PGRST202' ||
     error.code === '42883' ||
     error.message.includes('Could not find the function')
+  );
+}
+
+/** The same branch-project rule for a column the merge adds. */
+function isMissingColumn(error: { code?: string; message: string }): boolean {
+  return (
+    error.code === 'PGRST204' ||
+    error.code === '42703' ||
+    error.message.includes("'is_hidden' column")
   );
 }
 

@@ -7,7 +7,7 @@ import {
   type ChatMessageRecord,
 } from '@/backend/repositories/chat/chat-repository';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import {
   chatAttachmentIsInlineImage,
@@ -44,7 +44,8 @@ export class ChatError extends Error {
 export interface ChatServiceDeps {
   users: {
     getById(id: string): Promise<PublicUser | null>;
-    getByUsername(username: string): Promise<PublicUser | null>;
+    /** Carries `is_hidden`: the pre-chat screen must not open a hidden member. */
+    getByUsername(username: string): Promise<MemberProfile | null>;
     getMany(ids: string[]): Promise<PublicUser[]>;
     search(query: string, limit: number): Promise<PublicUser[]>;
   };
@@ -720,7 +721,9 @@ export class ChatService {
     if (!handle) throw new ChatError(400, 'معرِّف العضو مطلوب');
 
     const user = await this.deps.users.getByUsername(handle);
-    if (!user || !user.verified) throw new ChatError(404, 'العضو غير موجود');
+    // A hidden member is not in the directory (ADR-0127), so a hand-typed
+    // handle must reach the same answer the picker gives: nobody.
+    if (!user || !user.verified || user.is_hidden) throw new ChatError(404, 'العضو غير موجود');
     if (user.id === userId) throw new ChatError(400, 'لا يمكنك بدء محادثة مع نفسك');
 
     const peer = toPeer(user);

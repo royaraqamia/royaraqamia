@@ -8,7 +8,7 @@ import {
 } from '@/backend/config/blogpress';
 import { createPublicUsersRepositoryServer } from '@/backend/config/users';
 import type { Post, PostAuthor, PostTag, PostSummary } from '@/shared/contracts/blogpress';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
 import type { CommunitySearchResult } from '@/shared/contracts/community';
 import { COMMUNITY_TAGS } from '@/backend/shared/community-cache-tags';
 
@@ -135,7 +135,7 @@ export async function loadCommunitySearch(query: string): Promise<CommunitySearc
 }
 
 export interface CommunityMemberPage {
-  member: PublicUser;
+  member: MemberProfile;
   posts: PostSummary[];
   nextCursor: string | null;
 }
@@ -161,11 +161,19 @@ export const loadAccountPosts = unstable_cache(
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.index] }
 );
 
-/** A public member profile plus the first page of their published posts. */
+/**
+ * A public member profile plus the first page of their published posts.
+ *
+ * A hidden member (ADR-0127) stops here, returning `null`: this loader feeds a
+ * cached page, so its answer cannot depend on who is asking, and "absent" is
+ * what every other public read already says about the row. The row itself is
+ * still readable by handle — the uniqueness check and an existing chat thread
+ * need it — but not through this door.
+ */
 export const loadCommunityMember = unstable_cache(
   async (username: string): Promise<CommunityMemberPage | null> => {
     const member = await createPublicUsersRepositoryServer().getByUsername(username);
-    if (!member || !member.verified) return null;
+    if (!member || !member.verified || member.is_hidden) return null;
 
     const feed = await pub().getPublishedFeed(
       null,

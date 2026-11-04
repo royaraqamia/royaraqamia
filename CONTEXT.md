@@ -61,6 +61,12 @@ _Avoid_: Blog category, section, topic
 A User-owned label attached to Community Posts for discovery.
 _Avoid_: Blog tag, keyword, label
 
+**Hidden Member**:
+A `public.users` row that exists and can sign in but that no public surface lists: the roster, the
+member search, the sitemap and the chat picker skip it, and `/u/<handle>` answers 404 to everyone but
+the member itself and an Admin (ADR-0127). The row is not deleted and its content is untouched.
+_Avoid_: Banned member, deleted account, private profile
+
 ### Certificates
 
 **Certificate**:

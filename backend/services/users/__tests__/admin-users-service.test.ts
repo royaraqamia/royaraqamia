@@ -4,7 +4,13 @@ import type { AdminUsersRepository } from '@/backend/repositories/users/admin-us
 import type { AdminUser } from '@/shared/contracts/users';
 
 const sampleUsers: AdminUser[] = [
-  { id: 'u-1', name: 'أحمد محمد', email: 'ahmed@example.com', avatar_url: null },
+  {
+    id: 'u-1',
+    name: 'أحمد محمد',
+    email: 'ahmed@example.com',
+    avatar_url: null,
+    is_hidden: false,
+  },
 ];
 
 function makeRepo(overrides: Partial<AdminUsersRepository> = {}) {

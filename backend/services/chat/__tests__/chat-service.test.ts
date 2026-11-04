@@ -6,18 +6,19 @@ import {
   ChatThreadFullError,
   type ChatRepository,
 } from '@/backend/repositories/chat/chat-repository';
-import type { PublicUser } from '@/shared/contracts/users';
+import type { MemberProfile } from '@/shared/contracts/users';
 
 const me = '5f0f3c62-6a37-4a0b-9f0e-2b4c8f7a1d33';
 const peerId = '0d6a1b51-52a1-4c1f-8a4e-9b0b3d8f6a11';
 
-const peerUser: PublicUser = {
+const peerUser: MemberProfile = {
   id: peerId,
   username: 'sara',
   name: 'سارة',
   avatar_url: null,
   bio: null,
   verified: true,
+  is_hidden: false,
 };
 
 function makeRepository(
@@ -694,6 +695,23 @@ describe('ChatService.preview', () => {
     );
 
     await expect(service.preview(me, 'nobody')).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('refuses a hidden member, whose profile is not reachable either', async () => {
+    const { repository, service } = makeRepository(
+      {},
+      {
+        users: {
+          getById: vi.fn(async () => null),
+          getByUsername: vi.fn(async () => ({ ...peerUser, is_hidden: true })),
+          getMany: vi.fn(async () => []),
+          search: vi.fn(async () => []),
+        },
+      }
+    );
+
+    await expect(service.preview(me, '@sara')).rejects.toMatchObject({ status: 404 });
+    expect(repository.createConversation).not.toHaveBeenCalled();
   });
 });
 

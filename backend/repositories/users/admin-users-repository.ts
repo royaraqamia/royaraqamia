@@ -23,7 +23,7 @@ export function createAdminUsersRepository(
     async search(query, limit = 50): Promise<AdminUser[]> {
       let builder = supabase
         .from('users')
-        .select('id, name, email, avatar_url')
+        .select('id, name, email, avatar_url, is_hidden')
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);
 
