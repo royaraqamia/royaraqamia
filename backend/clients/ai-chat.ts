@@ -26,9 +26,14 @@ export const AI_CHAT_DEFAULT_MODEL = 'deepseek-v4.1-flash';
 
 /**
  * The models that take audio. `deepseek-v4.1-flash` answers text and images but
- * not speech, so a voice note is transcribed first, cheapest model first.
+ * not speech, so a voice note is transcribed first.
+ *
+ * One model, deliberately: `gemini-4-argon` was the second candidate and was
+ * removed for cost. A single candidate makes the failure path honest - the
+ * assistant says the note could not be transcribed instead of quietly paying a
+ * second, dearer model for the same seconds of audio.
  */
-export const AI_CHAT_TRANSCRIBE_MODELS = ['mimo-v2.6-flash', 'gemini-4-argon'];
+export const AI_CHAT_TRANSCRIBE_MODELS = ['mimo-v2.6-flash'];
 
 /** What the gateway calls a container, from the type the browser reported. */
 export function audioFormatFor(mimeType: string): string {

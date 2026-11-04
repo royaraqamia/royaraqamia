@@ -27,8 +27,9 @@ WebM/Opus, the gateway transcribes WAV and OGG, and there is no ffmpeg on the ap
 
 ## Consequences
 
-- One extra upload and one extra model call per voice note. The transcription list is cheapest-first
-  (`mimo-v2.6-flash`, then `gemini-4-argon`), and a refusal steps over instead of ending the turn.
+- One extra upload and one extra model call per voice note. `gemini-4-argon` was the second
+  candidate and was removed for cost, so a refusal now reaches the member as "could not transcribe"
+  rather than as a silent second, dearer attempt.
 - The WAV is ~32 KB/s: a minute of speech is about 2 MB, well inside the attachment ceiling.
 - A browser without `MediaRecorder` or `OfflineAudioContext` cannot record. The button is the only
   entry point, so such a device simply types.

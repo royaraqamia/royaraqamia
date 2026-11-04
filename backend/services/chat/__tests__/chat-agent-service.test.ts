@@ -90,7 +90,7 @@ function scriptedClient(rounds: AiChatStreamEvent[][]): AiChatClient & {
   const calls: AiChatWireMessage[][] = [];
 
   return {
-    model: 'gemini-3.8-flash',
+    model: 'deepseek-v4.1-flash',
     calls,
 
     async *streamReply() {},

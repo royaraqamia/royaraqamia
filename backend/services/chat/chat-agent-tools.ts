@@ -557,8 +557,8 @@ function toJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
       io: 'input',
       unrepresentable: 'any',
     }) as Record<string, unknown> & { $schema?: string };
-    // Gemini's compatibility layer refuses a declaration that carries Zod's
-    // `$schema` marker, which is metadata for a validator it is not.
+    // `$schema` is metadata for a validator, not part of a declaration: strict
+    // compatibility layers refuse a function that carries it.
     return parameters;
   } catch {
     return { type: 'object', properties: {}, additionalProperties: false };
