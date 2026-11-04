@@ -1,344 +1,290 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  chunkMessage,
-  commandSpan,
-  escapeHtml,
+  chunkMarkdown,
   formatAlert,
   formatDigest,
-  formatContext,
-  formatHistory,
-  formatMemories,
   formatOffset,
-  parseCommand,
-  parseOffset,
-  parseTarget,
+  languageOf,
   parseMemory,
+  parseOffset,
   parseWhen,
   renderAnswer,
-  silenceWav,
+  stripHtml,
+  toLatinDigits,
+  withPartNumbers,
 } from '../telegram-bridge.mjs';
-
-describe('parseCommand', () => {
-  it('reads the three commands the bridge acts on', () => {
-    expect(parseCommand('/task fix the login bug')).toEqual({
-      command: 'task',
-      args: 'fix the login bug',
-    });
-    expect(parseCommand('/now fix the login bug')).toEqual({
-      command: 'now',
-      args: 'fix the login bug',
-    });
-    expect(parseCommand('/remind in 30m call the bank')).toEqual({
-      command: 'remind',
-      args: 'in 30m call the bank',
-    });
-  });
-
-  it('ignores the bot suffix Telegram adds in groups', () => {
-    expect(parseCommand('/task@royaraqamia_bot thing').command).toBe('task');
-  });
-
-  it('treats an unknown slash as plain text, so a path is not a command', () => {
-    expect(parseCommand('/community/fix the header')).toEqual({
-      command: null,
-      args: '/community/fix the header',
-    });
-    expect(parseCommand('just a message').command).toBeNull();
-  });
-
-  it('returns empty args for a bare command', () => {
-    expect(parseCommand('/task')).toEqual({ command: 'task', args: '' });
-  });
-});
-
-describe('parseTarget', () => {
-  it('splits a repository prefix from its task', () => {
-    expect(parseTarget('my-site: fix the header')).toEqual({
-      repo: 'my-site',
-      body: 'fix the header',
-    });
-  });
-
-  it('reports the prefix even when it is probably prose, and leaves the choice to the caller', () => {
-    // `fix:` looks like a prefix; only the caller knows whether `fix` is a repo.
-    expect(parseTarget('fix: the login bug')).toEqual({ repo: 'fix', body: 'the login bug' });
-  });
-
-  it('keeps a message without a prefix whole', () => {
-    expect(parseTarget('https://example.com/a')).toEqual({
-      repo: null,
-      body: 'https://example.com/a',
-    });
-  });
-});
-
-describe('parseOffset', () => {
-  it('reads an hour offset', () => {
-    expect(parseOffset('+3')).toEqual({ minutes: 180, name: '+3' });
-    expect(parseOffset('-5')).toEqual({ minutes: -300, name: '-5' });
-  });
-
-  it('reads a half-hour offset', () => {
-    expect(parseOffset('+5:30').minutes).toBe(330);
-  });
-
-  it('reads a named zone', () => {
-    expect(parseOffset('Asia/Damascus').minutes).toBe(180);
-    expect(parseOffset('UTC').minutes).toBe(0);
-  });
-
-  it('rejects what is not an offset', () => {
-    expect(parseOffset('tonight')).toBeNull();
-    expect(parseOffset('+3:99')).toBeNull();
-  });
-});
-
-describe('formatOffset', () => {
-  it('renders signed hours and minutes', () => {
-    expect(formatOffset(180)).toBe('+03:00');
-    expect(formatOffset(-330)).toBe('-05:30');
-    expect(formatOffset(0)).toBe('+00:00');
-  });
-});
-
-describe('parseWhen', () => {
-  const now = Date.parse('2026-11-03T00:00:00Z');
-
-  it('reads a relative delay and keeps the reminder text', () => {
-    const parsed = parseWhen('in 30m call the bank', now, 180);
-    expect(parsed.at.toISOString()).toBe('2026-11-03T00:30:00.000Z');
-    expect(parsed.rest).toBe('call the bank');
-  });
-
-  it('reads hours and days', () => {
-    expect(parseWhen('in 2h go', now, 180).at.toISOString()).toBe('2026-11-03T02:00:00.000Z');
-    expect(parseWhen('in 1d go', now, 180).at.toISOString()).toBe('2026-11-04T00:00:00.000Z');
-  });
-
-  it('reads a wall clock in the chat offset', () => {
-    // 09:30 at UTC+3 is 06:30 UTC, same day.
-    expect(parseWhen('09:30 standup', now, 180).at.toISOString()).toBe('2026-11-03T06:30:00.000Z');
-  });
-
-  it('rolls a past wall clock to tomorrow', () => {
-    // 00:00 local (21:00Z the day before) has passed; 23:00 local is the next one.
-    const late = Date.parse('2026-11-03T12:00:00Z');
-    expect(parseWhen('09:30 standup', late, 180).at.toISOString()).toBe('2026-11-04T06:30:00.000Z');
-  });
-
-  it('refuses text with no time in it', () => {
-    expect(parseWhen('call the bank', now, 180)).toBeNull();
-  });
-});
-
-describe('chunkMessage', () => {
-  it('leaves a short message alone', () => {
-    expect(chunkMessage('short')).toEqual(['short']);
-  });
-
-  it('splits something longer than Telegram accepts, without losing a line', () => {
-    const line = 'x'.repeat(99);
-    const text = Array.from({ length: 100 }, () => line).join('\n');
-    const chunks = chunkMessage(text);
-
-    expect(chunks.length).toBeGreaterThan(1);
-    expect(chunks.every((chunk) => chunk.length <= 4000)).toBe(true);
-    expect(chunks.join('\n').replace(/\n/g, '')).toBe(text.replace(/\n/g, ''));
-  });
-
-  it('returns one empty chunk for empty input', () => {
-    expect(chunkMessage('')).toEqual(['']);
-  });
-});
-
-describe('formatDigest', () => {
-  const runs = [
-    { conclusion: 'success', html_url: 'https://example.com/run' },
-    { conclusion: 'failure', html_url: 'https://example.com/run2' },
-  ];
-  const items = [{ number: 12, title: 'Fix the header', html_url: 'https://example.com/12' }];
-
-  it('names the workflow, the counts and the linked items', () => {
-    const text = formatDigest({ workflow: 'Issue Planner', runs, items });
-
-    expect(text).toContain('Issue Planner');
-    expect(text).toContain('1 ناجح');
-    expect(text).toContain('1 فاشل');
-    expect(text).toContain('#12');
-    expect(text).toContain('Fix the header');
-  });
-
-  it('says so when the day was empty rather than printing a bare header', () => {
-    const text = formatDigest({ workflow: 'Issue Implementer', runs: [], items: [] });
-
-    expect(text).toContain('لا تشغيلات');
-    expect(text).toContain('لا شيء');
-  });
-
-  it('escapes HTML in a title, so a merged pull request cannot break the message', () => {
-    const text = formatDigest({
-      workflow: 'Issue Implementer',
-      runs,
-      items: [{ number: 1, title: '<b>x</b>', html_url: 'https://example.com/1' }],
-    });
-
-    expect(text).toContain('&lt;b&gt;x&lt;/b&gt;');
-  });
-
-  it('escapes a quote in a link, so a URL cannot break out of the attribute', () => {
-    const text = formatDigest({
-      workflow: 'Issue Implementer',
-      runs: [{ conclusion: 'failure', html_url: 'https://example.com/r" onclick="alert(1)' }],
-      items: [],
-    });
-
-    expect(text).toContain('href="https://example.com/r&quot; onclick=&quot;alert(1)"');
-    expect(text).not.toContain('onclick="');
-  });
-});
-
-describe('escapeHtml', () => {
-  it('escapes the quotes an attribute value needs, not just the tag characters', () => {
-    expect(escapeHtml(`a"b'c<d>e&f`)).toBe('a&quot;b&#39;c&lt;d&gt;e&amp;f');
-  });
-
-  it('treats a missing value as empty rather than printing the word undefined', () => {
-    expect(escapeHtml(undefined)).toBe('');
-    expect(escapeHtml(null)).toBe('');
-  });
-});
+import { parseForget } from '../telegram/answer.mjs';
+import { progressLine } from '../telegram/agent.mjs';
+import { decide } from '../telegram/guard-decision.mjs';
+import { buildSystemPrompt, failureLine } from '../telegram/prompt.mjs';
+import { escapeHtml } from '../telegram/text.mjs';
 
 describe('renderAnswer', () => {
-  it('turns a backticked command into code, with a direction mark', () => {
-    expect(renderAnswer('استخدم `/task` لذلك')).toBe('استخدم <code>\u200E/task</code> لذلك');
+  it('escapes before it formats, so a stray angle bracket is text', () => {
+    const html = renderAnswer('اقرأ <script>alert(1)</script> ثم `npm test`');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('<code>');
+    expect(html).not.toContain('<script>');
   });
 
-  it('escapes HTML before adding tags, so prose about tags is safe', () => {
-    expect(renderAnswer('<b>x</b>')).toBe('&lt;b&gt;x&lt;/b&gt;');
+  it('renders bold, links and bullets without inventing tags', () => {
+    const html = renderAnswer('**عنوان**\n- نقطة\n[runs](https://github.com/x/y)');
+    expect(html).toContain('<b>عنوان</b>');
+    expect(html).toContain('• نقطة');
+    expect(html).toContain('<a href="https://github.com/x/y">runs</a>');
   });
 
-  it('leaves plain prose alone', () => {
-    expect(renderAnswer('مرحبا، كل شيء بخير.')).toBe('مرحبا، كل شيء بخير.');
-  });
-});
-
-describe('commandSpan', () => {
-  it('keeps a leading slash on the left of the command in an RTL paragraph', () => {
-    // Without U+200E the bidi algorithm moves `/` to the visual end (`task/`).
-    expect(commandSpan('/task')).toBe('<code>\u200E/task</code>');
-  });
-
-  it('escapes the command, so it cannot inject markup', () => {
-    expect(commandSpan('<b>')).toBe('<code>\u200E&lt;b&gt;</code>');
+  it('leaves a fenced block whole, including its markup characters', () => {
+    const html = renderAnswer('```ts\nconst a = 1 < 2 && `x`;\n```');
+    expect(html).toMatch(/^<pre>[\s\S]*<\/pre>$/);
+    expect(html).toContain('&lt;');
+    expect(html).not.toContain('<code>');
   });
 });
 
-describe('formatHistory', () => {
-  it('labels who said what, in the order it was said', () => {
-    const text = formatHistory([
-      { direction: 'in', body: 'مرحبا' },
-      { direction: 'out', body: 'أهلاً' },
-    ]);
-    expect(text).toBe('المستخدم: مرحبا\nالمساعد: أهلاً');
+describe('chunkMarkdown', () => {
+  it('splits before markup, so every piece has balanced tags', () => {
+    const long = Array.from({ length: 80 }, (_, index) => `**سطر ${index}** نص طويل هنا`).join(
+      '\n'
+    );
+    const chunks = chunkMarkdown(long, 400);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      const html = renderAnswer(chunk);
+      const open = (html.match(/<b>/g) ?? []).length;
+      const close = (html.match(/<\/b>/g) ?? []).length;
+      expect(open).toBe(close);
+    }
   });
 
-  it('drops rows with no text, so a stored command does not break the prompt', () => {
-    expect(
-      formatHistory([
-        { direction: 'out', body: '' },
-        { direction: 'in', body: 'x' },
-      ])
-    ).toBe('المستخدم: x');
+  it('closes and reopens a fence that lands across the boundary', () => {
+    const code = Array.from({ length: 40 }, (_, index) => `const value${index} = ${index};`).join(
+      '\n'
+    );
+    const chunks = chunkMarkdown('قبل\n```ts\n' + code + '\n```\nبعد', 200);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      expect((chunk.match(/```/g) ?? []).length % 2).toBe(0);
+    }
   });
 
-  it('is empty for an empty conversation', () => {
-    expect(formatHistory([])).toBe('');
+  it('cuts a single enormous line instead of returning it whole', () => {
+    const chunks = chunkMarkdown('كلمة '.repeat(5000), 1000);
+    expect(chunks.every((chunk) => chunk.length <= 1000)).toBe(true);
+  });
+
+  it('numbers the pieces only when there is more than one', () => {
+    expect(withPartNumbers(['one'])).toEqual(['one']);
+    const numbered = withPartNumbers(['a\nb', 'c\nd']);
+    expect(numbered[0]).toContain('(1/2)');
+    expect(numbered[1]).toContain('(2/2)');
   });
 });
 
-describe('formatMemories', () => {
-  it('renders one bullet per remembered fact', () => {
-    expect(formatMemories([{ content: 'يفضّل الردود المختصرة' }])).toBe('• يفضّل الردود المختصرة');
+describe('languageOf', () => {
+  it('mirrors the language of the message', () => {
+    expect(languageOf('fix the login page')).toBe('en');
+    expect(languageOf('أصلح صفحة الدخول')).toBe('ar');
   });
 
-  it('drops duplicates and blanks', () => {
-    expect(
-      formatMemories([{ content: 'أ' }, { content: 'أ' }, { content: '  ' }, { content: 'ب' }])
-    ).toBe('• أ\n• ب');
+  it('follows the first sentence of a mixed message', () => {
+    expect(languageOf('fix the login page. أيضاً أضف زراً')).toBe('en');
+    expect(languageOf('أصلح صفحة الدخول. Also add a button')).toBe('ar');
   });
 
-  it('stops at the limit, so memory cannot become a prompt', () => {
-    const rows = Array.from({ length: 50 }, (_, index) => ({ content: `واقعة ${index}` }));
-    expect(formatMemories(rows).split('\n')).toHaveLength(40);
+  it('answers Arabic for a message with no letters at all', () => {
+    expect(languageOf('123')).toBe('ar');
+    expect(languageOf('?!')).toBe('ar');
   });
 });
 
-describe('formatContext', () => {
-  it('puts memories first, then the summary, then the recent messages', () => {
-    const text = formatContext({ memories: '• م', summary: 'مل', history: 'س' });
-    expect(text.indexOf('م')).toBeLessThan(text.indexOf('مل'));
-    expect(text.indexOf('مل')).toBeLessThan(text.indexOf('س'));
+describe('time parsing', () => {
+  const now = Date.parse('2026-11-04T12:00:00Z');
+
+  it('reads Arabic durations, with Arabic-Indic digits', () => {
+    expect(parseWhen('بعد \u0663\u0660 دقيقة اتصل', now, 180)?.rest).toBe('اتصل');
+    expect(parseWhen('بعد نصف ساعة اتصل', now, 180)?.at.toISOString()).toBe(
+      new Date(now + 30 * 60_000).toISOString()
+    );
+    expect(parseWhen('بعد ساعتين اتصل', now, 180)?.at.toISOString()).toBe(
+      new Date(now + 120 * 60_000).toISOString()
+    );
+    expect(parseWhen('بعد يومين اتصل', now, 180)?.at.toISOString()).toBe(
+      new Date(now + 2880 * 60_000).toISOString()
+    );
   });
 
-  it('omits the parts it does not have', () => {
-    expect(formatContext({ memories: '', summary: '', history: 'س' })).toBe('آخر الرسائل:\nس');
-    expect(formatContext({})).toBe('');
+  it('reads the English forms the help used to document', () => {
+    expect(parseWhen('in 30m call the bank', now, 180)?.rest).toBe('call the bank');
+    expect(parseWhen('in 2h review', now, 180)?.at.toISOString()).toBe(
+      new Date(now + 2 * 3_600_000).toISOString()
+    );
+  });
+
+  it('reads a wall clock in the chat offset and moves it to tomorrow when past', () => {
+    // 12:00 UTC is 15:00 in +03:00, so 09:30 has already passed and means tomorrow.
+    const when = parseWhen('09:30 صباحاً', now, 180);
+    expect(when?.at.toISOString()).toBe('2026-11-05T06:30:00.000Z');
+    const later = parseWhen('18:00 مساءً', now, 180);
+    expect(later?.at.toISOString()).toBe('2026-11-04T15:00:00.000Z');
+  });
+
+  it('reads offsets in Arabic and Latin', () => {
+    expect(parseOffset('+3')).toEqual({ minutes: 180, name: '+3' });
+    expect(parseOffset('دمشق')?.minutes).toBe(180);
+    expect(parseOffset('-5.5')).toBeNull();
+    expect(formatOffset(-90)).toBe('-01:30');
+  });
+
+  it('normalises Arabic-Indic digits', () => {
+    expect(toLatinDigits('\u0663\u0660 دقيقة')).toBe('30 دقيقة');
+    expect(toLatinDigits('\u06f1\u06f2\u06f3')).toBe('123');
   });
 });
 
 describe('parseMemory', () => {
-  it('reads the JSON even when the model wraps it in a code fence', () => {
-    const parsed = parseMemory(
-      '```json\n{"summary":"ملخص","memories":[{"kind":"preference","content":"يحب الإيجاز"}]}\n```'
+  it('reads a fenced JSON answer', () => {
+    const { summary, memories } = parseMemory(
+      '```json\n{"summary":"ملخص","memories":[{"kind":"preference","content":"يحب الفصحى"}]}\n```'
     );
-    expect(parsed.summary).toBe('ملخص');
-    expect(parsed.memories).toEqual([{ kind: 'preference', content: 'يحب الإيجاز' }]);
+    expect(summary).toBe('ملخص');
+    expect(memories).toEqual([{ kind: 'preference', content: 'يحب الفصحى' }]);
   });
 
-  it('falls back to no memory when the answer is not JSON', () => {
-    expect(parseMemory('عذراً، لم أفهم')).toEqual({ summary: '', memories: [] });
+  it('invents nothing when the answer is not JSON', () => {
+    expect(parseMemory('لم أفهم')).toEqual({ summary: '', memories: [] });
   });
 
-  it('rejects an unknown kind, an empty content and anything past the cap', () => {
-    const parsed = parseMemory(
-      JSON.stringify({
-        summary: 'س',
-        memories: [
-          { kind: 'nonsense', content: 'حقيقة' },
-          { kind: 'fact', content: '  ' },
-          ...Array.from({ length: 10 }, (_, index) => ({ kind: 'fact', content: `ذكرى ${index}` })),
-        ],
-      })
-    );
-    expect(parsed.memories[0]).toEqual({ kind: 'fact', content: 'حقيقة' });
+  it('drops a kind it does not know and caps the list', () => {
+    const memories = Array.from({ length: 9 }, (_, index) => ({
+      kind: 'nonsense',
+      content: `fact number ${index}`,
+    }));
+    const parsed = parseMemory(JSON.stringify({ summary: 's', memories }));
     expect(parsed.memories).toHaveLength(6);
+    expect(parsed.memories[0].kind).toBe('fact');
   });
 });
 
-describe('silenceWav', () => {
-  it('builds a valid 16-bit mono PCM header for the probe', () => {
-    const wav = silenceWav(1, 8000);
-    expect(wav.length).toBe(44 + 16_000);
-    expect(wav.toString('ascii', 0, 4)).toBe('RIFF');
-    expect(wav.toString('ascii', 8, 12)).toBe('WAVE');
-    expect(wav.readUInt32LE(24)).toBe(8000);
-    expect(wav.readUInt16LE(34)).toBe(16);
+describe('stripHtml', () => {
+  it('turns a stored answer back into prose the model can read', () => {
+    expect(stripHtml('📥 سجّلت <a href="https://x">#1043</a> في <code>royaraqamia</code>')).toBe(
+      '📥 سجّلت #1043 في royaraqamia'
+    );
+  });
+
+  it('unwraps entities rather than teaching the model to quote them', () => {
+    expect(stripHtml('&quot;body&quot; &amp; &lt;x&gt;')).toBe('"body" & <x>');
   });
 });
 
-describe('formatAlert', () => {
-  it('names the workflow, the repository and the link', () => {
+describe('parseForget', () => {
+  it('accepts the short sentence it documents', () => {
+    expect(parseForget('احذف رقم 3')).toBe(3);
+    expect(parseForget('forget memory 12')).toBe(12);
+  });
+
+  it('refuses anything that is not that sentence', () => {
+    expect(parseForget('احذف رقم 3 ثم أعد تشغيل الاختبارات وشغّل الفحص الكامل')).toBeNull();
+    expect(parseForget('delete everything')).toBeNull();
+  });
+});
+
+describe('the guard rails', () => {
+  it('refuses the writes a message must not make', () => {
+    expect(decide('git', ['push', 'origin', 'main']).allow).toBe(false);
+    expect(decide('git', ['commit', '-m', 'x']).allow).toBe(false);
+    expect(decide('gh', ['pr', 'merge', '12']).allow).toBe(false);
+    expect(decide('vercel', ['deploy', '--prod']).allow).toBe(false);
+    expect(decide('git', ['clean', '-fd']).allow).toBe(false);
+  });
+
+  it('leaves the reads alone', () => {
+    expect(decide('git', ['log', '--oneline', '-5']).allow).toBe(true);
+    expect(decide('git', ['diff']).allow).toBe(true);
+    expect(decide('gh', ['pr', 'view', '12']).allow).toBe(true);
+    expect(decide('vercel', ['ls']).allow).toBe(true);
+    expect(decide('vercel', ['deploy']).allow).toBe(true);
+  });
+});
+
+describe('the prompt', () => {
+  it('states the language rule, the tool rule and the confirmation rule', () => {
+    const prompt = buildSystemPrompt({
+      tz: { offsetMinutes: 180, formatted: '+03:00' },
+      now: new Date('2026-11-04T12:00:00Z'),
+      runUrl: 'https://github.com/x/y/actions/runs/1',
+    });
+
+    expect(prompt).toContain('فصحى');
+    expect(prompt).toContain('بلا لهجة');
+    expect(prompt).toContain('لا تقل إنك قرأت شيئاً لم تقرأه');
+    expect(prompt).toContain('لا تدمج في main');
+    expect(prompt).toContain('UTC+03:00');
+  });
+
+  it('gives a failure a reference instead of the provider text', () => {
+    const line = failureLine('a1b2c3d4');
+    expect(line).toContain('a1b2c3d4');
+    expect(line).not.toContain('Supabase');
+    expect(line).not.toContain('null');
+  });
+});
+
+describe('progressLine', () => {
+  it('names the work in Arabic', () => {
+    expect(
+      progressLine({ type: 'tool', tool: 'read', state: { input: { path: 'a/b/config.mjs' } } })
+    ).toBe('أقرأ config.mjs…');
+    expect(progressLine({ type: 'tool', tool: 'grep', state: { input: {} } })).toBe(
+      'أبحث في المستودع…'
+    );
+    expect(
+      progressLine({ type: 'tool', tool: 'bash', state: { input: { command: 'npm run lint' } } })
+    ).toBe('أشغّل npm run…');
+  });
+
+  it('falls back rather than throwing on an unknown tool', () => {
+    expect(progressLine({ type: 'tool', tool: 'mcp__supabase__query', state: {} })).toContain(
+      'قاعدة البيانات'
+    );
+    expect(progressLine({ type: 'text' })).toBe('');
+  });
+});
+
+describe('digest and alert text', () => {
+  it('counts runs and links the latest', () => {
+    const text = formatDigest({
+      workflow: 'Issue Planner',
+      runs: [
+        { conclusion: 'success', html_url: 'https://x/1' },
+        { conclusion: 'failure', html_url: 'https://x/2' },
+      ],
+      items: [{ number: 7, html_url: 'https://x/7', title: 'عنوان' }],
+      url: 'https://x/run',
+    });
+    expect(text).toContain('1 ناجح');
+    expect(text).toContain('1 فاشل');
+    expect(text).toContain('#7');
+  });
+
+  it('names the workflow and the repo in an alert', () => {
     const text = formatAlert({
       workflow: 'Migration Drift',
       conclusion: 'failure',
-      url: 'https://example.com/run',
-      repo: ['royaraqamia', 'royaraqamia'],
+      url: 'https://x/run',
+      repo: 'royaraqamia/royaraqamia',
     });
-
     expect(text).toContain('Migration Drift');
     expect(text).toContain('فاشل');
-    expect(text).toContain('royaraqamia/royaraqamia');
-    expect(text).toContain('https://example.com/run');
+  });
+});
+
+describe('escapeHtml', () => {
+  it('escapes both quotes so an attribute cannot be closed', () => {
+    expect(escapeHtml('<a href="x" onclick=\'y\'>')).toBe(
+      '&lt;a href=&quot;x&quot; onclick=&#39;y&#39;&gt;'
+    );
   });
 });

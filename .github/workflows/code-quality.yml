@@ -41,6 +41,9 @@ jobs:
       - name: Digits Are ASCII
         run: npm run check:digits
 
+      - name: The Bot Writes Fusha
+        run: npm run check:fusha
+
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 

@@ -1,120 +1,96 @@
-# Telegram bridge
+# Telegram bot
 
-The owner's phone, wired to the autonomous issue pipeline. One workflow
-(`.github/workflows/telegram.yml`), one script (`scripts/telegram-bridge.mjs`), one Edge Function
-(`supabase/functions/telegram`), and two migrations. Design and reasoning:
-[ADR 0121](../adr/0121-telegram-is-a-door-not-an-agent.md) (why it is a dispatcher) and
-[ADR 0122](../adr/0122-the-webhook-replaces-the-poll-because-the-poll-was-a-clock.md) (why the door is
-a webhook).
+The owner's phone, wired to an agent that has the repository. One workflow
+(`.github/workflows/telegram.yml`), one entry script (`scripts/telegram-bridge.mjs`) over
+`scripts/telegram/*`, one Edge Function (`supabase/functions/telegram`). Design and reasoning:
+[ADR 0129](../adr/0129-the-telegram-bot-is-an-agent.md) (why it is an agent, and what replaced the
+commands), [ADR 0122](../adr/0122-the-webhook-replaces-the-poll-because-the-poll-was-a-clock.md) (why
+the door is a webhook).
 
 ## How a message travels
 
 1. Telegram `POST`s the update to `https://<ref>.supabase.co/functions/v1/telegram`.
-2. The function verifies the `X-Telegram-Bot-Api-Secret-Token` header, ignores anything that is not a
-   text message from `TELEGRAM_CHAT_ID`, and stores the update in `telegram_messages`.
+2. The function verifies the `X-Telegram-Bot-Api-Secret-Token` header, ignores anything that is not
+   from `TELEGRAM_CHAT_ID`, and stores the update in `telegram_messages` — text, a voice note, a
+   picture or a document.
 3. It dispatches `telegram.yml` through `dispatch_github_workflow` (Vault PAT, no new credential).
-4. The workflow drains unprocessed rows, routes them, and replies — ~20–40 seconds end to end.
-5. Every five minutes a pg_cron function (`wake_telegram_bridge`) asks Postgres whether anything is
-   pending — an undispatched update, or a due reminder — and dispatches the workflow only when the
-   answer is yes. An idle day therefore starts **zero** runs.
+4. The `bridge` job claims the row, sends a status message, and runs `opencode run` with the
+   conversation, the memory and the owner's words. Progress is edited into the status message.
+5. The answer arrives; if files changed, the run files an issue, pushes a branch with
+   `AGENT_PUSH_TOKEN`, opens a pull request, and posts it with a merge button.
+6. Every five minutes `wake_telegram_bridge` asks Postgres whether anything is pending and dispatches
+   only when the answer is yes. An idle day starts **zero** runs.
 
 ## What it is
 
-A dispatcher. A message becomes an issue; the workflow that owns that kind of work runs; the result
-comes back to the chat. It never checks out a repository and cannot push code by itself.
+An agent, not a dispatcher. One `opencode run` per message, with the checkout, `.agents/skills`, a
+shell, the web, the Supabase MCP server and the Vercel CLI, on
+`opencode-go/deepseek-v4.1-flash`. There are no commands: the sentence is the instruction.
 
-## Commands
+A plain question is answered from what it can read. "Fix the header" edits files and opens a pull
+request. "Deploy it" is refused until the owner asks for production explicitly, and the guard rails
+are code — see below.
 
-| Message               | What happens                                                                            |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| plain text            | **Answered**, nothing filed — a question, not a task                                    |
-| `/task text`          | Issue in `royaraqamia` labelled `ready-for-agent`; the implementer merges it when green |
-| `/task <repo>: text`  | Same, in `<repo>` — honoured only when the token can see that repository                |
-| `/now text`           | Issue + `/oc` comment: runs in minutes, stops at an open pull request for review        |
-| `/remind 09:30 text`  | Reminder at the wall clock in your stored offset                                        |
-| `/remind in 30m text` | Reminder after a delay (`m`, `h`, `d`)                                                  |
-| `/tz +3`              | Stores the offset once (`/tz Asia/Damascus` also works)                                 |
-| `/help`               | The table above, in the chat                                                            |
+## What it may and may not do
 
-The answer route is the bridge's only model call: DeepSeek V4.1 Flash through `OPENCODE_API_KEY`,
-with no tools and no repository, so a chatty message cannot change anything. Its only context is the
-last ten exchanges, which is why an old conversation costs a paragraph rather than a transcript.
+| Action                                              | How                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| Read any file, search, `git log`/`diff`             | Allowed                                                       |
+| Run a command, a test, the repo's own scripts       | Allowed                                                       |
+| Edit files                                          | Allowed; the working tree is what the branch is made from     |
+| File an issue, push a branch, open a PR             | The publish step, after the turn, with `AGENT_PUSH_TOKEN`     |
+| Merge into `main`                                   | Two button taps, 30 minutes, `merge` job only                 |
+| `git commit`/`push`, `gh pr merge`, `vercel --prod` | Refused by the shims in `scripts/telegram/guard-decision.mjs` |
+| Delete a memory                                     | `احذف رقم 3`, matched by `parseForget`, nothing broader       |
 
-## Looking things up, without a command
+The `bridge` job's own token is read-only for contents and pull requests, and `AGENT_PUSH_TOKEN` is
+deleted from the environment the agent's process receives. Three independent things would have to
+fail at once for a message to write `main`.
 
-The chat has one tool, `lookup`, and decides for itself when a question needs it
-([ADR 0123](../adr/0123-the-chat-escalates-instead-of-guessing.md)):
+## The pieces
 
-- **`repo`** greps the checkout the runner already has and answers from the matching lines, citing paths.
-- **`web`** fetches the URL it was given, or the search page for a phrase.
+| File                                  | Job                                                            |
+| ------------------------------------- | -------------------------------------------------------------- |
+| `scripts/telegram/answer.mjs`         | one message: transcribe, attach, run, deliver, publish         |
+| `scripts/telegram/agent.mjs`          | spawns `opencode run`, reads the JSON event stream             |
+| `scripts/telegram/progress.mjs`       | the status message, chunking, the stop button                  |
+| `scripts/telegram/prompt.mjs`         | the instructions: language, tools, confirmations, formatting   |
+| `scripts/telegram/publish.mjs`        | issue, branch, push, pull request                              |
+| `scripts/telegram/merge.mjs`          | the confirmed merge, and the step machine behind it            |
+| `scripts/telegram/jobs.mjs`           | drain, reminders, digests, alerts, distillation, probe         |
+| `scripts/telegram/store.mjs`          | the message log, context, memory, confirmations                |
+| `scripts/telegram/text.mjs`           | markdown to Telegram HTML, chunking, time and language parsing |
+| `scripts/telegram/guard-decision.mjs` | which command is refused, and why                              |
 
-When it escalates, the bot first says «سأتحقق…», then the answer arrives in a second message a minute
-or two later. A question that needs neither is answered in about two seconds. Voice notes are
-transcribed first (`mimo-v2.6-flash`, the only audio-capable model on the plan) and then follow the
-same path, so a spoken task is still a task.
+## The status message
 
-The timezone is stored, not detected: Telegram sends none and a runner is always UTC, so without
-`/tz` every reminder is interpreted at the Damascus default (+03:00).
+Sent before the first tool call, edited at most every three seconds with what the agent is doing
+(`أقرأ config.mjs…`, `أبحث في المستودع…`, `أشغّل npm run test…`), carrying a **إيقاف** button that sets
+`cancel_requested` on the row. The run reads that column between steps, so a tap reaches a turn that
+is already working. When the answer lands, the status message is deleted rather than edited: the
+answer is chunked, and a stale stop button under a finished answer only invites a tap that fails.
 
-## Messages it sends
+## Memory
 
-- **Digest, twice a day.** One when the Issue Planner completes, one when the Issue Implementer
-  completes — triggered by `workflow_run`, not by a clock, because the schedule drifts and a fixed
-  hour would report on the wrong day.
-- **Alerts.** `Release Health` and `Migration Drift` failures, sent when they go red.
-- **Replies.** What it filed, what it could not parse, and the error text when a run fails.
+`telegram_memories` holds durable facts, `telegram_summaries` the rolling paragraph, and
+`telegram_messages` the transcript (90 days). The agent sees memory and summary first, then the last
+twelve exchanges, with markup stripped. "ماذا تتذكر عني؟" lists them with ids; "احذف رقم 3" deletes
+one, deterministically, without giving the agent a `DELETE`.
 
-Arabic prose, English identifiers: file names, commands, workflow names and issue numbers are left
-as they are so they stay copy-pasteable.
+## Reliability contract
 
-## Setup
+- Every message ends in exactly one answer, or one apology carrying a reference (`failureLine`); the
+  provider's own error text goes to the run log, never to the chat.
+- A row is claimed with a compare-and-set, so no message is answered twice and no pull request is
+  opened twice.
+- A deterministic failure (a 4xx, a file Telegram no longer has) is final on the first attempt; only
+  a failure that might pass is retried, three times.
+- Every delivered message is recorded, and `recordOutbound` refuses an empty body — the crash that
+  sent a PostgREST 400 into the chat.
+- An alert repeats at most once per thirty minutes per workflow.
 
-Repository secrets, none of which are in the repo:
+## When something is wrong
 
-| Secret                      | Where it comes from                                         |
-| --------------------------- | ----------------------------------------------------------- |
-| `TELEGRAM_BOT_TOKEN`        | BotFather                                                   |
-| `TELEGRAM_CHAT_ID`          | your own chat id; the only chat the bridge answers          |
-| `TELEGRAM_WEBHOOK_SECRET`   | any long random string; Telegram echoes it on every call    |
-| `SUPABASE_ACCESS_TOKEN`     | already present; deploys the function                       |
-| `SUPABASE_PROJECT_REF`      | already present                                             |
-| `SUPABASE_SERVICE_ROLE_KEY` | already present for the other workflows                     |
-| `SUPABASE_URL`              | optional — `SUPABASE_PROJECT_REF` is used when it is absent |
-
-Then merge a change under `supabase/functions/telegram/**`: the workflow writes the function's
-secrets, deploys it, and calls `setWebhook` with the secret. All three steps are idempotent, so a
-re-run is harmless. Finally send `/tz +3` once.
-
-## Storage
-
-| Table                | Purpose                                                           | Retention                         |
-| -------------------- | ----------------------------------------------------------------- | --------------------------------- |
-| `telegram_chats`     | who may talk, and their offset                                    | kept                              |
-| `telegram_messages`  | the transcript, `update_id` unique, `processed_at`, voice file id | 90 days (`sweep_telegram_bridge`) |
-| `telegram_lookups`   | questions the chat escalated, and whether they were answered      | kept                              |
-| `telegram_summaries` | unused since the answer reads the last exchanges                  | —                                 |
-| `telegram_reminders` | what was asked and whether it was sent                            | sent rows pruned at 90 days       |
-| `telegram_state`     | unused since the webhook replaced polling                         | —                                 |
-
-Row level security is on and there is no policy: only `service_role` reads or writes. There is no
-signed-in user behind a chat, so an anon key reads nothing.
-
-## Troubleshooting
-
-- **No reply within a minute or two.** The webhook did not reach the function, or the dispatch failed.
-  Check the backstop: `select * from cron.job where jobname = 'telegram-bridge-wake'` should exist and
-  fire every five minutes, dispatching only when there is a row to work on. The backlog is
-  `select count(*) from telegram_messages where direction = 'in' and processed_at is null`.
-- **Every call answers 401.** `TELEGRAM_WEBHOOK_SECRET` differs between the function's secrets and the
-  value passed to `setWebhook`. Re-run the deploy job, which sets both.
-- **The bot stops answering.** Check the last `Telegram Bridge` run. A 401 means a rotated token; a
-  400 from Telegram usually means a `chat_id` that is not the chat writing.
-- **A message was processed twice.** It cannot be: `update_id` is unique and the row is written
-  before the issue is filed. A duplicate issue means the same text was sent twice, which is not a
-  redelivery.
-- **A reminder fired at the wrong hour.** Send `/tz` again; the stored offset is what is used, not
-  the runner's clock.
-- **A `repo:` prefix was ignored.** The name has to be a repository the token can see; a typo falls
-  back to `royaraqamia` rather than opening an issue somewhere unexpected.
-- **The digest is missing.** `workflow_run` only fires for workflows on the default branch, so a
-  planner run before the merge that introduced this file reports nothing.
+Run `workflow_dispatch` with `mode: probe` to measure the transcription endpoint, `mode: agent-probe`
+to measure the assistant gateway, or read the run log — every line is prefixed `telegram:`. The chat
+gives the owner a reference that grep finds in that log.
