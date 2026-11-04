@@ -74,18 +74,16 @@ describe('PushNotificationToggle auto-heal', () => {
     await waitFor(() => {
       expect(mocks.subscribeToPush).not.toHaveBeenCalled();
     });
-    const button = await screen.findByRole('button');
-    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
-    expect(button).toHaveAttribute('aria-pressed', 'false');
+    const button = await screen.findByRole('switch');
+    expect(button).toHaveAttribute('aria-checked', 'false');
   });
 
   it('shows push as disabled even when a browser-side subscription exists but the preference is off', async () => {
     mocks.isPushDisabledByUser.mockReturnValue(true);
     installGlobals({ existing: true });
     render(<PushNotificationToggle />);
-    const button = await screen.findByRole('button');
-    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
-    expect(button).toHaveAttribute('aria-pressed', 'false');
+    const button = await screen.findByRole('switch');
+    expect(button).toHaveAttribute('aria-checked', 'false');
     expect(mocks.subscribeToPush).not.toHaveBeenCalled();
   });
 
@@ -127,9 +125,9 @@ describe('PushNotificationToggle auto-heal', () => {
     installGlobals({ existing: true });
     render(<PushNotificationToggle />);
     await waitFor(() => {
-      expect(screen.getByRole('button')).toHaveTextContent('إيقاف إشعارات الجهاز');
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     });
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('switch'));
     await waitFor(() => {
       expect(mocks.unsubscribeFromPush).toHaveBeenCalledTimes(1);
     });
@@ -152,8 +150,8 @@ describe('PushNotificationToggle auto-heal', () => {
 
     // The toggle itself is the retry; the server being unreachable is a moment,
     // not a setting.
-    const button = screen.getByRole('button');
-    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
+    const button = screen.getByRole('switch');
+    expect(button).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(button);
     await waitFor(() => {
       expect(mocks.subscribeToPush).toHaveBeenCalledTimes(2);
@@ -169,8 +167,8 @@ describe('PushNotificationToggle inside the native shell', () => {
   it('never touches the browser push path', async () => {
     render(<PushNotificationToggle />);
 
-    const button = await screen.findByRole('button');
-    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
+    const button = await screen.findByRole('switch');
+    expect(button).toHaveAttribute('aria-checked', 'false');
     expect(nativeMocks.installNativePushHandlers).toHaveBeenCalledTimes(1);
     expect(nativeMocks.healNativePushRegistration).toHaveBeenCalledTimes(1);
     expect(mocks.subscribeToPush).not.toHaveBeenCalled();
@@ -178,7 +176,7 @@ describe('PushNotificationToggle inside the native shell', () => {
 
   it('registers the device token through the native transport', async () => {
     render(<PushNotificationToggle />);
-    const button = await screen.findByRole('button');
+    const button = await screen.findByRole('switch');
 
     fireEvent.click(button);
 
@@ -186,14 +184,14 @@ describe('PushNotificationToggle inside the native shell', () => {
       expect(nativeMocks.registerNativePush).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(screen.getByRole('button')).toHaveTextContent('إيقاف إشعارات الجهاز');
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     });
   });
 
   it('shows the native blocked message when the permission is refused', async () => {
     nativeMocks.registerNativePush.mockResolvedValue('denied');
     render(<PushNotificationToggle />);
-    fireEvent.click(await screen.findByRole('button'));
+    fireEvent.click(await screen.findByRole('switch'));
 
     await waitFor(() => {
       expect(screen.getByText(/إعدادات التطبيق/)).toBeTruthy();
@@ -204,8 +202,8 @@ describe('PushNotificationToggle inside the native shell', () => {
     nativeMocks.hasNativePushToken.mockReturnValue(true);
     render(<PushNotificationToggle />);
 
-    const button = await screen.findByRole('button');
-    expect(button).toHaveTextContent('إيقاف إشعارات الجهاز');
+    const button = await screen.findByRole('switch');
+    expect(button).toHaveAttribute('aria-checked', 'true');
 
     fireEvent.click(button);
 
@@ -213,7 +211,7 @@ describe('PushNotificationToggle inside the native shell', () => {
       expect(nativeMocks.unregisterNativePush).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(screen.getByRole('button')).toHaveTextContent('تفعيل إشعارات الجهاز');
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
     });
   });
 });
