@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, MessagesSquare, Plus, Sparkles, Users, X } from 'lucide-react';
+import { Check, MessagesSquare, Plus, Users, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { createChatGroup, getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
@@ -14,6 +14,7 @@ import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { MemberPicker } from './member-picker';
+import { AssistantMark } from './assistant-mark';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
 /**
  * What a past instant is, in the chats surface's words (#819).
@@ -77,10 +78,18 @@ export function ChatsPanel() {
   const pending = threads.filter(
     (thread) => thread.myStatus === 'requested' || thread.myStatus === 'invited'
   );
+  /**
+   * The assistant is the list's first row, always: it is what the product is
+   * sold on, and leaving it to `last_message_at` buried it under every newer
+   * conversation. `list_chat_threads` sorts it first too; the client repeats the
+   * rule so a list read before that migration still draws it on top.
+   */
+  const assistant = threads.find((thread) => thread.kind === 'agent') ?? null;
   const open = threads.filter(
-    (thread) => thread.myStatus === 'active' || thread.myStatus === 'declined'
+    (thread) =>
+      thread.kind !== 'agent' && (thread.myStatus === 'active' || thread.myStatus === 'declined')
   );
-  const hasAssistant = threads.some((thread) => thread.kind === 'agent');
+  const hasAssistant = assistant !== null;
 
   // The lock is the server's answer, not a guess: one read says what today's
   // allowance is, and a failed read leaves the row offered (the thread's own
@@ -188,9 +197,7 @@ export function ChatsPanel() {
       {!hasAssistant &&
         (assistantLocked ? (
           <div className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs">
-            <span className="rounded-full bg-muted/60 p-2 text-muted-foreground/80">
-              <Sparkles size={18} />
-            </span>
+            <AssistantMark className="size-9 opacity-80" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">
                 {CHATS_LIST_COPY.assistantTitle}
@@ -213,9 +220,7 @@ export function ChatsPanel() {
             disabled={assistantBusy}
             className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
           >
-            <span className="rounded-full bg-primary/10 p-2 text-primary">
-              <Sparkles size={18} />
-            </span>
+            <AssistantMark className="size-9" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">
                 {CHATS_LIST_COPY.assistantTitle}
@@ -226,6 +231,12 @@ export function ChatsPanel() {
             </span>
           </button>
         ))}
+
+      {assistant ? (
+        <ul className="overflow-hidden rounded-2xl border border-primary/25 bg-primary/5 shadow-xs">
+          <ThreadRow thread={assistant} pinned />
+        </ul>
+      ) : null}
 
       {pending.length > 0 && (
         <section aria-label={CHATS_LIST_COPY.requestsLabel} className="space-y-2">
@@ -294,31 +305,10 @@ export function ChatsPanel() {
       {open.length > 0 ? (
         <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
           {open.map((thread) => (
-            <li key={thread.id} className="transition-safe hover:bg-muted/50">
-              <Link
-                href={`/chats/${thread.id}`}
-                className="flex items-start gap-3.5 px-4 py-3.5 focus-visible:bg-accent/80 focus-visible:outline-none"
-              >
-                <ThreadIdentity thread={thread} />
-                <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-                  {thread.lastMessageAt && (
-                    <span className="text-[11px] font-medium text-muted-foreground/60">
-                      {chatTimeAgo(thread.lastMessageAt)}
-                    </span>
-                  )}
-                  {thread.unreadCount > 0 && (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
-                      {thread.unreadCount > 99
-                        ? CHATS_LIST_COPY.unreadOverflow
-                        : thread.unreadCount}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
+            <ThreadRow key={thread.id} thread={thread} />
           ))}
         </ul>
-      ) : (
+      ) : assistant ? null : (
         pending.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
             <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">
@@ -528,12 +518,50 @@ function GroupForm({
   );
 }
 
+/**
+ * One row of the list, shared by the pinned assistant row and every open thread,
+ * so the two cannot drift apart. `pinned` is the assistant's tile: same row, its
+ * own surface, and it always sits above the requests and the open threads.
+ */
+function ThreadRow({
+  thread,
+  pinned = false,
+}: {
+  thread: ChatConversationSummary;
+  pinned?: boolean;
+}) {
+  return (
+    <li className={cn('transition-safe', pinned ? 'hover:bg-primary/10' : 'hover:bg-muted/50')}>
+      <Link
+        href={`/chats/${thread.id}`}
+        className="flex items-start gap-3.5 px-4 py-3.5 focus-visible:bg-accent/80 focus-visible:outline-none"
+      >
+        <ThreadIdentity thread={thread} />
+        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+          {thread.lastMessageAt ? (
+            <span className="text-[11px] font-medium text-muted-foreground/60">
+              {chatTimeAgo(thread.lastMessageAt)}
+            </span>
+          ) : null}
+          {thread.unreadCount > 0 ? (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
+              {thread.unreadCount > 99 ? CHATS_LIST_COPY.unreadOverflow : thread.unreadCount}
+            </span>
+          ) : null}
+        </div>
+      </Link>
+    </li>
+  );
+}
+
 function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
   const label = thread.counterpart?.name ?? thread.counterpart?.username ?? thread.title;
 
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
-      {thread.kind === 'group' ? (
+      {thread.kind === 'agent' ? (
+        <AssistantMark className="size-9" />
+      ) : thread.kind === 'group' ? (
         <span
           aria-hidden
           className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80"

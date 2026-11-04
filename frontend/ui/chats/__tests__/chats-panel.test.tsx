@@ -178,6 +178,37 @@ describe('ChatsPanel', () => {
    * statement with a way to upgrade, not a control that opens a thread which
    * refuses every question.
    */
+  /**
+   * The assistant is the product's selling point and its thread is older than
+   * most conversations, so `last_message_at` order put it wherever the member's
+   * friends happened to leave it. It is the first row now, above the requests
+   * and the open threads, whatever the input order is.
+   */
+  it('pins the assistant above every other thread', () => {
+    hooks.threads = [
+      THREAD,
+      GROUP,
+      {
+        ...THREAD,
+        id: 'agent-1',
+        kind: 'agent',
+        title: 'المساعد الذكي',
+        counterpart: null,
+        lastMessageAt: '2026-10-01T00:00:00.000Z',
+        createdAt: '2026-10-01T00:00:00.000Z',
+      },
+    ];
+
+    render(<ChatsPanel />);
+
+    const rows = screen
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('href')?.startsWith('/chats/'));
+
+    expect(rows[0]).toHaveAttribute('href', '/chats/agent-1');
+    expect(rows.map((row) => row.getAttribute('href'))).toContain('/chats/c-1');
+  });
+
   it('offers the assistant locked when the plan allows no turn', async () => {
     api.getChatAssistant.mockResolvedValue({
       available: true,

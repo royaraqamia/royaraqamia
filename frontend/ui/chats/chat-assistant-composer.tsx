@@ -55,7 +55,7 @@ export function AssistantComposer({
 
   if (allowance && allowance.member.cap === 0) {
     return (
-      <div className="space-y-1.5 border-t border-border/40 p-3 text-center">
+      <div className="space-y-1.5 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 text-center">
         <p className="text-xs text-muted-foreground">{ASSISTANT_COPY.locked}</p>
         <Link
           href="/pricing"
@@ -96,7 +96,7 @@ export function AssistantComposer({
         event.preventDefault();
         onAsk(draft);
       }}
-      className="space-y-2 border-t border-border/40 p-3"
+      className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3"
     >
       <div className="flex items-end gap-2">
         <textarea
