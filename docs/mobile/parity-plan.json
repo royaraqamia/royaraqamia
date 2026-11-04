@@ -62,7 +62,7 @@
     { "surface": "account-plan", "phase": "core", "state": "todo" },
     { "surface": "account-connected-apps", "phase": "core", "state": "todo" },
     { "surface": "account-blocked", "phase": "core", "state": "todo", "issue": "#977" },
-    { "surface": "account-faq", "phase": "core", "state": "todo", "issue": "#949" },
+    { "surface": "account-faq", "phase": "core", "state": "native" },
     { "surface": "account-services", "phase": "core", "state": "todo", "issue": "#978" },
     { "surface": "account-news", "phase": "core", "state": "todo", "issue": "#950" },
     { "surface": "account-changelog", "phase": "core", "state": "todo", "issue": "#951" },
