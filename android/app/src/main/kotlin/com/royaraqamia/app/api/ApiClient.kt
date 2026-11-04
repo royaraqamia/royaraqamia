@@ -75,6 +75,10 @@ class ApiClient(
     suspend fun <T> patch(path: String, body: String?, serializer: KSerializer<T>): ApiResult<T> =
         decodeAfter("PATCH", path, body, serializer)
 
+    /** A `PUT`, for the routes whose write replaces the whole record (the news checklist). */
+    suspend fun <T> put(path: String, body: String?, serializer: KSerializer<T>): ApiResult<T> =
+        decodeAfter("PUT", path, body, serializer)
+
     /**
      * One write, answered as its raw body (#650).
      *
@@ -170,6 +174,10 @@ class ApiClient(
     /** [patch] with the serializer taken from the type the caller asked for. */
     suspend inline fun <reified T> patch(path: String, body: String?): ApiResult<T> =
         patch(path, body, serializer<T>())
+
+    /** [put] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> put(path: String, body: String?): ApiResult<T> =
+        put(path, body, serializer<T>())
 
     private fun send(method: String, path: String, accessToken: String, body: String?): Answer =
         try {

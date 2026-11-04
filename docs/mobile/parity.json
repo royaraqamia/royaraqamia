@@ -1151,6 +1151,110 @@
       ]
     },
     {
+      "id": "account-news-preferences",
+      "surface": "account-news",
+      "issue": "#950",
+      "web": {
+        "route": "app/account/news/page.tsx",
+        "component": "frontend/ui/account/news-preferences.tsx",
+        "copyModule": "frontend/ui/account/account-news-preferences-copy.ts",
+        "copyExport": "ACCOUNT_NEWS_PREFERENCES_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsPreferencesCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsPreferencesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/AccountNewsPreferencesCopy.kt",
+        "copyObject": "AccountNewsPreferencesCopy"
+      },
+      "copySource": "shared/copy/account-news-preferences.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signIn"
+        },
+        {
+          "name": "Failed",
+          "copy": "loadFailed"
+        },
+        {
+          "name": "Ready",
+          "copy": "save"
+        }
+      ]
+    },
+    {
+      "id": "account-news-private",
+      "surface": "account-news",
+      "issue": "#950",
+      "web": {
+        "route": "app/account/news/page.tsx",
+        "component": "frontend/ui/account/news-private-sources.tsx",
+        "copyModule": "frontend/ui/account/account-news-private-copy.ts",
+        "copyExport": "ACCOUNT_NEWS_PRIVATE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsPrivateSourcesCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsPrivateSourcesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/AccountNewsPrivateCopy.kt",
+        "copyObject": "AccountNewsPrivateCopy"
+      },
+      "copySource": "shared/copy/account-news-private.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "Failed",
+          "copy": "loadFailed"
+        },
+        {
+          "name": "Ready",
+          "copy": "heading"
+        }
+      ]
+    },
+    {
+      "id": "account-news-request",
+      "surface": "account-news",
+      "issue": "#950",
+      "web": {
+        "route": "app/account/news/page.tsx",
+        "component": "frontend/ui/account/news-source-request.tsx",
+        "copyModule": "frontend/ui/account/account-news-request-copy.ts",
+        "copyExport": "ACCOUNT_NEWS_REQUEST_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsSourceRequestCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/NewsSourceRequestUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/accountnews/AccountNewsRequestCopy.kt",
+        "copyObject": "AccountNewsRequestCopy"
+      },
+      "copySource": "shared/copy/account-news-request.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "submit"
+        },
+        {
+          "name": "Submitting",
+          "copy": "submitBusy"
+        },
+        {
+          "name": "Failed",
+          "copy": "sendFailed"
+        },
+        {
+          "name": "Submitted",
+          "copy": "received"
+        }
+      ]
+    },
+    {
       "id": "account-faq",
       "surface": "account-faq",
       "issue": "#949",
