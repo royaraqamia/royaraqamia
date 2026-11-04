@@ -28,6 +28,8 @@ vi.mock('@/frontend/api/chats', () => api);
 
 vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
   isChatAttachmentTooLarge: () => false,
+  uploadChatAttachment: vi.fn(),
+  removeChatAttachmentObjects: vi.fn(),
 }));
 
 /** The typing channel is a broadcast under test elsewhere; here it is a seam. */
@@ -250,6 +252,53 @@ function mineMessage(): ChatMessage {
 }
 
 /**
+ * A voice note is one control in both threads and one player in the bubble
+ * (ADR-0127): the same paperclip-then-microphone row, and a clip that plays
+ * where it sits instead of a download chip.
+ */
+describe('ChatThreadView voice notes', () => {
+  beforeEach(() => {
+    hook.messages.current = [];
+    thread.current = makeThread('direct');
+  });
+
+  it('draws the microphone beside the paperclip in a member thread', () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('button', { name: 'إرفاق ملف' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeInTheDocument();
+  });
+
+  it('plays an audio attachment and leaves other files a chip', () => {
+    hook.messages.current = [
+      {
+        ...mineMessage(),
+        body: null,
+        attachments: [
+          {
+            id: 'a-1',
+            fileName: 'voice-note.wav',
+            mimeType: 'audio/wav',
+            byteSize: 48_000,
+          },
+          {
+            id: 'a-2',
+            fileName: 'تقرير.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 4_000,
+          },
+        ],
+      },
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('button', { name: 'تشغيل الرسالة الصوتية' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تنزيل تقرير.pdf' })).toBeInTheDocument();
+  });
+});
+
+/**
  * A refused write is a sentence, not a silent screen (#844): the hook answers
  * `false`/a sentence, and the view is what keeps the draft, keeps the editor
  * open, and takes the spinner off a dialog whose write rejected.
@@ -338,12 +387,13 @@ describe('ChatThreadView assistant', () => {
     api.getChatAssistant.mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
   });
 
-  it('gives the assistant a text-only composer', async () => {
+  it('gives the assistant the same composer as a member thread', async () => {
     render(<ChatThreadView conversationId="c-1" />);
 
     expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'إرفاق ملف' })).toBeNull();
-    // A voice note is offered; a general file picker is not.
+    // ADR-0127: one row, so the paperclip and the microphone beside it are the
+    // same controls in both threads.
+    expect(screen.getByRole('button', { name: 'إرفاق ملف' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeInTheDocument();
   });
 
@@ -395,7 +445,7 @@ describe('ChatThreadView assistant', () => {
         'c-1',
         'ما هو الذكاء الاصطناعي؟',
         expect.any(Function),
-        null
+        []
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));

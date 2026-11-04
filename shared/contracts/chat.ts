@@ -48,6 +48,44 @@ export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
 export const CHAT_ATTACHMENTS_PER_MESSAGE_MAX = 5;
 
 /**
+ * A voice note's bounds, in one place because both composers draw the same
+ * control and must agree about when a clip is a mis-tap and when it is too long
+ * (ADR-0127). A hold shorter than a second is discarded; five minutes at 24 kHz
+ * mono is about 14 MB, well inside the per-file ceiling.
+ */
+export const CHAT_VOICE_NOTE_MIN_MS = 1_000;
+export const CHAT_VOICE_NOTE_MAX_MS = 5 * 60 * 1_000;
+/**
+ * The clip's sample rate. 24 kHz mono is the best a WAV can be while the same
+ * single object is both played by a browser and read by the transcription
+ * model: 16 kHz is speech-only and audibly thin in a player, and 48 kHz would
+ * spend 29 MB on five minutes.
+ */
+export const CHAT_VOICE_NOTE_SAMPLE_RATE = 24_000;
+export const CHAT_VOICE_NOTE_MIME = 'audio/wav';
+
+/** A recording, whichever container the browser reported. */
+export function chatAttachmentIsAudio(mimeType: string): boolean {
+  return mimeType.trim().toLowerCase().startsWith('audio/');
+}
+
+/**
+ * A file the assistant can read as words. Binary formats (PDF, archives,
+ * documents) are not decoded on the server: there is no parser in this runtime,
+ * and a guess at their contents is worse than a sentence saying so (ADR-0127).
+ */
+export function chatAttachmentIsReadableText(mimeType: string): boolean {
+  const mime = mimeType.trim().toLowerCase();
+  return (
+    mime.startsWith('text/') ||
+    mime === 'application/json' ||
+    mime === 'application/xml' ||
+    mime === 'application/x-yaml' ||
+    mime === 'application/javascript'
+  );
+}
+
+/**
  * A thread's typing channel is a Realtime **private** topic named after the
  * conversation it belongs to: `chat:<conversation id>`. Realtime authorises the
  * topic with the policies on `realtime.messages`
@@ -273,20 +311,22 @@ export const ChatAttachmentInputSchema = z.object({
 });
 
 /**
- * A turn is text, a voice note, or both. A voice note is transcribed before the
- * model sees it, which is why the audio is an attachment rather than a body: the
- * recording stays in the thread, and the transcript is what the turn answers.
+ * A turn is text, files, or both. A voice note is transcribed before the model
+ * sees it, an image reaches it as an image part, and a text file as text — the
+ * recording and the file still stay in the thread either way (ADR-0126,
+ * ADR-0127). A file no model can read is refused with a sentence, not guessed
+ * at.
  */
 export const ChatAgentTurnSchema = z
   .object({
     body: z.string().trim().max(CHAT_BODY_MAX, 'السؤال طويل جداً').optional(),
-    attachment: ChatAttachmentInputSchema.optional(),
+    attachments: z
+      .array(ChatAttachmentInputSchema)
+      .max(CHAT_ATTACHMENTS_PER_MESSAGE_MAX, 'خمسة مرفقات في الرسالة الواحدة')
+      .optional(),
   })
-  .refine((value) => Boolean(value.body) || Boolean(value.attachment), {
-    message: 'اكتب سؤالك أو أرسل رسالة صوتية',
-  })
-  .refine((value) => !value.attachment || value.attachment.mimeType.startsWith('audio/'), {
-    message: 'الملف المرفق ليس تسجيلاً صوتياً',
+  .refine((value) => Boolean(value.body) || (value.attachments?.length ?? 0) > 0, {
+    message: 'اكتب سؤالك أو أرسل ملفاً',
   });
 
 export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;

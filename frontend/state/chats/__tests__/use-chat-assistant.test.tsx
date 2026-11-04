@@ -42,7 +42,7 @@ describe('useChatAssistant', () => {
     const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
 
     await act(async () => {
-      await result.current.ask('سؤال');
+      await result.current.ask('سؤال', []);
     });
 
     expect(result.current.interrupted).toBe('بدأت أشرح');
@@ -60,13 +60,13 @@ describe('useChatAssistant', () => {
 
     const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
     await act(async () => {
-      await result.current.ask('سؤال');
+      await result.current.ask('سؤال', []);
     });
     expect(result.current.interrupted).toBe('نصف رد');
 
     api.streamChatAgentTurn.mockImplementation(async () => undefined);
     await act(async () => {
-      await result.current.ask('سؤال آخر');
+      await result.current.ask('سؤال آخر', []);
     });
 
     expect(result.current.interrupted).toBe('');

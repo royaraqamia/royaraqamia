@@ -17,6 +17,7 @@ import type { Reservation } from '@/backend/services/plans/plan-gate';
 import {
   AiChatProviderError,
   type AiChatClient,
+  type AiChatContentPart,
   type AiChatMessage,
   type AiChatToolCall,
   type AiChatWireMessage,
@@ -28,6 +29,9 @@ import {
   CHAT_AGENT_MAX_ROUNDS,
   CHAT_AGENT_TOKEN_BUDGET,
   CHAT_AGENT_TURN_TIMEOUT_MS,
+  chatAttachmentIsAudio,
+  chatAttachmentIsInlineImage,
+  chatAttachmentIsReadableText,
   normalizeChatBody,
   type ChatAgentAllowance,
   type ChatAgentEvent,
@@ -117,6 +121,21 @@ export function allowanceSpentSentence(resetsAt: string): string {
 const PLAN_LOCKED = 'المساعد متاح لمشتركي الخطة المدفوعة.';
 const UNAVAILABLE = 'المساعد غير متاح حالياً.';
 const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
+/** A recording no model would transcribe. */
+const COULD_NOT_TRANSCRIBE = 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.';
+/** A file whose bytes could not be read back from the bucket. */
+const COULD_NOT_READ = 'لم أستطع قراءة المرفق. أعد إرساله أو اكتب سؤالك.';
+/** A format no model on this deployment can read: PDF, archives, documents. */
+const UNREADABLE_FILE =
+  'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو ملفاً نصياً أو رسالة صوتية.';
+/** The label a transcript carries inside the turn, so the model sees its origin. */
+const SPOKEN_LABEL = 'تسجيل صوتي';
+/** A text file's ceiling in the turn: enough for a long note, not a whole book. */
+const ATTACHMENT_TEXT_MAX = 20_000;
+/** An image's ceiling in a turn, because base64 rides inside the request body. */
+const ATTACHMENT_IMAGE_MAX = 5 * 1024 * 1024;
+/** A picture the provider would refuse after the turn already spent its count. */
+const IMAGE_TOO_LARGE = 'الصورة كبيرة جداً على المساعد. أرسل صورة أصغر أو اكتب سؤالك.';
 
 /** A ledger row the project's ceiling refused (`private.enforce_chat_agent_project_cap`). */
 function isProjectAllowanceRefusal(error: unknown): boolean {
@@ -213,12 +232,12 @@ export class ChatAgentService {
     conversationId: string,
     body: string,
     context: ChatAgentTurnContext,
-    attachment?: ChatAttachmentInput
+    attachments: ChatAttachmentInput[] = []
   ): AsyncGenerator<ChatAgentEvent, void, void> {
     const typed = normalizeChatBody(body);
-    // A voice note may carry the question alone; its transcript is checked below,
-    // once the recording has actually been read.
-    if (!typed && !attachment) throw new ChatAgentError(400, 'اكتب سؤالك');
+    // A file may carry the question alone; what it says is checked once it has
+    // actually been read.
+    if (!typed && attachments.length === 0) throw new ChatAgentError(400, 'اكتب سؤالك');
 
     const client = this.deps.client;
     if (!client) throw new ChatAgentError(503, UNAVAILABLE);
@@ -263,12 +282,12 @@ export class ChatAgentService {
       });
 
     try {
-      // A voice note is transcribed first, and its transcript is what the message
-      // says. The recording stays attached, so the member still hears what they
-      // sent and the model still reads words rather than a container.
-      const question = attachment ? await this.spokenQuestion(attachment) : typed;
-      if (!question)
-        throw new ChatAgentError(422, 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.');
+      // A voice note is transcribed, an image reaches the model as an image part,
+      // and a text file as text — while the recording and the file stay attached,
+      // so the member still hears (and sees) what they sent (ADR-0126, ADR-0127).
+      const read = await this.readAttachments(attachments);
+      const question = [typed, read.words].filter(Boolean).join('\n');
+      if (!question && read.parts.length === 0) throw new ChatAgentError(422, COULD_NOT_READ);
 
       // A voice note's words are only known now, and the row should say what the
       // turn actually answered. Best effort: the recording still runs the turn.
@@ -276,9 +295,9 @@ export class ChatAgentService {
         await this.deps.agent.setTurnQuestion(turnId, question).catch(() => undefined);
       }
 
-      await this.deps.chats.sendMessage(userId, conversationId, {
+      const sent = await this.deps.chats.sendMessage(userId, conversationId, {
         body: question,
-        ...(attachment ? { attachments: [attachment] } : {}),
+        ...(attachments.length > 0 ? { attachments } : {}),
       });
 
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
@@ -289,8 +308,11 @@ export class ChatAgentService {
         context,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          ...(attachment ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
-          ...trimHistory(page.messages),
+          ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
+          // The line just stored is replaced by its own reading, so an image or a
+          // file reaches the model as a part rather than as an empty body.
+          ...trimHistory(page.messages.filter((message) => message.id !== sent.id)),
+          { role: 'user', content: read.parts.length > 0 ? read.parts : question },
         ],
       });
     } catch (error) {
@@ -317,6 +339,65 @@ export class ChatAgentService {
 
     const transcript = await client.transcribe(audio, attachment.mimeType);
     return transcript ? normalizeChatBody(transcript) : null;
+  }
+
+  /**
+   * Everything the turn's files say, in the form the model reads (ADR-0127).
+   *
+   * Audio is transcribed into words — the recording itself is never sent to the
+   * model — an image travels as an image part, and a text file as text. A file
+   * no model can read is refused with a sentence rather than guessed at, and the
+   * allowance the turn reserved is given back by the caller's catch.
+   */
+  private async readAttachments(attachments: ChatAttachmentInput[]): Promise<{
+    /** What the member said out loud, as the message body. */
+    words: string;
+    /** The turn's content parts, in the order the files were staged. */
+    parts: AiChatContentPart[];
+    /** Whether at least one file was a recording. */
+    spoken: boolean;
+  }> {
+    const words: string[] = [];
+    const parts: AiChatContentPart[] = [];
+    let spoken = false;
+
+    for (const attachment of attachments) {
+      if (chatAttachmentIsAudio(attachment.mimeType)) {
+        const transcript = await this.spokenQuestion(attachment);
+        if (!transcript) throw new ChatAgentError(422, COULD_NOT_TRANSCRIBE);
+        words.push(transcript);
+        parts.push({ type: 'text', text: `[${SPOKEN_LABEL}] ${transcript}` });
+        spoken = true;
+        continue;
+      }
+
+      const bytes = await this.deps.attachments.download(attachment.storagePath);
+      if (!bytes) throw new ChatAgentError(422, COULD_NOT_READ);
+
+      if (chatAttachmentIsInlineImage(attachment.mimeType)) {
+        // A base64 image travels inside the request body, so the provider's own
+        // ceiling — not the bucket's — is what an oversized picture would hit,
+        // and it would hit it as an opaque 413 rather than a sentence.
+        if (bytes.byteLength > ATTACHMENT_IMAGE_MAX) throw new ChatAgentError(422, IMAGE_TOO_LARGE);
+        parts.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:${attachment.mimeType};base64,${Buffer.from(bytes).toString('base64')}`,
+          },
+        });
+        continue;
+      }
+
+      if (chatAttachmentIsReadableText(attachment.mimeType)) {
+        const text = new TextDecoder().decode(bytes).slice(0, ATTACHMENT_TEXT_MAX);
+        parts.push({ type: 'text', text: `[${attachment.fileName}]\n${text}` });
+        continue;
+      }
+
+      throw new ChatAgentError(422, UNREADABLE_FILE);
+    }
+
+    return { words: words.join('\n'), parts, spoken };
   }
 
   /**

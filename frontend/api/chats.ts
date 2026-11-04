@@ -327,14 +327,17 @@ export async function streamChatAgentTurn(
   id: string,
   body: string,
   onEvent: (event: ChatAgentEvent) => void,
-  attachment?: ChatAttachmentInput | null
+  attachments?: ChatAttachmentInput[] | null
 ): Promise<void> {
   let response: Response;
   try {
     response = await fetch(`/api/chats/${id}/assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body, ...(attachment ? { attachment } : {}) }),
+      body: JSON.stringify({
+        body,
+        ...(attachments && attachments.length > 0 ? { attachments } : {}),
+      }),
     });
   } catch (cause) {
     throw new ApiError('تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.', undefined, {

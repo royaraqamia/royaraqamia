@@ -636,7 +636,7 @@ export async function streamChatAgentTurn(
               supabase,
               ip: getClientIpFromHeaders(headers),
             },
-            parsed.data.attachment
+            parsed.data.attachments
           )) {
             write(event);
           }
