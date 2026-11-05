@@ -238,6 +238,21 @@ export const CONTRACTS = [
     file: 'LeadsContracts.kt',
     schemas: ['LeadSubmitResponseSchema'],
   },
+  // Consultation booking (#930): the two live reads the wizard paints and the
+  // envelope the never-queued booking write answers. The request body stays
+  // hand-built in `ConsultationRepository` so the client sends exactly the
+  // trimmed fields the draft collected, the same choice the lead bodies make;
+  // the responses are the site's own shapes, generated so a field the route
+  // stops returning breaks the app at compile time.
+  {
+    module: 'shared/contracts/consultation',
+    file: 'ConsultationContracts.kt',
+    schemas: [
+      'ConsultationPackagesResponseSchema',
+      'AvailabilitySlotsResponseSchema',
+      'BookingResultSchema',
+    ],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([

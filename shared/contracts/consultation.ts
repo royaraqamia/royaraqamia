@@ -41,22 +41,26 @@ export const CONSULTATION_START_PRICE_USD = 25;
 // Entities
 // ------------------------------------------------------------
 
-export interface ConsultationPackage {
-  id: string;
-  name: string;
-  description: string | null;
-  price_usd: number;
-  duration_minutes: number;
-  sessions_count: number;
-  is_active: boolean;
-  sort_order: number;
-}
+export const ConsultationPackageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  price_usd: z.number(),
+  duration_minutes: z.number(),
+  sessions_count: z.number(),
+  is_active: z.boolean(),
+  sort_order: z.number(),
+});
 
-export interface AvailabilitySlot {
-  id: string;
-  starts_at: string;
-  ends_at: string;
-}
+export type ConsultationPackage = z.infer<typeof ConsultationPackageSchema>;
+
+export const AvailabilitySlotSchema = z.object({
+  id: z.string(),
+  starts_at: z.string(),
+  ends_at: z.string(),
+});
+
+export type AvailabilitySlot = z.infer<typeof AvailabilitySlotSchema>;
 
 /**
  * Bounds for the consultation topic description.
@@ -139,6 +143,38 @@ export const CreateBookingSchema = BookingContactSchema.extend({
 });
 
 export type CreateBookingInput = z.infer<typeof CreateBookingSchema>;
+
+// ------------------------------------------------------------
+// Public response shapes
+//
+// The site reads these through its own API types; the app decodes the same
+// bodies through generated Kotlin, so a field the route stops returning is a
+// compile error in the client that would draw it (#930).
+// ------------------------------------------------------------
+
+export const ConsultationPackagesResponseSchema = z.object({
+  packages: z.array(ConsultationPackageSchema),
+});
+
+export const AvailabilitySlotsResponseSchema = z.object({
+  slots: z.array(AvailabilitySlotSchema),
+});
+
+/**
+ * The answer `POST /api/consultation/bookings` gives.
+ *
+ * A success carries the booking's id and the reference code the visitor quotes;
+ * a refusal carries its own sentence. The app never queues this write, because a
+ * booking reserves a scarce slot against a live conflict check (ADR-0031).
+ */
+export const BookingResultSchema = z.object({
+  success: z.boolean(),
+  bookingId: z.string().optional(),
+  referenceCode: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type BookingResult = z.infer<typeof BookingResultSchema>;
 
 /**
  * A signed-in booker's edit of their own booking. It carries the same visitor

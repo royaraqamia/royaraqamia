@@ -42,7 +42,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `profile` | `/u/[username]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `scan` | `/scan` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | `LeadsScreen.kt` (off) | The three lead forms, their validation and their anonymous Outbox are ported (#929), and switched off until they are the pages pixel for pixel: the shell hands the routes to the document in the meantime (#872, ADR-0117). |
-| `consultation` | `/consultation/book` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `consultation` | `/consultation/book` | `ConsultationScreen.kt` (off) | The booking wizard, its live reads and its never-queued write are ported (#930), and switched off until the visual gate pairs it with the page: the shell hands `/consultation/book` to the document in the meantime (#872, ADR-0117). |
 | `downloader` | `/downloader` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-guide` | `/mcp/guide` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

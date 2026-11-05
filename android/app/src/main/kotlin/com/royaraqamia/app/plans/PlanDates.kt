@@ -36,8 +36,11 @@ object PlanDates {
      * member is living in — the same choice the site's `Intl` call makes. A string
      * that is not an instant is shown as it came rather than blanked.
      */
-    fun label(iso: String): String {
-        val local = runCatching { ZonedDateTime.ofInstant(Instant.parse(iso), ZoneId.systemDefault()) }
+    fun label(iso: String): String = label(iso, ZoneId.systemDefault())
+
+    /** The same sentence in a named zone, for a surface that also shows Damascus time. */
+    fun label(iso: String, zone: ZoneId): String {
+        val local = runCatching { ZonedDateTime.ofInstant(Instant.parse(iso), zone) }
             .getOrElse { return iso }
         return pattern.format(HijrahDate.from(local)) + ERA
     }

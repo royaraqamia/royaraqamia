@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AvailabilitySlotsResponseSchema,
   arabicCharCountNoun,
   BookingContactSchema,
+  BookingResultSchema,
+  ConsultationPackagesResponseSchema,
   TOPIC_DESCRIPTION_MAX,
   TOPIC_DESCRIPTION_MIN,
 } from '../consultation';
@@ -80,5 +83,53 @@ describe('arabicCharCountNoun', () => {
     expect(arabicCharCountNoun(99)).toBe('حرفًا');
     expect(arabicCharCountNoun(100)).toBe('حرف');
     expect(arabicCharCountNoun(TOPIC_DESCRIPTION_MAX)).toBe('حرف');
+  });
+});
+
+describe('the booking screen response shapes', () => {
+  it('reads the packages the page renders', () => {
+    const result = ConsultationPackagesResponseSchema.safeParse({
+      packages: [
+        {
+          id: 'p-1',
+          name: 'جلسة',
+          description: null,
+          price_usd: 25,
+          duration_minutes: 60,
+          sessions_count: 1,
+          is_active: true,
+          sort_order: 0,
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('reads the slots the page renders and needs both ends', () => {
+    const result = AvailabilitySlotsResponseSchema.safeParse({
+      slots: [{ id: 's-1', starts_at: '2026-08-26T12:00:00Z', ends_at: '2026-08-26T13:00:00Z' }],
+    });
+    expect(result.success).toBe(true);
+
+    const missingEnd = AvailabilitySlotsResponseSchema.safeParse({
+      slots: [{ id: 's-1', starts_at: '2026-08-26T12:00:00Z' }],
+    });
+    expect(missingEnd.success).toBe(false);
+  });
+
+  it('reads a confirmed booking and a refusal', () => {
+    expect(
+      BookingResultSchema.safeParse({
+        success: true,
+        bookingId: 'b-1',
+        referenceCode: 'CONS-2026-A7K2M9QX',
+      }).success
+    ).toBe(true);
+
+    expect(
+      BookingResultSchema.safeParse({ success: false, error: 'سبقك شخص آخر إلى هذا الموعد.' })
+        .success
+    ).toBe(true);
   });
 });

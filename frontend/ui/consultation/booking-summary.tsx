@@ -20,6 +20,7 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
   return (
     <section
       aria-label="تفاصيل الاستشارة"
+      data-visual="consultation-title"
       className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
     >
       <SectionTitle size="card">
