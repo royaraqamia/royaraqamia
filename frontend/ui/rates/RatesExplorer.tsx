@@ -123,6 +123,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   return (
     <div className="space-y-10">
       <section
+        data-visual="converter"
         className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
         aria-label={RATES_CONVERTER_COPY.converterAria}
       >
@@ -130,6 +131,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           <Label htmlFor="rates-amount">{RATES_CONVERTER_COPY.amount}</Label>
           <Input
             id="rates-amount"
+            data-visual="amount"
             type="number"
             inputMode="decimal"
             min="0"
@@ -140,7 +142,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-          <div className="form-field">
+          <div data-visual="from" className="form-field">
             <Label htmlFor="rates-from">{RATES_CONVERTER_COPY.from}</Label>
             <SearchableSelect
               id="rates-from"
@@ -177,7 +179,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             </svg>
           </Button>
 
-          <div className="form-field">
+          <div data-visual="to" className="form-field">
             <Label htmlFor="rates-to">{RATES_CONVERTER_COPY.to}</Label>
             <SearchableSelect
               id="rates-to"

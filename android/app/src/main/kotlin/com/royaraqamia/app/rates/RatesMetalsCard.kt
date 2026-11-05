@@ -1,8 +1,10 @@
 package com.royaraqamia.app.rates
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,15 +13,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.contracts.generated.RatesBoard
-import com.royaraqamia.app.theme.LocalRoySpacing
-import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 
 /**
- * The gold and silver converter (#658), the app's half of
+ * The gold and silver converter (#658, #897), the app's half of
  * `frontend/ui/rates/MetalConverter.tsx`.
  *
  * A metal, a number of grams, a currency to read it in, and — for gold alone — the
@@ -32,8 +35,6 @@ import com.royaraqamia.app.theme.RoyColors
  */
 @Composable
 fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
-    val type = LocalRoyTypeScale.current
-
     var metal by remember(board) { mutableStateOf(board.metals.firstOrNull { it.code == RatesMath.GOLD }?.code ?: board.metals.firstOrNull()?.code ?: RatesMath.GOLD) }
     var grams by remember(board) { mutableStateOf("1") }
     var to by remember(board) { mutableStateOf(RatesMath.resolveDefaultTarget(board)) }
@@ -88,16 +89,31 @@ fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGapSm),
     ) {
-        Text(
-            text = RatesMetalsCopy.TITLE,
-            style = type.h3.copy(fontWeight = FontWeight.Bold),
-            color = RoyColors.primary,
-            textAlign = TextAlign.Center,
-        )
+        Box(
+            modifier =
+                Modifier.testTag(RatesMetrics.METALS_TITLE)
+                    .fillMaxWidth()
+                    .height(RatesMetrics.metalsTitleHeight),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = RatesMetalsCopy.TITLE,
+                style =
+                    TextStyle(
+                        fontSize = RatesMetrics.metalsTitleSize,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = RatesMetrics.metalsTitleLineHeight,
+                        textAlign = TextAlign.Center,
+                    ),
+                color = RoyColors.primary,
+                textAlign = TextAlign.Center,
+            )
+        }
 
-        RatesCard {
+        Spacer(Modifier.height(RatesMetrics.metalsTitleToCard))
+
+        RatesCard(tag = RatesMetrics.METALS_CARD) {
             if (board.metals.size > 1) {
                 ChoiceRow(
                     label = RatesMetalsCopy.METAL,
@@ -105,18 +121,28 @@ fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
                     selected = metal,
                     onSelect = { metal = it },
                 )
+                Spacer(Modifier.height(RatesMetrics.fieldGap))
             }
 
-            AmountField(label = RatesMetalsCopy.GRAMS, value = grams, onChange = { grams = it })
+            AmountField(
+                label = RatesMetalsCopy.GRAMS,
+                tag = "rates-metal-amount",
+                value = grams,
+                onChange = { grams = it },
+            )
+
+            Spacer(Modifier.height(RatesMetrics.fieldGap))
 
             CurrencyField(
                 label = RatesMetalsCopy.TO,
+                tag = "rates-metal-to",
                 selected = to,
                 currencies = board.currencies,
                 onSelect = { to = it },
             )
 
             if (basisRelevant) {
+                Spacer(Modifier.height(RatesMetrics.fieldGap))
                 ChoiceRow(
                     label = RatesMetalsCopy.RATE_LABEL,
                     options =
@@ -130,6 +156,7 @@ fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
             }
 
             if (marketRelevant) {
+                Spacer(Modifier.height(RatesMetrics.fieldGap))
                 ChoiceRow(
                     label = RatesMetalsCopy.MARKET,
                     options = markets.map { it.key to it.name },
@@ -139,6 +166,7 @@ fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
             }
 
             if (karatRelevant) {
+                Spacer(Modifier.height(RatesMetrics.fieldGap))
                 ChoiceRow(
                     label = RatesMetalsCopy.KARAT,
                     options = listOf("24", "22", "21", "18").map { it to it },
@@ -147,7 +175,10 @@ fun RatesMetalsCard(board: RatesBoard, modifier: Modifier = Modifier) {
                 )
             }
 
+            Spacer(Modifier.height(RatesMetrics.resultGap))
+
             RatesResultBox(
+                modifier = Modifier.testTag("rates-metal-result"),
                 conversion = if (state == RatesMetalsState.Ready) conversion else null,
                 targetCode = to,
                 oldLiraAmount = oldLira,

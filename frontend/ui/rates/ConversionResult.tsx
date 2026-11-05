@@ -6,6 +6,8 @@ import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
 
 interface ConversionResultProps {
+  /** The gate's anchor for this result box; the metals card draws a second one. */
+  dataVisual?: string;
   result: number | null;
   targetCode: string;
   /** The SYP side restated in old lira (100 old = 1 new), when the target is SYP. */
@@ -26,6 +28,7 @@ interface ConversionResultProps {
 }
 
 export function ConversionResult({
+  dataVisual = 'result',
   result,
   targetCode,
   oldLiraAmount,
@@ -34,7 +37,10 @@ export function ConversionResult({
   copy,
 }: ConversionResultProps) {
   return (
-    <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
+    <div
+      data-visual={dataVisual}
+      className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center"
+    >
       <p className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
         {result !== null ? (
           <span

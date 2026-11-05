@@ -13,7 +13,7 @@ _The three surfaces that already have a Kotlin screen. Recording both sides here
 
 - [x] **verify** `/verify` — native
 - [x] **verify-code** `/verify/[code]` — native
-- [ ] **rates** `/rates` — todo
+- [x] **rates** `/rates` — native
 
 ## Public content
 
@@ -109,9 +109,9 @@ A component is finished when the surface that draws it is native: 48 ported comp
 - [ ] `spendtrack-csv` on **spendtrack** · #653
 - [x] `verify-page` on **verify** · #658
 - [x] `certificate-result` on **verify** · #658
-- [ ] `rates-page` on **rates** · #658
-- [ ] `rates-converter` on **rates** · #658
-- [ ] `rates-metals` on **rates** · #658
+- [x] `rates-page` on **rates** · #658
+- [x] `rates-converter` on **rates** · #658
+- [x] `rates-metals` on **rates** · #658
 - [x] `verify-code-page` on **verify-code** · #658
 - [ ] `post-card` on **community** · #658
 - [ ] `community-feed` on **community** · #658
@@ -136,4 +136,4 @@ A component is finished when the surface that draws it is native: 48 ported comp
 
 ## Where this stands
 
-6 native · 32 to do · 1 blocked of 39 surfaces.
+7 native · 31 to do · 1 blocked of 39 surfaces.

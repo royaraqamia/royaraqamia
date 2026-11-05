@@ -123,11 +123,17 @@ export function MetalConverter({ board }: MetalConverterProps) {
       : null;
 
   return (
-    <section aria-label={RATES_METALS_COPY.metalsAria}>
-      <h2 className="mb-4 text-center text-xl font-bold text-foreground sm:text-2xl">
+    <section data-visual="metals" aria-label={RATES_METALS_COPY.metalsAria}>
+      <h2
+        data-visual="metals-title"
+        className="mb-4 text-center text-xl font-bold text-foreground sm:text-2xl"
+      >
         {RATES_METALS_COPY.title}
       </h2>
-      <div className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8">
+      <div
+        data-visual="metals-card"
+        className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
+      >
         <div>
           <span className="mb-1.5 block text-sm font-medium text-foreground">
             {RATES_METALS_COPY.metal}
@@ -144,6 +150,7 @@ export function MetalConverter({ board }: MetalConverterProps) {
           <Label htmlFor="metal-amount">{RATES_METALS_COPY.grams}</Label>
           <Input
             id="metal-amount"
+            data-visual="metal-amount"
             type="number"
             inputMode="decimal"
             min="0"
@@ -153,7 +160,7 @@ export function MetalConverter({ board }: MetalConverterProps) {
           />
         </div>
 
-        <div className="mt-4 form-field">
+        <div data-visual="metal-to" className="mt-4 form-field">
           <Label htmlFor="metal-to">{RATES_METALS_COPY.to}</Label>
           <SearchableSelect
             id="metal-to"
@@ -209,6 +216,7 @@ export function MetalConverter({ board }: MetalConverterProps) {
         ) : null}
 
         <ConversionResult
+          dataVisual="metal-result"
           result={conversion?.result ?? null}
           targetCode={to}
           oldLiraAmount={oldLiraAmount}

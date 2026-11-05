@@ -178,6 +178,33 @@
           }
         }
       ]
+    },
+    {
+      "surface": "rates",
+      "web": {
+        "route": "/rates"
+      },
+      "contract": "shared/visual/rates.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/rates/RatesScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.04,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-05",
+            "measured": 0.0309,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {
