@@ -73,12 +73,17 @@ export default async function RatesPage() {
       <main id="main-content" dir="rtl" className="flex-1 pt-6 pb-16 md:pb-24">
         <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">
-            <SectionTitle as="h1">
-              <SectionTitleHighlight>{RATES_PAGE_COPY.pageTitle}</SectionTitleHighlight>
-            </SectionTitle>
+            <div data-visual="title">
+              <SectionTitle as="h1">
+                <SectionTitleHighlight>{RATES_PAGE_COPY.pageTitle}</SectionTitleHighlight>
+              </SectionTitle>
+            </div>
 
             {board ? (
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+              <div
+                data-visual="board"
+                className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground"
+              >
                 <span>
                   {RATES_PAGE_COPY.updatedLabel}{' '}
                   {hijriDate ? (

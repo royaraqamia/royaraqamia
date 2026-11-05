@@ -1,0 +1,104 @@
+{
+  "surface": "rates",
+  "route": "/rates",
+  "notes": "The page at rest: the title, the line that dates the board, the currency converter, its amount field and result box, and the metals card with its heading. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the converter card, because it is the region both clients draw identically; the metals card repeats the same shapes and is measured by its own boxes. Widths are left out of the title deliberately: its width is the run of text, not a decision. Colours are left out deliberately too - they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "converter",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "rates-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "board",
+          "web": {
+            "selector": "[data-visual='board']"
+          },
+          "app": {
+            "tag": "rates-board"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "converter",
+          "web": {
+            "selector": "[data-visual='converter']"
+          },
+          "app": {
+            "tag": "rates-converter"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "amount",
+          "web": {
+            "selector": "[data-visual='amount']"
+          },
+          "app": {
+            "tag": "rates-amount"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "from",
+          "web": {
+            "selector": "[data-visual='from'] button"
+          },
+          "app": {
+            "tag": "rates-from"
+          },
+          "properties": ["width", "height", "radius", "fontSize"]
+        },
+        {
+          "name": "to",
+          "web": {
+            "selector": "[data-visual='to'] button"
+          },
+          "app": {
+            "tag": "rates-to"
+          },
+          "properties": ["width", "height", "radius", "fontSize"]
+        },
+        {
+          "name": "result",
+          "web": {
+            "selector": "[data-visual='result']"
+          },
+          "app": {
+            "tag": "rates-result"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "metals-title",
+          "web": {
+            "selector": "[data-visual='metals-title']"
+          },
+          "app": {
+            "tag": "rates-metals-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "metals-card",
+          "web": {
+            "selector": "[data-visual='metals-card']"
+          },
+          "app": {
+            "tag": "rates-metals-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        }
+      ]
+    }
+  ]
+}

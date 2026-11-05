@@ -1,0 +1,73 @@
+{
+  "surface": "rates",
+  "state": "at-rest",
+  "route": "/rates",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "board": {
+      "top": 146.5,
+      "height": 16,
+      "fontSize": 12
+    },
+    "converter": {
+      "top": 202.5,
+      "width": 361,
+      "height": 483.19,
+      "radius": 24,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "amount": {
+      "width": 311,
+      "height": 44,
+      "radius": 12,
+      "fontSize": 14,
+      "paddingLeft": 14,
+      "paddingRight": 14
+    },
+    "from": {
+      "width": 311,
+      "height": 44,
+      "radius": 12,
+      "fontSize": 14
+    },
+    "to": {
+      "width": 311,
+      "height": 44,
+      "radius": 12,
+      "fontSize": 14
+    },
+    "result": {
+      "top": 571.5,
+      "width": 311,
+      "height": 89.19,
+      "radius": 16,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "metals-title": {
+      "top": 725.69,
+      "height": 28,
+      "fontSize": 20,
+      "fontWeight": 700
+    },
+    "metals-card": {
+      "top": 769.69,
+      "width": 361,
+      "height": 499.19,
+      "radius": 24,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    }
+  }
+}

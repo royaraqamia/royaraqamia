@@ -1,30 +1,20 @@
 package com.royaraqamia.app.rates
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.contracts.generated.RatesBoard
-import com.royaraqamia.app.theme.LocalRoySpacing
-import com.royaraqamia.app.theme.Recipes
-import com.royaraqamia.app.theme.RoyColors
-import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /**
- * The currency converter (#658), the app's half of
+ * The currency converter (#658, #897), the app's half of
  * `frontend/ui/rates/RatesExplorer.tsx`.
  *
  * One amount, two currencies, a way to swap them, and — only when the pair actually
@@ -43,8 +33,6 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  */
 @Composable
 fun RatesConverterCard(board: RatesBoard, modifier: Modifier = Modifier) {
-    val spacing = LocalRoySpacing.current
-
     val default = RatesMath.resolveDefaultPair(board)
     var from by remember(board) { mutableStateOf(default.first) }
     var to by remember(board) { mutableStateOf(default.second) }
@@ -90,38 +78,44 @@ fun RatesConverterCard(board: RatesBoard, modifier: Modifier = Modifier) {
             else -> RatesConverterCopy.BASIS_OFFICIAL
         }
 
-    RatesCard(modifier) {
-        AmountField(label = RatesConverterCopy.AMOUNT, value = amount, onChange = { amount = it })
+    RatesCard(tag = RatesMetrics.CONVERTER, modifier = modifier) {
+        AmountField(
+            label = RatesConverterCopy.AMOUNT,
+            tag = RatesMetrics.AMOUNT,
+            value = amount,
+            onChange = { amount = it },
+        )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                CurrencyField(
-                    label = RatesConverterCopy.FROM,
-                    selected = from,
-                    currencies = board.currencies,
-                    onSelect = { from = it },
-                )
-            }
-            SwapButton {
-                val previous = from
-                from = to
-                to = previous
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                CurrencyField(
-                    label = RatesConverterCopy.TO,
-                    selected = to,
-                    currencies = board.currencies,
-                    onSelect = { to = it },
-                )
-            }
+        Spacer(Modifier.height(RatesMetrics.fieldGap))
+
+        CurrencyField(
+            label = RatesConverterCopy.FROM,
+            tag = RatesMetrics.FROM,
+            selected = from,
+            currencies = board.currencies,
+            onSelect = { from = it },
+        )
+
+        Spacer(Modifier.height(RatesMetrics.fieldGap))
+
+        SwapButton(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            val previous = from
+            from = to
+            to = previous
         }
 
+        Spacer(Modifier.height(RatesMetrics.fieldGap))
+
+        CurrencyField(
+            label = RatesConverterCopy.TO,
+            tag = RatesMetrics.TO,
+            selected = to,
+            currencies = board.currencies,
+            onSelect = { to = it },
+        )
+
         if (basisRelevant) {
+            Spacer(Modifier.height(RatesMetrics.fieldGap))
             ChoiceRow(
                 label = RatesConverterCopy.RATE_LABEL,
                 options =
@@ -135,6 +129,7 @@ fun RatesConverterCard(board: RatesBoard, modifier: Modifier = Modifier) {
         }
 
         if (marketRelevant) {
+            Spacer(Modifier.height(RatesMetrics.fieldGap))
             ChoiceRow(
                 label = RatesConverterCopy.MARKET,
                 options = markets.map { it.key to it.name },
@@ -143,7 +138,10 @@ fun RatesConverterCard(board: RatesBoard, modifier: Modifier = Modifier) {
             )
         }
 
+        Spacer(Modifier.height(RatesMetrics.resultGap))
+
         RatesResultBox(
+            modifier = Modifier.testTag(RatesMetrics.RESULT),
             conversion = if (state == RatesConverterState.Ready) conversion else null,
             targetCode = to,
             oldLiraAmount = oldLira,
@@ -158,29 +156,5 @@ fun RatesConverterCard(board: RatesBoard, modifier: Modifier = Modifier) {
                     emptyResult = RatesConverterCopy.EMPTY_RESULT,
                 ),
         )
-    }
-}
-
-/** The site's `عكس الاتِّجاه`: the same two currencies, swapped. */
-@Composable
-private fun SwapButton(onClick: () -> Unit) {
-    val spacing = LocalRoySpacing.current
-
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = RoyColors.muted.copy(alpha = 0.5f),
-    ) {
-        Row(
-            modifier = Modifier.padding(spacing.elementGapSm / 2f),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = LucideVectors.ArrowUpDown,
-                contentDescription = RatesConverterCopy.SWAP,
-                tint = RoyColors.primary,
-                modifier = Modifier.size(Recipes.Glyph.sm),
-            )
-        }
     }
 }

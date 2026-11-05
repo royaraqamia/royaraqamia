@@ -33,7 +33,7 @@ object NativeSurfaces {
      * pull request that makes its port indistinguishable from the page, never
      * before it (#874, ADR-0118).
      */
-    private val routes: Set<String> = setOf("/verify", "/account/faq", "/linksnap")
+    private val routes: Set<String> = setOf("/verify", "/account/faq", "/linksnap", "/rates")
 
     /**
      * The dynamic routes a passing port answers, matched by shape rather than by

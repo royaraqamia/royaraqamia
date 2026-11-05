@@ -1,0 +1,66 @@
+{
+  "surface": "rates",
+  "elements": {
+    "title": {
+      "top": 16.0,
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800
+    },
+    "board": {
+      "top": 82.545456,
+      "height": 16.0,
+      "fontSize": 12.0
+    },
+    "converter": {
+      "top": 138.54546,
+      "width": 360.72726,
+      "height": 483.63635,
+      "radius": 24.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "amount": {
+      "width": 310.54544,
+      "height": 44.0,
+      "radius": 12.0,
+      "fontSize": 14.0,
+      "paddingLeft": 14.0,
+      "paddingRight": 14.0
+    },
+    "from": {
+      "width": 310.54544,
+      "height": 44.0,
+      "radius": 12.0,
+      "fontSize": 14.0
+    },
+    "to": {
+      "width": 310.54544,
+      "height": 44.0,
+      "radius": 12.0,
+      "fontSize": 14.0
+    },
+    "result": {
+      "top": 507.63635,
+      "width": 310.54544,
+      "height": 89.45453,
+      "radius": 16.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "metals-title": {
+      "top": 662.1818,
+      "height": 28.0,
+      "fontSize": 20.0,
+      "fontWeight": 700
+    },
+    "metals-card": {
+      "top": 706.1818,
+      "width": 360.72726,
+      "height": 499.6364,
+      "radius": 24.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    }
+  }
+}
