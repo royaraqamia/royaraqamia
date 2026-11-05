@@ -14,9 +14,13 @@ export const metadata: Metadata = {
  * on the client, where the session's own client is the reader RLS expects. The
  * route is a data-free shell, like the account area's pages.
  *
- * A phone gets the whole screen: no page padding, no centred column, so the
- * header meets the app's chrome and the composer meets the keyboard the way a
- * messaging app does. The centred column returns from `sm` up.
+ * The page is the surface's whole height, and it does not scroll: the thread's
+ * own header and composer are its two fixed edges and only the messages move —
+ * WhatsApp and Telegram's shape, at every width (#1021). `dvh` is what makes a
+ * phone's collapsing URL bar and its on-screen keyboard shrink the surface
+ * instead of drawing the composer underneath them, and the keyboard cover it
+ * subtracts is Safari's, which shrinks only the visual viewport
+ * (`frontend/ui/shared/keyboard-inset.ts`).
  */
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +30,7 @@ export default async function ChatThreadPage({ params }: { params: Promise<{ id:
   return (
     <main
       id="main-content"
-      className="w-full pb-0 pt-0 sm:mx-auto sm:max-w-3xl sm:px-6 sm:pb-16 sm:pt-6"
+      className="flex h-[calc(100dvh-var(--roy-keyboard-cover,0px))] w-full flex-col overflow-hidden pb-0 pt-[var(--roy-safe-top)] sm:mx-auto sm:max-w-3xl sm:p-6"
     >
       <Suspense fallback={<ThreadFallback />}>
         <ChatThreadView conversationId={id} />
@@ -38,7 +42,7 @@ export default async function ChatThreadPage({ params }: { params: Promise<{ id:
 /** What the route paints while the thread's chunk resolves. */
 function ThreadFallback() {
   return (
-    <div className="flex flex-col items-center justify-center border-y border-border/70 bg-card/60 px-4 py-14 text-center sm:rounded-2xl sm:border sm:shadow-xs">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center border-border/70 bg-card/60 px-4 py-14 text-center sm:rounded-2xl sm:border sm:shadow-xs">
       <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
       <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
     </div>

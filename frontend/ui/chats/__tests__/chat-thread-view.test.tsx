@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 import type { ChatMessage, ChatPeer, ChatThread } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
@@ -134,7 +134,11 @@ function makeThread(kind: ChatThread['kind']): ChatThread {
 
 function openMenu() {
   render(<ChatThreadView conversationId="c-1" />);
-  fireEvent.click(screen.getByRole('button', { name: 'خيارات المحادثة' }));
+  // Radix opens on `pointerdown`; a bare click leaves the menu shut.
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'خيارات المحادثة' }), {
+    button: 0,
+    pointerType: 'mouse',
+  });
 }
 
 /**
@@ -148,26 +152,108 @@ describe('ChatThreadView menu', () => {
     thread.current = makeThread('direct');
     openMenu();
 
-    expect(screen.queryByRole('button', { name: 'مغادرة المحادثة' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'مغادرة المحادثة' })).not.toBeInTheDocument();
   });
 
   it('still offers leave on a group thread', () => {
     thread.current = makeThread('group');
     openMenu();
 
-    expect(screen.getByRole('button', { name: 'مغادرة المحادثة' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'مغادرة المحادثة' })).toBeInTheDocument();
   });
 
   /**
    * The blocked list is an account page, not a menu entry, and the screen is
-   * reached from the chats list — so the header carries no back link either.
+   * reached from the chats list — so the menu carries no back link either.
    */
   it('offers neither the blocked list nor a back link', () => {
     thread.current = makeThread('direct');
     openMenu();
 
-    expect(screen.queryByText('الأعضاء المحظورون')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'العودة إلى المحادثات' })).not.toBeInTheDocument();
+    const menu = screen.getByRole('menu');
+    expect(within(menu).queryByText('الأعضاء المحظورون')).toBeNull();
+    expect(within(menu).queryByRole('menuitem', { name: 'العودة إلى المحادثات' })).toBeNull();
+  });
+
+  /**
+   * A menu with nothing in it is not a menu (#1021): the assistant's thread has
+   * nothing to report, nobody to block and no membership to leave, so the header
+   * carries no ⋮ rather than a control that opens an empty box.
+   */
+  it('draws no menu on the assistant thread', () => {
+    thread.current = { ...makeThread('agent'), counterpart: null };
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.queryByRole('button', { name: 'خيارات المحادثة' })).toBeNull();
+  });
+
+  /**
+   * The reported bug this menu exists to fix: it used to stay open until the ⋮
+   * was pressed again, because only `onClick` on the trigger ever wrote the
+   * state. The panel is a Radix menu now, so outside and Escape dismiss it.
+   */
+  it('closes on Escape', async () => {
+    thread.current = makeThread('direct');
+    openMenu();
+    expect(await screen.findByRole('menu')).toBeInTheDocument();
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+
+  it('closes when the press lands outside it', async () => {
+    thread.current = makeThread('direct');
+    openMenu();
+    expect(await screen.findByRole('menu')).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body, { button: 0, pointerType: 'mouse' });
+
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+});
+
+/**
+ * The title names who the thread is with, and that name is the way to their
+ * profile: WhatsApp and Telegram open the contact from the header, and the
+ * site's own answer is `/u/[username]` — whose gate is `verified`, so a member
+ * without a public page keeps a plain title instead of a dead link.
+ */
+describe('ChatThreadView header profile link', () => {
+  it('links a direct thread header to the member profile', () => {
+    thread.current = makeThread('direct');
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('link', { name: 'سارة @sara' })).toHaveAttribute('href', '/u/sara');
+  });
+
+  it('keeps a plain title when the member has no public profile', () => {
+    const base = makeThread('direct');
+    thread.current = {
+      ...base,
+      counterpart: { ...PEER, verified: false },
+      // The header reads the counterpart out of the participants, so the flag
+      // has to travel with the row it actually reads.
+      participants: base.participants.map((participant) =>
+        participant.peer
+          ? { ...participant, peer: { ...participant.peer, verified: false } }
+          : participant
+      ),
+    };
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.queryByRole('link', { name: 'سارة @sara' })).toBeNull();
+  });
+
+  it('links a group member in the roster to their profile', () => {
+    const base = makeThread('group');
+    thread.current = {
+      ...base,
+      participants: [{ ...base.participants[0]!, peer: PEER }, base.participants[1]!],
+    };
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getAllByRole('link', { name: /سارة/ })[0]).toHaveAttribute('href', '/u/sara');
   });
 });
 
@@ -262,11 +348,23 @@ describe('ChatThreadView voice notes', () => {
     thread.current = makeThread('direct');
   });
 
-  it('draws the microphone beside the paperclip in a member thread', () => {
+  it('keeps the paperclip inside the field and swaps the end slot between mic and send', () => {
     render(<ChatThreadView conversationId="c-1" />);
 
+    // The attachment control lives in the field itself, so it is there whether or
+    // not there is something to send.
     expect(screen.getByRole('button', { name: 'إرفاق ملف' })).toBeInTheDocument();
+    // An empty field offers the microphone, never a send button nobody can press.
     expect(screen.getByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'إرسال' })).toBeNull();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'نص الرسالة' }), {
+      target: { value: 'سلام' },
+    });
+
+    // Typing turns the same slot into send, and the microphone stands down.
+    expect(screen.getByRole('button', { name: 'إرسال' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeNull();
   });
 
   it('plays an audio attachment and leaves other files a chip', () => {

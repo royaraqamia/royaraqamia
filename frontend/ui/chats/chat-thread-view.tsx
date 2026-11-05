@@ -30,6 +30,13 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice } from '@/frontend/ui/shared/read-failure';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Button } from '@/frontend/ui/primitives/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/frontend/ui/primitives/dropdown-menu';
+import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
@@ -120,7 +127,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const { user } = useSession();
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -132,6 +138,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const assistant = useChatAssistant(conversationId, Boolean(isAssistant), () => {
     void refresh();
   });
+
+  // A composer that meets the on-screen keyboard is the whole point of the fixed
+  // footer: Chrome and the Android shell shrink `100dvh` themselves
+  // (`interactive-widget: resizes-content`), and this publishes the strip Safari
+  // hides inside the visual viewport instead, which the surface's height takes
+  // off (`app/chats/[id]/page.tsx`).
+  useKeyboardInset();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -301,24 +314,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   };
 
   return (
-    <div className="overflow-x-clip border-y border-border/70 bg-card/60 sm:overflow-hidden sm:rounded-2xl sm:border sm:shadow-xs">
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-x-clip bg-card/60 sm:overflow-hidden sm:rounded-2xl sm:border sm:border-border/70 sm:shadow-xs">
       <ThreadHeader
         thread={thread}
         counterpart={counterpart}
-        menuOpen={menuOpen}
-        onToggleMenu={() => setMenuOpen((open) => !open)}
-        onReport={() => {
-          setMenuOpen(false);
-          setReporting(true);
-        }}
-        onBlock={() => {
-          setMenuOpen(false);
-          setConfirm({ kind: 'block' });
-        }}
-        onLeave={() => {
-          setMenuOpen(false);
-          setConfirm({ kind: 'leave' });
-        }}
+        onReport={() => setReporting(true)}
+        onBlock={() => setConfirm({ kind: 'block' })}
+        onLeave={() => setConfirm({ kind: 'leave' })}
       />
 
       {thread.kind === 'group' && (
@@ -338,94 +340,111 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
       {(notice || error) && (
         <p
           role="alert"
-          className="border-b border-border/40 bg-muted/40 px-4 py-2 text-xs font-medium text-foreground/80"
+          className="shrink-0 border-b border-border/40 bg-muted/40 px-4 py-2 text-xs font-medium text-foreground/80"
         >
           {error ?? notice}
         </p>
       )}
 
       {/*
-        On a phone the thread is the screen, the way it is in WhatsApp: the card
-        has no side border and the message area takes the height the chrome
-        leaves instead of a 60vh box. From `sm` up it is the centred panel it has
-        always been (#1021).
+        The message list is the only thing that scrolls: the header and the
+        composer are the surface's two fixed edges, the way they are in WhatsApp
+        and Telegram, at every width (#1021). The page itself never scrolls here,
+        so the composer cannot be scrolled away from the keyboard.
       */}
-      <div className="flex min-h-[62dvh] flex-col gap-2 overflow-y-auto px-4 py-4 pb-6 sm:max-h-[60vh] sm:min-h-[18rem]">
-        {hasOlder && (
-          <button
-            type="button"
-            onClick={() => void loadOlder()}
-            className="mx-auto rounded-lg px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
-          >
-            {CHAT_THREAD_COPY.loadOlder}
-          </button>
-        )}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4">
+        {/*
+          The last line sits on the composer rather than floating at the top of
+          an empty surface, which is what a short thread looks like in every
+          messenger. `min-h-full` is what keeps that honest: the inner box is at
+          least the list's height (so short content is pushed down) and grows
+          past it when the thread is long (so nothing at the top is cut off, the
+          way `justify-end` alone would).
+        */}
+        <div className="flex min-h-full flex-col justify-end gap-2">
+          {hasOlder && (
+            <button
+              type="button"
+              onClick={() => void loadOlder()}
+              className="mx-auto rounded-lg px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+            >
+              {CHAT_THREAD_COPY.loadOlder}
+            </button>
+          )}
 
-        {messages.length === 0 ? (
-          <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
-        ) : (
-          messages.map((message, index) => {
-            const mine = Boolean(user && message.senderId === user.id);
-            return (
-              <div key={message.id} className="flex w-full flex-col gap-2">
-                {isNewDay(messages[index - 1], message) && <DaySeparator at={message.createdAt} />}
-                <MessageRow
-                  message={message}
-                  mine={mine}
-                  receipt={readReceiptOf(thread, message, mine)}
-                  action={actionByMessage.get(message.id) ?? null}
-                  onResolve={(actionId, answer) => resolveAction(actionId, answer)}
-                  onEdit={edit}
-                  onDownload={(attachmentId) => void handleDownload(attachmentId)}
-                  onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
-                />
+          {messages.length === 0 ? (
+            <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
+          ) : (
+            messages.map((message, index) => {
+              const mine = Boolean(user && message.senderId === user.id);
+              return (
+                <div key={message.id} className="flex w-full flex-col gap-2">
+                  {isNewDay(messages[index - 1], message) && (
+                    <DaySeparator at={message.createdAt} />
+                  )}
+                  <MessageRow
+                    message={message}
+                    mine={mine}
+                    receipt={readReceiptOf(thread, message, mine)}
+                    action={actionByMessage.get(message.id) ?? null}
+                    onResolve={(actionId, answer) => resolveAction(actionId, answer)}
+                    onEdit={edit}
+                    onDownload={(attachmentId) => void handleDownload(attachmentId)}
+                    onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
+                  />
+                </div>
+              );
+            })
+          )}
+
+          {assistant.isStreaming && (
+            <div className="flex w-full flex-col items-start gap-1">
+              <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
+                {assistant.streamingText ? (
+                  <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
+                ) : (
+                  <p className="text-xs italic opacity-70">{ASSISTANT_COPY.thinking}</p>
+                )}
               </div>
-            );
-          })
-        )}
-
-        {assistant.isStreaming && (
-          <div className="flex w-full flex-col items-start gap-1">
-            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-              {assistant.streamingText ? (
-                <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
-              ) : (
-                <p className="text-xs italic opacity-70">{ASSISTANT_COPY.thinking}</p>
-              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* A turn that failed after writing something leaves that text on the
+          {/* A turn that failed after writing something leaves that text on the
             screen, named as unfinished rather than presented as an answer. */}
-        {!assistant.isStreaming && assistant.interrupted && (
-          <div className="flex w-full flex-col items-start gap-1">
-            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
-              <p className="whitespace-pre-wrap break-words">{assistant.interrupted}</p>
+          {!assistant.isStreaming && assistant.interrupted && (
+            <div className="flex w-full flex-col items-start gap-1">
+              <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
+                <p className="whitespace-pre-wrap break-words">{assistant.interrupted}</p>
+              </div>
+              <p className="text-[11px] italic text-muted-foreground">
+                {ASSISTANT_COPY.interrupted}
+              </p>
             </div>
-            <p className="text-[11px] italic text-muted-foreground">{ASSISTANT_COPY.interrupted}</p>
-          </div>
-        )}
+          )}
 
-        {/* What this turn read or proposed, so the member sees the tool that ran
+          {/* What this turn read or proposed, so the member sees the tool that ran
             and the card that is waiting for them (#818). */}
-        {assistant.toolsUsed.length > 0 && (
-          <ul
-            aria-live="polite"
-            className="flex flex-col gap-0.5 text-[11px] text-muted-foreground"
-          >
-            {assistant.toolsUsed.map((line, at) => (
-              <li key={`${at}-${line}`}>· {line}</li>
-            ))}
-          </ul>
-        )}
+          {assistant.toolsUsed.length > 0 && (
+            <ul
+              aria-live="polite"
+              className="flex flex-col gap-0.5 text-[11px] text-muted-foreground"
+            >
+              {assistant.toolsUsed.map((line, at) => (
+                <li key={`${at}-${line}`}>· {line}</li>
+              ))}
+            </ul>
+          )}
 
-        <div ref={bottomRef} />
+          <div ref={bottomRef} />
+        </div>
       </div>
 
       {/* Who is writing, drawn from a broadcast that is never stored (#816). */}
       {typing && (
-        <p aria-live="polite" className="px-4 pb-1 text-[11px] font-medium text-muted-foreground">
+        <p
+          aria-live="polite"
+          className="shrink-0 px-4 pb-1 text-[11px] font-medium text-muted-foreground"
+        >
           {typing}
         </p>
       )}
@@ -555,29 +574,31 @@ type Confirm =
 function ThreadHeader({
   thread,
   counterpart,
-  menuOpen,
-  onToggleMenu,
   onReport,
   onBlock,
   onLeave,
 }: {
   thread: ChatThread;
   counterpart: ReturnType<typeof counterpartOf>;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
   onReport: () => void;
   onBlock: () => void;
   onLeave: () => void;
 }) {
-  return (
-    <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      <Link
-        href="/notifications?tab=chats"
-        aria-label="???? ??? ?????????"
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
-      >
-        <ArrowRight className="size-5" aria-hidden="true" />
-      </Link>
+  /**
+   * The member this thread is about, when the site has a page for them.
+   *
+   * WhatsApp and Telegram both open the contact from the header, and the site's
+   * own answer to "who is this" is `/u/[username]` — the same page the community
+   * links to. `verified` is exactly the gate that page applies (a hidden or
+   * unverified member is 404 there), so the header links only where the link
+   * leads somewhere, and a member without a profile keeps a plain title.
+   */
+  const profileHref =
+    thread.kind === 'direct' && counterpart?.verified
+      ? `/u/${encodeURIComponent(counterpart.username)}`
+      : null;
+  const heading = (
+    <>
       {thread.kind === 'agent' ? (
         <AssistantMark className="size-9" />
       ) : thread.kind === 'group' ? (
@@ -599,7 +620,7 @@ function ThreadHeader({
         )
       )}
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 text-start">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
         {/* The assistant's thread has one participant, so a member count would
             read "1 members"; the assistant is not one (#817). */}
@@ -614,53 +635,73 @@ function ThreadHeader({
           </p>
         )}
       </div>
+    </>
+  );
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={onToggleMenu}
-          aria-label={CHAT_THREAD_COPY.options}
-          aria-expanded={menuOpen}
-          className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
+  /**
+   * An empty menu is not a menu: the assistant's thread has nothing reportable
+   * (the only other writer is the server's model, #817), no counterpart to
+   * block and no membership to leave, so its header carries no ⋮ at all.
+   */
+  const menuItems =
+    (thread.kind !== 'agent' ? 1 : 0) +
+    (thread.kind === 'direct' && counterpart ? 1 : 0) +
+    (thread.kind === 'group' ? 1 : 0);
+
+  return (
+    <div className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
+      <Link
+        href="/notifications?tab=chats"
+        aria-label="العودة إلى المحادثات"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
+      >
+        <ArrowRight className="size-5" aria-hidden="true" />
+      </Link>
+
+      {profileHref ? (
+        <Link
+          href={profileHref}
+          className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-safe hover:bg-muted/40 focus-ring"
         >
-          <EllipsisVertical size={18} />
-        </button>
+          {heading}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">{heading}</div>
+      )}
 
-        {menuOpen && (
-          <div className="absolute end-0 top-10 z-20 w-44 overflow-hidden rounded-xl border border-border/70 bg-popover shadow-lg">
+      {menuItems > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={CHAT_THREAD_COPY.options}
+              className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
+            >
+              <EllipsisVertical size={18} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
             {/* Nothing in an assistant thread is reportable: the only other
                 writer is the server's own model (#817). */}
             {thread.kind !== 'agent' && (
-              <button
-                type="button"
-                onClick={onReport}
-                className="block w-full px-3 py-2 text-start text-xs font-medium text-foreground hover:bg-accent"
-              >
+              <DropdownMenuItem onSelect={onReport} className="text-xs font-medium text-foreground">
                 {CHAT_THREAD_COPY.report}
-              </button>
+              </DropdownMenuItem>
             )}
             {counterpart && (
-              <button
-                type="button"
-                onClick={onBlock}
-                className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
-              >
+              <DropdownMenuItem onSelect={onBlock} className="text-xs font-medium text-destructive">
                 {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
-              </button>
+              </DropdownMenuItem>
             )}
             {/* A direct thread is the pair: it exits by decline, withdraw or block (#842). */}
             {thread.kind === 'group' && (
-              <button
-                type="button"
-                onClick={onLeave}
-                className="block w-full px-3 py-2 text-start text-xs font-medium text-destructive hover:bg-destructive/10"
-              >
+              <DropdownMenuItem onSelect={onLeave} className="text-xs font-medium text-destructive">
                 {CHAT_THREAD_COPY.leave}
-              </button>
+              </DropdownMenuItem>
             )}
-          </div>
-        )}
-      </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
@@ -720,18 +761,19 @@ function GroupRoster({
   return (
     <section
       aria-label={CHAT_THREAD_COPY.rosterLabel}
-      className="border-b border-border/40 px-3 py-2"
+      className="shrink-0 border-b border-border/40 px-3 py-2"
     >
       <ul className="flex items-center gap-1.5 overflow-x-auto">
         {members.map((participant) => {
           const name =
             participant.peer?.name ?? participant.peer?.username ?? CHAT_THREAD_COPY.memberFallback;
-
-          return (
-            <li
-              key={participant.userId}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 py-1 pe-2 ps-1"
-            >
+          // A group member opens their profile, the way tapping a member opens
+          // one in WhatsApp — and only where the site has a page for them.
+          const href = participant.peer?.verified
+            ? `/u/${encodeURIComponent(participant.peer.username)}`
+            : null;
+          const label = (
+            <>
               <MemberAvatar
                 name={name}
                 avatarUrl={participant.peer?.avatarUrl ?? null}
@@ -741,6 +783,24 @@ function GroupRoster({
               <span className="max-w-28 truncate text-[11px] font-medium text-foreground/80">
                 {name}
               </span>
+            </>
+          );
+
+          return (
+            <li
+              key={participant.userId}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 py-1 pe-2 ps-1"
+            >
+              {href ? (
+                <Link
+                  href={href}
+                  className="flex min-w-0 items-center gap-1.5 rounded-full hover:opacity-90"
+                >
+                  {label}
+                </Link>
+              ) : (
+                <span className="flex min-w-0 items-center gap-1.5">{label}</span>
+              )}
               {participant.role === 'owner' && (
                 <span className="text-[10px] text-muted-foreground/70">
                   {CHAT_THREAD_COPY.owner}
@@ -927,17 +987,13 @@ function ThreadFooter({
   }
 
   if (state === 'write') {
-    const quota = thread.attachmentQuota;
-    const todayRemaining = Math.max(0, quota.today.limitBytes - quota.today.usedBytes);
-    const totalRemaining = Math.max(0, quota.total.limitBytes - quota.total.usedBytes);
-
     return (
       <form
         onSubmit={(event) => {
           event.preventDefault();
           onSend();
         }}
-        className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
       >
         <ChatComposer
           value={draft}
@@ -953,22 +1009,14 @@ function ThreadFooter({
           ariaLabel={CHAT_THREAD_COPY.messageLabel}
           sendLabel={CHAT_THREAD_COPY.send}
           sendIcon={<Send size={16} />}
-        >
-          <p className="text-[11px] text-muted-foreground/70">
-            {todayRemaining === 0
-              ? 'بلغت حدّ المرفقات اليوم، يعود غداً.'
-              : totalRemaining === 0
-                ? 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات.'
-                : `المتبقي اليوم: ${formatAttachmentSize(todayRemaining)} · إجمالاً: ${formatAttachmentSize(totalRemaining)}`}
-          </p>
-        </ChatComposer>
+        />
       </form>
     );
   }
 
   if (state === 'answer') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
           <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
@@ -984,7 +1032,7 @@ function ThreadFooter({
 
   if (state === 'waiting') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.waitingComposer.replace('{title}', thread.title)}
         </p>
@@ -999,7 +1047,7 @@ function ThreadFooter({
 
   if (state === 'blocked') {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {CHAT_THREAD_COPY.blockedComposer}
         </p>
@@ -1014,7 +1062,7 @@ function ThreadFooter({
 
   if (state === 'closed' && thread.kind === 'direct' && counterpart) {
     return (
-      <div className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">
           {thread.status === 'declined'
             ? CHAT_THREAD_COPY.closedDeclined
@@ -1030,7 +1078,7 @@ function ThreadFooter({
   }
 
   return (
-    <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+    <p className="shrink-0 border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
       {thread.status === 'declined'
         ? CHAT_THREAD_COPY.declinedComposer
         : CHAT_THREAD_COPY.notMember}
