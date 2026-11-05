@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 47 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 48 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [ ] `habit-list` on **habitflow** · #649
 - [ ] `sync-status-pill` on **habitflow** · #649
@@ -132,6 +132,7 @@ A component is finished when the surface that draws it is native: 47 ported comp
 - [ ] `blogpress-list` on **blogpress** · #952
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
+- [ ] `blogpress-editor` on **blogpress-editor** · #954
 
 ## Where this stands
 

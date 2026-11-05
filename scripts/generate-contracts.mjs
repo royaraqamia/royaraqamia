@@ -180,7 +180,12 @@ export const CONTRACTS = [
   {
     module: 'shared/contracts/blogpress',
     file: 'BlogpressContracts.kt',
-    schemas: ['BlogpressSyncSnapshotSchema', 'BlogpressDeleteSchema', 'RestorePostSnapshotSchema'],
+    schemas: [
+      'BlogpressSyncSnapshotSchema',
+      'BlogpressDeleteSchema',
+      'BlogpressPostSaveSchema',
+      'RestorePostSnapshotSchema',
+    ],
   },
   // The account news page (#950): the reader's source checklist, their private
   // feeds and their proposals. The app draws the same three islands the page

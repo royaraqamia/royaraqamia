@@ -44,6 +44,12 @@ interface PostSettingsDialogProps {
   setMetaTitle: (value: string) => void;
   metaDesc: string;
   setMetaDesc: (value: string) => void;
+  /** The field labels, from the editor's shared copy source (#954). */
+  labels: {
+    slug: string;
+    metaTitle: string;
+    metaDescription: string;
+  };
 }
 
 export const PostSettingsDialog = memo(function PostSettingsDialog({
@@ -61,6 +67,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
   setMetaTitle,
   metaDesc,
   setMetaDesc,
+  labels,
 }: PostSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const siteHost = useMemo(() => {
@@ -126,7 +133,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
 
               <div className="space-y-2.5">
                 <Label htmlFor="slug" className="text-xs font-medium text-muted-foreground">
-                  رابط URL
+                  {labels.slug}
                 </Label>
                 <Input
                   id="slug"
@@ -268,7 +275,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="meta_title" className="text-xs font-medium text-muted-foreground">
-                    عنوان SEO
+                    {labels.metaTitle}
                   </Label>
                   <div className="flex items-center gap-2 text-xs">
                     {isTitleOptimal && (
@@ -329,7 +336,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="meta_desc" className="text-xs font-medium text-muted-foreground">
-                    وصف SEO
+                    {labels.metaDescription}
                   </Label>
                   <div className="flex items-center gap-2 text-xs">
                     {isDescOptimal && (

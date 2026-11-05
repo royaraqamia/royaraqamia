@@ -49,8 +49,9 @@
     },
     {
       "surface": "blogpress-editor",
-      "native": null,
-      "reason": "The app serves the bundled web surface; the product's native screens land in phase 3 (#646)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressEditorScreen.kt",
+      "reason": "The editor's fields, its autosave and its server save are drawn (#954), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "quran",

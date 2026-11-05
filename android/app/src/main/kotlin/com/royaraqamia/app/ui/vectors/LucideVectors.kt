@@ -1123,6 +1123,53 @@ object LucideVectors {
         }.build()
     }
 
+    /** `focus`, the site's own drawing. */
+    val Focus: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "focus",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M3 7V5a2 2 0 0 1 2-2h2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M17 3h2a2 2 0 0 1 2 2v2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M21 17v2a2 2 0 0 1-2 2h-2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M7 21H5a2 2 0 0 1-2-2v-2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `folder-input`, the site's own drawing. */
     val FolderInput: ImageVector by lazy {
         ImageVector.Builder(
@@ -1556,6 +1603,32 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("m7.5 4.27 9 5.15"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `panel-right`, the site's own drawing. */
+    val PanelRight: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "panel-right",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M5 3h14a2 0 0 0 1 2 0v18a2 0 0 0 1 -2 0h-14a2 0 0 0 1 -2 0v-18a2 0 0 0 1 2 0z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M15 3v18"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -2041,6 +2114,39 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M21 3v5h-5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `save`, the site's own drawing. */
+    val Save: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "save",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M7 3v4a1 1 0 0 0 1 1h7"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

@@ -56,6 +56,18 @@ data class BlogpressDelete(
 )
 
 @Serializable
+data class BlogpressPostSave(
+    val id: String,
+    val clientId: String,
+    val slug: String,
+    val content: String,
+    val cover_image: String,
+    val meta_title: String,
+    val meta_desc: String,
+    val updatedAt: String,
+)
+
+@Serializable
 data class RestorePostSnapshot(
     val id: String? = null,
     val slug: String,

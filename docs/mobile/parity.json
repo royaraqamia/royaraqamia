@@ -1457,6 +1457,42 @@
           "copy": "revelationMeccan"
         }
       ]
+    },
+    {
+      "id": "blogpress-editor",
+      "surface": "blogpress-editor",
+      "issue": "#954",
+      "web": {
+        "route": "app/blogpress/(app)/editor/[id]/page.tsx",
+        "component": "app/blogpress/(app)/editor/[id]/editor-content.tsx",
+        "copyModule": "app/blogpress/(app)/editor/[id]/editor-copy.ts",
+        "copyExport": "BLOGPRESS_EDITOR_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressEditorScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressEditorUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/blogpress/BlogpressEditorCopy.kt",
+        "copyObject": "BlogpressEditorCopy"
+      },
+      "copySource": "shared/copy/blogpress-editor.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "saved"
+        },
+        {
+          "name": "Draft",
+          "copy": "unsaved"
+        },
+        {
+          "name": "Saving",
+          "copy": "saving"
+        },
+        {
+          "name": "Failed",
+          "copy": "saveFailed"
+        }
+      ]
     }
   ],
   "exempt": [

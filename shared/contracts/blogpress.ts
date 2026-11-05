@@ -94,6 +94,35 @@ export const BlogpressDeleteSchema = z.object({
 export type BlogpressDelete = z.infer<typeof BlogpressDeleteSchema>;
 
 /**
+ * The editor's autosave as the Outbox replays it (#954).
+ *
+ * The editor owns five fields and the logical write time; everything else on the
+ * row — status, the publication dates, the counters and the pins — is
+ * server-owned and every transition to it has a route of its own. The server
+ * accepts this body as a `PATCH /api/blogpress/posts/{id}`, through the same
+ * `PostSchema` the site's editor sends, so the app cannot queue a field the
+ * site has stopped accepting.
+ *
+ * `updatedAt` is what keeps write order (ADR-0029): a replay older than the
+ * stored row loses at the server instead of overwriting a newer draft.
+ */
+export const BlogpressPostSaveSchema = z.object({
+  id: z.string().uuid('معرِّف منشور غير صالح'),
+  clientId: z.string().uuid('معرِّف منشور غير صالح'),
+  slug: z
+    .string()
+    .min(1, 'الرَّابط مطلوب')
+    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرَّابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
+  content: z.string(),
+  cover_image: z.string(),
+  meta_title: z.string(),
+  meta_desc: z.string(),
+  updatedAt: z.string(),
+});
+
+export type BlogpressPostSave = z.infer<typeof BlogpressPostSaveSchema>;
+
+/**
  * The content half of a deleted post, re-sent by the client to undo a delete.
  *
  * Only editor-owned fields are accepted: `status`, the publication dates,

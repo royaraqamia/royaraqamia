@@ -23,7 +23,7 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import {
   ArrowRight,
-  Loader2,
+  LoaderCircle,
   Check,
   X,
   Save,
@@ -49,6 +49,7 @@ import { PostSettingsDialog } from '@/frontend/ui/blogpress/post-settings-dialog
 import { EditorSidePanel } from '@/frontend/ui/blogpress/editor-side-panel';
 import { PostActionsMenu } from '@/frontend/ui/blogpress/post-actions-menu';
 import { EditorReadingProgress } from '@/frontend/ui/blogpress/editor-reading-progress';
+import { BLOGPRESS_EDITOR_COPY } from './editor-copy';
 
 interface EditorContentProps {
   post: Post;
@@ -193,12 +194,12 @@ export function EditorContent({
         const saved = await persist(fields);
         if (saved) {
           markSaved();
-          toast.success('تمَّ حفظ المنشور');
+          toast.success(BLOGPRESS_EDITOR_COPY.saveSuccess);
         } else {
-          toast.error('حدث خطأ في الحفظ');
+          toast.error(BLOGPRESS_EDITOR_COPY.saveFailed);
         }
       } catch {
-        toast.error('حدث خطأ في الحفظ');
+        toast.error(BLOGPRESS_EDITOR_COPY.saveFailed);
       }
     });
   }, [slug, setSlug, content, coverImage, metaTitle, metaDesc, resolveSlug, markSaved, persist]);
@@ -288,7 +289,7 @@ export function EditorContent({
         toast.success('تمَّ نشر المنشور!');
         router.push(`/community/${finalSlug}`);
       } catch {
-        toast.error('فشل نشر المنشور. حاول مرَّة أخرى.');
+        toast.error(BLOGPRESS_EDITOR_COPY.publishFailed);
       }
     });
   }, [
@@ -355,11 +356,16 @@ export function EditorContent({
               router.push('/blogpress');
             }}
             className="shrink-0 transition-smooth"
-            aria-label="العودة إلى لوحة التحكم"
+            aria-label={BLOGPRESS_EDITOR_COPY.backToDashboard}
           >
             <ArrowRight className="size-4" />
           </Button>
-          <span className="truncate text-sm font-bold text-muted-foreground">تحرير المنشور</span>
+          <span
+            className="truncate text-sm font-bold text-muted-foreground"
+            data-visual="blogpress-editor-title"
+          >
+            {BLOGPRESS_EDITOR_COPY.editingTitle}
+          </span>
           <SyncStatusPill status={sync} />
         </div>
         <div className="flex items-center gap-1">
@@ -380,11 +386,11 @@ export function EditorContent({
                 className="text-muted-foreground hover:text-foreground transition-smooth inline-flex min-h-11"
               >
                 {isUploading ? (
-                  <Loader2 className="size-4 ms-1.5 animate-spin" />
+                  <LoaderCircle className="size-4 ms-1.5 animate-spin" />
                 ) : (
                   <Upload className="size-4 ms-1.5" />
                 )}
-                {isUploading ? 'جاري الرَّفع...' : 'صورة'}
+                {isUploading ? BLOGPRESS_EDITOR_COPY.uploading : BLOGPRESS_EDITOR_COPY.image}
               </Button>
               <PostSettingsDialog
                 excerpt={excerpt}
@@ -401,6 +407,11 @@ export function EditorContent({
                 setMetaTitle={setMetaTitle}
                 metaDesc={metaDesc}
                 setMetaDesc={setMetaDesc}
+                labels={{
+                  slug: BLOGPRESS_EDITOR_COPY.slugLabel,
+                  metaTitle: BLOGPRESS_EDITOR_COPY.metaTitleLabel,
+                  metaDescription: BLOGPRESS_EDITOR_COPY.metaDescLabel,
+                }}
               />
             </>
           )}
@@ -408,8 +419,12 @@ export function EditorContent({
             variant="ghost"
             size="icon-sm"
             onClick={() => setSidePanelOpen((v) => !v)}
-            aria-label={sidePanelOpen ? 'إغلاق اللوحة الجانبيَّة' : 'فتح اللوحة الجانبيَّة'}
-            title={sidePanelOpen ? 'إغلاق اللوحة الجانبيَّة' : 'اللوحة الجانبيَّة (SEO والإحصاءات)'}
+            aria-label={
+              sidePanelOpen ? BLOGPRESS_EDITOR_COPY.panelClose : BLOGPRESS_EDITOR_COPY.panelOpen
+            }
+            title={
+              sidePanelOpen ? BLOGPRESS_EDITOR_COPY.panelClose : BLOGPRESS_EDITOR_COPY.panelOpen
+            }
             className={`text-muted-foreground hover:text-foreground transition-smooth shrink-0 ${
               sidePanelOpen ? 'bg-muted text-foreground' : ''
             }`}
@@ -420,8 +435,12 @@ export function EditorContent({
             variant="ghost"
             size="icon-sm"
             onClick={() => setDistractionFree((v) => !v)}
-            aria-label={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
-            title={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
+            aria-label={
+              distractionFree ? BLOGPRESS_EDITOR_COPY.focusExit : BLOGPRESS_EDITOR_COPY.focusMode
+            }
+            title={
+              distractionFree ? BLOGPRESS_EDITOR_COPY.focusExit : BLOGPRESS_EDITOR_COPY.focusMode
+            }
             className="text-muted-foreground hover:text-foreground transition-smooth shrink-0"
           >
             <Focus className="size-4" />
@@ -459,6 +478,7 @@ export function EditorContent({
               distractionFree ? 'max-w-4xl' : 'max-w-3xl'
             }`}
             ref={editorContainerRef}
+            data-visual="blogpress-editor-content"
           >
             <TiptapEditor
               ref={editorRef}
@@ -466,6 +486,7 @@ export function EditorContent({
               onUpdate={setContent}
               onImageUpload={handleImageUpload}
               onStateChange={() => forceRender()}
+              placeholder={BLOGPRESS_EDITOR_COPY.contentPlaceholder}
               className="flex-1"
             />
           </div>
@@ -513,8 +534,15 @@ export function EditorContent({
               <span
                 className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
               />
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                {isSaving ? 'جاري الحفظ...' : isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
+              <span
+                className="text-xs text-muted-foreground hidden sm:inline"
+                data-visual="blogpress-editor-status"
+              >
+                {isSaving
+                  ? BLOGPRESS_EDITOR_COPY.saving
+                  : isDirty
+                    ? BLOGPRESS_EDITOR_COPY.unsaved
+                    : BLOGPRESS_EDITOR_COPY.saved}
               </span>
             </div>
             <span className="text-muted-foreground/40 hidden sm:inline">·</span>
@@ -546,7 +574,7 @@ export function EditorContent({
                 className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-bold text-warning"
               >
                 <CloudOff className="size-3.5" />
-                النَّشر يتطلَّب اتصالاً
+                {BLOGPRESS_EDITOR_COPY.needsConnection}
               </span>
             )}
             <Button
@@ -556,14 +584,16 @@ export function EditorContent({
               disabled={pending}
               onClick={() => handleSave()}
               className="transition-smooth min-h-11 rounded-full"
+              data-visual="blogpress-editor-save"
             >
               {pending || isSaving ? (
                 <>
-                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جاري الحفظ...
+                  <LoaderCircle className="ms-1.5 size-3.5 animate-spin" />{' '}
+                  {BLOGPRESS_EDITOR_COPY.saving}
                 </>
               ) : (
                 <>
-                  <Save className="ms-1.5 size-3.5" /> حفظ
+                  <Save className="ms-1.5 size-3.5" /> {BLOGPRESS_EDITOR_COPY.save}
                 </>
               )}
             </Button>
@@ -577,11 +607,12 @@ export function EditorContent({
               >
                 {pending ? (
                   <>
-                    <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جاري النَّشر...
+                    <LoaderCircle className="ms-1.5 size-3.5 animate-spin" />{' '}
+                    {BLOGPRESS_EDITOR_COPY.publishing}
                   </>
                 ) : (
                   <>
-                    <Send className="ms-1.5 size-3.5" /> نشر
+                    <Send className="ms-1.5 size-3.5" /> {BLOGPRESS_EDITOR_COPY.publish}
                   </>
                 )}
               </Button>
