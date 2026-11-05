@@ -1,0 +1,94 @@
+{
+  "surface": "linksnap-unlock",
+  "route": "/linksnap/unlock/COMP-2026-UHVW9SG5",
+  "notes": "The protected-link page at rest: the card, its badge, the heading and body, the code the link carried, the password field, the one button and the way back. `origin` is the title, because the app draws the card inside the shell's frame and the page draws it in the document, so the design is the gaps between these boxes rather than where the card lands. `capture` is the card, because it is the region both clients draw identically. The error and offline faces are the form's other states and are not part of this at-rest contract yet.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='unlock-title']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='unlock-card']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "badge",
+          "web": {
+            "selector": "[data-visual='unlock-badge']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-badge"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "body",
+          "web": {
+            "selector": "[data-visual='unlock-body']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-body"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "code",
+          "web": {
+            "selector": "[data-visual='unlock-code']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-code"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "input",
+          "web": {
+            "selector": "[data-visual='unlock-input']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-input"
+          },
+          "properties": ["width", "height", "fontSize", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "submit",
+          "web": {
+            "selector": "[data-visual='unlock-submit']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-submit"
+          },
+          "properties": ["width", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "back",
+          "web": {
+            "selector": "[data-visual='unlock-back']"
+          },
+          "app": {
+            "tag": "linksnap-unlock-back"
+          },
+          "properties": ["top", "height", "fontSize"]
+        }
+      ]
+    }
+  ]
+}

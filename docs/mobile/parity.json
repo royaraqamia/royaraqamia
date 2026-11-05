@@ -1091,6 +1091,42 @@
       ]
     },
     {
+      "id": "linksnap-unlock",
+      "surface": "linksnap-unlock",
+      "issue": "#919",
+      "web": {
+        "route": "app/linksnap/unlock/[code]/page.tsx",
+        "component": "frontend/ui/linksnap/unlock-link-form.tsx",
+        "copyModule": "frontend/ui/linksnap/linksnap-unlock-copy.ts",
+        "copyExport": "LINKSNAP_UNLOCK_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockCopy.kt",
+        "copyObject": "LinksnapUnlockCopy"
+      },
+      "copySource": "shared/copy/linksnap-unlock.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "title"
+        },
+        {
+          "name": "Busy",
+          "copy": "busy"
+        },
+        {
+          "name": "Error",
+          "copy": "wrongPassword"
+        },
+        {
+          "name": "Offline",
+          "copy": "offline"
+        }
+      ]
+    },
+    {
       "id": "chats-list",
       "surface": "chats",
       "issue": "#819",

@@ -1,0 +1,61 @@
+{
+  "surface": "linksnap-unlock",
+  "state": "at-rest",
+  "route": "/linksnap/unlock/COMP-2026-UHVW9SG5",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 358.13,
+      "height": 32,
+      "fontSize": 24,
+      "fontWeight": 700
+    },
+    "card": {
+      "top": 190.13,
+      "width": 361,
+      "height": 471.75,
+      "radius": 24,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "badge": {
+      "top": 320.13,
+      "height": 26,
+      "fontSize": 12,
+      "fontWeight": 500
+    },
+    "body": {
+      "top": 402.13,
+      "height": 22.75,
+      "fontSize": 14
+    },
+    "code": {
+      "top": 432.88,
+      "height": 16,
+      "fontSize": 12,
+      "fontWeight": 700
+    },
+    "input": {
+      "width": 311,
+      "height": 48,
+      "fontSize": 14,
+      "paddingLeft": 16,
+      "paddingRight": 44
+    },
+    "submit": {
+      "width": 311,
+      "height": 52,
+      "fontSize": 16,
+      "fontWeight": 700
+    },
+    "back": {
+      "top": 619.88,
+      "height": 18,
+      "fontSize": 12
+    }
+  }
+}

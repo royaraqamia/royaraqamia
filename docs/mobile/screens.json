@@ -36,9 +36,8 @@
     },
     {
       "surface": "linksnap-unlock",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockScreen.kt",
-      "reason": "Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockScreen.kt"
     },
     {
       "surface": "blogpress",

@@ -430,6 +430,7 @@ class ShellActivity : ComponentActivity() {
                                             code = unlock,
                                             repository = graph.linksnap,
                                             onOpenUrl = ::openExternal,
+                                            onBack = { openRoute("/linksnap") },
                                         )
                                     else ->
                                         VerifyRoutes.codeOf(current)?.let { code ->
