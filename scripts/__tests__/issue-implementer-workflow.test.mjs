@@ -181,4 +181,35 @@ describe('the issue implementer merges what it watched go green', () => {
   it('reports why the merge was refused, not just that it was', () => {
     expect(land).toContain('The merge of #$pr was refused');
   });
+
+  it('closes the issue its merge named, because `Closes` is only a request through the API', () => {
+    // #1061: every implementer merge left its issue open - GitHub had recorded the link,
+    // and only the merge path differed from the web UI's.
+    const mergedAt = land.indexOf('if [ "$state" = "MERGED" ]');
+    expect(mergedAt).toBeGreaterThan(land.indexOf('gh pr merge'));
+    // GitHub's own record of the link, not a regex over a body that may say `Fixes` or
+    // have been edited after the request opened.
+    expect(land).toContain('closingIssuesReferences');
+    expect(land).toContain('gh issue close "$number" --reason completed');
+    expect(land.slice(mergedAt)).toContain('close_linked_issues');
+    // The message that used to claim a close which never happened.
+    expect(land).not.toContain('its Closes line closes the issue');
+  });
+
+  it('does not fail the landing when there is nothing it can close', () => {
+    const start = land.indexOf('close_linked_issues() {');
+    const closer = land.slice(start, land.indexOf('\n}\n', start));
+    expect(start).toBeGreaterThan(-1);
+    expect(closer).toContain('return 0');
+    // Already closed, another repository's issue, and a link that is not an issue are
+    // bookkeeping: the merge already happened, so none of them reports a red round.
+    expect(closer).toContain('CLOSED');
+    expect(closer).toContain('leaving it open');
+    expect(closer).toContain('leaving it alone');
+    expect(closer).not.toMatch(/\bred /);
+  });
+
+  it('closes the linked issue from pr-land too, because the landing script is shared', () => {
+    expect(read('.github/workflows/pr-land.yml')).toContain('bash scripts/ci/land-pull-request.sh');
+  });
 });
