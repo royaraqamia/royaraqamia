@@ -11,7 +11,7 @@
   },
   "notes": {
     "source": "The account news checklist's words, in both clients (#950). The page's view (`frontend/ui/account/news-preferences.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
-    "placeholders": "`{min}` and `{cost}` are the personal digest's minimum story count and credit price, substituted by each client so the sentence has one owner.",
+    "placeholders": "No sentence here carries a value; the categories and regions are the server's own keys, labelled here once for both clients.",
     "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
   },
   "strings": {
@@ -27,8 +27,6 @@
     "saveFailed": "تعذّر حفظ اختيارك. أعد المحاولة.",
     "savedAll": "سترى كل المصادر من الآن.",
     "savedSelected": "حفظنا اختيارك. ستعرض الأخبار هذه المصادر.",
-    "savedPersonal": "حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.",
-    "personalTitle": "مُلخَّص خاص بي",
     "categoryTech": "تقنية",
     "categoryPolitics": "سياسة",
     "categoryReligion": "دين",

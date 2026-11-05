@@ -23,8 +23,6 @@ export const ACCOUNT_NEWS_PREFERENCES_COPY = {
   saveFailed: 'تعذّر حفظ اختيارك. أعد المحاولة.',
   savedAll: 'سترى كل المصادر من الآن.',
   savedSelected: 'حفظنا اختيارك. ستعرض الأخبار هذه المصادر.',
-  savedPersonal: 'حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام.',
-  personalTitle: 'مُلخَّص خاص بي',
   categoryTech: 'تقنية',
   categoryPolitics: 'سياسة',
   categoryReligion: 'دين',

@@ -41,7 +41,7 @@ const BOARD: NewsBoard = {
   search: null,
   hasAnyDigest: true,
   preferences: { selectedSources: 2, filtered: true, fellBack: false },
-  personal: { enabled: true, available: true, active: false, ownSources: null },
+  personal: { available: true, active: false, ownSources: null },
   cards: null,
 };
 

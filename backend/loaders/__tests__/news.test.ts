@@ -40,7 +40,6 @@ import type {
 
 const READER_PREFERENCES: NewsSourcePreferences = {
   sourceIds: ['aljazeera-ar'],
-  personalEnabled: true,
 };
 
 const PREFERENCES_EFFECT: NewsPreferencesEffect = {
@@ -113,7 +112,6 @@ describe('loadNewsBoard personal digest selection', () => {
     expect(result.day).toEqual(shared.day);
     expect(result.preferences).toEqual(PREFERENCES_EFFECT);
     expect(result.personal).toEqual({
-      enabled: true,
       available: false,
       active: false,
       ownSources: null,
@@ -130,7 +128,6 @@ describe('loadNewsBoard personal digest selection', () => {
     expect(result.day).toEqual(personal);
     expect(result.preferences).toBeNull();
     expect(result.personal).toEqual({
-      enabled: true,
       available: true,
       active: true,
       ownSources: null,
@@ -147,7 +144,6 @@ describe('loadNewsBoard personal digest selection', () => {
     expect(mockPersonalGet).toHaveBeenCalledWith('user-1', { date: '2026-10-20' });
     expect(result.day).toEqual(personal);
     expect(result.personal).toEqual({
-      enabled: true,
       available: true,
       active: true,
       ownSources: null,
@@ -167,7 +163,6 @@ describe('loadNewsBoard personal digest selection', () => {
     expect(result.day).toEqual(shared.day);
     expect(result.preferences).toEqual(PREFERENCES_EFFECT);
     expect(result.personal).toEqual({
-      enabled: true,
       available: false,
       active: false,
       ownSources: null,
@@ -183,7 +178,6 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(personal);
     expect(result.personal).toEqual({
-      enabled: true,
       available: true,
       active: true,
       ownSources: null,
@@ -199,7 +193,6 @@ describe('loadNewsBoard personal digest selection', () => {
 
     expect(result.day).toEqual(shared.day);
     expect(result.personal).toEqual({
-      enabled: true,
       available: true,
       active: false,
       ownSources: null,
@@ -274,15 +267,15 @@ describe('loadNewsBoard own sources', () => {
     expect(result.personal?.ownSources).toEqual({ total: 2, contributed: 1 });
   });
 
-  it('still reports them when the personal digest is switched off', async () => {
-    mockPreferencesGet.mockResolvedValue({ sourceIds: [], personalEnabled: false });
+  it('still reports them when there is no personal digest for the day', async () => {
+    mockPreferencesGet.mockResolvedValue({ sourceIds: [] });
     mockGetBoard.mockResolvedValue(board({ day: day('2026-10-26', 'shared-26') }));
+    mockPersonalGet.mockResolvedValue(null);
     mockOwnSourceIds.mockResolvedValue(OWN);
 
     const result = await loadNewsBoard({}, 'mine');
 
     expect(result.personal).toEqual({
-      enabled: false,
       available: false,
       active: false,
       ownSources: { total: 2, contributed: 0 },

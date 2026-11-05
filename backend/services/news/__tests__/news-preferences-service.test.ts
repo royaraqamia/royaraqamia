@@ -24,7 +24,7 @@ const catalogue = { list: vi.fn(async () => CATALOGUE) };
 describe('news preferences service', () => {
   it('reports no selection for an account that never chose', async () => {
     const service = createNewsPreferencesService(repository(), catalogue);
-    expect(await service.get('user-1')).toEqual({ sourceIds: [], personalEnabled: false });
+    expect(await service.get('user-1')).toEqual({ sourceIds: [] });
   });
 
   it('keeps the stored ids in catalogue order and drops retired ones', async () => {
@@ -35,13 +35,11 @@ describe('news preferences service', () => {
     const repo = repository({
       getPreferences: vi.fn(async () => ({
         sourceIds: [second!.id, 'retired-source', first!.id],
-        personalEnabled: true,
       })),
     });
 
     expect(await createNewsPreferencesService(repo, catalogue).get('user-1')).toEqual({
       sourceIds: [first!.id, second!.id],
-      personalEnabled: true,
     });
   });
 
@@ -52,13 +50,11 @@ describe('news preferences service', () => {
     const repo = repository();
     const saved = await createNewsPreferencesService(repo, catalogue).save('user-1', {
       sourceIds: ['not-a-source', first!.id, first!.id],
-      personalEnabled: false,
     });
 
     expect(saved.sourceIds).toEqual([first!.id]);
     expect(repo.savePreferences).toHaveBeenCalledWith('user-1', {
       sourceIds: [first!.id],
-      personalEnabled: false,
     });
   });
 
@@ -67,39 +63,18 @@ describe('news preferences service', () => {
 
     const saved = await createNewsPreferencesService(repo, catalogue).save('user-1', {
       sourceIds: ['example-com'],
-      personalEnabled: false,
     });
 
     expect(saved.sourceIds).toEqual(['example-com']);
-  });
-
-  it('leaves the opt-in alone when the caller only edits the checklist', async () => {
-    const repo = repository({
-      getPreferences: vi.fn(async () => ({ sourceIds: [], personalEnabled: true })),
-    });
-
-    const saved = await createNewsPreferencesService(repo, catalogue).save('user-1', {
-      sourceIds: [],
-    });
-
-    expect(saved.personalEnabled).toBe(true);
-    expect(repo.savePreferences).toHaveBeenCalledWith('user-1', {
-      sourceIds: [],
-      personalEnabled: true,
-    });
   });
 
   it('stores an empty selection as "every source"', async () => {
     const repo = repository();
     const saved = await createNewsPreferencesService(repo, catalogue).save('user-1', {
       sourceIds: [],
-      personalEnabled: false,
     });
 
     expect(saved.sourceIds).toEqual([]);
-    expect(repo.savePreferences).toHaveBeenCalledWith('user-1', {
-      sourceIds: [],
-      personalEnabled: false,
-    });
+    expect(repo.savePreferences).toHaveBeenCalledWith('user-1', { sourceIds: [] });
   });
 });

@@ -11,22 +11,12 @@
  */
 export const ACCOUNT_NEWS_REQUEST_COPY = {
   title: 'أضف مصدرًا',
-  pending: 'أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز.',
   urlLabel: 'رابط المصدر',
   urlPlaceholder: 'https://example.com',
   submitBusy: 'جاري الإرسال…',
   submit: 'إرسال الطلب',
   received: 'استلمنا الرابط، وسيتحقّق منه النظام ويضيفه إلى مصادرك.',
   sendFailed: 'تعذّر إرسال الطلب. أعد المحاولة.',
-  statusResolving: 'جاري التحقّق',
-  statusReady: 'جاهز للمراجعة',
-  statusNeedsReview: 'يحتاج مراجعة',
-  statusApproved: 'مقبول',
-  statusRejected: 'مرفوض',
-  failureUnsupported: 'هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ.',
-  failureNoFeed: 'لم نجد خلاصة RSS أو Atom على هذه الصفحة.',
-  failureUnreachable: 'تعذّر الوصول إلى الرابط.',
-  failureQuota: 'وصلت إلى الحدّ الأقصى من المصادر في خطتك الحالية.',
 } as const;
 
 export type AccountNewsRequestCopyStrings = typeof ACCOUNT_NEWS_REQUEST_COPY;

@@ -100,7 +100,6 @@ export class FeedUnavailableError extends AppError {
   }
 }
 
-const USER_REQUESTS_LIMIT = 20;
 const ADMIN_REQUESTS_LIMIT = 100;
 
 /** The id suffixes one approval may try before giving up (the loop this replaces). */
@@ -144,7 +143,8 @@ function submissionError(error: unknown): never {
 
 export interface NewsSourceRequestsService {
   submit(userId: string, input: NewsSourceRequestInput): Promise<NewsSourceRequest>;
-  listMine(userId: string): Promise<NewsSourceRequest[]>;
+  /** Cancels a link the reader is still waiting on, or clears a refused one. */
+  cancel(userId: string, id: string): Promise<void>;
 }
 
 export interface NewsSourceAdminService {
@@ -245,8 +245,9 @@ export function createNewsSourceRequestsService({
       }
     },
 
-    listMine(userId: string): Promise<NewsSourceRequest[]> {
-      return requests.listForUser(userId, USER_REQUESTS_LIMIT);
+    async cancel(userId: string, id: string): Promise<void> {
+      const removed = await requests.remove(userId, id);
+      if (!removed) throw new NewsSourceRequestNotFoundError();
     },
   };
 }

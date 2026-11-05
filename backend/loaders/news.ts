@@ -194,20 +194,6 @@ export async function loadNewsBoard(
     return { ...shared, personal: null };
   }
 
-  if (!reader.preferences.personalEnabled) {
-    return {
-      ...shared,
-      personal: {
-        enabled: false,
-        available: false,
-        active: false,
-        // Nothing is generated for a reader who has not asked, so nothing of
-        // theirs can be in the digest either.
-        ownSources: summariseOwnSources(reader.ownSourceIds, null),
-      },
-    };
-  }
-
   const personalService = createNewsPersonalDigestServiceFor(reader.client);
   // A search is the retained window as published, so it never answers with a
   // personal digest; the personal read is skipped rather than filtered.
@@ -232,7 +218,6 @@ export async function loadNewsBoard(
   const shownDay = active ? personalDay : shared.day;
 
   const personal: NewsPersonalView = {
-    enabled: true,
     available: personalMatchesDay,
     active,
     ownSources: summariseOwnSources(reader.ownSourceIds, shownDay),

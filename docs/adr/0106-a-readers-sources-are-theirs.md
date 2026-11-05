@@ -80,3 +80,7 @@ So the prompt now says it explicitly, and the list makes it visible:
 
 Not changed: the digest is still the reader's own list, still generated only for a reader who turned it
 on, and still published by the same validator.
+
+## Amendment (2026-11-05): the switch is gone, and the list is one
+
+ADR-0130 draws a reader's own sources as one list — a request until it becomes a feed, the feed afterwards — and ADR-0131 makes the personal digest automatic, so the sentence above about the account page pointing at a toggle no longer holds. Nothing is switched on, the row's state carries what the page used to split across two lists, and the account page is where a pending link is cancelled as well as a feed removed. The page's own-source notice keeps only the 'nothing was published today' half.

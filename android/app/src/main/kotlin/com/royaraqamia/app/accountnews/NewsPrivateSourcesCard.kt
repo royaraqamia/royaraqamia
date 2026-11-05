@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -42,35 +43,55 @@ import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /**
- * The site's list of feeds this account added for itself (#950, ADR-0098).
+ * The site's one list of the reader's own sources (#950, ADR-0098, ADR-0130).
  *
  * The second client of `frontend/ui/account/news-private-sources.tsx`: the same
- * heading, ceiling badge, empty line, broken-feed notice and removal, from
- * `shared/copy/account-news-private.json`. A guest sees nothing here, because
- * the checklist above is where the page asks them to sign in.
+ * heading, ceiling badge, proposal field, rows and removal confirmation, from
+ * `shared/copy/account-news-private.json` and `account-news-request.json`. One
+ * row is one link whatever stage it reached: on its way, refused, or a feed that
+ * is working or has stopped, and the delete acts on whichever it is.
+ *
+ * The digest that reads these feeds is on for every account, so nothing here
+ * offers to switch it on.
  */
 @Composable
 fun NewsPrivateSourcesCard(
     state: NewsPrivateSourcesUiState,
+    requestState: NewsSourceRequestUiState,
+    url: String,
+    onUrlChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    removing: NewsOwnedSource?,
     removingId: String?,
-    enablingDigest: Boolean,
     actionError: String?,
     onRetry: () -> Unit,
-    onEnableDigest: () -> Unit,
-    onRemove: (String) -> Unit,
+    onAskRemove: (NewsOwnedSource) -> Unit,
+    onDismissRemove: () -> Unit,
+    onConfirmRemove: (NewsOwnedSource) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (removing != null) {
+        RemoveDialog(
+            row = removing,
+            busy = removingId == removing.id,
+            onDismiss = onDismissRemove,
+            onConfirm = { onConfirmRemove(removing) },
+        )
+    }
+
     when (state) {
         NewsPrivateSourcesUiState.Loading -> Skeleton(modifier)
         NewsPrivateSourcesUiState.Failed -> Failed(onRetry, modifier)
         is NewsPrivateSourcesUiState.Ready ->
             Ready(
                 summary = state.summary,
+                requestState = requestState,
+                url = url,
                 removingId = removingId,
-                enablingDigest = enablingDigest,
                 actionError = actionError,
-                onEnableDigest = onEnableDigest,
-                onRemove = onRemove,
+                onUrlChange = onUrlChange,
+                onSubmit = onSubmit,
+                onAskRemove = onAskRemove,
                 modifier = modifier,
             )
     }
@@ -78,12 +99,14 @@ fun NewsPrivateSourcesCard(
 
 @Composable
 private fun Ready(
-    summary: NewsPrivateSources,
+    summary: NewsOwnedSources,
+    requestState: NewsSourceRequestUiState,
+    url: String,
     removingId: String?,
-    enablingDigest: Boolean,
     actionError: String?,
-    onEnableDigest: () -> Unit,
-    onRemove: (String) -> Unit,
+    onUrlChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onAskRemove: (NewsOwnedSource) -> Unit,
     modifier: Modifier,
 ) {
     val spacing = LocalRoySpacing.current
@@ -113,14 +136,14 @@ private fun Ready(
 
         if (actionError != null) Alert(actionError)
 
-        if (summary.sources.isNotEmpty() && !summary.personalEnabled) {
-            EnableDigest(
-                busy = enablingDigest,
-                onEnable = onEnableDigest,
-            )
-        }
+        NewsSourceRequestCard(
+            state = requestState,
+            url = url,
+            onUrlChange = onUrlChange,
+            onSubmit = onSubmit,
+        )
 
-        if (summary.sources.isEmpty()) {
+        if (summary.rows.isEmpty()) {
             Text(
                 text = AccountNewsPrivateCopy.EMPTY,
                 modifier =
@@ -135,16 +158,16 @@ private fun Ready(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            for (source in summary.sources) {
-                PrivateRow(
-                    source = source,
-                    removing = removingId == source.id,
-                    onRemove = { onRemove(source.id) },
+            for (row in summary.rows) {
+                OwnedRow(
+                    row = row,
+                    removing = removingId == row.id,
+                    onRemove = { onAskRemove(row) },
                 )
             }
         }
 
-        if (summary.sources.any { it.status == "broken" }) {
+        if (summary.rows.any { it.state == "broken" }) {
             Row(
                 modifier =
                     Modifier
@@ -175,7 +198,7 @@ private fun Ready(
 }
 
 @Composable
-private fun PrivateRow(source: NewsPrivateSource, removing: Boolean, onRemove: () -> Unit) {
+private fun OwnedRow(row: NewsOwnedSource, removing: Boolean, onRemove: () -> Unit) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
 
@@ -192,29 +215,53 @@ private fun PrivateRow(source: NewsPrivateSource, removing: Boolean, onRemove: (
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = source.name,
+                    text = row.name,
                     style = type.small.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = source.url,
+                    text = row.url,
                     style = type.xs.copy(textDirection = TextDirection.Ltr),
                     color = Recipes.Row.labelColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (row.resolvedUrl != null && row.resolvedUrl != row.url) {
+                    Text(
+                        text = row.resolvedUrl,
+                        style = type.xs.copy(textDirection = TextDirection.Ltr),
+                        color = Recipes.Row.labelColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                val failure = NewsText.failureLabel(row.failure)
+                if (row.state == "needs_review" && failure != null) {
+                    Text(
+                        text = failure,
+                        style = type.xs,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (row.state == "rejected" && row.note != null) {
+                    Text(
+                        text = row.note,
+                        style = type.xs,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
-            StatusBadge(status = source.status)
+            StateBadge(state = row.state)
 
             TextButton(
                 onClick = onRemove,
                 enabled = !removing,
                 modifier =
                     Modifier.semantics {
-                        contentDescription = NewsText.removeLabel(source.name)
+                        contentDescription = NewsText.removeLabel(row.name)
                     },
             ) {
                 Icon(
@@ -229,18 +276,24 @@ private fun PrivateRow(source: NewsPrivateSource, removing: Boolean, onRemove: (
 }
 
 @Composable
-private fun StatusBadge(status: String) {
+private fun StateBadge(state: String) {
     val type = LocalRoyTypeScale.current
-    val broken = status == "broken"
     val tone =
-        if (broken) {
-            Recipes.Badge.Tone(
-                surface = RoyColors.destructive.copy(alpha = 0.1f),
-                border = RoyColors.destructive.copy(alpha = 0.3f),
-                content = RoyColors.destructive,
-            )
-        } else {
-            Recipes.Badge.success
+        when (state) {
+            "live" -> Recipes.Badge.success
+            "rejected", "broken" ->
+                Recipes.Badge.Tone(
+                    surface = RoyColors.destructive.copy(alpha = 0.1f),
+                    border = RoyColors.destructive.copy(alpha = 0.3f),
+                    content = RoyColors.destructive,
+                )
+            "needs_review" ->
+                Recipes.Badge.Tone(
+                    surface = RoyColors.warning.copy(alpha = 0.1f),
+                    border = RoyColors.warning.copy(alpha = 0.3f),
+                    content = RoyColors.warning,
+                )
+            else -> Recipes.Badge.neutral
         }
     val size = Recipes.Badge.default(type)
 
@@ -250,12 +303,36 @@ private fun StatusBadge(status: String) {
         border = BorderStroke(Recipes.Badge.borderWidth, tone.border),
     ) {
         Text(
-            text = NewsText.privateStatusLabel(status),
+            text = NewsText.ownedStateLabel(state),
             modifier = Modifier.padding(horizontal = size.paddingX, vertical = size.paddingY),
             style = size.text,
             color = tone.content,
         )
     }
+}
+
+@Composable
+private fun RemoveDialog(
+    row: NewsOwnedSource,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(NewsText.removeTitle(row.state)) },
+        text = { Text(NewsText.removeBody(row.state)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = !busy) {
+                Text(NewsText.removeConfirm(row.state))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(AccountNewsPrivateCopy.REMOVE_CANCEL)
+            }
+        },
+    )
 }
 
 @Composable
@@ -274,43 +351,6 @@ private fun CountBadge(used: Int, cap: Int) {
             style = size.text,
             color = Recipes.Badge.neutral.content,
         )
-    }
-}
-
-@Composable
-private fun EnableDigest(busy: Boolean, onEnable: () -> Unit) {
-    val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = Recipes.Card.radius,
-        color = RoyColors.primary.copy(alpha = 0.05f),
-        border = BorderStroke(1.dp, RoyColors.primary.copy(alpha = 0.3f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(spacing.elementGapSm),
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = AccountNewsPrivateCopy.ENABLE_TITLE,
-                modifier = Modifier.weight(1f),
-                style = type.xs,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TextButton(onClick = onEnable, enabled = !busy) {
-                Text(
-                    text =
-                        if (busy) {
-                            AccountNewsPrivateCopy.ENABLE_BUSY
-                        } else {
-                            AccountNewsPrivateCopy.ENABLE
-                        },
-                    style = type.xs,
-                )
-            }
-        }
     }
 }
 

@@ -5,7 +5,7 @@ import {
 import { request } from '@/frontend/transport/http';
 import type {
   NewsCategory,
-  NewsPrivateSourcesSummary,
+  NewsOwnedSourcesSummary,
   NewsRegion,
   NewsSource,
   NewsSourceDestination,
@@ -37,7 +37,6 @@ export function subscribeToNewsDigestChanges(handlers: PostgresChangeHandlers): 
 export interface NewsSourceSelection {
   sources: NewsSource[];
   selected: string[];
-  personalEnabled: boolean;
 }
 
 /**
@@ -50,83 +49,51 @@ export async function getNewsSourceSelection(): Promise<NewsSourceSelection> {
     success: boolean;
     sources: NewsSource[];
     selected: string[];
-    personalEnabled: boolean;
   }>('/api/me/news-sources', { cache: 'no-store' });
 
   return {
     sources: result.sources,
     selected: result.selected,
-    personalEnabled: result.personalEnabled,
   };
 }
 
-/** Saves the kept ids and the opt-in; an empty source list means "every source". */
+/** Saves the kept ids; an empty source list means "every source". */
 export async function saveNewsSourceSelection(
-  sourceIds: string[],
-  personalEnabled: boolean
-): Promise<{ selected: string[]; personalEnabled: boolean }> {
-  const result = await request<{
-    success: boolean;
-    selected: string[];
-    personalEnabled: boolean;
-  }>('/api/me/news-sources', {
+  sourceIds: string[]
+): Promise<{ selected: string[] }> {
+  const result = await request<{ success: boolean; selected: string[] }>('/api/me/news-sources', {
     method: 'PUT',
-    body: JSON.stringify({ sourceIds, personalEnabled }),
+    body: JSON.stringify({ sourceIds }),
   });
 
-  return { selected: result.selected, personalEnabled: result.personalEnabled };
+  return { selected: result.selected };
 }
 
-/** The proposals this account filed, newest first. */
-export async function getMyNewsSourceRequests(): Promise<NewsSourceRequest[]> {
-  const result = await request<{ success: boolean; requests: NewsSourceRequest[] }>(
-    '/api/me/news-source-requests',
-    { cache: 'no-store' }
-  );
-
-  return result.requests;
-}
-
-/** The feeds this account added for itself, and the plan's ceiling. */
-export async function getMyNewsPrivateSources(): Promise<NewsPrivateSourcesSummary> {
-  const result = await request<{ success: boolean } & NewsPrivateSourcesSummary>(
+/** The reader's one list (ADR-0130): their feeds and the links still on their way. */
+export async function getMyNewsPrivateSources(): Promise<NewsOwnedSourcesSummary> {
+  const result = await request<{ success: boolean } & NewsOwnedSourcesSummary>(
     '/api/me/news-private-sources',
     { cache: 'no-store' }
   );
 
   return {
-    sources: result.sources,
+    rows: result.rows,
     limited: result.limited,
     cap: result.cap,
     used: result.used,
-    personalEnabled: result.personalEnabled,
-  };
-}
-
-/**
- * Turns this account's own digest on, leaving its selection alone.
- *
- * A private source is read by the personal digest and by nothing else, so this
- * is the one action that makes an added feed arrive.
- */
-export async function enableMyPersonalDigest(): Promise<NewsPrivateSourcesSummary> {
-  const result = await request<{ success: boolean } & NewsPrivateSourcesSummary>(
-    '/api/me/news-private-sources',
-    { method: 'PATCH', body: JSON.stringify({ personalEnabled: true }) }
-  );
-
-  return {
-    sources: result.sources,
-    limited: result.limited,
-    cap: result.cap,
-    used: result.used,
-    personalEnabled: result.personalEnabled,
   };
 }
 
 /** Removes one of this account's own feeds. */
 export async function deleteNewsPrivateSource(id: string): Promise<void> {
   await request<{ success: boolean }>(`/api/me/news-private-sources/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** Cancels a link still being read, or clears one that was refused. */
+export async function deleteNewsSourceRequest(id: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/me/news-source-requests/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
 }

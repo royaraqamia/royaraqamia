@@ -91,11 +91,15 @@ export interface NewsSource {
   tier: 1 | 2;
 }
 
-/** The ids a signed-in reader kept; empty means "every source". */
+/**
+ * The ids a signed-in reader kept; empty means "every source".
+ *
+ * A reader's own digest is not an opt-in any more: it is generated for every
+ * account that has something of its own to narrow or to add (ADR-0131), so the
+ * only preference left here is the selection itself.
+ */
 export interface NewsSourcePreferences {
   sourceIds: string[];
-  /** True once the reader asked for a digest of their own (ADR-0079). */
-  personalEnabled: boolean;
 }
 
 /**
@@ -116,7 +120,6 @@ export const newsSourcePreferencesSchema = z.object({
     .array(z.string().trim().regex(NEWS_SOURCE_ID_PATTERN))
     .max(NEWS_MAX_SELECTED_SOURCES)
     .transform((ids) => [...new Set(ids)]),
-  personalEnabled: z.boolean().optional(),
 });
 
 export type NewsSourcePreferencesInput = z.infer<typeof newsSourcePreferencesSchema>;
@@ -139,8 +142,6 @@ export const NEWS_PERSONAL_DIGEST_COST = 5;
 
 /** How the page is presenting the reader's own digest, when they have one. */
 export interface NewsPersonalView {
-  /** The reader opted in. */
-  enabled: boolean;
   /** A personal digest exists for the day being viewed. */
   available: boolean;
   /** The page is showing it rather than the shared digest. */
@@ -291,23 +292,59 @@ export const NEWS_PRIVATE_SOURCE_STATUS_LABELS: Record<NewsPrivateSourceStatus, 
  */
 export const NEWS_PRIVATE_SOURCE_MAX_FAILURES = 3;
 
-/** What the account page holds, and what the plan allows. */
-export interface NewsPrivateSourcesSummary {
-  sources: NewsPrivateSource[];
+/**
+ * The states the reader's own list draws.
+ *
+ * The first four are a request's own states, and the last two are the health of
+ * the feed a request became. There is one badge per row: a link that turned into
+ * a source stops being "approved" and becomes "يعمل" or "توقّف عن العمل", so the
+ * page never shows two answers for one row.
+ */
+export const NEWS_OWNED_SOURCE_STATES = [
+  'resolving',
+  'ready',
+  'needs_review',
+  'rejected',
+  'live',
+  'broken',
+] as const;
+export type NewsOwnedSourceState = (typeof NEWS_OWNED_SOURCE_STATES)[number];
+
+/**
+ * One row of the reader's own list: a feed they hold, or a link still on its way
+ * to becoming one (ADR-0106, ADR-0130).
+ *
+ * `kind` is what the delete acts on — a source is removed from the reader's own
+ * feeds, an open request is cancelled — and it is the server's answer, so the
+ * client never guesses which table a row lives in.
+ */
+export interface NewsOwnedSource {
+  /** The source's id for a feed, the request's id for anything still in flight. */
+  id: string;
+  kind: 'source' | 'request';
+  name: string;
+  /** The link the reader pasted, or the feed actually fetched for a source. */
+  url: string;
+  /** The feed a request resolved to, when it is different from `url`. */
+  resolvedUrl: string | null;
+  state: NewsOwnedSourceState;
+  /** Why the system could not turn the link into a feed; request rows only. */
+  failure: NewsSourceRequestFailure | null;
+  /** An Admin's sentence about a refused row; request rows only. */
+  note: string | null;
+  /** The fetch's last complaint about a feed; source rows only. */
+  lastError: string | null;
+  createdAt: string;
+}
+
+/** What the account page holds: the one list, and what the plan allows. */
+export interface NewsOwnedSourcesSummary {
+  rows: NewsOwnedSource[];
   /** False for a plan with no ceiling (an Admin). */
   limited: boolean;
   cap: number;
   used: number;
-  /**
-   * Whether the personal digest is on. A private source is only ever read by
-   * that digest, so this is what tells the account page to offer the switch
-   * rather than leave a reader wondering why nothing arrives (ADR-0106).
-   */
-  personalEnabled: boolean;
 }
-
-/** The one thing the account page may change about a private source's delivery. */
-export const newsPersonalDigestToggleSchema = z.object({ personalEnabled: z.literal(true) });
 
 export const NEWS_SOURCE_NAME_MAX = 120;
 export const NEWS_SOURCE_URL_MAX = 500;
@@ -582,7 +619,6 @@ export const newsSourcesResponseSchema = z.object({
     })
   ),
   selected: z.array(z.string()),
-  personalEnabled: z.boolean(),
   error: z.string().optional(),
   code: z.string().optional(),
 });
@@ -591,61 +627,34 @@ export const newsSourcesResponseSchema = z.object({
 export const newsSourceSelectionResponseSchema = z.object({
   success: z.boolean(),
   selected: z.array(z.string()),
-  personalEnabled: z.boolean(),
   error: z.string().optional(),
   code: z.string().optional(),
 });
 
+/**
+ * The reader's one list: the feeds they hold and the links still on their way,
+ * in one envelope (ADR-0130). The row is the source of truth for what a delete
+ * would act on, so the two tables never leak into the client's shape.
+ */
 export const newsPrivateSourcesResponseSchema = z.object({
   success: z.boolean(),
-  sources: z.array(
+  rows: z.array(
     z.object({
       id: z.string(),
+      kind: z.enum(['source', 'request']),
       name: z.string(),
       url: z.string(),
-      kind: z.enum(NEWS_SOURCE_KINDS),
-      category: z.enum(NEWS_CATEGORIES),
-      region: z.enum(NEWS_REGIONS),
-      status: z.enum(NEWS_PRIVATE_SOURCE_STATUSES),
-      failureCount: z.number().int(),
+      resolvedUrl: z.string().nullable(),
+      state: z.enum(NEWS_OWNED_SOURCE_STATES),
+      failure: z.enum(NEWS_SOURCE_REQUEST_FAILURES).nullable(),
+      note: z.string().nullable(),
       lastError: z.string().nullable(),
-      lastCheckedAt: z.string().nullable(),
       createdAt: z.string(),
     })
   ),
   limited: z.boolean(),
   cap: z.number().int(),
   used: z.number().int(),
-  personalEnabled: z.boolean(),
-  error: z.string().optional(),
-  code: z.string().optional(),
-});
-
-/** One proposal's audit row; the reader sees what the system made of their link. */
-export const newsSourceRequestsResponseSchema = z.object({
-  success: z.boolean(),
-  requests: z.array(
-    z.object({
-      id: z.string(),
-      url: z.string(),
-      name: z.string(),
-      status: z.enum(NEWS_SOURCE_REQUEST_STATUSES),
-      kind: z.enum(NEWS_SOURCE_KINDS).nullable(),
-      resolvedUrl: z.string().nullable(),
-      failure: z.enum(NEWS_SOURCE_REQUEST_FAILURES).nullable(),
-      failureDetail: z.string().nullable(),
-      attempts: z.number().int(),
-      resolvedAt: z.string().nullable(),
-      category: z.enum(NEWS_CATEGORIES).nullable(),
-      region: z.enum(NEWS_REGIONS).nullable(),
-      tier: z.number().int().nullable(),
-      note: z.string().nullable(),
-      createdAt: z.string(),
-      reviewedAt: z.string().nullable(),
-      sourceId: z.string().nullable(),
-      userSourceId: z.string().nullable(),
-    })
-  ),
   error: z.string().optional(),
   code: z.string().optional(),
 });

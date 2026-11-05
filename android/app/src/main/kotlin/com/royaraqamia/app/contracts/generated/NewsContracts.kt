@@ -12,7 +12,6 @@ data class NewsSourcesResponse(
     val success: Boolean,
     val sources: List<NewsSourcesResponseSourcesItem>,
     val selected: List<String>,
-    val personalEnabled: Boolean,
     val error: String? = null,
     val code: String? = null,
 )
@@ -47,7 +46,6 @@ enum class NewsSourcesResponseSourcesItemRegion {
 data class NewsSourceSelectionResponse(
     val success: Boolean,
     val selected: List<String>,
-    val personalEnabled: Boolean,
     val error: String? = null,
     val code: String? = null,
 )
@@ -55,127 +53,50 @@ data class NewsSourceSelectionResponse(
 @Serializable
 data class NewsPrivateSourcesResponse(
     val success: Boolean,
-    val sources: List<NewsPrivateSourcesResponseSourcesItem>,
+    val rows: List<NewsPrivateSourcesResponseRowsItem>,
     val limited: Boolean,
     val cap: Long,
     val used: Long,
-    val personalEnabled: Boolean,
     val error: String? = null,
     val code: String? = null,
 )
 
 @Serializable
-data class NewsPrivateSourcesResponseSourcesItem(
+data class NewsPrivateSourcesResponseRowsItem(
     val id: String,
+    val kind: NewsPrivateSourcesResponseRowsItemKind,
     val name: String,
     val url: String,
-    val kind: NewsPrivateSourcesResponseSourcesItemKind,
-    val category: NewsPrivateSourcesResponseSourcesItemCategory,
-    val region: NewsPrivateSourcesResponseSourcesItemRegion,
-    val status: NewsPrivateSourcesResponseSourcesItemStatus,
-    val failureCount: Long,
+    val resolvedUrl: String?,
+    val state: NewsPrivateSourcesResponseRowsItemState,
+    val failure: NewsPrivateSourcesResponseRowsItemFailure?,
+    val note: String?,
     val lastError: String?,
-    val lastCheckedAt: String?,
     val createdAt: String,
 )
 
 @Serializable
-enum class NewsPrivateSourcesResponseSourcesItemKind {
-    @SerialName("feed") FEED,
-    @SerialName("telegram") TELEGRAM,
+enum class NewsPrivateSourcesResponseRowsItemKind {
+    @SerialName("source") SOURCE,
+    @SerialName("request") REQUEST,
 }
 
 @Serializable
-enum class NewsPrivateSourcesResponseSourcesItemCategory {
-    @SerialName("tech") TECH,
-    @SerialName("politics") POLITICS,
-    @SerialName("religion") RELIGION,
-    @SerialName("economy") ECONOMY,
-    @SerialName("world") WORLD,
-    @SerialName("other") OTHER,
-}
-
-@Serializable
-enum class NewsPrivateSourcesResponseSourcesItemRegion {
-    @SerialName("arab") ARAB,
-    @SerialName("islamic") ISLAMIC,
-    @SerialName("world") WORLD,
-}
-
-@Serializable
-enum class NewsPrivateSourcesResponseSourcesItemStatus {
+enum class NewsPrivateSourcesResponseRowsItemState {
+    @SerialName("resolving") RESOLVING,
     @SerialName("ready") READY,
+    @SerialName("needs_review") NEEDS_REVIEW,
+    @SerialName("rejected") REJECTED,
+    @SerialName("live") LIVE,
     @SerialName("broken") BROKEN,
 }
 
 @Serializable
-data class NewsSourceRequestsResponse(
-    val success: Boolean,
-    val requests: List<NewsSourceRequestsResponseRequestsItem>,
-    val error: String? = null,
-    val code: String? = null,
-)
-
-@Serializable
-data class NewsSourceRequestsResponseRequestsItem(
-    val id: String,
-    val url: String,
-    val name: String,
-    val status: NewsSourceRequestsResponseRequestsItemStatus,
-    val kind: NewsSourceRequestsResponseRequestsItemKind?,
-    val resolvedUrl: String?,
-    val failure: NewsSourceRequestsResponseRequestsItemFailure?,
-    val failureDetail: String?,
-    val attempts: Long,
-    val resolvedAt: String?,
-    val category: NewsSourceRequestsResponseRequestsItemCategory?,
-    val region: NewsSourceRequestsResponseRequestsItemRegion?,
-    val tier: Long?,
-    val note: String?,
-    val createdAt: String,
-    val reviewedAt: String?,
-    val sourceId: String?,
-    val userSourceId: String?,
-)
-
-@Serializable
-enum class NewsSourceRequestsResponseRequestsItemStatus {
-    @SerialName("resolving") RESOLVING,
-    @SerialName("ready") READY,
-    @SerialName("needs_review") NEEDS_REVIEW,
-    @SerialName("approved") APPROVED,
-    @SerialName("rejected") REJECTED,
-}
-
-@Serializable
-enum class NewsSourceRequestsResponseRequestsItemKind {
-    @SerialName("feed") FEED,
-    @SerialName("telegram") TELEGRAM,
-}
-
-@Serializable
-enum class NewsSourceRequestsResponseRequestsItemFailure {
+enum class NewsPrivateSourcesResponseRowsItemFailure {
     @SerialName("unsupported") UNSUPPORTED,
     @SerialName("no-feed") NO_FEED,
     @SerialName("unreachable") UNREACHABLE,
     @SerialName("quota") QUOTA,
-}
-
-@Serializable
-enum class NewsSourceRequestsResponseRequestsItemCategory {
-    @SerialName("tech") TECH,
-    @SerialName("politics") POLITICS,
-    @SerialName("religion") RELIGION,
-    @SerialName("economy") ECONOMY,
-    @SerialName("world") WORLD,
-    @SerialName("other") OTHER,
-}
-
-@Serializable
-enum class NewsSourceRequestsResponseRequestsItemRegion {
-    @SerialName("arab") ARAB,
-    @SerialName("islamic") ISLAMIC,
-    @SerialName("world") WORLD,
 }
 
 @Serializable

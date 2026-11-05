@@ -62,7 +62,18 @@ export interface NewsSourceRequestsRepository {
    * `NewsSourceRequestDbError` naming that index (#551).
    */
   insert(input: NewNewsSourceRequest): Promise<NewsSourceRequest>;
-  listForUser(userId: string, limit: number): Promise<NewsSourceRequest[]>;
+  /**
+   * The rows the reader's one list still shows above their feeds: everything
+   * that is not an accepted source — on its way, or refused (ADR-0130). A row
+   * that became a source is drawn from `news_user_sources` instead, so it is
+   * excluded here rather than merged twice.
+   */
+  listOwnedPending(userId: string, limit: number): Promise<NewsSourceRequest[]>;
+  /**
+   * Cancels one of the reader's own rows that is not an accepted source; false
+   * when no such row was theirs.
+   */
+  remove(userId: string, id: string): Promise<boolean>;
   /** Pending first, newest first; `status` narrows to one state. */
   listForAdmin(status: NewsSourceRequestStatus | null, limit: number): Promise<NewsSourceRequest[]>;
   findById(id: string): Promise<NewsSourceRequest | null>;

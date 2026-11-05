@@ -24,8 +24,6 @@ object AccountNewsPreferencesCopy {
     const val SAVE_FAILED = "تعذّر حفظ اختيارك. أعد المحاولة."
     const val SAVED_ALL = "سترى كل المصادر من الآن."
     const val SAVED_SELECTED = "حفظنا اختيارك. ستعرض الأخبار هذه المصادر."
-    const val SAVED_PERSONAL = "حفظنا اختيارك. سيُنشأ مُلخَّصك الخاص صباحًا بعد المُلخَّص العام."
-    const val PERSONAL_TITLE = "مُلخَّص خاص بي"
     const val CATEGORY_TECH = "تقنية"
     const val CATEGORY_POLITICS = "سياسة"
     const val CATEGORY_RELIGION = "دين"

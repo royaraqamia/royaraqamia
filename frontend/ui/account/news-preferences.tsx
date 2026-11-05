@@ -63,7 +63,6 @@ export function NewsPreferences() {
   const { user, isLoading: sessionLoading } = useSession();
   const [sources, setSources] = useState<NewsSource[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [personalEnabled, setPersonalEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,7 +74,6 @@ export function NewsPreferences() {
     try {
       const result = await getNewsSourceSelection();
       setSources(result.sources);
-      setPersonalEnabled(result.personalEnabled);
       // "Everything" is stored as an empty list; the picker shows it as all
       // ticked, because that is what the reader sees on /news.
       const kept = result.selected.length > 0 ? result.selected : result.sources.map((s) => s.id);
@@ -152,13 +150,11 @@ export function NewsPreferences() {
     try {
       // All ticked is "everything", stored as an empty list so sources approved
       // later are included by default.
-      await saveNewsSourceSelection(allSelected ? [] : [...selected], personalEnabled);
+      await saveNewsSourceSelection(allSelected ? [] : [...selected]);
       toast.success(
-        personalEnabled
-          ? ACCOUNT_NEWS_PREFERENCES_COPY.savedPersonal
-          : allSelected
-            ? ACCOUNT_NEWS_PREFERENCES_COPY.savedAll
-            : ACCOUNT_NEWS_PREFERENCES_COPY.savedSelected
+        allSelected
+          ? ACCOUNT_NEWS_PREFERENCES_COPY.savedAll
+          : ACCOUNT_NEWS_PREFERENCES_COPY.savedSelected
       );
     } catch (error) {
       toast.error(
@@ -282,39 +278,6 @@ export function NewsPreferences() {
           {ACCOUNT_NEWS_PREFERENCES_COPY.selectAll}
         </Button>
       </div>
-
-      <section className="rounded-2xl border border-border/50 bg-card/60 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">
-              {ACCOUNT_NEWS_PREFERENCES_COPY.personalTitle}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={personalEnabled}
-            aria-label={ACCOUNT_NEWS_PREFERENCES_COPY.personalTitle}
-            onClick={() => setPersonalEnabled((current) => !current)}
-            dir="ltr"
-            className={cn(
-              'relative mt-1 inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
-              personalEnabled
-                ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
-                : 'border-border/70 bg-muted'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
-                personalEnabled ? 'translate-x-0' : 'translate-x-[18px]'
-              )}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

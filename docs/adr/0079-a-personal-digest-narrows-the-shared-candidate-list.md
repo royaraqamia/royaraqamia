@@ -55,3 +55,7 @@ and it is a sentence the picker can say.
 - **Extend the shared digest to 30 stories and filter on read.** Rejected: thirty summaries cost the
   same model call as ten and the shared prompt gets worse for everyone, while a personal digest needs
   a _selection_, not a longer list.
+
+## Amendment (2026-11-05): the opt-in is automatic
+
+ADR-0131 makes the digest automatic for every account that has something of its own to narrow or to add, so 'a reader who opts in' above is now 'a reader the nightly run does not skip'. The cost still follows intent, because a reader with no selection and no private source is skipped by construction; what went away is the switch that let a reader ask for delivery and then see nothing arrive.

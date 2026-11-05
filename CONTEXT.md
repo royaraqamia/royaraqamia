@@ -556,10 +556,18 @@ _Sold as_: مصادر الأخبار
 _Avoid_: Feed settings, subscriptions, personalisation rules
 
 **Source Request**:
-A feed a reader proposed, waiting for a decision. It is an intake record, not a source: only an
-Admin's approval turns it into an Approved Source, and a reader can hold one open request at a time.
+A link a reader proposed. It is a row in the reader's own list until the resolver turns it into an Own
+Source; a link the worker could not read stays a row with its reason, and the reader may cancel it.
 _Sold as_: أضف مصدرًا
 _Avoid_: Suggestion, submission, ticket
+
+**Own Source**:
+A feed one reader holds for their own Personal Digest (`news_user_sources`). It is part of no Source
+List, no other reader can see it, and only that reader's digest reads it. The account page draws Own
+Sources and the Source Requests that have not become one as a single list, one row per link
+(ADR-0130).
+_Sold as_: مصادرك الخاصّة
+_Avoid_: Private feed, custom feed, user feed
 
 **Approved Source**:
 An addition to the Source List that an Admin accepted, stored in `news_sources` and merged on top of
@@ -567,9 +575,10 @@ the repo file by the daily fetch. The file wins any collision, so approval can a
 _Avoid_: Custom source, extra feed, user feed
 
 **Personal Digest**:
-The digest a reader opted into, built by the nightly run from the same fetched candidates narrowed to
-their Source Selection. It is not a second fetch: it is the shared candidate list with fewer items, and
-the same validator gates it.
+The digest built by the nightly run from the same fetched candidates narrowed to a reader's Source
+Selection and their Own Sources, for every account that has either. It is not a second fetch: it is
+the shared candidate list with fewer items, and the same validator gates it. There is no opt-in
+(ADR-0131).
 _Sold as_: مُلخَّصك الخاص
 _Avoid_: Private feed, custom digest, my newsletter
 

@@ -8,7 +8,8 @@ import com.royaraqamia.app.contracts.ApiResult
  * guest prompt, failure and list the page's `news-preferences.tsx` draws.
  *
  * [SignedOut] is separate from [Failed] because a guest can act on it in one tap
- * and cannot act on a 500.
+ * and cannot act on a 500. The digest that reads the selection is on for every
+ * account (ADR-0131), so there is nothing left to switch on here.
  */
 sealed interface NewsPreferencesUiState {
     data object Loading : NewsPreferencesUiState
@@ -20,7 +21,6 @@ sealed interface NewsPreferencesUiState {
     data class Ready(
         val sources: List<NewsSource>,
         val selected: Set<String>,
-        val personalEnabled: Boolean,
     ) : NewsPreferencesUiState
 
     companion object {
@@ -30,7 +30,6 @@ sealed interface NewsPreferencesUiState {
                     Ready(
                         sources = result.value.sources,
                         selected = result.value.selected,
-                        personalEnabled = result.value.personalEnabled,
                     )
                 is ApiResult.Failure ->
                     when (result.error) {

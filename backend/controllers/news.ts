@@ -14,11 +14,7 @@ import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { PLAN_QUOTAS } from '@/shared/contracts/plans';
-import {
-  newsPersonalDigestToggleSchema,
-  newsSourcePreferencesSchema,
-  newsSourceRequestSchema,
-} from '@/shared/contracts/news';
+import { newsSourcePreferencesSchema, newsSourceRequestSchema } from '@/shared/contracts/news';
 
 /** A refusal the form can show as-is, with the status the service chose for it. */
 function serviceErrorResponse(error: unknown, log: string): HttpResult {
@@ -49,7 +45,6 @@ export async function getMyNewsSources(): Promise<HttpResult> {
         success: true,
         sources,
         selected: preferences.sourceIds,
-        personalEnabled: preferences.personalEnabled,
       });
     },
     { mapError: messageError(500, 'تعذّر تحميل مصادر الأخبار.') }
@@ -82,33 +77,21 @@ export async function updateMyNewsSources(body: unknown, headers: Headers): Prom
 
       const preferences = await createNewsPreferencesServiceFor(supabase).save(userId, {
         sourceIds: parsed.data.sourceIds,
-        personalEnabled: parsed.data.personalEnabled,
       });
 
       return jsonResult(200, {
         success: true,
         selected: preferences.sourceIds,
-        personalEnabled: preferences.personalEnabled,
       });
     },
     { mapError: messageError(500, 'تعذّر حفظ مصادر الأخبار.') }
   );
 }
 
-/** The proposals this reader filed, newest first. */
-export async function getMyNewsSourceRequests(): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const requests = await createNewsSourceRequestsServiceFor(supabase).listMine(userId);
-      return jsonResult(200, { success: true, requests });
-    },
-    { mapError: messageError(500, 'تعذّر تحميل طلباتك.') }
-  );
-}
-
 /**
- * The feeds this reader added (ADR-0106): their own list, with the health the
- * digest fetch reported, and the plan's ceiling.
+ * The reader's one list (ADR-0130): the feeds they hold, the links still being
+ * read, and what was refused — with the health the digest fetch reported and the
+ * plan's ceiling.
  *
  * The ceiling travels with the list because it is the one place a reader has to
  * see "1 من 1" before they try to add a second.
@@ -143,31 +126,25 @@ export async function deleteMyNewsPrivateSource(id: string, headers: Headers): P
 }
 
 /**
- * Turns the reader's own digest on, without touching what they selected.
+ * Cancels a link the reader is still waiting on, or clears one that was refused.
  *
- * The button that calls this sits beside their private sources, and is the only
- * place a reader is told why nothing has arrived: a private source is read by
- * their own digest and by nothing else (ADR-0106). It is their click, because a
- * digest costs credits.
+ * It is the other half of the delete on the same list: a row that never became a
+ * feed has a request to remove and no source, and the reader should not have to
+ * know which table their link is in (ADR-0130).
  */
-export async function enableMyPersonalDigest(body: unknown, headers: Headers): Promise<HttpResult> {
+export async function cancelMyNewsSourceRequest(id: string, headers: Headers): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       if (!isSameOrigin(headers)) {
         return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
       }
 
-      if (!newsPersonalDigestToggleSchema.safeParse(body).success) {
-        return jsonResult(400, { success: false, error: 'طلب غير صالح.' });
-      }
+      if (!id) return jsonResult(404, { success: false, error: 'الطلب غير موجود.' });
 
-      const summary =
-        await createNewsPrivateSourcesServiceFor(supabase).enablePersonalDigest(userId);
-      return jsonResult(200, { success: true, ...summary });
+      await createNewsSourceRequestsServiceFor(supabase).cancel(userId, id);
+      return jsonResult(200, { success: true });
     },
-    {
-      mapError: (error) => serviceErrorResponse(error, 'Failed to enable the personal news digest'),
-    }
+    { mapError: (error) => serviceErrorResponse(error, 'Failed to cancel a news source request') }
   );
 }
 

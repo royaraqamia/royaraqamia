@@ -18,7 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The account news reads and writes, against the site's four routes (#950).
+ * The account news reads and writes, against the site's routes (#950).
  *
  * The paths and verbs are asserted as well as the bodies: they are the part a
  * rename on the site breaks silently, and a write made in the app has to be the
@@ -32,40 +32,27 @@ class NewsRepositoryTest {
           "sources": [
             { "id": "tech-daily", "name": "تقنية اليوم", "category": "tech", "region": "arab", "tier": 1 }
           ],
-          "selected": ["tech-daily"],
-          "personalEnabled": true
+          "selected": ["tech-daily"]
         }
         """.trimIndent()
 
-    private val privateBody =
+    private val ownedBody =
         """
         {
           "success": true,
-          "sources": [
-            { "id": "feed-1", "name": "مدوّنة", "url": "https://example.com/feed",
-              "kind": "feed", "category": "tech", "region": "world", "status": "ready",
-              "failureCount": 0, "lastError": null, "lastCheckedAt": null,
-              "createdAt": "2026-11-01T09:00:00.000Z" }
+          "rows": [
+            { "id": "feed-1", "kind": "source", "name": "مدوّنة",
+              "url": "https://example.com/feed", "resolvedUrl": null, "state": "live",
+              "failure": null, "note": null, "lastError": null,
+              "createdAt": "2026-11-01T09:00:00.000Z" },
+            { "id": "request-1", "kind": "request", "name": "t.me",
+              "url": "https://t.me/example", "resolvedUrl": null, "state": "needs_review",
+              "failure": "no-feed", "note": null, "lastError": null,
+              "createdAt": "2026-11-02T09:00:00.000Z" }
           ],
           "limited": true,
           "cap": 3,
-          "used": 1,
-          "personalEnabled": false
-        }
-        """.trimIndent()
-
-    private val requestsBody =
-        """
-        {
-          "success": true,
-          "requests": [
-            { "id": "request-1", "url": "https://example.com", "name": "مصدر",
-              "status": "needs_review", "kind": null, "resolvedUrl": null,
-              "failure": "no-feed", "failureDetail": "no feed", "attempts": 1,
-              "resolvedAt": null, "category": null, "region": null, "tier": null,
-              "note": null, "createdAt": "2026-11-01T09:00:00.000Z",
-              "reviewedAt": null, "sourceId": null, "userSourceId": null }
-          ]
+          "used": 2
         }
         """.trimIndent()
 
@@ -93,7 +80,6 @@ class NewsRepositoryTest {
         assertEquals("tech", selection.sources.single().category)
         assertEquals("arab", selection.sources.single().region)
         assertEquals(setOf("tech-daily"), selection.selected)
-        assertEquals(true, selection.personalEnabled)
         assertEquals("GET", transport.requests.single().method)
         assertEquals("https://app.test/api/me/news-sources", transport.requests.single().url)
     }
@@ -110,8 +96,7 @@ class NewsRepositoryTest {
                       "sources": [
                         { "id": "tech-daily", "name": "تقنية اليوم", "category": "tech", "region": "arab", "tier": 1 }
                       ],
-                      "selected": [],
-                      "personalEnabled": false
+                      "selected": []
                     }
                     """.trimIndent(),
                 )
@@ -126,55 +111,54 @@ class NewsRepositoryTest {
     fun `saving the checklist is the page's PUT with the kept ids`() {
         val transport =
             RecordingTransport {
-                HttpResponse(200, """{"success":true,"selected":["tech-daily"],"personalEnabled":true}""")
+                HttpResponse(200, """{"success":true,"selected":["tech-daily"]}""")
             }
 
-        val result = runBlocking { repository(transport).saveSelection(listOf("tech-daily"), true) }
+        val result = runBlocking { repository(transport).saveSelection(listOf("tech-daily")) }
 
         val write = (result as ApiResult.Success).value
         assertEquals(setOf("tech-daily"), write.selected)
-        assertEquals(true, write.personalEnabled)
         val request = transport.requests.single()
         assertEquals("PUT", request.method)
         assertEquals("https://app.test/api/me/news-sources", request.url)
         assertTrue(request.body.orEmpty().contains("\"sourceIds\":[\"tech-daily\"]"))
-        assertTrue(request.body.orEmpty().contains("\"personalEnabled\":true"))
     }
 
     @Test
-    fun `the private list, its switch and its removal use the page's routes`() {
-        val reads = RecordingTransport { HttpResponse(200, privateBody) }
+    fun `the one list reads both a feed and a request from the page's route`() {
+        val reads = RecordingTransport { HttpResponse(200, ownedBody) }
 
-        val summary = (runBlocking { repository(reads).privateSources() } as ApiResult.Success).value
-        assertEquals(1, summary.used)
+        val summary = (runBlocking { repository(reads).ownedSources() } as ApiResult.Success).value
+
+        assertEquals(2, summary.used)
         assertEquals(3, summary.cap)
-        assertEquals("ready", summary.sources.single().status)
+        assertEquals(listOf("source", "request"), summary.rows.map { it.kind })
+        assertEquals(listOf("live", "needs_review"), summary.rows.map { it.state })
+        assertEquals("no-feed", summary.rows.last().failure)
         assertEquals("https://app.test/api/me/news-private-sources", reads.requests.single().url)
+    }
 
-        val patch = RecordingTransport { HttpResponse(200, privateBody) }
-        runBlocking { repository(patch).enablePersonalDigest() }
-        assertEquals("PATCH", patch.requests.single().method)
-        assertEquals("https://app.test/api/me/news-private-sources", patch.requests.single().url)
-
-        val delete = RecordingTransport { HttpResponse(200, """{"success":true}""") }
-        runBlocking { repository(delete).deletePrivateSource("feed-1") }
-        assertEquals("DELETE", delete.requests.single().method)
+    @Test
+    fun `removing a feed and cancelling a request use their own routes`() {
+        val feed = RecordingTransport { HttpResponse(200, """{"success":true}""") }
+        runBlocking { repository(feed).deletePrivateSource("feed-1") }
+        assertEquals("DELETE", feed.requests.single().method)
         assertEquals(
             "https://app.test/api/me/news-private-sources/feed-1",
-            delete.requests.single().url,
+            feed.requests.single().url,
+        )
+
+        val request = RecordingTransport { HttpResponse(200, """{"success":true}""") }
+        runBlocking { repository(request).deleteRequest("request-1") }
+        assertEquals("DELETE", request.requests.single().method)
+        assertEquals(
+            "https://app.test/api/me/news-source-requests/request-1",
+            request.requests.single().url,
         )
     }
 
     @Test
-    fun `requests are read and submitted on the page's route`() {
-        val reads = RecordingTransport { HttpResponse(200, requestsBody) }
-
-        val rows = (runBlocking { repository(reads).requests() } as ApiResult.Success).value
-        assertEquals("needs_review", rows.single().status)
-        assertEquals("no_feed", rows.single().failure)
-        assertEquals("GET", reads.requests.single().method)
-        assertEquals("https://app.test/api/me/news-source-requests", reads.requests.single().url)
-
+    fun `submitting a link is the page's POST, and the list is read back`() {
         val writes =
             RecordingTransport {
                 HttpResponse(
@@ -189,12 +173,12 @@ class NewsRepositoryTest {
                     """.trimIndent(),
                 )
             }
-        val created =
-            (runBlocking { repository(writes).submitRequest("https://example.com") }
-                as ApiResult.Success)
-                .value
-        assertEquals("resolving", created.status)
+
+        val created = runBlocking { repository(writes).submitRequest("https://example.com") }
+
+        assertTrue(created is ApiResult.Success)
         assertEquals("POST", writes.requests.single().method)
+        assertEquals("https://app.test/api/me/news-source-requests", writes.requests.single().url)
         assertTrue(
             writes.requests.single().body.orEmpty().contains("\"url\":\"https://example.com\"")
         )
