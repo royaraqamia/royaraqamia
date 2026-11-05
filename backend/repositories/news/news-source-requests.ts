@@ -134,16 +134,43 @@ export function createNewsSourceRequestsRepository(
       return mapRequest(data as RequestRow);
     },
 
-    async listForUser(userId: string, limit: number): Promise<NewsSourceRequest[]> {
+    /**
+     * Everything that has not become a source: the rows still being read, the
+     * ones the system could not read, and the ones an Admin refused. An accepted
+     * row is deliberately absent — the reader's feeds are the other half of the
+     * one list (ADR-0130).
+     */
+    async listOwnedPending(userId: string, limit: number): Promise<NewsSourceRequest[]> {
       const { data, error } = await supabase
         .from('news_source_requests')
         .select(REQUEST_COLUMNS)
         .eq('user_id', userId)
+        .is('user_source_id', null)
+        .in('status', [...OPEN_REQUEST_STATUSES, 'rejected'])
         .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) dbError(error);
       return (data ?? []).map((row) => mapRequest(row as RequestRow));
+    },
+
+    /**
+     * Cancels one row the reader owns. The status filter is part of the claim,
+     * exactly as it is for the worker: an accepted or refused row is a record,
+     * not something a delete may quietly remove a source's history of.
+     */
+    async remove(userId: string, id: string): Promise<boolean> {
+      const { data, error } = await supabase
+        .from('news_source_requests')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId)
+        .is('user_source_id', null)
+        .in('status', [...OPEN_REQUEST_STATUSES, 'rejected'])
+        .select('id');
+
+      if (error) dbError(error);
+      return (data ?? []).length > 0;
     },
 
     async listForAdmin(

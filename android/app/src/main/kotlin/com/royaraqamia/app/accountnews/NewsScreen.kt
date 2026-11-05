@@ -26,12 +26,13 @@ import com.royaraqamia.app.theme.RoyColors
 import kotlinx.coroutines.launch
 
 /**
- * The site's `/account/news` as a screen (#950).
+ * The site's `/account/news` as a screen (#950, ADR-0130).
  *
- * The page's three islands, in the page's order: the checklist, the private
- * sources and the proposal form. The screen owns what the page's hooks own — when
- * to read, what a refused write leaves on screen, and the fact that a failed
- * proposal keeps both fields — while the three cards are the pair renderings.
+ * The page's two islands, in the page's order: the checklist, then the one list
+ * of the reader's own sources — the field a link is added with, and the rows it
+ * lands in. The screen owns what the page's hooks own — when to read, what a
+ * refused write leaves on screen, and the confirmation before a row is cleared —
+ * while the two cards are the pair renderings.
  *
  * It is ported and switched off: the shell still hands `/account/news` to the
  * document until the visual gate passes (ADR-0117, ADR-0118).
@@ -56,11 +57,10 @@ fun NewsScreen(
     var privateSources by remember {
         mutableStateOf<NewsPrivateSourcesUiState>(NewsPrivateSourcesUiState.Loading)
     }
+    var removing by remember { mutableStateOf<NewsOwnedSource?>(null) }
     var removingId by remember { mutableStateOf<String?>(null) }
-    var enablingDigest by remember { mutableStateOf(false) }
     var privateError by remember { mutableStateOf<String?>(null) }
 
-    var requests by remember { mutableStateOf<List<NewsRequest>>(emptyList()) }
     var requestState by remember {
         mutableStateOf<NewsSourceRequestUiState>(NewsSourceRequestUiState.Idle)
     }
@@ -73,18 +73,8 @@ fun NewsScreen(
     }
 
     suspend fun readPrivate() {
-        privateSources = NewsPrivateSourcesUiState.Loading
-        privateSources = NewsPrivateSourcesUiState.from(repository.privateSources())
         privateError = null
-    }
-
-    suspend fun readRequests() {
-        when (val result = repository.requests()) {
-            is ApiResult.Success -> requests = result.value
-            // The list is a convenience; the form below still works, exactly as
-            // the page's island treats a failed read.
-            is ApiResult.Failure -> requests = emptyList()
-        }
+        privateSources = NewsPrivateSourcesUiState.from(repository.ownedSources())
     }
 
     LaunchedEffect(repository, signedIn) {
@@ -93,8 +83,8 @@ fun NewsScreen(
             return@LaunchedEffect
         }
         readPreferences()
+        privateSources = NewsPrivateSourcesUiState.Loading
         readPrivate()
-        readRequests()
     }
 
     fun toggleSource(id: String) {
@@ -114,13 +104,6 @@ fun NewsScreen(
         }
     }
 
-    fun togglePersonal() {
-        val current = preferences
-        if (current is NewsPreferencesUiState.Ready) {
-            preferences = current.copy(personalEnabled = !current.personalEnabled)
-        }
-    }
-
     fun save() {
         val current = preferences
         if (current !is NewsPreferencesUiState.Ready || savingPreferences) return
@@ -133,7 +116,7 @@ fun NewsScreen(
             // All ticked is "everything", stored as an empty list, exactly as the
             // page's form saves it.
             val sourceIds = if (allSelected) emptyList() else current.selected.toList()
-            when (val result = repository.saveSelection(sourceIds, current.personalEnabled)) {
+            when (val result = repository.saveSelection(sourceIds)) {
                 is ApiResult.Success ->
                     preferences =
                         current.copy(
@@ -143,7 +126,6 @@ fun NewsScreen(
                                 } else {
                                     result.value.selected
                                 },
-                            personalEnabled = result.value.personalEnabled,
                         )
                 is ApiResult.Failure ->
                     preferencesError =
@@ -153,57 +135,17 @@ fun NewsScreen(
         }
     }
 
-    fun enableDigest() {
-        if (enablingDigest) return
-        scope.launch {
-            enablingDigest = true
-            privateError = null
-            when (val result = repository.enablePersonalDigest()) {
-                is ApiResult.Success -> privateSources = NewsPrivateSourcesUiState.Ready(result.value)
-                is ApiResult.Failure ->
-                    privateError =
-                        NewsFailure.message(result.error, AccountNewsPrivateCopy.ENABLE_FAILED)
-            }
-            enablingDigest = false
-        }
-    }
-
-    fun removeSource(id: String) {
-        if (removingId != null) return
-        scope.launch {
-            removingId = id
-            privateError = null
-            when (val result = repository.deletePrivateSource(id)) {
-                is ApiResult.Success -> {
-                    val current = privateSources
-                    if (current is NewsPrivateSourcesUiState.Ready) {
-                        val summary = current.summary
-                        privateSources =
-                            NewsPrivateSourcesUiState.Ready(
-                                summary.copy(
-                                    sources = summary.sources.filter { it.id != id },
-                                    used = (summary.used - 1).coerceAtLeast(0),
-                                )
-                            )
-                    }
-                }
-                is ApiResult.Failure ->
-                    privateError =
-                        NewsFailure.message(result.error, AccountNewsPrivateCopy.REMOVE_FAILED)
-            }
-            removingId = null
-        }
-    }
-
     fun submit() {
         if (requestState is NewsSourceRequestUiState.Submitting) return
         scope.launch {
             requestState = NewsSourceRequestUiState.Submitting
             when (val result = repository.submitRequest(url.trim())) {
                 is ApiResult.Success -> {
-                    requests = listOf(result.value) + requests
                     url = ""
                     requestState = NewsSourceRequestUiState.Submitted
+                    // The new row is the list's, not the form's: read it back so the
+                    // reader sees the link the moment the server has it (ADR-0130).
+                    readPrivate()
                 }
                 is ApiResult.Failure ->
                     requestState =
@@ -211,6 +153,33 @@ fun NewsScreen(
                             NewsFailure.message(result.error, AccountNewsRequestCopy.SEND_FAILED)
                         )
             }
+        }
+    }
+
+    fun confirmRemove(row: NewsOwnedSource) {
+        if (removingId != null) return
+        scope.launch {
+            removingId = row.id
+            privateError = null
+            val result =
+                if (row.kind == "source") {
+                    repository.deletePrivateSource(row.id)
+                } else {
+                    repository.deleteRequest(row.id)
+                }
+            when (result) {
+                is ApiResult.Success -> {
+                    removing = null
+                    // The ceiling counts a pending row, so the list is read back
+                    // rather than patched: the server already knows what the slot
+                    // and the rows are now.
+                    readPrivate()
+                }
+                is ApiResult.Failure ->
+                    privateError =
+                        NewsFailure.message(result.error, AccountNewsPrivateCopy.REMOVE_FAILED)
+            }
+            removingId = null
         }
     }
 
@@ -238,7 +207,6 @@ fun NewsScreen(
             onSignIn = onSignIn,
             onToggle = ::toggleSource,
             onToggleAll = ::selectAll,
-            onTogglePersonal = ::togglePersonal,
             onSave = ::save,
         )
 
@@ -247,20 +215,8 @@ fun NewsScreen(
 
             NewsPrivateSourcesCard(
                 state = privateSources,
-                removingId = removingId,
-                enablingDigest = enablingDigest,
-                actionError = privateError,
-                onRetry = { scope.launch { readPrivate() } },
-                onEnableDigest = ::enableDigest,
-                onRemove = ::removeSource,
-            )
-
-            Divider()
-
-            NewsSourceRequestCard(
-                state = requestState,
+                requestState = requestState,
                 url = url,
-                requests = requests,
                 onUrlChange = {
                     url = it
                     if (requestState is NewsSourceRequestUiState.Submitted) {
@@ -268,6 +224,13 @@ fun NewsScreen(
                     }
                 },
                 onSubmit = ::submit,
+                removing = removing,
+                removingId = removingId,
+                actionError = privateError,
+                onRetry = { scope.launch { readPrivate() } },
+                onAskRemove = { removing = it },
+                onDismissRemove = { removing = null },
+                onConfirmRemove = ::confirmRemove,
             )
         }
     }

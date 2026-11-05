@@ -375,14 +375,13 @@ describe('NewsBoard digest toggle', () => {
  */
 describe('NewsBoard own sources', () => {
   function withPersonal(overrides: {
-    enabled?: boolean;
     available?: boolean;
     active?: boolean;
     ownSources?: { total: number; contributed: number } | null;
   }): NewsBoardData {
     return {
       ...BOARD,
-      personal: { enabled: true, available: true, active: true, ownSources: null, ...overrides },
+      personal: { available: true, active: true, ownSources: null, ...overrides },
     };
   }
 
@@ -410,28 +409,6 @@ describe('NewsBoard own sources', () => {
 
     expect(await screen.findByText('لم يُنشَر شيء من مصادرك الخاصّة اليوم.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'إدارة المصادر' }).getAttribute('href')).toBe(
-      '/account/news'
-    );
-  });
-
-  it('points at the switch when the digest that would read them is off', async () => {
-    fetchMock.mockResolvedValue(
-      response('no-store', {
-        board: withPersonal({
-          enabled: false,
-          available: false,
-          active: false,
-          ownSources: { total: 2, contributed: 0 },
-        }),
-      })
-    );
-
-    render(<NewsBoard />);
-
-    expect(
-      await screen.findByText('مصادرك الخاصّة لا تصل إلى المُلخَّص حتى تُفعّل مُلخَّصك الخاص.')
-    ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'تفعيل المُلخَّص الخاص' }).getAttribute('href')).toBe(
       '/account/news'
     );
   });

@@ -251,30 +251,16 @@ export function NewsBoard() {
         </div>
       ) : null}
 
-      {view.search === null && personal?.ownSources ? (
-        personal.enabled ? (
-          personal.ownSources.contributed === 0 ? (
-            <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-              <span>لم يُنشَر شيء من مصادرك الخاصّة اليوم.</span>
-              <Link
-                href="/account/news"
-                className="font-bold text-primary underline-offset-4 hover:underline"
-              >
-                إدارة المصادر
-              </Link>
-            </p>
-          ) : null
-        ) : (
-          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            <span>مصادرك الخاصّة لا تصل إلى المُلخَّص حتى تُفعّل مُلخَّصك الخاص.</span>
-            <Link
-              href="/account/news"
-              className="font-bold text-primary underline-offset-4 hover:underline"
-            >
-              تفعيل المُلخَّص الخاص
-            </Link>
-          </p>
-        )
+      {view.search === null && personal?.ownSources && personal.ownSources.contributed === 0 ? (
+        <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <span>لم يُنشَر شيء من مصادرك الخاصّة اليوم.</span>
+          <Link
+            href="/account/news"
+            className="font-bold text-primary underline-offset-4 hover:underline"
+          >
+            إدارة المصادر
+          </Link>
+        </p>
       ) : null}
 
       <div className="mt-8">

@@ -6,11 +6,8 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.contracts.generated.NewsOkResponse
 import com.royaraqamia.app.contracts.generated.NewsPrivateSourcesResponse
-import com.royaraqamia.app.contracts.generated.NewsPrivateSourcesResponseSourcesItem
+import com.royaraqamia.app.contracts.generated.NewsPrivateSourcesResponseRowsItem
 import com.royaraqamia.app.contracts.generated.NewsSourceRequestResponse
-import com.royaraqamia.app.contracts.generated.NewsSourceRequestResponseRequest
-import com.royaraqamia.app.contracts.generated.NewsSourceRequestsResponse
-import com.royaraqamia.app.contracts.generated.NewsSourceRequestsResponseRequestsItem
 import com.royaraqamia.app.contracts.generated.NewsSourceSelectionResponse
 import com.royaraqamia.app.contracts.generated.NewsSourcesResponse
 import com.royaraqamia.app.contracts.generated.NewsSourcesResponseSourcesItem
@@ -32,51 +29,45 @@ data class NewsSource(
 data class NewsSelection(
     val sources: List<NewsSource>,
     val selected: Set<String>,
-    val personalEnabled: Boolean,
 )
 
 /** What the selection write answered once the server had kept it. */
 data class NewsSelectionWrite(
     val selected: Set<String>,
-    val personalEnabled: Boolean,
-)
-
-/** One feed this account added, and the health the digest fetch reported. */
-data class NewsPrivateSource(
-    val id: String,
-    val name: String,
-    val url: String,
-    val status: String,
-    val lastError: String?,
-)
-
-/** The private list with the plan's ceiling and the digest switch. */
-data class NewsPrivateSources(
-    val sources: List<NewsPrivateSource>,
-    val limited: Boolean,
-    val cap: Int,
-    val used: Int,
-    val personalEnabled: Boolean,
-)
-
-/** One proposal's audit row. */
-data class NewsRequest(
-    val id: String,
-    val name: String,
-    val url: String,
-    val status: String,
-    val failure: String?,
-    val resolvedUrl: String?,
-    val note: String?,
 )
 
 /**
- * The account news page's reads and writes (#950): the same four routes the
- * site's three islands call, with the same bodies.
+ * One row of the reader's one list (ADR-0130): a feed they hold, or a link on
+ * its way to becoming one. `kind` decides what a delete acts on and `state` is
+ * the one badge the row draws.
+ */
+data class NewsOwnedSource(
+    val id: String,
+    val kind: String,
+    val name: String,
+    val url: String,
+    val resolvedUrl: String?,
+    val state: String,
+    val failure: String?,
+    val note: String?,
+    val lastError: String?,
+)
+
+/** The one list with the plan's ceiling. */
+data class NewsOwnedSources(
+    val rows: List<NewsOwnedSource>,
+    val limited: Boolean,
+    val cap: Int,
+    val used: Int,
+)
+
+/**
+ * The account news page's reads and writes (#950): the same routes the site's
+ * two islands call, with the same bodies.
  *
- * `/api/me/news-sources` is the checklist, `/api/me/news-private-sources` its
- * private list and digest switch, and `/api/me/news-source-requests` the
- * proposal form and audit list. A write made in the app is therefore visible to
+ * `/api/me/news-sources` is the checklist, `/api/me/news-private-sources` the
+ * one list of feeds and pending links, and `/api/me/news-source-requests` the
+ * proposal and its cancellation. A write made in the app is therefore visible to
  * the page after the next read, because there is one server record rather than
  * a per-client copy (ADR-0098).
  */
@@ -100,7 +91,6 @@ class NewsRepository(private val client: ApiClient) {
                                 } else {
                                     body.selected.toSet()
                                 },
-                            personalEnabled = body.personalEnabled,
                         )
                     )
                 }
@@ -108,10 +98,7 @@ class NewsRepository(private val client: ApiClient) {
             is ApiResult.Failure -> result
         }
 
-    suspend fun saveSelection(
-        sourceIds: List<String>,
-        personalEnabled: Boolean,
-    ): ApiResult<NewsSelectionWrite> =
+    suspend fun saveSelection(sourceIds: List<String>): ApiResult<NewsSelectionWrite> =
         when (
             val result =
                 client.put<NewsSourceSelectionResponse>(
@@ -121,7 +108,6 @@ class NewsRepository(private val client: ApiClient) {
                                 "sourceIds",
                                 buildJsonArray { sourceIds.forEach { add(JsonPrimitive(it)) } },
                             )
-                            put("personalEnabled", personalEnabled)
                         }
                         .toString(),
                 )
@@ -131,60 +117,25 @@ class NewsRepository(private val client: ApiClient) {
                 if (!body.success) {
                     refused(body.error)
                 } else {
-                    ApiResult.Success(
-                        NewsSelectionWrite(
-                            selected = body.selected.toSet(),
-                            personalEnabled = body.personalEnabled,
-                        )
-                    )
+                    ApiResult.Success(NewsSelectionWrite(selected = body.selected.toSet()))
                 }
             }
             is ApiResult.Failure -> result
         }
 
-    suspend fun privateSources(): ApiResult<NewsPrivateSources> =
-        when (val result = client.get<NewsPrivateSourcesResponse>(PRIVATE_SOURCES_PATH)) {
-            is ApiResult.Success -> summaryOf(result.value)
-            is ApiResult.Failure -> result
-        }
-
-    suspend fun enablePersonalDigest(): ApiResult<NewsPrivateSources> =
-        when (
-            val result =
-                client.patch<NewsPrivateSourcesResponse>(
-                    PRIVATE_SOURCES_PATH,
-                    buildJsonObject { put("personalEnabled", true) }.toString(),
-                )
-        ) {
+    suspend fun ownedSources(): ApiResult<NewsOwnedSources> =
+        when (val result = client.get<NewsPrivateSourcesResponse>(OWNED_SOURCES_PATH)) {
             is ApiResult.Success -> summaryOf(result.value)
             is ApiResult.Failure -> result
         }
 
     suspend fun deletePrivateSource(id: String): ApiResult<Unit> =
-        when (val result = client.delete<NewsOkResponse>(privateSourcePath(id))) {
-            is ApiResult.Success ->
-                if (result.value.success) {
-                    ApiResult.Success(Unit)
-                } else {
-                    refused(result.value.error)
-                }
-            is ApiResult.Failure -> result
-        }
+        delete("$OWNED_SOURCES_PATH/${URLEncoder.encode(id, Charsets.UTF_8.name())}")
 
-    suspend fun requests(): ApiResult<List<NewsRequest>> =
-        when (val result = client.get<NewsSourceRequestsResponse>(REQUESTS_PATH)) {
-            is ApiResult.Success -> {
-                val body = result.value
-                if (!body.success) {
-                    refused(body.error)
-                } else {
-                    ApiResult.Success(body.requests.map { it.toDomain() })
-                }
-            }
-            is ApiResult.Failure -> result
-        }
+    suspend fun deleteRequest(id: String): ApiResult<Unit> =
+        delete("$REQUESTS_PATH/${URLEncoder.encode(id, Charsets.UTF_8.name())}")
 
-    suspend fun submitRequest(url: String): ApiResult<NewsRequest> =
+    suspend fun submitRequest(url: String): ApiResult<Unit> =
         when (
             val result =
                 client.post<NewsSourceRequestResponse>(
@@ -195,29 +146,34 @@ class NewsRepository(private val client: ApiClient) {
                         .toString(),
                 )
         ) {
-            is ApiResult.Success -> {
-                val body = result.value
-                val request = body.request
-                if (!body.success || request == null) {
-                    refused(body.error)
-                } else {
-                    ApiResult.Success(request.toDomain())
-                }
-            }
+            // Only the refusal is drawn here: the list above is what shows the new
+            // row once it is read again (ADR-0130).
+            is ApiResult.Success ->
+                if (result.value.success) ApiResult.Success(Unit) else refused(result.value.error)
             is ApiResult.Failure -> result
         }
 
-    private fun summaryOf(body: NewsPrivateSourcesResponse): ApiResult<NewsPrivateSources> =
+    private suspend fun delete(path: String): ApiResult<Unit> =
+        when (val result = client.delete<NewsOkResponse>(path)) {
+            is ApiResult.Success ->
+                if (result.value.success) {
+                    ApiResult.Success(Unit)
+                } else {
+                    refused(result.value.error)
+                }
+            is ApiResult.Failure -> result
+        }
+
+    private fun summaryOf(body: NewsPrivateSourcesResponse): ApiResult<NewsOwnedSources> =
         if (!body.success) {
             refused(body.error)
         } else {
             ApiResult.Success(
-                NewsPrivateSources(
-                    sources = body.sources.map { it.toDomain() },
+                NewsOwnedSources(
+                    rows = body.rows.map { it.toDomain() },
                     limited = body.limited,
                     cap = body.cap.toInt(),
                     used = body.used.toInt(),
-                    personalEnabled = body.personalEnabled,
                 )
             )
         }
@@ -230,35 +186,17 @@ class NewsRepository(private val client: ApiClient) {
             region = region.name.lowercase(),
         )
 
-    private fun NewsPrivateSourcesResponseSourcesItem.toDomain(): NewsPrivateSource =
-        NewsPrivateSource(
+    private fun NewsPrivateSourcesResponseRowsItem.toDomain(): NewsOwnedSource =
+        NewsOwnedSource(
             id = id,
+            kind = kind.name.lowercase(),
             name = name,
             url = url,
-            status = status.name.lowercase(),
+            resolvedUrl = resolvedUrl,
+            state = state.name.lowercase(),
+            failure = failure?.name?.lowercase()?.replace('_', '-'),
+            note = note,
             lastError = lastError,
-        )
-
-    private fun NewsSourceRequestsResponseRequestsItem.toDomain(): NewsRequest =
-        NewsRequest(
-            id = id,
-            name = name,
-            url = url,
-            status = status.name.lowercase(),
-            failure = failure?.name?.lowercase(),
-            resolvedUrl = resolvedUrl,
-            note = note,
-        )
-
-    private fun NewsSourceRequestResponseRequest.toDomain(): NewsRequest =
-        NewsRequest(
-            id = id,
-            name = name,
-            url = url,
-            status = status.name.lowercase(),
-            failure = failure?.name?.lowercase(),
-            resolvedUrl = resolvedUrl,
-            note = note,
         )
 
     /** A body the server refused, with its own sentence when it carried one. */
@@ -267,11 +205,8 @@ class NewsRepository(private val client: ApiClient) {
 
     companion object {
         const val SOURCES_PATH = "/api/me/news-sources"
-        const val PRIVATE_SOURCES_PATH = "/api/me/news-private-sources"
+        const val OWNED_SOURCES_PATH = "/api/me/news-private-sources"
         const val REQUESTS_PATH = "/api/me/news-source-requests"
-
-        fun privateSourcePath(id: String): String =
-            "$PRIVATE_SOURCES_PATH/${URLEncoder.encode(id, Charsets.UTF_8.name())}"
     }
 }
 

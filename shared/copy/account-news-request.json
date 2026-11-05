@@ -10,27 +10,17 @@
     "object": "AccountNewsRequestCopy"
   },
   "notes": {
-    "source": "The account news source-request form and its audit list, in both clients (#950), from the page's `frontend/ui/account/news-source-request.tsx`.",
-    "placeholders": "No sentence here carries a value; the row's own name and URL are data, not copy.",
+    "source": "The account news source-request field, in both clients (#950). The row's state and its refusal live in the one list beside it (`account-news-private`), so a link is only described in one place (ADR-0130).",
+    "placeholders": "No sentence here carries a value; the reader's own URL is data, not copy.",
     "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
   },
   "strings": {
     "title": "أضف مصدرًا",
-    "pending": "أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز.",
     "urlLabel": "رابط المصدر",
     "urlPlaceholder": "https://example.com",
     "submitBusy": "جاري الإرسال…",
     "submit": "إرسال الطلب",
     "received": "استلمنا الرابط، وسيتحقّق منه النظام ويضيفه إلى مصادرك.",
-    "sendFailed": "تعذّر إرسال الطلب. أعد المحاولة.",
-    "statusResolving": "جاري التحقّق",
-    "statusReady": "جاهز للمراجعة",
-    "statusNeedsReview": "يحتاج مراجعة",
-    "statusApproved": "مقبول",
-    "statusRejected": "مرفوض",
-    "failureUnsupported": "هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ.",
-    "failureNoFeed": "لم نجد خلاصة RSS أو Atom على هذه الصفحة.",
-    "failureUnreachable": "تعذّر الوصول إلى الرابط.",
-    "failureQuota": "وصلت إلى الحدّ الأقصى من المصادر في خطتك الحالية."
+    "sendFailed": "تعذّر إرسال الطلب. أعد المحاولة."
   }
 }

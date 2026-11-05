@@ -13,20 +13,10 @@ package com.royaraqamia.app.accountnews
  */
 object AccountNewsRequestCopy {
     const val TITLE = "أضف مصدرًا"
-    const val PENDING = "أحد روابطك قيد التحقّق الآن. يمكنك إضافة غيره، وسيظهر كلٌّ منهما حين يجهز."
     const val URL_LABEL = "رابط المصدر"
     const val URL_PLACEHOLDER = "https://example.com"
     const val SUBMIT_BUSY = "جاري الإرسال…"
     const val SUBMIT = "إرسال الطلب"
     const val RECEIVED = "استلمنا الرابط، وسيتحقّق منه النظام ويضيفه إلى مصادرك."
     const val SEND_FAILED = "تعذّر إرسال الطلب. أعد المحاولة."
-    const val STATUS_RESOLVING = "جاري التحقّق"
-    const val STATUS_READY = "جاهز للمراجعة"
-    const val STATUS_NEEDS_REVIEW = "يحتاج مراجعة"
-    const val STATUS_APPROVED = "مقبول"
-    const val STATUS_REJECTED = "مرفوض"
-    const val FAILURE_UNSUPPORTED = "هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ."
-    const val FAILURE_NO_FEED = "لم نجد خلاصة RSS أو Atom على هذه الصفحة."
-    const val FAILURE_UNREACHABLE = "تعذّر الوصول إلى الرابط."
-    const val FAILURE_QUOTA = "وصلت إلى الحدّ الأقصى من المصادر في خطتك الحالية."
 }

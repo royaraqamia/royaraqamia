@@ -20,6 +20,7 @@ import {
   NewsSourceAlreadyQueuedError,
   NewsSourceFeedRequiredError,
   NewsSourceRequestDecidedError,
+  NewsSourceRequestNotFoundError,
   NewsSourceRequestResolvingError,
   NewsSourceUrlInvalidError,
 } from '@/backend/services/news/news-source-requests-service';
@@ -88,7 +89,8 @@ function requests(
         resolvedAt: null,
       })
     ),
-    listForUser: vi.fn(async () => []),
+    listOwnedPending: vi.fn(async () => []),
+    remove: vi.fn(async () => true),
     listForAdmin: vi.fn(async () => []),
     findById: vi.fn(async () => request()),
     approve: vi.fn(async (input) =>
@@ -305,6 +307,22 @@ describe('news source requests service', () => {
         url: 'https://example.com/rss',
       })
     ).rejects.toBe(error);
+  });
+
+  it('cancels a link the reader owns', async () => {
+    const repo = requests();
+
+    await createNewsSourceRequestsService(deps({ requests: repo })).cancel('user-1', 'request-1');
+
+    expect(repo.remove).toHaveBeenCalledWith('user-1', 'request-1');
+  });
+
+  it('answers a link that is not the reader’s as missing', async () => {
+    const repo = requests({ remove: vi.fn(async () => false) });
+
+    await expect(
+      createNewsSourceRequestsService(deps({ requests: repo })).cancel('user-1', 'someone-else')
+    ).rejects.toBeInstanceOf(NewsSourceRequestNotFoundError);
   });
 });
 

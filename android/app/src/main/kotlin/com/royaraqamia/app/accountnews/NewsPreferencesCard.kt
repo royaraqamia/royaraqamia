@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,8 +51,7 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  *
  * The second client of `frontend/ui/account/news-preferences.tsx`: the same four
  * states ([NewsPreferencesUiState]), the same category groups, the same
- * fully-ticked "everything" default, the same personal-digest switch, and the
- * same words from `shared/copy/account-news-preferences.json`.
+ * fully-ticked "everything" default, and the same words from `shared/copy/account-news-preferences.json`.
  *
  * The card is a rendering of the state it is given. The screen owns the read,
  * the save and the action error, exactly as the page's island does.
@@ -67,7 +65,6 @@ fun NewsPreferencesCard(
     onSignIn: () -> Unit,
     onToggle: (String) -> Unit,
     onToggleAll: () -> Unit,
-    onTogglePersonal: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -82,7 +79,6 @@ fun NewsPreferencesCard(
                 actionError = actionError,
                 onToggle = onToggle,
                 onToggleAll = onToggleAll,
-                onTogglePersonal = onTogglePersonal,
                 onSave = onSave,
                 modifier = modifier,
             )
@@ -96,7 +92,6 @@ private fun Ready(
     actionError: String?,
     onToggle: (String) -> Unit,
     onToggleAll: () -> Unit,
-    onTogglePersonal: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier,
 ) {
@@ -171,11 +166,6 @@ private fun Ready(
                 )
             }
         }
-
-        PersonalDigest(
-            enabled = state.personalEnabled,
-            onToggle = onTogglePersonal,
-        )
     }
 }
 
@@ -245,43 +235,6 @@ private fun SourceRow(
                     )
                 }
             }
-        }
-    }
-}
-
-/** The personal-digest switch, with the sentence that makes it worth turning on. */
-@Composable
-private fun PersonalDigest(enabled: Boolean, onToggle: () -> Unit) {
-    val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = Recipes.Card.radius,
-        color = Recipes.Card.container,
-        border = Recipes.Card.border,
-    ) {
-        Row(
-            modifier = Modifier.padding(Recipes.Card.padding(spacing)),
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = AccountNewsPreferencesCopy.PERSONAL_TITLE,
-                    style = type.small.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-
-            Switch(
-                checked = enabled,
-                onCheckedChange = { onToggle() },
-                modifier =
-                    Modifier.semantics {
-                        contentDescription = AccountNewsPreferencesCopy.PERSONAL_TITLE
-                    },
-            )
         }
     }
 }
@@ -489,10 +442,4 @@ private fun Failed(onRetry: () -> Unit, modifier: Modifier) {
 /** The site's catalogue order. Internal keys, not the reader's words. */
 private val CATEGORY_ORDER =
     listOf("tech", "politics", "religion", "economy", "world", "other")
-
-/** `NEWS_PERSONAL_DIGEST_MIN_STORIES` in `shared/contracts/news.ts`. */
-private const val PERSONAL_MIN_STORIES = 3
-
-/** `NEWS_PERSONAL_DIGEST_COST` in `shared/contracts/news.ts`. */
-private const val PERSONAL_DIGEST_COST = 5
 

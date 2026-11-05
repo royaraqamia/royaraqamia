@@ -1,7 +1,7 @@
 {
   "surface": "account-news",
   "route": "/account/news",
-  "notes": "The account news page at rest, and with an empty private list: the title, the first catalogue row, the private-sources section and the source-request form. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. The states after a save or a refused proposal are separate recordings and are not part of this contract yet.",
+  "notes": "The account news page at rest, and with an empty own-sources list: the title, the first catalogue row, the one section for the reader's own sources (the proposal field inside it and the empty list), and ADR-0130 is why the field and the rows are one box. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. The states after a save or a refused proposal are separate recordings and are not part of this contract yet.",
   "states": [
     {
       "name": "at-rest",

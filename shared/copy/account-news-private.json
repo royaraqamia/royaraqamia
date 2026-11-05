@@ -10,8 +10,8 @@
     "object": "AccountNewsPrivateCopy"
   },
   "notes": {
-    "source": "The account news private-sources list in both clients (#950), from the page's `frontend/ui/account/news-private-sources.tsx`.",
-    "placeholders": "`{name}` is the feed's own name, substituted by each client.",
+    "source": "The account news one-list section's words, in both clients (#950, ADR-0130). The page's view (`frontend/ui/account/news-private-sources.tsx`) is the reference: every string here was written there first, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "placeholders": "`{name}` is the row's own name, substituted by each client.",
     "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference view does not render or a state the app declares but does not draw."
   },
   "strings": {
@@ -19,17 +19,30 @@
     "loadingLabel": "جاري تحميل مصادرك",
     "loadFailed": "تعذّر تحميل مصادرك الخاصّة. أعد المحاولة.",
     "retry": "إعادة المحاولة",
-    "empty": "لا مصادر خاصّة بعد. ألصق رابطًا في الحقل أعلاه، وسيتحقّق منه النظام ويضيفه هنا.",
-    "enableTitle": "مصادرك جاهزة، لكن مُلخَّصك الخاص مُتوقّف — ومصادرك الخاصّة لا تظهر في غيره. شغّله لتصلك أخبارها صباحًا.",
-    "enableBusy": "جاري التشغيل…",
-    "enable": "شغّل مُلخَّصي الخاص",
-    "enableSucceeded": "شغّلنا مُلخَّصك الخاص؛ ستصل أخبار هذه المصادر صباحًا.",
-    "enableFailed": "تعذّر تشغيل المُلخَّص. أعد المحاولة.",
-    "removed": "أزلنا المصدر من قائمتك.",
-    "removeFailed": "تعذّر إزالة المصدر. أعد المحاولة.",
+    "empty": "لا مصادر بعد. ألصق رابطًا في الحقل أعلاه، وسيتحقّق منه النظام ويضيفه هنا.",
+    "removedSource": "أزلنا المصدر من قائمتك.",
+    "removedRequest": "أزلنا الطلب من قائمتك.",
+    "removeFailed": "تعذّرت الإزالة. أعد المحاولة.",
     "removeAria": "إزالة {name}",
-    "statusReady": "يعمل",
+    "statusResolving": "جاري التحقّق",
+    "statusReady": "جاهز للمراجعة",
+    "statusNeedsReview": "يحتاج مراجعة",
+    "statusRejected": "مرفوض",
+    "statusLive": "يعمل",
     "statusBroken": "توقّف عن العمل",
-    "brokenNotice": "لم نعد نستطيع قراءة أحد مصادرك، فأوقفنا جلبها. أضف الرابط من جديد أو أزلها من القائمة."
+    "failureUnsupported": "هذه المنصّة لا تسمح بقراءة عامّة، ويحتاج مصدرها إلى إدخال يدويّ.",
+    "failureNoFeed": "لم نجد خلاصة RSS أو Atom على هذه الصفحة.",
+    "failureUnreachable": "تعذّر الوصول إلى الرابط.",
+    "failureQuota": "وصلت إلى الحدّ الأقصى من المصادر في خطتك الحالية.",
+    "brokenNotice": "لم نعد نستطيع قراءة أحد مصادرك، فأوقفنا جلبها. أضف الرابط من جديد أو أزلها من القائمة.",
+    "removeLiveTitle": "إزالة المصدر؟",
+    "removeLiveBody": "سيتوقّف جلب أخبار هذا المصدر، ولن يظهر في مُلخَّصك بعد الآن.",
+    "removePendingTitle": "إلغاء الطلب؟",
+    "removePendingBody": "لم يصل هذا الرابط إلى مصادرك بعد، وسيتوقّف التحقّق منه.",
+    "removeRefusedTitle": "إزالة الطلب؟",
+    "removeRefusedBody": "سيختفي هذا الطلب من قائمتك. يمكنك إضافة الرابط من جديد متى شئت.",
+    "removeConfirm": "إزالة",
+    "removeConfirmPending": "إلغاء الطلب",
+    "removeCancel": "إلغاء"
   }
 }
