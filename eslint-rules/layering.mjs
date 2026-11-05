@@ -48,11 +48,6 @@ const ZONES = [
     importer: /^backend\/services\//,
     forbidden: [alias('backend/(repositories|clients)')],
     why: 'a service depends on the interface it declares, and `backend/config` wires it',
-    // Off until #980 is done. The zone is correct — it is what `docs/architecture.md`
-    // says — but 34 existing services import a repository or client by value, and a rule
-    // that lands red teaches people to bypass it. #980 makes them type imports and routes
-    // the rest through the container; the line below is what turns it on.
-    enabled: false,
   },
 ];
 
