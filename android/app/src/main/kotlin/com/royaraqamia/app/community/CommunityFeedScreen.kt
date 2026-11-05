@@ -1,10 +1,13 @@
 package com.royaraqamia.app.community
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,8 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +27,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,6 +48,24 @@ import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import kotlinx.coroutines.launch
+
+/**
+ * The visual gate's handles on the feed (#901, `shared/visual/community.json`).
+ *
+ * The card's tags live on the components the screen ships rather than on a copy
+ * the test draws, so what is measured is what a member sees. The load-more's box
+ * is the page's own pill: 44dp tall with the label's 14sp bold type and 32dp of
+ * horizontal padding, because the page's anchor is `h-11 px-8 text-sm font-bold`.
+ */
+object CommunityFeedMetrics {
+    const val CARD = "community-card"
+    const val CARD_CONTENT = "community-card-content"
+    const val LOAD_MORE = "community-load-more"
+    const val LOAD_MORE_REGION = "community-load-more-region"
+    const val CARD_RADIUS = 24
+    const val LOAD_MORE_HEIGHT = 44
+    const val LOAD_MORE_PADDING = 32
+}
 
 /**
  * `/community` as a screen (#658).
@@ -147,13 +174,16 @@ private fun Feed(
     onOpenProfile: (String) -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding =
             PaddingValues(
-                horizontal = spacing.containerPadding,
+                // The page's feed sits inside two containers (`main` and the page's
+                // own `max-w-7xl`), so its column is 32px in from the viewport at
+                // 393 rather than the shell's usual 16. The app draws no outer
+                // container, so the card keeps the page's width by taking both.
+                horizontal = spacing.containerPadding * 2,
                 vertical = spacing.elementGapSm,
             ),
         verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
@@ -185,23 +215,51 @@ private fun Feed(
                         onRetry = onLoadMore,
                     )
                 } else {
-                    OutlinedButton(
-                        onClick = onLoadMore,
-                        enabled = !loadingMore,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            text =
-                                if (loadingMore) {
-                                    CommunityFeedCopy.LOADING
-                                } else {
-                                    CommunityFeedCopy.LOAD_MORE
-                                },
-                            style = type.small.copy(fontWeight = FontWeight.Bold),
-                        )
-                    }
+                    LoadMore(loading = loadingMore, onLoadMore = onLoadMore)
                 }
             }
+        }
+    }
+}
+
+/**
+ * The page's `LoadMore` control: a centred pill, `h-11 px-8 text-sm font-bold`,
+ * with the same words from the same copy source.
+ *
+ * It is not a Material button: the page's anchor is a pill with a 1px border and
+ * a translucent muted fill, and the gate measures the box rather than trusting a
+ * lookalike. The label is a button label, so the page's `aria-label` sentence is
+ * the app's content description.
+ */
+@Composable
+private fun LoadMore(loading: Boolean, onLoadMore: () -> Unit) {
+    val type = LocalRoyTypeScale.current
+
+    Row(
+        modifier =
+            Modifier.fillMaxWidth().testTag(CommunityFeedMetrics.LOAD_MORE_REGION),
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier =
+                Modifier.height(CommunityFeedMetrics.LOAD_MORE_HEIGHT.dp)
+                    .clip(CircleShape)
+                    .background(RoyColors.muted.copy(alpha = 0.3f))
+                    .border(1.dp, RoyColors.border, CircleShape)
+                    .clickable(enabled = !loading, onClick = onLoadMore)
+                    .padding(horizontal = CommunityFeedMetrics.LOAD_MORE_PADDING.dp)
+                    .testTag(CommunityFeedMetrics.LOAD_MORE)
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = CommunityFeedCopy.LOAD_MORE_ARIA
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = if (loading) CommunityFeedCopy.LOADING else CommunityFeedCopy.LOAD_MORE,
+                style = type.small.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.foreground,
+            )
         }
     }
 }
@@ -219,7 +277,7 @@ private fun EmptyFeed() {
     val spacing = LocalRoySpacing.current
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(spacing.containerPadding),
+        modifier = Modifier.fillMaxSize().padding(spacing.containerPadding * 2),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -259,7 +317,7 @@ private fun Unavailable(offline: Boolean, onRetry: () -> Unit) {
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .padding(LocalRoySpacing.current.containerPadding),
+                .padding(LocalRoySpacing.current.containerPadding * 2),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -288,7 +346,7 @@ private fun FeedSkeleton() {
         modifier =
             Modifier.fillMaxSize()
                 .padding(
-                    horizontal = spacing.containerPadding,
+                    horizontal = spacing.containerPadding * 2,
                     vertical = spacing.elementGapSm,
                 ),
         verticalArrangement = Arrangement.spacedBy(spacing.elementGap),

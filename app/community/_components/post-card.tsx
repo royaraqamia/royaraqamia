@@ -24,7 +24,10 @@ export function PostCard({ post, index }: PostCardProps) {
   if (removed) return null;
 
   return (
-    <article className="group/community relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/50">
+    <article
+      data-visual="community-card"
+      className="group/community relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/50"
+    >
       {post.cover_image && (
         <div className="relative aspect-16/10 w-full overflow-hidden bg-muted/80">
           <Link
@@ -46,7 +49,10 @@ export function PostCard({ post, index }: PostCardProps) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative">
+      <div
+        data-visual="community-card-content"
+        className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative"
+      >
         <div>
           {post.author?.name && (
             <Link

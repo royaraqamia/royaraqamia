@@ -37,10 +37,10 @@ class CommunityRoutesTest {
     }
 
     @Test
-    fun `the feed is a port that is switched off, and a post and a profile are public`() {
-        // #872 + ADR-0117: the feed's screen exists and the shell hands the route
-        // to the document until the port is the same screen as the page.
-        assertFalse(NativeSurfaces.isNative("/community"))
+    fun `the feed is native, and a post and a profile are public`() {
+        // #901 + ADR-0118: the feed's port passed the gate, so the shell draws it.
+        // A post is still the document, and a profile is public but not native.
+        assertTrue(NativeSurfaces.isNative("/community"))
         assertFalse(NativeSurfaces.isNative("/community/first-post"))
 
         assertTrue(NativeSurfaces.isPublic("/community"))

@@ -36,10 +36,11 @@ export function LoadMore({
   if (query) params.set('q', query);
 
   return (
-    <div className="mt-16 sm:mt-20 flex justify-center">
+    <div className="mt-16 sm:mt-20 flex justify-center" data-visual="community-load-more-region">
       <Link
         href={`/community?${params.toString()}`}
         rel="next"
+        data-visual="community-load-more"
         aria-label={ariaLabel}
         aria-busy={isLoading}
         onClick={(event) => {

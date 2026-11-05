@@ -42,6 +42,7 @@ object NativeSurfaces {
             "/linksnap",
             "/rates",
             "/habitflow",
+            "/community",
         )
 
     /**
