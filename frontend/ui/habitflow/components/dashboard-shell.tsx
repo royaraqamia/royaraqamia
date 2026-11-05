@@ -263,6 +263,7 @@ export function DashboardShell({
           >
             {/* Habits List Column */}
             <section
+              data-visual="habitflow-list"
               className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6"
               aria-label="قائمة العادات"
             >

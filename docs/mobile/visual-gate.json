@@ -205,6 +205,48 @@
           }
         }
       ]
+    },
+    {
+      "surface": "habitflow",
+      "web": {
+        "route": "/habitflow"
+      },
+      "contract": "shared/visual/habitflow.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/habitflow/HabitflowScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.05,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-05",
+            "measured": 0.0408,
+            "alignment": {
+              "dx": 1,
+              "dy": 3
+            }
+          }
+        },
+        {
+          "name": "with-count",
+          "tolerance": {
+            "pixels": 0.04,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-05",
+            "measured": 0.0299,
+            "alignment": {
+              "dx": 1,
+              "dy": -3
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {

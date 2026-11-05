@@ -1,0 +1,131 @@
+{
+  "surface": "habitflow",
+  "route": "/habitflow",
+  "notes": "The list, not the whole dashboard: its heading (with the count once there are rows), and the empty state. `origin` is the list title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `at-rest` captures the empty block, `with-count` captures the heading row, so each state proves the region both clients draw identically. The row a habit paints below the heading is not part of this contract yet: the app's list is drawn from the device and its row is the subject of its own port. Widths of the title and the count are left out deliberately - they are the run of the words and the number, not a decision. Colours are left out too - they are what the raster proves. The count's radius is omitted because the page's `rounded-full` computes to `calc(infinity * 1px)`, which is not a length either client can compare.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "empty",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='habitflow-title']"
+          },
+          "app": {
+            "tag": "habitflow-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='habitflow-list']"
+          },
+          "app": {
+            "tag": "habitflow-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "header",
+          "web": {
+            "selector": "[data-visual='habitflow-header']"
+          },
+          "app": {
+            "tag": "habitflow-header"
+          },
+          "properties": ["top", "width", "height", "paddingBottom"]
+        },
+        {
+          "name": "empty",
+          "web": {
+            "selector": "[data-visual='habitflow-empty']"
+          },
+          "app": {
+            "tag": "habitflow-empty"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "empty-icon",
+          "web": {
+            "selector": "[data-visual='habitflow-empty-icon']"
+          },
+          "app": {
+            "tag": "habitflow-empty-icon"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "empty-title",
+          "web": {
+            "selector": "[data-visual='habitflow-empty-title']"
+          },
+          "app": {
+            "tag": "habitflow-empty-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "empty-body",
+          "web": {
+            "selector": "[data-visual='habitflow-empty-body']"
+          },
+          "app": {
+            "tag": "habitflow-empty-body"
+          },
+          "properties": ["top", "width", "height", "fontSize", "lineHeight"]
+        }
+      ]
+    },
+    {
+      "name": "with-count",
+      "origin": "title",
+      "capture": "header",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='habitflow-title']"
+          },
+          "app": {
+            "tag": "habitflow-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='habitflow-list']"
+          },
+          "app": {
+            "tag": "habitflow-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "header",
+          "web": {
+            "selector": "[data-visual='habitflow-header']"
+          },
+          "app": {
+            "tag": "habitflow-header"
+          },
+          "properties": ["top", "width", "height", "paddingBottom"]
+        },
+        {
+          "name": "count",
+          "web": {
+            "selector": "[data-visual='habitflow-count']"
+          },
+          "app": {
+            "tag": "habitflow-count"
+          },
+          "properties": ["top", "height", "fontSize"]
+        }
+      ]
+    }
+  ]
+}
