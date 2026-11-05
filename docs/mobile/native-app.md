@@ -52,9 +52,44 @@ under a 419 ms floor. The launch is split roughly:
 Two changes took the frame from 565 ms to 489: the sign-in card no longer composes before the session
 answers ([#809](https://github.com/royaraqamia/royaraqamia/pull/809)), and the bundled Arabic faces are
 decoded off the main thread before the frame needs them — ~90 ms on its own
-([#820](https://github.com/royaraqamia/royaraqamia/pull/820)). A startup-targeted baseline profile is
-the one lever left and it cannot be generated from this phone: its ROM refuses `cmd package compile`
-to `adb shell` ([#762](https://github.com/royaraqamia/royaraqamia/issues/762)).
+([#820](https://github.com/royaraqamia/royaraqamia/pull/820)).
+
+### The app baseline profile
+
+The release APK carries the shell's own baseline profile (#762); what the profile is and how it is
+regenerated lives in the shell section below. Its measured effect is recorded here so it is not
+re-argued, and because the phone cannot witness the gain:
+
+**RMX3195 (realme C25s, Android 13), release APK, `npm run android:launch -- --runs 5`, 45 s apart:**
+
+| Build                                                             | Runs (ms)               | Median | LaunchState |
+| ----------------------------------------------------------------- | ----------------------- | ------ | ----------- |
+| library-only profiles, `status=speed-profile`, cool               | 522, 490, 496, 437, 423 | 490    | `COLD`      |
+| app profile, `status=speed-profile`, cool                         | 750, 598, 494, 535, 714 | 598    | `COLD`      |
+| app profile, same build, second series                            | 726, 585, 770, 566      | ~655   | `COLD`      |
+| app profile, fresh install (`status=verify`), device hot          | 513, 789, 846, 591, 645 | 645    | `COLD`      |
+| app profile, after `bg-dexopt-job` (`status=speed-profile`), cool | 671, 594, 565, 519, 533 | 565    | `COLD`      |
+
+**The effect is inside the noise.** The app profile's expected gain is the ~40-62 ms the compilation
+difference is worth, and one session of the same build ranged 494-770 ms; the runs before the
+profile and after it are also different builds. Claiming a gain from this table would be dishonest,
+and so would claiming a regression.
+
+What is verified instead:
+
+- The generated profile is committed — 16,873 rules naming `ShellActivity` and `royColorScheme()`,
+  not only the Compose libraries — and `npm run android:profile` regenerates it on the managed
+  emulator.
+- `:app:assembleRelease` runs `mergeReleaseBaselineProfile` → R8 → `compileReleaseArtProfile` →
+  `packageRelease`, so the packaged `assets/dexopt/baseline.prof` names the app's own startup path;
+  after `bg-dexopt-job` the package reports `status=speed-profile`.
+- The packaged bitmap stays 11,846 bytes — a baseline bitmap is sized by the dex's method count, not
+  by how many rules it sets — so the APK grows by well under the 100 KB budget.
+
+A startup-targeted profile generated on the reference phone is the remaining lever, and this phone
+cannot produce it: its ROM refuses `cmd package compile` to `adb shell`, the same
+`WRITE_SECURE_SETTINGS` restriction [#752](https://github.com/royaraqamia/royaraqamia/issues/752)
+recorded, so generation can only run through the managed emulator.
 
 A warm start only counts when the platform says it made one. `am start -W` answers
 `LaunchState: UNKNOWN` with no `TotalTime` while the activity still holds the top-resumed state after
