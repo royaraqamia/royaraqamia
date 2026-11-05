@@ -1,6 +1,7 @@
 package com.royaraqamia.app.store.blogpress
 
 import com.royaraqamia.app.contracts.generated.BlogpressDelete
+import com.royaraqamia.app.contracts.generated.BlogpressPostSave
 import com.royaraqamia.app.contracts.generated.RestorePostSnapshot
 import com.royaraqamia.app.store.outbox.OutboxIntentRow
 import com.royaraqamia.app.store.outbox.WriteRequest
@@ -25,9 +26,30 @@ object BlogpressWriteTransport {
     const val RESTORE_PATH = "$POSTS_PATH/restore"
 
     fun requestFor(intent: OutboxIntentRow): WriteRequest = when (intent.type) {
+        "post.save" -> saveRequest(intent.payload)
         "post.delete" -> deleteRequest(intent.payload)
         "post.restore" -> WriteRequest("POST", RESTORE_PATH, intent.payload)
         else -> throw IllegalArgumentException("Unknown outbox intent type: ${intent.type}")
+    }
+
+    /**
+     * `PATCH /api/blogpress/posts/{id}` with the editor's five fields.
+     *
+     * The id rides in the path and in the body: the path is what the route reads,
+     * and the body is the generated save shape the server's schema validates. A
+     * save carries the logical write time, so a replay older than the row loses
+     * at the server instead of overwriting a newer draft (ADR-0029).
+     */
+    private fun saveRequest(payload: String): WriteRequest {
+        val body = BlogpressPayloads.withNulls.parseToJsonElement(payload).jsonObject
+        val id =
+            body["id"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a post.save intent carries no id")
+        return WriteRequest(
+            method = "PATCH",
+            path = "$POSTS_PATH/${URLEncoder.encode(id, "UTF-8")}",
+            body = payload,
+        )
     }
 
     /**
@@ -74,6 +96,21 @@ object BlogpressPayloads {
 
     fun delete(id: String, updatedAt: String): String =
         withNulls.encodeToString(BlogpressDelete(id = id, updatedAt = updatedAt))
+
+    /** The editor's autosave as the `PATCH` body the page's own save sends (#954). */
+    fun save(row: BlogpressPostRow): String =
+        withNulls.encodeToString(
+            BlogpressPostSave(
+                id = row.id,
+                clientId = row.clientId,
+                slug = row.slug,
+                content = row.content,
+                cover_image = row.coverImage,
+                meta_title = row.metaTitle,
+                meta_desc = row.metaDesc,
+                updatedAt = row.updatedAt,
+            )
+        )
 
     /**
      * The content half of a deleted post, re-sent by undo.

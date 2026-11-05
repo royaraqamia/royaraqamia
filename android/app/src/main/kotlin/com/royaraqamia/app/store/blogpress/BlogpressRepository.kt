@@ -3,6 +3,7 @@ package com.royaraqamia.app.store.blogpress
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.BlogpressPostSave
 import com.royaraqamia.app.contracts.generated.BlogpressSyncSnapshot
 import com.royaraqamia.app.contracts.generated.BlogpressSyncSnapshotPostsItem
 import com.royaraqamia.app.contracts.generated.BlogpressSyncSnapshotPostsItemStatus
@@ -59,12 +60,56 @@ class BlogpressRepository(
     private val clock: WriteClock = SystemWriteClock,
     private val random: () -> Double = { Math.random() },
     private val nowMillis: () -> Long = { System.currentTimeMillis() },
-) {
+) : BlogpressEditorStore {
     /** One drain at a time, so two triggers cannot race for the same `seq`. */
     private val drainMutex = Mutex()
 
     /** The rows the dashboard paints, newest write first, tombstones excluded. */
     suspend fun posts(): List<BlogpressPostRow> = withContext(Dispatchers.IO) { dao().posts() }
+
+    /** The row the editor opened (#954): the server id or the client id. */
+    override suspend fun editorPost(id: String): BlogpressPostRow? =
+        withContext(Dispatchers.IO) { dao().postByAnyId(id) }
+
+    /**
+     * Autosaves the editor's fields (#954).
+     *
+     * The row and its `post.save` intent commit together, so a shut radio, a
+     * process kill or a reboot leaves the newest text on disk and the queue holds
+     * the write that will carry it. The intent's payload is the generated
+     * [BlogpressPostSave], so a field the server stops accepting breaks the
+     * build rather than leaving a write that can never drain.
+     *
+     * `updatedAt` is the logical write time: a replay that arrives after a newer
+     * draft loses at the server (ADR-0029), and the local row keeps the newest
+     * text because the pull leaves a queued row alone.
+     */
+    override suspend fun saveDraft(
+        id: String,
+        fields: BlogpressEditorFields,
+    ): BlogpressPostRow? = withContext(Dispatchers.IO) {
+        val dao = dao()
+        val existing = dao.postByAnyId(id) ?: return@withContext null
+        val now = clock.nowIso()
+        val row =
+            existing.copy(
+                slug = fields.slug,
+                content = fields.content,
+                coverImage = fields.coverImage,
+                metaTitle = fields.metaTitle,
+                metaDesc = fields.metaDesc,
+                updatedAt = now,
+            )
+        dao.commitPost(
+            row,
+            intent(
+                type = "post.save",
+                payload = BlogpressPayloads.save(row),
+                createdAt = nowMillis(),
+            ),
+        )
+        row
+    }
 
     /**
      * Tombstones a post and queues its replay (#952).
@@ -117,7 +162,7 @@ class BlogpressRepository(
      * store under a new identity mid-run and delete another account's `seq`. A
      * sign-out during the run stops it instead.
      */
-    suspend fun drain(): DrainReport = withContext(Dispatchers.IO) {
+    override suspend fun drain(): DrainReport = withContext(Dispatchers.IO) {
         drainMutex.withLock {
             val expected = identity()
             val dao = databases.forIdentity(expected).dao()
@@ -154,7 +199,7 @@ class BlogpressRepository(
     }
 
     /** Pending work as the pill reports it, without sending anything. */
-    suspend fun outboxStatus(): DrainReport = withContext(Dispatchers.IO) {
+    override suspend fun outboxStatus(): DrainReport = withContext(Dispatchers.IO) {
         val dao = dao()
         DrainReport(
             replayed = 0,
@@ -228,7 +273,7 @@ class BlogpressRepository(
         }
 
     /** Publish a draft now (#952). Online-only, like the page (ADR-0031). */
-    suspend fun publishPost(id: String): ApiResult<String> =
+    override suspend fun publishPost(id: String): ApiResult<String> =
         client.send("POST", postPath(id, "publish"))
 
     /** Unpublish a published post, or publish a scheduled one now. */

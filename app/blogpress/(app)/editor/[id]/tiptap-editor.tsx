@@ -39,6 +39,8 @@ export interface TiptapEditorRef {
 
 interface TiptapEditorProps {
   initialContent: string;
+  /** The site's one source for the editor's empty sentence (#954). */
+  placeholder: string;
   onUpdate?: (markdown: string) => void;
   onImageUpload?: (file: File) => void;
   onStateChange?: () => void;
@@ -120,7 +122,7 @@ const SLASH_COMMANDS: SlashCommandItem[] = [
 ];
 
 const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
-  ({ initialContent, onUpdate, onImageUpload, onStateChange, className }, ref) => {
+  ({ initialContent, placeholder, onUpdate, onImageUpload, onStateChange, className }, ref) => {
     const onUpdateRef = useRef(onUpdate);
     onUpdateRef.current = onUpdate;
     const onImageUploadRef = useRef(onImageUpload);
@@ -165,7 +167,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         ImageExtension,
         LinkExtension.configure({ openOnClick: false }),
         Placeholder.configure({
-          placeholder: 'اكتب المحتوى هنا...',
+          placeholder,
         }),
         TextAlign.configure({
           types: ['heading', 'paragraph'],

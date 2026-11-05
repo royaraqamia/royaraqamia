@@ -97,6 +97,14 @@ interface BlogpressDao {
     @Query("SELECT * FROM posts WHERE clientId = :clientId")
     suspend fun post(clientId: String): BlogpressPostRow?
 
+    /**
+     * The row the editor opened. The dashboard hands it the server's id while the
+     * store keys on `clientId`, and the two are the same row on different sides
+     * of the replay (ADR-0029), so either one finds it.
+     */
+    @Query("SELECT * FROM posts WHERE id = :id OR clientId = :id LIMIT 1")
+    suspend fun postByAnyId(id: String): BlogpressPostRow?
+
     /** One pull, one transaction: a process killed halfway writes all or none. */
     @Transaction
     suspend fun apply(rows: List<BlogpressPostRow>) {

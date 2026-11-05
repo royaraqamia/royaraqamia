@@ -245,6 +245,74 @@ class BlogpressWritesTest {
         assertTrue((answer as ApiResult.Failure).error is ApiError.Network)
     }
 
+    @Test
+    fun `a draft typed with the radio off survives a process kill`() = runBlocking {
+        val before = repository(sync = SYNC_BODY)
+        before.pull()
+        val row = before.editorPost("post-1")
+        checkNotNull(row)
+
+        before.saveDraft(row.id, fields("offline draft"))
+
+        // The process dies: the connection goes, the file does not.
+        databases.close()
+
+        val after = repository(sync = null)
+        assertEquals("the newest text is on disk", "offline draft", after.editorPost("post-1")?.content)
+        assertEquals("and the write is still queued", 1, after.outboxStatus().pending)
+    }
+
+    @Test
+    fun `a pull does not overwrite a queued newer draft`() = runBlocking {
+        val repository = repository(sync = SYNC_BODY)
+        repository.pull()
+        val row = repository.editorPost("post-1")
+        checkNotNull(row)
+
+        repository.saveDraft(row.id, fields("first edit"))
+        repository.saveDraft(row.id, fields("newer edit"))
+
+        // The server's copy is the one the pull first wrote, an older `updatedAt`.
+        val pulled = repository.pull()
+
+        assertTrue(pulled.toString(), pulled is ApiResult.Success)
+        assertEquals("a queued draft is not clobbered", "newer edit", repository.editorPost("post-1")?.content)
+        assertEquals("both autosaves wait for the server", 2, repository.outboxStatus().pending)
+    }
+
+    @Test
+    fun `a later drain sends the newest draft last, through the page's PATCH`() = runBlocking {
+        val transport = RecordingTransport { HttpResponse(200, """{"message":"ok"}""") }
+        val repository = repository(transport = transport, sync = SYNC_BODY)
+        repository.pull()
+        val row = repository.editorPost("post-1")
+        checkNotNull(row)
+
+        repository.saveDraft(row.id, fields("first edit"))
+        repository.saveDraft(row.id, fields("newer edit"))
+
+        val report = repository.drain()
+
+        assertEquals(2, report.replayed)
+        assertEquals(
+            listOf("PATCH" to "/posts/post-1", "PATCH" to "/posts/post-1"),
+            transport.requests.map { it.method to it.url.substringAfter("/api/blogpress") },
+        )
+        val bodies = transport.requests.map { it.body.orEmpty() }
+        assertTrue("the first write is the first intent: ${bodies[0]}", bodies[0].contains("first edit"))
+        assertTrue("and the newer draft is the last: ${bodies[1]}", bodies[1].contains("newer edit"))
+        assertTrue("the write carries its logical time: ${bodies[1]}", bodies[1].contains("\"updatedAt\""))
+    }
+
+    private fun fields(content: String): BlogpressEditorFields =
+        BlogpressEditorFields(
+            slug = "hello",
+            content = content,
+            coverImage = "",
+            metaTitle = "",
+            metaDesc = "",
+        )
+
     private suspend fun repository(
         transport: RecordingTransport = RecordingTransport { HttpResponse(200, "{}") },
         sync: String? = SYNC_BODY,
