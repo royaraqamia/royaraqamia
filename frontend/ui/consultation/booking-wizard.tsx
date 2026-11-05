@@ -18,49 +18,51 @@ interface BookingWizardProps {
 
 export function BookingWizard({ flow }: BookingWizardProps) {
   return (
-    <FormWizard
-      steps={BOOKING_STEP_META}
-      currentIndex={flow.stepIndex}
-      ariaLabel="خطوات الحجز"
-      error={flow.error}
-      submitting={flow.submitting}
-      canProceed={flow.canProceed && flow.online}
-      confirmLabel="تأكيد طلب الحجز"
-      submittingLabel="جاري إرسال الطَّلب..."
-      onBack={flow.back}
-      onNext={flow.next}
-      onConfirm={() => void flow.confirmBooking()}
-    >
-      {flow.step === 'package' && (
-        <PackageStep
-          packages={flow.packages}
-          selectedId={flow.selectedPackage?.id ?? null}
-          onSelect={flow.selectPackage}
-          error={flow.packagesError}
-          onRetry={flow.retryPackages}
-        />
-      )}
+    <div data-visual="consultation-wizard">
+      <FormWizard
+        steps={BOOKING_STEP_META}
+        currentIndex={flow.stepIndex}
+        ariaLabel="خطوات الحجز"
+        error={flow.error}
+        submitting={flow.submitting}
+        canProceed={flow.canProceed && flow.online}
+        confirmLabel="تأكيد طلب الحجز"
+        submittingLabel="جاري إرسال الطَّلب..."
+        onBack={flow.back}
+        onNext={flow.next}
+        onConfirm={() => void flow.confirmBooking()}
+      >
+        {flow.step === 'package' && (
+          <PackageStep
+            packages={flow.packages}
+            selectedId={flow.selectedPackage?.id ?? null}
+            onSelect={flow.selectPackage}
+            error={flow.packagesError}
+            onRetry={flow.retryPackages}
+          />
+        )}
 
-      {flow.step === 'details' && (
-        <DetailsStep
-          contact={flow.contact}
-          onChange={flow.updateContact}
-          onBlurField={flow.validateField}
-          fieldErrors={flow.fieldErrors}
-        />
-      )}
+        {flow.step === 'details' && (
+          <DetailsStep
+            contact={flow.contact}
+            onChange={flow.updateContact}
+            onBlurField={flow.validateField}
+            fieldErrors={flow.fieldErrors}
+          />
+        )}
 
-      {flow.step === 'slots' && (
-        <SlotStep
-          slots={flow.slots}
-          loading={flow.slotsLoading}
-          selectedIds={flow.selectedSlotIds}
-          requiredCount={flow.requiredSessions}
-          onToggle={flow.toggleSlot}
-          error={flow.slotsError}
-          onRetry={flow.retrySlots}
-        />
-      )}
-    </FormWizard>
+        {flow.step === 'slots' && (
+          <SlotStep
+            slots={flow.slots}
+            loading={flow.slotsLoading}
+            selectedIds={flow.selectedSlotIds}
+            requiredCount={flow.requiredSessions}
+            onToggle={flow.toggleSlot}
+            error={flow.slotsError}
+            onRetry={flow.retrySlots}
+          />
+        )}
+      </FormWizard>
+    </div>
   );
 }

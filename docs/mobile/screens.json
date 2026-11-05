@@ -185,8 +185,9 @@
     },
     {
       "surface": "consultation",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/consultation/ConsultationScreen.kt",
+      "reason": "The booking wizard, its live reads and its never-queued write are ported (#930), and switched off until the visual gate pairs it with the page: the shell hands `/consultation/book` to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "downloader",

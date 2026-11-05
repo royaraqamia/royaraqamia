@@ -41,6 +41,7 @@ import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityRoutes
+import com.royaraqamia.app.consultation.ConsultationScreen
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
@@ -352,6 +353,16 @@ class ShellActivity : ComponentActivity() {
                                 LeadsScreen(
                                     route = Routes.normalize(current),
                                     repository = graph.leads,
+                                    onCopy = ::copyToClipboard,
+                                )
+                            // Consultation booking (#930): the page's own live
+                            // reads and its never-queued write. Ported and off
+                            // until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/consultation/book" ->
+                                ConsultationScreen(
+                                    repository = graph.consultation,
+                                    online = Connectivity.isOnline(this@ShellActivity),
                                     onCopy = ::copyToClipboard,
                                 )
                             // The community feed (#658): public like the page, so

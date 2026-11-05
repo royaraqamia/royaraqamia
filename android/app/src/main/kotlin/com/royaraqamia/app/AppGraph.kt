@@ -7,6 +7,7 @@ import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityFeedSnapshotStore
+import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.notifications.NotificationsRepository
@@ -94,6 +95,8 @@ class AppGraph private constructor(
     val blogpress: BlogpressRepository,
     /** The lead forms' queue (#929): anonymous, so one store for the device. */
     val leads: LeadsRepository,
+    /** Consultation booking (#930): live reads and one never-queued write. */
+    val consultation: ConsultationRepository,
     /** The Quran reader's vendored text and the reader's last place (#955). */
     val quran: QuranRepository,
     private val databases: IdentityScopedStore<HabitStores>,
@@ -295,6 +298,11 @@ class AppGraph private constructor(
                         stores = leadStores,
                         client = client,
                         signedIn = signedIn,
+                        online = online,
+                    ),
+                consultation =
+                    ConsultationRepository(
+                        client = client,
                         online = online,
                     ),
                 databases = databases,

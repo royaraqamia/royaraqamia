@@ -49,6 +49,7 @@ export function ConsultationBookingPage() {
           <div
             role="status"
             aria-live="polite"
+            data-visual="consultation-offline"
             className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950 dark:text-amber-200"
           >
             <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
