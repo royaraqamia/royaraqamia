@@ -82,7 +82,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={error ? true : undefined}
           className={cn(
             // Sizing, Padding & Responsive Typography
-            'flex min-h-27.5 w-full rounded-2xl border px-4 py-3.5 text-sm sm:text-base leading-relaxed',
+            'flex min-h-27.5 w-full rounded-2xl border px-4 py-3.5 max-sm:text-sm/[1.625] sm:text-base/[1.625]',
             // High-Contrast Typography & Text Selection
             'text-foreground placeholder:text-muted-foreground/50 selection:bg-primary/20 selection:text-primary font-sans antialiased tracking-tight',
             // Surface Styling & Modern Glassmorphism
@@ -132,10 +132,14 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </div>
         )}
 
-        {/* Floating Glassmorphic Character Counter Pill */}
+        {/* Floating Glassmorphic Character Counter Pill. `dir="ltr"` on purpose:
+            the pair is two numbers around a slash, and an RTL paragraph lays the
+            logical first run rightmost, so `15 / 20,000` painted as
+            `20,000 / 15`. Digits are read left-to-right in both languages. */}
         {showCount && maxLength && (
           <div
             data-count-state={countState}
+            dir="ltr"
             className="absolute bottom-3 left-3.5 pointer-events-none flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-0.5 text-xs font-mono border border-border/50 shadow-2xs transition-safe duration-200 select-none"
             aria-live="polite"
           >

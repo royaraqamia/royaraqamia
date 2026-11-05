@@ -92,7 +92,7 @@ export function PlayerBar() {
           onClick={() => actions.previous()}
           aria-label="الآية السَّابقة"
           title="الآية السَّابقة"
-          className="hidden size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex"
+          className="max-sm:hidden size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex"
         >
           <SkipBack aria-hidden="true" className="size-4" />
         </button>
@@ -102,7 +102,7 @@ export function PlayerBar() {
           onClick={() => actions.next()}
           aria-label="الآية التَّالية"
           title="الآية التَّالية"
-          className="hidden size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex"
+          className="max-sm:hidden size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex"
         >
           <SkipForward aria-hidden="true" className="size-4" />
         </button>

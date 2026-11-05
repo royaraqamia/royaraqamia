@@ -78,7 +78,7 @@ export function CollapsibleText({
           aria-expanded={isExpanded}
           aria-controls={contentId}
           className={cn(
-            'mt-2 inline-flex cursor-pointer items-center gap-1 rounded-sm text-xs font-bold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none sm:text-sm',
+            'mt-2 inline-flex cursor-pointer items-center gap-1 rounded-sm max-sm:text-xs font-bold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none sm:text-sm',
             buttonClassName
           )}
         >

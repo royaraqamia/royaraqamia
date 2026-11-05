@@ -10,8 +10,14 @@ interface ScrollArrowsProps {
   ariaLabelRight?: string;
 }
 
+/**
+ * The row's edge arrows. The display pair is `max-md:hidden md:flex`, never
+ * `hidden md:flex`: two variants cannot be outranked by each other unless they
+ * overlap, so the pair holds whatever order the shell's and the surface's
+ * stylesheets end up in (ADR-0132).
+ */
 const arrowBase =
-  'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-safe duration-300 hover:scale-110 bg-black/60 hover:bg-[#7766EE] border-white/15 hover:border-[#7766EE]';
+  'max-md:hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-safe duration-300 hover:scale-110 bg-black/60 hover:bg-[#7766EE] border-white/15 hover:border-[#7766EE]';
 
 export function HorizontalScrollArrows({
   onScroll,

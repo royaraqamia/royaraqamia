@@ -86,6 +86,13 @@ Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) 
 - Stylesheets are cut by surface, not by component: `app/global.css` is the
   shell every route loads, and each surface brings its own `app/<surface>/app.css`
   ([performance.md](performance.md#stylesheets-by-surface))
+- A surface's stylesheet is appended after the shell's, so its utilities win the
+  classes the two share; a **shell component must therefore never pair a base
+  utility with a breakpoint variant** — write `max-sm:pt-5 sm:pt-6`, never
+  `pt-5 sm:pt-6`, and `max-lg:block` + `lg:hidden`, never `hidden` +
+  `max-lg:block`. A primitive whose property a caller must change takes a prop
+  (`DialogContent phone="sheet"`), not an overriding className. `npm run check:layers`
+  fails the shape ([ADR-0132](adr/0132-a-shell-component-owns-no-base-utility.md))
 
 ## Naming
 

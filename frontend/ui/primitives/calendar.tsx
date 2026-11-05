@@ -76,8 +76,8 @@ const calendarClassNames: Partial<ClassNames> = {
      nested inside the sheet, so the calendar stays frameless — it contributes
      only layout and padding. `mx-auto` keeps it centered in a container wider
      than its `w-fit` grid (e.g. the sheet). */
-  root: cn('relative w-fit select-none p-4 transition-safe duration-300 sm:p-5', 'mx-auto'),
-  months: 'relative flex flex-col gap-5 sm:flex-row sm:gap-7',
+  root: cn('relative w-fit select-none max-sm:p-4 transition-safe duration-300 sm:p-5', 'mx-auto'),
+  months: 'relative flex max-sm:flex-col max-sm:gap-5 sm:flex-row sm:gap-7',
   month: 'relative w-full space-y-4',
   /* Overriding `classNames` replaces react-day-picker's defaults rather than
      merging them, so the nav loses its built-in `rdp-nav` hook. That hook is

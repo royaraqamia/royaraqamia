@@ -56,7 +56,7 @@ export function NeedsConnection({
         <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-bold leading-snug">{NEEDS_CONNECTION_COPY.title}</p>
-          <p className="text-xs leading-relaxed sm:text-sm">{message}</p>
+          <p className="max-sm:text-xs/[1.625] sm:text-sm/[1.625]">{message}</p>
           {onRetry && (
             <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-1.5">
               {NEEDS_CONNECTION_COPY.retry}

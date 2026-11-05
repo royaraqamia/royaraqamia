@@ -73,6 +73,12 @@ jobs:
       - name: Surface Matrix
         run: npm run check:surfaces
 
+      # A shell component may not pair a base utility with a breakpoint variant:
+      # a surface emits the base class too and outranks the shell, so the variant
+      # silently stops applying (ADR-0132).
+      - name: Style Layers
+        run: npm run check:layers
+
       - name: Screen Inventory
         run: npm run check:screens
 

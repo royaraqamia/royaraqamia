@@ -6,19 +6,19 @@
    SpendTrack, LinkSnap, BlogPress, Community, the admin dialogs and the editor
    (issue #497).
 
-   The shell imports Tailwind unwrapped, so its utilities land in the top-level
-   `utilities` layer; a surface wraps the same import in `layer(surface)`
-   (`app/surface.css`), which is declared *below* it. A surface's stylesheet is
-   appended after the shell's, and the shell's utilities must still win the
-   properties they define — otherwise a surface's copy of a base utility strips
-   the shell's breakpoint variant off the same element (ADR-0130).
+   The shell imports Tailwind unwrapped, and so does every surface
+   (`app/surface.css`): both compilations put their utilities in the same
+   `utilities` layer, and the route's stylesheet is appended after the shell's,
+   so a surface wins the classes it shares with the shell. The rule that keeps
+   the other direction safe — a shell component may not pair a base utility with
+   a breakpoint variant — is ADR-0132, and `npm run check:layers` enforces it.
 
    The list below is the shell's whole contribution: the root layout and the
    components it renders on every route. Nothing here guesses at a directory —
    `source(none)` means an unlisted file contributes no CSS, which is what
    keeps a surface's classes out of the shell. Adding an import to
    `app/layout.tsx` means adding its source here too. */
-@layer theme, base, components, surface, utilities;
+@layer theme, base, components, utilities;
 
 @import 'tailwindcss' source(none);
 @import './tailwind.css';

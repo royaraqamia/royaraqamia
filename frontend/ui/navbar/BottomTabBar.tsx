@@ -61,9 +61,13 @@ export function BottomTabBar() {
       data-bottom-tabbar
       data-visual="chrome-tabbar"
       aria-label={BOTTOM_TAB_BAR_COPY.navLabel}
-      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-full lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
+      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 max-lg:border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-full lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
     >
-      <ul className="mx-auto flex max-w-md items-stretch lg:max-w-none">
+      {/* `border-t` and `max-w-md` are written as `max-lg:` variants on purpose: a
+          bare base utility here loses to a surface's copy of it (ADR-0132), so a
+          surface that emits the same base class would strip `lg:border` and
+          `lg:max-w-none` off the desktop bar. */}
+      <ul className="mx-auto flex max-lg:max-w-md items-stretch lg:max-w-none">
         {TABS.map((tab) => {
           const isActive = tab.isActive(pathname ?? '');
           const Icon = tab.icon;

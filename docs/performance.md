@@ -128,19 +128,25 @@ The fix is one stylesheet per surface, cut by route rather than by component:
 `source(none)` (nothing is scanned unless an entry lists it), imports
 `theme.css` (so a token resolves identically on both sides), declares the `dark`
 variant once (so a surface cannot silently fall back to
-`prefers-color-scheme`), and — the part that stops the two chunks fighting —
-compiles the surface's utilities into a `surface` layer declared _below_
-`utilities` (ADR-0130). `global.css` then lists the root layout's sources and
+`prefers-color-scheme`), and imports Tailwind _unwrapped_ — the same layer names
+as the shell (ADR-0132). `global.css` then lists the root layout's sources and
 nothing else, and a surface entry lists its own.
 
-That layer order is load-bearing rather than tidy. Two chunks that overlap are
-resolved by document order, and a route's chunk is appended _after_ the shell's:
-the surface's copy of a base utility (`hidden`, `flex`) used to beat the shell's
-own breakpoint variant on the same element (`max-lg:block`, `sm:hidden`), so the
-mobile bottom sheet snapped back into an anchored panel and other components
-drifted between navigations until a reload changed which chunk came last. A
-surface's utilities now lose every property the shell defines, and still apply
-to everything it does not.
+Both stylesheets therefore meet in the same `utilities` layer, and a class
+emitted by one chunk beats a _different_ class emitted by the other by document
+order: Next appends the route's chunk after the shell's. That is the order the
+app relies on, and it is why the surface import is not wrapped in a layer —
+`@import 'tailwindcss' layer(surface)` takes Tailwind's Preflight into that
+layer, so a surface's `h1 { font-size: inherit }` outranked every heading
+utility the shell ships and `/quran`'s title measured 16px instead of 48px.
+
+What that order cannot protect is a _shell_ component that pairs a base utility
+with a breakpoint variant: whichever surface emits that base class wins the
+property, and the `sm:`/`lg:` step silently drops. That is a code rule, not a
+stylesheet one — write `max-sm:pt-5 sm:pt-6`, never `pt-5 sm:pt-6` —
+`npm run check:layers` fails it, and `DialogContent`'s `phone="sheet"` prop
+exists because a surface that must change a primitive's property is a case for a
+prop, not for an overriding className (ADR-0132).
 
 Adding a surface is three lines: create `app/<surface>/app.css`, `@source` the
 surface's route directory and the `frontend/ui/**` directories its components

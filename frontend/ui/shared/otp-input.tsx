@@ -70,7 +70,7 @@ export function OtpInput({
 
   return (
     <div
-      className="flex items-center justify-center gap-1.5 min-[380px]:gap-2 sm:gap-3 w-full max-w-full py-2 select-none"
+      className="flex items-center justify-center max-[379.98px]:gap-1.5 min-[380px]:gap-2 sm:gap-3 w-full max-w-full py-2 select-none"
       dir="ltr"
       role="group"
       aria-label="One-time password input"
@@ -107,7 +107,7 @@ export function OtpInput({
               className={`
                 w-10 h-12 min-[380px]:w-12 min-[380px]:h-14 sm:w-14 sm:h-16
                 text-center font-mono font-bold text-xl sm:text-2xl tabular-nums tracking-widest
-                rounded-xl sm:rounded-2xl border-2 outline-none
+                max-sm:rounded-xl sm:rounded-2xl border-2 outline-none
                 transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
                 ${

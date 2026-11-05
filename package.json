@@ -39,6 +39,7 @@
     "check:fusha": "node scripts/check-fusha.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:surfaces": "node scripts/check-surfaces.mjs",
+    "check:layers": "node scripts/check-layers.mjs",
     "check:screens": "node scripts/check-screens.mjs",
     "check:visual": "node scripts/check-visual.mjs",
     "check:plan": "node scripts/check-plan.mjs",
