@@ -36,6 +36,13 @@ object NativeSurfaces {
     private val routes: Set<String> = setOf("/verify", "/account/faq", "/linksnap")
 
     /**
+     * The dynamic routes a passing port answers, matched by shape rather than by
+     * whole string: `/verify/<code>` is one row in `screens.json` but every
+     * certificate has its own path.
+     */
+    private val dynamicRoutes: List<(String) -> Boolean> = listOf(VerifyRoutes::matches)
+
+    /**
      * The routes a signed-out visitor reads.
      *
      * This is the site's `perf/surfaces.json` answer rather than a third opinion: a
@@ -48,7 +55,9 @@ object NativeSurfaces {
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean =
-        routes.contains(Routes.normalize(route)) || QuranRoutes.matches(route)
+        routes.contains(Routes.normalize(route)) ||
+            dynamicRoutes.any { it(route) } ||
+            QuranRoutes.matches(route)
 
     /** Whether [route] is readable with no session (the matrix's public rows). */
     fun isPublic(route: String): Boolean =

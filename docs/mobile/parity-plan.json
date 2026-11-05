@@ -47,7 +47,7 @@
     {
       "surface": "verify-code",
       "phase": "gate",
-      "state": "todo"
+      "state": "native"
     },
     {
       "surface": "rates",

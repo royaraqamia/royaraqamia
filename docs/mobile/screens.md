@@ -38,7 +38,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `rates` | `/rates` | `RatesScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
-| `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
 | `profile` | `/u/[username]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `scan` | `/scan` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | `LeadsScreen.kt` (off) | The three lead forms, their validation and their anonymous Outbox are ported (#929), and switched off until they are the pages pixel for pixel: the shell hands the routes to the document in the meantime (#872, ADR-0117). |

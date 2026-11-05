@@ -1,0 +1,94 @@
+{
+  "surface": "verify-code",
+  "route": "/verify/COMP-2026-UHVW9SG5",
+  "notes": "A shared certificate at rest: the header, the certificate's card with its banner, the grid of details and the seal. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card, because it is the region both clients draw identically: the banner, the details and the seal, inside its own rounded border. Widths of the detail text are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves. The `not-found` and `unreachable` faces are separate recordings and are not part of this contract yet.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title']"
+          },
+          "app": {
+            "tag": "verify-code-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "subtitle",
+          "web": {
+            "selector": "[data-visual='subtitle']"
+          },
+          "app": {
+            "tag": "verify-code-subtitle"
+          },
+          "properties": ["top", "height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='card']"
+          },
+          "app": {
+            "tag": "verify-code-card"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "card-header",
+          "web": {
+            "selector": "[data-visual='card-header']"
+          },
+          "app": {
+            "tag": "verify-code-card-header"
+          },
+          "properties": ["top", "width", "height", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "details",
+          "web": {
+            "selector": "[data-visual='details']"
+          },
+          "app": {
+            "tag": "verify-code-details"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "detail-0",
+          "web": {
+            "selector": "[data-visual='detail-0']"
+          },
+          "app": {
+            "tag": "verify-code-detail-0"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "seal",
+          "web": {
+            "selector": "[data-visual='seal']"
+          },
+          "app": {
+            "tag": "verify-code-seal"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "actions",
+          "web": {
+            "selector": "[data-visual='actions']"
+          },
+          "app": {
+            "tag": "verify-code-actions"
+          },
+          "properties": ["top", "width", "height", "rowGap"]
+        }
+      ]
+    }
+  ]
+}
