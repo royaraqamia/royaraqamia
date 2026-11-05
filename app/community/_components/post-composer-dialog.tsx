@@ -140,7 +140,7 @@ export function PostComposerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent className="dialog-phone-full max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
+      <DialogContent phone="sheet">
         <DialogHeader>
           <DialogTitle className="text-center">
             {isEdit ? 'تعديل المنشور' : 'منشور جديد'}
@@ -162,13 +162,16 @@ export function PostComposerDialog({
                 surfaceClassName="min-h-40 max-sm:min-h-0"
               />
             </div>
+            {/* `dir="ltr"`: two numbers around a slash, and RTL puts the logical
+                first run rightmost — the counter painted `20,000 / 15`. */}
             <p
               data-slot="composer-meta"
               aria-live="polite"
+              dir="ltr"
               className={
                 charCount > BODY_MAX
-                  ? 'text-[11px] font-bold text-destructive'
-                  : 'text-[11px] text-muted-foreground'
+                  ? 'text-end text-[11px] font-bold text-destructive'
+                  : 'text-end text-[11px] text-muted-foreground'
               }
             >
               {charCount} / {BODY_MAX.toLocaleString('en-US')}

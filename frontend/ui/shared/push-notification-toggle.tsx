@@ -163,64 +163,59 @@ export function PushNotificationToggle() {
   const blocked = state.kind === 'denied';
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {/* The row names itself before it is read: a bell beside the label is
-              what a settings list looks like in every app that has one. */}
-          <span
-            aria-hidden="true"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/40 text-muted-foreground"
-          >
-            <Bell size={16} />
-          </span>
+    <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-4 text-start">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {/* The row is drawn exactly like every other account row (#1023): the
+            bare 16px purple glyph the `AccountRow`s use, not a chip of its own
+            — a bordered tile beside a list of bare glyphs read as a different
+            kind of control. */}
+        <Bell aria-hidden="true" className="w-4 h-4 shrink-0 text-primary" />
 
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">إشعارات الجهاز</p>
-            {blocked ? (
-              <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
-                {native
-                  ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
-                  : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
-              </p>
-            ) : null}
-            {state.kind === 'unreachable' ? (
-              <p
-                role="status"
-                aria-live="polite"
-                className="mt-1 text-[11px] leading-6 text-muted-foreground"
-              >
-                تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
-              </p>
-            ) : null}
-          </div>
+        <div className="min-w-0">
+          <p className="max-sm:text-sm font-bold text-foreground sm:text-base">إشعارات الجهاز</p>
+          {blocked ? (
+            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
+              {native
+                ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
+                : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
+            </p>
+          ) : null}
+          {state.kind === 'unreachable' ? (
+            <p
+              role="status"
+              aria-live="polite"
+              className="mt-1 text-[11px] leading-6 text-muted-foreground"
+            >
+              تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+            </p>
+          ) : null}
         </div>
-
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isEnabled}
-          aria-label="إشعارات الجهاز"
-          disabled={busy || blocked}
-          onClick={() => void handleToggle()}
-          dir="ltr"
-          className={cn(
-            'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
-            'disabled:cursor-not-allowed disabled:opacity-60',
-            isEnabled
-              ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
-              : 'border-border/70 bg-muted'
-          )}
-        >
-          <span
-            className={cn(
-              'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
-              isEnabled ? 'translate-x-0' : 'translate-x-[18px]'
-            )}
-            aria-hidden="true"
-          />
-        </button>
       </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isEnabled}
+        aria-label="إشعارات الجهاز"
+        disabled={busy || blocked}
+        onClick={() => void handleToggle()}
+        dir="ltr"
+        className={cn(
+          'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
+          'disabled:cursor-not-allowed disabled:opacity-60',
+          isEnabled
+            ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
+            : 'border-border/70 bg-muted'
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
+            isEnabled ? 'translate-x-0' : 'translate-x-[18px]'
+          )}
+          aria-hidden="true"
+        />
+      </button>
     </div>
   );
 }

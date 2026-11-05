@@ -352,8 +352,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         composer are the surface's two fixed edges, the way they are in WhatsApp
         and Telegram, at every width (#1021). The page itself never scrolls here,
         so the composer cannot be scrolled away from the keyboard.
+
+        No bar on a phone or tablet — `dialog-scrollbar-touch-none` drops it below
+        `lg`, where the gesture is the affordance and `:active` painted the strip
+        mid-swipe — and a thin bar above `lg` the moment the pointer is over the
+        list, which is the `.dialog-scrollbar` pair the composers use.
       */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 dialog-scrollbar dialog-scrollbar-touch-none">
         {/*
           The last line sits on the composer rather than floating at the top of
           an empty surface, which is what a short thread looks like in every
