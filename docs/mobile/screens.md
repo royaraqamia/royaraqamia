@@ -26,8 +26,8 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-links` | `/account/links` | `LinksnapScreen.kt` (off) | The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
-| `account-plan` | `/account/plan` | `PlanScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
+| `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
 | `account-faq` | `/account/faq` | `AccountFaqScreen.kt` |  |
 | `account-news` | `/account/news` | `NewsScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-services` | `/account/services` | `AccountServicesScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |

@@ -1,0 +1,19 @@
+{
+  "surface": "account-connected-apps",
+  "elements": {
+    "title": {
+      "top": 12.0,
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800
+    },
+    "cta": {
+      "top": 98.545456,
+      "width": 176.0,
+      "height": 52.0,
+      "radius": 9999,
+      "fontSize": 16.0,
+      "fontWeight": 700
+    }
+  }
+}

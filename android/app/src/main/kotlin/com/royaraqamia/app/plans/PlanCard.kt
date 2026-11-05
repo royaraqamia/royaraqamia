@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -33,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Brush
@@ -172,16 +171,26 @@ private fun ActivationRow(activation: UsageScreenModel.Activation) {
     }
 }
 
-/** The site's card surface: `rounded-2xl border border-border/50 bg-card/60`. */
+/**
+ * The site's card surface: `rounded-2xl border border-border/50 bg-card/60`.
+ *
+ * The one-pixel padding is the site's border, which CSS counts inside the card's
+ * box (`box-sizing: border-box`) while Compose paints it without taking layout
+ * space; without it the card's content would sit a pixel high and its height would
+ * miss the page's by two.
+ */
 @Composable
 private fun CardShell(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val spacing = LocalRoySpacing.current
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = Recipes.Card.radius,
-        colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
-        border = Recipes.Card.border,
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(Recipes.Card.radius)
+                .background(Recipes.Card.container)
+                .border(Recipes.Card.border, Recipes.Card.radius)
+                .padding(PlanScreenMetrics.cardBorder),
     ) {
         Column(
             modifier = Modifier.padding(Recipes.Card.padding(spacing)),
@@ -339,21 +348,27 @@ private fun Badge(model: UsageScreenModel) {
     }
 }
 
-/** The site's guest prompt: a lock, the reason, and the way in. */
+/**
+ * The site's guest prompt: a lock, the reason, and the way in.
+ *
+ * The boxes are the page's own (`PlanScreenMetrics`): the mark, then the two
+ * sentences four pixels apart, then the action sixteen below them, which is the
+ * card's gap plus the page's `mt-1`. The action is full-width here because the
+ * page's CTA carries `w-full` on this surface.
+ */
 @Composable
 private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
     val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
 
-    CardShell(modifier) {
+    CardShell(modifier.testTag(PlanScreenMetrics.CARD)) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         ) {
             Box(
                 modifier =
-                    Modifier.size(Recipes.GuestMark.size)
+                    Modifier.testTag(PlanScreenMetrics.MARK)
+                        .size(PlanScreenMetrics.markSize)
                         .royInsetShadow(
                             shape = Recipes.GuestMark.radius,
                             color = Recipes.GuestMark.shadowColor,
@@ -372,22 +387,44 @@ private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
                     modifier = Modifier.size(Recipes.Glyph.md),
                 )
             }
-            Text(
-                text = PlanCardCopy.SIGN_IN_TITLE,
-                style = type.body.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = PlanCardCopy.SIGN_IN_BODY,
-                style = type.xs,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
+
+            Spacer(Modifier.height(PlanScreenMetrics.cardGap))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(PlanScreenMetrics.textGap),
+            ) {
+                Text(
+                    text = PlanCardCopy.SIGN_IN_TITLE,
+                    modifier =
+                        Modifier.testTag(PlanScreenMetrics.SIGN_IN_TITLE)
+                            .height(PlanScreenMetrics.signInTitleHeight),
+                    fontSize = PlanScreenMetrics.signInTitleSize,
+                    lineHeight = PlanScreenMetrics.signInTitleLineHeight,
+                    fontWeight = PlanScreenMetrics.signInTitleWeight,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = PlanCardCopy.SIGN_IN_BODY,
+                    modifier =
+                        Modifier.testTag(PlanScreenMetrics.SIGN_IN_BODY)
+                            .height(PlanScreenMetrics.signInBodyHeight),
+                    fontSize = PlanScreenMetrics.signInBodySize,
+                    lineHeight = PlanScreenMetrics.signInBodyLineHeight,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(Modifier.height(PlanScreenMetrics.ctaToText))
+
             Box(
                 modifier =
-                    Modifier.height(Recipes.Cta.height)
-                        .widthIn(min = Recipes.Cta.minWidth)
+                    Modifier.testTag(PlanScreenMetrics.CTA)
+                        .fillMaxWidth()
+                        .height(Recipes.Cta.height)
                         .shadow(
                             elevation = Recipes.Cta.bloomY,
                             shape = Recipes.Cta.radius,

@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -484,7 +485,8 @@ private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
     ) {
         Box(
             modifier =
-                Modifier.height(Recipes.Cta.height)
+                Modifier.testTag(ConnectedAppsScreenMetrics.CTA)
+                    .height(Recipes.Cta.height)
                     .widthIn(min = Recipes.Cta.minWidth)
                     .shadow(
                         elevation = Recipes.Cta.bloomY,

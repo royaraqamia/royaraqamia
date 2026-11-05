@@ -1,0 +1,34 @@
+{
+  "surface": "account-connected-apps",
+  "route": "/account/connected-apps",
+  "notes": "The page at rest for a guest: the title and the one action the page offers a visitor with no session. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gap between these boxes, not where the first one lands. `capture` is the action, because it is the region both clients draw identically. The title's width is left out deliberately - it is the run of the words, not a decision - and colours are left out too, because they are what the raster proves. The member's list states read the fixture account's own connections and are not part of this contract yet.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "cta",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='connected-title'] h1"
+          },
+          "app": {
+            "tag": "connected-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "cta",
+          "web": {
+            "selector": "[data-visual='connected-cta']"
+          },
+          "app": {
+            "tag": "connected-cta"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    }
+  ]
+}

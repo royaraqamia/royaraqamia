@@ -96,15 +96,13 @@
     },
     {
       "surface": "account-plan",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanScreen.kt",
-      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanScreen.kt"
     },
     {
       "surface": "account-connected-apps",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt",
-      "reason": "Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreen.kt"
     },
     {
       "surface": "account-faq",

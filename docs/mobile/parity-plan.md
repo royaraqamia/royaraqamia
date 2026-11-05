@@ -46,8 +46,8 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 - [ ] **account-links** `/account/links` — todo · #944
 - [ ] **account-posts** `/account/posts` — todo
 - [ ] **account-submissions** `/account/submissions` — todo · #931
-- [ ] **account-plan** `/account/plan` — todo
-- [ ] **account-connected-apps** `/account/connected-apps` — todo
+- [x] **account-plan** `/account/plan` — native · #900
+- [x] **account-connected-apps** `/account/connected-apps` — native · #900
 - [ ] **account-blocked** `/account/blocked` — todo · #977
 - [x] **account-faq** `/account/faq` — native
 - [ ] **account-services** `/account/services` — todo · #978
@@ -88,8 +88,8 @@ A component is finished when the surface that draws it is native: 48 ported comp
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
 - [ ] `sign-in` on **auth** · #770
-- [ ] `plan-card` on **account-plan** · #647
-- [ ] `account-connected-apps` on **account-connected-apps** · #657
+- [x] `plan-card` on **account-plan** · #647
+- [x] `account-connected-apps` on **account-connected-apps** · #657
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
 - [ ] `shell-services-order` on **home** · #806
@@ -136,4 +136,4 @@ A component is finished when the surface that draws it is native: 48 ported comp
 
 ## Where this stands
 
-8 native · 30 to do · 1 blocked of 39 surfaces.
+10 native · 28 to do · 1 blocked of 39 surfaces.

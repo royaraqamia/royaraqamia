@@ -61,7 +61,7 @@ export function usageShare(limits: OwnedItemState[]): number {
 export function PlanView() {
   return (
     <div className="space-y-6">
-      <header className="mb-10 text-center">
+      <header data-visual="plan-title" className="mb-10 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>{PLAN_CARD_COPY.pageTitle}</SectionTitleHighlight>
         </SectionTitle>
@@ -92,17 +92,22 @@ function PlanBody() {
 
   if (!user) {
     return (
-      <section className="roy-card items-center text-center">
-        <div className="roy-guest-mark">
+      <section data-visual="plan-card" className="roy-card items-center text-center">
+        <div data-visual="plan-mark" className="roy-guest-mark">
           <Lock className="roy-glyph roy-glyph--md" aria-hidden="true" />
         </div>
         <div className="space-y-1">
-          <p className="text-base font-bold text-foreground">{PLAN_CARD_COPY.signInTitle}</p>
-          <p className="text-xs text-muted-foreground sm:text-sm">{PLAN_CARD_COPY.signInBody}</p>
+          <p data-visual="plan-sign-in-title" className="text-base font-bold text-foreground">
+            {PLAN_CARD_COPY.signInTitle}
+          </p>
+          <p data-visual="plan-sign-in-body" className="text-xs text-muted-foreground sm:text-sm">
+            {PLAN_CARD_COPY.signInBody}
+          </p>
         </div>
         <SignInCta
           href={`/auth/login?redirect=${encodeURIComponent('/account/plan')}`}
           className="mt-1 w-full sm:w-auto"
+          visual="plan-cta"
         >
           {PLAN_CARD_COPY.signIn}
         </SignInCta>
