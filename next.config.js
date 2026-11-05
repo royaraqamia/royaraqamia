@@ -208,10 +208,14 @@ const nextConfig = {
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           {
             key: 'Permissions-Policy',
-            // `camera=(self)` is what the Scanner needs (ADR-0035). `self`, never
+            // `camera=(self)` is what the Scanner needs (ADR-0035) and
+            // `microphone=(self)` is what a chat voice note needs (ADR-0127):
+            // the composer calls `getUserMedia({ audio: true })`, and the empty
+            // allowlist (`microphone=()`) refused it in every browser and in the
+            // shell's own WebView, which reads the same header. `self`, never
             // `*`: a wildcard would let any third-party frame we ever embed
-            // borrow a visitor's camera. Nothing else is granted.
-            value: 'camera=(self), microphone=(), geolocation=(), payment=()',
+            // borrow a visitor's camera or microphone. Nothing else is granted.
+            value: 'camera=(self), microphone=(self), geolocation=(), payment=()',
           },
         ],
       },

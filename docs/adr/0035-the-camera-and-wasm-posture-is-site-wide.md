@@ -45,3 +45,16 @@ formats — the engine has to keep the promise, not merely exist. The engine a d
 is announced once on the console (`[scan] decoding with …`) — which is how the Android detector
 above was confirmed in the field, on a phone whose native detector answered every frame with
 nothing.
+
+## Amendment (2026-11-05): the microphone is the voice note's, and it is `self` too
+
+A chat voice note records in the page (`getUserMedia({ audio: true })`, ADR-0126 and ADR-0127),
+and this header still shipped `microphone=()`, an allowlist with nothing in it. A browser reads
+that as "no document on this origin may open a microphone", so the permission was refused before
+any prompt could be drawn and the composer could only report its generic sentence about the
+microphone permission. The shell's WebView reads the same header, so the installed app failed
+identically even though `AndroidManifest.xml` already declared `RECORD_AUDIO` and
+`MODIFY_AUDIO_SETTINGS` and Capacitor's own `BridgeWebChromeClient` already requests them.
+
+The value is now `microphone=(self)`: the camera's posture, granted to our own documents and never
+to a third-party frame. `scripts/__tests__/security-config.test.ts` fails a return to `()` or `*`.
