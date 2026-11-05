@@ -1,0 +1,26 @@
+/* The preamble every Tailwind entry in this app compiles against (issue #497).
+
+   `global.css` (the shell) and each surface (`app/<surface>/app.css`) import
+   this file after their own `@import 'tailwindcss'`, so both compilations agree
+   on four things that are easy to let drift:
+
+   - the `dark` variant. The site renders its dark theme unconditionally (the
+     `:root` tokens in `global.css`), so `dark:` must key off an always-present
+     class instead of `prefers-color-scheme`. Declared once here, used by every
+     entry, so no surface can silently fork the variant;
+   - `source(none)`: no stylesheet guesses at sources any more. Every file that
+     contributes class names is listed by the entry that ships it, so a
+     surface's utilities stop leaking into the shell's stylesheet;
+   - the type plugin and the animation utilities, which both sides draw;
+   - the tokens in `theme.css`, imported by both so a token defined in one
+     compilation only is not a token that renders differently by route.
+
+   The *layer order* is declared by the two entries themselves, not here,
+   because it is not the same on both sides: the shell's utilities must outrank
+   a surface's (see `app/surface.css`). */
+
+@import './theme.css';
+@plugin "@tailwindcss/typography";
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));

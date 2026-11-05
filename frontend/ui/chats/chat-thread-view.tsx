@@ -22,6 +22,7 @@ import {
 } from '@/frontend/state/chats/use-chat-assistant';
 import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
+import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
@@ -360,8 +361,15 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           least the list's height (so short content is pushed down) and grows
           past it when the thread is long (so nothing at the top is cut off, the
           way `justify-end` alone would).
+
+          `shrink-0` is what lets it grow at all. As a flex item of a list with
+          a definite height it shrank back to that height the moment a thread
+          ran past one screen — and because the rows inside it are flex items
+          too, they compressed into the same box instead of overflowing. The
+          list then reported `scrollHeight === clientHeight`: nothing to scroll,
+          and every line squeezed into the last screenful.
         */}
-        <div className="flex min-h-full flex-col justify-end gap-2">
+        <div className="flex min-h-full shrink-0 flex-col justify-end gap-2">
           {hasOlder && (
             <button
               type="button"
@@ -584,6 +592,8 @@ function ThreadHeader({
   onBlock: () => void;
   onLeave: () => void;
 }) {
+  const goBack = useBackAction('/notifications?tab=chats');
+
   /**
    * The member this thread is about, when the site has a page for them.
    *
@@ -650,13 +660,23 @@ function ThreadHeader({
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      <Link
-        href="/notifications?tab=chats"
+      {/*
+        The thread's own back control, and the only one on this page: the
+        floating header stands down here (`SecondaryHeader`). It runs the app's
+        shared back decision rather than a link, because a `Link` to the chats
+        tab *pushes*: open a thread from the tab, press back, and the tab and
+        the thread take turns forever. Back pops the entry the thread was opened
+        from when there is one, and replaces itself with the tab when there is
+        not — like WhatsApp's conversation screen.
+      */}
+      <button
+        type="button"
+        onClick={goBack}
         aria-label="العودة إلى المحادثات"
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
       >
         <ArrowRight className="size-5" aria-hidden="true" />
-      </Link>
+      </button>
 
       {profileHref ? (
         <Link

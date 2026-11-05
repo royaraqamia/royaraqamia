@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { Lock, Mic, Paperclip, Square, X } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -47,7 +48,6 @@ export function ChatComposer({
   ariaLabel,
   sendLabel,
   sendIcon,
-  children,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -66,13 +66,10 @@ export function ChatComposer({
   sendLabel: string;
   /** The send glyph, named by the thread that draws the row (ADR-0100). */
   sendIcon: ReactNode;
-  /** The line under the row: the quota, the remaining turns, a refusal. */
-  children?: ReactNode;
 }) {
   const recorder = useVoiceRecorder();
   const [locked, setLocked] = useState(false);
   const [pressing, setPressing] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const cancelling = useRef(false);
@@ -83,11 +80,21 @@ export function ChatComposer({
   /** The slot at the row's end: send once there is something to send, else the microphone. */
   const showSend = value.trim().length > 0 || files.length > 0;
 
+  // A refusal is a toast, not a sentence parked under the field. WhatsApp and
+  // Telegram keep the row itself clean: a tap that was too short, a refused
+  // microphone and a spent allowance all say their piece once and leave, and
+  // nothing accumulates under the input while the member is typing. One `id`
+  // per subject, so a repeated failure replaces the last toast instead of
+  // stacking a column of the same sentence.
+  useEffect(() => {
+    if (recorder.error) toast.error(recorder.error, { id: 'chat-composer-error' });
+  }, [recorder.error]);
+
   // The cap ends the capture by itself, and the note is still sent: someone who
   // kept talking past five minutes gets their words, not a discarded clip.
   useEffect(() => {
     if (!recorder.isRecording || recorder.elapsedMs < VOICE_NOTE_MAX_MS) return;
-    setNotice(VOICE_COPY.limitReached);
+    toast.info(VOICE_COPY.limitReached, { id: 'chat-composer-limit' });
     void finish();
     // `finish` reads the recorder's current capture; the elapsed guard above is
     // what keeps this from re-running on every tick.
@@ -108,7 +115,6 @@ export function ChatComposer({
   function onPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
     if (disabled || recorder.isPreparing) return;
     event.preventDefault();
-    setNotice(null);
     cancelling.current = false;
     pendingRelease.current = null;
     origin.current = { x: event.clientX, y: event.clientY };
@@ -322,15 +328,10 @@ export function ChatComposer({
       </div>
 
       {recorder.isPreparing && (
-        <p className="text-[11px] text-muted-foreground">{VOICE_COPY.preparing}</p>
-      )}
-      {(recorder.error ?? notice) && (
-        <p role="alert" className="text-[11px] font-medium text-destructive">
-          {recorder.error ?? notice}
+        <p className="sr-only" aria-live="polite">
+          {VOICE_COPY.preparing}
         </p>
       )}
-
-      {children}
     </>
   );
 }

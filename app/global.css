@@ -1,17 +1,27 @@
 /* The shell's stylesheet: tokens, resets, chrome and shared primitives.
 
-   Every other route-level stylesheet in the app starts with this file's
-   preamble (`surface.css`) and adds only the sources its own surface uses, so
+   Every other route-level stylesheet in the app compiles against the same
+   preamble (`tailwind.css`) and adds only the sources its own surface uses, so
    a visitor reading `/terms` no longer parses the utilities of HabitFlow,
    SpendTrack, LinkSnap, BlogPress, Community, the admin dialogs and the editor
    (issue #497).
 
+   The shell imports Tailwind unwrapped, so its utilities land in the top-level
+   `utilities` layer; a surface wraps the same import in `layer(surface)`
+   (`app/surface.css`), which is declared *below* it. A surface's stylesheet is
+   appended after the shell's, and the shell's utilities must still win the
+   properties they define — otherwise a surface's copy of a base utility strips
+   the shell's breakpoint variant off the same element (ADR-0130).
+
    The list below is the shell's whole contribution: the root layout and the
    components it renders on every route. Nothing here guesses at a directory —
-   `source(none)` in `surface.css` means an unlisted file contributes no CSS,
-   which is what keeps a surface's classes out of the shell. Adding an import
-   to `app/layout.tsx` means adding its source here too. */
-@import './surface.css';
+   `source(none)` means an unlisted file contributes no CSS, which is what
+   keeps a surface's classes out of the shell. Adding an import to
+   `app/layout.tsx` means adding its source here too. */
+@layer theme, base, components, surface, utilities;
+
+@import 'tailwindcss' source(none);
+@import './tailwind.css';
 @import './tokens.css';
 @import './components.css';
 

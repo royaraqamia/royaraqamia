@@ -101,10 +101,10 @@
     "title": {
       "color": "rgb(245, 245, 245)",
       "font-family": "\"Aref Ruqaa Digits\", ibmPlexSansArabic, \"ibmPlexSansArabic Fallback\"",
-      "font-size": "30px",
+      "font-size": "48px",
       "font-weight": "800",
-      "line-height": "37.5px",
-      "letter-spacing": "-0.75px"
+      "line-height": "60px",
+      "letter-spacing": "-1.2px"
     },
     "search": {
       "height": "44px",

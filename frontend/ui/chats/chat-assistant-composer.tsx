@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Send } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
 import type { ChatAttachmentQuota } from '@/shared/contracts/chat';
@@ -22,7 +23,9 @@ const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
  * A composer is not a dashboard: "40 من 40" every time the thread opens is noise
  * a member learns to read past, while the last few turns are the ones that
  * change what they can do today. Five is the point where a count stops being
- * trivia and starts being a warning.
+ * trivia and starts being a warning — and even then it is said once, as a toast
+ * when the allowance turns thin, not as a line parked under the field the way
+ * it used to be.
  */
 const TURNS_WORTH_SAYING = 5;
 
@@ -60,7 +63,35 @@ export function AssistantComposer({
 }) {
   const allowance = assistant.allowance;
   const [files, setFiles] = useState<File[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  const remaining = allowance
+    ? Math.max(
+        0,
+        Math.min(
+          allowance.member.cap - allowance.member.used,
+          allowance.project.limit - allowance.project.used
+        )
+      )
+    : null;
+
+  /** A refused attachment or a failed turn is a toast, never a line under the field. */
+  useEffect(() => {
+    if (assistant.error) toast.error(assistant.error, { id: 'assistant-composer-error' });
+  }, [assistant.error]);
+
+  // The last few turns are worth one toast, not a permanent line: it fires as
+  // the count enters the window, and the spent state above takes over from
+  // there. One `id` per subject, so each step down replaces the last instead of
+  // stacking.
+  useEffect(() => {
+    if (remaining === null || !allowance || remaining > TURNS_WORTH_SAYING) return;
+    toast.info(
+      ASSISTANT_COPY.remaining
+        .replace('{remaining}', String(remaining))
+        .replace('{cap}', String(allowance.member.cap)),
+      { id: 'assistant-composer-remaining' }
+    );
+  }, [allowance, remaining]);
 
   /** Sends the draft and everything staged; a recorded clip is staged first. */
   function send(staged: File[] = files) {
@@ -72,10 +103,9 @@ export function AssistantComposer({
   function addFiles(picked: File[]) {
     const staged = stageFiles(files, picked, quota);
     if ('refusal' in staged) {
-      setNotice(staged.refusal);
+      toast.error(staged.refusal, { id: 'assistant-composer-attachment' });
       return;
     }
-    setNotice(null);
     setFiles(staged.files);
   }
 
@@ -114,16 +144,6 @@ export function AssistantComposer({
     );
   }
 
-  const remaining = allowance
-    ? Math.max(
-        0,
-        Math.min(
-          allowance.member.cap - allowance.member.used,
-          allowance.project.limit - allowance.project.used
-        )
-      )
-    : null;
-
   return (
     <form
       onSubmit={(event) => {
@@ -142,10 +162,9 @@ export function AssistantComposer({
         onRecorded={(clip) => {
           const staged = stageFiles(files, [clip], quota);
           if ('refusal' in staged) {
-            setNotice(staged.refusal);
+            toast.error(staged.refusal, { id: 'assistant-composer-attachment' });
             return;
           }
-          setNotice(null);
           send(staged.files);
         }}
         disabled={assistant.isStreaming}
@@ -153,27 +172,7 @@ export function AssistantComposer({
         ariaLabel={ASSISTANT_COPY.placeholder}
         sendLabel={ASSISTANT_COPY.send}
         sendIcon={<Send size={16} />}
-      >
-        {notice && (
-          <p role="alert" className="text-[11px] font-medium text-destructive">
-            {notice}
-          </p>
-        )}
-
-        {remaining !== null && allowance && remaining <= TURNS_WORTH_SAYING && (
-          <p className="text-[11px] text-muted-foreground/70">
-            {ASSISTANT_COPY.remaining
-              .replace('{remaining}', String(remaining))
-              .replace('{cap}', String(allowance.member.cap))}
-          </p>
-        )}
-
-        {assistant.error && (
-          <p role="alert" className="text-[11px] font-medium text-destructive">
-            {assistant.error}
-          </p>
-        )}
-      </ChatComposer>
+      />
     </form>
   );
 }
