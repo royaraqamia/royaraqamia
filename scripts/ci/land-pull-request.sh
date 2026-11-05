@@ -6,6 +6,10 @@
 # the same checks through protection would gate every human pull request on a rule nobody
 # wrote for them. So the order is fixed here: watch, then merge the exact commit it
 # watched, squash only, and never delete the branch a later conflict resolution may need.
+# Once the merge is confirmed the branch is finished, and its ref is deleted: a merge made
+# through the API by the Actions app does not apply the repository's "automatically delete
+# head branches", so one merged `opencode/*` branch stayed on the remote per round and the
+# branch list read like work nobody had landed.
 #
 # The issue the merge names is closed afterwards: `Closes #N` in the body is a request the
 # API merge does not honour (#1061), so the record is made true here instead.
@@ -112,6 +116,43 @@ close_linked_issues() {
   return 0
 }
 
+# A merge made through the API by the Actions app does not apply the repository's
+# "automatically delete head branches", whatever that setting says: every implementer merge
+# on 2026-11-04/05 left its merged `opencode/*` branch on the remote (#1040, #1044, #1054,
+# #1055, #1056, #1057), while the Telegram bot's merge of the same shape deletes the ref
+# itself (`scripts/telegram/merge.mjs`) and left none. One merged branch per round is how the
+# branch list starts reading like work nobody landed.
+#
+# The merge has already happened by the time this runs, so the ref is dead weight and not
+# something a later conflict resolution can need: the pull request it points at is merged,
+# and a push to it would only revive a branch whose content `main` already holds
+# (`landing.md`, "A merged branch is finished").
+#
+# Nothing here may fail the landing: an already deleted ref, a fork's head or a permission
+# the token does not hold is bookkeeping, not a reason to report a red round.
+delete_merged_branch() {
+  local repo owner branch head_owner
+  repo="${GITHUB_REPOSITORY:-}"
+  [ -n "$repo" ] || repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null) || repo=''
+  [ -n "$repo" ] || return 0
+  owner="${repo%%/*}"
+
+  read -r branch head_owner <<<"$(gh pr view "$pr" --json headRefName,headRepositoryOwner \
+    --jq '"\(.headRefName) \(.headRepositoryOwner.login // "")"' 2>/dev/null)" || return 0
+  [ -n "$branch" ] || return 0
+  if [ -n "$head_owner" ] && [ "$head_owner" != "$owner" ]; then
+    echo "Merged #$pr from $head_owner's fork; leaving its branch alone."
+    return 0
+  fi
+
+  if gh api -X DELETE "repos/$repo/git/refs/heads/$branch" >/dev/null 2>&1; then
+    echo "Deleted the merged branch $branch."
+  else
+    echo "The merged branch $branch was already gone, or could not be deleted."
+  fi
+  return 0
+}
+
 if [ "$(mergeable)" = "CONFLICTING" ]; then
   red "Pull request #$pr conflicts with main, so its checks cannot run until that is resolved."
 fi
@@ -168,6 +209,7 @@ state=$(gh pr view "$pr" --json state --jq .state)
 if [ "$state" = "MERGED" ]; then
   write status merged
   echo "Merged pull request #$pr."
+  delete_merged_branch
   close_linked_issues
   exit 0
 fi

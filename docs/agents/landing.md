@@ -251,6 +251,10 @@ The way in is a conflict resolution still being written when the merge happens â
 reopened by the push that was meant to make it mergeable. So the order is: resolve, push, then let the
 merge land. After the merge the branch is read-only, and the worktree is only somewhere to look.
 
+A merge the pipeline makes itself deletes the branch it finished ([ADR-0120](../adr/0120-the-implementer-merges-its-own-green-pull-request.md)'s
+2026-11-05 amendment), so a surviving `opencode/*` branch is one a push revived, not one the merge
+forgot. The check below is the same either way.
+
 A revived branch proves itself empty before anything is done with it:
 
 ```powershell
