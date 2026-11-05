@@ -5,6 +5,7 @@ import {
   Briefcase,
   CalendarCheck2,
   Download,
+  Flag,
   GraduationCap,
   Link2,
   Megaphone,
@@ -74,6 +75,12 @@ const SECTIONS = [
     label: 'مصادر الأخبار',
     description: 'مراجعة المصادر التي يقترحها القرَّاء وقبولها أو رفضها',
     icon: Newspaper,
+  },
+  {
+    href: '/admin/reports',
+    label: 'إبلاغات المحادثات',
+    description: 'مراجعة بلاغات المحادثات ومقتطفاتها المجمّدة',
+    icon: Flag,
   },
 ];
 
