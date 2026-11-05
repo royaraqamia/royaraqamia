@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +84,11 @@ fun PostCard(
     val label = PostText.label(post.content, post.meta_desc)
 
     Surface(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onOpen),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .testTag(CommunityFeedMetrics.CARD)
+                .clickable(onClick = onOpen),
         shape = CARD_SHAPE,
         color = RoyColors.muted.copy(alpha = 0.2f),
         border = BorderStroke(1.dp, RoyColors.border.copy(alpha = 0.6f)),
@@ -102,7 +107,9 @@ fun PostCard(
             }
 
             Column(
-                modifier = Modifier.padding(Recipes.Card.padding(spacing)),
+                modifier =
+                    Modifier.padding(Recipes.Card.padding(spacing))
+                        .testTag(CommunityFeedMetrics.CARD_CONTENT),
                 verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
             ) {
                 val author = post.author
@@ -235,4 +242,4 @@ fun PostCard(
 }
 
 /** The site's `rounded-3xl`: one step larger than the account card's shape. */
-private val CARD_SHAPE = RoundedCornerShape(24.dp)
+private val CARD_SHAPE = RoundedCornerShape(CommunityFeedMetrics.CARD_RADIUS.dp)

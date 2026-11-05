@@ -17,7 +17,10 @@ interface CommunitySearchSummaryProps {
  */
 export function CommunitySearchSummary({ query }: CommunitySearchSummaryProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border text-sm text-muted-foreground shadow-sm">
+    <div
+      data-visual="community-summary"
+      className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border text-sm text-muted-foreground shadow-sm"
+    >
       <div className="flex items-center gap-2.5">
         <Search className="size-4 text-primary shrink-0" />
         <span>نتائج البحث عن:</span>

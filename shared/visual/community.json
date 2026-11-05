@@ -1,0 +1,54 @@
+{
+  "surface": "community",
+  "route": "/community",
+  "notes": "The page's feed column at rest: the first post card and the load-more control, the two boxes both clients draw. `origin` is the first card, because the page's frame and the app's frame are different heights and the page's search box and members strip are chrome the app does not draw yet (#658); the design this contract owns is the card's own box and the control under it. `capture` is the load-more control, because its words and its pill are the same on both clients and do not depend on the feed's data. The post text is data, so it is not measured; the card's height is left out for the same reason (the page's footer also carries the share and actions controls, which are not part of this slice). The search field and the search summary are anchored on the page for the slice that ports search, but they are not part of this contract: the app has no search control yet, and a contract element the app does not draw would be a number with nothing behind it.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "card",
+      "capture": "load-more-region",
+      "elements": [
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='community-card']"
+          },
+          "app": {
+            "tag": "community-card"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "card-content",
+          "web": {
+            "selector": "[data-visual='community-card-content']"
+          },
+          "app": {
+            "tag": "community-card-content"
+          },
+          "properties": ["paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "load-more-region",
+          "web": {
+            "selector": "[data-visual='community-load-more-region']"
+          },
+          "app": {
+            "tag": "community-load-more-region"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "load-more",
+          "web": {
+            "selector": "[data-visual='community-load-more']"
+          },
+          "app": {
+            "tag": "community-load-more"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingLeft"]
+        }
+      ]
+    }
+  ]
+}

@@ -184,7 +184,7 @@ export function CommunitySearch() {
     }`;
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative" data-visual="community-search">
       <Search
         className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
         aria-hidden="true"

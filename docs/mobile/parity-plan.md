@@ -21,7 +21,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 
 - [ ] **marketing** `/pricing` `/privacy` `/security` `/terms` `/app-info` — todo
 - [ ] **downloader** `/downloader` — todo
-- [ ] **community** `/community` — todo
+- [x] **community** `/community` — native
 - [ ] **community-post** `/community/[slug]` — todo
 - [ ] **profile** `/u/[username]` — todo
 - [ ] **news** `/news` — todo
@@ -113,10 +113,10 @@ A component is finished when the surface that draws it is native: 48 ported comp
 - [x] `rates-converter` on **rates** · #658
 - [x] `rates-metals` on **rates** · #658
 - [x] `verify-code-page` on **verify-code** · #658
-- [ ] `post-card` on **community** · #658
-- [ ] `community-feed` on **community** · #658
-- [ ] `needs-connection` on **community** · #658
-- [ ] `read-failure` on **community** · #658
+- [x] `post-card` on **community** · #658
+- [x] `community-feed` on **community** · #658
+- [x] `needs-connection` on **community** · #658
+- [x] `read-failure` on **community** · #658
 - [x] `linksnap-page` on **linksnap** · #654
 - [x] `linksnap-shortener` on **linksnap** · #916
 - [x] `linksnap-empty` on **linksnap** · #654
@@ -136,4 +136,4 @@ A component is finished when the surface that draws it is native: 48 ported comp
 
 ## Where this stands
 
-10 native · 28 to do · 1 blocked of 39 surfaces.
+11 native · 27 to do · 1 blocked of 39 surfaces.

@@ -33,7 +33,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-services` | `/account/services` | `AccountServicesScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `community` | `/community` | `CommunityFeedScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `community` | `/community` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `rates` | `/rates` | `RatesScreen.kt` |  |

@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 import { signIn } from './sign-in';
 
@@ -161,12 +161,62 @@ async function measure(page: Page, elements: Measured[]) {
 }
 
 /**
+ * The rows the community feed's recording seeds, and the ids it must delete.
+ *
+ * The load-more control only exists on a feed with more rows than one page (9),
+ * so the page's state is reached by writing ten rows through the account's own
+ * create route and removing them after the capture. The rows are the fixture's,
+ * not whatever the site happens to publish: a recording that depends on today's
+ * feed is not evidence (ADR-0119).
+ */
+const COMMUNITY_SEED_PREFIX = 'e2e-visual-community-';
+const seeded: Record<string, string[]> = {};
+
+async function clearCommunitySeeds(context: BrowserContext, baseURL: string): Promise<void> {
+  const response = await context.request.get(`${baseURL}/api/blogpress/sync`);
+  if (!response.ok()) return;
+  const body = (await response.json()) as {
+    posts?: { id: string; slug: string; deleted_at?: string | null }[];
+  };
+  for (const post of body.posts ?? []) {
+    if (post.deleted_at || !post.slug.startsWith(COMMUNITY_SEED_PREFIX)) continue;
+    await context.request.delete(`${baseURL}/api/blogpress/posts/${post.id}`);
+  }
+}
+
+async function seedCommunityPosts(
+  context: BrowserContext,
+  baseURL: string,
+  ids: string[]
+): Promise<void> {
+  for (let index = 1; index <= 10; index += 1) {
+    const response = await context.request.post(`${baseURL}/api/blogpress/posts`, {
+      data: {
+        slug: `${COMMUNITY_SEED_PREFIX}${Date.now()}-${index}`,
+        content: `منشور تجريبي للبوابة ${index}`,
+        status: 'published',
+      },
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok()) {
+      throw new Error(
+        `community seed ${index} failed: ${response.status()} ${await response.text()}`
+      );
+    }
+    const body = (await response.json()) as { id?: string };
+    if (body.id) ids.push(body.id);
+  }
+}
+
+/**
  * What a state does to the page before it is measured.
  *
  * A state is not a second page: it is the same route with something open, a
  * selection made, or a session behind it. Each routine is named by the contract,
  * so a state with no routine fails by name instead of silently recording the page
- * at rest under another state's name.
+ * at rest under another state's name. A surface-specific name (`<surface>/<state>`)
+ * wins over the shared one, so a state that needs its own rows does not change
+ * what every other surface records.
  */
 const PREPARE: Record<
   string,
@@ -201,6 +251,32 @@ const PREPARE: Record<
     // The session lands after the first paint, and the state is the signed-in form
     // or nothing: waiting for its first field is what makes the recording that state.
     await page.locator('[data-visual="custom-label"]').waitFor({ timeout: 20_000 });
+  },
+  // The community feed's load-more is the region the gate measures, and it only
+  // exists past the first page. The fixture account seeds ten rows and the
+  // cleanup below removes them, so the feed after the run is the feed before it.
+  'community/at-rest': async (page, visit) => {
+    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
+    await signIn(page.context(), baseURL);
+    await clearCommunitySeeds(page.context(), baseURL);
+    // The array is registered before the first write, so a seed that fails
+    // halfway still leaves every row it did write for the cleanup below.
+    const ids: string[] = [];
+    seeded['community/at-rest'] = ids;
+    await seedCommunityPosts(page.context(), baseURL, ids);
+    await visit(baseURL);
+    await page.locator('[data-visual="community-load-more"]').waitFor({ timeout: 20_000 });
+  },
+};
+
+/** What a state removes after its recording, so a seed is never left behind. */
+const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
+  'community/at-rest': async (page) => {
+    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
+    for (const id of seeded['community/at-rest'] ?? []) {
+      await page.context().request.delete(`${baseURL}/api/blogpress/posts/${id}`);
+    }
+    seeded['community/at-rest'] = [];
   },
 };
 
@@ -267,65 +343,75 @@ test.describe('the visual gate', () => {
 
         // The state is reached the same way a person reaches it: the routine is
         // named by the contract, so a state nobody can record fails here rather
-        // than recording the page at rest under another name.
-        const prepare = PREPARE[state.name];
+        // than recording the page at rest under another name. A surface-specific
+        // routine wins, so one surface's seeded rows do not change another's.
+        const key = `${surface.surface}/${state.name}`;
+        const prepare = PREPARE[key] ?? PREPARE[state.name];
         if (!prepare) throw new Error(`no routine records the state "${state.name}"`);
-        await prepare(page, visit);
 
-        // Motion and a blinking caret would make two recordings of one page differ.
-        await page.addStyleTag({
-          content:
-            '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
-        });
+        try {
+          await prepare(page, visit);
 
-        const measured = await measure(page, elements);
-        for (const element of elements) {
-          expect(
-            measured[element.name],
-            `${surface.surface}/${state.name}: ${element.name} (${element.selector})`
-          ).toBeTruthy();
-        }
-
-        const dir = join(ROOT, 'e2e', '__visual__', surface.surface, state.name);
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(
-          join(dir, 'web.json'),
-          `${JSON.stringify(
-            {
-              surface: surface.surface,
-              state: state.name,
-              route: surface.web.route,
-              viewport: { ...VIEWPORT, deviceScaleFactor: DEVICE_SCALE },
-              elements: measured,
-            },
-            null,
-            2
-          )}\n`,
-          'utf8'
-        );
-
-        // The raster compares the region both clients draw identically. The page's
-        // frame and the app's are not the same height, so a viewport capture would
-        // compare the site's chrome with the app's; the contract names the element.
-        // A frame that declares `raster: "none"` records no image at all: its gate
-        // entry's `why` says what the page's pixels are that the app cannot draw.
-        const region = spec.capture
-          ? elements.find((element) => element.name === spec.capture)
-          : null;
-        if (surface.raster === 'none') {
-          // Nothing to capture: the layout numbers are the whole recording.
-        } else if (region) {
-          await page
-            .locator(region.selector)
-            .first()
-            .screenshot({ path: join(dir, 'web.png'), animations: 'disabled', caret: 'hide' });
-        } else {
-          await page.screenshot({
-            path: join(dir, 'web.png'),
-            fullPage: false,
-            animations: 'disabled',
-            caret: 'hide',
+          // Motion and a blinking caret would make two recordings of one page differ.
+          await page.addStyleTag({
+            content:
+              '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
           });
+
+          const measured = await measure(page, elements);
+          for (const element of elements) {
+            expect(
+              measured[element.name],
+              `${surface.surface}/${state.name}: ${element.name} (${element.selector})`
+            ).toBeTruthy();
+          }
+
+          const dir = join(ROOT, 'e2e', '__visual__', surface.surface, state.name);
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(
+            join(dir, 'web.json'),
+            `${JSON.stringify(
+              {
+                surface: surface.surface,
+                state: state.name,
+                route: surface.web.route,
+                viewport: { ...VIEWPORT, deviceScaleFactor: DEVICE_SCALE },
+                elements: measured,
+              },
+              null,
+              2
+            )}\n`,
+            'utf8'
+          );
+
+          // The raster compares the region both clients draw identically. The page's
+          // frame and the app's are not the same height, so a viewport capture would
+          // compare the site's chrome with the app's; the contract names the element.
+          // A frame that declares `raster: "none"` records no image at all: its gate
+          // entry's `why` says what the page's pixels are that the app cannot draw.
+          const region = spec.capture
+            ? elements.find((element) => element.name === spec.capture)
+            : null;
+          if (surface.raster === 'none') {
+            // Nothing to capture: the layout numbers are the whole recording.
+          } else if (region) {
+            await page
+              .locator(region.selector)
+              .first()
+              .screenshot({ path: join(dir, 'web.png'), animations: 'disabled', caret: 'hide' });
+          } else {
+            await page.screenshot({
+              path: join(dir, 'web.png'),
+              fullPage: false,
+              animations: 'disabled',
+              caret: 'hide',
+            });
+          }
+        } finally {
+          // A seed is removed even when the recording failed: the next run must
+          // start from the same feed this one did.
+          const cleanup = CLEANUP[key] ?? CLEANUP[state.name];
+          if (cleanup) await cleanup(page);
         }
       });
     }

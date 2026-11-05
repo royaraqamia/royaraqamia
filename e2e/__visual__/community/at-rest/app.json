@@ -1,0 +1,23 @@
+{
+  "surface": "community",
+  "elements": {
+    "card": {
+      "width": 328.72726,
+      "radius": 24.0
+    },
+    "card-content": {
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "load-more-region": {
+      "width": 328.72726,
+      "height": 44.0
+    },
+    "load-more": {
+      "height": 44.0,
+      "fontSize": 14.0,
+      "fontWeight": 700,
+      "paddingLeft": 32.0
+    }
+  }
+}

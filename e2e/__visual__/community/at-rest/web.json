@@ -1,0 +1,30 @@
+{
+  "surface": "community",
+  "state": "at-rest",
+  "route": "/community",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "card": {
+      "width": 329,
+      "radius": 24
+    },
+    "card-content": {
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "load-more-region": {
+      "width": 329,
+      "height": 44
+    },
+    "load-more": {
+      "height": 44,
+      "fontSize": 14,
+      "fontWeight": 700,
+      "paddingLeft": 32
+    }
+  }
+}
