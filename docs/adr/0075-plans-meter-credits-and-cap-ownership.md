@@ -251,3 +251,31 @@ concurrent creates could outrun the count even through the app (#526).
 - **Credits stay where they were.** The meter is still the request layer's, which
   is why a publish is charged once; only the standing caps and the publication
   rules moved into the write.
+
+## Amendment (2026-11-05): a cap reads the write, not the row
+
+The owned-item trigger above counts rows, and a row is a slot, so measuring it on
+every write is the same question every time. A cap that lives _inside_ one row —
+`news_source_preferences.source_ids`, capped at the plan's `news.sources` —
+is a different shape, and 20261029160000 measured it on every insert _and_ every
+update. The consequence was not a limit on sourcing. It was a row that could not
+be written at all: one free reader selected six sources while the ceiling was 64,
+and from then on every column of that row was refused with `PL001`, including the
+two columns that have nothing to do with the selection — the digest flag and the
+nightly run's served marker (`last_personal_digest_at`). Production found it on
+2026-11-05, when
+`20261115120000_news_one_source_list.sql` (ADR-0131's sweep) stopped at its first
+statement on that row, and the merge's migration job with it.
+
+- **The refusal belongs to the selection.** `private.assert_news_source_cap()`
+  returns early when the write is an update that leaves `source_ids` exactly as
+  it was (`is not distinct from`). A save that carries more sources than the plan
+  allows is still `PL001`, and a reader already over the cap still cannot add
+  one — the grandfathering rule above, "a live row being edited is not a new
+  slot", applied to a selection stored inside a row.
+- **Nothing is trimmed, and the columns beside the selection stay writable.** The
+  sweep, the served marker and any future flag on that row are ordinary writes;
+  the reader fixes the state by cutting down, and the refusal names the number.
+- **20261029160000's "must cut down before they can change anything" is
+  withdrawn** in favour of "before they can change the selection". The stricter
+  reading could not be satisfied by the very migration that needed it.

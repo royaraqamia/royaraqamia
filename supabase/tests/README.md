@@ -218,7 +218,11 @@ certificate and `users` write assertions do not.
 writing machine), so treat its first run the same: the SQL it exercises is deployed by the
 drift workflow on merge, but the assertions themselves are unrehearsed. Its #701 block is the
 exception: the migration and those assertions ran against the linked project inside a
-rolled-back transaction, so only the pgTAP harness around them is unrehearsed.
+rolled-back transaction, so only the pgTAP harness around them is unrehearsed. The
+news-source pair added on 2026-11-05 (the digest flag beside a grandfathered selection
+succeeds, a seventh source on that row is still `PL001`) is in the same position: both
+statements ran against the linked project's over-cap row inside a rolled-back transaction,
+and `20261115120000` applied in full there the same way.
 
 `habit_reminders_damascus_test.sql` (#604) is in the same position, with one difference: its
 helper boundaries, its selection body and every fixture's statement shape were run against the
