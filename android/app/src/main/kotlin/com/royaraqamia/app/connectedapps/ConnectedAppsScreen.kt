@@ -1,9 +1,11 @@
 package com.royaraqamia.app.connectedapps
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,11 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.theme.LocalRoySpacing
-import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 import kotlinx.coroutines.launch
 
@@ -49,7 +56,6 @@ fun ConnectedAppsScreen(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf<ConnectedAppsUiState>(ConnectedAppsUiState.Loading) }
     var actionError by remember { mutableStateOf<String?>(null) }
@@ -87,16 +93,26 @@ fun ConnectedAppsScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(RoyColors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+        verticalArrangement = Arrangement.spacedBy(ConnectedAppsScreenMetrics.titleToBody),
     ) {
         Text(
             text = ConnectedAppsCopy.PAGE_TITLE,
-            modifier = Modifier.fillMaxWidth(),
-            style = type.h2,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(ConnectedAppsScreenMetrics.titleHeight)
+                    .testTag(ConnectedAppsScreenMetrics.TITLE),
+            style =
+                TextStyle(
+                    fontSize = ConnectedAppsScreenMetrics.titleSize,
+                    lineHeight = ConnectedAppsScreenMetrics.titleLineHeight,
+                    fontWeight = ConnectedAppsScreenMetrics.titleWeight,
+                    letterSpacing = ConnectedAppsScreenMetrics.titleTracking,
+                    textAlign = TextAlign.Center,
+                ),
             color = RoyColors.primary,
-            textAlign = TextAlign.Center,
         )
 
         ConnectedAppsCard(
@@ -109,4 +125,23 @@ fun ConnectedAppsScreen(
             onConnectNew = onConnectNew,
         )
     }
+}
+
+/**
+ * The page's own numbers, which the visual gate compares box by box
+ * (`shared/visual/account-connected-apps.json`, ADR-0118).
+ *
+ * The title is `SectionTitle`'s `text-3xl font-extrabold` with the highlight's
+ * `py-[0.15em]`; the guest's one action is the site's gradient pill.
+ */
+internal object ConnectedAppsScreenMetrics {
+    const val TITLE = "connected-title"
+    const val CTA = "connected-cta"
+
+    val titleSize = 30.sp
+    val titleLineHeight = 46.5.sp
+    val titleHeight = 46.5.dp
+    val titleWeight = FontWeight.ExtraBold
+    val titleTracking = (-0.025).em
+    val titleToBody = 40.dp
 }

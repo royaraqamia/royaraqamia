@@ -145,12 +145,14 @@
     {
       "surface": "account-plan",
       "phase": "core",
-      "state": "todo"
+      "state": "native",
+      "issue": "#900"
     },
     {
       "surface": "account-connected-apps",
       "phase": "core",
-      "state": "todo"
+      "state": "native",
+      "issue": "#900"
     },
     {
       "surface": "account-blocked",

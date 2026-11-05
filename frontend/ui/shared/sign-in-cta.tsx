@@ -10,6 +10,11 @@ interface SignInCtaProps {
   children?: ReactNode;
   className?: string;
   /**
+   * The visual gate's own name for this box (`shared/visual/<surface>.json`).
+   * Optional, and only read by the recorder: no surface changes because of it.
+   */
+  visual?: string;
+  /**
    * The overlay this CTA sits in, if any. It is dismissed first and the push
    * follows the history entry that dismissal releases, so a guest who taps it
    * from inside a prompt still lands on the sign-in page.
@@ -28,6 +33,7 @@ export function SignInCta({
   href,
   children = 'تسجيل الدُّخول',
   className,
+  visual,
   dismiss,
 }: SignInCtaProps) {
   const classes = cn(CTA_CLASSES, className);
@@ -48,7 +54,7 @@ export function SignInCta({
   }
 
   return (
-    <Link href={href} className={classes}>
+    <Link href={href} className={classes} data-visual={visual}>
       {content}
     </Link>
   );

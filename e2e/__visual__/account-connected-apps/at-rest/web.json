@@ -1,0 +1,26 @@
+{
+  "surface": "account-connected-apps",
+  "state": "at-rest",
+  "route": "/account/connected-apps",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "cta": {
+      "top": 166.5,
+      "width": 176,
+      "height": 52,
+      "radius": 9999,
+      "fontSize": 16,
+      "fontWeight": 700
+    }
+  }
+}

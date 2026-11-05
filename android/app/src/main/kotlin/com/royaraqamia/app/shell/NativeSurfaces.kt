@@ -34,7 +34,15 @@ object NativeSurfaces {
      * before it (#874, ADR-0118).
      */
     private val routes: Set<String> =
-        setOf("/verify", "/account/faq", "/linksnap", "/rates", "/habitflow")
+        setOf(
+            "/verify",
+            "/account/faq",
+            "/account/plan",
+            "/account/connected-apps",
+            "/linksnap",
+            "/rates",
+            "/habitflow",
+        )
 
     /**
      * The dynamic routes a passing port answers, matched by shape rather than by

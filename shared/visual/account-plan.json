@@ -1,0 +1,74 @@
+{
+  "surface": "account-plan",
+  "route": "/account/plan",
+  "notes": "The page at rest for a guest: the title and the card that stands in for a plan the page cannot read without a session. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card, because it is the region both clients draw identically: the guest mark, the two sentences and the gradient action. Widths of the two sentences are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves. The member's Ready state needs the fixture account's own plan and is not part of this contract yet.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='plan-title'] h1"
+          },
+          "app": {
+            "tag": "plan-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='plan-card']"
+          },
+          "app": {
+            "tag": "plan-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "mark",
+          "web": {
+            "selector": "[data-visual='plan-mark']"
+          },
+          "app": {
+            "tag": "plan-mark"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "sign-in-title",
+          "web": {
+            "selector": "[data-visual='plan-sign-in-title']"
+          },
+          "app": {
+            "tag": "plan-sign-in-title"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "sign-in-body",
+          "web": {
+            "selector": "[data-visual='plan-sign-in-body']"
+          },
+          "app": {
+            "tag": "plan-sign-in-body"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "cta",
+          "web": {
+            "selector": "[data-visual='plan-cta']"
+          },
+          "app": {
+            "tag": "plan-cta"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    }
+  ]
+}

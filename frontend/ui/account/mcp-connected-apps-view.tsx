@@ -68,7 +68,7 @@ export function connectedAppName(connectedApp: McpConnectedApp): string {
 export function McpConnectedAppsView() {
   return (
     <div className="space-y-6">
-      <header className="mb-10 text-center">
+      <header data-visual="connected-title" className="mb-10 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>{MCP_CONNECTED_APPS_COPY.pageTitle}</SectionTitleHighlight>
         </SectionTitle>
@@ -142,7 +142,7 @@ function ConnectedAppsBody() {
 
   if (!user)
     return (
-      <SignInCta href="/auth/login?redirect=/account/connected-apps">
+      <SignInCta href="/auth/login?redirect=/account/connected-apps" visual="connected-cta">
         {MCP_CONNECTED_APPS_COPY.signIn}
       </SignInCta>
     );

@@ -247,6 +247,60 @@
           }
         }
       ]
+    },
+    {
+      "surface": "account-plan",
+      "web": {
+        "route": "/account/plan"
+      },
+      "contract": "shared/visual/account-plan.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/plans/PlanScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.2,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-05",
+            "measured": 0.1759,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "surface": "account-connected-apps",
+      "web": {
+        "route": "/account/connected-apps"
+      },
+      "contract": "shared/visual/account-connected-apps.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/connectedapps/ConnectedAppsScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.13,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-05",
+            "measured": 0.118,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {
