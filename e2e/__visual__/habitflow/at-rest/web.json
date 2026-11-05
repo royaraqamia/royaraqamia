@@ -1,0 +1,55 @@
+{
+  "surface": "habitflow",
+  "state": "at-rest",
+  "route": "/habitflow",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 231.66,
+      "height": 32,
+      "fontSize": 24,
+      "fontWeight": 700
+    },
+    "list": {
+      "top": 231.66,
+      "width": 329,
+      "rowGap": 24
+    },
+    "header": {
+      "top": 231.66,
+      "width": 329,
+      "height": 41,
+      "paddingBottom": 8
+    },
+    "empty": {
+      "top": 296.66,
+      "width": 329,
+      "height": 279.5,
+      "radius": 24,
+      "paddingTop": 56,
+      "paddingLeft": 24
+    },
+    "empty-icon": {
+      "width": 64,
+      "height": 64,
+      "radius": 16
+    },
+    "empty-title": {
+      "top": 437.66,
+      "height": 28,
+      "fontSize": 18,
+      "fontWeight": 700
+    },
+    "empty-body": {
+      "top": 473.66,
+      "width": 279,
+      "height": 45.5,
+      "fontSize": 14,
+      "lineHeight": 22.75
+    }
+  }
+}

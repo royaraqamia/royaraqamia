@@ -1,0 +1,27 @@
+{
+  "surface": "habitflow",
+  "elements": {
+    "title": {
+      "top": 12.0,
+      "height": 32.0,
+      "fontSize": 24.0,
+      "fontWeight": 700
+    },
+    "list": {
+      "top": 12.0,
+      "width": 328.72726,
+      "rowGap": 24.0
+    },
+    "header": {
+      "top": 12.0,
+      "width": 328.72726,
+      "height": 41.090908,
+      "paddingBottom": 8.0
+    },
+    "count": {
+      "top": 17.09091,
+      "height": 22.181818,
+      "fontSize": 12.0
+    }
+  }
+}

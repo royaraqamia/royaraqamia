@@ -59,7 +59,7 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 
 _The local-store products, where the app has a real reason to be native: offline writes and a device store behind the same screen._
 
-- [ ] **habitflow** `/habitflow` — todo
+- [x] **habitflow** `/habitflow` — native · #898
 - [ ] **spendtrack** `/spendtrack` `/spendtrack/categories` — todo
 - [x] **linksnap** `/linksnap` — native
 - [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #952
@@ -85,8 +85,8 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 A component is finished when the surface that draws it is native: 48 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
-- [ ] `habit-list` on **habitflow** · #649
-- [ ] `sync-status-pill` on **habitflow** · #649
+- [x] `habit-list` on **habitflow** · #649
+- [x] `sync-status-pill` on **habitflow** · #649
 - [ ] `sign-in` on **auth** · #770
 - [ ] `plan-card` on **account-plan** · #647
 - [ ] `account-connected-apps` on **account-connected-apps** · #657
@@ -136,4 +136,4 @@ A component is finished when the surface that draws it is native: 48 ported comp
 
 ## Where this stands
 
-7 native · 31 to do · 1 blocked of 39 surfaces.
+8 native · 30 to do · 1 blocked of 39 surfaces.

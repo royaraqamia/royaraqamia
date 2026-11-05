@@ -189,7 +189,8 @@
     {
       "surface": "habitflow",
       "phase": "products",
-      "state": "todo"
+      "state": "native",
+      "issue": "#898"
     },
     {
       "surface": "spendtrack",

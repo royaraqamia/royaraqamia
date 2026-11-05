@@ -175,6 +175,19 @@ const PREPARE: Record<
   'at-rest': async (_page, visit) => {
     await visit();
   },
+  // A list with one row: the guest store takes the write on the device, so the
+  // state is reached through the page's own control rather than a fixture row.
+  // The new habit is always this browser context's, and the count it produces is
+  // one, so the recording does not depend on what an account happens to own.
+  'with-count': async (page, visit) => {
+    await visit();
+    // The dev overlay's own button sits over the FAB; the recording is of the
+    // page, not of the overlay, and CI runs a production build with neither.
+    await page.locator('#btn-create-habit').click({ force: true });
+    await page.locator('#input-add-habit-name').fill('قراءة');
+    await page.locator('#btn-submit-add-habit').click();
+    await page.locator('[data-visual="habitflow-count"]').waitFor({ timeout: 20_000 });
+  },
   // The signed-in shortener: the same route with a session behind it, so the
   // custom code and password blocks are drawn. The account is the e2e user the
   // other specs sign in with; the capture is a recording, not a write.
@@ -234,7 +247,13 @@ test.describe('the visual gate', () => {
             }
           );
           if (regionSelector) {
-            await page.locator(regionSelector).first().waitFor({ timeout: 30_000 });
+            const region = page.locator(regionSelector).first();
+            await region.waitFor({ timeout: 30_000 });
+            // A capture region below the fold is measured before it is drawn: the
+            // page's own `whileInView` leaves it translated until it enters the
+            // viewport, so the recording has to scroll it in before the numbers are
+            // taken. A region already in view is not moved.
+            await region.scrollIntoViewIfNeeded();
           }
           // The card enters with a scale animation (`initial: scale(0.95)`), so the
           // first frame after it exists is a box five percent too small. Waiting for
