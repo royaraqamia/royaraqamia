@@ -8,6 +8,14 @@
 # lapsed, and opens (or closes) a single tracking issue so a human notices a
 # recurring outage.
 #
+# A run that failed is re-dispatched too, and on a shorter fuse than the 26-hour
+# heartbeat: the planner dies on a transient upstream refusal often enough to matter
+# (`[prefill_cap_refused] the cell is at capacity`, an upstream 429 that its own five
+# attempts at five seconds cannot outlast), and waiting a day to retry a five-minute
+# job leaves the pipeline idle for a day. The retry is quiet — the schedule itself is
+# on time — so it re-dispatches, logs, and leaves the alert issue to the heartbeat
+# condition, which is still what proves the automation is actually degraded.
+#
 # Every dispatch is fire-and-forget — GitHub answers `204` and can still start
 # nothing, which is how the 2026-10-19/20 misses stayed invisible until the 26-hour
 # check. So each re-dispatch is confirmed: the run has to appear in the Actions API
@@ -51,44 +59,82 @@ jobs:
             const ALERT_LABEL = 'opencode:alert';
             const ALERT_TITLE = 'Issue automation heartbeat missed';
             const STALE_MS = 26 * 60 * 60 * 1000;
+            // A run whose conclusion is one of these did not do its work. `timed_out`
+            // counts: the job hit its own wall, which is a retry's job to answer, not
+            // a heartbeat's.
+            const FAILED = new Set(['failure', 'timed_out']);
             const targets = [
               { name: 'Issue Planner', file: 'issue-planner.yml' },
               { name: 'Issue Implementer', file: 'issue-implementer.yml' },
             ];
 
-            const lastSuccess = async (file) => {
-              const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+            // Newest first. `conclusion` is null while a run is queued or in flight,
+            // which is what keeps a re-dispatch from stacking on one already on its way.
+            const history = async (file) =>
+              github.paginate(github.rest.actions.listWorkflowRuns, {
                 owner,
                 repo,
                 workflow_id: file,
                 per_page: 30,
               });
-              return runs.find((r) => r.conclusion === 'success') || null;
+
+            const inspect = async (file) => {
+              const runs = await history(file);
+              const success = runs.find((r) => r.conclusion === 'success') || null;
+              const latest = runs.find((r) => r.conclusion !== null) || null;
+              const ageMs = success
+                ? Date.now() - Date.parse(success.created_at)
+                : Number.POSITIVE_INFINITY;
+              return {
+                success,
+                latest,
+                inFlight: runs.some((r) => r.status === 'queued' || r.status === 'in_progress'),
+                ageHours: success ? (ageMs / 3600000).toFixed(1) : 'never',
+                lapsed: !success || ageMs > STALE_MS,
+                failed: latest ? FAILED.has(latest.conclusion) : false,
+              };
             };
 
-            const stale = [];
+            const lapsed = [];
+            const queue = [];
             const lines = [];
             for (const target of targets) {
-              const run = await lastSuccess(target.file);
-              const ageMs = run ? Date.now() - Date.parse(run.created_at) : Number.POSITIVE_INFINITY;
-              const ageHours = run ? (ageMs / 3600000).toFixed(1) : 'never';
-              lines.push(
-                '- ' + target.name + ': ' +
-                  (run
-                    ? 'last success `' + run.created_at + '` (' + ageHours + 'h ago, run ' + run.id + ')'
-                    : 'no successful run on record')
-              );
-              if (!run || ageMs > STALE_MS) stale.push(target);
+              const state = await inspect(target.file);
+              const last = state.success
+                ? 'last success `' + state.success.created_at + '` (' + state.ageHours +
+                  'h ago, run ' + state.success.id + ')'
+                : 'no successful run on record';
+              const latest = state.latest && (!state.success || state.latest.id !== state.success.id)
+                ? '; most recent run ' + state.latest.id + ' (' + state.latest.conclusion +
+                  ', `' + state.latest.created_at + '`)'
+                : '';
+              lines.push('- ' + target.name + ': ' + last + latest);
+              // A lapsed target is dispatched once, whatever its last run concluded:
+              // the retry below is for the schedule that is on time and still failed.
+              if (state.lapsed) {
+                lapsed.push(target);
+                queue.push({ target, because: 'lapsed', inFlight: state.inFlight });
+              } else if (state.failed) {
+                queue.push({ target, because: 'failed', inFlight: state.inFlight });
+              }
             }
 
-            // Re-dispatch each lapsed workflow and confirm a run actually started.
+            // Re-dispatch each queued workflow and confirm a run actually started.
             // The dispatch call itself proves nothing: GitHub returns 204 for a
             // request it then drops, so a catch-up that is not verified is reported
             // as a recovery that never happened.
             const DISPATCH_WAIT_MS = 90 * 1000;
             const DISPATCH_POLL_MS = 5 * 1000;
             const recoveries = [];
-            for (const target of stale) {
+            for (const { target, because, inFlight } of queue) {
+              // The workflow's own `Daily guard` makes a redundant dispatch cheap, but
+              // it is not free (a runner, a checkout, a minute), and a run already on
+              // its way will reach the same conclusion this one would.
+              if (inFlight) {
+                core.info(target.name + ' has a run queued or in flight; not re-dispatching.');
+                recoveries.push({ target, because, skipped: true });
+                continue;
+              }
               const since = Date.now();
               try {
                 await github.rest.actions.createWorkflowDispatch({
@@ -99,7 +145,7 @@ jobs:
                 });
               } catch (err) {
                 core.error('Could not re-dispatch ' + target.name + ': ' + err.message);
-                recoveries.push({ target, error: err.message });
+                recoveries.push({ target, because, error: err.message });
                 continue;
               }
 
@@ -118,21 +164,28 @@ jobs:
               }
 
               if (run) {
-                core.warning('Re-dispatched ' + target.name + '; run ' + run.id + ' started.');
+                core.warning(
+                  'Re-dispatched ' + target.name + ' (' + because + '); run ' + run.id + ' started.'
+                );
               } else {
                 core.error(
-                  'Re-dispatched ' + target.name + ' but no run appeared within ' +
+                  'Re-dispatched ' + target.name + ' (' + because + ') but no run appeared within ' +
                     DISPATCH_WAIT_MS / 1000 + 's — the dispatch was dropped.'
                 );
               }
-              recoveries.push({ target, run });
+              recoveries.push({ target, because, run });
             }
 
-            const recoveryLines = recoveries.map(({ target, run, error }) => {
-              if (error) return '- ' + target.name + ': re-dispatch failed (' + error + ').';
-              if (run) return '- ' + target.name + ': re-dispatched, run ' + run.id + ' started.';
+            const why = { lapsed: 'heartbeat lapsed', failed: 'last run failed' };
+            const recoveryLines = recoveries.map(({ target, because, run, error, skipped }) => {
+              const reason = why[because] || because;
+              if (skipped) return '- ' + target.name + ': a run was already on its way (' + reason + ').';
+              if (error) return '- ' + target.name + ': re-dispatch failed, ' + reason + ' (' + error + ').';
+              if (run) {
+                return '- ' + target.name + ': re-dispatched, ' + reason + '; run ' + run.id + ' started.';
+              }
               return (
-                '- ' + target.name + ': re-dispatched, but no run appeared within ' +
+                '- ' + target.name + ': re-dispatched, ' + reason + ', but no run appeared within ' +
                 DISPATCH_WAIT_MS / 1000 + 's. The dispatch was dropped — this is GitHub, not the pipeline.'
               );
             });
@@ -146,7 +199,7 @@ jobs:
             });
             const existing = open.find((i) => !i.pull_request && i.title === ALERT_TITLE);
 
-            if (stale.length === 0) {
+            if (lapsed.length === 0) {
               if (existing) {
                 await github.rest.issues.createComment({
                   owner,
@@ -162,7 +215,13 @@ jobs:
                 });
                 core.info('Closed heartbeat alert #' + existing.number + '.');
               } else {
-                core.info('All heartbeats healthy; no alert to raise.');
+                core.info(
+                  recoveries.length === 0
+                    ? 'All heartbeats healthy; no alert to raise.'
+                    : 'Every heartbeat is inside its window; re-dispatched ' +
+                      recoveries.filter((r) => !r.skipped).length +
+                      ' failed run(s) without raising the alert.'
+                );
               }
               return;
             }
@@ -170,7 +229,7 @@ jobs:
             const body = [
               'The heartbeat for the autonomous issue automation is late. Checked every six hours.',
               '',
-              'Last successful runs:',
+              'Last success and most recent run:',
               ...lines,
               '',
               'Catch-up:',

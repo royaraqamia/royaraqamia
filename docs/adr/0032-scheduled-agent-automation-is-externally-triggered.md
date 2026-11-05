@@ -55,3 +55,21 @@ blast radius is bounded to starting workflows, but the deployment currently reus
 automation token rather than a dedicated one, so a Vault compromise equals that token's scope —
 documented, with a rotation runbook, in `docs/security.md`. If the Vault secret is never
 provisioned the pipeline degrades to the old schedule-plus-monitor behaviour rather than breaking.
+
+## Amendment (2026-11-05): a failed run is re-dispatched, not just a lapsed one
+
+The catch-up above keys on the age of the last **success**, which answers a schedule that never
+fired and misses the one that fired and died. A planner run that ends `failure` leaves the last
+success recent, so nothing re-dispatches it until 26 hours have passed — and the failure it most
+often meets is transient: `[prefill_cap_refused] the cell is at capacity`, an upstream 429 the
+agent's own five attempts at five-second intervals cannot outlast, on a job that then takes six
+minutes to reach the same point again. One refusal therefore cost a whole day of planning
+(2026-11-05, Issue Planner run 41958766207).
+
+So `issue-automation-health.yml` now also re-dispatches a target whose most recent completed run
+concluded `failure` or `timed_out`, whether or not its heartbeat has lapsed, and skips a target
+that already has a run queued or in flight. That retry is deliberately quiet — it is logged, not
+filed as an issue — because the schedule is on time and a single retry is not evidence of
+degradation; the `opencode:alert` issue still means the heartbeat lapsed, which is what a retry
+that keeps failing turns into within a day. The bound is the check's own cadence: at most four
+retries a day per workflow, each of which that workflow's `Daily guard` makes cheap to answer.
