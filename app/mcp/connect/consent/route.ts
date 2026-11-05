@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
-import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
+import {
+  createDefaultMcpConnectedAppService,
+  createDefaultMcpOAuthProvider,
+} from '@/backend/config/mcp';
 import { createMcpBridgeSessionMinter } from '@/backend/services/mcp/bridge-session';
-import { encryptBridgeSession } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { encryptBridgeSession } from '@/backend/shared/mcp-token-crypto';
 import { isSameOrigin, getClientIp } from '@/backend/transport/http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { mcpConsentRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
-import { createMcpConnectedAppService } from '@/backend/services/mcp/connected-apps';
 import { createUsageService } from '@/backend/config/plans';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
   const codeChallenge = (form.get('code_challenge') as string) ?? '';
   const codeChallengeMethod = (form.get('code_challenge_method') as string) ?? 'S256';
 
-  const provider = createMcpOAuthProvider();
+  const provider = createDefaultMcpOAuthProvider();
   const client = await provider.getClient(clientId);
 
   if (!client || !redirectUri || !client.redirect_uris.includes(redirectUri)) {
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
 
   // A grant is one connected app, so the plan's connected-app cap applies here —
   // re-consenting for a client that is already connected reuses its slot.
-  const connected = await createMcpConnectedAppService().list(user.id);
+  const connected = await createDefaultMcpConnectedAppService().list(user.id);
   if (!connected.some((app) => app.clientId === clientId)) {
     const plan = await createUsageService().caps(user.id);
     if (!plan.unlimited && connected.length >= plan.caps.mcp_connected_apps) {

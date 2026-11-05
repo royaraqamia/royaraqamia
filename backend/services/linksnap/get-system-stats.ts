@@ -1,4 +1,4 @@
-import {
+import type {
   AdminRepository,
   SystemStatsReportData,
 } from '@/backend/repositories/linksnap/admin-repository';

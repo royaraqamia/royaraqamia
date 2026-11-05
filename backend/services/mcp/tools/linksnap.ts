@@ -4,9 +4,7 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
-import { createShortLinkRepository } from '@/backend/config/linksnap';
+import { createAnalyticsRepository, createShortLinkRepository } from '@/backend/config/linksnap';
 import { ShortenUrlService } from '@/backend/services/linksnap/shorten-url';
 import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
 import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
@@ -76,7 +74,7 @@ export async function listLinksHandler(
   try {
     requireAnyScope(ctx, ['linksnap.read']);
     const userId = requireUserId(ctx, 'Listing short links');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
+    const repo = createShortLinkRepository(ctx.supabase as never);
     const links = await repo.listByUserId(userId);
 
     const start = params.offset;
@@ -118,7 +116,7 @@ export async function getAnalyticsHandler(
     requireAnyScope(ctx, ['linksnap.read']);
     requireUserId(ctx, 'Getting link analytics');
 
-    const analyticsRepo = new SupabaseAnalyticsRepository(ctx.supabase as never);
+    const analyticsRepo = createAnalyticsRepository(ctx.supabase as never);
     const owner = await analyticsRepo.getLinkOwner(params.code);
     if (!owner || owner !== ctx.userId) {
       return {

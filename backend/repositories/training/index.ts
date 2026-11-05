@@ -10,10 +10,12 @@ import {
   CohortNotFoundError,
   InvalidReleaseStatusError,
   NotEnrolledError,
-  type TrainingApplicationCreateInput,
-  type TrainingApplicationEditFields,
-  type TrainingApplicationListQuery,
-  type TrainingApplicationsRepository,
+} from '@/backend/shared/domain/training';
+import type {
+  TrainingApplicationCreateInput,
+  TrainingApplicationEditFields,
+  TrainingApplicationListQuery,
+  TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';

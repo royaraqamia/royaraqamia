@@ -4,7 +4,7 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
-import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
+import { createPostsRepository } from '@/backend/config/blogpress';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { postExcerpt } from '@/shared/reading-time';
 import {

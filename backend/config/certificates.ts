@@ -2,6 +2,13 @@ import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
+
+// The container is the one place that names the implementation, so a caller that
+// needs the repository itself (the assistant's tools, the MCP data plane) asks
+// here rather than importing `backend/repositories` across a service boundary
+// (`layers/no-cross-layer-import`).
+export { createCertificatesRepository };
+
 import { getAdminSupabase, getPublicSupabase } from '@/backend/config/supabase';
 import { createCertificateVerifier } from '@/backend/services/certificates/certificate-verification';
 import {

@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { ChatService, ChatError, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
-import {
-  AgentThreadExistsError,
-  ChatThreadFullError,
-  type ChatRepository,
-} from '@/backend/repositories/chat/chat-repository';
+import { AgentThreadExistsError, ChatThreadFullError } from '@/backend/shared/domain/chat';
+import type { ChatRepository } from '@/backend/repositories/chat/chat-repository';
 import type { MemberProfile } from '@/shared/contracts/users';
 
 const me = '5f0f3c62-6a37-4a0b-9f0e-2b4c8f7a1d33';

@@ -1,5 +1,5 @@
 import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
-import { createMcpOAuthProvider, type McpOAuthProvider } from './oauth-provider';
+import type { McpOAuthProvider } from './oauth-provider';
 
 /**
  * The account area's view of a user's MCP grants.
@@ -17,7 +17,8 @@ import { createMcpOAuthProvider, type McpOAuthProvider } from './oauth-provider'
  */
 
 export interface McpConnectedAppsDeps {
-  provider?: McpOAuthProvider;
+  /** The OAuth provider. Required: the service does not build one of its own. */
+  provider: McpOAuthProvider;
 }
 
 export interface McpConnectedAppService {
@@ -29,10 +30,8 @@ export interface McpConnectedAppService {
   disconnectAll(userId: string): Promise<void>;
 }
 
-export function createMcpConnectedAppService(
-  deps: McpConnectedAppsDeps = {}
-): McpConnectedAppService {
-  const provider = deps.provider ?? createMcpOAuthProvider();
+export function createMcpConnectedAppService(deps: McpConnectedAppsDeps): McpConnectedAppService {
+  const { provider } = deps;
 
   return {
     async list(userId) {

@@ -3,10 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createSupabaseChatRepository } from '@/backend/repositories/chat/supabase-chat-repository';
 import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
-import {
-  createSupabaseChatAgentActionRepository,
-  toChatAgentAction,
-} from '@/backend/repositories/chat/chat-agent-action-repository';
+import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import {
   ChatAgentActionService,
   type ChatAgentActionServiceDeps,
@@ -60,9 +57,7 @@ export function createSupabaseChatService(
     // of a thread they are in (#818).
     actions: {
       listForMessages: async (messageIds) =>
-        (await createSupabaseChatAgentActionRepository(supabase).listForMessages(messageIds)).map(
-          toChatAgentAction
-        ),
+        createSupabaseChatAgentActionRepository(supabase).listForMessages(messageIds),
     },
     // A request is delivered on the service role: `notifications` grants INSERT
     // to `service_role` only, and the producer is fail-safe by contract.

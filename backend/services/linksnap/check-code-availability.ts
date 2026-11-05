@@ -1,4 +1,4 @@
-import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
 import { isReservedShortCode } from '@/backend/services/linksnap/redirect-url';
 

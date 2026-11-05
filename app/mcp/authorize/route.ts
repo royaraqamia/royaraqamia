@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
-import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
+import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   // Resolve the client first so the redirect_uri can be verified against the
   // registered allowlist before any error redirect (RFC 6749 §4.1.2.1).
-  const provider = createMcpOAuthProvider();
+  const provider = createDefaultMcpOAuthProvider();
   const client = clientId ? await provider.getClient(clientId) : null;
 
   if (!client) {

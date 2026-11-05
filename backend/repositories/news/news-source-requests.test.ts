@@ -6,7 +6,7 @@ import { createNewsSourceRequestsRepository } from '@/backend/repositories/news/
 import {
   NewsSourceRequestDbError,
   OPEN_REQUEST_URL_CONSTRAINT,
-} from '@/backend/repositories/news/news-source-requests-repository';
+} from '@/backend/shared/domain/news';
 
 function makeClient(result: { data: unknown; error: unknown }) {
   const single = vi.fn().mockResolvedValue(result);

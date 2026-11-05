@@ -35,15 +35,13 @@ const mockRepo = {
   revokeToken: vi.fn(),
 };
 
-// Mock the oauth repository module
-vi.mock('@/backend/repositories/mcp/mcp-oauth-repository', () => ({
-  createMcpOAuthRepository: () => mockRepo,
-  McpOAuthRepository: {} as any,
-}));
+/** The resolver takes its store from the container; the test hands it the mock. */
+const resolve = (bearerToken: string | null | undefined) =>
+  resolveMcpContext(bearerToken, mockRepo as never);
 
 // Mock token crypto. `readBridgeSession` mirrors the real marker: a ciphertext
 // the mint path wrote reads as ours, any other row reads as borrowed.
-vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
+vi.mock('@/backend/shared/mcp-token-crypto', () => ({
   hashToken: vi.fn((t: string) => `hash-${t}`),
   readBridgeSession: vi.fn((enc: string) => {
     if (enc === 'encrypted-refresh-token') {
@@ -126,7 +124,7 @@ describe('resolveMcpContext', () => {
   });
 
   it('returns anonymous context for null/undefined token', async () => {
-    const ctx = await resolveMcpContext(null);
+    const ctx = await resolve(null);
     expect(ctx).not.toBeNull();
     expect(ctx!.userId).toBeNull();
     expect(ctx!.scopes).toEqual([]);
@@ -136,7 +134,7 @@ describe('resolveMcpContext', () => {
   it('returns null for unknown token', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(null);
 
-    const ctx = await resolveMcpContext('unknown-token');
+    const ctx = await resolve('unknown-token');
     expect(ctx).toBeNull();
   });
 
@@ -144,7 +142,7 @@ describe('resolveMcpContext', () => {
     const revokedToken = { ...mockTokenRecord, revoked_at: '2026-01-01T00:00:00Z' };
     mockRepo.getTokenByHash.mockResolvedValue(revokedToken);
 
-    const ctx = await resolveMcpContext('revoked-token');
+    const ctx = await resolve('revoked-token');
     expect(ctx).toBeNull();
   });
 
@@ -152,14 +150,14 @@ describe('resolveMcpContext', () => {
     const expiredToken = { ...mockTokenRecord, expires_at: '2025-01-01T00:00:00Z' };
     mockRepo.getTokenByHash.mockResolvedValue(expiredToken);
 
-    const ctx = await resolveMcpContext('expired-token');
+    const ctx = await resolve('expired-token');
     expect(ctx).toBeNull();
   });
 
   it('returns valid context for a good token', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    const ctx = await resolveMcpContext('valid-token');
+    const ctx = await resolve('valid-token');
 
     expect(ctx).not.toBeNull();
     expect(ctx!.userId).toBe('user-123');
@@ -182,7 +180,7 @@ describe('resolveMcpContext', () => {
       session_enc: 'borrowed-browser-session',
     });
 
-    const ctx = await resolveMcpContext('valid-token');
+    const ctx = await resolve('valid-token');
 
     // A pre-amendment row still drains — it is a usable session — but rotating it
     // must not stamp "this session is ours" onto the user's browser session.
@@ -196,8 +194,8 @@ describe('resolveMcpContext', () => {
   it('reuses the cached client on the happy path while re-checking the row', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    const first = await resolveMcpContext('valid-token');
-    const second = await resolveMcpContext('valid-token');
+    const first = await resolve('valid-token');
+    const second = await resolve('valid-token');
 
     // The expensive part — the user-scoped Supabase client — is built once...
     expect(supabaseMocks.refreshSession).toHaveBeenCalledTimes(1);
@@ -216,7 +214,7 @@ describe('resolveMcpContext', () => {
    */
   it('rejects a token another instance revoked, without this instance clearing its cache', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
-    expect(await resolveMcpContext('valid-token')).not.toBeNull();
+    expect(await resolve('valid-token')).not.toBeNull();
 
     // A sibling instance served POST /mcp/revoke: the row flipped and only *that*
     // instance's Map was cleared. This one's entry is untouched and stale.
@@ -226,8 +224,8 @@ describe('resolveMcpContext', () => {
       revoked_at: '2026-01-01T00:00:00Z',
     });
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
     // The dead entry was dropped, so the third call takes the full path again.
     expect(mockRepo.isAccessTokenLive).toHaveBeenCalledTimes(1);
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
@@ -235,20 +233,20 @@ describe('resolveMcpContext', () => {
 
   it('rejects a bearer whose row is gone — rotation or sweep — even while cached', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
-    expect(await resolveMcpContext('valid-token')).not.toBeNull();
+    expect(await resolve('valid-token')).not.toBeNull();
 
     // Rotation revoked the superseded access row and the daily sweep deleted it;
     // the retired bearer still has a cached context on this instance.
     mockRepo.isAccessTokenLive.mockResolvedValue(false);
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
   });
 
   it('respects admin gating: admin scope stripped if user not in ADMIN_EMAILS', async () => {
     const adminToken = { ...mockTokenRecord, scope: ['community.read', 'admin'] };
     mockRepo.getTokenByHash.mockResolvedValue(adminToken);
 
-    const ctx = await resolveMcpContext('admin-token');
+    const ctx = await resolve('admin-token');
     expect(ctx!.scopes).toEqual(['community.read']);
     expect(ctx!.isAdmin).toBe(false);
   });
@@ -274,7 +272,7 @@ describe('resolveMcpContext', () => {
       },
     });
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
 
     // Access row and its refresh row are both retired, so the client's next
     // /mcp/token refresh answers invalid_grant and restarts the browser flow
@@ -295,7 +293,7 @@ describe('resolveMcpContext', () => {
       error: { name: 'AuthApiError', status: 503, message: 'Service Unavailable' },
     });
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
     expect(mockRepo.revokeToken).not.toHaveBeenCalled();
   });
 
@@ -305,7 +303,7 @@ describe('resolveMcpContext', () => {
       session_enc: 'encrypted-with-a-rotated-key',
     });
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
     expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
     expect(logger.warn).toHaveBeenCalledWith(
       '[MCP:SESSION] retired a dead bridge grant',
@@ -316,7 +314,7 @@ describe('resolveMcpContext', () => {
   it('retires a grant that carries no session at all', async () => {
     mockRepo.getTokenByHash.mockResolvedValue({ ...mockTokenRecord, session_enc: null });
 
-    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(await resolve('valid-token')).toBeNull();
     expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
     expect(logger.warn).toHaveBeenCalledWith(
       '[MCP:SESSION] retired a dead bridge grant',
@@ -355,9 +353,9 @@ describe('invalidateTokenCache', () => {
   it('clears the cache for a token', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    await resolveMcpContext('token');
+    await resolve('token');
     invalidateTokenCache('hash-token');
-    await resolveMcpContext('token');
+    await resolve('token');
 
     // Should call repo twice since cache was invalidated
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
@@ -366,9 +364,9 @@ describe('invalidateTokenCache', () => {
   it('force-rebuilds the context instead of probing the dropped entry', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    await resolveMcpContext('token');
+    await resolve('token');
     invalidateTokenCache('hash-token');
-    await resolveMcpContext('token');
+    await resolve('token');
 
     // A dropped entry is rebuilt from scratch, client and all: the invalidators
     // are a local optimization on top of the per-request row check, never the
@@ -382,9 +380,9 @@ describe('invalidateUserCache', () => {
   it('clears cached contexts for the user, forcing a re-read', async () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
-    await resolveMcpContext('token');
+    await resolve('token');
     invalidateUserCache('user-123');
-    await resolveMcpContext('token');
+    await resolve('token');
 
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
   });

@@ -80,7 +80,7 @@ vi.mock('@/backend/repositories/mcp/mcp-oauth-repository', () => ({
   createMcpOAuthRepository: () => mockRepo,
 }));
 
-vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
+vi.mock('@/backend/shared/mcp-token-crypto', () => ({
   hashToken: vi.fn((t: string) => `hash-${t}`),
   generateOpaqueToken: vi.fn(() => 'opaque-token'),
   encryptSecret: vi.fn((p: string) => `enc(${p})`),

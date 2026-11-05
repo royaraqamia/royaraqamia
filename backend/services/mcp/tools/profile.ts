@@ -4,7 +4,7 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
-import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
+import { createServerUserProfileRepository } from '@/backend/config/users';
 
 /**
  * Profile read tool. Reads the caller's own row in the `users` table using the
@@ -27,7 +27,7 @@ export async function getProfileHandler(
   try {
     requireAnyScope(ctx, ['profile.read']);
     const userId = requireUserId(ctx, 'Getting your profile');
-    const repo = createUserProfileRepository(ctx.supabase as never);
+    const repo = createServerUserProfileRepository(ctx.supabase as never);
     const profile = await repo.getById(userId);
 
     if (!profile) {
@@ -111,7 +111,7 @@ export async function updateProfileHandler(
   try {
     requireAnyScope(ctx, ['profile.write']);
     const userId = requireUserId(ctx, 'Updating your profile');
-    const repo = createUserProfileRepository(ctx.supabase as never);
+    const repo = createServerUserProfileRepository(ctx.supabase as never);
 
     await repo.updateProfile(userId, {
       name: params.name,

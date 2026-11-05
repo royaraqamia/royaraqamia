@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createMcpOAuthProvider,
-  McpOAuthError,
-  isValidMcpRedirectUri,
-} from '@/backend/services/mcp/oauth-provider';
-import { generateOpaqueToken } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { McpOAuthError, isValidMcpRedirectUri } from '@/backend/services/mcp/oauth-provider';
+import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
+import { generateOpaqueToken } from '@/backend/shared/mcp-token-crypto';
 import { parseScopes } from '@/backend/services/mcp/scope';
 import { noStore } from '@/backend/services/mcp/oauth-http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
@@ -76,7 +73,7 @@ export async function POST(req: NextRequest) {
   const clientName = typeof body.client_name === 'string' ? body.client_name : null;
   const scopes = parseScopes(typeof body.scope === 'string' ? body.scope : undefined);
 
-  const provider = createMcpOAuthProvider();
+  const provider = createDefaultMcpOAuthProvider();
   const clientId = generateOpaqueToken(16);
   const clientSecret = authMethod === 'none' ? undefined : generateOpaqueToken(32);
 

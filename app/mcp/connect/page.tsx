@@ -2,7 +2,7 @@ import '../app.css';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
-import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
+import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import {
   Card,
   CardDescription,
@@ -42,7 +42,7 @@ export default async function ConnectPage({
   const codeChallenge = params.code_challenge;
   const codeChallengeMethod = params.code_challenge_method;
 
-  const provider = createMcpOAuthProvider();
+  const provider = createDefaultMcpOAuthProvider();
   const client = clientId ? await provider.getClient(clientId) : null;
 
   if (!client || !redirectUri || !client.redirect_uris.includes(redirectUri)) {

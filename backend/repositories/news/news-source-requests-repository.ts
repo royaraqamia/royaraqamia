@@ -43,29 +43,6 @@ export interface RejectNewsSourceRequest {
   reviewedBy: string;
 }
 
-/** The partial unique index that refuses a second open request for one feed. */
-export const OPEN_REQUEST_URL_CONSTRAINT = 'uq_news_source_requests_open_url';
-
-/** The partial unique index that refuses a second open request from one reader. */
-export const OPEN_REQUEST_USER_CONSTRAINT = 'uq_news_source_requests_open_user';
-
-/**
- * A failed repository call with the SQLSTATE and constraint Postgres named
- * (#551). The partial unique indexes are the real dedupe, so a caller has to be
- * able to tell which one refused it instead of answering every collision with
- * the same sentence.
- */
-export class NewsSourceRequestDbError extends Error {
-  constructor(
-    readonly code: string | null,
-    readonly constraint: string | null,
-    message: string
-  ) {
-    super(message);
-    this.name = 'NewsSourceRequestDbError';
-  }
-}
-
 /**
  * The intake queue a reader's proposal moves through: `resolving` when the
  * reader files it, then whatever the resolution worker and the Admin decide.

@@ -11,9 +11,11 @@ import {
   CohortCourseMismatchError,
   CohortFullError,
   NotEnrolledError,
-  type TrainingApplicationCreateInput,
-  type TrainingApplicationEditFields,
-  type TrainingApplicationsRepository,
+} from '@/backend/shared/domain/training';
+import type {
+  TrainingApplicationCreateInput,
+  TrainingApplicationEditFields,
+  TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
 import {
   TRAINING_REFERENCE_CODE_REGEX,
@@ -21,7 +23,7 @@ import {
   type TrainingApplicationEditInput,
   type TrainingApplicationInput,
 } from '@/shared/contracts/training';
-import { createRateLimiter } from '@/backend/clients/rate-limiter';
+import { createInMemoryRateLimiter } from '@/backend/config/rate-limiter';
 
 const VALID_INPUT: TrainingApplicationInput = {
   course_slug: 'build-digital-products',
@@ -264,7 +266,7 @@ describe('TrainingApplicationService.submit', () => {
 
     // Real in-memory limiter with the real service: proves the shared-IP
     // (classroom/NAT) path, not just that the mock says yes.
-    const limiter = createRateLimiter();
+    const limiter = createInMemoryRateLimiter();
     const service = new TrainingApplicationService({
       repository,
       checkRateLimit: (key, limit, windowMs) => limiter.checkRateLimit(key, limit, windowMs),

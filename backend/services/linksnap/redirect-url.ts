@@ -1,5 +1,5 @@
-import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
-import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { logger } from '@/backend/shared/logger';
 

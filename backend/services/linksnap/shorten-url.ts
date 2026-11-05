@@ -1,5 +1,5 @@
 import {
-  ShortLinkRepository,
+  type ShortLinkRepository,
   type AnonymousLinkOwner,
 } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';

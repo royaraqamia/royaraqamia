@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
-  createMcpOAuthRepository,
   type McpOAuthRepository,
   type McpTokenRecord,
 } from '@/backend/repositories/mcp/mcp-oauth-repository';
@@ -155,14 +154,12 @@ async function buildUserScopedClient(
  * of looping on 401.
  */
 export async function resolveMcpContext(
-  bearerToken: string | null | undefined
+  bearerToken: string | null | undefined,
+  repo: McpOAuthRepository
 ): Promise<McpUserContext | null> {
   if (!bearerToken) return anonymousContext();
 
-  const tokenHash = (await import('@/backend/repositories/mcp/mcp-token-crypto')).hashToken(
-    bearerToken
-  );
-  const repo = createMcpOAuthRepository();
+  const tokenHash = (await import('@/backend/shared/mcp-token-crypto')).hashToken(bearerToken);
 
   const cached = getCachedContext(tokenHash);
   if (cached) {
@@ -198,7 +195,7 @@ export async function resolveMcpContext(
   let storedRefreshToken: string;
   let sessionOwned: boolean;
   try {
-    const bridge = (await import('@/backend/repositories/mcp/mcp-token-crypto')).readBridgeSession(
+    const bridge = (await import('@/backend/shared/mcp-token-crypto')).readBridgeSession(
       sessionEnc
     );
     storedRefreshToken = bridge.refreshToken;
@@ -226,7 +223,7 @@ export async function resolveMcpContext(
   try {
     const rotated = userScoped.refreshToken;
     if (rotated && rotated !== storedRefreshToken) {
-      const crypto = await import('@/backend/repositories/mcp/mcp-token-crypto');
+      const crypto = await import('@/backend/shared/mcp-token-crypto');
       // Re-encrypt the way the row was written: a marked row stays ours across
       // the rotation, an unmarked (pre-amendment) one stays borrowed.
       const newEnc = sessionOwned

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMcpOAuthProvider, McpOAuthError } from '@/backend/services/mcp/oauth-provider';
+import { McpOAuthError } from '@/backend/services/mcp/oauth-provider';
+import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import { basicAuthCredentials, noStore } from '@/backend/services/mcp/oauth-http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   const clientId = basic?.clientId ?? bodyClientId;
   const clientSecret = basic?.clientSecret ?? (bodyClientSecret || undefined);
 
-  const provider = createMcpOAuthProvider();
+  const provider = createDefaultMcpOAuthProvider();
   const client = clientId ? await provider.getClient(clientId) : null;
   if (!client) {
     return NextResponse.json(

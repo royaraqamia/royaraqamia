@@ -2,11 +2,11 @@
 import { z } from 'zod';
 
 import {
-  AiChatProviderError,
   type AiChatClient,
   type AiChatStreamEvent,
   type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
+import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import {
   ChatAgentError,

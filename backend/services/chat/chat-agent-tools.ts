@@ -2,8 +2,8 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import { createCertificatesRepository } from '@/backend/repositories/certificates';
-import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
+import { createCertificatesRepository } from '@/backend/config/certificates';
+import { createPostsRepository } from '@/backend/config/blogpress';
 import { createHabitService } from '@/backend/config/habitflow';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import { createPublicConsultationService } from '@/backend/config/consultation';

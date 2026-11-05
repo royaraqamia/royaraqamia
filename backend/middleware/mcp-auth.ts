@@ -1,6 +1,7 @@
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { resolveMcpContext, type McpUserContext } from '@/backend/services/mcp/session';
+import { resolveDefaultMcpContext } from '@/backend/config/mcp-session';
+import type { McpUserContext } from '@/backend/services/mcp/session';
 import { ALL_SCOPES } from '@/backend/services/mcp/scope';
 import { PUBLIC_TOOL_NAMES } from '@/backend/services/mcp/public-tools';
 import { mcpResourceUrl } from '@/backend/services/mcp/oauth-metadata';
@@ -91,7 +92,7 @@ export async function authenticateMcpRequest(
     ? authorization.slice('Bearer '.length).trim()
     : null;
 
-  const ctx = await resolveMcpContext(bearer);
+  const ctx = await resolveDefaultMcpContext(bearer);
 
   if (!ctx) return challengeResponse(request);
 

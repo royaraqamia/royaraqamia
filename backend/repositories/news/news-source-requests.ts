@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
+import { NewsSourceRequestDbError } from '@/backend/shared/domain/news';
 import {
-  NewsSourceRequestDbError,
   type ApproveNewsSourceRequest,
   type NewNewsSourceRequest,
   type NewsSourceRequestsRepository,

@@ -15,13 +15,13 @@ import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-att
 import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
 import {
-  AiChatProviderError,
   type AiChatClient,
   type AiChatContentPart,
   type AiChatMessage,
   type AiChatToolCall,
   type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
+import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import { logger } from '@/backend/shared/logger';
 import {
