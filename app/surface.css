@@ -3,26 +3,28 @@
 
    `global.css` is the shell every route loads; each surface
    (`app/<surface>/app.css`) imports this file first so both compilations agree
-   on three things that are easy to let drift:
+   on the layer order and on the four things `tailwind.css` names.
 
-   - the layer order `theme, base, components, utilities`, declared by
-     `tailwindcss` itself. Same names, same order on both sides means a surface
-     chunk can use a base utility without redefining it, and a surface rule can
-     never jump ahead of one the shell already shipped;
-   - `source(none)`: no stylesheet guesses at sources any more. Every file that
-     contributes class names is listed by the entry that ships it, so a
-     surface's utilities stop leaking into the shell's stylesheet;
-   - the `dark` variant. The site renders its dark theme unconditionally (the
-     `:root` tokens in `global.css`), so `dark:` must key off an always-present
-     class instead of `prefers-color-scheme`. Declared once here, used by every
-     entry, so no surface can silently fork the variant.
+   The layer order is the load-bearing part, and it is deliberately *not* the
+   one `tailwindcss` ships:
 
-   Tokens live in `theme.css` and are imported by both sides for the same
-   reason: a token defined in one compilation only is a token that renders
-   differently depending on the route. */
-@import 'tailwindcss' source(none);
-@import './theme.css';
-@plugin "@tailwindcss/typography";
-@import 'tw-animate-css';
+       theme, base, components, surface, utilities
 
-@custom-variant dark (&:where(.dark, .dark *));
+   A route's stylesheet is appended to the document *after* the shell's, and two
+   rules in the same layer are resolved by document order — so a surface that
+   re-emits a base utility the shell also has (`hidden`, `flex`) silently beat
+   the shell's own breakpoint variants (`max-lg:block`, `sm:hidden`) and the
+   element lost them: the bottom sheet became an anchored panel again, and every
+   other component that pairs a base utility with a variant drifted the same
+   way until a reload changed which sheet came last (ADR-0130).
+
+   Naming the surface's compilation `surface` and declaring it *below*
+   `utilities` removes the race for good: whatever the document order, the
+   shell's utilities win the properties they define, and a surface's utilities
+   still apply to everything the shell does not mention. The shell's own entry
+   imports Tailwind unwrapped (`utilities`); a surface wraps it with
+   `layer(surface)`. */
+@layer theme, base, components, surface, utilities;
+
+@import 'tailwindcss' layer(surface) source(none);
+@import './tailwind.css';
