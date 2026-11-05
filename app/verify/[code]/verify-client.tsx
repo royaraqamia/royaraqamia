@@ -273,7 +273,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
       <div className="relative z-10 w-full max-w-3xl mx-auto">
         <m.div variants={staggerVariants} initial="hidden" animate="visible">
           {/* Header Section */}
-          <div className="mb-10 text-center flex flex-col items-center">
+          <div data-visual="header" className="mb-10 text-center flex flex-col items-center">
             {/* Glowing Icon Badge */}
             <m.div variants={fadeUp} className="mb-6 relative">
               <m.div
@@ -287,6 +287,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             </m.div>
 
             <m.h1
+              data-visual="title"
               variants={fadeUp}
               className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-neutral-900 dark:text-neutral-50"
             >
@@ -297,6 +298,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             </m.h1>
 
             <m.p
+              data-visual="subtitle"
               variants={fadeUp}
               className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-md leading-relaxed"
             >
@@ -307,7 +309,10 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           {/* Certificate Main Display Card */}
           <m.div variants={fadeUp}>
             <div className="relative group">
-              <Card className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 transition-safe duration-500">
+              <Card
+                data-visual="card"
+                className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 transition-safe duration-500"
+              >
                 {/* Aesthetic Corner Brackets */}
                 <div className="pointer-events-none absolute top-0 inset-s-0 size-12 md:size-16 border-t-2 border-s-2 border-primary/30 rounded-ss-3xl" />
                 <div className="pointer-events-none absolute top-0 inset-e-0 size-12 md:size-16 border-t-2 border-e-2 border-primary/30 rounded-se-3xl" />
@@ -315,7 +320,10 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                 <div className="pointer-events-none absolute bottom-0 inset-e-0 size-12 md:size-16 border-b-2 border-e-2 border-primary/30 rounded-ee-3xl" />
 
                 {/* Card Header Banner */}
-                <div className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/60 dark:border-neutral-800/60 px-6 md:px-8 py-5">
+                <div
+                  data-visual="card-header"
+                  className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/60 dark:border-neutral-800/60 px-6 md:px-8 py-5"
+                >
                   <div className="flex items-center gap-3.5">
                     <div className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-accent-purple text-white shadow-md shadow-primary/20">
                       <ShieldCheck className="size-6 text-white" />
@@ -349,10 +357,14 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                 <CardContent className="p-6 md:p-8">
                   <div className="grid gap-8 lg:grid-cols-12 items-stretch">
                     {/* Details List */}
-                    <div className="lg:col-span-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-1">
+                    <div
+                      data-visual="details"
+                      className="lg:col-span-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-1"
+                    >
                       {details.map((detail, i) => (
                         <m.div
                           key={detail.label}
+                          data-visual={i === 0 ? 'detail-0' : undefined}
                           custom={i}
                           initial={{ opacity: 0, x: -15 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -390,6 +402,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
 
                     {/* QR Code Seal Box */}
                     <m.div
+                      data-visual="seal"
                       className="lg:col-span-5 flex flex-col items-center justify-center gap-4 rounded-2xl bg-linear-to-b from-neutral-100/80 to-neutral-200/40 dark:from-neutral-800/50 dark:to-neutral-900/50 border border-neutral-200/80 dark:border-neutral-800/80 p-6 text-center shadow-inner"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -418,6 +431,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
 
           {/* Action Dock Bar */}
           <m.div
+            data-visual="actions"
             className="no-print mt-8 flex flex-wrap items-center justify-center gap-3"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}

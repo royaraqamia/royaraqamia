@@ -1,0 +1,61 @@
+{
+  "surface": "verify-code",
+  "state": "at-rest",
+  "route": "/verify/COMP-2026-UHVW9SG5",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 224,
+      "height": 36,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 36
+    },
+    "subtitle": {
+      "top": 272,
+      "height": 26,
+      "fontSize": 16,
+      "lineHeight": 26
+    },
+    "card": {
+      "top": 338,
+      "width": 361,
+      "height": 975,
+      "radius": 24
+    },
+    "card-header": {
+      "top": 339,
+      "width": 359,
+      "height": 85,
+      "paddingLeft": 24,
+      "paddingRight": 24
+    },
+    "details": {
+      "top": 448,
+      "width": 311,
+      "rowGap": 14
+    },
+    "detail-0": {
+      "top": 448,
+      "width": 311,
+      "height": 68,
+      "radius": 16
+    },
+    "seal": {
+      "top": 958,
+      "width": 311,
+      "height": 334,
+      "radius": 16
+    },
+    "actions": {
+      "top": 1345,
+      "width": 361,
+      "height": 192,
+      "rowGap": 12
+    }
+  }
+}
