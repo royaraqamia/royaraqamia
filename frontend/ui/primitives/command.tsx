@@ -37,7 +37,7 @@ function CommandDialog({
 }) {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 rounded-2xl border border-border/80 bg-popover shadow-2xl sm:max-w-xl max-w-[calc(100vw-2rem)] mx-auto">
+      <DialogContent className="overflow-hidden p-0 rounded-2xl border border-border/80 bg-popover shadow-2xl sm:max-w-xl max-sm:max-w-[calc(100vw-2rem)] mx-auto">
         <DialogHeader className="sr-only">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

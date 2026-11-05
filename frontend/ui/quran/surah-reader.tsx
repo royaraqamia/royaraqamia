@@ -122,7 +122,7 @@ export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReade
                   <p
                     id={`ayah-${number}`}
                     data-ayah={number}
-                    className="font-quran scroll-mt-28 text-2xl leading-[2.4] text-foreground sm:text-3xl sm:leading-[2.5]"
+                    className="font-quran scroll-mt-28 max-sm:text-2xl/[2.4] sm:text-3xl/[2.5] text-foreground"
                   >
                     {head}
                     <span className="ayah-tail">

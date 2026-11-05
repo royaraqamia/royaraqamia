@@ -31,7 +31,7 @@ export function ResponsiveSheetScrim() {
     <div
       data-responsive-sheet-scrim=""
       aria-hidden="true"
-      className="fixed inset-0 z-[10999] hidden bg-black/60 max-lg:block max-lg:animate-in max-lg:fade-in-0 max-lg:duration-200"
+      className="fixed inset-0 z-[10999] lg:hidden bg-black/60 max-lg:block max-lg:animate-in max-lg:fade-in-0 max-lg:duration-200"
     />
   );
 }

@@ -59,7 +59,7 @@ export function FormWizard({
             <span
               aria-current={index === currentIndex ? 'step' : undefined}
               className={cn(
-                'flex items-center gap-2 text-xs sm:text-sm font-bold whitespace-nowrap',
+                'flex items-center gap-2 max-sm:text-xs sm:text-sm font-bold whitespace-nowrap',
                 index === currentIndex
                   ? 'text-primary'
                   : index < currentIndex
@@ -79,7 +79,7 @@ export function FormWizard({
               >
                 {index + 1}
               </span>
-              <span className="hidden sm:inline">{step.label}</span>
+              <span className="max-sm:hidden sm:inline">{step.label}</span>
             </span>
             {index < steps.length - 1 && (
               <span
@@ -115,7 +115,7 @@ export function FormWizard({
           className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
         >
           <ArrowRight className="size-4" aria-hidden="true" />
-          <span className="hidden sm:inline">السَّابق</span>
+          <span className="max-sm:hidden sm:inline">السَّابق</span>
         </button>
 
         {isLastStep ? (

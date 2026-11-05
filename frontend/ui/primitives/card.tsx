@@ -25,7 +25,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-5 min-w-0',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 max-sm:px-5 max-sm:pt-5 max-sm:pb-4 sm:px-6 sm:pt-6 sm:pb-5 min-w-0',
         'has-data-[slot=card-action]:grid-cols-[1fr_auto]',
         'border-b border-border/40 [.border-b]:pb-5 sm:[.border-b]:pb-6',
         className
@@ -40,7 +40,11 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
     <h4
       data-slot="card-title"
       className={cn(
-        'text-base sm:text-lg lg:text-xl font-bold tracking-tight text-card-foreground leading-snug wrap-break-word min-w-0 transition-colors',
+        // Variant-only (`max-sm:/.sm:/lg:`), never a bare `text-base`/`leading-snug`
+        // beside a breakpoint rule: the surface's stylesheet comes after the shell's,
+        // so a surface that emits `text-base` would strip the steps (ADR-0132). The
+        // line-height is written into the size utility so one class carries both.
+        'max-sm:text-base/[1.375] sm:text-lg/[1.375] lg:text-xl/[1.375] font-bold tracking-tight text-card-foreground wrap-break-word min-w-0 transition-colors',
         className
       )}
       {...props}
@@ -53,7 +57,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
     <p
       data-slot="card-description"
       className={cn(
-        'text-xs sm:text-sm text-muted-foreground/90 leading-relaxed font-normal tracking-normal wrap-break-word min-w-0',
+        'max-sm:text-xs/[1.625] sm:text-sm/[1.625] text-muted-foreground/90 font-normal tracking-normal wrap-break-word min-w-0',
         className
       )}
       {...props}
@@ -79,7 +83,7 @@ function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-content"
       className={cn(
-        'px-5 sm:px-6 py-5 sm:py-6 text-sm text-card-foreground/90 flex-1 min-w-0',
+        'max-sm:px-5 sm:px-6 max-sm:py-5 sm:py-6 text-sm text-card-foreground/90 flex-1 min-w-0',
         'first:pt-5 sm:first:pt-6 last:pb-5 sm:last:pb-6',
         className
       )}
@@ -93,7 +97,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-footer"
       className={cn(
-        'flex items-center justify-between gap-3 px-5 sm:px-6 py-4 sm:py-5 mt-auto min-w-0 border-t border-border/40 bg-muted/20 [.border-t]:pt-4 sm:[.border-t]:pt-5',
+        'flex items-center justify-between gap-3 max-sm:px-5 sm:px-6 max-sm:py-4 sm:py-5 mt-auto min-w-0 border-t border-border/40 bg-muted/20 [.border-t]:pt-4 sm:[.border-t]:pt-5',
         className
       )}
       {...props}

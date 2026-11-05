@@ -272,7 +272,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
             {/* Sticky Table of Contents Sidebar */}
             {hasHeadings && (
               <aside
-                className="hidden lg:block lg:col-span-4 self-start sticky top-28"
+                className="max-lg:hidden lg:col-span-4 self-start sticky top-28"
                 aria-label="فهرس المحتويات"
               >
                 <div className="rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm transition-safe duration-300 hover:border-border/90 hover:shadow-md">

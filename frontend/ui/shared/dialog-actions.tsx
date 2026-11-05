@@ -9,6 +9,8 @@ interface DialogActionsProps {
   children: ReactNode;
   onCancel: () => void;
   cancelLabel?: string;
+  /** Drop the text cancel: the dialog's only action is the primary one (a note that saves itself). */
+  hideCancel?: boolean;
   /** Optional start-side action rendered opposite the primary/cancel group (e.g. an archive button). */
   leading?: ReactNode;
   /** Optional secondary action rendered between the primary and the cancel (e.g. a destructive button). */
@@ -31,6 +33,7 @@ export function DialogActions({
   children,
   onCancel,
   cancelLabel = 'إلغاء',
+  hideCancel = false,
   leading,
   secondary,
   className,
@@ -46,14 +49,16 @@ export function DialogActions({
     >
       {leading}
       <div className="flex flex-col-reverse sm:flex-row items-center gap-3 w-full sm:w-auto">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
-        >
-          {cancelLabel}
-        </Button>
+        {!hideCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
+          >
+            {cancelLabel}
+          </Button>
+        )}
         {secondary}
         {children}
       </div>

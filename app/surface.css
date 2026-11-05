@@ -5,26 +5,23 @@
    (`app/<surface>/app.css`) imports this file first so both compilations agree
    on the layer order and on the four things `tailwind.css` names.
 
-   The layer order is the load-bearing part, and it is deliberately *not* the
-   one `tailwindcss` ships:
+   The order is Tailwind's own — `theme, base, components, utilities` — and the
+   two stylesheets meet in the *same* `utilities` layer. What decides a contest
+   between them is then document order: Next appends a route's stylesheet after
+   the shell's, so a surface's utility wins where both name the same class (the
+   declarations are identical, so nothing changes) and where a surface's
+   breakpoint variant meets the shell's copy of a base utility (the surface's
+   component keeps its own responsive code).
 
-       theme, base, components, surface, utilities
+   That is why the surface import is *not* wrapped in a layer. ADR-0130 tried
+   `@import 'tailwindcss' layer(surface)` with `surface` above `utilities`; the
+   wrapper also moves Tailwind's Preflight into that layer, so a surface's
+   `h1 { font-size: inherit }` outranked every heading utility the shell ships
+   and `/quran` rendered its title at 16px. Unwrapped, Preflight is in `base` on
+   both sides, exactly like every other shared rule.
 
-   A route's stylesheet is appended to the document *after* the shell's, and two
-   rules in the same layer are resolved by document order — so a surface that
-   re-emits a base utility the shell also has (`hidden`, `flex`) silently beat
-   the shell's own breakpoint variants (`max-lg:block`, `sm:hidden`) and the
-   element lost them: the bottom sheet became an anchored panel again, and every
-   other component that pairs a base utility with a variant drifted the same
-   way until a reload changed which sheet came last (ADR-0130).
-
-   Naming the surface's compilation `surface` and declaring it *below*
-   `utilities` removes the race for good: whatever the document order, the
-   shell's utilities win the properties they define, and a surface's utilities
-   still apply to everything the shell does not mention. The shell's own entry
-   imports Tailwind unwrapped (`utilities`); a surface wraps it with
-   `layer(surface)`. */
-@layer theme, base, components, surface, utilities;
-
-@import 'tailwindcss' layer(surface) source(none);
+   The mirror image of the document-order win — a *shell* component pairing a
+   base utility with a breakpoint variant, which a surface's base class would
+   strip — is ADR-0132's rule, and `npm run check:layers` fails it. */
+@import 'tailwindcss' source(none);
 @import './tailwind.css';

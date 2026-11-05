@@ -240,7 +240,7 @@ export function CountryPhoneInput({
             side="bottom"
             sideOffset={6}
             collisionPadding={8}
-            className="w-[min(19rem,calc(100vw-2rem))] p-0 sm:w-80 sm:p-0"
+            className="w-[min(19rem,calc(100vw-2rem))] p-0 sm:w-80"
           >
             <CountryPicker selectedIso={country.iso} onSelect={handleSelect} />
           </PopoverContent>
@@ -273,7 +273,7 @@ export function CountryPhoneInput({
         placeholder={placeholder}
         aria-invalid={invalid ? 'true' : undefined}
         aria-describedby={ariaDescribedBy}
-        className="min-w-0 flex-1 bg-transparent px-3 text-sm tracking-tight tabular-nums text-foreground outline-none selection:bg-primary/15 selection:text-primary placeholder:text-muted-foreground/60 disabled:cursor-not-allowed sm:text-base"
+        className="min-w-0 flex-1 bg-transparent px-3 max-sm:text-sm tracking-tight tabular-nums text-foreground outline-none selection:bg-primary/15 selection:text-primary placeholder:text-muted-foreground/60 disabled:cursor-not-allowed sm:text-base"
       />
     </div>
   );

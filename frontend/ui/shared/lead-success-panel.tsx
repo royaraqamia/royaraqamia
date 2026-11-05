@@ -55,12 +55,12 @@ export function LeadSuccessPanel({
   }
 
   return (
-    <div className={cn('p-6 sm:p-10 text-center', className)} role="status">
+    <div className={cn('max-sm:p-6 sm:p-10 text-center', className)} role="status">
       <CheckCircle2 className="mx-auto mb-5 size-12 text-emerald-600" aria-hidden="true" />
 
       <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">{title}</h2>
 
-      <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
+      <p className="mt-3 max-sm:text-sm/[1.625] sm:text-base/[1.625] text-muted-foreground max-w-lg mx-auto">
         {message}
       </p>
 

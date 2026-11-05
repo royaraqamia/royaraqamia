@@ -18,7 +18,7 @@ export function HeroCtaButton({ className, children, asChild, ...props }: Button
       asChild={asChild}
       variant="hero"
       className={cn(
-        'group/hc relative h-13 sm:h-14 gap-2.5 overflow-hidden rounded-full px-6 sm:px-8 text-base sm:text-lg font-bold text-white duration-300 hover:translate-y-0 hover:scale-[1.02] active:scale-[0.98]',
+        'group/hc relative max-sm:h-13 sm:h-14 gap-2.5 overflow-hidden rounded-full max-sm:px-6 sm:px-8 max-sm:text-base sm:text-lg font-bold text-white duration-300 hover:translate-y-0 hover:scale-[1.02] active:scale-[0.98]',
         className
       )}
       {...props}

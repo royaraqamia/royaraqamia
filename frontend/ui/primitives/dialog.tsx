@@ -62,8 +62,26 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideClose?: boolean }
->(({ className, children, hideClose = false, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    hideClose?: boolean;
+    /**
+     * The phone shape (ADR-0132).
+     *
+     * `card` — the default — floats above the page with a margin. `sheet` is the
+     * whole screen, for a composer whose field *is* the screen (the community and
+     * notes editors).
+     *
+     * It is a prop rather than a `className` the caller passes because the sheet
+     * replaces properties this component already sets (`grid` → flex column,
+     * `max-h-[calc(100dvh-3rem)]` → none, `rounded-3xl` → none, the width). Two
+     * builds meet on a caller's className and document order decides between them,
+     * which cannot be right for every element; compiled here, the sheet and the
+     * defaults are one class list in one sheet, and the variants win by
+     * Tailwind's own sort whatever the surface does with its own.
+     */
+    phone?: 'card' | 'sheet';
+  }
+>(({ className, children, hideClose = false, phone = 'card', ...props }, ref) => {
   // The on-screen keyboard shortens a phone dialog; `app/global.css` reads what
   // this publishes. Measured from the surface rather than from the app root on
   // purpose: the baseline is the height the dialog opened at, before a field
@@ -79,16 +97,16 @@ const DialogContent = React.forwardRef<
         aria-modal="true"
         data-slot="dialog-content"
         className={cn(
-          'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed z-10000 max-sm:grid sm:grid gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
           'border border-border/60 bg-background',
-          'rounded-3xl sm:rounded-2xl',
-          'max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
+          'max-sm:rounded-3xl sm:rounded-2xl',
+          'max-sm:max-h-[calc(100dvh_-_3rem)] sm:max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
           // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
           // Centred with insets + auto margins, not `translate`: a surface stylesheet
           // that ships a base `translate-y-*` (the landing chunk does, via Navbar)
           // loads after this one and would win the `--tw-translate-y` cascade,
           // pinning the dialog's top edge to the middle of the screen.
-          'inset-x-0 bottom-4 mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
+          'max-sm:inset-x-0 max-sm:bottom-4 max-sm:w-[calc(100%-2rem)] mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
           // Entrance & Exit Motion Animations
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
@@ -96,6 +114,8 @@ const DialogContent = React.forwardRef<
           'sm:data-[state=open]:slide-in-from-top-[48%]',
           'sm:data-[state=closed]:slide-out-to-top-[48%]',
           'will-change-[transform,opacity] contain-layout contain-style',
+          phone === 'sheet' &&
+            'dialog-phone-full dialog-scrollbar-touch-none max-sm:inset-0 max-sm:bottom-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:flex-col max-sm:rounded-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]',
           className
         )}
         {...props}
@@ -120,7 +140,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex flex-col space-y-1.5 text-center sm:text-left pe-8', className)}
+      className={cn('flex flex-col space-y-1.5 max-sm:text-center sm:text-left pe-8', className)}
       {...props}
     />
   );
@@ -131,7 +151,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-2',
+        'flex flex-col-reverse max-sm:gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-2',
         className
       )}
       {...props}

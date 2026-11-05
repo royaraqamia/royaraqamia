@@ -92,7 +92,7 @@ export function ReadFailureNotice({
         <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-bold leading-snug">{READ_FAILURE_COPY.title}</p>
-          <p className="text-xs leading-relaxed sm:text-sm">{failure.message}</p>
+          <p className="max-sm:text-xs/[1.625] sm:text-sm/[1.625]">{failure.message}</p>
           {retry && <div className="mt-1.5">{retry}</div>}
         </div>
       </div>

@@ -18,6 +18,7 @@ import {
 import { Label } from '@/frontend/ui/primitives/label';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NoteBodyEditor } from './note-body-editor';
 
 const AUTOSAVE_DELAY_MS = 500;
@@ -139,7 +140,7 @@ function NoteEditorDialogBody({
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent className="dialog-phone-full max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none dialog-scrollbar-touch-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
+      <DialogContent phone="sheet">
         <DialogHeader>
           <DialogTitle className="text-center">الملاحظة</DialogTitle>
         </DialogHeader>
@@ -183,8 +184,12 @@ function NoteEditorDialogBody({
           </p>
         </div>
 
-        <DialogActions onCancel={onClose} cancelLabel="تمّ">
-          {null}
+        {/* The note saves itself, so the only action is the way out: a primary
+            button, the same weight the composers give their save. */}
+        <DialogActions onCancel={onClose} hideCancel>
+          <HeroCtaButton type="button" onClick={onClose} className="w-full sm:w-auto">
+            تمّ
+          </HeroCtaButton>
         </DialogActions>
       </DialogContent>
 

@@ -79,3 +79,18 @@ compilations still cannot drift apart on anything except the layer name.
   the bundler's ordering is not a fix.
 - **One stylesheet for every route.** Correct by construction, and the cost
   ADR-0113 measured and removed.
+
+## Amendment (2026-11-05)
+
+Reversed the next day by [ADR-0132](0132-a-shell-component-owns-no-base-utility.md),
+on measurement. The order decided here fixed the popper scrim and cost every
+surface its breakpoint variants: 379 elements lost their `sm:`/`lg:` step, against
+29 inside shell components for the opposite order. Moving the surface _above_ the
+shell does not work either — `@import 'tailwindcss' layer(surface)` takes
+Preflight into that layer, so a surface's `h1 { font-size: inherit }` outranks the
+shell's heading utilities (measured on `/quran`: 16px/400 for a title that is
+48px/800). Both entries import Tailwind unwrapped and the surface's utilities win
+on document order, as they did before this decision. What survives from here is
+narrower than a layer — a shell component owns no base utility beside a breakpoint
+variant, which is what the scrim actually needed — and `npm run check:layers`
+holds it.

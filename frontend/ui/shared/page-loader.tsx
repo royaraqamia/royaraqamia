@@ -12,7 +12,7 @@ export function PageLoader() {
         <div className="absolute inset-x-0 top-0 h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-70" />
 
         {/* High-Precision Kinetic Spinner Assembly */}
-        <div className="relative mb-10 flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
+        <div className="relative mb-10 flex max-sm:h-20 max-sm:w-20 items-center justify-center sm:h-24 sm:w-24">
           {/* Faint Outer Structural Track */}
           <div className="absolute inset-0 rounded-full border border-white/5 transition-colors duration-700 group-hover:border-white/10" />
 
@@ -34,13 +34,13 @@ export function PageLoader() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-violet-500 transition-colors duration-500 group-hover:bg-violet-400" />
             </span>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-violet-300/80 transition-colors duration-500 group-hover:text-violet-300 sm:text-xs">
+            <span className="max-sm:text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-violet-300/80 transition-colors duration-500 group-hover:text-violet-300 sm:text-xs">
               جاري التَّهيئة
             </span>
           </div>
 
           {/* Primary Action Feedback */}
-          <h1 className="text-sm font-medium tracking-wide text-neutral-300 transition-colors duration-500 group-hover:text-white sm:text-base">
+          <h1 className="max-sm:text-sm font-medium tracking-wide text-neutral-300 transition-colors duration-500 group-hover:text-white sm:text-base">
             جاري تحميل المحتوى...
           </h1>
         </div>

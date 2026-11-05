@@ -13,9 +13,11 @@ export type SectionTitleSize = 'card' | 'section' | 'display';
 export type SectionTitleTone = 'foreground' | 'inverse' | 'auth';
 
 const SIZE_CLASSES: Record<SectionTitleSize, string> = {
-  card: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
-  section: 'text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight',
-  display: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15]',
+  card: 'max-sm:text-2xl sm:text-3xl font-extrabold tracking-tight',
+  section:
+    'max-sm:text-3xl/[1.25] sm:text-4xl/[1.25] lg:text-5xl/[1.25] font-extrabold tracking-tight',
+  display:
+    'max-sm:text-3xl/[1.15] sm:text-5xl/[1.15] lg:text-6xl/[1.15] font-extrabold tracking-tight',
 };
 
 const TONE_CLASSES: Record<SectionTitleTone, string> = {

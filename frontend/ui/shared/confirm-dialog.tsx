@@ -47,7 +47,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
     >
       <DialogContent
         hideClose
-        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background shadow-2xl"
+        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto max-sm:p-6 sm:p-8 max-sm:rounded-2xl sm:rounded-3xl border border-border/80 bg-background shadow-2xl"
         onPointerDownOutside={(e) => {
           e.preventDefault();
           onCancel();
@@ -56,15 +56,15 @@ export const ConfirmDialog = memo(function ConfirmDialog({
       >
         <DialogHeader className="flex flex-col items-center text-center space-y-0 pt-1 pe-0">
           <div
-            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 hover:scale-105 shadow-xs ${
+            className={`max-sm:w-12 max-sm:h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 hover:scale-105 shadow-xs ${
               variant === 'danger'
                 ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/25 dark:bg-destructive/20 dark:ring-destructive/30'
                 : 'bg-primary/10 text-primary ring-1 ring-primary/25 dark:bg-primary/20 dark:ring-primary/30'
             }`}
           >
-            <Icon aria-hidden="true" className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
+            <Icon aria-hidden="true" className="max-sm:w-6 max-sm:h-6 sm:w-7 sm:h-7 shrink-0" />
           </div>
-          <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          <DialogTitle className="max-sm:text-lg sm:text-xl font-bold tracking-tight text-foreground">
             {title}
           </DialogTitle>
           <DialogDescription className="mt-2 text-sm text-muted-foreground leading-relaxed wrap-break-word max-w-prose">
@@ -72,7 +72,11 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogActions onCancel={onCancel} cancelLabel={cancelLabel} className="mt-6 sm:mt-8 pt-0">
+        <DialogActions
+          onCancel={onCancel}
+          cancelLabel={cancelLabel}
+          className="max-sm:mt-6 sm:mt-8 pt-0"
+        >
           <HeroCtaButton
             type="button"
             onClick={onConfirm}

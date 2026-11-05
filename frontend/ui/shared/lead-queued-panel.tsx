@@ -18,7 +18,7 @@ interface LeadQueuedPanelProps {
  */
 export function LeadQueuedPanel({ message, status }: LeadQueuedPanelProps) {
   return (
-    <div className="p-6 sm:p-10 text-center" role="status">
+    <div className="max-sm:p-6 sm:p-10 text-center" role="status">
       <CloudUpload className="mx-auto mb-5 size-12 text-primary" aria-hidden="true" />
 
       <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">

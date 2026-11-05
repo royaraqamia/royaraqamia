@@ -51,14 +51,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <section
           role="alert"
           aria-live="assertive"
-          className="relative flex min-h-120 w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
+          className="relative flex min-h-120 w-full items-center justify-center max-sm:px-4 py-12 sm:px-6 lg:px-8"
         >
           {/* Main Error Glassmorphism Card Container */}
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 text-center shadow-2xl transition-safe duration-300 sm:p-8">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-background/80 max-sm:p-6 text-center shadow-2xl transition-safe duration-300 sm:p-8">
             {/* Pulsing Icon Badge */}
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-8 ring-destructive/5 sm:h-20 sm:w-20">
+            <div className="mx-auto mb-6 flex max-sm:h-16 max-sm:w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-8 ring-destructive/5 sm:h-20 sm:w-20">
               <svg
-                className="h-8 w-8 stroke-[1.75] transition-transform duration-300 hover:scale-110 sm:h-10 sm:w-10"
+                className="max-sm:h-8 max-sm:w-8 stroke-[1.75] transition-transform duration-300 hover:scale-110 sm:h-10 sm:w-10"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -74,16 +74,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             {/* Typography Stack */}
             <div className="space-y-2">
-              <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              <h2 className="max-sm:text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                 حدث خطأ غير مُتوقَّع
               </h2>
-              <p className="mx-auto max-w-xs text-sm font-normal leading-relaxed text-muted-foreground sm:text-base">
+              <p className="mx-auto max-w-xs max-sm:text-sm/[1.625] font-normal text-muted-foreground sm:text-base/[1.625]">
                 عذرًا، حدث خطأ أثناء تحميل الصَّفحة. يُرجَى المحاولة مرَّة أخرى.
               </p>
             </div>
 
             {/* Primary Action Button */}
-            <div className="mt-6 sm:mt-8">
+            <div className="max-sm:mt-6 sm:mt-8">
               <Button
                 onClick={this.handleReset}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-safe duration-200 hover:scale-[1.01] active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

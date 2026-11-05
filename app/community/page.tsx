@@ -72,8 +72,12 @@ export default async function CommunityPage() {
             </Suspense>
           </div>
 
-          {/* Members rail (desktop) */}
-          <aside className="sticky top-24 hidden self-start lg:block" aria-label="أعضاء المجتمع">
+          {/* Members rail (desktop). `max-lg:hidden`, never `hidden lg:block`: a
+              variant class can only be outranked by another variant, so the pair
+              is immune to whichever stylesheet wins, the shell's or this surface's
+              (ADR-0132). An `aside` is already `display: block` at
+              `lg`, so there is nothing to restore. */}
+          <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
             <CommunityMembersPanel members={members} />
           </aside>
         </div>
