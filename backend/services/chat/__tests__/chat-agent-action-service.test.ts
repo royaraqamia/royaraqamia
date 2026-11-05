@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type {
-  ChatAgentActionRecord,
-  ChatAgentActionRepository,
-} from '@/backend/repositories/chat/chat-agent-action-repository';
+import type { ChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import { AppError } from '@/backend/shared/errors';
 import { RepositoryError } from '@/backend/shared/repository-error';
@@ -20,7 +18,7 @@ const CONTEXT = { supabase: {} as never, ip: '127.0.0.1' };
 
 const AGENT_THREAD = { kind: 'agent' } as unknown as Awaited<ReturnType<ChatService['getThread']>>;
 
-function proposal(overrides: Partial<ChatAgentActionRecord> = {}): ChatAgentActionRecord {
+function proposal(overrides: Partial<ChatAgentAction> = {}): ChatAgentAction {
   return {
     id: 'action-1',
     conversationId: 'conversation-1',
@@ -40,7 +38,7 @@ function proposal(overrides: Partial<ChatAgentActionRecord> = {}): ChatAgentActi
  * The row as the database keeps it: the claim is a compare-and-set, so a second
  * confirmation finds nothing to claim — which is the whole point of the test.
  */
-function repository(row: ChatAgentActionRecord) {
+function repository(row: ChatAgentAction) {
   let current = { ...row };
   const writes: string[] = [];
 

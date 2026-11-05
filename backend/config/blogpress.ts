@@ -2,6 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+
+// The container is the one place that names the implementation, so a caller that
+// needs the repository itself (the assistant's tools, the MCP data plane) asks
+// here rather than importing `backend/repositories` across a service boundary
+// (`layers/no-cross-layer-import`).
+export { createPostsRepository };
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import {

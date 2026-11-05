@@ -1,11 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import {
-  toChatAgentAction,
-  type ChatAgentActionRecord,
-  type ChatAgentActionRepository,
-} from '@/backend/repositories/chat/chat-agent-action-repository';
+import type { ChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import {
@@ -61,7 +57,7 @@ export class ChatAgentActionService {
   /** The proposals drawn under one page of the thread. */
   async list(conversationId: string, messageIds: string[]): Promise<ChatAgentAction[]> {
     const rows = await this.deps.actions.listForMessages(messageIds);
-    return rows.filter((row) => row.conversationId === conversationId).map(toChatAgentAction);
+    return rows.filter((row) => row.conversationId === conversationId);
   }
 
   /**
@@ -98,7 +94,7 @@ export class ChatAgentActionService {
         attachments: [],
         replyTo: null,
       },
-      action: toChatAgentAction(action),
+      action,
     };
   }
 
@@ -171,17 +167,17 @@ export class ChatAgentActionService {
 
     const rejected = await this.deps.actions.reject(conversationId, actionId, userId);
     if (!rejected) throw new ChatAgentError(409, ALREADY_RESOLVED);
-    return toChatAgentAction(rejected);
+    return rejected;
   }
 
   private async settle(
     conversationId: string,
-    claimed: ChatAgentActionRecord,
+    claimed: ChatAgentAction,
     status: 'applied' | 'failed',
     result: Record<string, unknown>
   ): Promise<ChatAgentAction> {
     const settled = await this.deps.actions.settle(conversationId, claimed.id, status, result);
-    return toChatAgentAction(settled);
+    return settled;
   }
 
   /** A proposal only exists in the assistant's own thread. */

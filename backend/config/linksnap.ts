@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
 import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
 import { SupabaseAdminRepository } from '@/backend/repositories/linksnap/supabase-admin';
@@ -25,15 +27,20 @@ import { env } from '@/backend/config/env';
  * Linksnap composition root — central wiring for repositories and
  * services used by the API route handlers.
  */
-export function createShortLinkRepository(): SupabaseShortLinkRepository {
+export function createShortLinkRepository(
+  client?: SupabaseClient<Database>
+): SupabaseShortLinkRepository {
   // The service role is required: `anon` no longer has SELECT on short_links, so
   // the anonymous redirect and unlock resolve through it without exposing the
-  // password hash or owner over the Data API.
-  return new SupabaseShortLinkRepository(getAdminSupabase());
+  // password hash or owner over the Data API. A caller that already holds a
+  // client — the MCP data plane, on the member's own session — passes it in.
+  return new SupabaseShortLinkRepository(client ?? getAdminSupabase());
 }
 
-export function createAnalyticsRepository(): SupabaseAnalyticsRepository {
-  return new SupabaseAnalyticsRepository(getAdminSupabase());
+export function createAnalyticsRepository(
+  client?: SupabaseClient<Database>
+): SupabaseAnalyticsRepository {
+  return new SupabaseAnalyticsRepository(client ?? getAdminSupabase());
 }
 
 export function createAdminRepository(): SupabaseAdminRepository {

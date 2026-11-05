@@ -4,7 +4,7 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
-import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
+import { getHabitRepository } from '@/backend/config/habitflow';
 import {
   buildPaginationMeta,
   DEFAULT_PAGE_SIZE,
@@ -64,7 +64,7 @@ export async function listHabitsHandler(
   try {
     requireAnyScope(ctx, ['habitflow.read']);
     const userId = requireUserId(ctx, 'Listing habits');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const habits = await repo.getHabits();
 
     const start = params.offset;
@@ -108,7 +108,7 @@ export async function getLogsHandler(
   try {
     requireAnyScope(ctx, ['habitflow.read']);
     const userId = requireUserId(ctx, 'Getting habit logs');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const logs = await repo.getLogs(params.start, params.end);
 
     const start = params.offset;
@@ -273,7 +273,7 @@ export async function createHabitHandler(
   try {
     requireAnyScope(ctx, ['habitflow.write']);
     const userId = requireUserId(ctx, 'Creating a habit');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const habit = await repo.createHabit({
       name: params.name,
       frequency: params.frequency ?? 'daily',
@@ -305,7 +305,7 @@ export async function updateHabitHandler(
   try {
     requireAnyScope(ctx, ['habitflow.write']);
     const userId = requireUserId(ctx, 'Updating a habit');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const habit = await repo.updateHabit(params.id, {
       name: params.name,
       frequency: params.frequency,
@@ -337,7 +337,7 @@ export async function deleteHabitHandler(
   try {
     requireAnyScope(ctx, ['habitflow.write']);
     const userId = requireUserId(ctx, 'Deleting a habit');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const deleted = await repo.deleteHabit(params.id);
 
     if (!deleted) {
@@ -363,7 +363,7 @@ export async function toggleLogHandler(
   try {
     requireAnyScope(ctx, ['habitflow.write']);
     const userId = requireUserId(ctx, 'Toggling a habit log');
-    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const repo = getHabitRepository(userId, ctx.supabase as never).repository;
     const log = await repo.toggleLog(params.habit_id, params.date, params.completed);
 
     const output = {

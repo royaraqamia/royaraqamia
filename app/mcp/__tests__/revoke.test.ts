@@ -9,11 +9,11 @@ const { mockGetClient, mockRevokeToken, mockCheckRateLimitApi } = vi.hoisted(() 
 
 vi.mock('@/backend/middleware/http', () => ({ checkRateLimitApi: mockCheckRateLimitApi }));
 
-vi.mock('@/backend/services/mcp/oauth-provider', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/backend/services/mcp/oauth-provider')>();
+vi.mock('@/backend/config/mcp', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/config/mcp')>();
   return {
     ...actual,
-    createMcpOAuthProvider: () => ({
+    createDefaultMcpOAuthProvider: () => ({
       getClient: mockGetClient,
       revokeToken: mockRevokeToken,
     }),

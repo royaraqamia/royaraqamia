@@ -9,6 +9,18 @@ import { logger } from '@/backend/shared/logger';
 let defaultRateLimiter: RateLimiter | null = null;
 let warnedMissingRedis = false;
 
+/**
+ * A limiter of this process's own, with no shared store behind it.
+ *
+ * The composition root is the one place that names the implementation, so a
+ * caller that needs a limiter the default does not share — a test proving a
+ * burst against a real counter, a one-off sweep — asks here instead of reaching
+ * into `backend/clients` itself.
+ */
+export function createInMemoryRateLimiter(): RateLimiter {
+  return createRateLimiter();
+}
+
 export function getDefaultRateLimiter(): RateLimiter {
   if (!defaultRateLimiter) {
     const redisUrl = env.upstashRedisUrl;

@@ -9,7 +9,7 @@ import {
   CohortFullError,
   CohortNotFoundError,
   NotEnrolledError,
-} from '@/backend/repositories/training/training-applications-repository';
+} from '@/backend/shared/domain/training';
 import { RepositoryError } from '@/backend/shared/repository-error';
 
 const { loggerError, captureException } = vi.hoisted(() => ({

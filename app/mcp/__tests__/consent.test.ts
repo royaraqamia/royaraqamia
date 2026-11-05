@@ -14,19 +14,16 @@ vi.mock('@/backend/config/env', () => ({
   },
 }));
 
-vi.mock('@/backend/services/mcp/oauth-provider', () => ({
-  createMcpOAuthProvider: () => ({
+vi.mock('@/backend/config/mcp', () => ({
+  createDefaultMcpOAuthProvider: () => ({
     getClient: mockGetClient,
     createAuthorizationCode: mockCreateAuthorizationCode,
   }),
+  createDefaultMcpConnectedAppService: () => ({ list: async () => [] }),
 }));
 
 vi.mock('@/backend/services/mcp/bridge-session', () => ({
   createMcpBridgeSessionMinter: () => ({ mint: mockMint }),
-}));
-
-vi.mock('@/backend/services/mcp/connected-apps', () => ({
-  createMcpConnectedAppService: () => ({ list: async () => [] }),
 }));
 
 vi.mock('@/backend/config/plans', () => ({
@@ -51,7 +48,7 @@ vi.mock('next/headers', () => ({
   }),
 }));
 
-import { readBridgeSession } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { readBridgeSession } from '@/backend/shared/mcp-token-crypto';
 import { POST } from '@/app/mcp/connect/consent/route';
 
 const client = {

@@ -6,26 +6,21 @@ import type { ChatAgentAction, ChatAgentActionStatus } from '@/shared/contracts/
 
 type ActionRow = Database['public']['Tables']['chat_agent_actions']['Row'];
 
-export interface ChatAgentActionRecord {
-  id: string;
-  conversationId: string;
-  messageId: string;
-  tool: string;
-  args: Record<string, unknown>;
-  status: ChatAgentActionStatus;
-  result: Record<string, unknown> | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  resolvedBy: string | null;
-}
-
 function asObject(value: Json | null): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function toRecord(row: ActionRow): ChatAgentActionRecord {
+/**
+ * The row as the thread draws it, which is the record minus its column names.
+ *
+ * The repository answers with the contract type itself rather than a private
+ * record each caller has to map: the two shapes are the same fields, and a
+ * service may not import a mapper from `backend/repositories`
+ * (`layers/no-cross-layer-import`).
+ */
+function toRecord(row: ActionRow): ChatAgentAction {
   return {
     id: row.id,
     conversationId: row.conversation_id,
@@ -40,22 +35,6 @@ function toRecord(row: ActionRow): ChatAgentActionRecord {
   };
 }
 
-/** The row as the thread draws it, which is the record minus its column names. */
-export function toChatAgentAction(record: ChatAgentActionRecord): ChatAgentAction {
-  return {
-    id: record.id,
-    conversationId: record.conversationId,
-    messageId: record.messageId,
-    tool: record.tool,
-    args: record.args,
-    status: record.status,
-    result: record.result,
-    createdAt: record.createdAt,
-    resolvedAt: record.resolvedAt,
-    resolvedBy: record.resolvedBy,
-  };
-}
-
 /**
  * The proposals of one thread (ADR-0113, #818).
  *
@@ -67,37 +46,29 @@ export function toChatAgentAction(record: ChatAgentActionRecord): ChatAgentActio
  * role, exactly like the assistant's own reply (#817).
  */
 export interface ChatAgentActionRepository {
-  listForMessages(messageIds: string[]): Promise<ChatAgentActionRecord[]>;
-  find(conversationId: string, actionId: string): Promise<ChatAgentActionRecord | null>;
+  listForMessages(messageIds: string[]): Promise<ChatAgentAction[]>;
+  find(conversationId: string, actionId: string): Promise<ChatAgentAction | null>;
   /**
    * `proposed` -> `confirmed`, as one conditional write. An empty answer means
    * another request already resolved the row, which is what makes a double tap
    * apply once.
    */
-  claim(
-    conversationId: string,
-    actionId: string,
-    userId: string
-  ): Promise<ChatAgentActionRecord | null>;
+  claim(conversationId: string, actionId: string, userId: string): Promise<ChatAgentAction | null>;
   /** `proposed` -> `rejected`, with the same guard. */
-  reject(
-    conversationId: string,
-    actionId: string,
-    userId: string
-  ): Promise<ChatAgentActionRecord | null>;
+  reject(conversationId: string, actionId: string, userId: string): Promise<ChatAgentAction | null>;
   /** `confirmed` -> `applied` or `failed`, with what the service answered. */
   settle(
     conversationId: string,
     actionId: string,
     status: 'applied' | 'failed',
     result: Record<string, unknown>
-  ): Promise<ChatAgentActionRecord>;
+  ): Promise<ChatAgentAction>;
   insertProposal(input: {
     conversationId: string;
     messageId: string;
     tool: string;
     args: Record<string, unknown>;
-  }): Promise<ChatAgentActionRecord>;
+  }): Promise<ChatAgentAction>;
 }
 
 export function createSupabaseChatAgentActionRepository(

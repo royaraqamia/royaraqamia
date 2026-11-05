@@ -5,6 +5,8 @@ import {
   AgentThreadExistsError,
   ChatThreadFullError,
   DirectThreadExistsError,
+} from '@/backend/shared/domain/chat';
+import {
   type AddParticipantInput,
   type ChatAttachmentRecord,
   type ChatConversationRecord,

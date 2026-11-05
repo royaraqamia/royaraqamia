@@ -3,8 +3,8 @@ import { authenticateMcpRequest, extractBearerToken } from '../mcp-auth';
 import type { McpUserContext } from '@/backend/services/mcp/session';
 
 const mockResolve = vi.fn();
-vi.mock('@/backend/services/mcp/session', () => ({
-  resolveMcpContext: (...args: unknown[]) => mockResolve(...args),
+vi.mock('@/backend/config/mcp-session', () => ({
+  resolveDefaultMcpContext: (...args: unknown[]) => mockResolve(...args),
 }));
 
 vi.mock('@/backend/config/env', () => ({

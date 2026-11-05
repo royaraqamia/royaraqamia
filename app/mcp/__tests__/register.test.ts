@@ -7,13 +7,9 @@ vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/backend/services/mcp/oauth-provider', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/backend/services/mcp/oauth-provider')>();
-  return {
-    ...actual,
-    createMcpOAuthProvider: () => ({ registerClient: mockRegister }),
-  };
-});
+vi.mock('@/backend/config/mcp', () => ({
+  createDefaultMcpOAuthProvider: () => ({ registerClient: mockRegister }),
+}));
 
 import { POST } from '@/app/mcp/register/route';
 

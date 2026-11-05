@@ -1,5 +1,6 @@
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
+import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
 
 /**
  * The assistant's provider, spoken to over the OpenAI-compatible chat
@@ -93,19 +94,12 @@ export type AiChatStreamEvent =
   { type: 'text'; text: string } | { type: 'tool'; call: AiChatToolCall };
 
 /**
- * The provider's own refusal: an exhausted free tier (429) or a billing wall
- * (402). It is a state the thread shows, not an outage, so it carries the
- * status that made it readable.
+ * The provider's own refusal carries the status that made it readable: an
+ * exhausted free tier (429) or a billing wall (402). It is a state the thread
+ * shows, not an outage. The class is declared in `backend/shared/domain/ai-chat`
+ * because the service matches on it, and a service may not import a value from
+ * `backend/clients`.
  */
-export class AiChatProviderError extends Error {
-  constructor(
-    readonly status: number,
-    message = 'the assistant provider refused the request'
-  ) {
-    super(message);
-    this.name = 'AiChatProviderError';
-  }
-}
 
 export interface AiChatClient {
   readonly model: string;

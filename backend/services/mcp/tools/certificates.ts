@@ -4,7 +4,7 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId, requireAdmin } from './guards';
-import { createCertificatesRepository } from '@/backend/repositories/certificates';
+import { createCertificatesRepository } from '@/backend/config/certificates';
 import { getPublicSupabase } from '@/backend/config/supabase';
 import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import { toPublicCertificate } from '@/shared/contracts/certificates';

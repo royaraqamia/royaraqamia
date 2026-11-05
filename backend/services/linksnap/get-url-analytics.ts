@@ -1,4 +1,4 @@
-import {
+import type {
   AnalyticsRepository,
   AnalyticsDateRange,
 } from '@/backend/repositories/linksnap/analytics-repository';

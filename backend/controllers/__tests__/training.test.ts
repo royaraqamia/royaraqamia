@@ -63,7 +63,7 @@ import {
   updateMyTrainingApplication,
   updateTrainingApplication,
 } from '@/backend/controllers/training';
-import { CohortCourseMismatchError } from '@/backend/repositories/training/training-applications-repository';
+import { CohortCourseMismatchError } from '@/backend/shared/domain/training';
 import {
   TrainingApplicationClosedError,
   TrainingApplicationEnrolledError,

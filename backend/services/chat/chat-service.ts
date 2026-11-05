@@ -3,8 +3,10 @@ import {
   ChatThreadFullError,
   DirectThreadExistsError,
   directPairKey,
-  type ChatRepository,
-  type ChatMessageRecord,
+} from '@/backend/shared/domain/chat';
+import type {
+  ChatRepository,
+  ChatMessageRecord,
 } from '@/backend/repositories/chat/chat-repository';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { MemberProfile, PublicUser } from '@/shared/contracts/users';

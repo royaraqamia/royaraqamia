@@ -3,8 +3,8 @@ import {
   NewsSourceRequestDbError,
   OPEN_REQUEST_URL_CONSTRAINT,
   OPEN_REQUEST_USER_CONSTRAINT,
-  type NewsSourceRequestsRepository,
-} from '@/backend/repositories/news/news-source-requests-repository';
+} from '@/backend/shared/domain/news';
+import type { NewsSourceRequestsRepository } from '@/backend/repositories/news/news-source-requests-repository';
 import type { NewsSourcesRepository } from '@/backend/repositories/news/news-sources-repository';
 import type { NewsUserSourcesRepository } from '@/backend/repositories/news/news-user-sources-repository';
 import { FeedProbeError, type FeedProbeResult } from '@/backend/services/news/feed-probe';

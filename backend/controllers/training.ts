@@ -19,7 +19,7 @@ import {
   CohortNotFoundError,
   InvalidReleaseStatusError,
   NotEnrolledError,
-} from '@/backend/repositories/training/training-applications-repository';
+} from '@/backend/shared/domain/training';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { isRepositoryError } from '@/backend/shared/repository-error';

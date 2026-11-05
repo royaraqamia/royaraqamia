@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import {
-  createMcpOAuthRepository,
   type McpOAuthClientRecord,
   type McpOAuthRepository,
   type McpUserGrantRecord,
@@ -10,7 +9,7 @@ import {
   generateOpaqueToken,
   hashToken,
   readBridgeSession,
-} from '@/backend/repositories/mcp/mcp-token-crypto';
+} from '@/backend/shared/mcp-token-crypto';
 import { createMcpBridgeSessionRevoker, type McpBridgeSessionRevoker } from './bridge-session';
 import { ALL_SCOPES, type McpScope } from './scope';
 import { invalidateTokenCache, invalidateUserCache } from './token-cache';
@@ -58,7 +57,8 @@ export class McpOAuthError extends Error {
 }
 
 export interface McpOAuthProviderDeps {
-  repo?: McpOAuthRepository;
+  /** The token store. Required: the service does not build one of its own. */
+  repo: McpOAuthRepository;
   /** Signs out the grant's own minted bridge sessions when a live revoke strands them. */
   bridgeSessions?: McpBridgeSessionRevoker;
 }
@@ -188,8 +188,8 @@ export interface McpOAuthProvider {
   revokeUserClient(userId: string, clientId: string): Promise<void>;
 }
 
-export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAuthProvider {
-  const repo = deps.repo ?? createMcpOAuthRepository();
+export function createMcpOAuthProvider(deps: McpOAuthProviderDeps): McpOAuthProvider {
+  const repo = deps.repo;
   const bridgeSessions = deps.bridgeSessions ?? createMcpBridgeSessionRevoker();
 
   return {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BulkLinkActionService } from '@/backend/services/linksnap/bulk-link-action';
-import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 
 function makeDeps() {
   return {

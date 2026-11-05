@@ -8,8 +8,8 @@ const { mockCheckRateLimitApi } = vi.hoisted(() => ({ mockCheckRateLimitApi: vi.
 
 vi.mock('@/backend/middleware/http', () => ({ checkRateLimitApi: mockCheckRateLimitApi }));
 
-vi.mock('@/backend/services/mcp/oauth-provider', () => ({
-  createMcpOAuthProvider: () => ({ getClient: mockGetClient }),
+vi.mock('@/backend/config/mcp', () => ({
+  createDefaultMcpOAuthProvider: () => ({ getClient: mockGetClient }),
 }));
 
 vi.mock('@/backend/config/supabase', () => ({
