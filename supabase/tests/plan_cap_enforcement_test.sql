@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(60);
+select plan(62);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -632,6 +632,37 @@ select throws_ok(
   'PL001',
   null,
   'a free reader cannot select more than five news sources'
+);
+
+-- The row a reader already has is not a save. Six sources were selectable while
+-- the ceiling was 64, so a free reader can hold six; the columns beside the
+-- selection — the digest flag, the nightly run's served marker — are writable,
+-- and only another source is refused (ADR-0075, 2026-11-05 amendment).
+set local session_replication_role = replica;
+
+insert into public.news_source_preferences (user_id, source_ids, personal_enabled)
+values (
+  '00000000-0000-0000-0000-00000000ca05',
+  array['a','b','c','d','e','f'],
+  false
+);
+
+set local session_replication_role = origin;
+
+select lives_ok(
+  $$update public.news_source_preferences
+       set personal_enabled = true
+     where user_id = '00000000-0000-0000-0000-00000000ca05'$$,
+  'a selection already over the cap does not refuse the digest flag beside it'
+);
+
+select throws_ok(
+  $$update public.news_source_preferences
+       set source_ids = array['a','b','c','d','e','f','g']
+     where user_id = '00000000-0000-0000-0000-00000000ca05'$$,
+  'PL001',
+  null,
+  'the same row still cannot carry a seventh source'
 );
 
 insert into public.short_links (
