@@ -19,9 +19,11 @@ const IDLE_LEVELS = 16;
  * The composer's input row, shared by the member's thread and the assistant's
  * (ADR-0127).
  *
- * One control, not two copies: the textarea, the paperclip, the microphone and
- * the send button in the same order, with the microphone immediately beside the
- * paperclip — the placement WhatsApp and Telegram trained everyone to expect.
+ * One field, and two controls: the paperclip sits *inside* the field at its end
+ * edge, and the far end of the row is one slot that is a microphone while the
+ * field is empty and a send button the moment there is something to send — the
+ * row WhatsApp and Telegram trained everyone to expect, and the row that stops
+ * the microphone from sitting beside a button nobody presses yet.
  * The parent supplies the words and the staged files; this file owns the
  * recording gesture, so the two threads cannot behave differently.
  *
@@ -78,6 +80,8 @@ export function ChatComposer({
   const pendingRelease = useRef<'send' | 'cancel' | null>(null);
   const canSend =
     !disabled && !recorder.isPreparing && (value.trim().length > 0 || files.length > 0);
+  /** The slot at the row's end: send once there is something to send, else the microphone. */
+  const showSend = value.trim().length > 0 || files.length > 0;
 
   // The cap ends the capture by itself, and the note is still sent: someone who
   // kept talking past five minutes gets their words, not a discarded clip.
@@ -249,64 +253,70 @@ export function ChatComposer({
           </>
         ) : (
           <>
-            <textarea
-              value={value}
-              onChange={(event) => {
-                onValueChange(event.target.value);
-                // A draft that is being typed says so; a cleared one says nothing,
-                // and the reader's own five-second window closes it.
-                if (onTyping && event.target.value.trim()) onTyping();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
+            <div className="relative flex min-h-10 flex-1 items-end">
+              <textarea
+                value={value}
+                onChange={(event) => {
+                  onValueChange(event.target.value);
+                  // A draft that is being typed says so; a cleared one says nothing,
+                  // and the reader's own five-second window closes it.
+                  if (onTyping && event.target.value.trim()) onTyping();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    if (canSend) onSend();
+                  }
+                }}
+                rows={1}
+                maxLength={4000}
+                placeholder={placeholder}
+                aria-label={ariaLabel}
+                // The clip lives inside the field, so the text keeps clear of it.
+                className="max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pe-10 ps-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+              />
+              <button
+                type="button"
+                aria-label={VOICE_COPY.attach}
+                disabled={disabled}
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1 end-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+              >
+                <Paperclip size={16} />
+              </button>
+            </div>
+
+            {showSend ? (
+              <Button
+                type="submit"
+                variant="hero"
+                size="icon-sm"
+                aria-label={sendLabel}
+                disabled={!canSend}
+                onClick={(event) => {
                   event.preventDefault();
-                  if (canSend) onSend();
-                }
-              }}
-              rows={1}
-              maxLength={4000}
-              placeholder={placeholder}
-              aria-label={ariaLabel}
-              className="max-h-32 min-h-10 flex-1 resize-none rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label={VOICE_COPY.attach}
-              disabled={disabled}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip size={16} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={VOICE_COPY.record}
-              aria-pressed={false}
-              disabled={disabled || recorder.isPreparing}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerUp}
-              onPointerLeave={onPointerMove}
-            >
-              <Mic size={16} />
-            </Button>
-            <Button
-              type="submit"
-              variant="hero"
-              size="icon-sm"
-              aria-label={sendLabel}
-              disabled={!canSend}
-              onClick={(event) => {
-                event.preventDefault();
-                onSend();
-              }}
-            >
-              {sendIcon}
-            </Button>
+                  onSend();
+                }}
+              >
+                {sendIcon}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={VOICE_COPY.record}
+                aria-pressed={false}
+                disabled={disabled || recorder.isPreparing}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                onPointerLeave={onPointerMove}
+              >
+                <Mic size={16} />
+              </Button>
+            )}
           </>
         )}
       </div>

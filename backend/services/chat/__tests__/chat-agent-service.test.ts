@@ -348,6 +348,31 @@ describe('the assistant turn', () => {
     expect(release).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * A refused credential (401/403) is a deployment whose provider key is wrong,
+   * not a busy assistant: "try again" can never work until the operator fixes it,
+   * so the turn says the assistant is unavailable instead of inviting a retry.
+   * This is the sentence the production outage of 2026-11-05 showed as
+   * "تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى." for every turn.
+   */
+  it('names a refused credential as an unavailable assistant, not a retry', async () => {
+    const client: AiChatClient = {
+      model: 'deepseek-v4.1-flash',
+      async *streamReply() {},
+      transcribe: async () => null,
+      // eslint-disable-next-line require-yield -- the refusal is the point of this fixture
+      async *streamWithTools() {
+        throw new AiChatProviderError(401);
+      },
+    };
+
+    const { service } = makeService({ client });
+
+    await expect(
+      collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
+    ).rejects.toMatchObject({ status: 502, message: expect.stringMatching(/غير متاح/) });
+  });
+
   it('answers a voice note with its transcript, and keeps the recording attached', async () => {
     const transcribe = vi.fn(async () => 'اشتريت قهوة');
     const { service, chats, agent, attachments } = makeService({

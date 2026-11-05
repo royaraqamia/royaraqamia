@@ -16,6 +16,16 @@ const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
   timeZone: 'Asia/Damascus',
 });
 
+/**
+ * When the turn count is worth a line.
+ *
+ * A composer is not a dashboard: "40 من 40" every time the thread opens is noise
+ * a member learns to read past, while the last few turns are the ones that
+ * change what they can do today. Five is the point where a count stops being
+ * trivia and starts being a warning.
+ */
+const TURNS_WORTH_SAYING = 5;
+
 /** The spent-day sentence, from the server's own reset instant. */
 function limitReachedSentence(resetsAt: string): string {
   const reset = new Date(resetsAt);
@@ -31,9 +41,9 @@ function limitReachedSentence(resetsAt: string): string {
  *
  * Three states come before the input and each names its own remedy: no provider
  * key, a Free member, or a day whose allowance is spent. The row itself is
- * `ChatComposer`, the same control the member's thread draws — the paperclip,
- * the microphone beside it and the send button are one implementation, so the
- * two threads cannot drift apart.
+ * `ChatComposer`, the same control the member's thread draws — the paperclip
+ * inside the field, the microphone-or-send slot at its end — so the two threads
+ * cannot drift apart.
  */
 export function AssistantComposer({
   assistant,
@@ -71,7 +81,7 @@ export function AssistantComposer({
 
   if (!assistant.available) {
     return (
-      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+      <p className="shrink-0 border-t border-border/40 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center text-xs font-medium text-muted-foreground">
         {ASSISTANT_COPY.unavailable}
       </p>
     );
@@ -79,7 +89,7 @@ export function AssistantComposer({
 
   if (allowance && allowance.member.cap === 0) {
     return (
-      <div className="space-y-1.5 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3 text-center">
+      <div className="shrink-0 space-y-1.5 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center">
         <p className="text-xs text-muted-foreground">{ASSISTANT_COPY.locked}</p>
         <Link
           href="/pricing"
@@ -98,7 +108,7 @@ export function AssistantComposer({
 
   if (allowance && spent) {
     return (
-      <p className="border-t border-border/40 px-4 py-3 text-center text-xs font-medium text-muted-foreground">
+      <p className="shrink-0 border-t border-border/40 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center text-xs font-medium text-muted-foreground">
         {limitReachedSentence(allowance.resetsAt)}
       </p>
     );
@@ -120,7 +130,7 @@ export function AssistantComposer({
         event.preventDefault();
         send();
       }}
-      className="space-y-2 sticky bottom-0 z-10 border-t border-border/40 bg-card p-3"
+      className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
     >
       <ChatComposer
         value={draft}
@@ -150,7 +160,7 @@ export function AssistantComposer({
           </p>
         )}
 
-        {remaining !== null && allowance && (
+        {remaining !== null && allowance && remaining <= TURNS_WORTH_SAYING && (
           <p className="text-[11px] text-muted-foreground/70">
             {ASSISTANT_COPY.remaining
               .replace('{remaining}', String(remaining))

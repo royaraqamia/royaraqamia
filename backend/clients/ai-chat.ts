@@ -284,10 +284,14 @@ export function createAiChatClient(): AiChatClient | null {
       // The body names the provider's reason; it is logged, never sent to the
       // member, because it talks about quotas and keys rather than the app.
       const detail = await response.text().catch(() => '');
-      logger.warn('Assistant provider refused a turn', {
-        status: response.status,
-        detail: detail.slice(0, 500),
-      });
+      const context = { status: response.status, detail: detail.slice(0, 500) };
+      // A refused credential is the deployment's problem, not a busy provider:
+      // it is loud, because every turn will fail the same way until it is fixed.
+      if (response.status === 401 || response.status === 403) {
+        logger.error('Assistant provider refused the credential', context);
+      } else {
+        logger.warn('Assistant provider refused a turn', context);
+      }
       throw new AiChatProviderError(response.status);
     }
 

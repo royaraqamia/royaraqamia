@@ -569,7 +569,14 @@ export class ChatAgentService {
       }
     } catch (error) {
       const failure = classifiedFailure(error, answerText);
-      logger.warn('Assistant turn failed', { error: String(error), turn: turnId });
+      // A refused credential is the deployment's fault, not the member's: it is
+      // logged as an error so it reaches the operator's alerts instead of the
+      // turn-by-turn warnings.
+      const refused =
+        error instanceof AiChatProviderError && (error.status === 401 || error.status === 403);
+      const line = { error: String(error), turn: turnId };
+      if (refused) logger.error('Assistant turn refused a credential', line);
+      else logger.warn('Assistant turn failed', line);
       throw failure;
     }
 
@@ -597,7 +604,14 @@ export class ChatAgentService {
 }
 
 /** A failed turn, in the one sentence its stream carries to the composer. */
-function classifiedFailure(error: unknown, partialText: string): ChatAgentError {
+function classifiedFailure(error: unknown, partialText: string): ChatAgentTurnFailure {
+  // A refusal the operator's key caused (401/403) is not the member's to retry:
+  // "try again" on a deployment whose provider key is wrong is advice that can
+  // never work, and it hides a fault the operator has to see.
+  if (error instanceof AiChatProviderError && (error.status === 401 || error.status === 403)) {
+    return new ChatAgentTurnFailure(502, UNAVAILABLE, partialText);
+  }
+
   return new ChatAgentTurnFailure(
     502,
     error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)

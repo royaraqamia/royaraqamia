@@ -39,6 +39,19 @@ describe('security configuration', () => {
     expect(config).toMatch(/media-src [^;]*https:\/\/audio\.royaraqamia\.com[^;]*blob:/);
   });
 
+  it('lets our own origin use the microphone, and no other origin', () => {
+    // ADR-0127: a chat voice note is `getUserMedia({ audio: true })`, and the
+    // empty allowlist this header shipped with (`microphone=()`) refused it in
+    // every browser — including the shell's WebView, which reads the same header.
+    // `self`, never `*`, is the same posture the camera already has (ADR-0035).
+    const config = read('next.config.js');
+    expect(config).toMatch(/value: 'camera=\(self\), microphone=\(self\),/);
+    // The value itself, not a comment about it: an empty or wildcard allowlist
+    // is the regression this test exists for.
+    expect(config).not.toMatch(/value: '[^']*microphone=\(\)/);
+    expect(config).not.toMatch(/value: '[^']*microphone=\*/);
+  });
+
   it('does not allow CORS wildcard with credentials', () => {
     const config = read('next.config.js');
     expect(config).not.toContain('Access-Control-Allow-Origin');
