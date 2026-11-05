@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * edit would break and nothing else would notice:
  *
  * - the merge arrives after the watch, never before it, and names the commit it watched;
- * - it is a squash with no branch deletion and no protection bypass;
+ * - it is a squash, with no branch deletion in the merge itself and no protection bypass;
  * - a red round is repaired once and then watched again, not retried in a loop;
  * - the repair can authenticate, cut its branch from the live base, and is asked for the
  *   conflict first - a conflicted pull request is never measured at all;
@@ -43,10 +43,27 @@ describe('the issue implementer merges what it watched go green', () => {
     ).toBeLessThan(merged);
   });
 
-  it('never deletes the branch and never bypasses protection', () => {
+  it('never deletes the branch with the merge, and never bypasses protection', () => {
     expect(land).not.toMatch(/gh pr merge[^\n]*--delete-branch/);
     expect(land).not.toMatch(/gh pr merge[^\n]*--admin/);
     expect(workflow).not.toContain('secrets.RELEASE_TOKEN');
+  });
+
+  it('deletes the ref of the branch its merge finished', () => {
+    // #1040, #1044, #1054-#1057: a merge made through the API by the Actions app applies
+    // no "automatically delete head branches", so every round left its merged
+    // `opencode/*` branch on the remote and the branch list read like work nobody landed.
+    // The Telegram merge deletes the ref itself for the same reason.
+    const mergedAt = land.indexOf('if [ "$state" = "MERGED" ]');
+    expect(mergedAt).toBeGreaterThan(-1);
+    expect(land.slice(mergedAt)).toContain('delete_merged_branch');
+    expect(land).toContain('gh api -X DELETE "repos/$repo/git/refs/heads/$branch"');
+    // The branch is deleted after the merge is read back, never before it: up to the merge
+    // a conflict resolution may still need the branch.
+    expect(land.indexOf('delete_merged_branch() {')).toBeLessThan(mergedAt);
+    // Bookkeeping after a merge that already happened: it may never report a red round.
+    const start = land.indexOf('delete_merged_branch() {');
+    expect(land.slice(start, land.indexOf('\n}\n', start))).toContain('return 0');
   });
 
   it('repairs a red run once and watches the repair, instead of retrying in a loop', () => {

@@ -139,10 +139,28 @@ the merge all stay on `GITHUB_TOKEN`, so a leaked PAT cannot comment, label or m
 anything. When the secret is absent both workflows say so on the pull request instead of
 pretending the repair worked.
 
+## Amendment (2026-11-05): the branch a merge finished is deleted
+
+`--delete-branch` is still never passed, but the ref no longer outlives the merge. The
+repository's "automatically delete head branches" does not apply to a merge made through the
+API by the Actions app: the six merges of 2026-11-04/05 (#1040, #1044, #1054, #1055, #1056,
+#1057) each left their `opencode/*` branch on the remote, so the branch list read like work
+nobody had landed — the state `landing.md` describes under "A merged branch is finished". The
+Telegram bot had already solved it the same way: `scripts/telegram/merge.mjs` deletes the head
+ref after its merge and left none. `scripts/ci/land-pull-request.sh` now does the same, after
+it has re-read the pull request and seen `MERGED`.
+
+The distinction the paragraph above was making still holds. The branch is kept for as long as
+a conflict resolution may need it, which is the whole window up to the merge; after the merge
+a push to that ref cannot carry work anything reads, because `main` already holds the change.
+The deletion is bookkeeping, never a failure: an already deleted ref, a fork's head or a
+permission the token does not hold leaves the landing's report untouched.
+
 ## Considered options
 
 - **Keep the merge manual and run more issues a day.** Rejected: six pull requests waiting for one
   person is not faster than one, and the queue still cannot move at night.
+
 - **Let `/oc` merge too.** Rejected: `/oc` is a reply to a comment, so a person is already there; the
   merge is theirs.
 - **Merge with `--admin`.** Rejected: there is no protection to bypass, and asking for the bypass is
