@@ -7,6 +7,9 @@
 # wrote for them. So the order is fixed here: watch, then merge the exact commit it
 # watched, squash only, and never delete the branch a later conflict resolution may need.
 #
+# The issue the merge names is closed afterwards: `Closes #N` in the body is a request the
+# API merge does not honour (#1061), so the record is made true here instead.
+#
 # The three states this has to tell apart are not "green", "red" and "pending" - they are
 # "measured and green", "measured and red" and "never measured". The third is the one that
 # used to be reported as the first: a pull request that conflicts with `main` has no merge
@@ -55,6 +58,58 @@ mergeable() {
     esac
   done
   printf '%s' "$state"
+}
+
+# `Closes #N` in a pull request body is a request, not a guarantee: GitHub recorded the
+# cross-reference for #1049 and left the issue open when the merge came through the API,
+# while the same request merged in the web UI closes it. Closing the linked issues here
+# makes the record true whichever way it merged. The links are GitHub's own record
+# (`closingIssuesReferences`), not a regex over the body, so `Fixes`, `Resolves` and a
+# body edited after the request opened are all covered.
+#
+# Nothing here may fail the landing: the merge has already happened, and an issue that is
+# already closed, sits in another repository or is not an issue at all is bookkeeping,
+# not a reason to report a red round.
+close_linked_issues() {
+  local repo slug number state url links closed=''
+  repo="${GITHUB_REPOSITORY:-}"
+  [ -n "$repo" ] || repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null) || repo=''
+
+  links=$(gh pr view "$pr" --json closingIssuesReferences \
+    --jq '.closingIssuesReferences[] | "\(.repository.owner.login)/\(.repository.name) \(.number)"' \
+    2>/dev/null) || links=''
+
+  if [ -z "$links" ]; then
+    echo "No issue is linked to #$pr; there is nothing to close."
+    return 0
+  fi
+
+  while read -r slug number; do
+    [ -n "$number" ] || continue
+    if [ -n "$repo" ] && [ "$slug" != "$repo" ]; then
+      echo "Linked #$number belongs to $slug, not $repo; leaving it open."
+      continue
+    fi
+    url=$(gh issue view "$number" --json url --jq .url 2>/dev/null) || url=''
+    case "$url" in
+      */issues/"$number") ;;
+      *)
+        echo "Linked #$number is not an issue in $repo; leaving it alone."
+        continue
+        ;;
+    esac
+    state=$(gh issue view "$number" --json state --jq .state 2>/dev/null) || state=''
+    if [ "$state" = "CLOSED" ]; then
+      echo "Linked issue #$number was already closed."
+    elif gh issue close "$number" --reason completed >/dev/null 2>&1; then
+      closed="${closed:+$closed, }#$number"
+    else
+      echo "Linked issue #$number was not closed; leaving it open."
+    fi
+  done <<<"$links"
+
+  [ -z "$closed" ] || echo "Closed $closed."
+  return 0
 }
 
 if [ "$(mergeable)" = "CONFLICTING" ]; then
@@ -112,7 +167,8 @@ sleep 5
 state=$(gh pr view "$pr" --json state --jq .state)
 if [ "$state" = "MERGED" ]; then
   write status merged
-  echo "Merged pull request #$pr; its Closes line closes the issue."
+  echo "Merged pull request #$pr."
+  close_linked_issues
   exit 0
 fi
 
