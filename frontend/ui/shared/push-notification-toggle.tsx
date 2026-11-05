@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { Bell } from 'lucide-react';
 import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
@@ -164,24 +165,35 @@ export function PushNotificationToggle() {
   return (
     <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-foreground">إشعارات الجهاز</p>
-          {blocked ? (
-            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
-              {native
-                ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
-                : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
-            </p>
-          ) : null}
-          {state.kind === 'unreachable' ? (
-            <p
-              role="status"
-              aria-live="polite"
-              className="mt-1 text-[11px] leading-6 text-muted-foreground"
-            >
-              تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
-            </p>
-          ) : null}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* The row names itself before it is read: a bell beside the label is
+              what a settings list looks like in every app that has one. */}
+          <span
+            aria-hidden="true"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/40 text-muted-foreground"
+          >
+            <Bell size={16} />
+          </span>
+
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">إشعارات الجهاز</p>
+            {blocked ? (
+              <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
+                {native
+                  ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
+                  : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
+              </p>
+            ) : null}
+            {state.kind === 'unreachable' ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="mt-1 text-[11px] leading-6 text-muted-foreground"
+              >
+                تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <button

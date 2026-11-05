@@ -13,6 +13,19 @@ vi.mock('@/frontend/state/session-provider', () => ({
   useSession: () => ({ user: { id: 'peer-1' } }),
 }));
 
+/** The thread's own back control runs the app's shared back decision; the seam
+ *  records what it asked the router to do. */
+const nav = vi.hoisted(() => ({
+  back: vi.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => nav,
+  usePathname: () => '/chats/c-1',
+}));
+
 const api = vi.hoisted(() => ({
   blockChatUser: vi.fn(),
   getChatAttachmentUrl: vi.fn(),
@@ -74,6 +87,7 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
 }));
 
 import { ChatThreadView } from '@/frontend/ui/chats/chat-thread-view';
+import { recordPathname, resetInAppNavigation } from '@/frontend/ui/navbar/nav-history';
 
 const PEER: ChatPeer = {
   id: 'peer-1',
@@ -393,6 +407,46 @@ describe('ChatThreadView voice notes', () => {
 
     expect(screen.getByRole('button', { name: 'تشغيل الرسالة الصوتية' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'تنزيل تقرير.pdf' })).toBeInTheDocument();
+  });
+});
+
+/**
+ * One back control, and it is the app's: the thread header is the only back
+ * affordance on this page (`SecondaryHeader` stands down). It pops the entry the
+ * thread was opened from, and when there is none it *replaces* itself with the
+ * chats tab — never pushes, which is what let the tab and the thread trade
+ * places under repeated presses.
+ */
+describe('ChatThreadView back control', () => {
+  beforeEach(() => {
+    resetInAppNavigation();
+    thread.current = makeThread('direct');
+    nav.back.mockReset();
+    nav.replace.mockReset();
+    nav.push.mockReset();
+  });
+
+  it('replaces itself with the chats tab when the thread was opened cold', () => {
+    recordPathname('/chats/c-1');
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'العودة إلى المحادثات' }));
+
+    expect(nav.replace).toHaveBeenCalledWith('/notifications?tab=chats');
+    expect(nav.back).not.toHaveBeenCalled();
+    expect(nav.push).not.toHaveBeenCalled();
+  });
+
+  it('pops the page the thread was opened from', () => {
+    recordPathname('/notifications?tab=chats');
+    recordPathname('/chats/c-1');
+    render(<ChatThreadView conversationId="c-1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'العودة إلى المحادثات' }));
+
+    expect(nav.back).toHaveBeenCalledTimes(1);
+    expect(nav.replace).not.toHaveBeenCalled();
+    expect(nav.push).not.toHaveBeenCalled();
   });
 });
 

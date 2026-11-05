@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { markInAppNavigation } from './nav-history';
+import { recordPathname } from './nav-history';
 
 /**
  * Counts in-app navigations for the current page load (see `nav-history.ts`).
@@ -11,21 +11,18 @@ import { markInAppNavigation } from './nav-history';
  * header itself only exists on secondary pages, and could not have seen the
  * primary ones the user passed through.
  *
- * Idempotent under React's double-invoked effects: the first run records the
- * entry pathname and later runs compare against it rather than against a
- * "have I run before" flag.
+ * It also keeps the trail the back control reads, including the entry path, so
+ * "is there a page of ours behind this one?" is answered from where the user
+ * has actually been rather than from a counter that never comes back down.
+ *
+ * Idempotent under React's double-invoked effects: recording the same pathname
+ * twice is a no-op.
  */
 export function NavHistoryTracker() {
   const pathname = usePathname();
-  const entryPathname = useRef<string | null>(null);
 
   useEffect(() => {
-    if (entryPathname.current === null) {
-      entryPathname.current = pathname;
-      return;
-    }
-    if (entryPathname.current === pathname) return;
-    markInAppNavigation();
+    recordPathname(pathname);
   }, [pathname]);
 
   return null;
