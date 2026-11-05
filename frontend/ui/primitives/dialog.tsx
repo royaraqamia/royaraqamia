@@ -106,7 +106,7 @@ const DialogContent = React.forwardRef<
           // that ships a base `translate-y-*` (the landing chunk does, via Navbar)
           // loads after this one and would win the `--tw-translate-y` cascade,
           // pinning the dialog's top edge to the middle of the screen.
-          'max-sm:inset-x-0 max-sm:bottom-4 max-sm:w-[calc(100%-2rem)] mx-auto sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg',
+          'max-sm:inset-x-0 max-sm:bottom-4 max-sm:w-[calc(100%-2rem)] sm:inset-x-0 sm:inset-y-0 sm:my-auto sm:h-fit sm:w-full sm:max-w-lg mx-auto',
           // Entrance & Exit Motion Animations
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',

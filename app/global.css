@@ -1686,6 +1686,17 @@ body:has([data-secondary-header]) #main-content {
     transform: none !important;
     z-index: 11000 !important;
   }
+
+  /* The panel itself, not only its wrapper. A caller is free to pass a width —
+     `className="w-44"` on a menu is ordinary — and that base utility wins over
+     the panel's own `max-lg:w-full`, because a surface's stylesheet is appended
+     after the shell's (ADR-0132). The sheet is the width of the screen whatever
+     the caller asked for, and this is where its placement already lives. */
+  [data-radix-popper-content-wrapper]:has(> [data-responsive-sheet]) > [data-responsive-sheet] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
 }
 
 /* Form Validation Styles */
