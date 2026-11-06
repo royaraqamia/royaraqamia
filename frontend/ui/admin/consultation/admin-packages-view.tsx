@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import {
@@ -13,38 +13,16 @@ import { Label } from '@/frontend/ui/primitives/label';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { cn } from '@/frontend/shared/cn';
-
-interface PackageDraft {
-  name: string;
-  description: string;
-  price_usd: string;
-  duration_minutes: string;
-  sessions_count: string;
-  is_active: boolean;
-}
-
-const EMPTY_DRAFT: PackageDraft = {
-  name: '',
-  description: '',
-  price_usd: '25',
-  duration_minutes: '60',
-  sessions_count: '1',
-  is_active: true,
-};
+import { packagesInitialState, packagesReducer } from './admin-packages-view.reducer';
 
 export function AdminPackagesView() {
-  const [packages, setPackages] = useState<ConsultationPackage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<PackageDraft>(EMPTY_DRAFT);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [form, dispatch] = useReducer(packagesReducer, undefined, packagesInitialState);
+  const { packages, loading, editingId, draft, showForm, saving, message } = form;
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    setPackages(await adminListPackages());
-    setLoading(false);
+    dispatch({ type: 'loadStarted' });
+    const list = await adminListPackages();
+    dispatch({ type: 'loaded', packages: list });
   }, []);
 
   useEffect(() => {
@@ -52,24 +30,11 @@ export function AdminPackagesView() {
   }, [refresh]);
 
   function startCreate() {
-    setEditingId(null);
-    setDraft(EMPTY_DRAFT);
-    setShowForm(true);
-    setMessage(null);
+    dispatch({ type: 'createStarted' });
   }
 
   function startEdit(pkg: ConsultationPackage) {
-    setEditingId(pkg.id);
-    setDraft({
-      name: pkg.name,
-      description: pkg.description ?? '',
-      price_usd: String(pkg.price_usd),
-      duration_minutes: String(pkg.duration_minutes),
-      sessions_count: String(pkg.sessions_count),
-      is_active: pkg.is_active,
-    });
-    setShowForm(true);
-    setMessage(null);
+    dispatch({ type: 'editStarted', pkg });
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -87,22 +52,24 @@ export function AdminPackagesView() {
     };
 
     if (!payload.name || !(payload.price_usd > 0)) {
-      setMessage({ ok: false, text: 'الاسم والسِّعر مطلوبان.' });
+      dispatch({ type: 'messageSet', message: { ok: false, text: 'الاسم والسِّعر مطلوبان.' } });
       return;
     }
 
-    setSaving(true);
+    dispatch({ type: 'saveStarted' });
     const result = editingId
       ? await adminUpdatePackage(editingId, payload)
       : await adminCreatePackage(payload);
-    setSaving(false);
+    dispatch({ type: 'saveFinished' });
 
     if (result.success) {
-      setMessage({ ok: true, text: editingId ? 'تم تحديث الباقة.' : 'تمت إضافة الباقة.' });
-      setShowForm(false);
+      dispatch({
+        type: 'saveSucceeded',
+        message: { ok: true, text: editingId ? 'تم تحديث الباقة.' : 'تمت إضافة الباقة.' },
+      });
       void refresh();
     } else {
-      setMessage({ ok: false, text: result.error ?? 'فشل الحفظ.' });
+      dispatch({ type: 'messageSet', message: { ok: false, text: result.error ?? 'فشل الحفظ.' } });
     }
   }
 
@@ -115,7 +82,10 @@ export function AdminPackagesView() {
     if (result.success) {
       void refresh();
     } else {
-      setMessage({ ok: false, text: result.error ?? 'فشل حذف الباقة.' });
+      dispatch({
+        type: 'messageSet',
+        message: { ok: false, text: result.error ?? 'فشل حذف الباقة.' },
+      });
     }
   }
 
@@ -134,7 +104,7 @@ export function AdminPackagesView() {
         ) : (
           <button
             type="button"
-            onClick={() => setShowForm(false)}
+            onClick={() => dispatch({ type: 'formClosed' })}
             className="focus-visible:outline-ring border-border text-muted-foreground hover:text-foreground inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
           >
             <X className="size-4" />
@@ -171,7 +141,9 @@ export function AdminPackagesView() {
               <Input
                 id="pkg-name"
                 value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: 'draftChanged', patch: { name: e.target.value } })
+                }
                 maxLength={160}
                 placeholder="مثال: استشارة موسّعة — 3 جلسات"
                 className="bg-muted border-border rounded-xl focus-ring"
@@ -187,7 +159,9 @@ export function AdminPackagesView() {
                 min={1}
                 step={0.5}
                 value={draft.price_usd}
-                onChange={(e) => setDraft({ ...draft, price_usd: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: 'draftChanged', patch: { price_usd: e.target.value } })
+                }
                 className="bg-muted border-border rounded-xl focus-ring"
               />
             </div>
@@ -202,7 +176,9 @@ export function AdminPackagesView() {
                 max={480}
                 step={15}
                 value={draft.duration_minutes}
-                onChange={(e) => setDraft({ ...draft, duration_minutes: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: 'draftChanged', patch: { duration_minutes: e.target.value } })
+                }
                 className="bg-muted border-border rounded-xl focus-ring"
               />
             </div>
@@ -216,7 +192,9 @@ export function AdminPackagesView() {
                 min={1}
                 max={20}
                 value={draft.sessions_count}
-                onChange={(e) => setDraft({ ...draft, sessions_count: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: 'draftChanged', patch: { sessions_count: e.target.value } })
+                }
                 className="bg-muted border-border rounded-xl focus-ring"
               />
             </div>
@@ -230,7 +208,9 @@ export function AdminPackagesView() {
               id="pkg-desc"
               rows={3}
               value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              onChange={(e) =>
+                dispatch({ type: 'draftChanged', patch: { description: e.target.value } })
+              }
               maxLength={1000}
               className="bg-muted border-border rounded-xl focus-ring"
             />
@@ -240,7 +220,9 @@ export function AdminPackagesView() {
             <input
               type="checkbox"
               checked={draft.is_active}
-              onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
+              onChange={(e) =>
+                dispatch({ type: 'draftChanged', patch: { is_active: e.target.checked } })
+              }
               className="accent-primary size-4"
             />
             الباقة فعّالة وتظهر للزوار
