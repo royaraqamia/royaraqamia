@@ -86,5 +86,27 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
+      # Robolectric resolves its Android runtime (`android-all-instrumented`) from
+      # Maven Central *inside the test JVM*, at test-class setup — where Gradle
+      # neither retries nor verifies it. A slow or rate-limited fetch therefore
+      # fails every Robolectric class at once (`MavenArtifactFetcher` throwing
+      # `IOException`) while the rest of the JVM suite passes: that is what
+      # failed #1080's run, 16 of 501 tests, all `sdk = [34]`. The Gradle cache
+      # above does not cover it, so each run paid that download again.
+      #
+      # The key is the file that names the Robolectric version, because that
+      # version is what names the artifact; a bump re-downloads. A cache cannot
+      # be updated once written (`post-if: success()` means only a green run
+      # saves one), so a surface that adds a new `@Config(sdk = …)` downloads
+      # that jar on every run until this key moves — extend the hash of the
+      # test sources when one does.
+      - name: Cache the Robolectric runtime
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ runner.os }}-${{ hashFiles('android/variables.gradle') }}
+          restore-keys: |
+            robolectric-${{ runner.os }}-
+
       - name: Run the shell's JVM tests
         run: npm run android:test
