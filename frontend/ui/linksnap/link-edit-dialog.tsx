@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   LoaderCircle,
@@ -39,6 +39,14 @@ import {
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import type { ShortenedLink } from '@/frontend/api/linksnap';
+import {
+  defaultExpiryParts,
+  expiresInParts,
+  hasLinkEditChanges,
+  linkEditInitialState,
+  linkEditReducer,
+  type LinkEditBaseline,
+} from './link-edit-dialog.reducer';
 
 interface LinkEditDialogProps {
   open: boolean;
@@ -50,21 +58,6 @@ interface LinkEditDialogProps {
   token: string;
   onSaved: (link: ShortenedLink) => void;
   onClose: () => void;
-}
-
-/**
- * Splits an ISO timestamp into separate date (YYYY-MM-DD) and time (HH:mm) strings.
- */
-function splitExpiry(value: string | null): { date: string; time: string } {
-  if (!value) return { date: '', time: '' };
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return { date: '', time: '' };
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
 }
 
 /**
@@ -110,19 +103,20 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
   onSaved,
   onClose,
 }: LinkEditDialogProps) {
-  // --- Form State ---
-  const [editingUrlValue, setEditingUrlValue] = useState(currentUrl);
-  const [editingCodeValue, setEditingCodeValue] = useState(code);
-  const [expiresDateValue, setExpiresDateValue] = useState('');
-  const [expiresTimeValue, setExpiresTimeValue] = useState('');
-  const [enableExpiry, setEnableExpiry] = useState(Boolean(currentExpiresAt));
-  const [passwordEnabled, setPasswordEnabled] = useState(currentPasswordProtected);
-  const [passwordValue, setPasswordValue] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  // --- Form State: ten values that reset, toggle and validate as one form ---
+  const baseline = useMemo<LinkEditBaseline>(
+    () => ({
+      url: currentUrl,
+      code,
+      expiresAt: currentExpiresAt,
+      passwordProtected: currentPasswordProtected,
+    }),
+    [currentUrl, code, currentExpiresAt, currentPasswordProtected]
+  );
+  const [form, dispatch] = useReducer(linkEditReducer, baseline, linkEditInitialState);
 
   const safePreviewHref = useMemo(() => {
-    const raw = editingUrlValue.trim();
+    const raw = form.url.trim();
     if (!raw) return null;
 
     const candidate = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw) ? raw : `https://${raw}`;
@@ -136,16 +130,11 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
     } catch {
       return null;
     }
-  }, [editingUrlValue]);
-  const [copiedLink, setCopiedLink] = useState(false);
+  }, [form.url]);
 
   // --- API Hooks ---
   const { updateLink, updateLoading, updateError } = useUpdateLink(token);
-  const { status: slugStatus, error: slugError } = useSlugAvailability(
-    editingCodeValue,
-    token,
-    code
-  );
+  const { status: slugStatus, error: slugError } = useSlugAvailability(form.code, token, code);
 
   const baseUrl = useMemo(() => {
     const b = getBaseUrl();
@@ -153,23 +142,11 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
   }, []);
 
   const fullShortUrl = useMemo(() => {
-    return `${getBaseUrl()}/${editingCodeValue || code}`;
-  }, [editingCodeValue, code]);
+    return `${getBaseUrl()}/${form.code || code}`;
+  }, [form.code, code]);
 
   // Synchronize initial state when dialog opens
-  const resetFormState = useCallback(() => {
-    const initial = splitExpiry(currentExpiresAt);
-    setEditingUrlValue(currentUrl);
-    setEditingCodeValue(code);
-    setExpiresDateValue(initial.date);
-    setExpiresTimeValue(initial.time);
-    setEnableExpiry(Boolean(currentExpiresAt));
-    setPasswordEnabled(currentPasswordProtected);
-    setPasswordValue('');
-    setShowPassword(false);
-    setPasswordError(null);
-    setCopiedLink(false);
-  }, [currentUrl, code, currentExpiresAt, currentPasswordProtected]);
+  const resetFormState = useCallback(() => dispatch({ type: 'reset', baseline }), [baseline]);
 
   useEffect(() => {
     if (open) {
@@ -178,59 +155,18 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
   }, [open, resetFormState]);
 
   // Track if any changes have been made
-  const hasChanges = useMemo(() => {
-    const initialExpiry = splitExpiry(currentExpiresAt);
-    const urlChanged = editingUrlValue.trim() !== currentUrl.trim();
-    const codeChanged = editingCodeValue.trim() !== code.trim();
-    const passwordStateChanged = passwordEnabled !== currentPasswordProtected;
-    const passwordValueChanged = passwordValue.trim().length > 0;
-    const expiryStateChanged = enableExpiry !== Boolean(currentExpiresAt);
-    const expiryDateChanged =
-      enableExpiry &&
-      (expiresDateValue !== initialExpiry.date || expiresTimeValue !== initialExpiry.time);
-
-    return (
-      urlChanged ||
-      codeChanged ||
-      passwordStateChanged ||
-      passwordValueChanged ||
-      expiryStateChanged ||
-      expiryDateChanged
-    );
-  }, [
-    editingUrlValue,
-    currentUrl,
-    editingCodeValue,
-    code,
-    passwordEnabled,
-    currentPasswordProtected,
-    passwordValue,
-    enableExpiry,
-    currentExpiresAt,
-    expiresDateValue,
-    expiresTimeValue,
-  ]);
+  const hasChanges = useMemo(() => hasLinkEditChanges(form, baseline), [form, baseline]);
 
   // Quick Preset Handlers for Expiration
-  const setExpiryPreset = (hoursFromNow: number) => {
-    setEnableExpiry(true);
-    const d = new Date();
-    d.setTime(d.getTime() + hoursFromNow * 60 * 60 * 1000);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    setExpiresDateValue(`${y}-${m}-${day}`);
-    setExpiresTimeValue(`${hh}:${mm}`);
-  };
+  const addHoursPreset = (hoursFromNow: number) =>
+    dispatch({ type: 'expiryPresetApplied', parts: expiresInParts(hoursFromNow) });
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(fullShortUrl);
-      setCopiedLink(true);
+      dispatch({ type: 'linkCopied' });
       toast.success('تم نسخ الرَّابط المُختصر إلى الحافظة');
-      setTimeout(() => setCopiedLink(false), 2000);
+      setTimeout(() => dispatch({ type: 'copyFeedbackCleared' }), 2000);
     } catch {
       toast.error('تعذر نسخ الرَّابط');
     }
@@ -238,7 +174,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setPasswordError(null);
+    dispatch({ type: 'passwordErrorSet', message: null });
 
     // Validate Slug status
     if (slugStatus === 'taken') {
@@ -248,26 +184,29 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
 
     // Password verification logic
     let password: string | null | undefined;
-    if (!passwordEnabled) {
+    if (!form.passwordEnabled) {
       password = currentPasswordProtected ? null : undefined;
-    } else if (passwordValue.trim()) {
-      password = passwordValue.trim();
+    } else if (form.password.trim()) {
+      password = form.password.trim();
     } else if (!currentPasswordProtected) {
-      setPasswordError('يرجى كتابة كلمة المرور لتفعيل الحماية، أو إيقاف تفعيل المفتاح.');
+      dispatch({
+        type: 'passwordErrorSet',
+        message: 'يرجى كتابة كلمة المرور لتفعيل الحماية، أو إيقاف تفعيل المفتاح.',
+      });
       return;
     }
 
     // Expiry payload logic
     let expiresAt: string | null = null;
-    if (enableExpiry && expiresDateValue) {
-      const timePart = expiresTimeValue || '23:59:59';
-      expiresAt = new Date(`${expiresDateValue}T${timePart}`).toISOString();
+    if (form.enableExpiry && form.expiresDate) {
+      const timePart = form.expiresTime || '23:59:59';
+      expiresAt = new Date(`${form.expiresDate}T${timePart}`).toISOString();
     }
 
     try {
       const updated = await updateLink(clientId, {
-        newCode: editingCodeValue !== code ? editingCodeValue : undefined,
-        originalUrl: editingUrlValue.trim(),
+        newCode: form.code !== code ? form.code : undefined,
+        originalUrl: form.url.trim(),
         expiresAt,
         password,
       });
@@ -288,7 +227,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
         !updateLoading &&
         slugStatus !== 'taken' &&
         slugStatus !== 'checking' &&
-        editingUrlValue.trim() &&
+        form.url.trim() &&
         !slugTooShort &&
         hasChanges
       ) {
@@ -298,11 +237,11 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
   };
 
   const remainingTimeBadge = useMemo(() => {
-    if (!enableExpiry || !expiresDateValue) return null;
-    return formatRemainingTime(expiresDateValue, expiresTimeValue);
-  }, [enableExpiry, expiresDateValue, expiresTimeValue]);
+    if (!form.enableExpiry || !form.expiresDate) return null;
+    return formatRemainingTime(form.expiresDate, form.expiresTime);
+  }, [form.enableExpiry, form.expiresDate, form.expiresTime]);
 
-  const slugTooShort = editingCodeValue.trim().length < 3;
+  const slugTooShort = form.code.trim().length < 3;
 
   return (
     <Dialog
@@ -372,13 +311,13 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   <span>معاينة الرَّابط المباشر</span>
                 </span>
                 <div className="flex items-center gap-1.5">
-                  {passwordEnabled && (
+                  {form.passwordEnabled && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
                       <ShieldCheck className="w-3 h-3" />
                       محمي
                     </span>
                   )}
-                  {enableExpiry && remainingTimeBadge && (
+                  {form.enableExpiry && remainingTimeBadge && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
                       <Clock className="w-3 h-3" />
                       {remainingTimeBadge}
@@ -392,7 +331,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   <Link2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                   <span className="text-xs sm:text-sm font-mono font-bold text-foreground truncate">
                     <span className="text-muted-foreground font-normal">{baseUrl}/</span>
-                    <span className="text-primary">{editingCodeValue || '...'}</span>
+                    <span className="text-primary">{form.code || '...'}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0" dir="ltr">
@@ -403,7 +342,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     title="نسخ الرَّابط المختصر"
                     aria-label="نسخ الرَّابط المختصر"
                   >
-                    {copiedLink ? (
+                    {form.copied ? (
                       <CheckCheck className="w-4 h-4 text-emerald-500" />
                     ) : (
                       <Copy className="w-4 h-4" />
@@ -445,8 +384,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   type="url"
                   required
                   dir="ltr"
-                  value={editingUrlValue}
-                  onChange={(e) => setEditingUrlValue(e.target.value)}
+                  value={form.url}
+                  onChange={(e) => dispatch({ type: 'urlChanged', url: e.target.value })}
                   placeholder="https://example.com/very-long-target-url"
                   className="w-full h-11 px-3.5 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
                   aria-describedby={updateError ? 'edit-url-error' : undefined}
@@ -466,7 +405,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   <span>الرمز المُختصَر (Slug)</span>
                 </label>
                 <span className="text-[11px] font-mono text-muted-foreground">
-                  {editingCodeValue.length}/16
+                  {form.code.length}/16
                 </span>
               </div>
 
@@ -475,7 +414,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   'flex items-center w-full overflow-hidden bg-background dark:bg-neutral-950 border rounded-xl transition-safe duration-200 shadow-xs',
                   slugStatus === 'taken'
                     ? 'border-destructive/60'
-                    : slugStatus === 'available' && editingCodeValue !== code
+                    : slugStatus === 'available' && form.code !== code
                       ? 'border-emerald-500/60'
                       : 'border-border/70 dark:border-neutral-800'
                 )}
@@ -488,10 +427,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   id="edit-code-input"
                   type="text"
                   dir="ltr"
-                  value={editingCodeValue}
-                  onChange={(e) =>
-                    setEditingCodeValue(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
-                  }
+                  value={form.code}
+                  onChange={(e) => dispatch({ type: 'codeChanged', code: e.target.value })}
                   maxLength={16}
                   placeholder="custom-slug"
                   className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-bold focus:outline-none text-foreground placeholder:text-muted-foreground/30"
@@ -518,7 +455,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                 ) : slugStatus === 'available' ? (
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                    {editingCodeValue === code
+                    {form.code === code
                       ? 'هذا هو الرمز المخصص الحالي.'
                       : 'الرمز متاح وجاهز للاستخدام!'}
                   </span>
@@ -546,7 +483,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
               <div
                 className={cn(
                   'rounded-2xl border transition-safe duration-200 overflow-hidden',
-                  enableExpiry
+                  form.enableExpiry
                     ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
                     : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
                 )}
@@ -556,7 +493,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     <div
                       className={cn(
                         'p-2 rounded-xl border shrink-0 transition-colors',
-                        enableExpiry
+                        form.enableExpiry
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
                       )}
@@ -576,21 +513,14 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={enableExpiry}
+                    aria-checked={form.enableExpiry}
                     aria-label="تفعيل أو تعطيل انتهاء صلاحية الرَّابط"
-                    onClick={() => {
-                      const nextState = !enableExpiry;
-                      setEnableExpiry(nextState);
-                      if (!nextState) {
-                        setExpiresDateValue('');
-                        setExpiresTimeValue('');
-                      } else if (!expiresDateValue) {
-                        setExpiryPreset(24 * 7); // Default to 7 days
-                      }
-                    }}
+                    onClick={() =>
+                      dispatch({ type: 'expiryToggled', fallback: defaultExpiryParts() })
+                    }
                     className={cn(
                       'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                      enableExpiry
+                      form.enableExpiry
                         ? 'bg-primary border-primary'
                         : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
                     )}
@@ -600,13 +530,13 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       aria-hidden="true"
                       className={cn(
                         'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
-                        enableExpiry ? 'translate-x-6' : 'translate-x-1'
+                        form.enableExpiry ? 'translate-x-6' : 'translate-x-1'
                       )}
                     />
                   </button>
                 </div>
 
-                {enableExpiry && (
+                {form.enableExpiry && (
                   <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Quick Presets */}
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -615,21 +545,21 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       </span>
                       <button
                         type="button"
-                        onClick={() => setExpiryPreset(24)}
+                        onClick={() => addHoursPreset(24)}
                         className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-safe cursor-pointer"
                       >
                         24 ساعة
                       </button>
                       <button
                         type="button"
-                        onClick={() => setExpiryPreset(24 * 7)}
+                        onClick={() => addHoursPreset(24 * 7)}
                         className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-safe cursor-pointer"
                       >
                         7 أيام
                       </button>
                       <button
                         type="button"
-                        onClick={() => setExpiryPreset(24 * 30)}
+                        onClick={() => addHoursPreset(24 * 30)}
                         className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-safe cursor-pointer"
                       >
                         30 يوماً
@@ -644,8 +574,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                           التاريخ
                         </span>
                         <DatePicker
-                          value={expiresDateValue}
-                          onChange={setExpiresDateValue}
+                          value={form.expiresDate}
+                          onChange={(date) => dispatch({ type: 'expiryDateChanged', date })}
                           placeholder="اختر التاريخ"
                           aria-label="تاريخ انتهاء الصلاحية"
                           className="w-full h-10 px-3 bg-background dark:bg-neutral-950 border-border/70 dark:border-neutral-800 rounded-xl text-xs font-medium text-foreground"
@@ -657,8 +587,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                           الوقت
                         </span>
                         <TimePicker
-                          value={expiresTimeValue}
-                          onChange={setExpiresTimeValue}
+                          value={form.expiresTime}
+                          onChange={(time) => dispatch({ type: 'expiryTimeChanged', time })}
                           aria-label="وقت انتهاء الصلاحية"
                           triggerClassName="h-10 text-xs flex-1"
                           className="w-full"
@@ -673,7 +603,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
               <div
                 className={cn(
                   'rounded-2xl border transition-safe duration-200 overflow-hidden',
-                  passwordEnabled
+                  form.passwordEnabled
                     ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
                     : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
                 )}
@@ -683,7 +613,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     <div
                       className={cn(
                         'p-2 rounded-xl border shrink-0 transition-colors',
-                        passwordEnabled
+                        form.passwordEnabled
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
                       )}
@@ -702,15 +632,12 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     id="edit-password-toggle"
                     type="button"
                     role="switch"
-                    aria-checked={passwordEnabled}
+                    aria-checked={form.passwordEnabled}
                     aria-label="تفعيل أو تعطيل الحماية بكلمة مرور"
-                    onClick={() => {
-                      setPasswordEnabled((prev) => !prev);
-                      setPasswordError(null);
-                    }}
+                    onClick={() => dispatch({ type: 'passwordToggled' })}
                     className={cn(
                       'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                      passwordEnabled
+                      form.passwordEnabled
                         ? 'bg-primary border-primary'
                         : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
                     )}
@@ -720,13 +647,13 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       aria-hidden="true"
                       className={cn(
                         'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
-                        passwordEnabled ? 'translate-x-6' : 'translate-x-1'
+                        form.passwordEnabled ? 'translate-x-6' : 'translate-x-1'
                       )}
                     />
                   </button>
                 </div>
 
-                {passwordEnabled && (
+                {form.passwordEnabled && (
                   <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
                     {currentPasswordProtected && (
                       <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
@@ -741,31 +668,30 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     <div className="relative">
                       <input
                         id="edit-password-input"
-                        type={showPassword ? 'text' : 'password'}
-                        value={passwordValue}
+                        type={form.showPassword ? 'text' : 'password'}
+                        value={form.password}
                         dir="ltr"
-                        onChange={(e) => {
-                          setPasswordValue(e.target.value);
-                          setPasswordError(null);
-                        }}
+                        onChange={(e) =>
+                          dispatch({ type: 'passwordChanged', password: e.target.value })
+                        }
                         placeholder={
                           currentPasswordProtected
                             ? '•••••••••••• (اتركه فارغاً للإبقاء على الحالية)'
                             : 'أدخل كلمة مرور قوية'
                         }
                         autoComplete="new-password"
-                        aria-invalid={passwordError ? true : undefined}
-                        aria-describedby={passwordError ? 'edit-password-error' : undefined}
+                        aria-invalid={form.passwordError ? true : undefined}
+                        aria-describedby={form.passwordError ? 'edit-password-error' : undefined}
                         className="w-full h-10 pr-3.5 pl-10 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-xs font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => dispatch({ type: 'passwordVisibilityToggled' })}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
-                        title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                        aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                        title={form.showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                        aria-label={form.showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                       >
-                        {showPassword ? (
+                        {form.showPassword ? (
                           <EyeOff className="w-4 h-4" />
                         ) : (
                           <Eye className="w-4 h-4" />
@@ -773,14 +699,14 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       </button>
                     </div>
 
-                    {passwordError && (
+                    {form.passwordError && (
                       <p
                         id="edit-password-error"
                         role="alert"
                         className="text-xs font-medium text-destructive flex items-center gap-1.5"
                       >
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                        {passwordError}
+                        {form.passwordError}
                       </p>
                     )}
                   </div>
