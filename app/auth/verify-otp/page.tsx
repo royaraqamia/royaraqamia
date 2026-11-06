@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useReducer } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CircleAlert, ArrowLeft, Clock, CircleCheckBig, CircleCheck, Loader2 } from 'lucide-react';
@@ -11,9 +11,9 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { OTP_EXPIRY_SECONDS, verifyOtpInitialState, verifyOtpReducer } from './verify-otp.reducer';
 
-const OTP_EXPIRY_SECONDS = 5 * 60;
-const RESEND_COOLDOWN_SECONDS = 60;
+const OTP_START_KEY_PREFIX = 'otp_start_';
 
 function VerifyOtpForm() {
   const router = useRouter();
@@ -21,26 +21,12 @@ function VerifyOtpForm() {
   const email = searchParams.get('email') ?? '';
   const redirectTo = searchParams.get('redirect') ?? '/';
 
-  const OTP_START_KEY = `otp_start_${email}`;
+  const OTP_START_KEY = `${OTP_START_KEY_PREFIX}${email}`;
 
-  type VerifyState = {
-    message?: string;
-    success?: boolean;
-    redirectTo?: string;
-    offline?: boolean;
-  } | null;
-  const [otp, setOtp] = useState('');
-  const [state, setState] = useState<VerifyState>(null);
-  const [resendMessage, setResendMessage] = useState<string | null>(null);
-  const [resendError, setResendError] = useState<string | null>(null);
-  const [resendOffline, setResendOffline] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(OTP_EXPIRY_SECONDS);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [isVerified, setIsVerified] = useState(false);
-  const countdownRef = useRef(countdown);
-  countdownRef.current = countdown;
+  const [form, dispatch] = useReducer(verifyOtpReducer, undefined, verifyOtpInitialState);
+
+  const { otp, verifying, outcome, resending, resendOutcome, countdown, resendCooldown } = form;
+  const isVerified = outcome.status === 'verified';
 
   // Redirect if no email
   useEffect(() => {
@@ -55,7 +41,7 @@ function VerifyOtpForm() {
     const stored = sessionStorage.getItem(OTP_START_KEY);
     if (stored) {
       const elapsed = Math.floor((Date.now() - Number(stored)) / 1000);
-      setCountdown(Math.max(0, OTP_EXPIRY_SECONDS - elapsed));
+      dispatch({ type: 'countdownRestored', seconds: Math.max(0, OTP_EXPIRY_SECONDS - elapsed) });
     } else {
       sessionStorage.setItem(OTP_START_KEY, String(Date.now()));
     }
@@ -64,74 +50,59 @@ function VerifyOtpForm() {
   // OTP expiry countdown
   useEffect(() => {
     if (countdown <= 0 || !email) return;
-    const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
+    const timer = setInterval(() => dispatch({ type: 'countdownTicked' }), 1000);
     return () => clearInterval(timer);
   }, [countdown, email]);
 
   // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
-    const timer = setInterval(() => setResendCooldown((prev) => prev - 1), 1000);
+    const timer = setInterval(() => dispatch({ type: 'resendCooldownTicked' }), 1000);
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // Reset countdown when OTP is resent successfully
-  useEffect(() => {
-    if (resendMessage) {
-      sessionStorage.setItem(OTP_START_KEY, String(Date.now()));
-      setCountdown(OTP_EXPIRY_SECONDS);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-    }
-  }, [resendMessage, OTP_START_KEY]);
-
   // Handle successful verification with feedback
   useEffect(() => {
-    if (state && 'success' in state && state.success) {
-      setIsVerified(true);
-      sessionStorage.removeItem(OTP_START_KEY);
-      const redirectToUrl = state.redirectTo ?? '/';
-      const timer = setTimeout(() => {
-        router.replace(redirectToUrl);
-      }, 1200);
-      return () => clearInterval(timer);
-    }
-    return;
-  }, [state, router, OTP_START_KEY]);
+    if (outcome.status !== 'verified') return;
+    sessionStorage.removeItem(OTP_START_KEY);
+    const timer = setTimeout(() => {
+      router.replace(outcome.redirectTo);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [outcome, router, OTP_START_KEY]);
 
   if (!email) return null;
 
   async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setState(null);
-    setIsPending(true);
+    dispatch({ type: 'verifyStarted' });
     try {
       const result = await verifyOtp({ email, otp, redirectTo });
       if (!result.ok) {
-        setState({ message: result.message, offline: result.offline });
+        dispatch({ type: 'verifyRejected', message: result.message, offline: result.offline });
         return;
       }
-      setState({ success: true, redirectTo: result.redirectUrl });
+      dispatch({ type: 'verifySucceeded', redirectTo: result.redirectUrl });
     } finally {
-      setIsPending(false);
+      dispatch({ type: 'verifyFinished' });
     }
   }
 
   async function handleResend(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setResendMessage(null);
-    setResendError(null);
-    setResendOffline(false);
-    setIsResending(true);
+    dispatch({ type: 'resendStarted' });
     try {
       const result = await resendOtp(email);
       if (!result.ok) {
-        setResendOffline(result.offline);
-        setResendError(result.offline ? null : result.message);
+        dispatch({ type: 'resendRejected', message: result.message, offline: result.offline });
         return;
       }
-      setResendMessage(result.message);
+      // The stored start follows the fresh code, so a reload restores its own
+      // five minutes rather than the previous code's.
+      sessionStorage.setItem(OTP_START_KEY, String(Date.now()));
+      dispatch({ type: 'resendSucceeded', message: result.message });
     } finally {
-      setIsResending(false);
+      dispatch({ type: 'resendFinished' });
     }
   }
 
@@ -187,9 +158,9 @@ function VerifyOtpForm() {
               <div className="py-2 flex justify-center">
                 <OtpInput
                   value={otp}
-                  onChange={setOtp}
-                  disabled={isPending}
-                  hasError={!!state?.message && !state.offline}
+                  onChange={(value) => dispatch({ type: 'otpChanged', otp: value })}
+                  disabled={verifying}
+                  hasError={outcome.status === 'failed'}
                 />
               </div>
 
@@ -211,17 +182,17 @@ function VerifyOtpForm() {
                 </div>
               )}
 
-              {state?.offline ? (
+              {outcome.status === 'offline' ? (
                 <NeedsConnection
                   variant="inline"
                   message="لم يصل طلب التَّحقُّق إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
                 />
               ) : (
-                state?.message && (
+                outcome.status === 'failed' && (
                   <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs">
                     <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
                     <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
-                      {state.message}
+                      {outcome.message}
                     </p>
                   </div>
                 )
@@ -229,10 +200,10 @@ function VerifyOtpForm() {
 
               <HeroCtaButton
                 type="submit"
-                disabled={otp.length !== 6 || isPending}
+                disabled={otp.length !== 6 || verifying}
                 className="w-full"
               >
-                {isPending ? (
+                {verifying ? (
                   <>
                     <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
                     <span>جاري التَّحقُّق...</span>
@@ -251,10 +222,10 @@ function VerifyOtpForm() {
                 <Button
                   type="submit"
                   variant="link"
-                  disabled={isResending || resendCooldown > 0}
+                  disabled={resending || resendCooldown > 0}
                   className="text-xs font-bold text-primary hover:text-primary/80 transition-colors p-0 h-auto focus-visible:ring-2 focus-visible:ring-ring rounded-full disabled:opacity-50"
                 >
-                  {isResending
+                  {resending
                     ? 'جاري إعادة الإرسال...'
                     : resendCooldown > 0
                       ? `إعادة الإرسال بعد (${resendCooldown}ث)`
@@ -267,7 +238,7 @@ function VerifyOtpForm() {
                 كلمة المرور بدلًا من الرَّمز.
               </p>
 
-              {resendOffline && (
+              {resendOutcome.status === 'offline' && (
                 <NeedsConnection
                   variant="inline"
                   message="لم يصل طلب إعادة إرسال الرَّمز إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
@@ -275,16 +246,16 @@ function VerifyOtpForm() {
                 />
               )}
 
-              {resendError && (
+              {resendOutcome.status === 'failed' && (
                 <p role="alert" className="text-xs sm:text-sm font-medium text-destructive">
-                  {resendError}
+                  {resendOutcome.message}
                 </p>
               )}
 
-              {resendMessage && (
+              {resendOutcome.status === 'sent' && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
                   <CircleCheck size={14} className="shrink-0" />
-                  <span>{resendMessage}</span>
+                  <span>{resendOutcome.message}</span>
                 </div>
               )}
             </div>
