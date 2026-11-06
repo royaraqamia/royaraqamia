@@ -223,7 +223,7 @@ jobs:
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 64000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
           model: opencode-go/deepseek-v4.1-flash
           # No `variant: high` here on purpose. The planner maps the repo rather than

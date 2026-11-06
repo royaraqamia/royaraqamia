@@ -107,7 +107,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 64000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
           model: opencode-go/deepseek-v4.1-flash
           # Default depth, not `high`: the plan is a reading of the request, and the
@@ -154,7 +154,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 128000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         with:
           model: opencode-go/deepseek-v4.1-flash
           # Same model, default reasoning depth. ADR 0133.

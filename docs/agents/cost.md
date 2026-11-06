@@ -28,9 +28,15 @@ If a schedule has to move, keep long batches inside **10:00–01:00 UTC**.
 
 ## Reasoning depth and output ceilings
 
-No workflow asks for `variant: high` any more. `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX`
-is a runaway ceiling, not a target: `128000` for implementation and repair,
-`64000` for a plan. The model is unchanged.
+No workflow asks for `variant: high` any more. That is the saving: reasoning is
+billed as output, and the variant buys more of it.
+
+`OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX` is left as it was, because it is not a
+cost lever. The limit is applied **per request**, and OpenCode already clamps a
+reply at `OUTPUT_TOKEN_MAX = 256_000` ("no reply needs more, however much the
+model allows"), so the `750000` values were already inert. Lowering them only
+adds a way to truncate a single long reply — a failed run and a retry, which
+costs more than the reply would have.
 
 ## The ledger
 

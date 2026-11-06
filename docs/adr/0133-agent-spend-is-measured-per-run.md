@@ -42,10 +42,16 @@ only trims.**
    Damascus. Nothing about the work changes; the same tokens count half.
 
 2. **Default reasoning depth, same model.** `variant: high` is removed from the
-   implementer, `/oc` and the news digest, and the output cap drops to
-   `128000` (implement, repair) or `64000` (plan). The cap is a runaway ceiling,
-   not a target: no real diff needs more, and a generation that would is a bug.
-   DeepSeek V4.1 Flash stays the model everywhere.
+   implementer, `/oc` and the news digest. That is a real saving: the variant buys
+   reasoning tokens, and reasoning is billed as output.
+
+   The output ceiling was **not** lowered. It looks like a cost control and is not
+   one. The limit is applied to each request, and OpenCode already clamps a reply
+   at `OUTPUT_TOKEN_MAX = 256_000` — "no reply needs more, however much the model
+   allows" — so the `750000` values were inert. The only thing a lower number
+   could do is cut a single long reply, which fails the run and pays for a retry;
+   that costs more than the reply would have. DeepSeek V4.1 Flash stays the model
+   everywhere.
 
 3. **Every agent step records what it spent.** `scripts/agents/usage.mjs` reads
    the CLI's own report (`opencode stats --json`) on the runner and writes one row

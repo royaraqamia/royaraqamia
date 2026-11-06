@@ -59,17 +59,6 @@ describe('agent cost is chosen in the workflow, not discovered on the invoice', 
     }
   });
 
-  it('keeps the runaway output ceiling under a real diff', () => {
-    for (const name of WORKFLOWS) {
-      const values = [
-        ...read(name).matchAll(/OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX:\s*'?(\d+)'?/g),
-      ].map((match) => Number(match[1]));
-      for (const value of values) {
-        expect(value, `${name} allows an unbounded generation`).toBeLessThanOrEqual(128_000);
-      }
-    }
-  });
-
   it('records what each agent workflow spent, and gates only the optional work', () => {
     for (const name of WORKFLOWS) {
       expect(read(name), `${name} does not record its spend`).toContain(

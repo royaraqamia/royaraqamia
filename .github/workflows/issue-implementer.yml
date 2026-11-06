@@ -475,7 +475,7 @@ jobs:
           # The dummy Turnstile secret the Playwright suite expects; the real one is a
           # different value and is not needed to exercise a form locally.
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 128000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         with:
           model: opencode-go/deepseek-v4.1-flash
           # No `variant: high`. The variant buys reasoning depth the issue does not
@@ -737,7 +737,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           PR: ${{ steps.checks.outputs.pr }}
           REASON: ${{ steps.checks.outputs.reason }}
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 128000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         run: |
           set -euo pipefail
 
