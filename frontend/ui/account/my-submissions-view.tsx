@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { ClipboardList, Pencil, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -41,6 +41,7 @@ import { ProjectRequestEditForm } from './project-request-edit-form';
 import { RetainerEditForm } from './retainer-edit-form';
 import { TrainingApplicationEditForm } from './training-application-edit-form';
 import { ConsultationBookingEditForm } from './consultation-booking-edit-form';
+import { submissionsInitialState, submissionsReducer } from './my-submissions-view.reducer';
 
 type Kind = 'project_request' | 'retainer' | 'training_application' | 'consultation_booking';
 
@@ -173,13 +174,16 @@ function SubmissionsSkeleton({ label }: { label: string }) {
 export function MySubmissionsView() {
   const { user, isLoading } = useSession();
   const { identity } = useLocalIdentity();
-  const [projectRequests, setProjectRequests] = useState<ProjectRequest[] | null>(null);
-  const [retainers, setRetainers] = useState<Retainer[] | null>(null);
-  const [applications, setApplications] = useState<TrainingApplication[] | null>(null);
-  const [bookings, setBookings] = useState<ConsultationBooking[] | null>(null);
-  const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [loadOffline, setLoadOffline] = useState(false);
+  const [state, dispatch] = useReducer(submissionsReducer, undefined, submissionsInitialState);
+  const {
+    projectRequests,
+    retainers,
+    applications,
+    bookings,
+    editingKey,
+    loadFailed,
+    loadOffline,
+  } = state;
 
   // The last screen this identity's submissions painted (#495): the lists are
   // network reads, so the snapshot is what stops the first frame being a
@@ -205,8 +209,7 @@ export function MySubmissionsView() {
   const bookingRows = bookings ?? snapshot?.bookings ?? null;
 
   const load = useCallback(async () => {
-    setLoadFailed(false);
-    setLoadOffline(false);
+    dispatch({ type: 'loadStarted' });
     try {
       const [requests, rows, training, consultations] = await Promise.all([
         getMyProjectRequests(),
@@ -214,13 +217,18 @@ export function MySubmissionsView() {
         getMyTrainingApplications(),
         getMyConsultationBookings(),
       ]);
-      setProjectRequests(requests);
-      setRetainers(rows);
-      setApplications(training);
-      setBookings(consultations);
+      dispatch({
+        type: 'loaded',
+        projectRequests: requests,
+        retainers: rows,
+        applications: training,
+        bookings: consultations,
+      });
     } catch (error) {
-      setLoadOffline(error instanceof ApiError && error.isNetworkError);
-      setLoadFailed(true);
+      dispatch({
+        type: 'loadFailed',
+        offline: error instanceof ApiError && error.isNetworkError,
+      });
     }
   }, []);
 
@@ -318,7 +326,7 @@ export function MySubmissionsView() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setEditingKey(key)}
+                  onClick={() => dispatch({ type: 'editStarted', key })}
                 >
                   <Pencil className="size-4" aria-hidden="true" />
                   تعديل
@@ -340,52 +348,36 @@ export function MySubmissionsView() {
                   <ProjectRequestEditForm
                     request={requests.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
-                      setProjectRequests(
-                        (rows) =>
-                          rows?.map((row) => (row.id === updated.id ? updated : row)) ?? rows
-                      );
-                      setEditingKey(null);
+                      dispatch({ type: 'projectRequestSaved', request: updated });
                     }}
-                    onCancel={() => setEditingKey(null)}
+                    onCancel={() => dispatch({ type: 'editStopped' })}
                   />
                 )}
                 {submission.kind === 'retainer' && (
                   <RetainerEditForm
                     retainer={retainerRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
-                      setRetainers(
-                        (rows) =>
-                          rows?.map((row) => (row.id === updated.id ? updated : row)) ?? rows
-                      );
-                      setEditingKey(null);
+                      dispatch({ type: 'retainerSaved', retainer: updated });
                     }}
-                    onCancel={() => setEditingKey(null)}
+                    onCancel={() => dispatch({ type: 'editStopped' })}
                   />
                 )}
                 {submission.kind === 'training_application' && (
                   <TrainingApplicationEditForm
                     application={applicationRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
-                      setApplications(
-                        (rows) =>
-                          rows?.map((row) => (row.id === updated.id ? updated : row)) ?? rows
-                      );
-                      setEditingKey(null);
+                      dispatch({ type: 'applicationSaved', application: updated });
                     }}
-                    onCancel={() => setEditingKey(null)}
+                    onCancel={() => dispatch({ type: 'editStopped' })}
                   />
                 )}
                 {submission.kind === 'consultation_booking' && (
                   <ConsultationBookingEditForm
                     booking={bookingRows.find((row) => row.id === submission.id)!}
                     onSaved={(updated) => {
-                      setBookings(
-                        (rows) =>
-                          rows?.map((row) => (row.id === updated.id ? updated : row)) ?? rows
-                      );
-                      setEditingKey(null);
+                      dispatch({ type: 'bookingSaved', booking: updated });
                     }}
-                    onCancel={() => setEditingKey(null)}
+                    onCancel={() => dispatch({ type: 'editStopped' })}
                   />
                 )}
               </div>
