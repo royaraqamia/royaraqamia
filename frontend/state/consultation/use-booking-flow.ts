@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
-  BookingContactSchema,
   TOPIC_DESCRIPTION_MIN,
   type AvailabilitySlot,
   type ConsultationPackage,
@@ -13,43 +12,28 @@ import {
   submitBooking,
 } from '@/frontend/api/consultation';
 import { useSubmissionReceipt } from '@/frontend/shared/use-submission-receipt';
+import {
+  BOOKING_STEPS,
+  bookingFlowInitialState,
+  bookingFlowReducer,
+  stepAt,
+  OFFLINE_BOOKING,
+  PACKAGES_UNAVAILABLE,
+  SLOTS_UNAVAILABLE,
+  UNEXPECTED_BOOKING_ERROR,
+  type BookingContactDraft,
+  type BookingStep,
+} from './use-booking-flow.reducer';
 
-export const BOOKING_STEPS = ['package', 'slots', 'details'] as const;
-export type BookingStep = (typeof BOOKING_STEPS)[number];
-
-export interface BookingContactDraft {
-  full_name: string;
-  phone_whatsapp: string;
-  topic_description: string;
-}
+export {
+  BOOKING_STEPS,
+  type BookingContactDraft,
+  type BookingStep,
+} from './use-booking-flow.reducer';
 
 export interface CreatedBooking {
   id: string;
   referenceCode: string;
-}
-
-const EMPTY_CONTACT: BookingContactDraft = {
-  full_name: '',
-  phone_whatsapp: '',
-  topic_description: '',
-};
-
-/**
- * Availability and packages are live reads. A request that never reached the
- * server is not an empty calendar and not an empty catalogue, so a failure has
- * its own message instead of the "none available" state those steps show for a
- * genuine absence (ADR-0031).
- */
-const SLOTS_UNAVAILABLE = 'تعذَّر تحميل المواعيد المُتاحة. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
-const PACKAGES_UNAVAILABLE = 'تعذَّر تحميل الباقات. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
-
-/**
- * Field-level validation delegated to the shared contract schema, so the
- * client never invents a rule the server does not enforce.
- */
-function contactFieldError(field: keyof BookingContactDraft, value: string): string | undefined {
-  const result = BookingContactSchema.shape[field].safeParse(value);
-  return result.success ? undefined : result.error.issues[0]?.message;
 }
 
 export interface UseBookingFlowResult {
@@ -102,23 +86,12 @@ export function useBookingFlow(
 ): UseBookingFlowResult {
   const { initialPackages } = options;
   const hasInitialPackages = initialPackages !== undefined;
-  const [stepIndex, setStepIndex] = useState(0);
-  const [packages, setPackages] = useState<ConsultationPackage[]>(initialPackages ?? []);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
-  const [contact, setContact] = useState<BookingContactDraft>(EMPTY_CONTACT);
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  /** Set when the availability read failed, so the step never claims emptiness. */
-  const [slotsError, setSlotsError] = useState<string | null>(null);
-  const [packagesError, setPackagesError] = useState<string | null>(null);
-  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  // Booking reserves an Availability Slot against a live conflict check, so it
-  // is online-only and never queues (ADR-0031). Start "online" so the server and
-  // first client render agree, then read the real value in an effect.
-  const [online, setOnline] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [state, dispatch] = useReducer(
+    bookingFlowReducer,
+    initialPackages ?? [],
+    bookingFlowInitialState
+  );
+
   // The receipt survives a refresh; only the reference code is remembered, so
   // the booking id is filled in from the stored code when present.
   const receipt = useSubmissionReceipt('consultation');
@@ -127,7 +100,11 @@ export function useBookingFlow(
     : null;
 
   useEffect(() => {
-    const sync = () => setOnline(typeof navigator === 'undefined' || navigator.onLine !== false);
+    const sync = () =>
+      dispatch({
+        type: 'onlineChanged',
+        online: typeof navigator === 'undefined' || navigator.onLine !== false,
+      });
     sync();
     window.addEventListener('online', sync);
     window.addEventListener('offline', sync);
@@ -139,11 +116,9 @@ export function useBookingFlow(
 
   const loadPackages = useCallback(async () => {
     try {
-      const list = await fetchConsultationPackages();
-      setPackages(list);
-      setPackagesError(null);
+      dispatch({ type: 'packagesLoaded', packages: await fetchConsultationPackages() });
     } catch {
-      setPackagesError(PACKAGES_UNAVAILABLE);
+      dispatch({ type: 'packagesFailed', message: PACKAGES_UNAVAILABLE });
     }
   }, []);
 
@@ -154,74 +129,33 @@ export function useBookingFlow(
   }, [hasInitialPackages, loadPackages]);
 
   const loadSlots = useCallback(async () => {
-    setSlotsLoading(true);
+    dispatch({ type: 'slotsLoadingStarted' });
     try {
-      const fresh = await fetchAvailableSlots();
-      setSlots(fresh);
-      setSlotsError(null);
-      // Drop selections that disappeared (freed/deleted) while away.
-      setSelectedSlotIds((ids) => {
-        const available = new Set(fresh.map((s) => s.id));
-        const kept = ids.filter((id) => available.has(id));
-        return kept.length === ids.length ? ids : kept;
-      });
+      dispatch({ type: 'slotsLoaded', slots: await fetchAvailableSlots() });
     } catch {
-      // Keep whatever is already selected: the submit path runs its own live
-      // conflict check, so a booking is still refused server-side if a slot was
-      // taken meanwhile. What must not happen is the step reading this as
-      // "nothing is open".
-      setSlotsError(SLOTS_UNAVAILABLE);
-    } finally {
-      setSlotsLoading(false);
+      dispatch({ type: 'slotsFailed', message: SLOTS_UNAVAILABLE });
     }
   }, []);
 
   const selectedPackage = useMemo(
-    () => packages.find((p) => p.id === selectedPackageId) ?? null,
-    [packages, selectedPackageId]
+    () => state.packages.find((pkg) => pkg.id === state.selectedPackageId) ?? null,
+    [state.packages, state.selectedPackageId]
   );
 
   const toggleSlot = useCallback((slotId: string) => {
-    setSelectedSlotIds((current) =>
-      current.includes(slotId) ? current.filter((id) => id !== slotId) : [...current, slotId]
-    );
-    setError(null);
+    dispatch({ type: 'slotToggled', slotId });
   }, []);
 
-  function updateContact(patch: Partial<BookingContactDraft>) {
-    setContact((current) => ({ ...current, ...patch }));
-    setError(null);
-    // Clear a stale error as soon as the user fixes the offending field.
-    setFieldErrors((current) => {
-      const touched = (Object.keys(patch) as (keyof BookingContactDraft)[]).filter(
-        (field) => current[field]
-      );
-      if (touched.length === 0) return current;
-      const next = { ...current };
-      for (const field of touched) {
-        if (!contactFieldError(field, patch[field] ?? '')) delete next[field];
-      }
-      return next;
-    });
-  }
+  const updateContact = (patch: Partial<BookingContactDraft>) => {
+    dispatch({ type: 'contactPatched', patch });
+  };
 
-  const validateField = useCallback(
-    (field: keyof BookingContactDraft) => {
-      const message = contactFieldError(field, contact[field]);
-      setFieldErrors((current) => {
-        const existing = current[field];
-        if (message === existing) return current;
-        const next = { ...current };
-        if (message) next[field] = message;
-        else delete next[field];
-        return next;
-      });
-    },
-    [contact]
-  );
+  const validateField = useCallback((field: keyof BookingContactDraft) => {
+    dispatch({ type: 'fieldValidated', field });
+  }, []);
 
   const requiredSessions = selectedPackage?.sessions_count ?? 1;
-  const step: BookingStep = BOOKING_STEPS[stepIndex] ?? 'package';
+  const step: BookingStep = stepAt(state.stepIndex);
 
   const canProceed = useMemo(() => {
     switch (step) {
@@ -229,121 +163,107 @@ export function useBookingFlow(
         return Boolean(selectedPackage);
       case 'details':
         return (
-          contact.full_name.trim().length > 1 &&
-          contact.phone_whatsapp.trim().length > 5 &&
-          contact.topic_description.trim().length >= TOPIC_DESCRIPTION_MIN
+          state.contact.full_name.trim().length > 1 &&
+          state.contact.phone_whatsapp.trim().length > 5 &&
+          state.contact.topic_description.trim().length >= TOPIC_DESCRIPTION_MIN
         );
       case 'slots':
-        return selectedSlotIds.length === requiredSessions && !slotsLoading;
+        return state.selectedSlotIds.length === requiredSessions && !state.slotsLoading;
       default:
         return false;
     }
-  }, [step, selectedPackage, contact, selectedSlotIds, requiredSessions, slotsLoading]);
+  }, [
+    step,
+    selectedPackage,
+    state.contact,
+    state.selectedSlotIds,
+    requiredSessions,
+    state.slotsLoading,
+  ]);
 
   const next = useCallback(() => {
     if (!canProceed) return;
-    if (BOOKING_STEPS[stepIndex] === 'package') {
+    if (step === 'package') {
       void loadSlots();
     }
-    if (BOOKING_STEPS[stepIndex] === 'details') {
-      // Keep selection ordered chronologically for the summary.
-      setSelectedSlotIds((ids) =>
-        slots
-          .filter((s) => ids.includes(s.id))
-          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-          .map((s) => s.id)
-      );
-    }
-    setError(null);
-    setStepIndex((i) => Math.min(i + 1, BOOKING_STEPS.length - 1));
-  }, [canProceed, stepIndex, loadSlots, slots]);
+    dispatch({ type: 'stepAdvanced' });
+  }, [canProceed, step, loadSlots]);
 
   const back = useCallback(() => {
-    setError(null);
-    setStepIndex((i) => Math.max(i - 1, 0));
+    dispatch({ type: 'stepBacked' });
   }, []);
 
   const goTo = useCallback((target: BookingStep) => {
-    const index = BOOKING_STEPS.indexOf(target);
-    if (index >= 0 && index < BOOKING_STEPS.length - 1) {
-      setError(null);
-      setStepIndex(index);
-    }
+    dispatch({ type: 'stepJumped', index: BOOKING_STEPS.indexOf(target) });
   }, []);
 
   const confirmBooking = useCallback(async () => {
-    if (!selectedPackage || submitting) return;
+    if (!selectedPackage || state.submitting) return;
     // Online-only: a booking must not queue, because it reserves a scarce slot
     // that could collide with another device's booking by the time it replays.
-    if (!online) {
-      setError('يلزم الاتصال بالإنترنت لإتمام الحجز. تحقَّق من اتِّصالك ثم أعِد المحاولة.');
+    if (!state.online) {
+      dispatch({ type: 'bookingRefused', message: OFFLINE_BOOKING });
       return;
     }
-    setSubmitting(true);
-    setError(null);
-    setFieldErrors({});
+    dispatch({ type: 'bookingStarted' });
     try {
       const result = await submitBooking({
         package_id: selectedPackage.id,
-        slot_ids: selectedSlotIds,
-        full_name: contact.full_name.trim(),
-        phone_whatsapp: contact.phone_whatsapp.trim(),
-        topic_description: contact.topic_description.trim(),
+        slot_ids: state.selectedSlotIds,
+        full_name: state.contact.full_name.trim(),
+        phone_whatsapp: state.contact.phone_whatsapp.trim(),
+        topic_description: state.contact.topic_description.trim(),
       });
       if (result.success && result.bookingId && result.referenceCode) {
         receipt.remember(result.referenceCode);
+        dispatch({ type: 'bookingFinished' });
       } else {
-        setError(result.error ?? 'تعذر إنشاء الحجز.');
-        setFieldErrors(result.fieldErrors ?? {});
+        dispatch({
+          type: 'bookingFailed',
+          message: result.error ?? 'تعذر إنشاء الحجز.',
+          fieldErrors: result.fieldErrors ?? {},
+        });
       }
     } catch {
-      setError('حدث خطأ غير متوقع، حاول مرة أخرى.');
-    } finally {
-      setSubmitting(false);
+      dispatch({ type: 'bookingFailed', message: UNEXPECTED_BOOKING_ERROR });
     }
-  }, [selectedPackage, submitting, selectedSlotIds, contact, receipt, online]);
+  }, [
+    selectedPackage,
+    state.submitting,
+    state.selectedSlotIds,
+    state.contact,
+    state.online,
+    receipt,
+  ]);
 
   return {
-    stepIndex,
+    stepIndex: state.stepIndex,
     step,
-    packages,
-    packagesError,
+    packages: state.packages,
+    packagesError: state.packagesError,
     retryPackages: () => void loadPackages(),
     selectedPackage,
-    selectPackage: (packageId) => {
-      setSelectedPackageId(packageId);
-      setSelectedSlotIds([]);
-      // A new package means new availability; the old failure was about the old one.
-      setSlotsError(null);
-      setError(null);
-    },
-    contact,
+    selectPackage: (packageId) => dispatch({ type: 'packageSelected', packageId }),
+    contact: state.contact,
     updateContact,
     validateField,
-    slots,
-    slotsLoading,
-    slotsError,
+    slots: state.slots,
+    slotsLoading: state.slotsLoading,
+    slotsError: state.slotsError,
     retrySlots: () => void loadSlots(),
-    selectedSlotIds,
+    selectedSlotIds: state.selectedSlotIds,
     toggleSlot,
-    clearSlots: () => setSelectedSlotIds([]),
+    clearSlots: () => dispatch({ type: 'slotsCleared' }),
     requiredSessions,
     canProceed,
-    submitting,
-    online,
-    error,
-    fieldErrors,
+    submitting: state.submitting,
+    online: state.online,
+    error: state.error,
+    fieldErrors: state.fieldErrors,
     createdBooking,
     startOver: () => {
       receipt.dismiss();
-      setStepIndex(0);
-      setSelectedPackageId(null);
-      setSelectedSlotIds([]);
-      setContact(EMPTY_CONTACT);
-      setSlotsError(null);
-      setPackagesError(null);
-      setError(null);
-      setFieldErrors({});
+      dispatch({ type: 'startedOver' });
     },
     next,
     back,
