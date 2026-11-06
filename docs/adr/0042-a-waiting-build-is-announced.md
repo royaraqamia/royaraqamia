@@ -1,5 +1,10 @@
 # A waiting build is announced, not just swapped in
 
+> **Superseded 2026-11-06 by [ADR-0134](0134-a-waiting-build-is-taken-on-load.md).** The prompt is
+> removed: a document load takes the waiting build silently, and an open document is never asked or
+> moved. Everything below is kept as the record of why the prompt was added, and of the measurement
+> that decided it — a reload does not release a waiting worker.
+
 ADR-0039 decided that a swapped worker replaces the document, and it rejected an "update available"
 prompt. The swap half holds up; the rejection does not survive the measurement that came with it.
 

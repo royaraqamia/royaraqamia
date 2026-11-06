@@ -6,10 +6,16 @@ the document is visible the app re-checks for a new worker on `visibilitychange`
 15-minute interval, and when a _swapped_ worker takes control the document reloads once
 (`frontend/shared/sw-update.ts`). There is no "update available" prompt, and no `skipWaiting`.
 
-> **Reconsidered 2026-10-14 — see ADR-0042.** The swap half of this stands. The rejection of a prompt
+> **Reconsidered 2026-10-14 - see ADR-0042.** The swap half of this stands. The rejection of a prompt
 > does not: it rested on "the shell has no chrome to hang it on", which is not true of a prompt the
-> page itself renders, and the measurement below is precisely the case a prompt is for — a client that
+> page itself renders, and the measurement below is precisely the case a prompt is for - a client that
 > is never relaunched has no way to hear about the build that is already downloaded and waiting.
+>
+> **Reconsidered again 2026-11-06 - see ADR-0134.** The prompt that ADR-0042 added is gone. The swap
+> half still stands, and the in-session re-check (`visibilitychange`, `focus`, the 15-minute interval)
+> does not: a document load now takes a waiting build, and an open document is never asked or moved.
+> The measurement below is unchanged — a reload does not release a waiting worker, which is exactly
+> why the load has to ask for the build instead of waiting for the browser.
 
 **What a swap waits for, measured 2026-10-14** (Chromium through Playwright, and the same behaviour
 seen on the production deployment): a deploy installs the new worker while the tab is open, and the

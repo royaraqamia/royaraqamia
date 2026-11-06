@@ -1,5 +1,10 @@
 # An update offer names a worker, and the gesture is bounded
 
+> **Amended 2026-11-06 - see [ADR-0134](0134-a-waiting-build-is-taken-on-load.md).** There is no
+> button any more: the take happens at document load. What survives, unchanged, is this ADR's
+> mechanism — `SKIP_WAITING` is posted to the worker the probe named, and the deadline reloads the
+> document when the message activates nothing. Read "the gesture" below as "the take".
+
 ADR-0042's prompt renders from a boolean and its button posts `SKIP_WAITING` into whatever
 `registration.waiting` holds at the moment of the tap. Measured on 2026-10-17 against a production
 build, with the page instrumented: two things that boolean cannot express, both of which end the same

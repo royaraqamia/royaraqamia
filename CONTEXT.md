@@ -413,8 +413,8 @@ The moment a newly installed service worker takes control of a document the prev
 happens once the previous worker's clients are gone, so it lands on a client's next launch (inside the
 Android shell, its next cold start) rather than on a refresh. The document replaces itself when it
 happens, so a client is never left running a build whose caches `activate` has already deleted
-(ADR-0039); while a build is only _waiting_ — downloaded, not yet in control — the page offers it
-instead of applying it silently (ADR-0042).
+(ADR-0039); while a build is only _waiting_ — downloaded, not yet in control — a document load takes it
+silently, with no prompt and no gesture (ADR-0134).
 _Avoid_: update, SW update, auto-update
 
 **Shell version**:
@@ -430,8 +430,8 @@ _Avoid_: app version, build number, versionCode
 A newer APK published at `public/android/latest.json`, announced by the shell's own native prompt and
 installed by it — downloaded into the app's own storage, checked against the manifest's size and
 SHA-256, then handed to the system installer, which is what asks the user (ADR-0044). While it is
-pending, the site holds its web offer back. Distinct from a worker swap, which is the web build
-updating itself within the same install (ADR-0042).
+pending, the site holds its own web take back. Distinct from a worker swap, which is the web build
+updating itself within the same install (ADR-0134).
 
 The manifest is stamped from the built APK by `android:publish` and published by the `Android Release`
 workflow — one batch of native changes, dispatched by hand, not one per merge (ADR-0090). It names our

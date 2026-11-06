@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyWorkerUpdate,
+  takeWaitingUpdateAtLoad,
   watchWorkerUpdates,
   UPDATE_APPLY_DEADLINE_MS,
-  UPDATE_CHECK_INTERVAL_MS,
+  UPDATE_TAKE_GUARD_MS,
 } from '@/frontend/shared/sw-update';
 
 type Listener = () => void;
@@ -29,12 +30,17 @@ function createWorker() {
       state = 'installed';
       listeners.forEach((listener) => listener());
     },
+    /** An install the browser gave up on. */
+    discarded: () => {
+      state = 'redundant';
+      listeners.forEach((listener) => listener());
+    },
   };
 }
 
 /**
  * A `ServiceWorkerContainer` stand-in: the module only reads `controller`, asks
- * for the registration to `update()`, and watches `waiting`/`installing`.
+ * the registration to `update()`, and watches `waiting`/`installing`.
  */
 function createServiceWorkerFake(initialController: object | null = null) {
   const listeners = new Set<Listener>();
@@ -79,6 +85,201 @@ let visibility: DocumentVisibilityState;
 /** Flushes the fake service worker's promise chain without advancing the clock. */
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
+describe('takeWaitingUpdateAtLoad', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    visibility = 'visible';
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => visibility,
+    });
+    window.sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('takes a build that is downloaded and waiting', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    const reload = vi.fn();
+
+    const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload });
+    await flush();
+
+    expect(taken).toBe(true);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    // The swap does the reload, once, through `controllerchange`.
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('asks the browser for a deploy before it decides', async () => {
+    // The case the whole mechanism exists for: the deploy landed after this
+    // document was cached, so the waiting worker appears *because* of the check
+    // a load makes — the navigation's own check finishes too late to be seen.
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.update.mockImplementation(async () => {
+      sw.registration.waiting = worker;
+    });
+
+    const taken = await takeWaitingUpdateAtLoad({
+      serviceWorker: sw.container,
+      reload: vi.fn(),
+    });
+
+    expect(sw.update).toHaveBeenCalledTimes(1);
+    expect(taken).toBe(true);
+  });
+
+  it('takes the install that finishes while the document is loading', async () => {
+    const { worker, installed } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.install(worker);
+
+    const taking = takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+    await flush();
+    expect(sw.registration.waiting).toBeNull();
+
+    // The download the check started lands: the worker is now waiting.
+    sw.registration.waiting = worker;
+    installed();
+
+    expect(await taking).toBe(true);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up on an install that outlives the deadline', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.install(worker);
+
+    const taking = takeWaitingUpdateAtLoad({
+      serviceWorker: sw.container,
+      reload: vi.fn(),
+      installDeadlineMs: 1_000,
+    });
+    await vi.advanceTimersByTimeAsync(1_001);
+
+    expect(await taking).toBe(false);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it('leaves the document alone once the person has started using it', async () => {
+    // A reload under someone mid-form is the thing this channel exists to avoid;
+    // the build waits for the next load instead.
+    const { worker, installed } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.install(worker);
+
+    const taking = takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+    await flush();
+    window.dispatchEvent(new Event('keydown'));
+
+    sw.registration.waiting = worker;
+    installed();
+
+    expect(await taking).toBe(false);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it('never takes anything in a document nobody is looking at', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    visibility = 'hidden';
+
+    const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+
+    expect(taken).toBe(false);
+  });
+
+  it('does nothing on a first install, which is not an update', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake(null);
+    sw.setWaiting(worker);
+
+    const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+
+    expect(taken).toBe(false);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it('stands down while the shell is announcing its own update', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+
+    const taken = await takeWaitingUpdateAtLoad({
+      serviceWorker: sw.container,
+      reload: vi.fn(),
+      isSuppressed: async () => true,
+    });
+
+    expect(taken).toBe(false);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it('still takes a waiting build when the check itself fails', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    sw.update.mockRejectedValue(new Error('offline'));
+
+    const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+
+    expect(taken).toBe(true);
+  });
+
+  it('refuses a second take inside the guard window', async () => {
+    // The one thing standing between a worker that never activates and an
+    // endless reload: the document that comes back must not try again at once.
+    const first = createWorker();
+    const sw = createServiceWorkerFake({});
+
+    sw.setWaiting(first.worker);
+    expect(await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() })).toBe(
+      true
+    );
+
+    const second = createWorker();
+    sw.setWaiting(second.worker);
+    expect(await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() })).toBe(
+      false
+    );
+    expect(second.worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+  });
+
+  it('takes again once the guard window has passed', async () => {
+    const sw = createServiceWorkerFake({});
+    const first = createWorker();
+    sw.setWaiting(first.worker);
+    expect(await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() })).toBe(
+      true
+    );
+
+    await vi.advanceTimersByTimeAsync(UPDATE_TAKE_GUARD_MS + 1);
+
+    const second = createWorker();
+    sw.setWaiting(second.worker);
+    expect(await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() })).toBe(
+      true
+    );
+  });
+
+  it('finds nothing to take when nothing is waiting', async () => {
+    const sw = createServiceWorkerFake({});
+
+    expect(await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() })).toBe(
+      false
+    );
+  });
+});
+
 describe('watchWorkerUpdates', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -91,38 +292,6 @@ describe('watchWorkerUpdates', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('re-checks for a new worker on focus and on the interval while visible', async () => {
-    const sw = createServiceWorkerFake();
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn() });
-
-    // The initial check is part of the setup: a document that is opened and left
-    // alone never fires focus, and an update waiting at load has to be announced.
-    await flush();
-    const baseline = sw.update.mock.calls.length;
-
-    window.dispatchEvent(new Event('focus'));
-    await flush();
-    expect(sw.update.mock.calls.length).toBe(baseline + 1);
-
-    await vi.advanceTimersByTimeAsync(UPDATE_CHECK_INTERVAL_MS);
-    expect(sw.update.mock.calls.length).toBe(baseline + 2);
-
-    dispose();
-  });
-
-  it('never checks while the document is hidden', async () => {
-    const sw = createServiceWorkerFake();
-    visibility = 'hidden';
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn() });
-
-    window.dispatchEvent(new Event('focus'));
-    document.dispatchEvent(new Event('visibilitychange'));
-    await vi.advanceTimersByTimeAsync(UPDATE_CHECK_INTERVAL_MS * 3);
-    expect(sw.update).not.toHaveBeenCalled();
-
-    dispose();
   });
 
   it('reloads once when a swapped worker takes control', () => {
@@ -181,161 +350,34 @@ describe('watchWorkerUpdates', () => {
     dispose();
   });
 
+  it('installs no timer and no check of its own', async () => {
+    // A document that is only sitting there is never moved (ADR-0134): the
+    // watcher exists for swaps it did not start, and watching costs no requests.
+    const sw = createServiceWorkerFake({});
+    const reload = vi.fn();
+    const dispose = watchWorkerUpdates(sw.container, { reload });
+
+    expect(vi.getTimerCount()).toBe(0);
+    window.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(60 * 60_000);
+
+    expect(sw.update).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+
+    dispose();
+  });
+
   it('stops watching once disposed', async () => {
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
-    const onUpdateAvailable = vi.fn();
-    const dispose = watchWorkerUpdates(sw.container, { reload, onUpdateAvailable });
+    const dispose = watchWorkerUpdates(sw.container, { reload });
 
     dispose();
     expect(sw.listenerCount()).toBe(0);
-    const settled = sw.update.mock.calls.length;
 
     sw.swapTo({});
-    window.dispatchEvent(new Event('focus'));
-    await vi.advanceTimersByTimeAsync(UPDATE_CHECK_INTERVAL_MS);
+    await vi.advanceTimersByTimeAsync(0);
     expect(reload).not.toHaveBeenCalled();
-    expect(onUpdateAvailable).not.toHaveBeenCalled();
-    expect(sw.update.mock.calls.length).toBe(settled);
-  });
-
-  it('announces a worker that was already waiting when the document loaded', async () => {
-    // What a reload leaves behind: the previous refresh bumped into the update
-    // and did not release it (ADR-0039).
-    const { worker } = createWorker();
-    const sw = createServiceWorkerFake({});
-    sw.setWaiting(worker);
-    const onUpdateAvailable = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-
-    expect(onUpdateAvailable).toHaveBeenCalledTimes(1);
-    expect(onUpdateAvailable).toHaveBeenCalledWith(true);
-
-    dispose();
-  });
-
-  it('announces an update that finished installing after the check', async () => {
-    const sw = createServiceWorkerFake({});
-    const onUpdateAvailable = vi.fn();
-    const { worker, installed } = createWorker();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-
-    sw.install(worker);
-    window.dispatchEvent(new Event('focus'));
-    await flush();
-    expect(onUpdateAvailable).not.toHaveBeenCalled();
-
-    // The install finishing is the browser's news, not the check's return value.
-    sw.registration.waiting = worker;
-    installed();
-    await flush();
-
-    expect(onUpdateAvailable).toHaveBeenCalledWith(true);
-
-    dispose();
-  });
-
-  it('says so once, however many times it re-checks', async () => {
-    const { worker } = createWorker();
-    const sw = createServiceWorkerFake({});
-    sw.setWaiting(worker);
-    const onUpdateAvailable = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-    window.dispatchEvent(new Event('focus'));
-    window.dispatchEvent(new Event('focus'));
-    await flush();
-
-    expect(onUpdateAvailable).toHaveBeenCalledTimes(1);
-
-    dispose();
-  });
-
-  it('does not announce anything on a first install, which is not an update', async () => {
-    const { worker } = createWorker();
-    const sw = createServiceWorkerFake(null);
-    // No controller means the document was never served by an older build, so
-    // there is nothing to be behind.
-    sw.setWaiting(worker);
-    const onUpdateAvailable = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-
-    expect(onUpdateAvailable).not.toHaveBeenCalled();
-
-    dispose();
-  });
-
-  it('takes the announcement back when the waiting worker takes over', async () => {
-    const { worker } = createWorker();
-    const sw = createServiceWorkerFake({});
-    sw.setWaiting(worker);
-    const onUpdateAvailable = vi.fn();
-    const reload = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload, onUpdateAvailable });
-    await flush();
-    expect(onUpdateAvailable).toHaveBeenLastCalledWith(true);
-
-    // The swap: the waiting worker is in control and the document is replaced.
-    sw.registration.waiting = null;
-    sw.swapTo({});
-    expect(onUpdateAvailable).toHaveBeenLastCalledWith(false);
-    expect(reload).toHaveBeenCalledTimes(1);
-
-    dispose();
-  });
-
-  it('takes the announcement back when the worker it named goes away instead', async () => {
-    // The offer is true of one worker, not of a boolean: Activating a worker the
-    // browser superseded leaves the registration with nothing waiting while the
-    // prompt still says an update is ready to take — a gesture that lands nowhere.
-    // The offer has to come down with the worker it named.
-    const { worker } = createWorker();
-    const sw = createServiceWorkerFake({});
-    sw.setWaiting(worker);
-    const onUpdateAvailable = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-    expect(onUpdateAvailable).toHaveBeenLastCalledWith(true);
-
-    sw.registration.waiting = null;
-    window.dispatchEvent(new Event('focus'));
-    await flush();
-
-    expect(onUpdateAvailable).toHaveBeenLastCalledWith(false);
-
-    dispose();
-  });
-
-  it('announces a replacement worker as its own offer', async () => {
-    const { worker: first } = createWorker();
-    const { worker: second } = createWorker();
-    const sw = createServiceWorkerFake({});
-    sw.setWaiting(first);
-    const onUpdateAvailable = vi.fn();
-
-    const dispose = watchWorkerUpdates(sw.container, { reload: vi.fn(), onUpdateAvailable });
-    await flush();
-    expect(onUpdateAvailable).toHaveBeenCalledTimes(1);
-
-    // A newer install superseded the announced one between two probes. The value
-    // is the same, but it is a different build on offer.
-    sw.setWaiting(second);
-    window.dispatchEvent(new Event('focus'));
-    await flush();
-
-    expect(onUpdateAvailable).toHaveBeenCalledTimes(2);
-    expect(onUpdateAvailable).toHaveBeenLastCalledWith(true);
-
-    dispose();
   });
 });
 
@@ -383,10 +425,11 @@ describe('applyWorkerUpdate', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('reloads anyway when the posted gesture never lands', async () => {
-    // The worker the offer named can be superseded before the tap, and a message
-    // to a worker that is no longer waiting activates nothing and reports
-    // nothing. Without the deadline the document would sit on «جاري التحديث...».
+  it('reloads anyway when the take never lands', async () => {
+    // The worker the take named can be superseded in the moment between the probe
+    // and the message, and a message to a worker that is no longer waiting
+    // activates nothing and reports nothing. Without the deadline the document
+    // would sit on the previous build with the update half-applied.
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
@@ -400,7 +443,7 @@ describe('applyWorkerUpdate', () => {
     await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
 
     expect(reload).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toContain('gesture never landed');
+    expect(warn.mock.calls[0]?.[0]).toContain('never landed');
     warn.mockRestore();
   });
 

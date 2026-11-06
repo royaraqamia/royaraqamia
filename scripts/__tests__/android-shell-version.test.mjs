@@ -157,7 +157,7 @@ describe('what counts as a shell change', () => {
   });
 
   it('does not cover the web app', () => {
-    expect(isShellPath('frontend/ui/shared/update-prompt.tsx')).toBe(false);
+    expect(isShellPath('frontend/shared/sw-update.ts')).toBe(false);
     expect(isShellPath('public/android/latest.json')).toBe(false);
     expect(isShellPath('app/layout.tsx')).toBe(false);
   });
@@ -187,7 +187,7 @@ describe('what counts as a shell change', () => {
 
   it('says which files or dependencies made it a shell change', () => {
     const verdict = shellChangeVerdict({
-      files: ['android/app/src/main/AndroidManifest.xml', 'frontend/ui/shared/update-prompt.tsx'],
+      files: ['android/app/src/main/AndroidManifest.xml', 'frontend/shared/sw-update.ts'],
     });
 
     expect(verdict.changesShell).toBe(true);
@@ -196,7 +196,7 @@ describe('what counts as a shell change', () => {
 
   it('says nothing about a web-only change', () => {
     const verdict = shellChangeVerdict({
-      files: ['frontend/ui/shared/update-prompt.tsx', 'README.md'],
+      files: ['frontend/shared/sw-update.ts', 'README.md'],
     });
 
     expect(verdict.changesShell).toBe(false);

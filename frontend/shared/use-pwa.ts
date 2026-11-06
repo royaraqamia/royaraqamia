@@ -2,8 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { requestPersistentStorage } from './persistent-storage';
-import { observeShellUpdate } from './shell-update';
-import { applyWorkerUpdate, watchWorkerUpdates } from './sw-update';
+import {
+  getShellUpdateState,
+  loadShellUpdate,
+  observeShellUpdate,
+  shellVersionFromUserAgent,
+} from './shell-update';
+import { takeWaitingUpdateAtLoad, watchWorkerUpdates } from './sw-update';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,8 +20,25 @@ export interface PWAState {
   isInstalled: boolean;
   isOnline: boolean;
   registration: ServiceWorkerRegistration | null;
-  /** A newer build is installed and waiting; `applyUpdate` moves onto it. */
-  updateAvailable: boolean;
+}
+
+/**
+ * How long a load waits for the shell to say whether it has an update of its
+ * own. Past it the web take proceeds: the shell's card is a native overlay and a
+ * page reload does not disturb it, so a slow manifest is not a reason to hold a
+ * document on an old build.
+ */
+const SHELL_ANSWER_DEADLINE_MS = 1_000;
+
+/** Resolves when `promise` settles or `ms` passes, whichever is first. */
+function settledBy(promise: Promise<unknown>, ms: number): Promise<void> {
+  return Promise.race([
+    promise.then(
+      () => undefined,
+      () => undefined
+    ),
+    new Promise<void>((resolve) => window.setTimeout(resolve, ms)),
+  ]);
 }
 
 export function usePWA() {
@@ -25,7 +47,6 @@ export function usePWA() {
     isInstalled: false,
     isOnline: true,
     registration: null,
-    updateAvailable: false,
   });
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -82,32 +103,46 @@ export function usePWA() {
   }, []);
 
   /**
-   * Announces a waiting build and keeps the document on the build its worker
-   * serves: see `sw-update.ts`, ADR-0039 for the swap and ADR-0042 for the
-   * prompt. Both matter inside the Android shell, which has no reload control.
+   * The update surface (ADR-0134). A document load is the one moment the page
+   * may move itself: if a build is downloaded and waiting, it takes control and
+   * this document reloads once. A document that is only sitting there is never
+   * reloaded, and the person is never asked.
+   *
+   * It stands down while the shell is announcing its own update (ADR-0043): one
+   * update at a time, and the APK install brings a newer web build with it.
    */
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-    return watchWorkerUpdates(navigator.serviceWorker, {
-      onUpdateAvailable: (available) =>
-        setState((prev) =>
-          prev.updateAvailable === available ? prev : { ...prev, updateAvailable: available }
-        ),
+
+    const shellIsUpdating = async (): Promise<boolean> => {
+      // A browser has no shell to be behind.
+      if (shellVersionFromUserAgent(navigator.userAgent) === null) return false;
+      await settledBy(loadShellUpdate(), SHELL_ANSWER_DEADLINE_MS);
+      return getShellUpdateState().updatePending;
+    };
+
+    void takeWaitingUpdateAtLoad({
+      serviceWorker: navigator.serviceWorker,
+      isSuppressed: shellIsUpdating,
     });
   }, []);
 
   /**
-   * The other update channel: inside the Android shell a new APK is something to
-   * be told about too (ADR-0043). A browser has no such bridge, and the observer
+   * The other half: a swap the page did not start — another document took the
+   * deploy — has already purged the previous build's caches, so this document
+   * reloads once when the new worker takes control (ADR-0039).
+   */
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    return watchWorkerUpdates(navigator.serviceWorker);
+  }, []);
+
+  /**
+   * The shell channel: inside the Android shell a new APK is something the shell
+   * announces itself (ADR-0043). A browser has no such bridge, and the observer
    * is a no-op there.
    */
   useEffect(() => observeShellUpdate(), []);
-
-  /** Moves this document onto the waiting build, replacing it once. */
-  const applyUpdate = useCallback(() => {
-    if (!('serviceWorker' in navigator)) return;
-    void applyWorkerUpdate(navigator.serviceWorker);
-  }, []);
 
   const promptInstall = useCallback(async () => {
     if (!installPrompt) return;
@@ -118,5 +153,5 @@ export function usePWA() {
     return outcome === 'accepted';
   }, [installPrompt]);
 
-  return { ...state, promptInstall, applyUpdate };
+  return { ...state, promptInstall };
 }

@@ -42,7 +42,8 @@ the FAB half-swallowing سورة آل عمران's play button.
   because something is playing, and a control that disappears is a worse answer than one that moves.
 - **Lifting to the same line for everything.** Rejected: the offline pill already sits a line above the
   corner floats, and the update prompt a line above that, so they can be on screen together. Putting
-  all three on one line trades a covered player for two covered pills.
+  all three on one line trades a covered player for two covered pills. (The update prompt was removed
+  in [ADR-0134](0134-a-waiting-build-is-taken-on-load.md); the offline pill and its line stand.)
 
 ## Consequences
 

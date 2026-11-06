@@ -42,11 +42,12 @@ changed is the _presentation_: it is no longer the platform's `AlertDialog` but 
 painted from this product's own tokens, and the shell no longer takes its light/dark or its direction
 from the phone.
 
-The page's half is only _not to double up_. It can see which shell it is in from its own user agent —
-`MainActivity` appends `RoyaraqamiaShell/20000`, a token every document can read — and compares that
-with the manifest from its own origin. While the shell's offer is pending, the site's own prompt stays
-down (ADR-0042), so the two channels never speak at once. Absent token (a browser, or a shell built
-before this) reads as "no shell update", which leaves the web prompt working everywhere else.
+The page's half is only _not to double up_. It can see which shell it is in from its own user agent -
+`MainActivity` appends `RoyaraqamiaShell/20000`, a token every document can read - and compares that
+with the manifest from its own origin. While the shell's offer is pending, the page's own update take
+stands down (ADR-0042, now ADR-0134), so the two channels never move the install at once. Absent token
+(a browser, or a shell built before this) reads as "no shell update", which leaves the web take
+working everywhere else.
 
 A shell the manifest marks `minSupportedVersionCode` above the installed one is the one case with
 nothing to decline: the dialog has no «لاحقًا» and does not dismiss. Nothing sets that field yet; it

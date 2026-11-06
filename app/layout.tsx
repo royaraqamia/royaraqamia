@@ -15,7 +15,6 @@ import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { QuranPlayerProvider } from '@/frontend/state/quran/player-context';
 import { GlobalPlayer } from '@/frontend/ui/quran/global-player';
-import { UpdatePrompt } from '@/frontend/ui/shared/update-prompt';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
 import { SecondaryHeader } from '../frontend/ui/navbar/SecondaryHeader';
 import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
@@ -186,7 +185,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         {children}
                         <BottomTabBar />
                         <GlobalPlayer />
-                        <UpdatePrompt />
                       </PWAProvider>
                       <RoyaToaster />
                     </NotificationProvider>

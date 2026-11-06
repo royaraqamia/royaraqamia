@@ -26,10 +26,11 @@ import { logger } from './logger';
  *   `RoyaraqamiaShell/20003`        — the counter, all a shell before ADR-0046 sent
  *   `RoyaraqamiaShell/1.0.3+20003`  — the version a user reads, then the counter
  *
- * The page compares the counter with the manifest on its own origin, and holds its
- * own offer back while the shell's is pending. Absent token (a browser, or a shell
- * built before any of this) reads as "no shell update pending", which leaves the
- * web prompt working everywhere else.
+ * The page compares the counter with the manifest on its own origin, and holds
+ * its own update back while the shell's is pending (ADR-0134): one update at a
+ * time, and the install the card offers carries a newer web build with it.
+ * Absent token (a browser, or a shell built before any of this) reads as "no
+ * shell update pending", which leaves the web take working everywhere else.
  */
 
 export { SHELL_MANIFEST_PATH, SHELL_USER_AGENT_TOKEN };
@@ -194,14 +195,28 @@ export async function refreshShellUpdate({
   );
 }
 
+let manifestInFlight: Promise<void> | null = null;
+
 /**
- * What the page does with the channel: look once per document, so the prompt
- * knows from its first render whether the shell is the one speaking. Returns a
+ * The manifest read, shared by everything that needs the answer in this
+ * document. The load's update take asks the same question as the observer
+ * below, and asking twice would be two requests for one bit.
+ */
+export function loadShellUpdate(): Promise<void> {
+  manifestInFlight ??= refreshShellUpdate().finally(() => {
+    manifestInFlight = null;
+  });
+  return manifestInFlight;
+}
+
+/**
+ * What the page does with the channel: look once per document, so anything that
+ * has to stand down for the shell's own update card knows whether to. Returns a
  * disposer for symmetry with the worker watcher, though there is nothing to
  * detach yet.
  */
 export function observeShellUpdate(): () => void {
-  void refreshShellUpdate();
+  void loadShellUpdate();
   return () => {};
 }
 
