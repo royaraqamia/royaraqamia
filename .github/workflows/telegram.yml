@@ -275,6 +275,19 @@ jobs:
         env: *agent-env
         run: node scripts/telegram-bridge.mjs digest --workflow "Issue Implementer"
 
+      - name: Record what the turn spent
+        # Best-effort and never blocking: an interactive turn is what the owner
+        # asked for, so it is measured after the fact and never gated. ADR 0133.
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: Telegram Bridge
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
   merge:
     name: Merge a confirmed pull request
     # The only job with write access, and the only one a second button tap can

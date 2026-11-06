@@ -28,7 +28,10 @@ describe('the landing workflow keeps no pull request unattended', () => {
 
   it('sweeps on a schedule, because a stranded pull request waits at most one interval', () => {
     expect(workflow).toMatch(/schedule:/);
-    expect(workflow).toContain("cron: '*/30 * * * *'");
+    // Two hours, not thirty minutes: every sweep that finds a red check starts an
+    // agent, and 48 sweeps a day is how a stranded pull request drained the plan's
+    // allowance (ADR-0133).
+    expect(workflow).toContain("cron: '15 */2 * * *'");
     expect(workflow).toContain('workflow_dispatch');
   });
 
@@ -79,8 +82,27 @@ describe('the landing workflow keeps no pull request unattended', () => {
 
   it('stops after a bounded number of attempts instead of spending every agent run', () => {
     expect(workflow).toContain('MAX_ATTEMPTS');
+    expect(workflow).toContain("MAX_ATTEMPTS: '2'");
     expect(workflow).toContain('pr-land-attempt');
     expect(workflow).toContain('gh pr edit "$PR" --add-label opencode:stuck');
+  });
+
+  it('defers a repair the allowance refused, because an agent cannot fix a quota', () => {
+    const repairAt = workflow.indexOf('Repair the pull request');
+    const recheck = workflow.indexOf('Watch the repaired pull request');
+    const repair = workflow.slice(repairAt, recheck);
+    expect(repair).toContain('allowance');
+    expect(repair).toContain('rate.?limit');
+    // The refusal is detected before the agent is spawned, so no attempt is spent on it.
+    expect(repair.indexOf('rate.?limit')).toBeLessThan(repair.indexOf('opencode run --model'));
+  });
+
+  it('records what the repair spent, behind a soft gate that never blocks a merge', () => {
+    expect(workflow).toContain('./.github/actions/agent-usage');
+    expect(workflow).toContain('mode: gate');
+    expect(workflow).toContain('mode: record');
+    // The repair is the optional half; the green merge above it is not gated.
+    expect(workflow).toContain("steps.budget.outputs.soft != 'true'");
   });
 
   it('checks out the branch with a credential helper, because checkout stores none', () => {

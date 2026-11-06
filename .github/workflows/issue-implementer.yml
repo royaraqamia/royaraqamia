@@ -66,9 +66,16 @@ name: 'Issue Implementer'
 
 on:
   schedule:
-    # 06:00 UTC = 09:00 Damascus (UTC+3, no DST) — daily backstop. The primary
+    # 10:45 UTC = 13:45 Damascus (UTC+3, no DST) — daily backstop. The primary
     # trigger is the planner dispatching this workflow once it finishes.
-    - cron: '0 6 * * *'
+    #
+    # 10:45 rather than the old 06:00 because DeepSeek V4.1 Flash is priced
+    # double inside its peak windows (01:00-04:00 and 06:00-10:00 UTC, Monday to
+    # Friday), and the Go plan's monthly limit counts those dollars. The six
+    # rounds run one after another, so starting at the edge of the off-peak
+    # stretch (10:00-01:00 UTC) is what keeps the whole day's work at half the
+    # allowance. See ADR 0133.
+    - cron: '45 10 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -106,8 +113,34 @@ jobs:
         round: [1, 2, 3, 4, 5, 6]
 
     steps:
+      - name: Checkout
+        # Before the guard on purpose: the allowance gate below is a local action,
+        # and a `uses: ./...` step needs the repository. The checkout is seconds of
+        # runner time and no model, so paying it on a skipped round is cheaper than
+        # a second copy of the gate's logic.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check the model allowance
+        # A soft gate, not a wall: it only reduces the optional rounds below, and
+        # any error leaves it "not soft" so a broken ledger never stops work. One
+        # round always runs. ADR 0133.
+        id: budget
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: gate
+          workflow: Issue Implementer
+          cap-5h-usd: '15'
+          cap-weekly-usd: '40'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Daily guard
-        # Idempotency for the redundant triggers: the planner's dispatch, the 06:00
+        # Idempotency for the redundant triggers: the planner's dispatch, the 10:45
         # schedule and the health-monitor catch-up all point here. Only the first
         # successful run on a given UTC day does work; the rest exit immediately, and
         # the run that does work carries the day's six rounds. The
@@ -122,6 +155,7 @@ jobs:
           # a step can. Every later step is already gated on `steps.guard.outputs.run`.
           ROUND: ${{ matrix.round }}
           REQUESTED_ROUNDS: ${{ github.event.inputs.rounds }}
+          SOFT_BUDGET: ${{ steps.budget.outputs.soft }}
         with:
           script: |
             const round = Number(process.env.ROUND || '1');
@@ -149,16 +183,23 @@ jobs:
             if (recent && !force) {
               core.notice('Issue Implementer already succeeded today at ' + recent.created_at + '; skipping this ' + context.eventName + ' trigger. Dispatch with force=true to override.');
               core.setOutput('run', 'false');
-            } else {
-              core.setOutput('run', 'true');
+              return;
             }
 
-      - name: Checkout
-        if: steps.guard.outputs.run == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 1
-          persist-credentials: false
+            // The allowance gate is advisory: it trims the day to one issue when the
+            // plan's five-hour window is nearly spent, and it never stops the first
+            // round. `force` is the owner's override, and an empty/undefined value
+            // (a failed gate) runs the full day.
+            if (process.env.SOFT_BUDGET === 'true' && round > 1) {
+              core.notice(
+                'The model allowance is soft-exhausted this window; round ' + round +
+                  ' of the day is skipped. Round 1 still runs. See ADR 0133.'
+              );
+              core.setOutput('run', 'false');
+              return;
+            }
+
+            core.setOutput('run', 'true');
 
       - name: Setup Build Environment
         if: steps.guard.outputs.run == 'true'
@@ -434,10 +475,13 @@ jobs:
           # The dummy Turnstile secret the Playwright suite expects; the real one is a
           # different value and is not needed to exercise a form locally.
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 128000
         with:
           model: opencode-go/deepseek-v4.1-flash
-          variant: high
+          # No `variant: high`. The variant buys reasoning depth the issue does not
+          # need — the acceptance criteria are the spec — and it multiplies the
+          # output tokens the Go allowance is charged for. Default depth, same
+          # model, same work. ADR 0133.
           share: 'false'
           prompt: |
             You are the Issue Implementer for this repository (Next.js App Router + React 19 + TypeScript strict, Arabic-RTL SaaS, Supabase Postgres). You run unattended and implement exactly ONE GitHub issue, chosen for you below. The CI infrastructure has already checked out a dedicated branch and will handle committing, pushing and opening the pull request. Do NOT run any git commands yourself, and do not merge anything: the workflow watches the checks and merges when they are green (ADR 0120), and only then.
@@ -515,6 +559,21 @@ jobs:
             6. Your final response becomes the pull request. Its first line becomes the title: start it with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. The body MUST contain a line `Closes #${{ steps.select.outputs.issue_number }}`, then (1) what you changed and why, including any migration applied and its exact name, (2) an `## Evidence` section: every command you ran, its final output, and the files that changed - the claim lives here or it is not claimed, (3) the gates you ran and any you deliberately skipped and why, and (4) when the diff draws or changes a screen, one line per screen naming what you checked for RTL, keyboard and focus, the empty state, the error state and the loading state - with `web-design-guidelines` as the review that produced it. A screen line you cannot write honestly is a screen you have not finished. The checks on this pull request run the whole suite, so do not claim more than you ran.
 
             Do not create scratch files or logs in the repository. Leave the working tree otherwise clean.
+
+      - name: Record what the round spent
+        # Best-effort: the ledger is what turns next month's cap into a measured
+        # number. An unknown CLI shape or a missing secret leaves the round
+        # unaffected. ADR 0133.
+        if: always() && steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: Issue Implementer
+          round: ${{ matrix.round }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and the
@@ -678,9 +737,17 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           PR: ${{ steps.checks.outputs.pr }}
           REASON: ${{ steps.checks.outputs.reason }}
-          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 128000
         run: |
           set -euo pipefail
+
+          # A refusal from the provider's own allowance is not a code defect, and an
+          # agent cannot fix it. Spending 45 minutes discovering that is how a
+          # limited window turns into a dead day (ADR 0032's 2026-11-05 amendment).
+          if printf '%s' "$REASON" | grep -Eqi '429|too many requests|rate.?limit|budget|allowance|capacity|quota'; then
+            echo "::warning title=The model allowance refused the run::Nothing to repair on #$PR; leaving it for the next window."
+            exit 0
+          fi
 
           if [ "$HAS_PUSH_TOKEN" != 'true' ]; then
             # The same defect that made every repair of the first run invisible: a commit
@@ -757,6 +824,21 @@ jobs:
           if [ "$status" -ne 0 ]; then
             echo "::warning title=Repair run failed::The repair changed files but exited $status; the checks will decide."
           fi
+
+      - name: Record what the repair spent
+        # Same row as the round: the CLI's totals are cumulative for the job, so
+        # re-recording after the repair converges the row on the job's real spend
+        # instead of counting the implementation twice. ADR 0133.
+        if: always() && steps.repair.outcome == 'success' && steps.select.outputs.issue_number != ''
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: Issue Implementer
+          round: ${{ matrix.round }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Watch the repaired pull request, then merge it
         id: recheck

@@ -40,7 +40,11 @@ name: 'News Digest'
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    # 23:30 UTC = 02:30 Damascus (UTC+3, no DST), so the digest is ready before
+    # the morning read. It used to run at 03:00 UTC, inside DeepSeek V4.1 Flash's
+    # peak window (01:00-04:00 and 06:00-10:00 UTC, Monday-Friday), where the same
+    # tokens count double against the Go allowance. ADR 0133.
+    - cron: '30 23 * * *'
   workflow_dispatch:
     inputs:
       date:
@@ -68,7 +72,9 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
       NEWS_MODEL: opencode-go/deepseek-v4.1-flash
-      NEWS_VARIANT: high
+      # No reasoning variant: the digest is a selection and a rewrite of stories it
+      # was handed, and `#high` multiplied the output tokens the Go allowance is
+      # charged for without changing the editorial rules. ADR 0133.
       # Pinned: the digest must not change behaviour because a global install moved.
       OPENCODE_CLI_VERSION: '2.1.4'
       OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: '32000'
@@ -86,6 +92,19 @@ jobs:
           node-version: '22'
           install-web-deps: 'false'
           cache-next: 'false'
+
+      - name: Check the model allowance
+        # The shared digest is the product and always runs; the per-reader digests
+        # are the optional half, and they are the part skipped when the five-hour
+        # allowance is nearly spent. Any error reads as "not soft". ADR 0133.
+        id: budget
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: gate
+          workflow: News Digest
+          cap-5h-usd: '15'
+          cap-weekly-usd: '40'
 
       - name: Resolve the Damascus day
         id: day
@@ -130,7 +149,7 @@ jobs:
           JSON
           cd "$workdir"
           opencode run \
-            --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+            --model "${NEWS_MODEL}" \
             --standalone \
             --auto \
             "$(cat "$GITHUB_WORKSPACE/.news/prompt.txt")" | tee "$GITHUB_WORKSPACE/.news/model-output.txt"
@@ -141,7 +160,7 @@ jobs:
             --digest .news/model-output.txt \
             --candidates .news/candidates.json \
             --date "${{ steps.day.outputs.date }}" \
-            --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+            --model "${NEWS_MODEL}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --out .news/resolved.json
 
@@ -160,11 +179,11 @@ jobs:
       # (#619). A failure further down the loop has already moved its reader to
       # the back, which is why nothing below stamps anything.
       - name: Prepare personal digests
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && steps.budget.outputs.soft != 'true' }}
         run: node scripts/news/personal-digests.mjs --candidates .news/candidates.json --out .news/personal
 
       - name: Generate personal digests
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && steps.budget.outputs.soft != 'true' }}
         run: |
           set -uo pipefail
           manifest="$GITHUB_WORKSPACE/.news/personal/manifest.json"
@@ -177,7 +196,7 @@ jobs:
             cd "$RUNNER_TEMP/news-model"
 
             if ! opencode run \
-              --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+              --model "${NEWS_MODEL}" \
               --standalone \
               --auto \
               "$(cat "$dir/prompt.txt")" > "$dir/model-output.txt" 2>&1; then
@@ -189,7 +208,7 @@ jobs:
               --digest "$dir/model-output.txt" \
               --candidates "$dir/candidates.json" \
               --date "${{ steps.day.outputs.date }}" \
-              --model "${NEWS_MODEL}#${NEWS_VARIANT}" \
+              --model "${NEWS_MODEL}" \
               --min-stories 3 \
               --out "$dir/resolved.json"; then
               echo "::warning::the digest was rejected for $user; that reader keeps the shared digest"
@@ -200,6 +219,15 @@ jobs:
               --digest "$dir/resolved.json" \
               --user "$user" || echo "::warning::publishing failed for $user"
           done < "$GITHUB_WORKSPACE/.news/personal/users.txt"
+
+      - name: Record what the digest spent
+        # Best-effort and non-blocking. ADR 0133.
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: News Digest
 
       - name: Dry run notice
         if: ${{ inputs.dry_run }}

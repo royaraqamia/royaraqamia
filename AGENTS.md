@@ -74,6 +74,7 @@ Write for the user, in Arabic, not about the code: no file names, versions, comm
 - [Android shell (APK / AAB)](docs/mobile/android-shell.md)
 - [Working in a worktree](docs/agents/worktrees.md)
 - [Landing the work](docs/agents/landing.md)
+- [Agent cost & the Go allowance](docs/agents/cost.md)
 
 ## Agent skills
 
