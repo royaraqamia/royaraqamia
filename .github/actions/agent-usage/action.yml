@@ -1,0 +1,59 @@
+name: 'Agent usage'
+description: >-
+  Records what an OpenCode agent step spent against the Go allowance, or answers
+  whether the current five-hour/weekly allowance is nearly spent. Best-effort by
+  construction: a missing ledger secret, an absent CLI or an unrecognised payload
+  is reported as "no data", and the gate fails open so a broken measurement can
+  never stop work (ADR-0133).
+
+inputs:
+  mode:
+    description: "'record' writes a row for the step that just finished; 'gate' answers soft-exhaustion."
+    required: true
+  workflow:
+    description: 'The workflow name, stored on the row.'
+    required: false
+    default: 'unknown'
+  round:
+    description: 'The matrix round or attempt counter; "all" when neither applies.'
+    required: false
+    default: 'all'
+  cap-5h-usd:
+    description: 'Soft cap for the last five hours, in dollars of the plan allowance.'
+    required: false
+    default: '15'
+  cap-weekly-usd:
+    description: 'Soft cap for the last seven days, in dollars of the plan allowance.'
+    required: false
+    default: '40'
+
+outputs:
+  soft:
+    description: 'true when optional work should be trimmed. Never a reason to block a first round or an interactive turn.'
+    value: ${{ steps.run.outputs.soft }}
+  reason:
+    description: 'Why the gate is soft, in one line.'
+    value: ${{ steps.run.outputs.reason }}
+  allowance_5h_usd:
+    description: 'Allowance recorded in the last five hours.'
+    value: ${{ steps.run.outputs.allowance_5h_usd }}
+  allowance_7d_usd:
+    description: 'Allowance recorded in the last seven days.'
+    value: ${{ steps.run.outputs.allowance_7d_usd }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Record or gate
+      id: run
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        WORKFLOW: ${{ inputs.workflow }}
+        ROUND: ${{ inputs.round }}
+        CAP_5H_USD: ${{ inputs.cap-5h-usd }}
+        CAP_WEEKLY_USD: ${{ inputs.cap-weekly-usd }}
+      # `|| true`: the script already swallows its own failures, and a composite
+      # action cannot carry `continue-on-error` into the caller. A gate that did
+      # not answer leaves `soft` empty, which every caller reads as "not soft".
+      run: node "$GITHUB_WORKSPACE/scripts/agents/usage.mjs" "$MODE" || true

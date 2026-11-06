@@ -110,7 +110,8 @@ jobs:
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
           model: opencode-go/deepseek-v4.1-flash
-          variant: high
+          # Default depth, not `high`: the plan is a reading of the request, and the
+          # extra reasoning multiplied what the Go allowance is charged for. ADR 0133.
           share: 'false'
           prompt: |
             You are planning a user-requested task for this repository (Next.js App Router + React 19 + TypeScript strict, Arabic RTL SaaS, Supabase Postgres backend). The user commented: "${{ github.event.comment.body }}"
@@ -156,7 +157,7 @@ jobs:
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         with:
           model: opencode-go/deepseek-v4.1-flash
-          variant: high
+          # Same model, default reasoning depth. ADR 0133.
           share: 'false'
           prompt: |
             You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing and opening the pull request. Do NOT run any git commands yourself, and do not merge anything: opening the pull request is where the run ends and a person merges it.
@@ -181,6 +182,19 @@ jobs:
             After implementing, review your diff critically for correctness, layering violations, and regressions. Then run the gates the change can actually break: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests your change reaches (npx vitest run <path> for the test files beside what you touched, or npx vitest run --changed). Do not run the full `npm test` unless the change is repo-wide, do not run e2e tests, and do not run `npm run build` unless nothing cheaper would catch a broken build — next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module; if your change is capable of breaking the build by itself, run it and say so. Iterate until the gates you chose are green. If one fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so.
 
             Your final response becomes the pull request description, and its first line becomes the pull request title: start with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. Structure the rest as: (1) what you changed and why, (2) the gates you ran with their final output summary, naming any you deliberately skipped and why. The checks on the pull request run the whole suite, so do not claim more than you ran.
+
+      - name: Record what the task spent
+        # Best-effort and non-blocking. An interactive run is never gated: the
+        # person asked for it. ADR 0133.
+        if: always() && steps.implement.outcome == 'success'
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: OpenCode
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and

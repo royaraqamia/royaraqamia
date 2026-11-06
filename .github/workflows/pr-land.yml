@@ -9,7 +9,7 @@
 #
 # Two jobs, and they never overlap the implementer:
 #
-# - `sweep` runs every 30 minutes, and does nothing while an implementer run is in flight:
+# - `sweep` runs every two hours, and does nothing while an implementer run is in flight:
 #   during a run the implementer is the one watching its own pull request, so two writers
 #   on one branch is exactly the race this workflow exists to avoid. Once the run is over -
 #   or dead - the next sweep owns whatever it left open.
@@ -18,7 +18,7 @@
 #
 # A landing run is one attempt: watch the checks, merge when green; if red, repair once on
 # the branch (the conflict with `main` included, because a conflicted pull request gets no
-# checks at all) and watch again. Still red, and the next sweep takes it again 30 minutes
+# checks at all) and watch again. Still red, and the next sweep takes it again two hours
 # later. After `MAX_ATTEMPTS` attempts the pull request is labelled `opencode:stuck` and
 # left alone - a check that cannot pass needs a decision, not an unbounded agent - and
 # removing the label puts it back in the queue.
@@ -41,8 +41,11 @@ name: 'PR Landing'
 
 on:
   schedule:
-    # Every 30 minutes: the interval a stranded pull request waits, worst case.
-    - cron: '*/30 * * * *'
+    # Every two hours. The old 30-minute sweep meant a stranded pull request was
+    # retried up to 48 times a day, and every retry that found a red check started
+    # an agent. Two hours keeps the worst-case wait reasonable while capping the
+    # agent's daily attempts at 12. ADR 0133.
+    - cron: '15 */2 * * *'
   workflow_dispatch:
     inputs:
       pr:
@@ -164,6 +167,25 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Check the model allowance
+        # A repair is the optional part of landing: a green pull request still merges
+        # without the agent. When the five-hour allowance is nearly spent, the repair
+        # is deferred to the next sweep instead of spending the rest of the window on
+        # it. Any error reads as "not soft", so a broken ledger never stops a merge.
+        # The gate runs after the checkout because it is a local action. ADR 0133.
+        if: steps.gate.outputs.skip != 'true'
+        id: budget
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: gate
+          workflow: PR Landing
+          cap-5h-usd: '15'
+          cap-weekly-usd: '40'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Setup Build Environment
         if: steps.gate.outputs.skip != 'true'
         uses: ./.github/actions/setup-environment
@@ -237,10 +259,10 @@ jobs:
 
       - name: Repair the pull request — one attempt per run
         id: repair
-        # One attempt, not a loop: the next attempt is the next sweep, 30 minutes later, on
+        # One attempt, not a loop: the next attempt is the next sweep, two hours later, on
         # a runner that starts clean. A second red result inside the same run would only
         # spend the agent on the same tree twice.
-        if: steps.gate.outputs.skip != 'true' && steps.land.outputs.status == 'red'
+        if: steps.gate.outputs.skip != 'true' && steps.land.outputs.status == 'red' && steps.budget.outputs.soft != 'true'
         timeout-minutes: 60
         env:
           AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}
@@ -254,10 +276,19 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           REASON: ${{ steps.land.outputs.reason }}
-          MAX_ATTEMPTS: '5'
+          MAX_ATTEMPTS: '2'
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         run: |
           set -euo pipefail
+
+          # The provider's own allowance is not a code defect and an agent cannot fix
+          # it: spending 60 minutes failing the same way is how a limited window turns
+          # into a dead day. The next sweep retries when the window has moved.
+          if printf '%s' "$REASON" | grep -Eqi '429|too many requests|rate.?limit|budget|allowance|capacity|quota'; then
+            gh pr comment "$PR" --body "A repair was skipped because the model allowance refused the work (${REASON}). The next landing pass retries it."
+            echo "::warning title=The model allowance refused the run::Skipping the repair on #$PR this pass."
+            exit 0
+          fi
 
           attempts=$(gh pr view "$PR" --json comments --jq '
             [ .comments[] | select(.body | contains("<!-- pr-land-attempt")) ] | length')
@@ -331,6 +362,19 @@ jobs:
           if [ "$status" -ne 0 ]; then
             echo "::warning title=Repair run failed::The repair changed files but exited $status; the checks will decide."
           fi
+
+      - name: Record what the repair spent
+        # Best-effort and non-blocking. ADR 0133.
+        if: always() && steps.repair.outcome == 'success'
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: PR Landing
+          round: 'repair'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Watch the repaired pull request, then merge
         id: recheck

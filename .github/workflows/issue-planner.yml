@@ -41,8 +41,16 @@ name: 'Issue Planner'
 
 on:
   schedule:
-    # 03:00 UTC = 06:00 Damascus (UTC+3, no DST) — daily
-    - cron: '0 3 * * *'
+    # 10:15 UTC = 13:15 Damascus (UTC+3, no DST) — daily.
+    #
+    # The hour is chosen for the Go allowance, not for the clock. DeepSeek V4.1
+    # Flash is priced double during its peak windows (01:00-04:00 and 06:00-10:00
+    # UTC, Monday to Friday), and those dollars are what the Go plan's monthly
+    # limit counts. 03:00 UTC sat inside the first window: the same work cost
+    # twice the allowance. This also hands the implementer it dispatches the
+    # whole off-peak stretch (10:00-01:00 UTC), so its six rounds do not drift
+    # into peak hours. See ADR 0133.
+    - cron: '15 10 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -273,6 +281,20 @@ jobs:
             8. Write the result to /tmp/issues.json using the Write tool — a JSON array of objects `{ "title": string, "body": string, "labels": string[] }`. Use a clear title of the form `type(scope): description`. `labels` may add `bug`, `enhancement` or `documentation`, but never `ready-for-agent` or any `opencode:*` label (the workflow adds those). If nothing is worth filing, write exactly `[]`.
 
             Write ONLY to /tmp/issues.json. Your chat response is ignored; the JSON file is the deliverable.
+
+      - name: Record what the analysis spent
+        # Best-effort and never blocking: the ledger is what makes next month's
+        # cap a measured number instead of a guess. A failure here (no Supabase
+        # secret, an unknown CLI shape) leaves the run unaffected. ADR 0133.
+        if: always() && steps.guard.outputs.run == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/agent-usage
+        with:
+          mode: record
+          workflow: Issue Planner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Publish issues
         id: publish
