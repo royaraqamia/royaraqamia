@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTrainingApplications, updateTrainingApplication } from '@/frontend/api/training';
@@ -15,6 +15,7 @@ import {
   type TrainingApplicationStatus,
   type TrainingManualStatus,
 } from '@/shared/contracts/training';
+import { adminListInitialState, adminListReducer } from '@/frontend/state/admin/admin-list.reducer';
 
 const PAGE_SIZE = 20;
 
@@ -29,20 +30,18 @@ const FILTERS: readonly { value: StatusFilter; label: string }[] = [
 ];
 
 export default function TrainingApplicationsPage() {
-  const [applications, setApplications] = useState<TrainingApplication[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(
+    adminListReducer<TrainingApplication, StatusFilter>,
+    'all' as StatusFilter,
+    adminListInitialState<TrainingApplication, StatusFilter>
+  );
+  const { rows: applications, total, page, search, statusFilter, loading, savingId } = form;
+  const { debouncedSearch } = form;
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      dispatch({ type: 'searchCommitted', search });
     }, 300);
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -50,7 +49,7 @@ export default function TrainingApplicationsPage() {
   }, [search]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    dispatch({ type: 'loadStarted' });
     try {
       const result = await getTrainingApplications(
         page,
@@ -58,31 +57,30 @@ export default function TrainingApplicationsPage() {
         statusFilter === 'all' ? undefined : statusFilter,
         debouncedSearch
       );
-      setApplications(result.data);
-      setTotal(result.total);
+      dispatch({ type: 'loaded', rows: result.data, total: result.total });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFinished' });
     }
   }, [page, statusFilter, debouncedSearch]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   const handleSave = useCallback(
     async (id: string, input: { status: TrainingManualStatus; notes: string | null }) => {
-      setSavingId(id);
+      dispatch({ type: 'savingStarted', id });
       try {
         const result = await updateTrainingApplication(id, input);
         const updated = result.data;
         if (result.success && updated) {
-          setApplications((rows) => rows.map((row) => (row.id === id ? updated : row)));
+          dispatch({ type: 'rowReplaced', row: updated });
           toast.success('تم تحديث الطَّلب');
         } else {
           toast.error(result.error || 'تعذّر تحديث الطَّلب');
         }
       } finally {
-        setSavingId(null);
+        dispatch({ type: 'savingFinished' });
       }
     },
     []
@@ -97,7 +95,7 @@ export default function TrainingApplicationsPage() {
           <Input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => dispatch({ type: 'searchChanged', search: event.target.value })}
             placeholder="ابحث بالاسم أو الرَّقم أو رمز الطَّلب..."
             aria-label="البحث في الطلبات"
             className="ps-10"
@@ -114,10 +112,7 @@ export default function TrainingApplicationsPage() {
               key={filter.value}
               type="button"
               aria-pressed={statusFilter === filter.value}
-              onClick={() => {
-                setStatusFilter(filter.value);
-                setPage(1);
-              }}
+              onClick={() => dispatch({ type: 'statusFilterChanged', statusFilter: filter.value })}
               className={cn(
                 'rounded-full border px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer min-h-9',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
@@ -151,7 +146,11 @@ export default function TrainingApplicationsPage() {
         onEnrollmentChanged={fetchData}
       />
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(page) => dispatch({ type: 'pageChanged', page })}
+      />
     </div>
   );
 }
