@@ -28,8 +28,8 @@
 #     idempotent: `setWebhook` on the same URL and secret is a no-op.
 #   - `workflow_dispatch` is what the function calls (through the Vault PAT), and
 #     what the owner can run by hand.
-#   - `workflow_run` on completion is what makes the daily summary a reaction
-#     instead of a clock; the planner and the implementer finish when they finish.
+#   - `workflow_run` on completion is what makes the digest a reaction instead
+#     of a clock; the planner and the implementer finish when they finish.
 #
 # Setup (repository secrets):
 #   TELEGRAM_BOT_TOKEN        - BotFather
@@ -324,7 +324,7 @@ jobs:
         run: node scripts/telegram-bridge.mjs merge --confirmation "$CONFIRMATION"
 
   digest:
-    name: Daily summary on completion
+    name: Digest on completion
     if: >-
       github.event_name == 'workflow_run' &&
       (github.event.workflow_run.name == 'Issue Planner' ||
@@ -338,7 +338,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Summarise the last 24 hours
+      - name: Send the digest
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
