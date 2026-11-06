@@ -26,7 +26,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **profile** `/u/[username]` — todo
 - [ ] **news** `/news` — todo
 - [ ] **scan** `/scan` — todo
-- [ ] **linksnap-unlock** `/linksnap/unlock/[code]` — todo
+- [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
 - [ ] **athkar** `/athkar` — todo
@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 48 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 49 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -120,6 +120,7 @@ A component is finished when the surface that draws it is native: 48 ported comp
 - [x] `linksnap-page` on **linksnap** · #654
 - [x] `linksnap-shortener` on **linksnap** · #916
 - [x] `linksnap-empty` on **linksnap** · #654
+- [x] `linksnap-unlock` on **linksnap-unlock** · #919
 - [ ] `chats-list` on **chats** · #819
 - [ ] `chat-thread` on **chats** · #819
 - [ ] `account-blocked` on **account-blocked** · #977
@@ -136,4 +137,4 @@ A component is finished when the surface that draws it is native: 48 ported comp
 
 ## Where this stands
 
-11 native · 27 to do · 1 blocked of 39 surfaces.
+12 native · 26 to do · 1 blocked of 39 surfaces.

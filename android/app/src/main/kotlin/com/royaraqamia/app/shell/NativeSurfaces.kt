@@ -50,7 +50,8 @@ object NativeSurfaces {
      * whole string: `/verify/<code>` is one row in `screens.json` but every
      * certificate has its own path.
      */
-    private val dynamicRoutes: List<(String) -> Boolean> = listOf(VerifyRoutes::matches)
+    private val dynamicRoutes: List<(String) -> Boolean> =
+        listOf(VerifyRoutes::matches, { LinksnapRoutes.codeOf(it) != null })
 
     /**
      * The routes a signed-out visitor reads.

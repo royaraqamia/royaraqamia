@@ -15,7 +15,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `habitflow` | `/habitflow` | `HabitflowScreen.kt` |  |
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `linksnap` | `/linksnap` | `LinksnapShortenerScreen.kt` |  |
-| `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` (off) | Ported as the live server read the page makes (#654), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | `BlogpressScreen.kt` (off) | The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page. |
 | `blogpress-editor` | `/blogpress/editor/[id]` | `BlogpressEditorScreen.kt` (off) | The editor's fields, its autosave and its server save are drawn (#954), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |

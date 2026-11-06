@@ -1,0 +1,54 @@
+{
+  "surface": "linksnap-unlock",
+  "elements": {
+    "title": {
+      "top": 357.81818,
+      "height": 32.0,
+      "fontSize": 24.0,
+      "fontWeight": 700
+    },
+    "card": {
+      "top": 190.54546,
+      "width": 361.0909,
+      "height": 471.2727,
+      "radius": 24.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "badge": {
+      "top": 319.63635,
+      "height": 26.181824,
+      "fontSize": 12.0,
+      "fontWeight": 500
+    },
+    "body": {
+      "top": 401.81818,
+      "height": 22.909088,
+      "fontSize": 14.0
+    },
+    "code": {
+      "top": 432.72726,
+      "height": 16.0,
+      "fontSize": 12.0,
+      "fontWeight": 700
+    },
+    "input": {
+      "width": 310.9091,
+      "height": 48.00003,
+      "fontSize": 14.0,
+      "paddingLeft": 16.0,
+      "paddingRight": 44.0
+    },
+    "submit": {
+      "width": 310.9091,
+      "height": 52.0,
+      "fontSize": 16.0,
+      "fontWeight": 700
+    },
+    "back": {
+      "top": 619.63635,
+      "height": 18.181824,
+      "fontSize": 12.0
+    }
+  }
+}

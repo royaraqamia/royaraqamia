@@ -1,0 +1,35 @@
+{
+  "surface": "linksnap-unlock",
+  "component": "linksnap-unlock",
+  "web": {
+    "file": "frontend/ui/linksnap/linksnap-unlock-copy.ts",
+    "export": "LINKSNAP_UNLOCK_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapUnlockCopy.kt",
+    "object": "LinksnapUnlockCopy"
+  },
+  "notes": {
+    "source": "The protected-link page's words, in both clients (#654, #919). The site's `frontend/ui/linksnap/unlock-link-form.tsx` is the reference: the prompt, the password field, the one button, the way back, and the answers the server can give. The code a link carried is drawn as a value, not written into a sentence.",
+    "answers": "The server answers the form with a status; both clients read it from the same keys so the app cannot spell a refusal differently from the page. The page's own server strings are longer (they carry the code), and the copy is the sentence both clients draw for the same status.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "فتح الرَّابط",
+    "badge": "رابط محمي بكلمة مرور",
+    "body": "هذا الرَّابط محمي بكلمة مرور. أدخلها للمتابعة إلى الوجهة.",
+    "passwordLabel": "كلمة المرور",
+    "submit": "فتح الرَّابط",
+    "busy": "جاري الفتح...",
+    "back": "العودة إلى LinkSnap",
+    "emptyPassword": "أدخل كلمة المرور للمتابعة.",
+    "wrongPassword": "كلمة المرور غير صحيحة.",
+    "notFound": "هذا الرَّابط غير موجود.",
+    "blocked": "تم إلغاء تنشيط هذا الرَّابط.",
+    "expired": "انتهت صلاحية هذا الرَّابط.",
+    "notProtected": "هذا الرَّابط ليس محمياً بكلمة مرور.",
+    "offline": "يتطلَّب فتح هذا الرَّابط اتِّصالاً بالإنترنت. تحقَّق من اتِّصالك ثم أعد المحاولة.",
+    "fallback": "تعذَّر فتح الرَّابط. حاول مرَّة أخرى.",
+    "badResponse": "تعذَّر قراءة رد الخادم."
+  }
+}
