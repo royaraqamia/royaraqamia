@@ -32,8 +32,9 @@ announcement, and moving it raised three questions that a port does not usually 
 
 - **The card has no parity row, and the exemption is the hole.** `check:parity` exists so a ported
   component cannot drift from the one the site draws. This card has no such counterpart by
-  construction: the site never offers an APK install — a web deploy alone never prompts
-  ([ADR-0042](0042-a-waiting-build-is-announced.md)) — so there is no second client to hold the same
+  construction: the site never offers an APK install - a web deploy alone never prompts
+  ([ADR-0042](0042-a-waiting-build-is-announced.md), superseded by
+  [ADR-0134](0134-a-waiting-build-is-taken-on-load.md)) - so there is no second client to hold the same
   words. It is listed under `exempt` in `docs/mobile/parity.json`, with that reason, and its copy
   lives in `res/values/strings.xml`: one client, one source. The exemption is honest but it is a
   gap in the net, and it is the only one.
@@ -52,10 +53,11 @@ announcement, and moving it raised three questions that a port does not usually 
 
 - **Keep the Java dialog for the document's activity.** That is what this replaces: two prompts,
   two layouts, and a card that would be drawn twice from the same answer.
-- **Give the card a parity row against `frontend/ui/shared/update-prompt.tsx`.** That component is
-  a different prompt about a different thing — a waiting web build and the one reload that applies
-  it — so a row would assert that two unrelated sentences are the same sentence, which is worse
-  than an exemption that says why.
+- **Give the card a parity row against `frontend/ui/shared/update-prompt.tsx`.** That component was
+  a different prompt about a different thing - a waiting web build and the one reload that applies
+  it - so a row would assert that two unrelated sentences are the same sentence, which is worse
+  than an exemption that says why. (It has since been removed: the web take is silent and has no
+  words at all, ADR-0134.)
 - **Block the hand-over on any pending update.** An offer is something a user may decline, and a
   declined offer that still withheld the app would be a block wearing a question's clothes. Only a
   floor is absolute, because the site itself is what refuses a build below it.

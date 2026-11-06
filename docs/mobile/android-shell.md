@@ -334,7 +334,7 @@ changes rather than only on the machine that wrote them.
 | Load the live site (the shipped shape)                           | `capacitor.config.ts` `server.url`                                                                                 | Working — this is still the shell that ships; the bundled shape is [ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md) and lands as #502/#503                             |
 | Load a bundled document (the bundled target)                     | `server.url` unset, Vite build in `webDir`, `MainActivity.bundledRootFor`                                          | Spike-proven (#500, [two-origin-spike.md](two-origin-spike.md)): `https://localhost/`, Back returns to it, remote surfaces reached by Custom Tab; release APK 15.4 MiB against the shell's 16.1    |
 | Offline / unsupported fallback                                   | `capacitor.config.ts` `server.errorPath`, `android.minWebViewVersion`                                              | Working — a bundled page with retry or update copy (ADR-0067)                                                                                                                                      |
-| Announcing web updates                                           | `frontend/ui/shared/update-prompt.tsx`                                                                             | Working — in-page, so it shows in the shell too                                                                                                                                                    |
+| Announcing web updates                                           | `frontend/shared/sw-update.ts`                                                                                     | Silent - a document load takes a waiting build and reloads once; no prompt, so there is nothing to show in the shell (ADR-0134)                                                                    |
 | Announcing a new APK                                             | `ShellUpdatePrompt`, `public/android/latest.json`                                                                  | Working — a Compose card in the shell's frame (#652, ADR-0114), and it installs in place (ADR-0044); `/account` re-checks on demand                                                                |
 | Deep links (App Links + `royar://`)                              | manifest intent filters, `MainActivity.webUrlFor`                                                                  | Working                                                                                                                                                                                            |
 | Custom-scheme OAuth return                                       | manifest + `MainActivity`                                                                                          | Working — needs two Supabase allowlist entries (below)                                                                                                                                             |
@@ -750,7 +750,8 @@ adb shell input keyevent 4   # with a dialogue open: it closes, the page and its
 ```
 
 The shell's counter moves for this (ADR-0043): a shell installed before it keeps the old behaviour until
-it takes the update prompt.
+the APK's own update card installs the newer one. The web half needs no prompt for this: a document
+load takes whatever build is waiting (ADR-0134).
 
 ### The system bar band
 

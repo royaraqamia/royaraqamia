@@ -1593,13 +1593,6 @@ body {
   --roy-float-rise: max(0px, var(--roy-player-lift) - var(--roy-corner-rest));
 }
 
-/* The update prompt keeps a stagger above the corner floats, and the player
-   raises it by the distance it raises those. */
-.update-prompt {
-  bottom: calc(8rem + var(--roy-float-rise));
-  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 /* ========================================
    BOTTOM TAB BAR
    ======================================== */

@@ -1,12 +1,16 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
- * A worker swap has to reach a running client with no gesture and no prompt
- * (ADR-0039): the Android shell has no reload control, so the app re-checks for
- * a new worker itself while the document is visible, and replaces the document
- * when a swapped worker takes control.
+ * A deploy reaches a client with no prompt and no gesture, and never moves a
+ * document that is only open (ADR-0134).
+ *
+ * The update surface is a document load: the page checks for a deploy as it
+ * loads, and when one is downloaded and waiting it takes control and reloads
+ * once. A document that is merely sitting there is never reloaded — there is no
+ * timer, no focus check and no prompt — so nothing here dispatches a focus event
+ * and waits for the app to notice.
  *
  * Runs against a production build, because the worker is only registered outside
  * development:
@@ -38,11 +42,11 @@ function cachedBuild(page: Page, path = '/rates'): Promise<string> {
   );
 }
 
-interface SwProbe {
-  /** Documents loaded in this context; `window.name` survives a reload. */
-  loads: number;
-  /** Calls the app made to `getRegistration()` — the re-check, and only that. */
-  checks: number;
+/** Documents loaded in this context; `window.name` survives a reload. */
+async function countLoads(page: Page): Promise<number> {
+  // The probe dies with the execution context mid-reload; -1 means "ask again",
+  // which is what a poll does with a value that is not the one it waits for.
+  return page.evaluate(() => Number(window.name || 0)).catch(() => -1);
 }
 
 test.skip(!ENABLED, 'requires SW_UPDATE_E2E=1 (production build)');
@@ -57,254 +61,164 @@ test.afterAll(() => {
   if (original !== null) writeFileSync(VERSION_SCRIPT, original);
 });
 
-test('a deploy reaches a running client without a reload loop', async ({ browser }) => {
-  test.setTimeout(180_000);
-
-  const context = await browser.newContext({ serviceWorkers: 'allow' });
-
-  // Probe the re-check. `getRegistration()` is called by `sw-update.ts` and
-  // nowhere else in the app, so counting it isolates the app's re-check from the
-  // browser's own update checks.
+/** One document counting its own loads, and nothing else. */
+async function instrument(context: BrowserContext): Promise<void> {
   await context.addInitScript(() => {
-    const probe = { loads: Number(window.name || 0) + 1, checks: 0 };
-    window.name = String(probe.loads);
-    (window as unknown as { __swProbe: typeof probe }).__swProbe = probe;
-
-    const container = navigator.serviceWorker;
-    if (!container) return;
-    const original = container.getRegistration.bind(container);
-    container.getRegistration = ((...args: Parameters<typeof original>) => {
-      probe.checks += 1;
-      return original(...args);
-    }) as typeof container.getRegistration;
+    // `newPage()` opens on `about:blank` first, which is not a document of the app.
+    if (!/^https?:$/.test(location.protocol)) return;
+    window.name = String(Number(window.name || 0) + 1);
   });
+}
 
-  const page = await context.newPage();
-  const probe = () => page.evaluate(() => (window as unknown as { __swProbe: SwProbe }).__swProbe);
-
-  // The probe dies with the execution context while the app reloads; -1 means
-  // "mid-reload", so a poll can simply ask again.
-  const loads = () =>
-    page
-      .evaluate(() => (window as unknown as { __swProbe: SwProbe }).__swProbe.loads)
-      .catch(() => -1);
-
-  // The start state has to be the built version, whatever a previous test or a
-  // crashed run left in the generated version script.
-  writeFileSync(VERSION_SCRIPT, original ?? '');
-
-  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
-    timeout: 30_000,
-  });
-
-  // `PWAProvider` defers `register()` to `requestIdleCallback` with a 5s ceiling,
-  // and that call re-checks for a new worker; let it finish so the deploy below
-  // cannot be picked up by a check that is already in flight.
-  await page.waitForTimeout(7_000);
-  const settled = await probe();
-
-  // Nothing re-checks a document that just sits there — that is the whole reason
-  // the shell needs the app to do it.
-  await page.waitForTimeout(2_000);
-  expect((await probe()).checks).toBe(settled.checks);
-
-  // Deploy: the worker's imported version script changes, which is what installs
-  // a new worker even when the worker's own bytes are identical. Remove the
-  // app's re-check and the poll below is what fails.
+function deploy(): void {
   writeFileSync(
     VERSION_SCRIPT,
     `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
   );
+}
 
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect
-    .poll(async () => (await probe()).checks, { timeout: 15_000 })
-    .toBeGreaterThan(settled.checks);
-
-  // The re-check installs the new worker; it must not take control on its own,
-  // and the document must not have reloaded yet.
-  await page.waitForTimeout(3_000);
-  const waiting = await page.evaluate(async () =>
-    Boolean((await navigator.serviceWorker.getRegistration())?.waiting)
-  );
-  expect(waiting).toBe(true);
-  expect((await probe()).loads).toBe(settled.loads);
-
-  // A client that is launched rather than reloaded sees a waiting worker release
-  // when the old client goes away; `SKIP_WAITING` stands in for that release, and
-  // the app has to bring itself onto the new build.
-  await page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    registration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
-  });
-  await expect.poll(loads, { timeout: 30_000 }).toBe(settled.loads + 1);
-
-  // No loop: the tab settles instead of reloading its way to the new build.
-  await page.waitForTimeout(3_000);
-  expect(await loads()).toBe(settled.loads + 1);
-
-  // The swap keeps the store: the schema-named cache survives it, and the copy
-  // the new worker refreshed now names the build that wrote it.
-  const cacheKeys = await page.evaluate(async () => (await caches.keys()).join(','));
-  expect(cacheKeys).toContain(DATA_CACHE);
-  await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
-
-  await context.close();
-});
-
-/**
- * ADR-0042: the announcement is the *first* half of the update channel — a build
- * that is downloaded and waiting is worth telling the user about, because a
- * refresh does not release it (measured 2026-10-14 above). Declining is a real
- * answer; the gesture is what moves the document, and it still moves it once.
- */
-test('a waiting worker is announced, and the prompt is how a document takes it', async ({
-  browser,
-}) => {
-  test.setTimeout(180_000);
-
-  const context = await browser.newContext({ serviceWorkers: 'allow' });
-
-  await context.addInitScript(() => {
-    const probe = { loads: Number(window.name || 0) + 1, checks: 0 };
-    window.name = String(probe.loads);
-    (window as unknown as { __swProbe: typeof probe }).__swProbe = probe;
-  });
-
-  const page = await context.newPage();
-  const loads = () =>
-    page
-      .evaluate(() => (window as unknown as { __swProbe: { loads: number } }).__swProbe.loads)
-      .catch(() => -1);
-
-  writeFileSync(VERSION_SCRIPT, original ?? '');
+/** Opens the app and lets the registration and its own check settle. */
+async function open(page: Page): Promise<void> {
   await page.goto('/rates', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
     timeout: 30_000,
   });
+  // `PWAProvider` defers `register()` to `requestIdleCallback` with a 5s ceiling.
   await page.waitForTimeout(7_000);
+}
 
-  const settled = await loads();
-  // Nothing is waiting yet, so there is nothing to announce.
-  await expect(page.getByTestId('update-prompt')).toBeHidden();
+test('a refresh takes the deploy, once, and lands the new build', async ({ browser }) => {
+  test.setTimeout(240_000);
 
-  writeFileSync(
-    VERSION_SCRIPT,
-    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
-  );
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  await instrument(context);
+  const page = await context.newPage();
+
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  await open(page);
+  const settled = await countLoads(page);
+
+  // There is no prompt to show, in any state.
+  await expect(page.getByTestId('update-prompt')).toHaveCount(0);
+  expect(settled).toBe(1);
+
+  deploy();
+
+  // A document that is only open is never moved: no timer, no focus check, no
+  // prompt. This is the half that makes the take safe to ship at all.
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForTimeout(8_000);
+  expect(await countLoads(page)).toBe(settled);
 
-  // The announcement: a build is downloaded and waiting, and the document is
-  // still on the previous one — the prompt tells the truth when it says so.
-  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
-  expect(
-    await page.evaluate(async () =>
-      Boolean((await navigator.serviceWorker.getRegistration())?.waiting)
-    )
-  ).toBe(true);
-  expect(await loads()).toBe(settled);
-
-  // Declining is respected: no reload, and no repeated asking in this document.
-  await page.getByRole('button', { name: 'لاحقًا' }).click();
-  await expect(page.getByTestId('update-prompt')).toBeHidden();
-  expect(await loads()).toBe(settled);
-
-  // A refresh is exactly the case the prompt exists for: it does not release the
-  // waiting worker (ADR-0039, measured above), it re-asks in the new document,
-  // and this time the gesture is the way through.
+  // A manual refresh is the moment the page may move itself: the load finds the
+  // deploy, waits for it to be ready, and takes it — the refresh, then one
+  // reload onto the new build.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'تحديث الآن' }).click();
+  await expect.poll(() => countLoads(page), { timeout: 90_000 }).toBe(settled + 2);
 
-  // One reload for the gesture, plus the one the refresh already made.
-  await expect.poll(loads, { timeout: 30_000 }).toBe(settled + 2);
-  await expect(page.getByTestId('update-prompt')).toBeHidden();
-  // The store survived the deploy; the document in it is now this build's.
+  // The store survived the deploy; the copy in it is now this build's.
   expect(await page.evaluate(async () => (await caches.keys()).join(','))).toContain(DATA_CACHE);
   await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
 
   // No loop: the tab settles on the build its worker serves.
-  await page.waitForTimeout(3_000);
-  expect(await loads()).toBe(settled + 2);
+  await page.waitForTimeout(5_000);
+  expect(await countLoads(page)).toBe(settled + 2);
 
   await context.close();
 });
 
 /**
- * ADR-0055: the offer names a worker, and the gesture is bounded.
- *
- * A `SKIP_WAITING` posted to a worker the browser has already superseded
- * activates nothing and reports nothing — no event, no error. The button's label
- * is component state that only the document unloading clears, so without a
- * deadline the client sits on «جاري التحديث...» for good. Simulated by dropping
- * the message, which is what silence looks like from the page.
+ * ADR-0039: the other half of the channel. A document whose build was replaced by
+ * *another* client has already had the previous build's chunks purged from the
+ * cache, so it reloads once when it becomes visible — it cannot stay, and it is
+ * not the page choosing to interrupt anyone.
  */
-test('a gesture that lands nowhere still moves the document', async ({ browser }) => {
-  test.setTimeout(180_000);
+test('a document reloads when another client takes the deploy first', async ({ browser }) => {
+  test.setTimeout(240_000);
 
   const context = await browser.newContext({ serviceWorkers: 'allow' });
+  await instrument(context);
 
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  const first = await context.newPage();
+  await open(first);
+  expect(await countLoads(first)).toBe(1);
+
+  deploy();
+
+  // A second document loads and takes the deploy itself, which activates the
+  // worker and claims every client it can reach.
+  const second = await context.newPage();
+  await open(second);
+  await expect.poll(() => countLoads(second), { timeout: 90_000 }).toBe(2);
+
+  // The first document was open the whole time; the swap replaced it once.
+  await expect.poll(() => countLoads(first), { timeout: 30_000 }).toBe(2);
+  await expect.poll(() => cachedBuild(first), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
+  await first.waitForTimeout(5_000);
+  expect(await countLoads(first)).toBe(2);
+
+  await context.close();
+});
+
+/**
+ * ADR-0055's backstop, now behind a take instead of a button: a `SKIP_WAITING`
+ * posted to a worker the browser has already superseded activates nothing and
+ * reports nothing — no event, no error. Simulated by dropping the message, which
+ * is what silence looks like from the page. The deadline moves the document
+ * anyway, and the guard stops the document that comes back from trying again.
+ */
+test('a take that lands nowhere still moves the document, and does not loop', async ({
+  browser,
+}) => {
+  test.setTimeout(240_000);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  await instrument(context);
+  // Every document in this context drops the message, so the take that comes back
+  // after the deadline is the one the guard has to stop.
   await context.addInitScript(() => {
-    const probe = { loads: Number(window.name || 0) + 1 };
-    window.name = String(probe.loads);
-    (window as unknown as { __swProbe: { loads: number } }).__swProbe = probe;
+    ServiceWorker.prototype.postMessage = function dropped() {
+      // The message a superseded worker never receives.
+    };
   });
-
   const page = await context.newPage();
   const warns: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'warning') warns.push(message.text());
   });
-  const loads = () =>
-    page
-      .evaluate(() => (window as unknown as { __swProbe: { loads: number } }).__swProbe.loads)
-      .catch(() => -1);
 
   writeFileSync(VERSION_SCRIPT, original ?? '');
-  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
-    timeout: 30_000,
-  });
-  await page.waitForTimeout(7_000);
-  const settled = await loads();
+  await open(page);
+  const settled = await countLoads(page);
 
-  writeFileSync(
-    VERSION_SCRIPT,
-    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
-  );
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
+  deploy();
 
-  await page.evaluate(() => {
-    ServiceWorker.prototype.postMessage = function dropped() {
-      // The message a superseded worker never receives.
-    };
-  });
-  await page.getByRole('button', { name: 'تحديث الآن' }).click();
+  await page.reload({ waitUntil: 'domcontentloaded' });
 
-  // The label was honest only while something was happening; the document moves
-  // itself forward instead of staying on a dead gesture.
-  await expect.poll(loads, { timeout: 30_000 }).toBe(settled + 1);
-  expect(warns.some((line) => line.includes('gesture never landed'))).toBe(true);
+  // The refresh, then the reload the deadline owes.
+  await expect.poll(() => countLoads(page), { timeout: 90_000 }).toBe(settled + 2);
+  expect(warns.some((line) => line.includes('never landed'))).toBe(true);
 
-  // A reload does not release a waiting worker (ADR-0039), so the update is still
-  // on offer — what the deadline buys is that the offer is live again instead of a
-  // frozen label, and that the failure left a trace.
-  await expect(page.getByRole('button', { name: 'تحديث الآن' })).toBeVisible();
+  // The document that came back refuses a second take inside the guard window,
+  // so a worker that cannot activate cannot put the tab in a reload loop.
+  await page.waitForTimeout(8_000);
+  expect(await countLoads(page)).toBe(settled + 2);
 
   await context.close();
 });
 
 /**
- * One offer at a time (ADR-0043). Inside the shell a newer APK is announced
- * natively, so the page holds its own reload offer back while the shell's is
- * pending. To the page the shell is two things and nothing else: a token in its
- * user agent, and the manifest it fetches from its own origin — so that is what
- * this stands up, with a genuinely waiting worker behind it.
+ * One update at a time (ADR-0043): inside the shell a newer APK is announced
+ * natively, and installing it brings the newest web build with it — so the page
+ * holds its own take back while the shell's card is up. To the page the shell is
+ * two things and nothing else: a token in its user agent, and the manifest it
+ * fetches from its own origin.
  */
-test('the shell keeps the page quiet while it announces its own update', async ({ browser }) => {
-  test.setTimeout(180_000);
+test('the shell keeps the page on its build while it announces its own update', async ({
+  browser,
+}) => {
+  test.setTimeout(240_000);
 
   const context = await browser.newContext({
     serviceWorkers: 'allow',
@@ -312,6 +226,7 @@ test('the shell keeps the page quiet while it announces its own update', async (
       'Mozilla/5.0 (Linux; Android 11; sdk_gphone_x86) AppleWebKit/537.36 (KHTML, like Gecko) ' +
       'Chrome/83.0.4103.106 Mobile Safari/537.36 RoyaraqamiaShell/20000',
   });
+  await instrument(context);
   const page = await context.newPage();
 
   // The published APK is one shell ahead of this one.
@@ -326,98 +241,21 @@ test('the shell keeps the page quiet while it announces its own update', async (
   );
 
   writeFileSync(VERSION_SCRIPT, original ?? '');
-  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
-    timeout: 30_000,
-  });
-  await page.waitForTimeout(7_000);
+  await open(page);
+  const settled = await countLoads(page);
 
-  writeFileSync(
-    VERSION_SCRIPT,
-    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
-  );
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await page.waitForFunction(
-    async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
-    null,
-    { timeout: 30_000 }
-  );
-
-  // A web update is genuinely waiting, and the page still says nothing: the
-  // shell is the one with an update to talk about.
-  await page.waitForTimeout(3_000);
-  await expect(page.getByTestId('update-prompt')).toBeHidden();
-
-  await context.close();
-});
-
-/**
- * The other half of the decision, and the reason the mechanism above is worth
- * having: a swap waits for the previous worker's clients to go away. A reload
- * does not release a waiting worker (measured 2026-10-14), and the shell's next
- * cold start does — so a client moves to a new deploy on its next launch.
- */
-test('a refresh keeps the previous build; the next cold start takes the new one', async ({
-  browser,
-}) => {
-  test.setTimeout(180_000);
-
-  // The build the device is on before the deploy below. The caches are named by
-  // schema (#488), so a build is identified by the stamp its entries carry, not
-  // by a cache name.
-  const previousBuild = (original ?? '').split("'")[1] ?? '';
-  expect(previousBuild).toMatch(/^royaraqamia-v/);
-
-  const context = await browser.newContext({ serviceWorkers: 'allow' });
-  const page = await context.newPage();
-
-  const cacheKeys = () => page.evaluate(async () => (await caches.keys()).join(','));
-  const hasWaiting = () =>
-    page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting));
-
-  // Start from the build this test is going to replace, so the outcome does not
-  // depend on what the test above left behind.
-  writeFileSync(VERSION_SCRIPT, original ?? '');
-
-  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
-    timeout: 30_000,
-  });
-  // Let the registration's own update check finish before the deploy.
-  await page.waitForTimeout(7_000);
-  expect(await cacheKeys()).toContain(DATA_CACHE);
-  await expect.poll(() => cachedBuild(page), { timeout: 30_000 }).toBe(previousBuild);
-
-  writeFileSync(
-    VERSION_SCRIPT,
-    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
-  );
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await page.waitForFunction(
-    async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
-    null,
-    { timeout: 30_000 }
-  );
-
-  // A refresh keeps the previous build: the waiting worker survives the
-  // navigation, and the page is still served by it.
+  deploy();
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(8_000);
-  expect(await hasWaiting()).toBe(true);
-  const afterRefresh = await cacheKeys();
-  expect(afterRefresh).toContain(DATA_CACHE);
+  await page.waitForTimeout(10_000);
 
-  // A fresh browsing context — the shell's next cold start — is what releases
-  // it. The new worker keeps the store rather than deleting the previous build's
-  // (#488), so the cold start costs no shell downloads; what moves is the stamp,
-  // which the new build rewrote when its activation refreshed the route (#489).
-  await page.close();
-  const relaunched = await context.newPage();
-  await relaunched.goto('/rates', { waitUntil: 'domcontentloaded' });
-  await expect.poll(() => cachedBuild(relaunched), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
-  expect(await relaunched.evaluate(async () => (await caches.keys()).join(','))).toContain(
-    DATA_CACHE
-  );
+  // The deploy is genuinely waiting, and the page still stays where it is: the
+  // shell is the one with an update to talk about.
+  expect(
+    await page.evaluate(async () =>
+      Boolean((await navigator.serviceWorker.getRegistration())?.waiting)
+    )
+  ).toBe(true);
+  expect(await countLoads(page)).toBe(settled + 1);
 
   await context.close();
 });
