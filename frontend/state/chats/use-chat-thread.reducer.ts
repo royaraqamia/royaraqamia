@@ -1,0 +1,123 @@
+import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+
+/**
+ * One open thread: its header, its first page, the older page a scroll-back
+ * appends, the send in flight and the one failure the screen shows.
+ *
+ * The read landed six of these in a single `try`, and every list transition
+ * touched three at once (messages, the proposals beside them, the cursor), so
+ * they are one state here.
+ */
+export interface ChatThreadData {
+  thread: ChatThread | null;
+  messages: ChatMessage[];
+  actions: ChatAgentAction[];
+  cursor: string | null;
+  isLoading: boolean;
+  isSending: boolean;
+  error: string | null;
+  readFailed: boolean;
+}
+
+export type ChatThreadAction =
+  | {
+      type: 'readSucceeded';
+      thread: ChatThread | null;
+      messages: ChatMessage[];
+      actions: ChatAgentAction[];
+      cursor: string | null;
+    }
+  | { type: 'readFailed' }
+  | {
+      type: 'olderLoaded';
+      messages: ChatMessage[];
+      actions: ChatAgentAction[];
+      cursor: string | null;
+    }
+  | { type: 'sendStarted' }
+  | { type: 'sendFinished' }
+  | { type: 'messageAppended'; message: ChatMessage }
+  | { type: 'messageReplaced'; message: ChatMessage }
+  | { type: 'messageTombstoned'; messageId: string; deletedAt: string }
+  | { type: 'actionReplaced'; action: ChatAgentAction }
+  | { type: 'errorSet'; message: string | null };
+
+export function chatThreadInitialState(): ChatThreadData {
+  return {
+    thread: null,
+    messages: [],
+    actions: [],
+    cursor: null,
+    isLoading: true,
+    isSending: false,
+    error: null,
+    readFailed: false,
+  };
+}
+
+export function chatThreadReducer(state: ChatThreadData, action: ChatThreadAction): ChatThreadData {
+  switch (action.type) {
+    case 'readSucceeded':
+      return {
+        ...state,
+        thread: action.thread,
+        messages: action.messages,
+        actions: action.actions,
+        cursor: action.cursor,
+        readFailed: false,
+        isLoading: false,
+      };
+
+    case 'readFailed':
+      // Nothing to draw and nothing to send into: the screen says so instead of
+      // showing an empty conversation (ADR-0031).
+      return { ...state, thread: null, readFailed: true, isLoading: false };
+
+    case 'olderLoaded':
+      return {
+        ...state,
+        messages: [...action.messages, ...state.messages],
+        actions: [...action.actions, ...state.actions],
+        cursor: action.cursor,
+      };
+
+    case 'sendStarted':
+      return { ...state, isSending: true, error: null };
+
+    case 'sendFinished':
+      return { ...state, isSending: false };
+
+    case 'messageAppended':
+      return { ...state, messages: [...state.messages, action.message] };
+
+    case 'messageReplaced':
+      return {
+        ...state,
+        messages: state.messages.map((message) =>
+          message.id === action.message.id ? action.message : message
+        ),
+      };
+
+    case 'messageTombstoned':
+      return {
+        ...state,
+        messages: state.messages.map((message) =>
+          message.id === action.messageId
+            ? { ...message, body: null, deletedAt: action.deletedAt, attachments: [] }
+            : message
+        ),
+      };
+
+    case 'actionReplaced':
+      return {
+        ...state,
+        actions: state.actions.map((candidate) =>
+          candidate.id === action.action.id ? action.action : candidate
+        ),
+      };
+
+    case 'errorSet':
+      return { ...state, error: action.message };
+  }
+}

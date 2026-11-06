@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import {
   confirmChatAgentAction,
@@ -25,6 +25,7 @@ import {
 } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { chatThreadInitialState, chatThreadReducer } from './use-chat-thread.reducer';
 
 /**
  * A refused write is a sentence, not an unhandled rejection: the buttons that
@@ -74,14 +75,8 @@ export interface ChatThreadState {
  * reader is not looking at, which is what keeps the list's badge honest (#816).
  */
 export function useChatThread(conversationId: string): ChatThreadState {
-  const [thread, setThread] = useState<ChatThread | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [actions, setActions] = useState<ChatAgentAction[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [readFailed, setReadFailed] = useState(false);
+  const [state, dispatch] = useReducer(chatThreadReducer, undefined, chatThreadInitialState);
+  const { thread, messages, actions, cursor, isLoading, isSending, error, readFailed } = state;
   /** The newest line the screen holds, stamped or not. */
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
@@ -108,21 +103,20 @@ export function useChatThread(conversationId: string): ChatThreadState {
         getChatMessages(conversationId),
       ]);
 
-      setThread(nextThread);
-      setMessages(page.messages);
-      setActions(page.actions);
-      setCursor(page.nextCursor);
-      setReadFailed(false);
+      dispatch({
+        type: 'readSucceeded',
+        thread: nextThread,
+        messages: page.messages,
+        actions: page.actions,
+        cursor: page.nextCursor,
+      });
 
       if (nextThread) {
         newestRef.current = page.messages[page.messages.length - 1]?.id ?? null;
         markSeen();
       }
     } catch {
-      setThread(null);
-      setReadFailed(true);
-    } finally {
-      setIsLoading(false);
+      dispatch({ type: 'readFailed' });
     }
   }, [conversationId, markSeen]);
 
@@ -171,9 +165,12 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const loadOlder = useCallback(async () => {
     if (!cursor) return;
     const page = await getChatMessages(conversationId, cursor);
-    setMessages((current) => [...page.messages, ...current]);
-    setActions((current) => [...page.actions, ...current]);
-    setCursor(page.nextCursor);
+    dispatch({
+      type: 'olderLoaded',
+      messages: page.messages,
+      actions: page.actions,
+      cursor: page.nextCursor,
+    });
   }, [conversationId, cursor]);
 
   /**
@@ -186,8 +183,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
       const trimmed = body.trim();
       if (!trimmed && files.length === 0) return false;
 
-      setIsSending(true);
-      setError(null);
+      dispatch({ type: 'sendStarted' });
 
       const uploaded: ChatAttachmentInput[] = [];
       try {
@@ -202,44 +198,40 @@ export function useChatThread(conversationId: string): ChatThreadState {
 
         if (!result.success || !result.message) {
           await removeChatAttachmentObjects(uploaded.map((attachment) => attachment.storagePath));
-          setError(result.error ?? 'تعذّر إرسال الرسالة');
+          dispatch({ type: 'errorSet', message: result.error ?? 'تعذّر إرسال الرسالة' });
           return false;
         }
 
-        setMessages((current) => [...current, result.message as ChatMessage]);
+        dispatch({ type: 'messageAppended', message: result.message });
         // The thread carries the quota, so the composer's reading of it is one
         // refresh behind without this.
         void refresh();
         return true;
       } catch (error) {
         await removeChatAttachmentObjects(uploaded.map((attachment) => attachment.storagePath));
-        setError(failureOf(error, 'تعذّر إرسال الرسالة'));
+        dispatch({ type: 'errorSet', message: failureOf(error, 'تعذّر إرسال الرسالة') });
         return false;
       } finally {
-        setIsSending(false);
+        dispatch({ type: 'sendFinished' });
       }
     },
     [conversationId, refresh]
   );
 
   const edit = useCallback(async (messageId: string, body: string) => {
-    setError(null);
+    dispatch({ type: 'errorSet', message: null });
 
     try {
       const result = await editChatMessage(messageId, body);
       if (!result.success || !result.message) {
-        setError(result.error ?? 'تعذّر تعديل الرسالة');
+        dispatch({ type: 'errorSet', message: result.error ?? 'تعذّر تعديل الرسالة' });
         return false;
       }
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === messageId ? (result.message as ChatMessage) : message
-        )
-      );
+      dispatch({ type: 'messageReplaced', message: result.message });
       return true;
     } catch (error) {
-      setError(failureOf(error, 'تعذّر تعديل الرسالة'));
+      dispatch({ type: 'errorSet', message: failureOf(error, 'تعذّر تعديل الرسالة') });
       return false;
     }
   }, []);
@@ -254,13 +246,11 @@ export function useChatThread(conversationId: string): ChatThreadState {
       const result = await deleteChatMessage(messageId);
       if (!result.success) return result.error ?? 'تعذّر حذف الرسالة';
 
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === messageId
-            ? { ...message, body: null, deletedAt: new Date().toISOString(), attachments: [] }
-            : message
-        )
-      );
+      dispatch({
+        type: 'messageTombstoned',
+        messageId,
+        deletedAt: new Date().toISOString(),
+      });
       return null;
     } catch (error) {
       return failureOf(error, 'تعذّر حذف الرسالة');
@@ -319,16 +309,14 @@ export function useChatThread(conversationId: string): ChatThreadState {
    */
   const resolveAction = useCallback(
     async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
-      setError(null);
+      dispatch({ type: 'errorSet', message: null });
       try {
         const action =
           answer === 'confirm'
             ? await confirmChatAgentAction(conversationId, actionId)
             : await rejectChatAgentAction(conversationId, actionId);
 
-        setActions((current) =>
-          current.map((candidate) => (candidate.id === action.id ? action : candidate))
-        );
+        dispatch({ type: 'actionReplaced', action });
 
         const reason = action.result?.error;
         return action.status === 'failed' && typeof reason === 'string' ? reason : null;
