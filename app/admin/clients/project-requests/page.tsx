@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { getProjectRequests, updateProjectRequest } from '@/frontend/api/project-requests';
@@ -14,6 +14,7 @@ import {
   type ProjectRequest,
   type ProjectRequestStatus,
 } from '@/shared/contracts/project-requests';
+import { adminListInitialState, adminListReducer } from '@/frontend/state/admin/admin-list.reducer';
 
 const PAGE_SIZE = 20;
 
@@ -28,20 +29,18 @@ const FILTERS: readonly { value: StatusFilter; label: string }[] = [
 ];
 
 export default function ProjectRequestsPage() {
-  const [requests, setRequests] = useState<ProjectRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(
+    adminListReducer<ProjectRequest, StatusFilter>,
+    'all' as StatusFilter,
+    adminListInitialState<ProjectRequest, StatusFilter>
+  );
+  const { rows: requests, total, page, search, statusFilter, loading, savingId } = form;
+  const { debouncedSearch } = form;
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      dispatch({ type: 'searchCommitted', search });
     }, 300);
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -49,7 +48,7 @@ export default function ProjectRequestsPage() {
   }, [search]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    dispatch({ type: 'loadStarted' });
     try {
       const result = await getProjectRequests(
         page,
@@ -57,31 +56,30 @@ export default function ProjectRequestsPage() {
         statusFilter === 'all' ? undefined : statusFilter,
         debouncedSearch
       );
-      setRequests(result.data);
-      setTotal(result.total);
+      dispatch({ type: 'loaded', rows: result.data, total: result.total });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFinished' });
     }
   }, [page, statusFilter, debouncedSearch]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   const handleSave = useCallback(
     async (id: string, input: { status: ProjectRequestStatus; notes: string | null }) => {
-      setSavingId(id);
+      dispatch({ type: 'savingStarted', id });
       try {
         const result = await updateProjectRequest(id, input);
         const updated = result.data;
         if (result.success && updated) {
-          setRequests((rows) => rows.map((row) => (row.id === id ? updated : row)));
+          dispatch({ type: 'rowReplaced', row: updated });
           toast.success('تم تحديث الطَّلب');
         } else {
           toast.error(result.error || 'تعذّر تحديث الطَّلب');
         }
       } finally {
-        setSavingId(null);
+        dispatch({ type: 'savingFinished' });
       }
     },
     []
@@ -96,7 +94,7 @@ export default function ProjectRequestsPage() {
           <Input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => dispatch({ type: 'searchChanged', search: event.target.value })}
             placeholder="ابحث بالاسم أو الرَّقم أو رمز الطَّلب..."
             aria-label="البحث في طلبات المشاريع"
             className="ps-10"
@@ -113,10 +111,7 @@ export default function ProjectRequestsPage() {
               key={filter.value}
               type="button"
               aria-pressed={statusFilter === filter.value}
-              onClick={() => {
-                setStatusFilter(filter.value);
-                setPage(1);
-              }}
+              onClick={() => dispatch({ type: 'statusFilterChanged', statusFilter: filter.value })}
               className={cn(
                 'rounded-full border px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer min-h-9',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
@@ -149,7 +144,11 @@ export default function ProjectRequestsPage() {
         onSave={handleSave}
       />
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(page) => dispatch({ type: 'pageChanged', page })}
+      />
     </div>
   );
 }

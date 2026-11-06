@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ import {
   type SubscriptionRequest,
   type SubscriptionRequestStatus,
 } from '@/shared/contracts/subscriptions';
+import { adminListInitialState, adminListReducer } from '@/frontend/state/admin/admin-list.reducer';
 
 const PAGE_SIZE = 20;
 
@@ -35,20 +36,18 @@ const FILTERS: readonly { value: StatusFilter; label: string }[] = [
  * to it rather than writing a grant of its own.
  */
 export default function SubscriptionRequestsPage() {
-  const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(
+    adminListReducer<SubscriptionRequest, StatusFilter>,
+    'all' as StatusFilter,
+    adminListInitialState<SubscriptionRequest, StatusFilter>
+  );
+  const { rows: requests, total, page, search, statusFilter, loading, savingId } = form;
+  const { debouncedSearch } = form;
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      dispatch({ type: 'searchCommitted', search });
     }, 300);
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -56,7 +55,7 @@ export default function SubscriptionRequestsPage() {
   }, [search]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    dispatch({ type: 'loadStarted' });
     try {
       const result = await getSubscriptionRequests(
         page,
@@ -64,10 +63,9 @@ export default function SubscriptionRequestsPage() {
         statusFilter === 'all' ? undefined : statusFilter,
         debouncedSearch
       );
-      setRequests(result.data);
-      setTotal(result.total);
+      dispatch({ type: 'loaded', rows: result.data, total: result.total });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFinished' });
     }
   }, [page, statusFilter, debouncedSearch]);
 
@@ -77,18 +75,18 @@ export default function SubscriptionRequestsPage() {
 
   const handleSave = useCallback(
     async (id: string, input: { status: SubscriptionRequestStatus; notes: string | null }) => {
-      setSavingId(id);
+      dispatch({ type: 'savingStarted', id });
       try {
         const result = await updateSubscriptionRequest(id, input);
         const updated = result.data;
         if (result.success && updated) {
-          setRequests((rows) => rows.map((row) => (row.id === id ? updated : row)));
+          dispatch({ type: 'rowReplaced', row: updated });
           toast.success('تم تحديث الطَّلب');
         } else {
           toast.error(result.error || 'تعذّر تحديث الطَّلب');
         }
       } finally {
-        setSavingId(null);
+        dispatch({ type: 'savingFinished' });
       }
     },
     []
@@ -111,7 +109,7 @@ export default function SubscriptionRequestsPage() {
           <Input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => dispatch({ type: 'searchChanged', search: event.target.value })}
             placeholder="ابحث بالاسم أو الرَّقم أو رمز الطَّلب..."
             aria-label="البحث في طلبات الاشتراك"
             className="ps-10"
@@ -128,10 +126,7 @@ export default function SubscriptionRequestsPage() {
               key={filter.value}
               type="button"
               aria-pressed={statusFilter === filter.value}
-              onClick={() => {
-                setStatusFilter(filter.value);
-                setPage(1);
-              }}
+              onClick={() => dispatch({ type: 'statusFilterChanged', statusFilter: filter.value })}
               className={cn(
                 'rounded-full border px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer min-h-9',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
@@ -164,7 +159,11 @@ export default function SubscriptionRequestsPage() {
         onSave={handleSave}
       />
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(page) => dispatch({ type: 'pageChanged', page })}
+      />
     </div>
   );
 }
