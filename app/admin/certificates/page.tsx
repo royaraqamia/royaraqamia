@@ -1,47 +1,45 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useReducer, useRef } from 'react';
 import Link from 'next/link';
 import { CircleAlert, Plus } from 'lucide-react';
-import {
-  getCertificates,
-  deleteCertificate,
-  type AdminCertificate,
-} from '@/frontend/api/certificates';
+import { getCertificates, deleteCertificate } from '@/frontend/api/certificates';
 import { isCertificateExpired } from '@/frontend/shared/format';
 import { toast } from 'sonner';
 import { ApiError } from '@/frontend/transport/http';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Button } from '@/frontend/ui/primitives/button';
-import {
-  CertificatesFilterBar,
-  type StatusFilter,
-} from '@/frontend/ui/admin/certificates-filter-bar';
+import { CertificatesFilterBar } from '@/frontend/ui/admin/certificates-filter-bar';
 import { CertificatesList } from '@/frontend/ui/admin/certificates-list';
 import { Pagination } from '@/frontend/ui/shared/pagination';
+import { certificatesListInitialState, certificatesListReducer } from './certificates-list.reducer';
 
 export default function CertificatesListPage() {
-  const [certificates, setCertificates] = useState<AdminCertificate[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [loadFailure, setLoadFailure] = useState<{ offline: boolean; message: string } | null>(
-    null
+  const [form, dispatch] = useReducer(
+    certificatesListReducer,
+    undefined,
+    certificatesListInitialState
   );
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<AdminCertificate | null>(null);
+  const {
+    certificates,
+    total,
+    page,
+    search,
+    statusFilter,
+    loading,
+    deletingId,
+    loadFailure,
+    copiedId,
+    deleteTarget,
+  } = form;
+  const debouncedSearch = form.debouncedSearch;
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const pageSize = 20;
 
   useEffect(() => {
     debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      dispatch({ type: 'searchCommitted', search });
     }, 300);
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -49,21 +47,18 @@ export default function CertificatesListPage() {
   }, [search]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setLoadFailure(null);
+    dispatch({ type: 'loadStarted' });
     try {
       const result = await getCertificates(page, pageSize, debouncedSearch);
-      setCertificates(result.data);
-      setTotal(result.total);
+      dispatch({ type: 'loaded', certificates: result.data, total: result.total });
     } catch (error) {
-      setCertificates([]);
-      setTotal(0);
-      setLoadFailure({
-        offline: error instanceof ApiError && error.isNetworkError,
-        message: error instanceof Error ? error.message : 'تعذّر تحميل الشَّهادات.',
+      dispatch({
+        type: 'loadFailed',
+        failure: {
+          offline: error instanceof ApiError && error.isNetworkError,
+          message: error instanceof Error ? error.message : 'تعذّر تحميل الشَّهادات.',
+        },
       });
-    } finally {
-      setLoading(false);
     }
   }, [page, debouncedSearch]);
 
@@ -73,9 +68,10 @@ export default function CertificatesListPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(deleteTarget.id);
+    const id = deleteTarget.id;
+    dispatch({ type: 'deleteStarted', id });
     try {
-      const result = await deleteCertificate(deleteTarget.id);
+      const result = await deleteCertificate(id);
       if (result.success) {
         toast.success('تم حذف الشهادة بنجاح');
         await fetchData();
@@ -85,16 +81,15 @@ export default function CertificatesListPage() {
     } catch {
       toast.error('حدث خطأ أثناء الحذف');
     } finally {
-      setDeleting(null);
-      setDeleteTarget(null);
+      dispatch({ type: 'deleteFinished' });
     }
   }
 
   function copyCode(code: string, id: string) {
     navigator.clipboard.writeText(`https://royaraqamia.com/verify/${code}`);
-    setCopiedId(id);
+    dispatch({ type: 'copyRaised', id });
     toast.success('تم نسخ رابط التحقق');
-    setTimeout(() => setCopiedId(null), 2000);
+    setTimeout(() => dispatch({ type: 'copyCleared' }), 2000);
   }
 
   const filtered = certificates.filter((cert) => {
@@ -110,12 +105,11 @@ export default function CertificatesListPage() {
       <CertificatesFilterBar
         search={search}
         statusFilter={statusFilter}
-        onSearchChange={setSearch}
-        onSearchSubmit={() => {
-          setPage(1);
-          setDebouncedSearch(search);
-        }}
-        onStatusFilterChange={setStatusFilter}
+        onSearchChange={(search) => dispatch({ type: 'searchChanged', search })}
+        onSearchSubmit={() => dispatch({ type: 'searchCommitted', search })}
+        onStatusFilterChange={(statusFilter) =>
+          dispatch({ type: 'statusFilterChanged', statusFilter })
+        }
         action={
           <Link
             href="/admin/certificates/new"
@@ -164,18 +158,24 @@ export default function CertificatesListPage() {
             certificates={filtered}
             loading={loading}
             hasSearch={!!search}
-            deleting={deleting}
+            deleting={deletingId}
             copiedId={copiedId}
             deleteTarget={deleteTarget}
             onCopy={copyCode}
-            onDeleteRequest={setDeleteTarget}
+            onDeleteRequest={(certificate) =>
+              dispatch({ type: 'deleteTargetChanged', certificate })
+            }
             onDeleteDialogChange={(open) => {
-              if (!open) setDeleteTarget(null);
+              if (!open) dispatch({ type: 'deleteTargetChanged', certificate: null });
             }}
             onConfirmDelete={handleDelete}
           />
 
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(page) => dispatch({ type: 'pageChanged', page })}
+          />
         </>
       )}
     </div>
