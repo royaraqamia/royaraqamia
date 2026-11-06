@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 import NextLink from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Copy, Check, Share2, QrCode, RotateCcw, LockOpen, CloudOff } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { SINGLE_URL_SHORTENER_COPY } from './single-url-shortener-copy';
+import { shortenerInitialState, shortenerReducer } from './single-url-shortener.reducer';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -30,20 +31,13 @@ function isValidUrl(url: string): boolean {
 export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerProps) {
   const reducedMotion = useReducedMotion();
   const { shorten, loading, error, setError } = useShortenLink(token);
-  const [originalUrl, setOriginalUrl] = useState('');
-  const [customCode, setCustomCode] = useState('');
-  const [password, setPassword] = useState('');
-  const [shortenedUrl, setShortenedUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [showQr, setShowQr] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(shortenerReducer, undefined, shortenerInitialState);
+  const { originalUrl, customCode, password, shortenedUrl, copied, showQr, qrDataUrl } = form;
   const { status: slugStatus, error: slugError } = useSlugAvailability(customCode, token);
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShortenedUrl(null);
-    setShowQr(false);
-    setQrDataUrl(null);
+    dispatch({ type: 'submitted' });
 
     if (!isValidUrl(originalUrl)) {
       setError(SINGLE_URL_SHORTENER_COPY.invalidUrl);
@@ -54,7 +48,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     if (!link) return;
 
     const generatedCode = link.code;
-    setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
+    dispatch({ type: 'shortened', url: `${getBaseUrl()}/${generatedCode}` });
     onLinkCreated?.();
     const style = getComputedStyle(document.documentElement);
     const primary = style.getPropertyValue('--primary').trim();
@@ -74,9 +68,9 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     if (!shortenedUrl) return;
     try {
       await navigator.clipboard.writeText(shortenedUrl);
-      setCopied(true);
+      dispatch({ type: 'copyRaised' });
       toast.success(SINGLE_URL_SHORTENER_COPY.copySuccessToast);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => dispatch({ type: 'copyCleared' }), 2000);
     } catch (err) {
       logger.error('Failed to copy text', { error: String(err) });
       toast.error(SINGLE_URL_SHORTENER_COPY.copyFailedToast);
@@ -102,7 +96,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
   const toggleQr = async () => {
     if (showQr) {
-      setShowQr(false);
+      dispatch({ type: 'qrHidden' });
       return;
     }
     if (!qrDataUrl && shortenedUrl) {
@@ -117,22 +111,18 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           errorCorrectionLevel: 'M',
           color: { dark: dark ?? '#000000', light: light ?? '#ffffff' },
         });
-        setQrDataUrl(dataUrl);
+        dispatch({ type: 'qrLoaded', dataUrl });
       } catch {
         return;
       }
     }
-    setShowQr(true);
+    dispatch({ type: 'qrShown' });
   };
 
   const resetForm = () => {
-    setOriginalUrl('');
-    setCustomCode('');
-    setPassword('');
-    setShortenedUrl(null);
+    dispatch({ type: 'reset' });
+    // The failure text lives in the shorten hook, so only it can clear it.
     setError(null);
-    setShowQr(false);
-    setQrDataUrl(null);
   };
 
   return (
@@ -160,7 +150,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               dir="ltr"
               required
               value={originalUrl}
-              onChange={(e) => setOriginalUrl(e.target.value)}
+              onChange={(e) => dispatch({ type: 'urlChanged', url: e.target.value })}
               placeholder={SINGLE_URL_SHORTENER_COPY.urlPlaceholder}
               autoFocus
               aria-describedby="single-url-error"
@@ -206,9 +196,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   id="custom-code"
                   type="text"
                   value={customCode}
-                  onChange={(e) =>
-                    setCustomCode(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
-                  }
+                  onChange={(e) => dispatch({ type: 'codeChanged', code: e.target.value })}
                   placeholder={SINGLE_URL_SHORTENER_COPY.customPlaceholder}
                   maxLength={16}
                   className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground placeholder:text-muted-foreground"
@@ -269,7 +257,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   data-visual="password-field"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => dispatch({ type: 'passwordChanged', password: e.target.value })}
                   placeholder={SINGLE_URL_SHORTENER_COPY.passwordPlaceholder}
                   autoComplete="new-password"
                   className="w-full px-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
