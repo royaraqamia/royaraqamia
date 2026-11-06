@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
 import { getChatAssistant, streamChatAgentTurn } from '@/frontend/api/chats';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
 import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
+import { chatAssistantInitialState, chatAssistantReducer } from './use-chat-assistant.reducer';
 
 export interface ChatAssistantState {
   /** False when the deployment has no provider key: the thread reads, nothing sends. */
@@ -50,19 +51,13 @@ export function useChatAssistant(
   enabled: boolean,
   onAnswered: () => void
 ): ChatAssistantState {
-  const [available, setAvailable] = useState(true);
-  const [allowance, setAllowance] = useState<ChatAgentAllowance | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
-  const [interrupted, setInterrupted] = useState('');
-  const [toolsUsed, setToolsUsed] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(chatAssistantReducer, undefined, chatAssistantInitialState);
+  const { available, allowance, isStreaming, streamingText, interrupted, toolsUsed, error } = state;
 
   const refresh = useCallback(async () => {
     try {
-      const state = await getChatAssistant();
-      setAvailable(state.available);
-      setAllowance(state.allowance);
+      const next = await getChatAssistant();
+      dispatch({ type: 'assistantLoaded', available: next.available, allowance: next.allowance });
     } catch {
       // A read that fails leaves the composer as it was: the next turn answers
       // the refusal instead, which is more useful than a broken header.
@@ -78,14 +73,9 @@ export function useChatAssistant(
       const question = body.trim();
       if ((!question && files.length === 0) || isStreaming) return false;
 
-      setIsStreaming(true);
-      setStreamingText('');
-      setInterrupted('');
-      setToolsUsed([]);
-      setError(null);
+      dispatch({ type: 'turnStarted' });
 
       let failure: string | null = null;
-      let partial = '';
 
       try {
         // Files go up before the turn so the thread can show them and the server
@@ -101,15 +91,14 @@ export function useChatAssistant(
             question,
             (event: ChatAgentEvent) => {
               if (event.type === 'delta') {
-                partial += event.text;
-                setStreamingText((current) => current + event.text);
+                dispatch({ type: 'delta', text: event.text });
               } else if (event.type === 'error') failure = event.error;
-              else if (event.type === 'tool') setToolsUsed((current) => [...current, event.label]);
+              else if (event.type === 'tool') dispatch({ type: 'toolUsed', label: event.label });
               else if (event.type === 'proposal')
-                setToolsUsed((current) => [
-                  ...current,
-                  chatAgentActionSentence(event.action.tool, event.action.args),
-                ]);
+                dispatch({
+                  type: 'toolUsed',
+                  label: chatAgentActionSentence(event.action.tool, event.action.args),
+                });
             },
             attachments
           );
@@ -122,15 +111,9 @@ export function useChatAssistant(
       } catch (caught) {
         failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
       } finally {
-        setIsStreaming(false);
-        setStreamingText('');
-        // A turn that failed after it had written something keeps that text: the
-        // member already read it, and dropping it made the error look like the
-        // whole answer never existed.
-        if (failure && partial.trim()) setInterrupted(partial);
+        dispatch({ type: 'turnSettled', failure });
       }
 
-      setError(failure);
       // Both outcomes spend or return allowance, so the meter is re-read either
       // way — and the stored reply is the thread's own read, not a local guess.
       await refresh();
