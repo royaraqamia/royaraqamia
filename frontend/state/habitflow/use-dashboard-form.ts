@@ -1,7 +1,13 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useReducer, useRef, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { Habit, HabitRepository, HabitTargetPeriod } from '@/shared/contracts/habitflow';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
+import {
+  dashboardFormInitialState,
+  dashboardFormReducer,
+  type DashboardFormState,
+  type HabitDraftFields,
+} from './use-dashboard-form.reducer';
 
 export interface DashboardForm {
   isAddModalOpen: boolean;
@@ -37,103 +43,163 @@ function parseTarget(value: string): number | null {
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : null;
 }
 
+/**
+ * The dashboard's habit form.
+ *
+ * The state is one reducer, but the setters it returns keep the shape callers
+ * already have — `Dispatch<SetStateAction<T>>`, stable by identity — because the
+ * dashboard lists `setIsAddModalOpen` and `setFormError` in an effect's
+ * dependency array. Each one resolves a functional update against the latest
+ * committed state through a ref, so `dispatch` staying stable does not change
+ * what a caller may pass it.
+ */
 export function useDashboardForm(
   store: HabitRepository | null,
   setHabits: Dispatch<SetStateAction<Habit[]>>,
   habits: Habit[]
 ): DashboardForm {
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
+  const [state, dispatch] = useReducer(dashboardFormReducer, undefined, dashboardFormInitialState);
+  const latest = useRef<DashboardFormState>(state);
+  latest.current = state;
 
-  const [habitName, setHabitName] = useState<string>('');
-  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
-  const [habitTarget, setHabitTarget] = useState<string>('');
-  const [habitTargetPeriod, setHabitTargetPeriod] = useState<HabitTargetPeriod | ''>('');
-  const [habitReminderTime, setHabitReminderTime] = useState<string>('');
+  const patchField = useCallback(
+    <K extends keyof HabitDraftFields>(key: K, value: HabitDraftFields[K]) => {
+      dispatch({ type: 'fieldsPatched', patch: { [key]: value } as Partial<HabitDraftFields> });
+    },
+    []
+  );
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [formError, setFormError] = useState<string>('');
-  const [confirmArchiveHabitId, setConfirmArchiveHabitId] = useState<string | null>(null);
+  const fieldSetter = useCallback(
+    <K extends keyof HabitDraftFields>(key: K): Dispatch<SetStateAction<HabitDraftFields[K]>> =>
+      (action) => {
+        const current = latest.current[key];
+        const value =
+          typeof action === 'function'
+            ? (action as (prev: HabitDraftFields[K]) => HabitDraftFields[K])(current)
+            : action;
+        patchField(key, value);
+      },
+    [patchField]
+  );
+
+  // One stable setter per field, resolved once per hook instance.
+  const setHabitName = useCallback<Dispatch<SetStateAction<string>>>(
+    (action) => fieldSetter('habitName')(action),
+    [fieldSetter]
+  );
+  const setHabitFrequency = useCallback<Dispatch<SetStateAction<'daily' | 'weekly'>>>(
+    (action) => fieldSetter('habitFrequency')(action),
+    [fieldSetter]
+  );
+  const setHabitTarget = useCallback<Dispatch<SetStateAction<string>>>(
+    (action) => fieldSetter('habitTarget')(action),
+    [fieldSetter]
+  );
+  const setHabitTargetPeriod = useCallback<Dispatch<SetStateAction<HabitTargetPeriod | ''>>>(
+    (action) => fieldSetter('habitTargetPeriod')(action),
+    [fieldSetter]
+  );
+  const setHabitReminderTime = useCallback<Dispatch<SetStateAction<string>>>(
+    (action) => fieldSetter('habitReminderTime')(action),
+    [fieldSetter]
+  );
+  const setIsAddModalOpen = useCallback<Dispatch<SetStateAction<boolean>>>((action) => {
+    const open = typeof action === 'function' ? action(latest.current.isAddModalOpen) : action;
+    dispatch({ type: 'addModalSet', open });
+  }, []);
+  const setFormError = useCallback<Dispatch<SetStateAction<string>>>((action) => {
+    const current = latest.current.formError;
+    const message = typeof action === 'function' ? action(current) : action;
+    dispatch({ type: 'formErrorSet', message });
+  }, []);
 
   const handleAddHabit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
-    if (!habitName.trim()) return;
+    dispatch({ type: 'formErrorSet', message: '' });
+    if (!state.habitName.trim()) return;
     if (!store) {
-      setFormError('جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      dispatch({
+        type: 'formErrorSet',
+        message: 'جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.',
+      });
       return;
     }
-    setIsSubmitting(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const habit = await store.createHabit({
-        name: habitName.trim(),
-        frequency: habitFrequency,
-        target: parseTarget(habitTarget),
-        targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
-        reminderTime: habitReminderTime === '' ? null : habitReminderTime,
+        name: state.habitName.trim(),
+        frequency: state.habitFrequency,
+        target: parseTarget(state.habitTarget),
+        targetPeriod: state.habitTargetPeriod === '' ? null : state.habitTargetPeriod,
+        reminderTime: state.habitReminderTime === '' ? null : state.habitReminderTime,
       });
       setHabits((prev) => [...prev, habit]);
-      setIsAddModalOpen(false);
-      resetFields();
+      dispatch({ type: 'createSucceeded' });
       toast.success('تم إنشاء العادة بنجاح');
     } catch (error) {
       // A reached cap throws with its own copy; the form shows it as-is.
-      setFormError(showActionError(error, 'فشل إنشاء العادة'));
+      dispatch({
+        type: 'submitFailed',
+        message: showActionError(error, 'فشل إنشاء العادة'),
+      });
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: 'submitFinished' });
     }
   };
 
   const handleEditHabit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
-    if (!selectedHabit || !habitName.trim()) return;
+    dispatch({ type: 'formErrorSet', message: '' });
+    if (!state.selectedHabit || !state.habitName.trim()) return;
     if (!store) {
-      setFormError('جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      dispatch({
+        type: 'formErrorSet',
+        message: 'جاري تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.',
+      });
       return;
     }
-    setIsSubmitting(true);
+    dispatch({ type: 'submitStarted' });
     try {
-      const updated = await store.updateHabit(selectedHabit.id, {
-        name: habitName.trim(),
-        frequency: habitFrequency,
-        target: parseTarget(habitTarget),
-        targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
-        reminderTime: habitReminderTime === '' ? null : habitReminderTime,
+      const updated = await store.updateHabit(state.selectedHabit.id, {
+        name: state.habitName.trim(),
+        frequency: state.habitFrequency,
+        target: parseTarget(state.habitTarget),
+        targetPeriod: state.habitTargetPeriod === '' ? null : state.habitTargetPeriod,
+        reminderTime: state.habitReminderTime === '' ? null : state.habitReminderTime,
       });
-      setHabits((prev) => prev.map((h) => (h.id === selectedHabit.id ? updated : h)));
-      setIsEditModalOpen(false);
-      setSelectedHabit(null);
-      resetFields();
+      setHabits((prev) => prev.map((h) => (h.id === state.selectedHabit?.id ? updated : h)));
+      dispatch({ type: 'editSucceeded' });
       toast.success('تم تحديث العادة بنجاح');
     } catch {
-      setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+      dispatch({
+        type: 'submitFailed',
+        message: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+      });
       toast.error('فشل تحديث العادة');
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: 'submitFinished' });
     }
   };
 
   const handleArchiveHabit = (habitId: string) => {
-    setIsEditModalOpen(false);
-    setConfirmArchiveHabitId(habitId);
+    dispatch({ type: 'archiveStarted', habitId });
   };
 
   const confirmArchive = async () => {
+    const confirmArchiveHabitId = state.confirmArchiveHabitId;
     if (!confirmArchiveHabitId || !store) return;
-    setFormError('');
+    dispatch({ type: 'formErrorSet', message: '' });
 
     const archivedHabit = habits.find((h) => h.id === confirmArchiveHabitId);
     const storeRef = store;
+    const id = confirmArchiveHabitId;
 
     const showUndoToast = (title: string) => {
       toast(title, {
         action: {
           label: 'تراجع',
           onClick: async () => {
-            const id = confirmArchiveHabitId;
-            if (!id || !archivedHabit) return;
+            if (!archivedHabit) return;
             try {
               // A delete is a tombstone; undo is a newer write that clears it.
               await storeRef.updateHabit(id, { archived: false, deletedAt: null });
@@ -151,68 +217,50 @@ export function useDashboardForm(
     };
 
     try {
-      const success = await store.deleteHabit(confirmArchiveHabitId);
+      const success = await store.deleteHabit(id);
       if (!success) {
-        setFormError('فشل في أرشفة العادة. يرجى المحاولة مرة أخرى.');
-        setConfirmArchiveHabitId(null);
+        dispatch({
+          type: 'archiveFailed',
+          message: 'فشل في أرشفة العادة. يرجى المحاولة مرة أخرى.',
+        });
         return;
       }
-      setHabits((prev) => prev.filter((h) => h.id !== confirmArchiveHabitId));
-      setIsEditModalOpen(false);
-      setSelectedHabit(null);
-      setFormError('');
-      setConfirmArchiveHabitId(null);
+      setHabits((prev) => prev.filter((h) => h.id !== id));
+      dispatch({ type: 'archiveSucceeded' });
       showUndoToast('تم أرشفة العادة');
     } catch {
-      setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-      setConfirmArchiveHabitId(null);
+      dispatch({
+        type: 'archiveFailed',
+        message: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+      });
       toast.error('فشل أرشفة العادة');
     }
   };
 
   const cancelArchive = () => {
-    setIsEditModalOpen(true);
-    setConfirmArchiveHabitId(null);
-  };
-
-  const resetFields = () => {
-    setHabitName('');
-    setHabitFrequency('daily');
-    setHabitTarget('');
-    setHabitTargetPeriod('');
-    setHabitReminderTime('');
-    setFormError('');
+    dispatch({ type: 'archiveCancelled' });
   };
 
   const openEditModal = (habit: Habit) => {
-    setSelectedHabit(habit);
-    setHabitName(habit.name);
-    setHabitFrequency(habit.frequency);
-    setHabitTarget(habit.target != null ? String(habit.target) : '');
-    setHabitTargetPeriod(habit.targetPeriod ?? '');
-    setHabitReminderTime(habit.reminderTime ?? '');
-    setIsEditModalOpen(true);
-    setFormError('');
+    dispatch({ type: 'editOpened', habit });
   };
 
   const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedHabit(null);
-    resetFields();
+    dispatch({ type: 'editClosed' });
   };
 
   return {
-    isAddModalOpen,
-    isEditModalOpen,
-    selectedHabit,
-    habitName,
-    habitFrequency,
-    habitTarget,
-    habitTargetPeriod,
-    habitReminderTime,
-    isSubmitting,
-    formError,
-    confirmArchiveHabitId,
+    isAddModalOpen: state.isAddModalOpen,
+    isEditModalOpen: state.isEditModalOpen,
+    selectedHabit: state.selectedHabit,
+    habitName: state.habitName,
+    habitFrequency: state.habitFrequency,
+    habitTarget: state.habitTarget,
+    habitTargetPeriod: state.habitTargetPeriod,
+    habitReminderTime: state.habitReminderTime,
+    isSubmitting: state.isSubmitting,
+    formError: state.formError,
+    confirmArchiveHabitId: state.confirmArchiveHabitId,
     setHabitName,
     setHabitFrequency,
     setHabitTarget,

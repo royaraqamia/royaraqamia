@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import {
@@ -13,28 +13,16 @@ import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-r
 import { requestWithMeta } from '@/frontend/transport/http';
 import { CommunityResults } from './community-results';
 import { CommunitySearchSummary } from './community-search-summary';
+import {
+  communityFeedInitialState,
+  communityFeedReducer,
+  type CommunitySnapshot,
+  type IndexData,
+} from './community-index-results.reducer';
 
 interface CommunityIndexResultsProps {
   initialPosts: PostSummary[];
   initialNextCursor: string | null;
-}
-
-interface IndexData {
-  posts: PostSummary[];
-  nextCursor: string | null;
-}
-
-/**
- * The feed as this device last painted it (#555).
- *
- * Page one is rendered on the server (ISR) and cached with the document, so an
- * offline reload of `/community` already has its rows. What does not come back
- * offline is a filtered or paginated page: those are reads of a never-cache API,
- * and a query the reader typed yesterday is a destination they return to. This is
- * the copy that answers it, holding the fields the cards render and no more.
- */
-interface CommunitySnapshot extends IndexData {
-  capturedAt: string;
 }
 
 /**
@@ -109,94 +97,67 @@ export function CommunityIndexResults({
   const isDefault = !cursor && !query;
   const route = normaliseSnapshotRoute('/community', searchParams.toString());
 
-  const [posts, setPosts] = useState(initialPosts);
-  const [nextCursor, setNextCursor] = useState(initialNextCursor);
-  const [ready, setReady] = useState(isDefault);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [pageError, setPageError] = useState<unknown | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<unknown | null>(null);
+  const [feed, dispatch] = useReducer(
+    communityFeedReducer,
+    { initialPosts, initialNextCursor, isDefault },
+    ({ initialPosts: posts, initialNextCursor: next, isDefault: isDefaultView }) =>
+      communityFeedInitialState(posts, next, isDefaultView)
+  );
+  const { posts, nextCursor, ready, loadingMore, pageError, loadMoreError, recordable } = feed;
+  // Only a trigger for the effect below: nothing renders it.
   const [reloadKey, setReloadKey] = useState(0);
-  const [recordable, setRecordable] = useState<CommunitySnapshot | null>(null);
 
   const snapshot = usePublicSnapshot<CommunitySnapshot>(route);
 
   useEffect(() => {
     if (isDefault) {
-      setPosts(initialPosts);
-      setNextCursor(initialNextCursor);
-      setReady(true);
-      setIsLoadingMore(false);
-      setPageError(null);
-      setLoadMoreError(null);
-      // The server rendered page one into the document; the rows it drew are
-      // what this device can show again without a server.
-      setRecordable(
-        initialPosts.length === 0
-          ? null
-          : {
-              posts: initialPosts,
-              nextCursor: initialNextCursor,
-              capturedAt: new Date().toISOString(),
-            }
-      );
+      dispatch({
+        type: 'restored',
+        posts: initialPosts,
+        nextCursor: initialNextCursor,
+        capturedAt: new Date().toISOString(),
+      });
       return;
     }
 
     const controller = new AbortController();
-    setReady(false);
-    setIsLoadingMore(false);
-    setPageError(null);
-    setLoadMoreError(null);
+    dispatch({ type: 'pageLoadStarted' });
 
     fetchIndex(cursor, query, controller.signal)
       .then(({ data, keepable }) => {
-        setPosts(data.posts);
-        setNextCursor(data.nextCursor);
-        setReady(true);
-        setRecordable(
-          keepable && data.posts.length > 0
-            ? {
-                posts: data.posts,
-                nextCursor: data.nextCursor,
-                capturedAt: new Date().toISOString(),
-              }
-            : null
-        );
+        dispatch({
+          type: 'pageLoaded',
+          data,
+          keepable,
+          capturedAt: new Date().toISOString(),
+        });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setPageError(error);
-        setReady(true);
+        dispatch({ type: 'pageFailed', error });
       });
 
     return () => controller.abort();
   }, [cursor, query, isDefault, initialPosts, initialNextCursor, reloadKey]);
 
   const handleLoadMore = useCallback(() => {
-    if (isLoadingMore || !nextCursor) return;
+    if (loadingMore || !nextCursor) return;
     const requestCursor = nextCursor;
-    setIsLoadingMore(true);
-    setLoadMoreError(null);
+    dispatch({ type: 'moreStarted' });
     fetchIndex(requestCursor, query)
       .then(({ data, keepable }) => {
-        setPosts((prev) => {
-          const next = [...prev, ...data.posts];
-          if (keepable) {
-            setRecordable({
-              posts: next,
-              nextCursor: data.nextCursor,
-              capturedAt: new Date().toISOString(),
-            });
-          }
-          return next;
+        dispatch({
+          type: 'moreLoaded',
+          data,
+          keepable,
+          capturedAt: new Date().toISOString(),
         });
-        setNextCursor(data.nextCursor);
       })
       .catch((error: unknown) => {
-        setLoadMoreError(error);
+        dispatch({ type: 'moreFailed', error });
       })
-      .finally(() => setIsLoadingMore(false));
-  }, [isLoadingMore, nextCursor, query]);
+      .finally(() => dispatch({ type: 'moreFinished' }));
+  }, [loadingMore, nextCursor, query]);
 
   const handleRetryPage = useCallback(() => setReloadKey((key) => key + 1), []);
 
@@ -215,7 +176,7 @@ export function CommunityIndexResults({
         nextCursor={null}
         query={query}
         onLoadMore={handleLoadMore}
-        isLoadingMore={isLoadingMore}
+        isLoadingMore={loadingMore}
         loadMoreError={loadMoreError}
         onRetryLoadMore={handleLoadMore}
         pageError={snapshot ? null : pageError}
@@ -233,7 +194,7 @@ export function CommunityIndexResults({
         nextCursor={nextCursor}
         query={query}
         onLoadMore={handleLoadMore}
-        isLoadingMore={isLoadingMore}
+        isLoadingMore={loadingMore}
         loadMoreError={loadMoreError}
         onRetryLoadMore={handleLoadMore}
       />
