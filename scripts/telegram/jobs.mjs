@@ -119,34 +119,37 @@ const conclusionArabic = {
   skipped: 'متجاوز',
 };
 
-export function formatDigest({ workflow, runs, items, url }) {
+/**
+ * An open pull request is news only once it has stopped moving.
+ *
+ * An implementer run that opens and merges inside four minutes made one change,
+ * not two, so a pull still in its first half hour is not reported - it is being
+ * worked on. Past that it is stuck on CI, a review or a conflict, which is the
+ * thing worth a line.
+ */
+const OPEN_GRACE_MS = 30 * 60 * 1000;
+
+const pullStateArabic = { open: 'مفتوح', closed: 'مغلق' };
+
+export function pullState(pull, now = Date.now()) {
+  if (pull?.merged_at) return 'merged';
+  if (pull?.state === 'closed') return 'closed';
+  if (!pull?.created_at) return null;
+  return now - Date.parse(pull.created_at) >= OPEN_GRACE_MS ? 'open' : null;
+}
+
+export function unseen(items, seen) {
+  return items.filter((item) => !seen.has(`${item.kind}:${item.number}:${item.state}`));
+}
+
+/** The heading and the lines the owner has not read. Nothing else. */
+export function formatDigest({ workflow, items }) {
   const noun = workflow.includes('Planner') ? 'مهام جديدة' : 'تغييرات مدموجة';
-  const lines = [`🗓 **${workflow}** — آخر 24 ساعة`];
-
-  if (!runs.length) {
-    lines.push('لا تشغيلات مسجلة.');
-  } else {
-    const successes = runs.filter((run) => run.conclusion === 'success').length;
-    const failures = runs.filter((run) => run.conclusion === 'failure').length;
-    lines.push(`التشغيلات: ${successes} ناجح · ${failures} فاشل`);
-    const latest = runs[0];
-    const label = conclusionArabic[latest.conclusion] ?? latest.conclusion ?? 'غير معروف';
-    lines.push(
-      `آخر تشغيل: ${label}${latest.html_url ? ` — [عرض التشغيل](${latest.html_url})` : ''}`
-    );
+  const lines = [`🗓 **${workflow}**`, '', `**${noun}:** ${items.length}`];
+  for (const item of items) {
+    const label = pullStateArabic[item.state] ? ` — ${pullStateArabic[item.state]}` : '';
+    lines.push(`• [#${item.number}](${item.html_url}) ${item.title}${label}`);
   }
-
-  if (items.length) {
-    lines.push('', `**${noun}:** ${items.length}`);
-    for (const item of items.slice(0, 12)) {
-      lines.push(`• [#${item.number}](${item.html_url}) ${item.title}`);
-    }
-    if (items.length > 12) lines.push(`… و${items.length - 12} أخرى`);
-  } else {
-    lines.push('', `${noun}: لا شيء.`);
-  }
-
-  if (url) lines.push('', `[سجل التشغيل الكامل](${url})`);
   return lines.join('\n');
 }
 
@@ -161,42 +164,139 @@ export function formatAlert({ workflow, conclusion, url, repo }) {
     .join('\n');
 }
 
+/**
+ * The planner's news is an issue that exists and was not reported before.
+ *
+ * `since` on the issues endpoint filters by *updated* time, so a comment on an
+ * old issue counted it as new - the first digest reported 16 where the planner
+ * files at most five. Nothing is filtered by date here at all: the receipt, not
+ * a window, is what decides whether the owner has seen a line.
+ */
+async function plannerItems({ owner, repo }) {
+  const issues =
+    (await github(
+      `/repos/${owner}/${repo}/issues?state=all&sort=created&direction=desc&per_page=50`
+    )) ?? [];
+  return issues
+    .filter((issue) => !issue.pull_request)
+    .map((issue) => ({
+      kind: 'issue',
+      number: issue.number,
+      state: 'created',
+      title: issue.title,
+      html_url: issue.html_url,
+    }));
+}
+
+async function implementerItems({ owner, repo, now }) {
+  // `state=all` and not `state=closed`: a pull that stays open is the one worth
+  // telling the owner about, and it is `pullState` that decides when.
+  const pulls =
+    (await github(
+      `/repos/${owner}/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=50`
+    )) ?? [];
+  return pulls
+    .map((pull) => ({ pull, state: pullState(pull, now) }))
+    .filter(({ state }) => Boolean(state))
+    .map(({ pull, state }) => ({
+      kind: 'pull',
+      number: pull.number,
+      state,
+      title: pull.title,
+      html_url: pull.html_url,
+    }));
+}
+
+async function recordDigestItems(items) {
+  if (!items.length) return;
+  await db('telegram_digest_items', {
+    method: 'POST',
+    headers: { prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify(
+      items.map((item) => ({
+        kind: item.kind,
+        number: item.number,
+        state: item.state,
+        sent_at: new Date().toISOString(),
+      }))
+    ),
+  });
+}
+
+async function reportedKeys(items) {
+  const seen = new Set();
+  for (const kind of ['issue', 'pull']) {
+    const numbers = items.filter((item) => item.kind === kind).map((item) => item.number);
+    if (!numbers.length) continue;
+    const rows =
+      (await db(
+        `telegram_digest_items?kind=eq.${kind}&number=in.(${numbers.join(',')})&select=number,state`
+      )) ?? [];
+    for (const row of rows) seen.add(`${kind}:${row.number}:${row.state}`);
+  }
+  return seen;
+}
+
+/**
+ * Treat what is already on the repository as reported.
+ *
+ * Without this the change that replaced the 24-hour window would replay the
+ * whole window once - seventeen lines the owner has already read. The flag is a
+ * `telegram_state` row rather than "the receipts table is empty", because a
+ * quiet repository has no receipts to notice, and reading emptiness as "never
+ * seeded" would swallow the first item that ever arrived.
+ */
+export async function seedDigestItems({ now = Date.now() } = {}) {
+  const flag = await db('telegram_state?key=eq.digest_items_seeded&select=value');
+  if (flag?.[0]) return { seeded: false, items: 0 };
+
+  const { owner, repo } = githubTarget();
+  const items = [
+    ...(await plannerItems({ owner, repo })),
+    ...(await implementerItems({ owner, repo, now })),
+  ];
+  await recordDigestItems(items);
+  await db('telegram_state', {
+    method: 'POST',
+    headers: { prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({
+      key: 'digest_items_seeded',
+      value: new Date(now).toISOString(),
+      updated_at: new Date(now).toISOString(),
+    }),
+  });
+  log(`digests: seeded ${items.length} item(s) as already reported`);
+  return { seeded: true, items: items.length };
+}
+
 export async function digest({ workflow, url, runId }) {
   const { owner, repo } = githubTarget();
   const chat = process.env.TELEGRAM_CHAT_ID;
   if (!chat) throw new Error('TELEGRAM_CHAT_ID is not set');
 
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const file = workflow.includes('Planner') ? 'issue-planner.yml' : 'issue-implementer.yml';
-  const runs =
-    (await github(
-      `/repos/${owner}/${repo}/actions/workflows/${file}/runs?per_page=10&created=${encodeURIComponent(
-        `>=${since}`
-      )}`
-    ).then((data) => data?.workflow_runs ?? [])) ?? [];
+  await seedDigestItems();
 
-  let items = [];
-  if (workflow.includes('Planner')) {
-    // `since` on the issues endpoint filters by *updated* time, so a comment on an
-    // old issue counted it as new - the first digest reported 16 where the
-    // planner files at most five. The list is fetched and filtered on creation.
-    const issues =
-      (await github(`/repos/${owner}/${repo}/issues?state=all&sort=created&per_page=50`)) ?? [];
-    items = issues.filter((issue) => !issue.pull_request && issue.created_at >= since);
+  const now = Date.now();
+  const items = workflow.includes('Planner')
+    ? await plannerItems({ owner, repo })
+    : await implementerItems({ owner, repo, now });
+
+  const fresh = unseen(items, await reportedKeys(items));
+
+  if (fresh.length) {
+    const text = formatDigest({ workflow, items: fresh });
+    await sendMarkdown(chat, text);
+    await recordOutbound({ chatId: chat, body: text, repo, runUrl: url ?? null });
+    // The receipt is written after the message lands: a failed send must not
+    // consume the lines, or the next tick would have nothing to retry.
+    await recordDigestItems(fresh);
+    log(`${workflow}: ${fresh.length} new item(s)`);
   } else {
-    const pulls =
-      (await github(
-        `/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=30`
-      )) ?? [];
-    items = pulls.filter((pull) => pull.merged_at && pull.merged_at >= since);
+    log(`${workflow}: nothing new`);
   }
 
-  const text = formatDigest({ workflow, runs, items, url });
-  await sendMarkdown(chat, text);
-  await recordOutbound({ chatId: chat, body: text, repo, runUrl: url ?? null });
-
-  // A receipt is written even for an on-demand digest: without one, the
-  // catch-up below reports the same run again and the owner reads it twice.
+  // A run receipt even when nothing was new, or catch-up re-reads the same run
+  // every half hour for six hours.
   if (runId) {
     await db('telegram_digests', {
       method: 'POST',
@@ -204,6 +304,8 @@ export async function digest({ workflow, url, runId }) {
       body: JSON.stringify({ run_id: runId, workflow }),
     }).catch(() => {});
   }
+
+  return { sent: fresh.length > 0, items: fresh.length };
 }
 
 export async function catchUpDigests() {

@@ -20,7 +20,7 @@
  * Modes (the workflow's `mode` input):
  *   drain     answer what the webhook stored
  *   remind    deliver due reminders
- *   digest    summarise a workflow's last 24 hours
+ *   digest    report what the owner has not been told yet
  *   alerts    report a red check, once per window
  *   remember  distil the conversation into summary + facts
  *   probe     measure the transcription endpoint
@@ -48,7 +48,7 @@ export {
   withPartNumbers,
 } from './telegram/text.mjs';
 export { formatContext, formatHistory, formatMemories } from './telegram/store.mjs';
-export { formatAlert, formatDigest, silenceWav } from './telegram/jobs.mjs';
+export { formatAlert, formatDigest, pullState, unseen, silenceWav } from './telegram/jobs.mjs';
 
 function arg(name) {
   const index = process.argv.indexOf(`--${name}`);

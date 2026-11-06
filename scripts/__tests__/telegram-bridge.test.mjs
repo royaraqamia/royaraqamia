@@ -9,9 +9,11 @@ import {
   parseMemory,
   parseOffset,
   parseWhen,
+  pullState,
   renderAnswer,
   stripHtml,
   toLatinDigits,
+  unseen,
   withPartNumbers,
 } from '../telegram-bridge.mjs';
 import { parseForget } from '../telegram/answer.mjs';
@@ -328,19 +330,33 @@ describe('progressLine', () => {
 });
 
 describe('digest and alert text', () => {
-  it('counts runs and links the latest', () => {
+  it('is the heading and only the lines given, with no run status', () => {
     const text = formatDigest({
       workflow: 'Issue Planner',
-      runs: [
-        { conclusion: 'success', html_url: 'https://x/1' },
-        { conclusion: 'failure', html_url: 'https://x/2' },
-      ],
       items: [{ number: 7, html_url: 'https://x/7', title: 'عنوان' }],
+      // The old renderer read these; passing them is how the shape is pinned.
+      runs: [{ conclusion: 'failure', html_url: 'https://x/run' }],
       url: 'https://x/run',
     });
-    expect(text).toContain('1 ناجح');
-    expect(text).toContain('1 فاشل');
+    expect(text).toContain('Issue Planner');
     expect(text).toContain('#7');
+    expect(text).not.toContain('ناجح');
+    expect(text).not.toContain('فاشل');
+    expect(text).not.toContain('آخر 24 ساعة');
+    expect(text).not.toContain('https://x/run');
+  });
+
+  it('labels a pull that did not merge, so the line stays true', () => {
+    const open = formatDigest({
+      workflow: 'Issue Implementer',
+      items: [{ number: 9, html_url: 'https://x/9', title: 'مفتوح', state: 'open' }],
+    });
+    const closed = formatDigest({
+      workflow: 'Issue Implementer',
+      items: [{ number: 10, html_url: 'https://x/10', title: 'مغلق', state: 'closed' }],
+    });
+    expect(open).toContain('مفتوح');
+    expect(closed).toContain('مغلق');
   });
 
   it('names the workflow and the repo in an alert', () => {
@@ -352,6 +368,36 @@ describe('digest and alert text', () => {
     });
     expect(text).toContain('Migration Drift');
     expect(text).toContain('فاشل');
+  });
+});
+
+describe('what a digest has already reported', () => {
+  const now = Date.parse('2026-11-06T22:00:00Z');
+
+  it('reports a pull once per state, never once per digest', () => {
+    const merged = {
+      kind: 'pull',
+      number: 42,
+      state: 'merged',
+      title: 'x',
+      html_url: 'https://x/42',
+    };
+    const seen = new Set(['pull:42:merged']);
+    expect(unseen([merged], seen)).toEqual([]);
+    expect(unseen([{ ...merged, state: 'open' }], seen)).toHaveLength(1);
+    expect(unseen([merged], new Set())).toEqual([merged]);
+  });
+
+  it('gives a just-opened pull its half hour before calling it stuck', () => {
+    const opened = { state: 'open', created_at: new Date(now - 10 * 60 * 1000).toISOString() };
+    const waiting = { state: 'open', created_at: new Date(now - 45 * 60 * 1000).toISOString() };
+    expect(pullState(opened, now)).toBeNull();
+    expect(pullState(waiting, now)).toBe('open');
+  });
+
+  it('treats a merge and an abandoned close as final states', () => {
+    expect(pullState({ state: 'closed', merged_at: '2026-11-06T21:00:00Z' }, now)).toBe('merged');
+    expect(pullState({ state: 'closed', merged_at: null }, now)).toBe('closed');
   });
 });
 
