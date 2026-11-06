@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { CalendarDays, Loader2, Pencil, Plus, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,7 +24,6 @@ import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
 import {
   TRAINING_COHORT_CAPACITY_MAX,
-  TRAINING_COHORT_DEFAULT_CAPACITY,
   TRAINING_COHORT_LABEL_MAX,
   TRAINING_COHORT_STATUSES,
   TRAINING_COHORT_STATUS_LABELS,
@@ -33,45 +32,21 @@ import {
   type TrainingCohort,
   type TrainingCohortStatus,
 } from '@/shared/contracts/training';
-
-interface CohortDraft {
-  label: string;
-  starts_at: string;
-  capacity: string;
-  status: TrainingCohortStatus;
-}
-
-const EMPTY_DRAFT: CohortDraft = {
-  label: '',
-  starts_at: '',
-  capacity: String(TRAINING_COHORT_DEFAULT_CAPACITY),
-  status: 'open',
-};
+import { cohortsInitialState, cohortsReducer, draftErrors } from './training-cohorts-view.reducer';
 
 const STATUS_TONES: Record<TrainingCohortStatus, string> = {
   open: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
   closed: 'border-border/60 bg-muted/50 text-muted-foreground',
 };
 
-/** The date input is date-only; the stored timestamp is trimmed to its calendar day. */
-function toDateInputValue(startsAt: string): string {
-  return startsAt.slice(0, 10);
-}
-
 export function TrainingCohortsView() {
-  const [cohorts, setCohorts] = useState<TrainingCohort[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<CohortDraft>(EMPTY_DRAFT);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(cohortsReducer, undefined, cohortsInitialState);
+  const { cohorts, loading, showForm, editingId, draft, fieldErrors, saving, togglingId } = form;
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    setCohorts(await getTrainingCohorts());
-    setLoading(false);
+    dispatch({ type: 'loadStarted' });
+    const list = await getTrainingCohorts();
+    dispatch({ type: 'loaded', cohorts: list });
   }, []);
 
   useEffect(() => {
@@ -79,44 +54,20 @@ export function TrainingCohortsView() {
   }, [refresh]);
 
   function startCreate() {
-    setEditingId(null);
-    setDraft(EMPTY_DRAFT);
-    setFieldErrors({});
-    setShowForm(true);
+    dispatch({ type: 'createStarted' });
   }
 
   function startEdit(cohort: TrainingCohort) {
-    setEditingId(cohort.id);
-    setDraft({
-      label: cohort.label,
-      starts_at: toDateInputValue(cohort.starts_at),
-      capacity: String(cohort.capacity),
-      status: cohort.status,
-    });
-    setFieldErrors({});
-    setShowForm(true);
-  }
-
-  function validate(): boolean {
-    const errors: Record<string, string> = {};
-    if (draft.label.trim().length < 2) errors.label = 'العنوان يجب أن يكون حرفين على الأقل';
-
-    if (!draft.starts_at) {
-      errors.starts_at = 'تاريخ البدء مطلوب';
-    }
-
-    const capacity = Number(draft.capacity);
-    if (!Number.isInteger(capacity) || capacity < 1 || capacity > TRAINING_COHORT_CAPACITY_MAX) {
-      errors.capacity = `عدد المقاعد يجب أن يكون بين 1 و${TRAINING_COHORT_CAPACITY_MAX}`;
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    dispatch({ type: 'editStarted', cohort });
   }
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
-    if (!validate()) return;
+    const errors = draftErrors(draft);
+    if (Object.keys(errors).length > 0) {
+      dispatch({ type: 'validationFailed', fieldErrors: errors });
+      return;
+    }
 
     const payload = {
       label: draft.label.trim(),
@@ -125,15 +76,15 @@ export function TrainingCohortsView() {
       status: draft.status,
     };
 
-    setSaving(true);
+    dispatch({ type: 'saveStarted' });
     const result = editingId
       ? await updateTrainingCohort(editingId, payload)
       : await createTrainingCohort({ course_slug: TRAINING_COURSE.slug, ...payload });
-    setSaving(false);
+    dispatch({ type: 'saveFinished' });
 
     if (result.success) {
       toast.success(editingId ? 'تم تحديث الدُّفعة' : 'تمت إضافة الدُّفعة');
-      setShowForm(false);
+      dispatch({ type: 'formClosed' });
       void refresh();
     } else {
       toast.error(result.error ?? 'تعذّر حفظ الدُّفعة');
@@ -142,9 +93,9 @@ export function TrainingCohortsView() {
 
   async function toggleStatus(cohort: TrainingCohort) {
     const next: TrainingCohortStatus = cohort.status === 'open' ? 'closed' : 'open';
-    setTogglingId(cohort.id);
+    dispatch({ type: 'toggleStarted', id: cohort.id });
     const result = await updateTrainingCohort(cohort.id, { status: next });
-    setTogglingId(null);
+    dispatch({ type: 'toggleFinished' });
 
     if (result.success) {
       toast.success(next === 'open' ? 'تم فتح الدُّفعة' : 'تم إغلاق الدُّفعة');
@@ -162,7 +113,7 @@ export function TrainingCohortsView() {
           <span className="text-foreground font-bold">{TRAINING_COURSE.title}</span>
         </p>
         {showForm ? (
-          <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+          <Button type="button" variant="outline" onClick={() => dispatch({ type: 'formClosed' })}>
             <X aria-hidden="true" />
             إلغاء
           </Button>
@@ -193,7 +144,7 @@ export function TrainingCohortsView() {
                 error={Boolean(fieldErrors.label)}
                 aria-describedby={fieldErrors.label ? 'cohort-label-error' : undefined}
                 onChange={(event) =>
-                  setDraft((current) => ({ ...current, label: event.target.value }))
+                  dispatch({ type: 'draftChanged', patch: { label: event.target.value } })
                 }
               />
               {fieldErrors.label && (
@@ -214,7 +165,7 @@ export function TrainingCohortsView() {
                 error={Boolean(fieldErrors.starts_at)}
                 aria-describedby={fieldErrors.starts_at ? 'cohort-starts-at-error' : undefined}
                 onChange={(event) =>
-                  setDraft((current) => ({ ...current, starts_at: event.target.value }))
+                  dispatch({ type: 'draftChanged', patch: { starts_at: event.target.value } })
                 }
               />
               {fieldErrors.starts_at && (
@@ -238,7 +189,7 @@ export function TrainingCohortsView() {
                 error={Boolean(fieldErrors.capacity)}
                 aria-describedby={fieldErrors.capacity ? 'cohort-capacity-error' : undefined}
                 onChange={(event) =>
-                  setDraft((current) => ({ ...current, capacity: event.target.value }))
+                  dispatch({ type: 'draftChanged', patch: { capacity: event.target.value } })
                 }
               />
               {fieldErrors.capacity && (
@@ -253,7 +204,10 @@ export function TrainingCohortsView() {
               <Select
                 value={draft.status}
                 onValueChange={(value) =>
-                  setDraft((current) => ({ ...current, status: value as TrainingCohortStatus }))
+                  dispatch({
+                    type: 'draftChanged',
+                    patch: { status: value as TrainingCohortStatus },
+                  })
                 }
               >
                 <SelectTrigger id="cohort-status" aria-label="حالة الدُّفعة">
