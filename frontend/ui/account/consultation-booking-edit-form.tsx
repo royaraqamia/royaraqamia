@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
 import { Button } from '@/frontend/ui/primitives/button';
 import {
@@ -8,28 +8,17 @@ import {
   fetchConsultationPackages,
   updateMyConsultationBooking,
 } from '@/frontend/api/consultation';
-import {
-  BookingContactSchema,
-  type AvailabilitySlot,
-  type ConsultationBooking,
-  type ConsultationPackage,
-} from '@/shared/contracts/consultation';
+import type { ConsultationBooking } from '@/shared/contracts/consultation';
 import { cn } from '@/frontend/shared/cn';
 import { PackageStep } from '../consultation/steps/package-step';
 import { SlotStep } from '../consultation/steps/slot-step';
 import { DetailsStep } from '../consultation/steps/details-step';
 import type { BookingContactDraft } from '@/frontend/state/consultation/use-booking-flow';
-
-const CONTACT_FIELDS: readonly (keyof BookingContactDraft)[] = [
-  'full_name',
-  'phone_whatsapp',
-  'topic_description',
-];
-
-function fieldError(field: keyof BookingContactDraft, value: string): string | undefined {
-  const result = BookingContactSchema.shape[field].safeParse(value);
-  return result.success ? undefined : result.error.issues[0]?.message;
-}
+import {
+  bookingEditInitialState,
+  bookingEditReducer,
+  contactErrors,
+} from './consultation-booking-edit-form.reducer';
 
 interface ConsultationBookingEditFormProps {
   booking: ConsultationBooking;
@@ -48,32 +37,27 @@ export function ConsultationBookingEditForm({
   onSaved,
   onCancel,
 }: ConsultationBookingEditFormProps) {
-  const [contact, setContact] = useState<BookingContactDraft>({
-    full_name: booking.full_name,
-    phone_whatsapp: booking.phone_whatsapp,
-    topic_description: booking.topic_description,
-  });
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [form, dispatch] = useReducer(bookingEditReducer, booking, bookingEditInitialState);
+  const { contact, fieldErrors, submitError, submitting, packages, slots, slotsLoading } = form;
+  const { packageId, slotIds } = form;
 
   const reschedulable = booking.status === 'pending' || booking.status === 'confirmed';
-  const [packages, setPackages] = useState<ConsultationPackage[]>([]);
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [packageId, setPackageId] = useState<string>(booking.package_id);
-  const [slotIds, setSlotIds] = useState<string[]>([]);
+  const selectedPackage = packages.find((pkg) => pkg.id === packageId) ?? null;
+  const requiredSessions = selectedPackage?.sessions_count ?? booking.sessions.length;
 
   const loadSlots = useCallback(async () => {
-    setSlotsLoading(true);
+    dispatch({ type: 'slotsLoadingStarted' });
     try {
       const fresh = await fetchAvailableSlots();
       // Keep the booking's own held sessions selectable by re-adding them: they
       // are filtered out of the "available" list because the booking holds them.
       const held = booking.sessions.filter((session) => !fresh.some((s) => s.id === session.id));
-      setSlots([...fresh, ...held].sort((a, b) => a.starts_at.localeCompare(b.starts_at)));
+      dispatch({
+        type: 'slotsLoaded',
+        slots: [...fresh, ...held].sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+      });
     } finally {
-      setSlotsLoading(false);
+      dispatch({ type: 'slotsLoadingFinished' });
     }
   }, [booking.sessions]);
 
@@ -82,8 +66,11 @@ export function ConsultationBookingEditForm({
     let cancelled = false;
     void Promise.all([fetchConsultationPackages(), loadSlots()]).then(([pkgs]) => {
       if (cancelled) return;
-      setPackages(pkgs);
-      setSlotIds(booking.sessions.map((session) => session.id));
+      dispatch({
+        type: 'optionsLoaded',
+        packages: pkgs,
+        slotIds: booking.sessions.map((session) => session.id),
+      });
     });
     return () => {
       cancelled = true;
@@ -91,39 +78,24 @@ export function ConsultationBookingEditForm({
   }, [reschedulable, loadSlots, booking.sessions]);
 
   function updateContact(patch: Partial<BookingContactDraft>) {
-    setContact((current) => ({ ...current, ...patch }));
-    setSubmitError(null);
-    setFieldErrors((current) => {
-      const touched = (Object.keys(patch) as (keyof BookingContactDraft)[]).filter(
-        (field) => current[field]
-      );
-      if (touched.length === 0) return current;
-      const next = { ...current };
-      for (const field of touched) {
-        if (!fieldError(field, patch[field] ?? '')) delete next[field];
-      }
-      return next;
-    });
+    dispatch({ type: 'contactPatched', patch });
   }
 
-  const selectedPackage = packages.find((pkg) => pkg.id === packageId) ?? null;
-  const requiredSessions = selectedPackage?.sessions_count ?? booking.sessions.length;
+  function toggleSlot(slotId: string) {
+    dispatch({ type: 'slotToggled', slotId });
+  }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitError(null);
+    dispatch({ type: 'submitErrorCleared' });
 
-    const errors: Record<string, string> = {};
-    for (const field of CONTACT_FIELDS) {
-      const message = fieldError(field, contact[field]);
-      if (message) errors[field] = message;
-    }
+    const errors = contactErrors(contact);
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+      dispatch({ type: 'validationFailed', fieldErrors: errors });
       return;
     }
 
-    setIsSubmitting(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const response = await updateMyConsultationBooking(booking.id, {
         full_name: contact.full_name.trim(),
@@ -141,17 +113,14 @@ export function ConsultationBookingEditForm({
         onSaved(response.data);
         return;
       }
-      setSubmitError(response.error ?? 'تعذّر تحديث الحجز، حاول مرة أخرى.');
-      setFieldErrors(response.fieldErrors ?? {});
+      dispatch({
+        type: 'submitFailed',
+        message: response.error ?? 'تعذّر تحديث الحجز، حاول مرة أخرى.',
+        fieldErrors: response.fieldErrors ?? {},
+      });
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: 'submitFinished' });
     }
-  }
-
-  function toggleSlot(slotId: string) {
-    setSlotIds((current) =>
-      current.includes(slotId) ? current.filter((id) => id !== slotId) : [...current, slotId]
-    );
   }
 
   return (
@@ -160,7 +129,11 @@ export function ConsultationBookingEditForm({
         <>
           <section aria-label="الباقة" className="space-y-3">
             <h3 className="text-sm font-bold text-foreground">الباقة والمواعيد</h3>
-            <PackageStep packages={packages} selectedId={packageId} onSelect={setPackageId} />
+            <PackageStep
+              packages={packages}
+              selectedId={packageId}
+              onSelect={(id) => dispatch({ type: 'packageSelected', packageId: id })}
+            />
             <SlotStep
               slots={slots}
               loading={slotsLoading}
@@ -192,10 +165,10 @@ export function ConsultationBookingEditForm({
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" variant="hero" isLoading={isSubmitting} disabled={isSubmitting}>
+        <Button type="submit" variant="hero" isLoading={submitting} disabled={submitting}>
           حفظ التَّعديلات
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           إلغاء
         </Button>
       </div>
