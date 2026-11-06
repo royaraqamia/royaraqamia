@@ -60,14 +60,13 @@ describe('agent cost is chosen in the workflow, not discovered on the invoice', 
   });
 
   it('keeps the runaway output ceiling under a real diff', () => {
-    const ceiling = (name) => {
-      const match = read(name).match(/OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX:\s*'?(\d+)'?/);
-      return match ? Number(match[1]) : 0;
-    };
     for (const name of WORKFLOWS) {
-      const value = ceiling(name);
-      if (!value) continue;
-      expect(value, `${name} allows an unbounded generation`).toBeLessThanOrEqual(128_000);
+      const values = [
+        ...read(name).matchAll(/OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX:\s*'?(\d+)'?/g),
+      ].map((match) => Number(match[1]));
+      for (const value of values) {
+        expect(value, `${name} allows an unbounded generation`).toBeLessThanOrEqual(128_000);
+      }
     }
   });
 
