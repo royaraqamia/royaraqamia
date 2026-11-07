@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useReducer, useRef } from 'react';
 import { Download, Pause, Play } from 'lucide-react';
 
 import { getChatAttachmentUrl } from '@/frontend/api/chats';
@@ -8,6 +8,7 @@ import { cn } from '@/frontend/shared/cn';
 import { peaksOf } from '@/frontend/state/chats/use-voice-recorder';
 import { CHAT_VOICE_NOTE_SAMPLE_RATE, type ChatAttachment } from '@/shared/contracts/chat';
 import { formatVoiceDuration, VOICE_COPY } from './voice-copy';
+import { voiceNotePlayerInitialState, voiceNotePlayerReducer } from './voice-note-player.reducer';
 
 /** The bars the shape is drawn with. */
 const BARS = 40;
@@ -46,13 +47,12 @@ export function VoiceNotePlayer({
   resolveUrl?: (attachment: ChatAttachment) => Promise<string | null>;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
-  const [url, setUrl] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [durationMs, setDurationMs] = useState(() => estimatedDurationMs(attachment));
-  const [peaks, setPeaks] = useState<number[]>(() => peakCache.get(attachment.id) ?? []);
-  const [speed, setSpeed] = useState(0);
-  const [failed, setFailed] = useState(false);
+  const [state, dispatch] = useReducer(
+    voiceNotePlayerReducer,
+    { durationMs: estimatedDurationMs(attachment), peaks: peakCache.get(attachment.id) ?? [] },
+    voiceNotePlayerInitialState
+  );
+  const { url, playing, progress, durationMs, peaks, speed, failed } = state;
 
   /** The clip's bytes, read once: the URL to play, and the shape to draw. */
   async function open(): Promise<string | null> {
@@ -62,10 +62,10 @@ export function VoiceNotePlayer({
       ? await resolveUrl(attachment)
       : ((await getChatAttachmentUrl(conversationId, attachment.id))?.url ?? null);
     if (!source) {
-      setFailed(true);
+      dispatch({ type: 'failed' });
       return null;
     }
-    setUrl(source);
+    dispatch({ type: 'opened', url: source });
     void drawShape(source);
     return source;
   }
@@ -81,8 +81,7 @@ export function VoiceNotePlayer({
         const decoded = await context.decodeAudioData(bytes);
         const shape = peaksOf(decoded.getChannelData(0), BARS);
         peakCache.set(attachment.id, shape);
-        setPeaks(shape);
-        setDurationMs(decoded.duration * 1_000);
+        dispatch({ type: 'shapeDecoded', peaks: shape, durationMs: decoded.duration * 1_000 });
       } finally {
         await context.close();
       }
@@ -106,16 +105,20 @@ export function VoiceNotePlayer({
       element.playbackRate = SPEEDS[speed] ?? 1;
       element.addEventListener('timeupdate', () => {
         const total = element.duration;
-        setProgress(Number.isFinite(total) && total > 0 ? element.currentTime / total : 0);
+        dispatch({
+          type: 'progressed',
+          progress: Number.isFinite(total) && total > 0 ? element.currentTime / total : 0,
+        });
       });
       element.addEventListener('loadedmetadata', () => {
-        if (Number.isFinite(element.duration)) setDurationMs(element.duration * 1_000);
+        if (Number.isFinite(element.duration)) {
+          dispatch({ type: 'durationKnown', durationMs: element.duration * 1_000 });
+        }
       });
-      element.addEventListener('play', () => setPlaying(true));
-      element.addEventListener('pause', () => setPlaying(false));
+      element.addEventListener('play', () => dispatch({ type: 'played' }));
+      element.addEventListener('pause', () => dispatch({ type: 'paused' }));
       element.addEventListener('ended', () => {
-        setPlaying(false);
-        setProgress(0);
+        dispatch({ type: 'ended' });
         element.currentTime = 0;
       });
       audio.current = element;
@@ -124,7 +127,7 @@ export function VoiceNotePlayer({
     try {
       await audio.current.play();
     } catch {
-      setFailed(true);
+      dispatch({ type: 'failed' });
     }
   }
 
@@ -134,12 +137,12 @@ export function VoiceNotePlayer({
     const bounds = event.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
     element.currentTime = ratio * element.duration;
-    setProgress(ratio);
+    dispatch({ type: 'progressed', progress: ratio });
   }
 
   function cycleSpeed() {
     const next = (speed + 1) % SPEEDS.length;
-    setSpeed(next);
+    dispatch({ type: 'speedAdvanced', speed: next });
     if (audio.current) audio.current.playbackRate = SPEEDS[next] ?? 1;
   }
 
