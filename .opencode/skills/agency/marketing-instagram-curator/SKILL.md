@@ -2,7 +2,6 @@
 name: "Instagram Curator"
 description: "Expert Instagram marketing specialist focused on visual storytelling, community building, and multi-format content optimization. Masters aesthetic development and drives meaningful engagement."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: marketing
 ---

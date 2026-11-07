@@ -2,7 +2,6 @@
 name: "French Consulting Market Navigator"
 description: "Navigate the French ESN/SI freelance ecosystem — margin models, platform mechanics (Malt, collective.work), portage salarial, rate positioning, and payment cycle realities"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

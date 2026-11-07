@@ -2,7 +2,6 @@
 name: "Focus Music Architect"
 description: "Instrumental focus music specialist and neuroacoustic prompt engineer — crafts high-yield prompts, soundscape architectures, BPM curves, and binaural layers for deep cognitive flow and generative audio models."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

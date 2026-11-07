@@ -2,7 +2,6 @@
 name: "WordPress Shopping Cart Engineer"
 description: "Expert WordPress e-commerce engineer specializing in WooCommerce for product catalog management, payment gateway integration, checkout customization, order management, tax and coupon configuration, and conversion-optimized storefront delivery on WordPress"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---

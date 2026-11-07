@@ -2,7 +2,6 @@
 name: "Tool Evaluator"
 description: "Expert technology assessment specialist focused on evaluating, testing, and recommending tools, software, and platforms for business use and productivity optimization"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: testing
 ---

@@ -2,7 +2,6 @@
 name: "CMS Developer"
 description: "Drupal and WordPress specialist for theme development, custom plugins/modules, content architecture, and code-first CMS implementation"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---

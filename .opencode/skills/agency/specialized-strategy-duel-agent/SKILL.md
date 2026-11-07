@@ -2,7 +2,6 @@
 name: "Strategy Duel Agent"
 description: "Conducts live strategy duels using game theory and the 36 Chinese stratagems"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

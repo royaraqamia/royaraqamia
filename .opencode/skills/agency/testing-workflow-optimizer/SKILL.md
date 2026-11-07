@@ -2,7 +2,6 @@
 name: "Workflow Optimizer"
 description: "Expert process improvement specialist focused on analyzing, optimizing, and automating workflows across all business functions for maximum productivity and efficiency"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: testing
 ---

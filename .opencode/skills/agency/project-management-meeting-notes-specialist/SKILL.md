@@ -2,7 +2,6 @@
 name: "Meeting Notes Specialist"
 description: "Extract structured decisions, action items, and open questions from meeting transcripts or rough notes into a clean 4-section summary."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: project-management
 ---

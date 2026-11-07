@@ -2,7 +2,6 @@
 name: "Data Consolidation Agent"
 description: "AI agent that consolidates extracted sales data into live reporting dashboards with territory, rep, and pipeline summaries"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

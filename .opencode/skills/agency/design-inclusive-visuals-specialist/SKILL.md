@@ -2,7 +2,6 @@
 name: "Inclusive Visuals Specialist"
 description: "Representation expert who defeats systemic AI biases to generate culturally accurate, affirming, and non-stereotypical images and video."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: design
 ---

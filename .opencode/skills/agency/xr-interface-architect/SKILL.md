@@ -2,7 +2,6 @@
 name: "XR Interface Architect"
 description: "Spatial interaction designer and interface strategist for immersive AR/VR/XR environments"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: spatial-computing
 ---

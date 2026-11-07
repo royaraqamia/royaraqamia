@@ -2,7 +2,6 @@
 name: "XR Cockpit Interaction Specialist"
 description: "Specialist in designing and developing immersive cockpit-based control systems for XR environments"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: spatial-computing
 ---

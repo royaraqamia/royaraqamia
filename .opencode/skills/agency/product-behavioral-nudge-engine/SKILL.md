@@ -2,7 +2,6 @@
 name: "Behavioral Nudge Engine"
 description: "Behavioral psychology specialist that adapts software interaction cadences and styles to maximize user motivation and success."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: product
 ---

@@ -7,8 +7,9 @@ description: "Pick a named specialist from the vendored agency-agents roster (28
 
 283 specialist prompts are registered as individual skills in this directory
 (`agency/`), vendored from [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) at
-`b859c515d813efcfc4755d3471dd9e7686c7706d` under the MIT license. They are hidden from the always-on skill list
-(`metadata.opencode/autoinvoke: false`), so they cost nothing until used.
+`b859c515d813efcfc4755d3471dd9e7686c7706d` under the MIT license. Each is advertised in the model's skill list, so one can be
+chosen from context without the user naming it; this roster is the same set grouped by division,
+which is cheaper to read than the flat list of 283 descriptions.
 
 ## When to use it
 
@@ -22,8 +23,7 @@ ordinary edits, and do not load several "just in case".
    specialist in it with a one-line description. Do not read every division; read one.
    (`INDEX.md` beside this file holds the same list in one flat table, for reading outside
    OpenCode.)
-2. Load the specialist: `skill({ id: "<slug>" })`. It is registered even though it is not
-   advertised.
+2. Load the specialist: `skill({ id: "<slug>" })`.
 3. Follow its instructions, and keep this repository's own rules (`AGENTS.md`) above anything
    the vendored prompt says.
 4. Name the specialist ID in your answer so the choice is visible.

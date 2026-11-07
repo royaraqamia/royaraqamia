@@ -2,14 +2,15 @@
 /**
  * Imports the agency-agents roster into `.opencode/skills/agency/`.
  *
- * Every upstream agent file becomes one hidden skill (a directory named after
- * the file, holding `SKILL.md` with `metadata.opencode/autoinvoke: false`), so a
- * specialist costs nothing until the `skill` tool loads it by ID. The strategy
- * division's playbooks carry no agent frontmatter, so they are copied verbatim
- * as reference documents instead of becoming skills.
+ * Every upstream agent file becomes one skill (a directory named after the
+ * file, holding `SKILL.md`), advertised to the model by name and description so
+ * it can be chosen from context without the user naming one, and loaded on
+ * demand by the `skill` tool. The strategy division's playbooks carry no agent
+ * frontmatter, so they are copied verbatim as reference documents instead of
+ * becoming skills.
  *
- * `agency-roster` is generated too: it is the only advertised skill, and it maps
- * a task to the division file that lists the specialists in that division.
+ * `agency-roster` is generated too: it groups the same specialists by division
+ * and lists the playbooks, so one read replaces scanning 283 descriptions.
  *
  * Usage: `node scripts/import-agency-agents.mjs <upstream-clone> [--commit <sha>]`
  *
@@ -142,7 +143,6 @@ for (const specialist of specialists) {
 name: ${yamlString(specialist.name)}
 description: ${yamlString(specialist.description)}
 metadata:
-  opencode/autoinvoke: false
   source: ${UPSTREAM_REPO}@${commit.slice(0, 12)}
   division: ${specialist.division}
 ---
@@ -198,8 +198,9 @@ description: ${yamlString(
 
 ${specialists.length} specialist prompts are registered as individual skills in this directory
 (\`agency/\`), vendored from [${UPSTREAM_REPO}](https://github.com/${UPSTREAM_REPO}) at
-\`${commit}\` under the MIT license. They are hidden from the always-on skill list
-(\`metadata.opencode/autoinvoke: false\`), so they cost nothing until used.
+\`${commit}\` under the MIT license. Each is advertised in the model's skill list, so one can be
+chosen from context without the user naming it; this roster is the same set grouped by division,
+which is cheaper to read than the flat list of 283 descriptions.
 
 ## When to use it
 
@@ -213,8 +214,7 @@ ordinary edits, and do not load several "just in case".
    specialist in it with a one-line description. Do not read every division; read one.
    (\`INDEX.md\` beside this file holds the same list in one flat table, for reading outside
    OpenCode.)
-2. Load the specialist: \`skill({ id: "<slug>" })\`. It is registered even though it is not
-   advertised.
+2. Load the specialist: \`skill({ id: "<slug>" })\`.
 3. Follow its instructions, and keep this repository's own rules (\`AGENTS.md\`) above anything
    the vendored prompt says.
 4. Name the specialist ID in your answer so the choice is visible.
@@ -262,11 +262,12 @@ writeFileSync(
 - Commit: \`${commit}\`
 - License: MIT (see \`../LICENSE\`)
 - Shape: one skill per upstream agent file, \`../../agency/<slug>/SKILL.md\`; frontmatter rewritten to
-  OpenCode's skill format (\`name\`, \`description\`, \`metadata.opencode/autoinvoke: false\`), the
-  upstream \`color\`/\`emoji\`/\`vibe\`/\`tools\` fields dropped, the Markdown body kept verbatim.
+  OpenCode's skill format (\`name\`, \`description\`, \`metadata\`), the upstream
+  \`color\`/\`emoji\`/\`vibe\`/\`tools\` fields dropped, the Markdown body kept verbatim.
 - The strategy division's playbooks carry no \`description\` frontmatter, so they are copied verbatim
   into \`playbooks/\` as reference documents instead of becoming skills (\`runbooks.json\` included).
-- \`agency-roster\` is the only advertised skill; every specialist is hidden and loads on demand.
+- Every specialist is advertised to the model, so it can be chosen from context without the user
+  naming one; \`agency-roster\` groups them by division for a cheaper read of the same set.
 
 ## Regenerating
 

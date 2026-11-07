@@ -71,10 +71,10 @@ Use proactively when task matches. Load with the `skill` tool.
 
 ## Vendored agency roster (msitarzewski/agency-agents)
 
-- `agency-roster` — Start here: maps a task to one division file listing its specialists
-- 299 specialist prompts (engineering, design, marketing, product, sales, security, testing…), each a
-  hidden skill (`metadata.opencode/autoinvoke: false`) loaded by ID on demand, so they cost no prompt
-  tokens until used. Tree, provenance and the regeneration recipe: `.opencode/skills/agency/`
+- `agency-roster` — Groups the roster by division; read one division file to find the right specialist
+- 283 specialist prompts (engineering, design, marketing, product, sales, security, testing…), each an
+  advertised skill chosen from context or loaded by ID, plus 16 NEXUS playbooks as plain Markdown.
+  Tree, provenance and the regeneration recipe: `.opencode/skills/agency/`
 
 ## Skill Versioning
 

@@ -2,7 +2,6 @@
 name: "Sovereign Health Systems Agent"
 description: "Government health mandate engagement framework for AI agents"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: healthcare
 ---
