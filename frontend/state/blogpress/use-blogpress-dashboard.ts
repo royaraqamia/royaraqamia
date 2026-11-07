@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { BlogpressLocalStore, postFromDraft } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine, type SyncStatus } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
@@ -23,6 +23,10 @@ import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { markContent } from '@/frontend/shared/perf-marks';
 import type { Post } from '@/shared/contracts/blogpress';
+import {
+  blogpressDashboardInitialState,
+  blogpressDashboardReducer,
+} from './use-blogpress-dashboard.reducer';
 
 /**
  * The dashboard's Local Store and its pull (#449, ADR-0073).
@@ -51,14 +55,6 @@ export interface BlogpressDashboardState {
   sync: DashboardSyncState;
   refresh: () => Promise<void>;
 }
-
-const IDLE: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
 
 /** The surface's snapshot (#495): the posts the dashboard last painted. */
 export const BLOGPRESS_SNAPSHOT_ROUTE = 'blogpress';
@@ -94,19 +90,17 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
    */
   const authorId = identityUserId(identity) ?? '';
   const isGuest = identity === GUEST_IDENTITY;
-  /**
-   * The identity the store read answered, or `null` before the first read.
-   * Tagged rather than a boolean so an identity change cannot paint the previous
-   * account's drafts while the new store opens.
-   */
-  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
+  const [state, dispatch] = useReducer(
+    blogpressDashboardReducer,
+    isOnline(),
+    blogpressDashboardInitialState
+  );
+  // `readyFor` is tagged rather than a boolean so an identity change cannot
+  // paint the previous account's drafts while the new store opens.
+  const { store, readyFor, posts, status, online } = state;
 
   // The last screen this identity painted (#495), read during render.
   const snapshot = useSnapshot<BlogpressSnapshot>(identity, BLOGPRESS_SNAPSHOT_ROUTE);
-  const [store, setStore] = useState<BlogpressLocalStore | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [status, setStatus] = useState<SyncStatus>(IDLE);
-  const [online, setOnline] = useState(isOnline);
   const engineRef = useRef<BlogpressSyncEngine | null>(null);
   // `refresh` below repaints from the store; the pull's own failure is tracked
   // separately so the two cannot be confused.
@@ -119,7 +113,7 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
   const ready = readyFor === identity;
 
   useEffect(() => {
-    const sync = () => setOnline(isOnline());
+    const sync = () => dispatch({ type: 'connectionChanged', online: isOnline() });
     sync();
     window.addEventListener('online', sync);
     window.addEventListener('offline', sync);
@@ -132,7 +126,10 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
   const readIntoState = useCallback(
     async (localStore: BlogpressLocalStore) => {
       const drafts = await localStore.getDrafts();
-      setPosts(drafts.map((draft) => postFromDraft(draft, authorId)));
+      dispatch({
+        type: 'postsRead',
+        posts: drafts.map((draft) => postFromDraft(draft, authorId)),
+      });
     },
     [authorId]
   );
@@ -158,10 +155,10 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
           });
           if (cancelled) return;
         }
-        setStore(localStore);
+        dispatch({ type: 'opened', store: localStore });
         await readIntoState(localStore);
         if (cancelled) return;
-        setReadyFor(identity);
+        dispatch({ type: 'ready', identity });
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -222,7 +219,7 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
       () => void pull()
     );
 
-    const unsubscribe = engine.subscribe(setStatus);
+    const unsubscribe = engine.subscribe((next) => dispatch({ type: 'syncStatus', status: next }));
     const unsubscribeWrites = store.subscribeWrites(() => {
       requestPersistentStorageOnce();
       void readIntoState(store).catch(() => {});
