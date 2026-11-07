@@ -32,6 +32,8 @@ do { Start-Sleep 2 } while (-not (Get-NetTCPConnection -LocalPort 3000 -State Li
 taskkill /PID $p.Id /T /F
 ```
 
+**A case Playwright cannot reach belongs to the browser tool.** A real signed-in account, a live push subscription, an interactive challenge, a deployed preview, a third-party dashboard: drive the owner's own browser through the `browse` MCP server instead of contorting a spec. It never becomes a gate, a spec or a CI step — [docs/agents/browser.md](docs/agents/browser.md).
+
 **Work in a worktree — never commit in a tree another agent may be writing to.** The canonical checkout is shared, and concurrent `git` there has silently lost a commit and published other agents' unpushed work. Create a worktree from local `main` — `worktree_create`, or `git worktree add -b <task> <dir> main` after the landing sync (never `origin/main`, [ADR-0072](docs/adr/0072-worktrees-are-cut-from-local-main.md)) — land your work by pushing from it, then remove it. Setup and cleanup: [docs/agents/worktrees.md](docs/agents/worktrees.md).
 
 **A branch never carries a local `main` squash copy.** The copies are the checkout's record; a copy and GitHub's squash of the same pull request are two different commits, so a branch stacked on one conflicts on every file both sides touched the moment the lower request lands (#831, #832, #833). `npm run check:branch-base` refuses one (the pre-push hook runs it), `npm run sync:base` rebases onto `origin/main` — or onto the open pull request's branch when the work depends on it — and then `git push --force-with-lease`. [landing.md](docs/agents/landing.md), step 2a.
@@ -74,6 +76,7 @@ Write for the user, in Arabic, not about the code: no file names, versions, comm
 - [Android shell (APK / AAB)](docs/mobile/android-shell.md)
 - [Working in a worktree](docs/agents/worktrees.md)
 - [Landing the work](docs/agents/landing.md)
+- [Driving the owner's browser](docs/agents/browser.md)
 - [Agent cost & the Go allowance](docs/agents/cost.md)
 
 ## Agent skills
