@@ -133,6 +133,7 @@ function toMessage(
     editedAt: record.editedAt,
     deletedAt: record.deletedAt,
     createdAt: record.createdAt,
+    clientId: record.clientId,
     attachments,
     replyTo,
   };
@@ -561,7 +562,13 @@ export class ChatService {
     }
   }
 
-  /** Post a line, and mark everything before it read for the writer. */
+  /**
+   * Post a line, and mark everything before it read for the writer.
+   *
+   * A line that arrives with a `clientId` is replay-safe (#1033): a retry after
+   * a reconnect answers the message the first attempt stored, so the outbox can
+   * push the same intent twice and the thread still holds one bubble.
+   */
   async sendMessage(
     userId: string,
     conversationId: string,
@@ -582,6 +589,7 @@ export class ChatService {
       senderKind: 'user',
       body,
       replyToId: input.replyToId ?? null,
+      clientId: input.clientId ?? null,
       attachments: input.attachments,
     });
 

@@ -86,6 +86,7 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
+    clientId: row.client_id,
   };
 }
 
@@ -106,6 +107,27 @@ function toAttachment(row: AttachmentRow): ChatAttachmentRecord {
  * own client, so RLS — not this file — decides which rows exist for it.
  */
 export function createSupabaseChatRepository(supabase: SupabaseClient<Database>): ChatRepository {
+  /**
+   * The row a replayed write already made (#1033), or null when the collision
+   * was not this writer's. Read through the caller's own RLS, like every other
+   * query here.
+   */
+  async function findReplay(senderId: string | null, clientId: string): Promise<MessageRow | null> {
+    if (!senderId) return null;
+
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('sender_id', senderId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (error && !isNotFoundError(error)) {
+      throw repositoryFailure('chat.findReplayedMessage', error);
+    }
+    return data;
+  }
+
   return {
     async listThreads() {
       const { data, error } = await supabase.rpc('list_chat_threads');
@@ -366,11 +388,22 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
           sender_kind: input.senderKind,
           body: input.body,
           reply_to_id: input.replyToId ?? null,
+          client_id: input.clientId ?? null,
         })
         .select()
         .single();
 
-      if (error) throw repositoryFailure('chat.insertMessage', error);
+      if (error) {
+        // A line queued offline is replayed when the connection returns
+        // (#1033): the second attempt collides with the row the first one
+        // wrote, and that row — with the attachments it already has — is the
+        // answer. A collision without a client id is still an outage.
+        if (input.clientId && underlyingCode(error) === UNIQUE_VIOLATION) {
+          const replayed = await findReplay(input.senderId, input.clientId);
+          if (replayed) return { record: toMessage(replayed), attachmentFailure: null };
+        }
+        throw repositoryFailure('chat.insertMessage', error);
+      }
 
       const attachments = input.attachments ?? [];
       if (attachments.length > 0 && input.senderId) {
