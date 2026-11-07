@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import {
-  atoms,
-  classAtoms,
-  classLists,
-  classNameLists,
-  expandBraces,
-  maskComments,
-} from '../check-layers.mjs';
+import { atoms, classAtoms, classLists, expandBraces, maskComments } from '../check-layers.mjs';
 
 describe('atoms', () => {
   it('expands the sides of a shorthand so `py-4` and `pt-5` can be compared', () => {

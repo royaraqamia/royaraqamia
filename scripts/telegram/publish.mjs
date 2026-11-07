@@ -29,8 +29,6 @@ const LABEL = 'telegram';
 export const CONVENTIONAL_TITLE =
   /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9.-]+\))?!?: \S.{0,70}$/;
 
-const TYPES = ['feat', 'fix', 'chore', 'docs', 'test', 'refactor', 'perf', 'style', 'build', 'ci'];
-
 const TITLE_PROMPT = [
   'Write one git commit title for the change described below, and nothing else.',
   'Format: type(scope): summary',
