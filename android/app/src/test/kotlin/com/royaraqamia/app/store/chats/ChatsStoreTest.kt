@@ -114,10 +114,11 @@ class ChatsStoreTest {
     }
 
     @Test
-    fun `a header without its list row is dropped`() = runBlocking {
-        dao.upsertHeader(ChatHeaderRow("orphan", "{}", 1))
-        dao.dropOrphanHeaders()
-        assertNull(dao.header("orphan"))
+    fun `a header survives without its list row, which is a deep link`() = runBlocking {
+        // Opening a notification's thread URL caches the header before the list
+        // has ever been read; the header is pruned by age, never by the list.
+        dao.upsertHeader(ChatHeaderRow("deep-link", "{}", 1))
+        assertNotNull(dao.header("deep-link"))
     }
 
     @Test

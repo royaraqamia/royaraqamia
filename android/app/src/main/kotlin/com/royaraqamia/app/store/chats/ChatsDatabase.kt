@@ -109,10 +109,6 @@ interface ChatsDao {
     @Upsert
     suspend fun upsertHeader(row: ChatHeaderRow)
 
-    /** A header without its list row is not a thread the tab offers any more. */
-    @Query("DELETE FROM headers WHERE id NOT IN (SELECT id FROM threads)")
-    suspend fun dropOrphanHeaders()
-
     @Query("DELETE FROM headers WHERE storedAt < :cutoff")
     suspend fun pruneHeaders(cutoff: Long)
 
