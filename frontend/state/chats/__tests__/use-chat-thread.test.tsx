@@ -1,6 +1,8 @@
+import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import { useEffect } from 'react';
+import { IDBFactory } from 'fake-indexeddb';
 
 const api = vi.hoisted(() => ({
   deleteChatMessage: vi.fn(),
@@ -44,7 +46,28 @@ vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
   uploadChatAttachment: attachments.uploadChatAttachment,
 }));
 
+vi.mock('@/frontend/state/use-local-identity', () => ({
+  useLocalIdentity: () => ({
+    identity: 'user:u-1',
+    sessionUserId: 'u-1',
+    isLoading: false,
+    isUnconfirmed: false,
+  }),
+}));
+
 import { useChatThread, type ChatThreadState } from '@/frontend/state/chats/use-chat-thread';
+import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
+import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+
+// A fresh factory per test: the store registry is keyed by it, so one test's
+// cached thread cannot paint in the next (#1033).
+beforeEach(() => {
+  Object.defineProperty(globalThis, 'indexedDB', {
+    value: new IDBFactory(),
+    configurable: true,
+    writable: true,
+  });
+});
 
 let captured: ChatThreadState | null = null;
 
@@ -206,6 +229,9 @@ describe('useChatThread read watermark', () => {
     await act(async () => {
       onChange?.();
     });
+    // The read paints the new line before the return; the watermark follows the
+    // paint, not the fetch.
+    await waitFor(() => expect(captured?.messages).toHaveLength(2));
     expect(api.markChatRead).toHaveBeenCalledTimes(1);
 
     setVisibility('visible');
@@ -254,5 +280,92 @@ describe('useChatThread invite', () => {
     await act(async () => {
       await expect(state.invite(['peer-2'])).resolves.toBe('تعذّرت دعوة الأعضاء');
     });
+  });
+});
+
+/**
+ * The thread reads from the device first (#1033): its header and the newest
+ * lines are drawn from `chats__<identity>` before the network answers, which is
+ * what makes a reload with no signal show the conversation instead of a spinner.
+ */
+describe('useChatThread cache', () => {
+  const quota = {
+    fileBytes: 1_000,
+    today: { usedBytes: 0, limitBytes: 10_000 },
+    total: { usedBytes: 0, limitBytes: 100_000 },
+    project: { usedBytes: 0, limitBytes: 500_000 },
+  };
+
+  const cachedThread: ChatThread = {
+    id: 'c-1',
+    kind: 'direct',
+    status: 'active',
+    title: 'سارة',
+    counterpart: null,
+    myStatus: 'active',
+    lastMessage: null,
+    unreadCount: 0,
+    lastMessageAt: '2026-11-01T10:00:00.000Z',
+    createdAt: '2026-11-01T09:00:00.000Z',
+    participants: [],
+    me: null,
+    blockedByMe: false,
+    canWrite: true,
+    attachmentQuota: quota,
+  };
+
+  const cachedMessage: ChatMessage = {
+    id: 'm-1',
+    conversationId: 'c-1',
+    senderId: 'u-2',
+    senderKind: 'user',
+    body: 'السلام عليكم',
+    replyToId: null,
+    editedAt: null,
+    deletedAt: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+    attachments: [],
+    replyTo: null,
+  };
+
+  beforeEach(() => {
+    captured = null;
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+    api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
+  });
+
+  it('paints the cached header and lines when the read fails', async () => {
+    const store = await ChatsLocalStore.open('user:u-1');
+    await store.saveThread(cachedThread);
+    await store.saveMessages('c-1', [cachedMessage], { replace: true });
+    store.close();
+
+    api.getChatThread.mockReset().mockRejectedValue(new Error('تعذّر الاتصال بالخادم'));
+    api.getChatMessages.mockReset().mockRejectedValue(new Error('تعذّر الاتصال بالخادم'));
+
+    const state = await renderThread();
+
+    expect(state.thread?.id).toBe('c-1');
+    expect(state.messages.map((message) => message.id)).toEqual(['m-1']);
+  });
+
+  it('writes the answered page down for the next entry', async () => {
+    api.getChatThread.mockReset().mockResolvedValue(cachedThread);
+    api.getChatMessages
+      .mockReset()
+      .mockResolvedValue({ messages: [cachedMessage], nextCursor: null });
+
+    await renderThread();
+
+    const store = await ChatsLocalStore.open('user:u-1');
+    const [thread, messages] = await Promise.all([
+      store.getThread('c-1'),
+      store.getMessages('c-1'),
+    ]);
+    store.close();
+
+    expect(thread?.title).toBe('سارة');
+    expect(messages.map((message) => message.id)).toEqual(['m-1']);
   });
 });

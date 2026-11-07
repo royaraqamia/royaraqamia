@@ -1160,7 +1160,10 @@ function MessageRow({
   const editable = mine && !deleted && canEditChatMessage(message.createdAt);
 
   return (
-    <div className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}>
+    <div
+      data-chat-message={message.id}
+      className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}
+    >
       {message.replyTo && (
         <p className="max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground">
           {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : (message.replyTo.body ?? '')}

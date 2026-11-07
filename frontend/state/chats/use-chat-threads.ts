@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSession } from '@/frontend/state/session-provider';
 import {
@@ -9,6 +9,15 @@ import {
   startDirectChat,
   subscribeToChatList,
 } from '@/frontend/api/chats';
+import { ChatsLocalStore, type StoredThread } from '@/frontend/api/chats/local-store';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
+import { logger } from '@/frontend/shared/logger';
 import type { ChatConversationSummary } from '@/shared/contracts/chat';
 
 /**
@@ -23,15 +32,33 @@ function failureOf(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+/** The list's snapshot route (#495): the rows the tab last painted (#1033). */
+export const CHATS_SNAPSHOT_ROUTE = 'chats';
+
+interface ChatsListSnapshot {
+  threads: StoredThread[];
+}
+
+/** The byte budget's second pass over the list. */
+function trimChatsList(data: ChatsListSnapshot): ChatsListSnapshot | null {
+  const threads = halveList(data.threads);
+  return threads.length === 0 ? null : { threads };
+}
+
 export interface ChatThreadsState {
   threads: ChatConversationSummary[];
   unreadCount: number;
   isLoading: boolean;
   /**
-   * Why the last read failed, or null when it answered. The tab draws the
-   * failure as its own face: an unreachable server is not "you have no
-   * conversations" (ADR-0031), so the reason is kept rather than the list
-   * silently emptying.
+   * Rows are on screen: the store answered, or the last painted list stands in
+   * (#1033). The tab draws its failure face only when this is false, because an
+   * unreachable server with a cached list is not "you have no conversations"
+   * (ADR-0031).
+   */
+  painted: boolean;
+  /**
+   * Why the last read failed, or null when it answered. With a cached list the
+   * tab keeps drawing the rows and the reason is kept for the next empty read.
    */
   error: unknown;
   refresh: () => Promise<void>;
@@ -43,38 +70,95 @@ export interface ChatThreadsState {
  * The Chats tab's list: the threads the caller can see, their unread total and
  * the two writes the list itself owns (answering a request, opening a thread).
  *
- * Realtime is a hint, never a payload (ADR-0060): an event means "pull again",
- * so the row's title, preview and unread count all come from the same read that
- * painted the rest of the list.
+ * The read paints from the device first (#1033): the list's twenty rows live in
+ * `chats__<identity>`, so a cold navigation or a phone with no signal shows the
+ * conversations it already knew instead of a spinner, and the network answer
+ * replaces them when it arrives. Realtime is a hint, never a payload (ADR-0060):
+ * an event means "pull again".
  */
-export function useChatThreads(enabled: boolean): ChatThreadsState {
+export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatThreadsState {
   const { user } = useSession();
   const [threads, setThreads] = useState<ChatConversationSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const storeRef = useRef<ChatsLocalStore | null>(null);
+
+  const ready = readyFor === identity;
+  // The last screen this identity painted (#495), read during render: the rows
+  // are on the device already, and opening the store is asynchronous.
+  const snapshot = useSnapshot<ChatsListSnapshot>(identity, CHATS_SNAPSHOT_ROUTE);
 
   const refresh = useCallback(async () => {
-    if (!enabled || !user) {
+    if (!enabled) {
       setThreads([]);
       setError(null);
-      setIsLoading(false);
       return;
     }
 
     try {
-      setThreads(await getChatThreads());
+      const rows = await getChatThreads();
+      // Write the answer down before painting it, so the next cold start reads
+      // exactly what this one drew.
+      await storeRef.current?.saveThreads(rows);
+      setThreads(rows);
       setError(null);
     } catch (cause) {
-      setThreads([]);
+      // The device's rows stay on screen; only a read with nothing cached is a
+      // failure the tab draws.
       setError(cause);
-    } finally {
-      setIsLoading(false);
     }
-  }, [enabled, user]);
+  }, [enabled]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!enabled) {
+      storeRef.current = null;
+      setThreads([]);
+      setReadyFor(null);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    let opened: ChatsLocalStore | null = null;
+
+    ChatsLocalStore.open(identity)
+      .then(async (store) => {
+        opened = store;
+        if (cancelled) return store.close();
+
+        // Thirty days is the retention the cache promises (#1033): sweep before
+        // painting, so a month-old conversation cannot come back from the dead.
+        await store.prune();
+        if (cancelled) return store.close();
+
+        const cached = await store.getThreads();
+        if (cancelled) return store.close();
+
+        storeRef.current = store;
+        if (cached.length > 0) setThreads(cached);
+        setReadyFor(identity);
+
+        store.subscribeWrites(() => {
+          void store.getThreads().then((rows) => {
+            if (!cancelled) setThreads(rows);
+          });
+        });
+
+        await refresh();
+      })
+      .catch((cause) => {
+        // A store that cannot open is a cache that is not there, not a broken
+        // tab: the read below is still what the member came for.
+        logger.error('Failed to open the Chats Local Store', { error: String(cause) });
+        if (!cancelled) setReadyFor(identity);
+      });
+
+    return () => {
+      cancelled = true;
+      opened?.close();
+      storeRef.current = null;
+    };
+  }, [enabled, identity, refresh]);
 
   useEffect(() => {
     if (!enabled || !user) return;
@@ -115,5 +199,27 @@ export function useChatThreads(enabled: boolean): ChatThreadsState {
     [refresh]
   );
 
-  return { threads, unreadCount, isLoading, error, refresh, respond, start };
+  // What the list paints with, and what it records (#495): the store's rows once
+  // they have answered, the last painted screen before that.
+  const rendered = useMemo(
+    () => (ready ? threads : ((snapshot?.threads ?? []) as ChatConversationSummary[])),
+    [ready, threads, snapshot]
+  );
+
+  const recorded = useMemo(
+    () => (ready ? { threads: screenful(threads) as StoredThread[] } : null),
+    [ready, threads]
+  );
+  useSnapshotRecorder(identity, CHATS_SNAPSHOT_ROUTE, recorded, { trim: trimChatsList });
+
+  return {
+    threads: rendered,
+    unreadCount,
+    isLoading: !ready && snapshot === null,
+    painted: rendered.length > 0,
+    error,
+    refresh,
+    respond,
+    start,
+  };
 }

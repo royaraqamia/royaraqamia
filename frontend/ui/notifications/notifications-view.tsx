@@ -23,6 +23,7 @@ import type { NotificationWithMeta } from '@/shared/contracts/notifications';
 import { cn } from '@/frontend/shared/cn';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
@@ -76,12 +77,14 @@ function defaultTab(notifications: NotificationWithMeta[], unreadChats: number):
 
 export function NotificationsView() {
   const { user } = useSession();
+  const { identity } = useLocalIdentity();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
-  const chats = useChatThreads(Boolean(user));
+  // The badge reads the same device-first list the tab draws (#1033).
+  const chats = useChatThreads(Boolean(user), identity);
 
   const baseId = useId();
   const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});

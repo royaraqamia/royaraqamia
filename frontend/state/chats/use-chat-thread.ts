@@ -23,6 +23,9 @@ import {
   removeChatAttachmentObjects,
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
+import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import { logger } from '@/frontend/shared/logger';
 import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { chatThreadInitialState, chatThreadReducer } from './use-chat-thread.reducer';
@@ -77,6 +80,8 @@ export interface ChatThreadState {
 export function useChatThread(conversationId: string): ChatThreadState {
   const [state, dispatch] = useReducer(chatThreadReducer, undefined, chatThreadInitialState);
   const { thread, messages, actions, cursor, isLoading, isSending, error, readFailed } = state;
+  const { identity } = useLocalIdentity();
+  const storeRef = useRef<ChatsLocalStore | null>(null);
   /** The newest line the screen holds, stamped or not. */
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
@@ -103,6 +108,15 @@ export function useChatThread(conversationId: string): ChatThreadState {
         getChatMessages(conversationId),
       ]);
 
+      // The device keeps what the server just answered (#1033): the header and
+      // the newest page are written down before they are painted, so the next
+      // entry into this thread — or the same one with no signal — draws them.
+      const store = storeRef.current;
+      if (store) {
+        if (nextThread) await store.saveThread(nextThread);
+        await store.saveMessages(conversationId, page.messages, { replace: true });
+      }
+
       dispatch({
         type: 'readSucceeded',
         thread: nextThread,
@@ -116,13 +130,62 @@ export function useChatThread(conversationId: string): ChatThreadState {
         markSeen();
       }
     } catch {
+      // With a cached thread on screen, an unreachable server leaves it there
+      // (ADR-0031's face belongs to a thread there is nothing to draw).
       dispatch({ type: 'readFailed' });
     }
   }, [conversationId, markSeen]);
 
+  /**
+   * The thread paints from the device first (#1033): the header and the newest
+   * two hundred lines are read from `chats__<identity>` and drawn immediately,
+   * then the network answer above replaces them.
+   */
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    let opened: ChatsLocalStore | null = null;
+
+    ChatsLocalStore.open(identity)
+      .then(async (store) => {
+        opened = store;
+        if (cancelled) return store.close();
+
+        await store.prune();
+        if (cancelled) return store.close();
+
+        const [cachedThread, cachedMessages] = await Promise.all([
+          store.getThread(conversationId),
+          store.getMessages(conversationId),
+        ]);
+        if (cancelled) return store.close();
+
+        storeRef.current = store;
+        if (cachedThread || cachedMessages.length > 0) {
+          dispatch({
+            type: 'readSucceeded',
+            thread: cachedThread,
+            messages: cachedMessages,
+            actions: [],
+            // Older pages always come from the network.
+            cursor: null,
+          });
+        }
+
+        await refresh();
+      })
+      .catch((cause) => {
+        logger.error('Failed to open the Chats Local Store for a thread', {
+          error: String(cause),
+        });
+        if (!cancelled) void refresh();
+      });
+
+    return () => {
+      cancelled = true;
+      opened?.close();
+      storeRef.current = null;
+    };
+  }, [conversationId, identity, refresh]);
 
   /**
    * Coming back to the tab is what stamps what arrived while it was in the
@@ -165,6 +228,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const loadOlder = useCallback(async () => {
     if (!cursor) return;
     const page = await getChatMessages(conversationId, cursor);
+    await storeRef.current?.saveMessages(conversationId, page.messages);
     dispatch({
       type: 'olderLoaded',
       messages: page.messages,
@@ -203,6 +267,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
         }
 
         dispatch({ type: 'messageAppended', message: result.message });
+        void storeRef.current?.saveMessages(conversationId, [result.message]);
         // The thread carries the quota, so the composer's reading of it is one
         // refresh behind without this.
         void refresh();
@@ -229,6 +294,10 @@ export function useChatThread(conversationId: string): ChatThreadState {
       }
 
       dispatch({ type: 'messageReplaced', message: result.message });
+      void storeRef.current?.patchMessage(messageId, {
+        body: result.message.body,
+        editedAt: result.message.editedAt,
+      });
       return true;
     } catch (error) {
       dispatch({ type: 'errorSet', message: failureOf(error, 'تعذّر تعديل الرسالة') });
@@ -250,6 +319,11 @@ export function useChatThread(conversationId: string): ChatThreadState {
         type: 'messageTombstoned',
         messageId,
         deletedAt: new Date().toISOString(),
+      });
+      void storeRef.current?.patchMessage(messageId, {
+        body: null,
+        deletedAt: new Date().toISOString(),
+        attachments: [],
       });
       return null;
     } catch (error) {

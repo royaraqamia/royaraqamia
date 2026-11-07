@@ -53,8 +53,16 @@ describe('reading', () => {
     });
   });
 
-  it('reports a failed read as a failure, not as an empty conversation', () => {
+  it('marks a failed read without discarding a thread already painted', () => {
+    // The device's thread is what the failure must not take away (#1033): the
+    // block face belongs to a screen with nothing to draw.
     expect(chatThreadReducer(stateOf({ thread: THREAD }), { type: 'readFailed' })).toMatchObject({
+      thread: THREAD,
+      readFailed: true,
+      isLoading: false,
+    });
+
+    expect(chatThreadReducer(chatThreadInitialState(), { type: 'readFailed' })).toMatchObject({
       thread: null,
       readFailed: true,
       isLoading: false,
