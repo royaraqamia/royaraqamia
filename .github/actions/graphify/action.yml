@@ -34,13 +34,14 @@ runs:
         # the agent's own shell, which is the one that has to find `graphify`.
         bin="$(pipx environment --value PIPX_BIN_DIR 2>/dev/null || true)"
         [ -n "${bin:-}" ] || bin="$HOME/.local/bin"
-        sudo ln -sf "$bin/graphify" /usr/local/bin/graphify || true
+        if [ -x "$bin/graphify" ]; then
+          sudo ln -sf "$bin/graphify" /usr/local/bin/graphify || true
+        fi
 
-        if ! command -v graphify >/dev/null; then
+        if ! graphify --version; then
           echo "::warning title=The Graphify CLI is not on PATH::The code graph is unavailable this run; the agent falls back to grep."
           exit 0
         fi
-        graphify --version
 
         # Registers the skill and the first-command reminder in the runner's own
         # OpenCode config ($HOME/.config/opencode), the same home opencode-runner
