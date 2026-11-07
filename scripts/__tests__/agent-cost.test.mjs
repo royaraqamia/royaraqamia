@@ -83,4 +83,30 @@ describe('agent cost is chosen in the workflow, not discovered on the invoice', 
       }
     }
   });
+
+  it('gates every optional caller on the month, not only on its short windows', () => {
+    // The month is the window whose exhaustion refuses a call outright, and it is the
+    // one that cost 2026-11-06: six ninety-minute rounds, no ledger reading it.
+    for (const name of ['issue-implementer.yml', 'pr-land.yml', 'news-digest.yml']) {
+      expect(read(name), `${name} does not gate on the month`).toContain("cap-monthly-usd: '75'");
+    }
+  });
+
+  it('keeps the health monitor’s catch-up dispatches off-peak too', () => {
+    // The health workflow re-dispatches the planner and the implementer, so its ticks are
+    // agent start times: 06:00 UTC used to start a whole day at double price.
+    const cron = /-\s+cron:\s*'([^']+)'/.exec(read('issue-automation-health.yml'))[1];
+    const [minute, hours] = cron.split(/\s+/);
+    for (const hour of hours.split(',')) {
+      expect(isPeak(Number(hour) * 60 + Number(minute)), `health runs at ${cron}`).toBe(false);
+    }
+  });
+
+  it('defers a repair that would start inside a peak-price window', () => {
+    for (const name of ['issue-implementer.yml', 'pr-land.yml']) {
+      expect(read(name), `${name} does not check the peak window`).toContain(
+        "steps.budget.outputs.peak != 'true'"
+      );
+    }
+  });
 });

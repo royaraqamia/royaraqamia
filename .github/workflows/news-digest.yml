@@ -105,6 +105,7 @@ jobs:
           workflow: News Digest
           cap-5h-usd: '15'
           cap-weekly-usd: '40'
+          cap-monthly-usd: '75'
 
       - name: Resolve the Damascus day
         id: day

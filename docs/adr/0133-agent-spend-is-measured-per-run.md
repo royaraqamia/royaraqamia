@@ -35,11 +35,11 @@ because the allowance had run out, which is the failure mode that repeats.
 **The schedule is set by the price, the ledger is measured per run, and the gate
 only trims.**
 
-1. **Scheduled work runs off-peak.** The planner moves to `10:15` UTC and the
-   implementer's backstop to `10:45`, so the planner's dispatch hands the
-   implementer the long off-peak stretch (`10:00`–`01:00` UTC) instead of starting
-   it inside one. The news digest moves to `23:30` UTC, still the small hours in
-   Damascus. Nothing about the work changes; the same tokens count half.
+1. **Scheduled work runs off-peak.** The planner moves to `10:15` UTC (the pg_cron
+   job included) and the implementer's backstop to `12:45`, so the planner's own
+   dispatch hands the implementer the long off-peak stretch (`10:00`–`01:00` UTC)
+   instead of starting it inside one. The news digest moves to `23:30` UTC, still the
+   small hours in Damascus. Nothing about the work changes; the same tokens count half.
 
 2. **Default reasoning depth, same model.** `variant: high` is removed from the
    implementer, `/oc` and the news digest. That is a real saving: the variant buys
@@ -61,9 +61,9 @@ only trims.**
    step**; a missing secret or CLI ends as "nothing recorded".
 
 4. **The gate is soft.** Before an autonomous run, the same module sums the
-   allowance in the last five hours and the last seven days and answers
-   `soft=true` at three quarters of each window ($15 and $40). `soft` never stops
-   the thing the owner asked for. It trims what is optional:
+   allowance in the last five hours, the last seven days and the last thirty days
+   and answers `soft=true` at three quarters of each window ($15, $40 and $75).
+   `soft` never stops the thing the owner asked for. It trims what is optional:
    - the implementer runs **one** round instead of six;
    - PR Landing **merges on green** but defers the agent repair to the next pass;
    - the news digest publishes the **shared** digest and defers the per-reader
@@ -72,6 +72,22 @@ only trims.**
 
    Every caller reads a missing or failed answer as "not soft", so a broken ledger
    cannot stop work.
+
+   **Amendment (2026-11-07).** The month is a window too, and it is the one whose
+   exhaustion refuses every call outright (`GoUsageLimitError`). On 2026-11-06 the
+   plan's monthly limit was hit and the implementer spent six ninety-minute rounds
+   proving it, because the gate only looked at five hours and seven days. The
+   thirty-day sum closes that gap; the threshold stays three quarters of the
+   window ($75 of $100).
+
+   **Amendment (2026-11-07, the clock).** The workflow's `schedule` is not the only
+   trigger. The planner's primary trigger is the pg_cron job, and it was still
+   03:00 UTC after the workflow moved to 10:15, so the daily run that matters was
+   billed at double price. The job moves to 10:15
+   (`20261115160000_dispatch_the_planner_off_peak.sql`), the implementer's backstop
+   moves to 12:45 so the planner's own dispatch goes first, the health monitor's
+   six-hour ticks avoid the peak windows, and the gate answers `peak` so a repair
+   that would start inside one is deferred instead of paid for at double.
 
 5. **PR Landing stops retrying what an agent cannot fix.** A provider refusal
    (429, budget, capacity, allowance) is detected before the repair starts and
@@ -105,7 +121,7 @@ already say.
 
 ## Consequences
 
-- The daily automation now runs in the afternoon in Damascus (13:15/13:45) rather
+- The daily automation now runs in the afternoon in Damascus (13:15/15:45) rather
   than the early morning, because the implementer's six rounds need the whole
   off-peak stretch. The digest keeps its before-morning slot.
 - Under allowance pressure a day produces one implemented issue instead of six.

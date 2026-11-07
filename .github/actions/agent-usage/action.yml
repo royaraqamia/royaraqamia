@@ -1,10 +1,10 @@
 name: 'Agent usage'
 description: >-
   Records what an OpenCode agent step spent against the Go allowance, or answers
-  whether the current five-hour/weekly allowance is nearly spent. Best-effort by
-  construction: a missing ledger secret, an absent CLI or an unrecognised payload
-  is reported as "no data", and the gate fails open so a broken measurement can
-  never stop work (ADR-0133).
+  whether the current five-hour, weekly or monthly allowance is nearly spent.
+  Best-effort by construction: a missing ledger secret, an absent CLI or an
+  unrecognised payload is reported as "no data", and the gate fails open so a
+  broken measurement can never stop work (ADR-0133).
 
 inputs:
   mode:
@@ -26,6 +26,10 @@ inputs:
     description: 'Soft cap for the last seven days, in dollars of the plan allowance.'
     required: false
     default: '40'
+  cap-monthly-usd:
+    description: 'Soft cap for the last thirty days, in dollars of the plan allowance.'
+    required: false
+    default: '75'
 
 outputs:
   soft:
@@ -40,6 +44,12 @@ outputs:
   allowance_7d_usd:
     description: 'Allowance recorded in the last seven days.'
     value: ${{ steps.run.outputs.allowance_7d_usd }}
+  allowance_30d_usd:
+    description: 'Allowance recorded in the last thirty days.'
+    value: ${{ steps.run.outputs.allowance_30d_usd }}
+  peak:
+    description: "true when the current UTC time is inside DeepSeek's double-price window."
+    value: ${{ steps.run.outputs.peak }}
 
 runs:
   using: 'composite'
@@ -53,6 +63,7 @@ runs:
         ROUND: ${{ inputs.round }}
         CAP_5H_USD: ${{ inputs.cap-5h-usd }}
         CAP_WEEKLY_USD: ${{ inputs.cap-weekly-usd }}
+        CAP_MONTHLY_USD: ${{ inputs.cap-monthly-usd }}
       # `|| true`: the script already swallows its own failures, and a composite
       # action cannot carry `continue-on-error` into the caller. A gate that did
       # not answer leaves `soft` empty, which every caller reads as "not soft".

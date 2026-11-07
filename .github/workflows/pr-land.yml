@@ -182,6 +182,7 @@ jobs:
           workflow: PR Landing
           cap-5h-usd: '15'
           cap-weekly-usd: '40'
+          cap-monthly-usd: '75'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -262,7 +263,11 @@ jobs:
         # One attempt, not a loop: the next attempt is the next sweep, two hours later, on
         # a runner that starts clean. A second red result inside the same run would only
         # spend the agent on the same tree twice.
-        if: steps.gate.outputs.skip != 'true' && steps.land.outputs.status == 'red' && steps.budget.outputs.soft != 'true'
+        #
+        # The sweep itself runs every two hours for the merge, but the repair is deferred
+        # when it would start inside DeepSeek's double-price window: a green merge costs no
+        # model, and the next off-peak sweep repairs the pull request at half the price.
+        if: steps.gate.outputs.skip != 'true' && steps.land.outputs.status == 'red' && steps.budget.outputs.soft != 'true' && steps.budget.outputs.peak != 'true'
         timeout-minutes: 60
         env:
           AGENT_PUSH_TOKEN: ${{ secrets.AGENT_PUSH_TOKEN }}

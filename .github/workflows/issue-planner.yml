@@ -278,7 +278,7 @@ jobs:
                ## Files
                ## Acceptance criteria
                ## Non-goals
-            8. Write the result to /tmp/issues.json using the Write tool — a JSON array of objects `{ "title": string, "body": string, "labels": string[] }`. Use a clear title of the form `type(scope): description`. `labels` may add `bug`, `enhancement` or `documentation`, but never `ready-for-agent` or any `opencode:*` label (the workflow adds those). If nothing is worth filing, write exactly `[]`.
+            8. Write the result to /tmp/issues.json using the Write tool — a JSON array of objects `{ "title": string, "body": string, "labels": string[] }`. Use a clear title of the form `type(scope): description`. `labels` may add `bug`, `enhancement` or `documentation`, but never `ready-for-agent` or any `opencode:*` label (the workflow adds those). Write the file after each finding you keep, not once at the end: this run has a wall clock, and a run the runner stops must still publish what it proved. If nothing is worth filing, write exactly `[]`.
 
             Write ONLY to /tmp/issues.json. Your chat response is ignored; the JSON file is the deliverable.
 
@@ -298,7 +298,11 @@ jobs:
 
       - name: Publish issues
         id: publish
-        if: steps.plan.outcome == 'success'
+        # `always()` on purpose: the step runner kills the plan step at its wall clock, and
+        # a run that explored for seventy minutes must still file what it proved. The
+        # planner writes each kept finding as it goes, so the file is a checkpoint rather
+        # than a last line; an absent or unreadable file publishes nothing, as before.
+        if: always() && steps.guard.outputs.run == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
