@@ -10,6 +10,7 @@ import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenRefresher
 import com.royaraqamia.app.store.MemoryIdentityStorage
+import com.royaraqamia.app.store.PublicSnapshotStore
 import com.royaraqamia.app.support.RecordingTransport
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -71,11 +72,10 @@ class CommunityFeedRepositoryTest {
             MemoryIdentityStorage(),
         )
 
-    private fun repository(transport: RecordingTransport, store: CommunityFeedSnapshotStore) =
+    private fun repository(transport: RecordingTransport, store: PublicSnapshotStore) =
         CommunityFeedRepository(ApiClient("https://app.test", guest(), transport), store)
 
-    private fun store(): CommunityFeedSnapshotStore =
-        CommunityFeedSnapshotStore(temporary.newFolder("community"))
+    private fun store(): PublicSnapshotStore = PublicSnapshotStore(temporary.newFolder("public"))
 
     @Test
     fun `a page the server answered is live and kept for later`() {
@@ -89,7 +89,7 @@ class CommunityFeedRepositoryTest {
         assertEquals("first-post", page.posts.single().slug)
         assertEquals("أحمد", page.posts.single().author?.name)
         assertEquals("cursor-1", page.nextCursor)
-        assertNotNull(snapshot.read())
+        assertNotNull(snapshot.read(CommunityFeedRepository.SNAPSHOT_SURFACE))
     }
 
     @Test
@@ -108,7 +108,7 @@ class CommunityFeedRepositoryTest {
     @Test
     fun `a read that failed falls back to the last page kept`() {
         val snapshot = store()
-        snapshot.save(body)
+        snapshot.save(CommunityFeedRepository.SNAPSHOT_SURFACE, body)
         val transport = RecordingTransport { throw IOException("offline") }
 
         val result = runBlocking { repository(transport, snapshot).firstPage() }
@@ -130,7 +130,7 @@ class CommunityFeedRepositoryTest {
     @Test
     fun `a kept page the contract can no longer read is not the feed`() {
         val snapshot = store()
-        snapshot.save("""{"posts":[{"id":"p-1"}]}""")
+        snapshot.save(CommunityFeedRepository.SNAPSHOT_SURFACE, """{"posts":[{"id":"p-1"}]}""")
         val transport = RecordingTransport { HttpResponse(500, "{}") }
 
         val result = runBlocking { repository(transport, snapshot).firstPage() }
@@ -155,7 +155,10 @@ class CommunityFeedRepositoryTest {
         assertTrue(next is ApiResult.Success)
 
         repository.remember(first.page.posts, "cursor-2")
-        val kept = ContractCodec.decode<com.royaraqamia.app.contracts.generated.CommunityIndexResponse>(snapshot.read().orEmpty())
+        val kept =
+            ContractCodec.decode<com.royaraqamia.app.contracts.generated.CommunityIndexResponse>(
+                snapshot.read(CommunityFeedRepository.SNAPSHOT_SURFACE).orEmpty()
+            )
         assertTrue(kept is ApiResult.Success)
         val page = (kept as ApiResult.Success).value
         assertEquals("cursor-2", page.nextCursor)

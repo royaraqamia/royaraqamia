@@ -7,7 +7,6 @@ import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
-import com.royaraqamia.app.community.CommunityFeedSnapshotStore
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
@@ -18,7 +17,6 @@ import com.royaraqamia.app.quran.AssetQuranRepository
 import com.royaraqamia.app.quran.PreferencesQuranPositionStore
 import com.royaraqamia.app.quran.QuranRepository
 import com.royaraqamia.app.rates.RatesRepository
-import com.royaraqamia.app.rates.RatesSnapshotStore
 import com.royaraqamia.app.shell.PreferencesServicesOrderStore
 import com.royaraqamia.app.shell.ServicesOrderStore
 import com.royaraqamia.app.session.EncryptedTokenStore
@@ -29,6 +27,7 @@ import com.royaraqamia.app.session.SignInOutcome
 import com.royaraqamia.app.session.SupabasePasswordGrant
 import com.royaraqamia.app.session.SupabaseTokenRefresher
 import com.royaraqamia.app.store.IdentityScopedStore
+import com.royaraqamia.app.store.PublicSnapshotStore
 import com.royaraqamia.app.store.PreferencesIdentityStorage
 import com.royaraqamia.app.store.blogpress.BlogpressRepository
 import com.royaraqamia.app.store.blogpress.BlogpressStores
@@ -229,6 +228,12 @@ class AppGraph private constructor(
                 )
             val client = ApiClient(siteUrl, session)
 
+            // One snapshot store for every public surface (#928): a surface names
+            // its key, so the feed and the rates board cannot overwrite each
+            // other and the rule in docs/specs/offline-first.md is one
+            // implementation rather than a file per screen.
+            val publicSnapshots = PublicSnapshotStore(File(context.filesDir, "public-snapshots"))
+
             // One database per identity, per product, opened on first use and
             // closed when the identity changes (ADR-0027, #768). The names are
             // the web's, so a device dump reads the same on both clients.
@@ -272,12 +277,8 @@ class AppGraph private constructor(
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
-                rates = RatesRepository(client, RatesSnapshotStore(File(context.filesDir, "rates"))),
-                community =
-                    CommunityFeedRepository(
-                        client,
-                        CommunityFeedSnapshotStore(File(context.filesDir, "community")),
-                    ),
+                rates = RatesRepository(client, publicSnapshots),
+                community = CommunityFeedRepository(client, publicSnapshots),
                 chats =
                     ChatsRepository(
                         client = client,

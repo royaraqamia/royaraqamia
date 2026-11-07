@@ -1,32 +1,34 @@
 package com.royaraqamia.app.rates
 
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.session.MemoryTokenStore
 import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenRefresher
 import com.royaraqamia.app.store.MemoryIdentityStorage
+import com.royaraqamia.app.store.PublicSnapshotStore
 import com.royaraqamia.app.support.RecordingTransport
+import java.io.IOException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.IOException
 
 /**
- * The snapshot the matrix promises for `/rates` (#658).
+ * The snapshot the shared public-surface rule promises for `/rates` (#658, #928).
  *
- * The page the worker caches keeps painting its last numbers with the radio off, so
- * the app must not be the client that says "nothing to show" where the browser
- * shows yesterday's board. What is asserted here is the order of the two facts: a
- * board the server answered is kept, and only a read that failed may fall back to
- * it — a kept board is never preferred over a live one, and one the contract can no
- * longer read is not a board.
+ * The rule (`docs/specs/offline-first.md`) is the same for every public surface:
+ * a board the server answered is kept, and only a read that failed may fall back
+ * to it — a kept board is never preferred over a live one, and one the contract
+ * can no longer read is not a board. The store is shared with the feed, so the
+ * test also proves the surface key is what keeps the two apart.
  */
 class RatesRepositoryTest {
     @get:Rule val temporary = TemporaryFolder()
@@ -63,10 +65,10 @@ class RatesRepositoryTest {
             MemoryIdentityStorage(),
         )
 
-    private fun repository(transport: RecordingTransport, store: RatesSnapshotStore) =
+    private fun repository(transport: RecordingTransport, store: PublicSnapshotStore) =
         RatesRepository(ApiClient("https://app.test", guest(), transport), store)
 
-    private fun store(): RatesSnapshotStore = RatesSnapshotStore(temporary.newFolder("rates"))
+    private fun store(): PublicSnapshotStore = PublicSnapshotStore(temporary.newFolder("public"))
 
     @Test
     fun `a board the server answered is live and kept for later`() {
@@ -77,7 +79,7 @@ class RatesRepositoryTest {
 
         assertTrue(result is RatesResult.Live)
         assertEquals("USD", (result as RatesResult.Live).board.base)
-        val kept = snapshot.read()
+        val kept = snapshot.read(RatesRepository.SNAPSHOT_SURFACE)
         assertNotNull("the read is kept", kept)
         assertTrue("the kept body is the board", kept!!.contains("\"SYP\""))
 
@@ -89,7 +91,7 @@ class RatesRepositoryTest {
 
     @Test
     fun `a read that never reached the server falls back to the kept board`() {
-        val kept = store().also { it.save(body) }
+        val kept = store().also { it.save(RatesRepository.SNAPSHOT_SURFACE, body) }
         val transport = RecordingTransport { throw IOException("offline") }
 
         val result = runBlocking { repository(transport, kept).board() }
@@ -100,7 +102,7 @@ class RatesRepositoryTest {
 
     @Test
     fun `a refusal is answered from the kept board too`() {
-        val kept = store().also { it.save(body) }
+        val kept = store().also { it.save(RatesRepository.SNAPSHOT_SURFACE, body) }
         val transport = RecordingTransport { HttpResponse(503, "maintenance") }
 
         val result = runBlocking { repository(transport, kept).board() }
@@ -109,72 +111,48 @@ class RatesRepositoryTest {
     }
 
     @Test
-    fun `with nothing kept there is nothing to show`() {
+    fun `with nothing kept there is nothing to show, and the failure is kept`() {
         val transport = RecordingTransport { throw IOException("offline") }
 
         val result = runBlocking { repository(transport, store()).board() }
 
-        assertEquals(RatesResult.Unavailable, result)
+        assertTrue(result is RatesResult.Unavailable)
+        assertTrue((result as RatesResult.Unavailable).error is ApiError.Network)
     }
 
     @Test
     fun `a kept file the contract can no longer read is not a board`() {
-        val stale = store().also { it.save("""{"base":"USD"}""") }
+        val stale = store().also { it.save(RatesRepository.SNAPSHOT_SURFACE, """{"base":"USD"}""") }
         val transport = RecordingTransport { throw IOException("offline") }
 
         val result = runBlocking { repository(transport, stale).board() }
 
-        assertEquals(RatesResult.Unavailable, result)
+        assertTrue(result is RatesResult.Unavailable)
     }
 
     @Test
     fun `a live read replaces the kept board rather than adding to it`() {
-        val snapshot = store().also { it.save("""{"base":"OLD"}""") }
+        val folder = temporary.newFolder("public")
+        val snapshot = PublicSnapshotStore(folder)
+        snapshot.save(RatesRepository.SNAPSHOT_SURFACE, """{"base":"OLD"}""")
         val transport = RecordingTransport { HttpResponse(200, body) }
 
         val result = runBlocking { repository(transport, snapshot).board() }
 
         assertTrue(result is RatesResult.Live)
-        val kept = snapshot.read()
+        val kept = snapshot.read(RatesRepository.SNAPSHOT_SURFACE)
         assertTrue(kept!!.contains("\"USD\""))
-        assertEquals("one file, not an archive", 1, temporary.root.listFiles()!!.size)
-    }
-}
-
-/** The file the snapshot lives in: written atomically, read only when present. */
-class RatesSnapshotStoreTest {
-    @get:Rule val temporary = TemporaryFolder()
-
-    @Test
-    fun `a saved body is the body that comes back`() {
-        val store = RatesSnapshotStore(temporary.newFolder("rates"))
-        store.save("""{"base":"USD"}""")
-
-        assertEquals("""{"base":"USD"}""", store.read())
+        assertEquals("one file, not an archive", 1, folder.listFiles()!!.size)
     }
 
     @Test
-    fun `a second save replaces the first`() {
-        val directory = temporary.newFolder("rates")
-        val store = RatesSnapshotStore(directory)
-        store.save("""{"base":"USD"}""")
-        store.save("""{"base":"SAR"}""")
-
-        assertEquals("""{"base":"SAR"}""", store.read())
-        assertEquals("the temporary file is not left behind", 1, directory.listFiles()!!.size)
-    }
-
-    @Test
-    fun `an empty directory reads as no snapshot`() {
-        assertNull(RatesSnapshotStore(temporary.newFolder("rates")).read())
-    }
-
-    @Test
-    fun `clearing drops the snapshot`() {
-        val store = RatesSnapshotStore(temporary.newFolder("rates"))
-        store.save("""{"base":"USD"}""")
-        store.clear()
-
-        assertNull(store.read())
+    fun `a request that never left is offline, a refusal is not`() {
+        assertEquals(
+            RatesUiState.Unavailable(offline = true),
+            RatesUiState.of(RatesResult.Unavailable(ApiError.Network("offline"))),
+        )
+        val refused = RatesUiState.of(RatesResult.Unavailable(ApiError.Server(500, "boom")))
+        assertTrue(refused is RatesUiState.Unavailable)
+        assertFalse((refused as RatesUiState.Unavailable).offline)
     }
 }

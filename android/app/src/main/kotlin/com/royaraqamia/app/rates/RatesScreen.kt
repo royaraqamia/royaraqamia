@@ -3,7 +3,6 @@ package com.royaraqamia.app.rates
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +25,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,7 +49,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.contracts.generated.RatesBoard
 import com.royaraqamia.app.contracts.generated.RatesBoardCurrenciesItem
-import com.royaraqamia.app.theme.LocalRoySpacing
+import com.royaraqamia.app.shared.NeedsConnection
+import com.royaraqamia.app.shared.NeedsConnectionState
+import com.royaraqamia.app.shared.ReadFailureNotice
+import com.royaraqamia.app.shared.ReadFailureState
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyShape
@@ -70,11 +71,13 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * a 1px border. The visual gate compares those boxes with the page's, so a changed
  * one fails `check:visual` instead of drifting quietly (ADR-0118).
  *
- * The offline face is the matrix's promise kept: a board that was read is kept, and
- * a read that failed shows it with the day it was quoted — the numbers carry their
- * own date, so a snapshot is "these rates, from then" and never passes itself off as
- * today's. Only with nothing kept is there nothing to show, and then the page's own
- * failure sentence is the whole screen with one way to try again.
+ * The offline face is the shared public-surface rule
+ * (`docs/specs/offline-first.md`): a board that was read is kept, and a read that
+ * failed shows it under the needs-connection line, with the day it was quoted —
+ * the numbers carry their own date, so a snapshot is "these rates, from then" and
+ * never passes itself off as today's. Only with nothing kept is there nothing to
+ * show, and then the same named state is the whole screen (or the read-failure
+ * state when the server refused rather than being unreachable).
  *
  * The loading face is drawn as the recipe's skeleton rather than a spinner: it is
  * the same shape the plan card uses, and the site has no sentence for it.
@@ -86,12 +89,7 @@ fun RatesScreen(repository: RatesRepository, modifier: Modifier = Modifier) {
 
     LaunchedEffect(repository, attempts) {
         state = null
-        state =
-            when (val result = repository.board()) {
-                is RatesResult.Live -> RatesUiState.Live(result.board)
-                is RatesResult.Snapshot -> RatesUiState.Snapshot(result.board)
-                RatesResult.Unavailable -> RatesUiState.Unavailable
-            }
+        state = RatesUiState.of(repository.board())
     }
 
     RatesScreenContent(state = state, onRetry = { attempts += 1 }, modifier = modifier)
@@ -104,6 +102,12 @@ fun RatesScreen(repository: RatesRepository, modifier: Modifier = Modifier) {
 @Composable
 internal fun RatesScreen(board: RatesBoard, modifier: Modifier = Modifier) {
     RatesScreenContent(state = RatesUiState.Live(board), onRetry = {}, modifier = modifier)
+}
+
+/** The screen over a state the caller already decided, so a test can draw each face. */
+@Composable
+internal fun RatesScreen(state: RatesUiState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    RatesScreenContent(state = state, onRetry = onRetry, modifier = modifier)
 }
 
 @Composable
@@ -146,16 +150,26 @@ private fun RatesScreenContent(
 
         when (val shown = state) {
             null -> Loading()
-            is RatesUiState.Live -> Body(shown.board)
-            is RatesUiState.Snapshot -> Body(shown.board)
-            RatesUiState.Unavailable -> Unavailable(onRetry = onRetry)
+            is RatesUiState.Live -> Body(shown.board, stale = false, onRetry = {})
+            is RatesUiState.Snapshot -> Body(shown.board, stale = true, onRetry = onRetry)
+            is RatesUiState.Unavailable -> Unavailable(offline = shown.offline, onRetry = onRetry)
         }
     }
 }
 
 /** The board's freshness line, the stale badge, and the two converters. */
 @Composable
-private fun Body(board: RatesBoard) {
+private fun Body(board: RatesBoard, stale: Boolean, onRetry: () -> Unit) {
+    if (stale) {
+        NeedsConnection(
+            message = RatesPageCopy.STALE_BADGE,
+            state = NeedsConnectionState.Inline,
+            onRetry = onRetry,
+        )
+
+        Spacer(Modifier.height(RatesMetrics.sectionGap))
+    }
+
     BoardLine(board)
 
     Spacer(Modifier.height(RatesMetrics.boardToConverter))
@@ -222,28 +236,34 @@ private fun Loading() {
 }
 
 /**
- * The page's own sentence for a screen with nothing to show.
+ * A screen with nothing to show.
  *
- * It is the whole failure — no retry button — for the same reason the page has
- * none: the board is read once per visit, and a visitor who wants another try
- * reloads. The one addition is the tap that does it here, so a phone is not a dead
- * end where the browser is a reload button.
+ * An unreachable server is the shared needs-connection state, and a refusal is the
+ * shared read-failure state (ADR-0031): the board's own failure sentence says what
+ * was lost, while the named state says why. The page reads the board once per
+ * visit; the retry is the one addition a phone needs, because it has no reload
+ * button.
  */
 @Composable
-private fun Unavailable(onRetry: () -> Unit) {
-    val spacing = LocalRoySpacing.current
-
+private fun Unavailable(offline: Boolean, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onRetry),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = RatesPageCopy.FAILURE_BODY,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        if (offline) {
+            NeedsConnection(
+                message = RatesPageCopy.FAILURE_BODY,
+                state = NeedsConnectionState.Block,
+                onRetry = onRetry,
+            )
+        } else {
+            ReadFailureNotice(
+                message = RatesPageCopy.FAILURE_BODY,
+                state = ReadFailureState.Failed,
+                onRetry = onRetry,
+            )
+        }
     }
 }
 

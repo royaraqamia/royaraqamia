@@ -6,6 +6,7 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponse
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItem
+import com.royaraqamia.app.store.PublicSnapshotStore
 import java.net.URLEncoder
 
 /** What the feed's first read came to, and where the rows came from. */
@@ -29,15 +30,19 @@ sealed interface CommunityFeedResult {
  * cursor and the same query parameter, so the app cannot show a subset the site
  * would not.
  *
- * Offline is the matrix's *snapshot*, not a second cache: the last answer is
- * kept ([CommunityFeedSnapshotStore]) and only a failed read falls back to it.
+ * Offline is the shared public-surface rule (`docs/specs/offline-first.md`): the
+ * last answer is kept in [PublicSnapshotStore] under this surface's key and only
+ * a failed read falls back to it. The store and the needs-connection state are
+ * one implementation for every public surface (#928); this class only names its
+ * own key.
+ *
  * Paging is online-only — a page the server never answered has no rows to keep —
  * but every page that does arrive joins the snapshot, so a member who read three
  * pages yesterday sees three offline today.
  */
 class CommunityFeedRepository(
     private val client: ApiClient,
-    private val snapshot: CommunityFeedSnapshotStore,
+    private val snapshot: PublicSnapshotStore,
 ) {
     /** Page one, live or from the snapshot, or neither. */
     suspend fun firstPage(): CommunityFeedResult {
@@ -52,7 +57,7 @@ class CommunityFeedRepository(
             is ApiResult.Failure -> failure = result.error
         }
 
-        val kept = snapshot.read() ?: return CommunityFeedResult.Unavailable(failure)
+        val kept = snapshot.read(SNAPSHOT_SURFACE) ?: return CommunityFeedResult.Unavailable(failure)
         return when (val decoded = ContractCodec.decode<CommunityIndexResponse>(kept)) {
             is ApiResult.Success -> CommunityFeedResult.Snapshot(decoded.value)
             // A snapshot the contract can no longer read is not the feed: it is
@@ -72,7 +77,8 @@ class CommunityFeedRepository(
      */
     fun remember(posts: List<CommunityIndexResponsePostsItem>, nextCursor: String?) {
         snapshot.save(
-            ContractCodec.encode(CommunityIndexResponse(posts = posts, nextCursor = nextCursor))
+            SNAPSHOT_SURFACE,
+            ContractCodec.encode(CommunityIndexResponse(posts = posts, nextCursor = nextCursor)),
         )
     }
 
@@ -80,5 +86,8 @@ class CommunityFeedRepository(
 
     companion object {
         const val INDEX_PATH = "/api/community/index"
+
+        /** The key this surface keeps its last-seen rows under (#928). */
+        const val SNAPSHOT_SURFACE = "community"
     }
 }
