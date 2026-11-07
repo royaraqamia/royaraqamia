@@ -32,7 +32,12 @@ name: 'Issue Automation Health'
 on:
   schedule:
     # Every six hours, so a missed heartbeat is caught within hours rather than a day.
-    - cron: '0 */6 * * *'
+    # The ticks are 05/11/17/23 UTC rather than 00/06/12/18: this workflow re-dispatches
+    # the planner and the implementer, and 06:00 is the first minute of DeepSeek's
+    # second peak window, so a catch-up there started a whole agent day at double
+    # price. Every tick below is inside the off-peak stretch (10:00-01:00 UTC plus the
+    # 04:00-06:00 gap). ADR 0133.
+    - cron: '0 5,11,17,23 * * *'
   workflow_dispatch:
 
 permissions:

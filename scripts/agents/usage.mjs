@@ -12,10 +12,11 @@
  *   to the run summary. It never fails a job: no ledger secret, no CLI and an
  *   unrecognised JSON shape all end as "nothing recorded".
  *
- *   `gate` sums the allowance already recorded in the last five hours and the
- *   last seven days, and answers whether the plan's window is nearly spent.
- *   `soft=true` means "trim the optional work", never "stop": the callers are
- *   written so one round, one merge and every interactive turn still happen.
+ *   `gate` sums the allowance already recorded in the last five hours, the
+ *   last seven days and the last thirty days, and answers whether the plan's
+ *   window is nearly spent. `soft=true` means "trim the optional work", never
+ *   "stop": the callers are written so one round, one merge and every
+ *   interactive turn still happen.
  *
  * The Console (Activity → Usage) remains the source of truth for the plan as a
  * whole, because it also counts usage this repository did not record - a TUI
@@ -30,9 +31,25 @@ import { appendFileSync } from 'node:fs';
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Environment, trimmed, or empty. */
 const env = (name) => (process.env[name] ?? '').trim();
+
+/**
+ * Whether `at` falls inside DeepSeek V4.1 Flash's double-price window.
+ *
+ * The window is 01:00-04:00 and 06:00-10:00 UTC, Monday to Friday, and the Go
+ * allowance counts list price, so the same work costs twice as much there. The
+ * schedules are chosen off-peak; this is the second line of defence for a run that
+ * was re-dispatched by a catch-up or drifted past its start.
+ */
+export function isPeakPrice(at = new Date()) {
+  const day = at.getUTCDay(); // 0 = Sunday
+  const hour = at.getUTCHours();
+  const weekday = day >= 1 && day <= 5;
+  return weekday && ((hour >= 1 && hour < 4) || (hour >= 6 && hour < 10));
+}
 
 function log(line) {
   process.stdout.write(`agent-usage: ${line}\n`);
@@ -248,10 +265,41 @@ async function spentSince(db, sinceMs) {
 }
 
 /**
+ * Which window, if any, is near its limit (ADR-0133).
+ *
+ * The plan cuts a month into a five-hour window (a fifth) and a week (half); the
+ * month itself is the one that refuses a call outright once it is spent, so the
+ * gate reads all three. Exported so the arithmetic is tested without a fetch
+ * mock, and so the reason line always names the window that answered.
+ */
+export function softVerdict({ five, week, month }, { capFive, capWeek, capMonth }) {
+  const windows = [
+    { label: 'the five-hour allowance', spent: five, cap: capFive },
+    { label: 'the weekly allowance', spent: week, cap: capWeek },
+    { label: 'the monthly allowance', spent: month, cap: capMonth },
+  ];
+  const over = windows.find((window) => window.spent >= window.cap);
+  if (!over) return { soft: false, reason: '' };
+  return {
+    soft: true,
+    reason:
+      `${over.label} is ${((over.spent / over.cap) * 100).toFixed(0)}% spent ` +
+      `($${over.spent.toFixed(2)} of $${over.cap})`,
+  };
+}
+
+/**
  * Soft-exhaustion: the five-hour window is a fifth of the monthly allowance and
- * the week is half, so the defaults below are three quarters of each.
+ * the week is half, so the defaults below are three quarters of each. The month
+ * is read too: it is the window whose exhaustion refuses every call, and the
+ * 2026-11-06 run burned six ninety-minute rounds on it without this gate saying
+ * anything.
  */
 export async function gate() {
+  // The clock answer does not need the ledger, and every caller reads a missing output
+  // as "not peak" (fail open), so it is written before anything can return early.
+  output('peak', String(isPeakPrice()));
+
   const db = supabase();
   if (!db) {
     log('no Supabase credentials; the gate stays open.');
@@ -262,12 +310,15 @@ export async function gate() {
 
   const capFive = Number(env('CAP_5H_USD') || '15');
   const capWeek = Number(env('CAP_WEEKLY_USD') || '40');
+  const capMonth = Number(env('CAP_MONTHLY_USD') || '75');
 
   let five = null;
   let week = null;
+  let month = null;
   try {
     five = await spentSince(db, FIVE_HOURS_MS);
     week = await spentSince(db, SEVEN_DAYS_MS);
+    month = await spentSince(db, THIRTY_DAYS_MS);
   } catch (error) {
     log(`the ledger could not be read (${error.message}); the gate stays open.`);
     output('soft', 'false');
@@ -275,9 +326,9 @@ export async function gate() {
     return;
   }
 
-  // A read that failed on one of the two windows fails open: blocking work on a
+  // A read that failed on one of the windows fails open: blocking work on a
   // ledger we could not read is the failure mode this gate exists to avoid.
-  if (five === null || week === null) {
+  if (five === null || week === null || month === null) {
     log('the ledger answered without totals; the gate stays open.');
     output('soft', 'false');
     output('reason', 'the usage ledger answered without totals');
@@ -286,31 +337,29 @@ export async function gate() {
 
   output('allowance_5h_usd', five.toFixed(4));
   output('allowance_7d_usd', week.toFixed(4));
+  output('allowance_30d_usd', month.toFixed(4));
 
-  const overFive = five >= capFive;
-  const overWeek = week >= capWeek;
-  const soft = overFive || overWeek;
+  const verdict = softVerdict({ five, week, month }, { capFive, capWeek, capMonth });
 
-  if (!soft) {
+  if (!verdict.soft) {
     log(
-      `spent $${five.toFixed(2)} in 5h (cap $${capFive}) and $${week.toFixed(2)} in 7d (cap $${capWeek}).`
+      `spent $${five.toFixed(2)} in 5h (cap $${capFive}), $${week.toFixed(2)} in 7d ` +
+        `(cap $${capWeek}) and $${month.toFixed(2)} in 30d (cap $${capMonth}).`
     );
     output('soft', 'false');
     output('reason', '');
     summary(
-      `- Go allowance: $${five.toFixed(2)} of $${capFive} in the last 5h, $${week.toFixed(2)} of $${capWeek} in the last 7d.`
+      `- Go allowance: $${five.toFixed(2)} of $${capFive} in the last 5h, ` +
+        `$${week.toFixed(2)} of $${capWeek} in the last 7d, ` +
+        `$${month.toFixed(2)} of $${capMonth} in the last 30d.`
     );
     return;
   }
 
-  const reason = overFive
-    ? `the five-hour allowance is ${((five / capFive) * 100).toFixed(0)}% spent ($${five.toFixed(2)} of $${capFive})`
-    : `the weekly allowance is ${((week / capWeek) * 100).toFixed(0)}% spent ($${week.toFixed(2)} of $${capWeek})`;
-
-  log(`soft budget: ${reason}; optional work will be trimmed.`);
+  log(`soft budget: ${verdict.reason}; optional work will be trimmed.`);
   output('soft', 'true');
-  output('reason', reason);
-  summary(`- Go allowance: **${reason}**; optional work trimmed (ADR-0133).`);
+  output('reason', verdict.reason);
+  summary(`- Go allowance: **${verdict.reason}**; optional work trimmed (ADR-0133).`);
 }
 
 async function main() {

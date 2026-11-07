@@ -15,16 +15,27 @@ and **$0.30/$1.20** during **01:00–04:00 and 06:00–10:00 UTC, Monday to Frid
 The allowance counts list price, so the same work costs double in those windows.
 Schedules are chosen for that, not for the clock:
 
-| Workflow          | Cron (UTC)     | Why                                                        |
-| ----------------- | -------------- | ---------------------------------------------------------- |
-| Issue Planner     | `15 10 * * *`  | 13:15 Damascus; hands the implementer the off-peak stretch |
-| Issue Implementer | `45 10 * * *`  | 13:45 Damascus; backstop only, the planner dispatches it   |
-| News Digest       | `30 23 * * *`  | 02:30 Damascus; ready before the morning read              |
-| PR Landing        | `15 */2 * * *` | every two hours, so a stranded PR cannot cost 48 turns     |
-| `/oc`             | on demand      | the person asked for it                                    |
-| Telegram bridge   | on message     | the owner asked for it                                     |
+| Workflow          | Cron (UTC)     | Why                                                         |
+| ----------------- | -------------- | ----------------------------------------------------------- |
+| Issue Planner     | `15 10 * * *`  | 13:15 Damascus; hands the implementer the off-peak stretch  |
+| Issue Implementer | `45 12 * * *`  | 15:45 Damascus; backstop only, after the planner's dispatch |
+| News Digest       | `30 23 * * *`  | 02:30 Damascus; ready before the morning read               |
+| PR Landing        | `15 */2 * * *` | every two hours, so a stranded PR cannot cost 48 turns      |
+| `/oc`             | on demand      | the person asked for it                                     |
+| Telegram bridge   | on message     | the owner asked for it                                      |
 
 If a schedule has to move, keep long batches inside **10:00–01:00 UTC**.
+
+The clock has two more guards, because a trigger is only the start:
+
+- the planner's **primary** trigger is the pg_cron job, not the GitHub schedule
+  (`supabase/migrations/20261115160000_dispatch_the_planner_off_peak.sql`); it was
+  still 03:00 UTC after the workflow moved, so every real planner run was in peak;
+- the implementer's backstop is 12:45 rather than 10:45 so the planner's dispatch
+  (which finishes around 11:30) goes first and is not suppressed by the daily guard;
+- the gate also answers `peak`, and the implementer and PR Landing repairs are
+  deferred when they would start inside a peak window. PR Landing still sweeps every
+  two hours because a green merge costs no model work; only its repair waits.
 
 ## Reasoning depth and output ceilings
 
@@ -65,9 +76,9 @@ the plan as a whole, because it also counts usage the repository did not record.
 ## The soft gate
 
 Before an autonomous run, `.github/actions/agent-usage` in `gate` mode sums the
-allowance in the last five hours and seven days. At three quarters of a window
-(`$15` / `$40` by default) it answers `soft=true`, and only optional work is
-trimmed:
+allowance in the last five hours, seven days and thirty days. At three quarters of
+a window (`$15` / `$40` / `$75` by default) it answers `soft=true`, and only
+optional work is trimmed:
 
 - **Issue Implementer**: one round instead of six (round 1 always runs).
 - **PR Landing**: a green pull request still merges; the agent repair is deferred
@@ -77,8 +88,8 @@ trimmed:
 - **Planner, `/oc`, Telegram**: never gated.
 
 A failed or empty answer reads as "not soft". To change the thresholds, edit the
-`cap-5h-usd` / `cap-weekly-usd` inputs on the gate step of the workflow in
-question.
+`cap-5h-usd` / `cap-weekly-usd` / `cap-monthly-usd` inputs on the gate step of the
+workflow in question.
 
 ## A refusal is not a repair
 

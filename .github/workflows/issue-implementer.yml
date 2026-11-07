@@ -30,7 +30,7 @@
 # Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
 # it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
 # sees that day's freshly filed issues — no fixed three-hour clock offset to race
-# against. The 06:00 UTC schedule is a no-config backstop for the case where the
+# against. The 12:45 UTC schedule is a no-config backstop for the case where the
 # planner never completes, and the `issue-automation-health` workflow can re-dispatch
 # directly. The `Daily guard` step makes those redundant triggers idempotent — only
 # the first successful run on a given UTC day does any work, preserving the
@@ -66,16 +66,22 @@ name: 'Issue Implementer'
 
 on:
   schedule:
-    # 10:45 UTC = 13:45 Damascus (UTC+3, no DST) — daily backstop. The primary
+    # 12:45 UTC = 15:45 Damascus (UTC+3, no DST) — daily backstop. The primary
     # trigger is the planner dispatching this workflow once it finishes.
     #
-    # 10:45 rather than the old 06:00 because DeepSeek V4.1 Flash is priced
-    # double inside its peak windows (01:00-04:00 and 06:00-10:00 UTC, Monday to
-    # Friday), and the Go plan's monthly limit counts those dollars. The six
-    # rounds run one after another, so starting at the edge of the off-peak
-    # stretch (10:00-01:00 UTC) is what keeps the whole day's work at half the
-    # allowance. See ADR 0133.
-    - cron: '45 10 * * *'
+    # 12:45, not the old 06:00 or the previous 10:45: the planner's primary trigger
+    # is now 10:15 UTC and a run takes up to seventy minutes plus setup, so the
+    # dispatch normally lands around 11:30. A backstop at 10:45 started the day's six
+    # rounds on the previous queue, and the planner's own dispatch then queued behind
+    # it and was suppressed by the daily guard. 12:45 leaves the chain room and is
+    # still inside the off-peak stretch.
+    #
+    # Off-peak because DeepSeek V4.1 Flash is priced double inside its peak windows
+    # (01:00-04:00 and 06:00-10:00 UTC, Monday to Friday), and the Go plan's monthly
+    # limit counts those dollars: the six rounds run one after another, so starting
+    # at 10:00-01:00 UTC is what keeps the whole day's work at half the allowance.
+    # See ADR 0133.
+    - cron: '45 12 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -135,12 +141,16 @@ jobs:
           workflow: Issue Implementer
           cap-5h-usd: '15'
           cap-weekly-usd: '40'
+          # Three quarters of the plan's $100 month. The five-hour and weekly windows
+          # protect a day; this one is the window whose exhaustion refuses every call
+          # outright, so the gate has to read it too (ADR-0133).
+          cap-monthly-usd: '75'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Daily guard
-        # Idempotency for the redundant triggers: the planner's dispatch, the 10:45
+        # Idempotency for the redundant triggers: the planner's dispatch, the 12:45
         # schedule and the health-monitor catch-up all point here. Only the first
         # successful run on a given UTC day does work; the rest exit immediately, and
         # the run that does work carries the day's six rounds. The
@@ -361,8 +371,32 @@ jobs:
               }
             };
 
+            // One issue costs at most one round of a run. A failed, timed-out or refused
+            // round leaves the issue `ready-for-agent` on purpose, so without this the
+            // next round picks the same issue again and one bad issue spends the whole
+            // day: on 2026-11-06 and 2026-11-07 all six rounds selected #920, and nothing
+            // landed. The claim comment carries this run's marker, so a later run - a
+            // re-dispatch after a failure, or tomorrow's - may take the issue again.
+            const runMarker =
+              '<!-- opencode-run:' + context.runId + '-' + context.runAttempt + ' -->';
+            const attemptedInThisRun = async (issueNumber) => {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                per_page: 100,
+              });
+              return comments.some((comment) => (comment.body || '').includes(runMarker));
+            };
+
             let chosen = null;
             for (const candidate of candidates) {
+              if (await attemptedInThisRun(candidate.number)) {
+                core.info(
+                  'Skipping #' + candidate.number + ': this run already spent a round on it.'
+                );
+                continue;
+              }
               if (await isBlocked(candidate)) {
                 core.info('Skipping #' + candidate.number + ': a blocker is still open.');
                 continue;
@@ -433,7 +467,11 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number,
-              body: 'The Issue Implementer picked this up. It will open a pull request and merge it once every check on it is green (ADR 0120). Any update will follow here.',
+              // The hidden marker is what the next round reads to know this run already
+              // spent a round on the issue. Without it one bad issue takes the whole day.
+              body:
+                'The Issue Implementer picked this up. It will open a pull request and merge it once every check on it is green (ADR 0120). Any update will follow here.\n\n' +
+                '<!-- opencode-run:' + context.runId + '-' + context.runAttempt + ' -->',
             });
 
       # `max-parallel: 1` orders the rounds but does not move the base: this job's
@@ -472,6 +510,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          # The visual gate's own fixture account (#920): the offline specs write to the
+          # shared E2E_TEST_* account, so a baseline recorded from it drifts.
+          E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}
+          E2E_VISUAL_PASSWORD: ${{ secrets.E2E_VISUAL_PASSWORD }}
           # The dummy Turnstile secret the Playwright suite expects; the real one is a
           # different value and is not needed to exercise a form locally.
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
@@ -537,7 +579,7 @@ jobs:
 
             Steps:
             1. Read the selected issue in the current state above. If it is ambiguous, unsafe, already satisfied by the current code, or no longer matches the repository, do NOT guess: write /tmp/result.json as `{"status":"cannot","reason":"<one sentence>"}` and stop without touching the working tree.
-            2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. If the change touches android/**, capacitor.config.ts or a Capacitor plugin dependency, add the Arabic release note with `npm run android:note -- "..."` and repeat it in the pull request body under `## Release note`.
+            2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. Never edit anything under `.github/workflows/`: the OpenCode Agent app that pushes this branch does not hold the `workflows` permission, so a push carrying a workflow file is rejected and the whole round is lost. If the issue requires a workflow change, stop and write /tmp/result.json as `{"status":"cannot","reason":"<the file and the change a person must make>"}`. If the change touches android/**, capacitor.config.ts or a Capacitor plugin dependency, add the Arabic release note with `npm run android:note -- "..."` and repeat it in the pull request body under `## Release note`.
             3. Database change rules: if the issue needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Read the recorded version back with list_migrations — do not assume the filename timestamp was used. Never run destructive DDL (DROP TABLE, DROP COLUMN, TRUNCATE, disabling RLS, weakening policies) through execute_sql; if that is the only fix, report cannot with the reason instead.
             4. Review your diff critically for correctness, layering violations, regressions and RLS implications - loading the `code-review` skill and reading your own diff with it - then run only the gates your change reaches, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests beside what you touched (npx vitest run <path>, or npx vitest run --changed).
 
@@ -716,7 +758,11 @@ jobs:
         # so a second invocation would land the fix on a second PR instead of this one.
         # Here the branch is the pull request's own, checked out first, and the commit is
         # made by this workflow.
-        if: steps.guard.outputs.run == 'true' && steps.checks.outputs.status == 'red' && steps.checks.outputs.pr != ''
+        #
+        # The peak-price window defers the repair for the same reason the soft budget
+        # does: a repair started at double price costs twice the allowance, and the
+        # landing workflow picks the pull request up at the next off-peak hour.
+        if: steps.guard.outputs.run == 'true' && steps.checks.outputs.status == 'red' && steps.checks.outputs.pr != '' && steps.budget.outputs.peak != 'true'
         timeout-minutes: 45
         env:
           # A push made with `GITHUB_TOKEN` starts no workflow, so the repaired head would
@@ -731,6 +777,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}
+          E2E_VISUAL_PASSWORD: ${{ secrets.E2E_VISUAL_PASSWORD }}
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
@@ -804,12 +852,12 @@ jobs:
           # by the `git add -A` below, so check for it before staging anything.
           if git grep -n -E '^(<<<<<<<|>>>>>>>)( |$)' >/dev/null 2>&1; then
             git merge --abort >/dev/null 2>&1 || true
-            echo "The conflict with main was left unresolved; leaving #$PR for the next round."
+            echo "The conflict with main was left unresolved; leaving #$PR to the landing workflow."
             exit 0
           fi
 
           if [ -z "$(git status --porcelain)" ]; then
-            echo "The repair run changed nothing; leaving #$PR for the next round."
+            echo "The repair run changed nothing; leaving #$PR to the landing workflow."
             exit 0
           fi
 
@@ -860,8 +908,9 @@ jobs:
         # rather than leave the issue stuck as in-progress.
         #
         # Nothing in this step is handed to a person. The queue is the implementer's, so an
-        # issue that did not land keeps `ready-for-agent` and the next round picks it up
-        # again; the only claim this workflow puts on is the one it takes off.
+        # issue that did not land keeps `ready-for-agent` and a later run picks it up
+        # again - the picker spends one round per issue per run, so a failure defers it
+        # instead of letting it take the day.
         if: always() && steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
@@ -895,7 +944,7 @@ jobs:
                 .catch(() => {});
 
             // The issue stays the agent's. `ready-for-agent` is left in place (and re-added
-            // in case a human removed it mid-run) so the next round's picker still sees it;
+            // in case a human removed it mid-run) so a later run's picker still sees it;
             // the claim label is the one that has to come off.
             const keepForTheAgent = async () => {
               await removeLabel('opencode:in-progress');
@@ -966,7 +1015,7 @@ jobs:
                 'The Issue Implementer could not complete this issue on this attempt.\n\nReason: ' +
                 reason +
                 (prNumber ? '\n\nPull request #' + prNumber + ' is open.' : '') +
-                '\n\nThe issue stays with the implementer and is taken up again by a later round.',
+                '\n\nThe issue stays with the implementer and is taken up again by a later run.',
             });
             await keepForTheAgent();
             core.info('Could not land issue #' + issue_number + ': ' + reason);

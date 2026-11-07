@@ -45,4 +45,21 @@ describe('the issue planner files only what it reproduced', () => {
     expect(workflow).toContain('Keep at most the 3 highest-impact findings');
     expect(workflow).not.toContain('at most the 5 highest-impact');
   });
+
+  it('publishes what it proved even when the wall clock stops the run', () => {
+    // 2026-11-07: the plan step hit its seventy-minute cap while still exploring, the
+    // publish step was skipped, and the day filed nothing. A timeout must not throw
+    // away findings the run already verified.
+    const publishAt = workflow.indexOf('name: Publish issues');
+    const publish = workflow.slice(publishAt, workflow.indexOf('name: Wake the Issue Implementer'));
+    expect(publishAt).toBeGreaterThan(-1);
+    expect(publish).toContain('if: always()');
+    expect(publish).not.toContain("steps.plan.outcome == 'success'");
+    expect(workflow).toContain('Write the file after each finding you keep');
+  });
+
+  it('hands the gate its own fixture account, not the offline one', () => {
+    expect(workflow).toContain('secrets.E2E_VISUAL_EMAIL');
+    expect(workflow).toContain('secrets.E2E_VISUAL_PASSWORD');
+  });
 });

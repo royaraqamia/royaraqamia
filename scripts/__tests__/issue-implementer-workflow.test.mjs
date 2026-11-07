@@ -89,6 +89,38 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toContain('a blocker is still open');
   });
 
+  it('spends at most one round of a run on an issue, so one bad issue cannot take the day', () => {
+    // 2026-11-06 and 2026-11-07: six rounds, every one of them #920, and nothing
+    // landed. The queue deliberately keeps a failed issue, so the picker has to
+    // remember what this run already tried.
+    expect(workflow).toContain('opencode-run:');
+    expect(workflow).toContain('attemptedInThisRun');
+    expect(workflow).toContain('this run already spent a round on it');
+    // The marker is written by the claim, which is the only thing that runs before
+    // the next round's picker.
+    const claimAt = workflow.indexOf('name: Claim the issue');
+    const cutAt = workflow.indexOf('name: Cut the branch from the current main');
+    expect(claimAt).toBeGreaterThan(-1);
+    expect(workflow.slice(claimAt, cutAt)).toContain('context.runId');
+  });
+
+  it('gates on the month, because that is the window that refuses every call', () => {
+    expect(workflow).toContain("cap-monthly-usd: '75'");
+  });
+
+  it('never lets a round end on a workflow file the push token cannot carry', () => {
+    // The token is the OpenCode Agent app, whose permissions do not include
+    // `workflows`: a diff that touches .github/workflows is rejected at push, so the
+    // instruction is to stop and name the change instead of spending the round.
+    expect(workflow).toContain('Never edit anything under `.github/workflows/`');
+    expect(workflow).toContain('does not hold the `workflows` permission');
+  });
+
+  it('hands the visual gate its own account instead of the offline one', () => {
+    expect(workflow).toContain('secrets.E2E_VISUAL_EMAIL');
+    expect(workflow).toContain('secrets.E2E_VISUAL_PASSWORD');
+  });
+
   it('runs six rounds one after another, so each branch is cut from the merge before it', () => {
     expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
     expect(workflow).toContain('max-parallel: 1');

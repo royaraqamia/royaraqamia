@@ -115,4 +115,9 @@ describe('the landing workflow keeps no pull request unattended', () => {
     expect(land).toContain('platforms;android-36');
     expect(land).toContain('npm install --global opencode-ai@');
   });
+
+  it('hands the gate its own fixture account, not the offline one', () => {
+    expect(workflow).toContain('secrets.E2E_VISUAL_EMAIL');
+    expect(workflow).toContain('secrets.E2E_VISUAL_PASSWORD');
+  });
 });
