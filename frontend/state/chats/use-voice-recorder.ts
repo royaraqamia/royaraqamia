@@ -1,12 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import {
   CHAT_VOICE_NOTE_MAX_MS,
   CHAT_VOICE_NOTE_MIN_MS,
   CHAT_VOICE_NOTE_SAMPLE_RATE,
 } from '@/shared/contracts/chat';
+import {
+  VOICE_LEVEL_BARS,
+  voiceRecorderInitialState,
+  voiceRecorderReducer,
+} from './use-voice-recorder.reducer';
 
 /**
  * A voice note, recorded in the browser and handed over as a WAV file
@@ -54,15 +59,10 @@ export const VOICE_TOO_SHORT_ERROR = 'اضغط مطوّلاً للتسجيل، �
 
 /** How often the timer and the level meter read the capture. */
 const TICK_MS = 100;
-/** Bars kept for the live waveform. */
-const LEVEL_BARS = 32;
 
 export function useVoiceRecorder(): VoiceRecorderState {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPreparing, setIsPreparing] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [levels, setLevels] = useState<number[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(voiceRecorderReducer, undefined, voiceRecorderInitialState);
+  const { isRecording, isPreparing, elapsedMs, levels, error } = state;
 
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -72,7 +72,7 @@ export function useVoiceRecorder(): VoiceRecorderState {
   const startedAt = useRef(0);
   const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const reset = useCallback(() => setError(null), []);
+  const reset = useCallback(() => dispatch({ type: 'attempted' }), []);
 
   /** Everything a capture opened, closed exactly once. */
   const release = useCallback(() => {
@@ -90,7 +90,7 @@ export function useVoiceRecorder(): VoiceRecorderState {
   useEffect(() => release, [release]);
 
   const start = useCallback(async () => {
-    setError(null);
+    dispatch({ type: 'attempted' });
     if (recorder.current) return true;
 
     try {
@@ -102,7 +102,7 @@ export function useVoiceRecorder(): VoiceRecorderState {
       try {
         const audio = new AudioContext();
         const node = audio.createAnalyser();
-        node.fftSize = LEVEL_BARS * 2;
+        node.fftSize = VOICE_LEVEL_BARS * 2;
         audio.createMediaStreamSource(captured).connect(node);
         context.current = audio;
         analyser.current = node;
@@ -119,24 +119,24 @@ export function useVoiceRecorder(): VoiceRecorderState {
       recorder.current = next;
       stream.current = captured;
       startedAt.current = Date.now();
-      setElapsedMs(0);
-      setLevels([]);
-      setIsRecording(true);
+      dispatch({ type: 'captureStarted' });
 
       ticker.current = setInterval(() => {
-        setElapsedMs(Date.now() - startedAt.current);
         const node = analyser.current;
-        if (!node) return;
+        if (!node) {
+          dispatch({ type: 'ticked', elapsedMs: Date.now() - startedAt.current, level: null });
+          return;
+        }
         const bins = new Uint8Array(node.frequencyBinCount);
         node.getByteFrequencyData(bins);
         const loudness = bins.reduce((sum, value) => sum + value, 0) / bins.length / 255;
-        setLevels((current) => [...current, loudness].slice(-LEVEL_BARS));
+        dispatch({ type: 'ticked', elapsedMs: Date.now() - startedAt.current, level: loudness });
       }, TICK_MS);
 
       return true;
     } catch {
       release();
-      setError(VOICE_PERMISSION_ERROR);
+      dispatch({ type: 'failed', message: VOICE_PERMISSION_ERROR });
       return false;
     }
   }, [release]);
@@ -147,7 +147,7 @@ export function useVoiceRecorder(): VoiceRecorderState {
       if (!active) return null;
 
       const held = Date.now() - startedAt.current;
-      setIsPreparing(true);
+      dispatch({ type: 'prepareStarted' });
 
       try {
         const recorded = await new Promise<Blob>((resolve) => {
@@ -160,20 +160,19 @@ export function useVoiceRecorder(): VoiceRecorderState {
         });
         recorder.current = null;
         release();
-        setIsRecording(false);
-        setElapsedMs(0);
+        dispatch({ type: 'captureStopped' });
 
         if (!keep || held < CHAT_VOICE_NOTE_MIN_MS) {
-          if (keep) setError(VOICE_TOO_SHORT_ERROR);
+          if (keep) dispatch({ type: 'failed', message: VOICE_TOO_SHORT_ERROR });
           return null;
         }
 
         return await toWav(recorded);
       } catch {
-        setError(VOICE_PERMISSION_ERROR);
+        dispatch({ type: 'failed', message: VOICE_PERMISSION_ERROR });
         return null;
       } finally {
-        setIsPreparing(false);
+        dispatch({ type: 'prepareFinished' });
       }
     },
     [release]
