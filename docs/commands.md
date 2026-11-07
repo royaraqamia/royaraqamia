@@ -74,7 +74,11 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
   evidence in `e2e/__visual__/`. A surface switched on in `docs/mobile/screens.json` without a
   passing pair fails here. `npm run visual:capture` records the page side of every gated surface at
   the app's viewport (393 x 852, DPR 2.75, Arabic, dark); the app's own Robolectric test writes the
-  screen side.
+  screen side. The capture signs in as the gate's own fixture account (`E2E_VISUAL_EMAIL` /
+  `E2E_VISUAL_PASSWORD`), never the offline suite's shared account, and provisions it first with
+  `e2e/setup-test-user.ts --visual --reset` (or `npm run visual:account` on its own). Without the
+  pair the capture skips with a message naming both variables and writes no evidence, so a missing
+  account is a state declared and not captured rather than a recording of the wrong member (#920).
 
 ## Load testing
 

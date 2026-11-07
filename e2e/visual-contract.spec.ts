@@ -3,7 +3,15 @@ import { join } from 'node:path';
 
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
-import { signIn } from './sign-in';
+import {
+  clearVisualCommunityPosts,
+  clearVisualLink,
+  COMMUNITY_SEED_PREFIX,
+  seedVisualLink,
+  signInAsVisualAccount,
+  VISUAL_ACCOUNT_MISSING,
+  visualCredentials,
+} from './visual-fixture';
 
 const ROOT = process.cwd();
 const GATE = join(ROOT, 'docs', 'mobile', 'visual-gate.json');
@@ -23,6 +31,12 @@ const GATE = join(ROOT, 'docs', 'mobile', 'visual-gate.json');
  * that the contract's elements are present, because a recording of a page that
  * lost an element would otherwise be the thing that makes the gate pass.
  *
+ * It signs in as the gate's own fixture account (#920), never the shared offline
+ * account the other specs write to. Without `E2E_VISUAL_EMAIL` /
+ * `E2E_VISUAL_PASSWORD` the suite skips before it measures anything, so a
+ * missing account is a declared state with no evidence rather than a recording
+ * of the wrong member.
+ *
  * Run it with `npm run visual:capture` (which selects this project), never by
  * hand: the viewport, DPR and locale are the measurement.
  */
@@ -36,6 +50,11 @@ const surfaces = [...(gate.surfaces ?? []), ...frame];
 /** The app's phone: 393 x 852 CSS px at DPR 2.75, dark, Arabic, RTL. */
 const VIEWPORT = { width: 393, height: 852 };
 const DEVICE_SCALE = 2.75;
+
+/** The origin the spec signs in on: the page's cookie host must match it. */
+function projectBaseURL(): string {
+  return test.info().project.use.baseURL ?? 'http://localhost:3000';
+}
 
 interface Measured {
   name: string;
@@ -161,38 +180,21 @@ async function measure(page: Page, elements: Measured[]) {
 }
 
 /**
- * The rows the community feed's recording seeds, and the ids it must delete.
+ * The rows the community feed's recording seeds.
  *
  * The load-more control only exists on a feed with more rows than one page (9),
  * so the page's state is reached by writing ten rows through the account's own
  * create route and removing them after the capture. The rows are the fixture's,
  * not whatever the site happens to publish: a recording that depends on today's
- * feed is not evidence (ADR-0119).
+ * feed is not evidence (ADR-0119). Their slugs are fixed, so the state is the
+ * same every run; the cleanup hard-deletes them by account and prefix, because
+ * the page's own delete is a tombstone that keeps the unique slug taken.
  */
-const COMMUNITY_SEED_PREFIX = 'e2e-visual-community-';
-const seeded: Record<string, string[]> = {};
-
-async function clearCommunitySeeds(context: BrowserContext, baseURL: string): Promise<void> {
-  const response = await context.request.get(`${baseURL}/api/blogpress/sync`);
-  if (!response.ok()) return;
-  const body = (await response.json()) as {
-    posts?: { id: string; slug: string; deleted_at?: string | null }[];
-  };
-  for (const post of body.posts ?? []) {
-    if (post.deleted_at || !post.slug.startsWith(COMMUNITY_SEED_PREFIX)) continue;
-    await context.request.delete(`${baseURL}/api/blogpress/posts/${post.id}`);
-  }
-}
-
-async function seedCommunityPosts(
-  context: BrowserContext,
-  baseURL: string,
-  ids: string[]
-): Promise<void> {
+async function seedCommunityPosts(context: BrowserContext, baseURL: string): Promise<void> {
   for (let index = 1; index <= 10; index += 1) {
     const response = await context.request.post(`${baseURL}/api/blogpress/posts`, {
       data: {
-        slug: `${COMMUNITY_SEED_PREFIX}${Date.now()}-${index}`,
+        slug: `${COMMUNITY_SEED_PREFIX}${index}`,
         content: `منشور تجريبي للبوابة ${index}`,
         status: 'published',
       },
@@ -203,8 +205,6 @@ async function seedCommunityPosts(
         `community seed ${index} failed: ${response.status()} ${await response.text()}`
       );
     }
-    const body = (await response.json()) as { id?: string };
-    if (body.id) ids.push(body.id);
   }
 }
 
@@ -239,14 +239,18 @@ const PREPARE: Record<
     await page.locator('[data-visual="habitflow-count"]').waitFor({ timeout: 20_000 });
   },
   // The signed-in shortener: the same route with a session behind it, so the
-  // custom code and password blocks are drawn. The account is the e2e user the
-  // other specs sign in with; the capture is a recording, not a write.
+  // custom code and password blocks are drawn. The account is the gate's own
+  // (#920), never the shared offline one the other specs write to, and its
+  // owned rows are the fixed link below rather than whatever a previous run
+  // left. The recording itself is the form; the link and its clicks keep the
+  // account settled for the states that read it next (#941, #962).
   'signed-in': async (page, visit) => {
     // The cookie is set for the site's own host (`NEXT_PUBLIC_SITE_URL`), so the
     // sign-in and the navigation must share it: a `127.0.0.1` login leaves the
     // session on a host the page never asks for.
-    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
-    await signIn(page.context(), baseURL);
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualLink(page.context(), baseURL);
     await visit(baseURL);
     // The session lands after the first paint, and the state is the signed-in form
     // or nothing: waiting for its first field is what makes the recording that state.
@@ -256,14 +260,10 @@ const PREPARE: Record<
   // exists past the first page. The fixture account seeds ten rows and the
   // cleanup below removes them, so the feed after the run is the feed before it.
   'community/at-rest': async (page, visit) => {
-    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
-    await signIn(page.context(), baseURL);
-    await clearCommunitySeeds(page.context(), baseURL);
-    // The array is registered before the first write, so a seed that fails
-    // halfway still leaves every row it did write for the cleanup below.
-    const ids: string[] = [];
-    seeded['community/at-rest'] = ids;
-    await seedCommunityPosts(page.context(), baseURL, ids);
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await clearVisualCommunityPosts(page.context(), baseURL);
+    await seedCommunityPosts(page.context(), baseURL);
     await visit(baseURL);
     await page.locator('[data-visual="community-load-more"]').waitFor({ timeout: 20_000 });
   },
@@ -271,16 +271,23 @@ const PREPARE: Record<
 
 /** What a state removes after its recording, so a seed is never left behind. */
 const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
+  'linksnap/signed-in': async (page) => {
+    await clearVisualLink(page.context(), projectBaseURL());
+  },
   'community/at-rest': async (page) => {
-    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
-    for (const id of seeded['community/at-rest'] ?? []) {
-      await page.context().request.delete(`${baseURL}/api/blogpress/posts/${id}`);
-    }
-    seeded['community/at-rest'] = [];
+    await clearVisualCommunityPosts(page.context(), projectBaseURL());
   },
 };
 
 test.describe('the visual gate', () => {
+  // The gate records with its own account (#920). Without the pair it skips
+  // before any state is measured, so nothing is written under the shared
+  // offline account and `check:visual` reports the state as declared and not
+  // captured rather than recording the wrong member. The list reporter does not
+  // echo an annotation, so the reason is printed as well.
+  const credentials = visualCredentials();
+  if (!credentials) console.log(VISUAL_ACCOUNT_MISSING);
+  test.skip(!credentials, VISUAL_ACCOUNT_MISSING);
   test.skip(surfaces.length === 0, 'no surface is under the gate yet (#874)');
 
   for (const surface of surfaces) {
