@@ -141,6 +141,19 @@ describe('sw-routing predicates', () => {
     }
   });
 
+  it('stores the two data-free chat shells through the runtime cache (#1128)', () => {
+    // `/notifications` and `/chats/[id]` are `force-dynamic`, so Next answers
+    // `no-store`; both paint every row on the client from the Local Store, so the
+    // document is stored anyway and the sign-out purge removes it with the rest
+    // of the runtime cache.
+    for (const path of ['/notifications', '/notifications?tab=chats', '/chats/c-1', '/chats/new']) {
+      expect(routing.isRuntimeShell(u(path))).toBe(true);
+    }
+    for (const path of ['/chats', '/notifications/foo', '/api/chats', '/api/notifications']) {
+      expect(routing.isRuntimeShell(u(path))).toBe(false);
+    }
+  });
+
   it('allows the public read surfaces to be cached', () => {
     for (const path of [
       '/',

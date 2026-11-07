@@ -280,3 +280,28 @@ stays, because a graceful fallback is still worth telling apart from a miss (ADR
 amendment). `e2e/public-offline.spec.ts` now pins that a prefix-served shell paints without the
 withdrawn copy, and `scripts/__tests__/sw.test.mjs` pins the prefix order, the homepage walk, that no
 marker is written, and the 503s.
+
+## Amendment (2026-11-07): two data-free chat shells ride the runtime cache
+
+`/notifications` and `/chats/[id]` are `force-dynamic`: the chat data is read on the client, where the
+session's own client is the reader RLS expects, and the server document carries no row. They are the
+ADR-0073 shape — a data-free shell painted from the identity-scoped Local Store (#1117, #1120, #1124)
+— but they are still rendered per request, so there is no prerendered document for the build to
+precache and Next answers `no-store`.
+
+The generic rule (`isCacheable`) refuses that response, so a radio-off reload had no exact document to
+answer with and the ancestor fallback served a different screen. The worker now stores a navigation's
+own document for these two paths even when the response says `no-store`, keyed by its exact URL, and
+serves it through the existing stale-while-revalidate fallback. The exception is one function,
+`isRuntimeShell` in `public/sw-routing.js` (exact `/notifications`, prefix `/chats/`), and it is
+deliberately narrower than "the chat area": `/api/chats` and `/api/notifications` are not documents.
+
+The boundary that makes it safe is the one every account shell already holds: the document contains
+nothing account-bearing, and the sign-out purge deletes these entries with every other runtime entry.
+A device that never opened a thread still has nothing to serve, exactly as for a dynamic detail route
+(ADR-0071's #473 amendment); the first **full document load** is the cost, because a client navigation
+caches only the RSC payload.
+
+`scripts/__tests__/sw-routing.test.mjs` pins the paths the exception covers, and
+`e2e/chats-offline.spec.ts` now cuts the radio (rather than the chats `fetch`) and reloads both
+surfaces from their own cached documents.
