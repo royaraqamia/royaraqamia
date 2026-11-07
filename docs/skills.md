@@ -75,6 +75,8 @@ Use proactively when task matches. Load with the `skill` tool.
 - 283 specialist prompts (engineering, design, marketing, product, sales, security, testing…), each an
   advertised skill chosen from context or loaded by ID, plus 16 NEXUS playbooks as plain Markdown.
   Tree, provenance and the regeneration recipe: `.opencode/skills/agency/`
+- The product assistant reaches the same roster through two read tools
+  (`list_specialists`, `load_specialist`) instead of a skill list — [ADR-0137](adr/0137-the-assistant-loads-a-specialist-by-tool.md)
 
 ## Skill Versioning
 

@@ -561,7 +561,7 @@ export class ChatAgentService {
               name: tool.name,
               label: CHAT_AGENT_TOOLS[tool.name].label,
             };
-            messages.push(toolAnswer(call.id, result));
+            messages.push(toolAnswer(call.id, result, tool.maxResultChars));
           } catch (error) {
             logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
             messages.push(
@@ -647,14 +647,14 @@ function sleep(ms: number): Promise<void> {
 }
 
 /** A tool's answer as the provider reads it: JSON, bounded so it fits the window. */
-function toolAnswer(callId: string, value: unknown): AiChatWireMessage {
+function toolAnswer(callId: string, value: unknown, maxChars = 4_000): AiChatWireMessage {
   let content: string;
   try {
     content = JSON.stringify(value ?? null);
   } catch {
     content = '{"error":"تعذّر تمثيل نتيجة الأداة"}';
   }
-  return { role: 'tool', tool_call_id: callId, content: content.slice(0, 4_000) };
+  return { role: 'tool', tool_call_id: callId, content: content.slice(0, maxChars) };
 }
 
 /** The model's arguments, as an object. Anything else is refused downstream. */
