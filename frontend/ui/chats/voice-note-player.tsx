@@ -38,12 +38,12 @@ export function VoiceNotePlayer({
   conversationId: string;
   attachment: ChatAttachment;
   mine: boolean;
-  onDownload: (attachmentId: string) => void;
+  onDownload: (attachment: ChatAttachment) => void;
   /**
    * Where this note's bytes come from (#1033): a queued note is still on the
    * device, so the thread hands its blob URL here instead of asking the server.
    */
-  resolveUrl?: (attachmentId: string) => Promise<string | null>;
+  resolveUrl?: (attachment: ChatAttachment) => Promise<string | null>;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export function VoiceNotePlayer({
     if (url) return url;
 
     const source = resolveUrl
-      ? await resolveUrl(attachment.id)
+      ? await resolveUrl(attachment)
       : ((await getChatAttachmentUrl(conversationId, attachment.id))?.url ?? null);
     if (!source) {
       setFailed(true);
@@ -147,7 +147,7 @@ export function VoiceNotePlayer({
     return (
       <button
         type="button"
-        onClick={() => onDownload(attachment.id)}
+        onClick={() => onDownload(attachment)}
         className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
       >
         <Download size={12} className="shrink-0" />

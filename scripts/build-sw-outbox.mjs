@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
+import { nextPublicDefines } from './next-public-env.mjs';
 
 const ENTRY = 'frontend/api/sw-outbox.ts';
 const OUTPUT = 'public/sw-outbox.js';
@@ -31,6 +32,7 @@ async function main() {
     minify: true,
     outfile: OUTPUT,
     tsconfig: 'tsconfig.json',
+    define: nextPublicDefines(),
     metafile: true,
     logLevel: 'warning',
   });
@@ -47,6 +49,15 @@ async function main() {
     throw new Error(
       `${ENTRY} must not depend on React, but it does: ${fromReact.join(', ')}. ` +
         'Split the React half out of whatever module the worker imports.'
+    );
+  }
+
+  // A worker has no `process` either; a stray read takes the whole drain down
+  // with no report to anyone (#1125).
+  const leftover = readFileSync(OUTPUT, 'utf8').match(/process\.env\.[A-Za-z_]+/);
+  if (leftover) {
+    throw new Error(
+      `${OUTPUT} still reads ${leftover[0]} — add it to nextPublicDefines() or stop importing it.`
     );
   }
 

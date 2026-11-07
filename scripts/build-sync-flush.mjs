@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
+import { nextPublicDefines } from './next-public-env.mjs';
 
 const ENTRY = 'frontend/api/sync-flush.ts';
 const OUTPUT = 'public/sync-flush.js';
@@ -39,6 +40,7 @@ async function main() {
     minify: true,
     outfile: OUTPUT,
     tsconfig: 'tsconfig.json',
+    define: nextPublicDefines(),
     metafile: true,
     logLevel: 'warning',
   });
@@ -54,6 +56,17 @@ async function main() {
     throw new Error(
       `${ENTRY} must not depend on React, but it does: ${fromReact.join(', ')}. ` +
         'Split the React half out of whatever module the worker imports.'
+    );
+  }
+
+  // A browser has no `process`, and this page has no second chance: an
+  // unreplaced read kills the script before it can report, and the worker waits
+  // out its timeout (#1125). `define` covers the values Next inlines; this is
+  // the check that none slipped through.
+  const leftover = readFileSync(OUTPUT, 'utf8').match(/process\.env\.[A-Za-z_]+/);
+  if (leftover) {
+    throw new Error(
+      `${OUTPUT} still reads ${leftover[0]} — add it to nextPublicDefines() or stop importing it.`
     );
   }
 
