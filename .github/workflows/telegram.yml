@@ -3,7 +3,8 @@
 # Telegram pushes each update to a Supabase Edge Function
 # (`supabase/functions/telegram`), which stores it and dispatches this workflow.
 # A message is then answered by `opencode run` in the `bridge` job: one process
-# with the checkout, the skills (`.agents/skills`), a shell, the web, the
+# with the checkout, the skills (`.agents/skills` and the vendored agency roster
+# in `.opencode/skills`), a shell, the web, the
 # Supabase MCP server and the Vercel CLI. No command, no mode, no `/task` -
 # the sentence is the instruction (ADR 0129, which supersedes ADR 0121).
 #
@@ -175,9 +176,11 @@ jobs:
 
       - name: Curate the agent's skills and tools
         # The shared action writes the Supabase MCP server and the headless
-        # permission block; this adds what is specific to the bot. The skill list
-        # is a deny-all followed by allows, so a new skill in `.agents/skills`
-        # cannot widen the agent's reach without a change here.
+        # permission block; this adds what is specific to the bot. Every skill in
+        # this checkout is reviewed here, and a skill is instructions rather than
+        # a tool, so the whole checked-out set is allowed — the vendored agency
+        # roster included, which is what lets the bot pick a specialist from the
+        # conversation instead of waiting to be told one.
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from 'node:fs';
@@ -187,37 +190,7 @@ jobs:
           const path = join(homedir(), '.config', 'opencode', 'opencode.json');
           const config = JSON.parse(readFileSync(path, 'utf8'));
 
-          const skills = [
-            'code-review',
-            'diagnosing-bugs',
-            'research',
-            'implement',
-            'implement-spec',
-            'pr',
-            'codebase-design',
-            'improve-codebase-architecture',
-            'domain-modeling',
-            'tdd',
-            'triage',
-            'frontend-design',
-            'ui-ux-pro-max',
-            'design-system',
-            'banner-design',
-            'brand',
-            'slides',
-            'supabase',
-            'supabase-postgres-best-practices',
-            'deploy-to-vercel',
-            'vercel-cli-with-tokens',
-            'vercel-optimize',
-            'security-review',
-            'find-skills',
-          ];
-
-          config.permissions = [
-            { action: 'skill', resource: '*', effect: 'deny' },
-            ...skills.map((skill) => ({ action: 'skill', resource: skill, effect: 'allow' })),
-          ];
+          config.permissions = [{ action: 'skill', resource: '*', effect: 'allow' }];
 
           writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`);
           NODE

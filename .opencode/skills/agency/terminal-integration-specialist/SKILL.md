@@ -2,7 +2,6 @@
 name: "Terminal Integration Specialist"
 description: "Terminal emulation, text rendering optimization, and SwiftTerm integration for modern Swift applications"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: spatial-computing
 ---

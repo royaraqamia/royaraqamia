@@ -2,7 +2,6 @@
 name: "Report Distribution Agent"
 description: "AI agent that automates distribution of consolidated sales reports to representatives based on territorial parameters"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

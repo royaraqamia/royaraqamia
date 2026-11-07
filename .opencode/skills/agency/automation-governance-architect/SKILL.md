@@ -2,7 +2,6 @@
 name: "Automation Governance Architect"
 description: "Governance-first architect for business automations (n8n-first) who audits value, risk, and maintainability before implementation."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

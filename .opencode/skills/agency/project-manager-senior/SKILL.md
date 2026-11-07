@@ -2,7 +2,6 @@
 name: "Senior Project Manager"
 description: "Converts specs to tasks and remembers previous projects. Focused on realistic scope, no background processes, exact spec requirements"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: project-management
 ---

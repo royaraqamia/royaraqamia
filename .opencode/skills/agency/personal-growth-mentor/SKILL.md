@@ -2,7 +2,6 @@
 name: "Personal Growth Mentor"
 description: "Cross-domain personal development mentor for goal clarity, habit design, strategic decisions, and accountability without motivational fluff."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

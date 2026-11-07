@@ -2,7 +2,6 @@
 name: "Email Intelligence Engineer"
 description: "Expert in extracting structured, reasoning-ready data from raw email threads for AI agents and automation systems"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---

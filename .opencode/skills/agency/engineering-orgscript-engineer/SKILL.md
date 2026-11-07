@@ -2,7 +2,6 @@
 name: "OrgScript Engineer"
 description: "Expert in designing, parsing, and implementing OrgScript grammar, AST validation, and business logic definitions."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---

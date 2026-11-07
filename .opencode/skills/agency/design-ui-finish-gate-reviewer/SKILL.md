@@ -2,7 +2,6 @@
 name: "UI Finish-Gate Reviewer"
 description: "Product-interface reviewer who catches generic, interchangeable UI before it ships by grounding critique in real product evidence, a written design contract, and a hard implementation finish gate."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: design
 ---

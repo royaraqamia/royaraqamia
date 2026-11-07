@@ -4,11 +4,12 @@
 - Commit: `b859c515d813efcfc4755d3471dd9e7686c7706d`
 - License: MIT (see `../LICENSE`)
 - Shape: one skill per upstream agent file, `../../agency/<slug>/SKILL.md`; frontmatter rewritten to
-  OpenCode's skill format (`name`, `description`, `metadata.opencode/autoinvoke: false`), the
-  upstream `color`/`emoji`/`vibe`/`tools` fields dropped, the Markdown body kept verbatim.
+  OpenCode's skill format (`name`, `description`, `metadata`), the upstream
+  `color`/`emoji`/`vibe`/`tools` fields dropped, the Markdown body kept verbatim.
 - The strategy division's playbooks carry no `description` frontmatter, so they are copied verbatim
   into `playbooks/` as reference documents instead of becoming skills (`runbooks.json` included).
-- `agency-roster` is the only advertised skill; every specialist is hidden and loads on demand.
+- Every specialist is advertised to the model, so it can be chosen from context without the user
+  naming one; `agency-roster` groups them by division for a cheaper read of the same set.
 
 ## Regenerating
 

@@ -2,7 +2,6 @@
 name: "Agents Orchestrator"
 description: "Autonomous pipeline manager that orchestrates the entire development workflow. You are the leader of this process."
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: specialized
 ---

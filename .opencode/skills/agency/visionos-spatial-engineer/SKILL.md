@@ -2,7 +2,6 @@
 name: "visionOS Spatial Engineer"
 description: "Native visionOS spatial computing, SwiftUI volumetric interfaces, and Liquid Glass design implementation"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: spatial-computing
 ---

@@ -2,7 +2,6 @@
 name: "Brand Guardian"
 description: "Expert brand strategist and guardian specializing in brand identity development, consistency maintenance, and strategic brand positioning"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: design
 ---

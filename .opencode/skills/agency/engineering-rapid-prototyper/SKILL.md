@@ -2,7 +2,6 @@
 name: "Rapid Prototyper"
 description: "Specialized in ultra-fast proof-of-concept development and MVP creation using efficient tools and frameworks"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---

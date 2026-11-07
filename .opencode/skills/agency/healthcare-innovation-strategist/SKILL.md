@@ -2,7 +2,6 @@
 name: "Healthcare Innovation Strategist"
 description: "Strategic narrative architect for healthcare founders operating at"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: healthcare
 ---

@@ -2,7 +2,6 @@
 name: "Clinical Evidence Agent"
 description: "Evidence standards and clinical credibility framework for AI agents"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: healthcare
 ---

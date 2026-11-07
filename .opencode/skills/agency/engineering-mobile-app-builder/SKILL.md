@@ -2,7 +2,6 @@
 name: "Mobile App Builder"
 description: "Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks"
 metadata:
-  opencode/autoinvoke: false
   source: msitarzewski/agency-agents@b859c515d813
   division: engineering
 ---
