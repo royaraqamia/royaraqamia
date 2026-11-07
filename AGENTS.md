@@ -77,7 +77,7 @@ Write for the user, in Arabic, not about the code: no file names, versions, comm
 
 `graphify-out/` holds a code knowledge graph of this checkout, built with tree-sitter by `graphify extract . --code-only` — local, no model, no tokens. Answer structure, caller and dependency questions from it before a file-by-file search: `graphify query "<question>"`, `graphify path "A" "B"`, `graphify explain "X"`. Use grep for exact strings — an error message, a config key, a migration name — and trust the code over the graph when the two disagree.
 
-The graph is generated, ignored, and never committed, so a stale one is a local problem, not a shared one: `graphify update .` refreshes it after a pull or a batch of edits (a full rebuild of this tree measured ~1 minute), or `graphify watch .` keeps it current while you work. A worktree starts without one; build it there before relying on it.
+The graph is generated, ignored, and never committed, so a stale one is a local problem, not a shared one. Ask through `npm run graph -- "<question>"` rather than `graphify query` directly: it compares the graph with HEAD and with files edited since, rebuilds only when one of them moved (about a minute in this tree), then runs the query — no hook and no background process. A worktree starts empty, and the first `npm run graph` builds it there.
 
 ## Detailed references
 
