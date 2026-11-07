@@ -265,6 +265,8 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `PASSWORD_BREACH_CHECK_ENABLED`        | Enable HIBP breached-password check (set `false` to disable)           | `true`                                         | optional (default `true`)       |
 | `E2E_TEST_EMAIL`                       | Email of the Playwright test account                                   | `e2e+ci@example.com`                           | for `test:e2e`                  |
 | `E2E_TEST_PASSWORD`                    | **Secret.** Password of the Playwright test account                    | `change-me`                                    | for `test:e2e`                  |
+| `E2E_VISUAL_EMAIL`                     | Email of the visual gate's dedicated fixture account (#920)            | `visual+ci@example.com`                        | for `visual:capture`            |
+| `E2E_VISUAL_PASSWORD`                  | **Secret.** Password of the visual gate's fixture account (#920)       | `change-me`                                    | for `visual:capture`            |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Public Web Push VAPID key (safe for the browser)                       | `BElN...`                                      | Web Push only                   |
 | `PUSH_ENDPOINT_ALLOWLIST`              | Comma-separated push-service hosts allowed for dispatch                | `fcm.googleapis.com,...`                       | Web Push only                   |
 | `PUSH_WEBHOOK_TOKEN`                   | **Secret.** Bearer token for the habit-reminder push webhook           | `change-me`                                    | Web Push only                   |

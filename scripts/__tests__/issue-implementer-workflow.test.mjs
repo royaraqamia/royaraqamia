@@ -108,6 +108,19 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toContain("cap-monthly-usd: '75'");
   });
 
+  it('never lets a round end on a workflow file the push token cannot carry', () => {
+    // The token is the OpenCode Agent app, whose permissions do not include
+    // `workflows`: a diff that touches .github/workflows is rejected at push, so the
+    // instruction is to stop and name the change instead of spending the round.
+    expect(workflow).toContain('Never edit anything under `.github/workflows/`');
+    expect(workflow).toContain('does not hold the `workflows` permission');
+  });
+
+  it('hands the visual gate its own account instead of the offline one', () => {
+    expect(workflow).toContain('secrets.E2E_VISUAL_EMAIL');
+    expect(workflow).toContain('secrets.E2E_VISUAL_PASSWORD');
+  });
+
   it('runs six rounds one after another, so each branch is cut from the merge before it', () => {
     expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
     expect(workflow).toContain('max-parallel: 1');

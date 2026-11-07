@@ -276,6 +276,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          # The visual gate's own fixture account (#920), so a repair re-records a
+          # baseline from the gate's account rather than the shared offline one.
+          E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}
+          E2E_VISUAL_PASSWORD: ${{ secrets.E2E_VISUAL_PASSWORD }}
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'

@@ -219,6 +219,10 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          # The visual gate's own fixture account (#920), so a recorded baseline is not
+          # read from the account the offline specs also write to.
+          E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}
+          E2E_VISUAL_PASSWORD: ${{ secrets.E2E_VISUAL_PASSWORD }}
           TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
