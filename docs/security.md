@@ -50,6 +50,17 @@ keystore secrets below.
 - Strict TS config (`noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals/Parameters`)
 - Keep DB/SDK/3rd-party off the UI boundary
 
+## Code scanning (CodeQL)
+
+`.github/workflows/codeql-analysis.yml` runs the `security-and-quality` pack on every push to `main`
+and every pull request. An open alert is closed one of two ways, never left to age:
+
+- **Fix it** when the finding is real. The quality queries (an unused import, a trivial conditional)
+  are cheap to clear and keep the list readable enough to notice the one that matters.
+- **Dismiss it with a reason** when the risk is already mitigated in code the analysis cannot follow
+  (a sanitizer it does not model, a test-only path), and put that reasoning in the dismissal comment
+  so the next reader does not re-investigate it.
+
 ## MCP threat boundary & key rotation
 
 The public MCP server stores a consenting user's Supabase session AES-256-GCM-encrypted
