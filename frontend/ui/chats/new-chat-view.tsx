@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -10,8 +10,9 @@ import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
-import type { ChatPreview } from '@/shared/contracts/chat';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
+import { newChatInitialState, newChatReducer } from './new-chat-view.reducer';
+import type { ChatPreview } from '@/shared/contracts/chat';
 
 /**
  * `/chats/new?to=<handle>`: the empty chat screen a picker row opens.
@@ -31,14 +32,12 @@ export function NewChatView() {
   const params = useSearchParams();
   const handle = params.get('to') ?? '';
   const { user, isLoading: isSessionLoading } = useSession();
-  const [preview, setPreview] = useState<ChatPreview | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRequesting, setIsRequesting] = useState(false);
+  const [state, dispatch] = useReducer(newChatReducer, undefined, newChatInitialState);
+  const { preview, error, isLoading, isRequesting } = state;
 
   useEffect(() => {
     if (!handle || !user) {
-      setIsLoading(false);
+      dispatch({ type: 'readSkipped' });
       return;
     }
 
@@ -51,13 +50,14 @@ export function NewChatView() {
           router.replace(`/chats/${next.conversationId}`);
           return;
         }
-        setPreview(next);
+        dispatch({ type: 'previewRead', preview: next });
       } catch (cause) {
         if (!cancelled) {
-          setError(cause instanceof Error && cause.message ? cause.message : 'العضو غير موجود');
+          dispatch({
+            type: 'readFailed',
+            message: cause instanceof Error && cause.message ? cause.message : 'العضو غير موجود',
+          });
         }
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
     })();
 
@@ -68,19 +68,21 @@ export function NewChatView() {
 
   async function request() {
     if (!preview || isRequesting) return;
-    setIsRequesting(true);
-    setError(null);
+    dispatch({ type: 'requestStarted' });
     try {
       const result = await startDirectChat(preview.peer.id);
       if (result.conversationId) {
         router.push(`/chats/${result.conversationId}`);
         return;
       }
-      setError(result.error ?? 'تعذّر إرسال الطلب');
+      dispatch({ type: 'requestFailed', message: result.error ?? 'تعذّر إرسال الطلب' });
     } catch (cause) {
-      setError(cause instanceof Error && cause.message ? cause.message : 'تعذّر إرسال الطلب');
+      dispatch({
+        type: 'requestFailed',
+        message: cause instanceof Error && cause.message ? cause.message : 'تعذّر إرسال الطلب',
+      });
     } finally {
-      setIsRequesting(false);
+      dispatch({ type: 'requestFinished' });
     }
   }
 

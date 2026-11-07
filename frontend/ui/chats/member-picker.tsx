@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { Check, Search, X } from 'lucide-react';
 
 import { searchChatMembers } from '@/frontend/api/chats';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import type { ChatPeer } from '@/shared/contracts/chat';
+import {
+  isMemberSearchable,
+  memberSearchInitialState,
+  memberSearchReducer,
+} from './member-picker.reducer';
 
 /**
  * The one member search the chats surface offers: verified handles only, two
@@ -32,24 +37,20 @@ export function MemberPicker({
   onToggle?: (peer: ChatPeer) => void;
   onClose?: () => void;
 }) {
-  const [term, setTerm] = useState('');
-  const [results, setResults] = useState<ChatPeer[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [state, dispatch] = useReducer(memberSearchReducer, undefined, memberSearchInitialState);
+  const { term, results, busy } = state;
 
-  async function search(value: string) {
-    setTerm(value);
-    if (value.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+  async function searchFor(value: string) {
+    dispatch({ type: 'typed', term: value });
+    if (!isMemberSearchable(value)) return;
 
-    setBusy(true);
+    dispatch({ type: 'searchStarted' });
     try {
-      setResults(await searchChatMembers(value));
+      dispatch({ type: 'searchSucceeded', results: await searchChatMembers(value) });
     } catch {
-      setResults([]);
+      dispatch({ type: 'searchFailed' });
     } finally {
-      setBusy(false);
+      dispatch({ type: 'searchFinished' });
     }
   }
 
@@ -61,7 +62,7 @@ export function MemberPicker({
         <Search size={16} className="shrink-0 text-muted-foreground/70" />
         <input
           value={term}
-          onChange={(event) => void search(event.target.value)}
+          onChange={(event) => void searchFor(event.target.value)}
           placeholder="ابحث باسم العضو أو معرِّفه"
           aria-label="البحث عن عضو"
           className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
@@ -80,7 +81,7 @@ export function MemberPicker({
 
       {busy && <p className="mt-2 text-xs text-muted-foreground/70">جاري البحث...</p>}
 
-      {!busy && term.trim().length >= 2 && results.length === 0 && (
+      {!busy && isMemberSearchable(term) && results.length === 0 && (
         <p className="mt-2 text-xs text-muted-foreground/70">لا نتائج</p>
       )}
 
