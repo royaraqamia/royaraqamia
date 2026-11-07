@@ -1,9 +1,9 @@
 name: 'OpenCode Runner Setup'
 description: >-
   Prepares a runner for an OpenCode agent job: installs the pinned Vercel CLI and
-  writes the runner-only OpenCode config (Supabase MCP server + headless permission
-  block). Shared by the autonomous agent workflows so the setup cannot drift between
-  them.
+  writes the runner-only OpenCode config (Supabase MCP server, compaction pruning
+  and the headless permission block). Shared by the autonomous agent workflows so
+  the setup cannot drift between them.
 
 inputs:
   supabase-project-ref:
@@ -24,7 +24,11 @@ runs:
         npm install --global vercel@${{ inputs.vercel-version }}
         vercel --version
 
-    - name: Configure Supabase MCP (runner-only)
+    - name: Configure OpenCode (runner-only)
+      # The repository carries no OpenCode config of its own, so the settings an
+      # autonomous run needs live here instead. `compaction.prune` is not a
+      # default (it is off upstream): pruning old tool output is what keeps the
+      # context of a long implementer or repair run from filling with stale reads.
       shell: bash
       env:
         SUPABASE_PROJECT_REF: ${{ inputs.supabase-project-ref }}
@@ -33,6 +37,9 @@ runs:
         cat > "$HOME/.config/opencode/opencode.json" <<EOF
         {
           "\$schema": "https://opencode.ai/config.json",
+          "compaction": {
+            "prune": true
+          },
           "mcp": {
             "supabase": {
               "type": "remote",
