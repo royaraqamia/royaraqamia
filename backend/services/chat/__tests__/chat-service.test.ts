@@ -56,6 +56,7 @@ function makeRepository(
         editedAt: null,
         deletedAt: null,
         createdAt: '2026-11-01T10:05:00.000Z',
+        clientId: null,
       },
       attachmentFailure: null,
     })),
@@ -838,6 +839,27 @@ describe('ChatService.sendMessage', () => {
       status: 429,
     });
   });
+
+  it("carries the writer's own id for the line through to the write (#1033)", async () => {
+    const { repository, service } = makeRepository();
+    const clientId = '11111111-1111-7111-8111-111111111111';
+
+    await service.sendMessage(me, 'c-1', { body: 'مرحبا', clientId });
+
+    expect(repository.insertMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId, senderId: me })
+    );
+  });
+
+  it('writes null for a caller that sends only while online', async () => {
+    const { repository, service } = makeRepository();
+
+    await service.sendMessage(me, 'c-1', { body: 'مرحبا' });
+
+    expect(repository.insertMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: null })
+    );
+  });
 });
 
 describe('ChatService.deleteMessage', () => {
@@ -944,6 +966,7 @@ describe('ChatService.sendMessage attachments', () => {
           editedAt: null,
           deletedAt: null,
           createdAt: '2026-11-01T10:05:00.000Z',
+          clientId: null,
         },
         attachmentFailure: { code: '53400', message: 'chat attachment daily allowance reached' },
       })),
@@ -982,6 +1005,7 @@ describe('ChatService.sendMessage attachments', () => {
           editedAt: null,
           deletedAt: null,
           createdAt: '2026-11-01T10:05:00.000Z',
+          clientId: null,
         },
         attachmentFailure: { code: '53400', message: 'chat attachment project storage is full' },
       })),
@@ -1017,6 +1041,7 @@ describe('ChatService.sendMessage attachments', () => {
           editedAt: null,
           deletedAt: null,
           createdAt: '2026-11-01T10:05:00.000Z',
+          clientId: null,
         },
         attachmentFailure: {
           code: '42501',

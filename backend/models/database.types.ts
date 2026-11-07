@@ -393,6 +393,7 @@ export type Database = {
       chat_messages: {
         Row: {
           body: string | null;
+          client_id: string | null;
           conversation_id: string;
           created_at: string;
           deleted_at: string | null;
@@ -404,6 +405,7 @@ export type Database = {
         };
         Insert: {
           body?: string | null;
+          client_id?: string | null;
           conversation_id: string;
           created_at?: string;
           deleted_at?: string | null;
@@ -415,6 +417,7 @@ export type Database = {
         };
         Update: {
           body?: string | null;
+          client_id?: string | null;
           conversation_id?: string;
           created_at?: string;
           deleted_at?: string | null;

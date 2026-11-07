@@ -38,6 +38,7 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
+    clientId: row.client_id,
   };
 }
 

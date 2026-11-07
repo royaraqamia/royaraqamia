@@ -263,6 +263,7 @@ data class ChatMessagePageResponseMessagesItem(
     val editedAt: String?,
     val deletedAt: String?,
     val createdAt: String,
+    val clientId: String? = null,
     val attachments: List<ChatMessagePageResponseMessagesItemAttachmentsItem>,
 )
 
@@ -299,6 +300,7 @@ data class ChatMessageResponseMessage(
     val editedAt: String?,
     val deletedAt: String?,
     val createdAt: String,
+    val clientId: String? = null,
     val attachments: List<ChatMessageResponseMessageAttachmentsItem>,
 )
 

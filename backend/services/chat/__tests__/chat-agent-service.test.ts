@@ -124,6 +124,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
       editedAt: null,
       deletedAt: null,
       createdAt: '2026-11-02T08:01:00.000Z',
+      clientId: null,
     })),
     startTurn: vi.fn(async () => 'turn-1'),
     setTurnQuestion: vi.fn(async () => undefined),

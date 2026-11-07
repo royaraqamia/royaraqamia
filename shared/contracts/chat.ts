@@ -188,6 +188,14 @@ export interface ChatMessage {
   editedAt: string | null;
   deletedAt: string | null;
   createdAt: string;
+  /**
+   * The writer's own id for the line, minted before it was sent (#1033). A
+   * message queued offline keeps it across retries, so the row that comes back
+   * names the bubble the device already painted; null for a line the server
+   * wrote itself (the assistant's, a system line) and for everything older than
+   * the column.
+   */
+  clientId?: string | null;
   attachments: ChatAttachment[];
   /**
    * The quoted line, one level deep: a reply to a reply quotes the message it
@@ -340,6 +348,13 @@ export const ChatMessageSendSchema = z
   .object({
     body: z.string().max(CHAT_BODY_MAX, 'الرسالة طويلة جداً').optional(),
     replyToId: z.string().uuid().optional().nullable(),
+    /**
+     * The line's identity, minted by the writer before the first attempt
+     * (#1033). A replay after a reconnect carries the same value, and the
+     * server answers the row that attempt already wrote instead of adding a
+     * second one; absent is a client that sends only while online.
+     */
+    clientId: z.string().uuid('معرّف الرسالة غير صالح').optional(),
     attachments: z
       .array(ChatAttachmentInputSchema)
       .max(CHAT_ATTACHMENTS_PER_MESSAGE_MAX, 'خمسة مرفقات في الرسالة الواحدة')
@@ -441,6 +456,7 @@ export const ChatMessageSchema = z.object({
   editedAt: z.string().nullable(),
   deletedAt: z.string().nullable(),
   createdAt: z.string(),
+  clientId: z.string().nullable().optional(),
   attachments: z.array(ChatAttachmentSchema),
 });
 

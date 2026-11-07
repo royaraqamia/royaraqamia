@@ -52,6 +52,8 @@ export interface ChatMessageRecord {
   editedAt: string | null;
   deletedAt: string | null;
   createdAt: string;
+  /** The writer's own id for the line (#1033); null for one the server named. */
+  clientId: string | null;
 }
 
 export interface ChatAttachmentRecord {
@@ -85,6 +87,12 @@ export interface InsertMessageInput {
   senderKind: ChatSenderKind;
   body: string | null;
   replyToId?: string | null;
+  /**
+   * The id the writer minted for this line (#1033). Present makes the insert a
+   * replay-safe write: a second insert with the same `(senderId, clientId)`
+   * answers the first row instead of creating one.
+   */
+  clientId?: string | null;
   attachments?: {
     storagePath: string;
     fileName: string;
