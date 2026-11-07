@@ -21,6 +21,7 @@ import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -47,6 +48,13 @@ class LinksnapWritesTest {
     private val alice = Identity.User("alice-id")
     private val bob = Identity.User("bob-id")
     private var who: Identity = alice
+
+    /**
+     * The Keystore cannot run on a JVM, so this stands in for it across the
+     * "process kill" the same way the real key survives one: one instance, one
+     * key, while the database file is closed and reopened (#921).
+     */
+    private val cipher = FakeLinkPasswordCipher()
 
     @Before
     fun setUp() {
@@ -85,6 +93,91 @@ class LinksnapWritesTest {
         assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"clientId\":\"${row.clientId}\""))
         assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"customCode\":\"${row.code}\""))
     }
+
+    @Test
+    fun `a queued password is ciphertext in the outbox, not the password`() = runBlocking {
+        val repository = repository(RecordingTransport { HttpResponse(200, "{}") })
+        val row = repository.createLink("https://example.com/locked", password = "hunter2")
+
+        assertTrue(row.passwordProtected)
+        val stored = databases.forIdentity(alice).dao().outbox().single().payload
+        assertFalse("the password is at rest in the outbox", stored.contains("hunter2"))
+        assertTrue("the row carries the sealed form instead", stored.contains("sealed:v1:"))
+    }
+
+    @Test
+    fun `an edit's password is sealed too`() = runBlocking {
+        val repository = repository(RecordingTransport { HttpResponse(200, "{}") })
+        val row = repository.createLink("https://example.com/open")
+        repository.updateLink(row.clientId, LinksnapEdit(password = "hunter2", passwordSet = true))
+
+        val stored = databases.forIdentity(alice).dao().outbox().last().payload
+        assertFalse("the edit's password is at rest in the outbox", stored.contains("hunter2"))
+        assertTrue("the edit carries the sealed form instead", stored.contains("sealed:v1:"))
+    }
+
+    @Test
+    fun `a queued password-protected create drains after a kill with the password the web sends`() =
+        runBlocking {
+            val before = repository(RecordingTransport { HttpResponse(200, "{}") })
+            val row = before.createLink("https://example.com/locked", password = "hunter2")
+
+            // The process dies: the connection goes, the file and the key do not.
+            databases.close()
+
+            val transport = RecordingTransport { HttpResponse(200, "{}") }
+            val after = repository(transport)
+            assertEquals(1, after.drain().replayed)
+
+            val sent = transport.requests.single()
+            assertTrue(
+                sent.body.orEmpty(),
+                sent.body.orEmpty().contains("\"password\":\"hunter2\""),
+            )
+            assertFalse(
+                "the sealed form never reaches the server",
+                sent.body.orEmpty().contains("sealed:v1:"),
+            )
+            assertTrue(
+                sent.body.orEmpty(),
+                sent.body.orEmpty().contains("\"clientId\":\"${row.clientId}\""),
+            )
+        }
+
+    @Test
+    fun `a device that cannot seal the password refuses to queue the link`() = runBlocking {
+        val refusing = FakeLinkPasswordCipher(refuseSeal = true)
+        val repository =
+            repository(RecordingTransport { HttpResponse(200, "{}") }, passwords = refusing)
+
+        val failure =
+            runCatching {
+                repository.createLink("https://example.com/locked", password = "hunter2")
+            }
+                .exceptionOrNull()
+
+        assertTrue(failure is LinkPasswordUnavailable)
+        assertEquals(LinksnapRepository.PASSWORD_CANNOT_BE_SEALED, failure?.message)
+        assertEquals("nothing reached the outbox", 0, repository.outboxStatus().pending)
+        assertEquals("and no row was painted", 0, repository.links().size)
+    }
+
+    @Test
+    fun `a key the device no longer has fails the drain, it does not send the sealed text`() =
+        runBlocking {
+            val before = repository(RecordingTransport { HttpResponse(200, "{}") })
+            before.createLink("https://example.com/locked", password = "hunter2")
+
+            val transport = RecordingTransport { HttpResponse(200, "{}") }
+            val keyless = FakeLinkPasswordCipher(refuseOpen = true)
+            val after = repository(transport, passwords = keyless)
+
+            val report = after.drain()
+
+            assertEquals(0, report.replayed)
+            assertEquals(1, report.failed)
+            assertEquals("the sealed text is never sent as a password", 0, transport.hits)
+        }
 
     @Test
     fun `a queued write is drained by the identity that made it, and by no other`() = runBlocking {
@@ -246,6 +339,7 @@ class LinksnapWritesTest {
         transport: RecordingTransport,
         identity: () -> Identity = { who },
         nowMillis: () -> Long = { 0L },
+        passwords: LinkPasswordCipher = cipher,
     ): LinksnapRepository {
         val session =
             Session(
@@ -261,7 +355,29 @@ class LinksnapWritesTest {
             clock = TestClock(),
             nowMillis = nowMillis,
             random = { 0.5 },
+            passwordCipher = passwords,
         )
+    }
+
+    /**
+     * A reversible stand-in for the Keystore (#921): it makes the stored value
+     * obviously not the password, and its two switches model a device that will
+     * not seal and a key that is gone.
+     */
+    private class FakeLinkPasswordCipher(
+        private val refuseSeal: Boolean = false,
+        private val refuseOpen: Boolean = false,
+    ) : LinkPasswordCipher {
+        override fun seal(password: String): String {
+            if (refuseSeal) throw IllegalStateException("the Keystore refused")
+            return "sealed:" + password.reversed()
+        }
+
+        override fun open(sealed: String): String {
+            if (refuseOpen) throw IllegalStateException("the key is gone")
+            require(sealed.startsWith("sealed:")) { "not a blob this build wrote" }
+            return sealed.removePrefix("sealed:").reversed()
+        }
     }
 
     /** A clock the assertions can hold still: one id per call, one instant per call. */

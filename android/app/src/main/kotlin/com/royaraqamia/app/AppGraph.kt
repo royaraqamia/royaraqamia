@@ -37,6 +37,7 @@ import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
 import com.royaraqamia.app.store.leads.LeadsRepository
 import com.royaraqamia.app.store.leads.LeadsStores
+import com.royaraqamia.app.store.linksnap.KeystoreLinkPasswordCipher
 import com.royaraqamia.app.store.linksnap.LinksnapRepository
 import com.royaraqamia.app.store.linksnap.LinksnapStores
 import com.royaraqamia.app.store.outbox.DrainReport
@@ -299,6 +300,7 @@ class AppGraph private constructor(
                         client = client,
                         signedIn = signedIn,
                         online = online,
+                        passwordCipher = KeystoreLinkPasswordCipher(),
                     ),
                 blogpress =
                     BlogpressRepository(

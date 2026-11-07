@@ -9,6 +9,8 @@ import java.net.URLEncoder
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -28,11 +30,39 @@ object LinksnapWriteTransport {
     const val LINKS_PATH = "/linksnap/api/links"
     const val UNLOCK_PATH = "/linksnap/api/unlock"
 
-    fun requestFor(intent: OutboxIntentRow): WriteRequest = when (intent.type) {
-        "link.create" -> WriteRequest("POST", SHORTEN_PATH, intent.payload)
-        "link.update" -> WriteRequest("PATCH", LINKS_PATH, intent.payload)
+    /**
+     * The request an intent becomes, with its sealed password opened just before
+     * the body leaves the device (#921). A key the device no longer holds throws
+     * here: the repository turns that into a permanent failure rather than
+     * sending the ciphertext as the visitor's password.
+     */
+    fun requestFor(
+        intent: OutboxIntentRow,
+        passwords: LinkPasswordCipher,
+    ): WriteRequest = when (intent.type) {
+        "link.create" -> WriteRequest("POST", SHORTEN_PATH, openPassword(intent.payload, passwords))
+        "link.update" -> WriteRequest("PATCH", LINKS_PATH, openPassword(intent.payload, passwords))
         "link.delete" -> deleteRequest(intent.payload)
         else -> throw IllegalArgumentException("Unknown outbox intent type: ${intent.type}")
+    }
+
+    /**
+     * The payload with its `password` opened. A payload without one — or the
+     * `null` that clears it — is returned untouched.
+     */
+    private fun openPassword(payload: String, passwords: LinkPasswordCipher): String {
+        val body = LinksnapPayloads.withNulls.parseToJsonElement(payload).jsonObject
+        val stored = body["password"]
+        if (stored == null || stored is JsonNull) return payload
+        val value = (stored as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return payload
+        if (!LinkPasswords.isSealed(value)) return payload
+
+        val opened = LinkPasswords.open(passwords, value)
+        return JsonObject(
+            body.mapValues { (key, element) ->
+                if (key == "password") JsonPrimitive(opened) else element
+            }
+        ).toString()
     }
 
     /**
