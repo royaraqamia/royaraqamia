@@ -3,19 +3,42 @@ package com.royaraqamia.app.chats
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.contracts.generated.ChatAssistantStateResponse
 import com.royaraqamia.app.contracts.generated.ChatAttachmentUrlResponse
 import com.royaraqamia.app.contracts.generated.ChatMembersResponse
 import com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponse
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
+import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemAttachmentsItem
+import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
 import com.royaraqamia.app.contracts.generated.ChatMessageResponse
+import com.royaraqamia.app.contracts.generated.ChatMessageResponseMessage
+import com.royaraqamia.app.contracts.generated.ChatMessageResponseMessageSenderKind
 import com.royaraqamia.app.contracts.generated.ChatOkResponse
 import com.royaraqamia.app.contracts.generated.ChatStartResponse
 import com.royaraqamia.app.contracts.generated.ChatThreadResponse
 import com.royaraqamia.app.contracts.generated.ChatThreadResponseThread
 import com.royaraqamia.app.contracts.generated.ChatThreadsResponse
 import com.royaraqamia.app.contracts.generated.ChatThreadsResponseThreadsItem
+import com.royaraqamia.app.store.Identity
+import com.royaraqamia.app.store.IdentityScopedStore
+import com.royaraqamia.app.store.chats.ChatMessageRow
+import com.royaraqamia.app.store.chats.ChatThreadRow
+import com.royaraqamia.app.store.chats.ChatsDao
+import com.royaraqamia.app.store.chats.ChatsStores
+import com.royaraqamia.app.store.outbox.DrainReport
+import com.royaraqamia.app.store.outbox.OutboxDrainer
+import com.royaraqamia.app.store.outbox.OutboxIntentRow
+import com.royaraqamia.app.store.outbox.OutboxQueue
+import com.royaraqamia.app.store.outbox.OutboxRules
+import com.royaraqamia.app.store.outbox.SendOutcome
+import com.royaraqamia.app.store.outbox.SystemWriteClock
+import com.royaraqamia.app.store.outbox.WriteClock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -32,8 +55,14 @@ data class ChatMessages(
     val nextCursor: String?,
 )
 
+/** Where a line the device still owes stands, as the bubble draws it. */
+enum class ChatPending {
+    Queued,
+    Failed,
+}
+
 /**
- * The chats surface's reads and writes (#819).
+ * The chats surface's reads and writes (#819), on the device first (#1033, #1127).
  *
  * Every route here is one the site's own components call, with the same body and
  * the same order: the list the tab draws (`GET /api/chats`), one thread
@@ -42,80 +71,286 @@ data class ChatMessages(
  * be a second component with the same name (ADR-0103), so the routes are the
  * site's and the bodies are the generated ones.
  *
- * A refusal is a value: a policy answer arrives as `success: false` with the
- * member's own sentence, and [ChatFailure.sentenceOf] is what turns it into text
- * a screen can draw — never a thrown error, because "you cannot post here" is a
- * state rather than an outage (ADR-0031).
+ * The device is the first answer (#1033):
+ *
+ * - [threads], [thread] and [messages] write every answered read into the
+ *   identity's Room database, and answer from it when the read cannot (#1127).
+ *   The windows are the web's: twenty threads, two hundred lines per thread,
+ *   thirty days.
+ * - [send] commits the line **and** its replay intent in one transaction, then
+ *   drains. The bubble is painted from the store while the queue still owes it;
+ *   a replay carries the client-minted id, so the server answers the row the
+ *   first attempt wrote instead of adding a second (#1115).
+ * - [drain] is the same [OutboxDrainer] the other products drain with, so the
+ *   background worker and the screen share one implementation of the queue.
+ *
+ * Attachments are the port's next slice (#933): the composer cannot stage a file
+ * yet, so no attachment can enter the queue here. The store and the transport
+ * carry a message's words; the bytes follow the composer that can produce them.
  */
-class ChatsRepository(private val client: ApiClient) {
-    /** The tab's rows, from the route the site's tab reads. */
+class ChatsRepository(
+    private val client: ApiClient,
+    private val databases: IdentityScopedStore<ChatsStores>? = null,
+    private val identity: () -> Identity = { Identity.Guest },
+    /** Whether a request can be sent now; a guest's queue never drains (ADR-0027). */
+    private val signedIn: () -> Boolean = { true },
+    /** Whether the radio is on. Injected so the JVM suite can pin a drain. */
+    private val online: () -> Boolean = { true },
+    private val clock: WriteClock = SystemWriteClock,
+    private val nowMillis: () -> Long = { System.currentTimeMillis() },
+    private val random: () -> Double = { Math.random() },
+) {
+    /** One drain at a time, so two triggers cannot race for the same `seq`. */
+    private val drainMutex = Mutex()
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
+
+    // --- Reads ----------------------------------------------------------------
+
+    /** The tab's rows, written to the device, or the last answer when it cannot. */
     suspend fun threads(): ApiResult<List<ChatThreadsResponseThreadsItem>> =
-        when (val result = client.get<ChatThreadsResponse>(THREADS_PATH)) {
-            is ApiResult.Success -> {
-                val body = result.value
-                if (!body.success) {
-                    refused(body.error)
-                } else {
-                    ApiResult.Success(body.threads.orEmpty())
+        withContext(Dispatchers.IO) {
+            when (val result = client.get<ChatThreadsResponse>(THREADS_PATH)) {
+                is ApiResult.Success -> {
+                    val body = result.value
+                    if (!body.success) {
+                        refused(body.error)
+                    } else {
+                        val rows = body.threads.orEmpty()
+                        saveThreads(rows)
+                        ApiResult.Success(rows)
+                    }
+                }
+                is ApiResult.Failure -> {
+                    val cached = cachedThreads()
+                    if (cached.isNotEmpty()) ApiResult.Success(cached) else result
                 }
             }
-            is ApiResult.Failure -> result
         }
 
-    /** One thread's header, roster and rights. */
+    /** The rows this device holds, with no request. */
+    suspend fun cachedThreads(): List<ChatThreadsResponseThreadsItem> =
+        withContext(Dispatchers.IO) {
+            val dao = dao() ?: return@withContext emptyList()
+            dao.threads(CHAT_THREAD_WINDOW).mapNotNull { decodeThread(it) }
+        }
+
+    /** One thread's header, roster and rights, written to the device. */
     suspend fun thread(conversationId: String): ApiResult<ChatThreadResponseThread> =
-        when (val result = client.get<ChatThreadResponse>(threadPath(conversationId))) {
-            is ApiResult.Success -> {
-                val body = result.value
-                val thread = body.thread
-                if (!body.success || thread == null) {
-                    refused(body.error)
-                } else {
-                    ApiResult.Success(thread)
+        withContext(Dispatchers.IO) {
+            when (val result = client.get<ChatThreadResponse>(threadPath(conversationId))) {
+                is ApiResult.Success -> {
+                    val body = result.value
+                    val thread = body.thread
+                    if (!body.success || thread == null) {
+                        refused(body.error)
+                    } else {
+                        saveHeader(thread)
+                        ApiResult.Success(thread)
+                    }
+                }
+                is ApiResult.Failure -> {
+                    val cached = cachedThread(conversationId)
+                    if (cached != null) ApiResult.Success(cached) else result
                 }
             }
-            is ApiResult.Failure -> result
+        }
+
+    /** The header this device holds, with no request. */
+    suspend fun cachedThread(conversationId: String): ChatThreadResponseThread? =
+        withContext(Dispatchers.IO) {
+            val dao = dao() ?: return@withContext null
+            dao.header(conversationId)?.let {
+                runCatching {
+                        json.decodeFromString(ChatThreadResponseThread.serializer(), it.json)
+                    }
+                    .getOrNull()
+            }
         }
 
     /** A page of lines, oldest last; `before` is the opaque cursor a page answered. */
     suspend fun messages(
         conversationId: String,
         before: String? = null,
-    ): ApiResult<ChatMessages> {
+    ): ApiResult<ChatMessages> = withContext(Dispatchers.IO) {
         val query = if (before == null) "" else "?before=" + encode(before)
-        return when (
+        when (
             val result = client.get<ChatMessagePageResponse>(messagesPath(conversationId) + query)
         ) {
             is ApiResult.Success ->
                 if (result.value.success) {
-                    ApiResult.Success(
-                        ChatMessages(
-                            messages = result.value.messages.orEmpty(),
-                            nextCursor = result.value.nextCursor,
+                    val page = result.value.messages.orEmpty()
+                    // Older pages still come from the network (#1033): only the
+                    // newest page is the device's window, so only it is written
+                    // down and only it can be answered offline.
+                    if (before != null) {
+                        return@withContext ApiResult.Success(
+                            ChatMessages(page, result.value.nextCursor)
                         )
-                    )
+                    }
+                    val merged = mergeAndSave(conversationId, page)
+                    ApiResult.Success(ChatMessages(merged, result.value.nextCursor))
                 } else {
                     refused(result.value.error)
                 }
-            is ApiResult.Failure -> result
+            is ApiResult.Failure -> {
+                if (before != null) {
+                    result
+                } else {
+                    val cached = cachedMessages(conversationId)
+                    if (cached.isNotEmpty()) {
+                        ApiResult.Success(ChatMessages(cached, null))
+                    } else {
+                        result
+                    }
+                }
+            }
         }
     }
 
-    /**
-     * One line, written. The answer's own row is not returned to the screen: the
-     * thread is read again, which is what the site's hook does after a send and
-     * what keeps one page shape rather than two structurally identical ones.
-     */
-    suspend fun send(conversationId: String, body: String): ApiResult<Unit> =
-        when (val result = client.post<ChatMessageResponse>(messagesPath(conversationId), textOf(body))) {
-            is ApiResult.Success ->
-                if (!result.value.success || result.value.message == null) {
-                    refused(result.value.error)
-                } else {
-                    ApiResult.Success(Unit)
-                }
-            is ApiResult.Failure -> result
+    /** The lines this device holds, newest page included and queued lines among them. */
+    suspend fun cachedMessages(conversationId: String): List<ChatMessagePageResponseMessagesItem> =
+        withContext(Dispatchers.IO) {
+            val dao = dao() ?: return@withContext emptyList()
+            dao.messages(conversationId).mapNotNull { decodeMessage(it) }
         }
+
+    // --- Writes ---------------------------------------------------------------
+
+    /**
+     * One line, written to the device and queued (#1033, #1127).
+     *
+     * The row and its intent are committed together, so the line survives the
+     * next millisecond whatever the radio does. The drain is attempted right
+     * away: online, the server's row replaces the local twin before the next
+     * read; offline, the bubble keeps saying the queue owes it. A permanent
+     * refusal is kept and surfaced as the warning, never dropped.
+     *
+     * With no store ([databases] absent, as the route tests construct it) the
+     * write is the online request it was before this cache existed.
+     */
+    suspend fun send(
+        conversationId: String,
+        body: String,
+        senderId: String? = null,
+    ): ApiResult<Unit> = withContext(Dispatchers.IO) {
+        val dao = dao() ?: return@withContext sendOnline(conversationId, body)
+
+        val clientId = clock.uuid()
+        val now = clock.nowIso()
+        val local =
+            ChatMessagePageResponseMessagesItem(
+                id = LOCAL_PREFIX + clientId,
+                conversationId = conversationId,
+                senderId = senderId,
+                senderKind = ChatMessagePageResponseMessagesItemSenderKind.USER,
+                body = body,
+                replyToId = null,
+                editedAt = null,
+                deletedAt = null,
+                createdAt = now,
+                clientId = clientId,
+                attachments = emptyList(),
+            )
+        dao.commitMessage(
+            messageRow(local),
+            OutboxIntentRow.pending(
+                id = clientId,
+                entity = conversationId,
+                type = MESSAGE_SEND,
+                payload =
+                    buildJsonObject {
+                            put("conversationId", conversationId)
+                            put("clientId", clientId)
+                            put("body", body)
+                        }
+                        .toString(),
+                createdAt = nowMillis(),
+            ),
+        )
+        drain()
+        ApiResult.Success(Unit)
+    }
+
+    /** The line's state while the queue holds it, keyed by its client id. */
+    suspend fun pending(conversationId: String): Map<String, ChatPending> =
+        withContext(Dispatchers.IO) {
+            val dao = dao() ?: return@withContext emptyMap()
+            dao.outbox()
+                .filter { it.type == MESSAGE_SEND }
+                .mapNotNull { entry ->
+                    val payload = payloadOf(entry) ?: return@mapNotNull null
+                    val id = payload["conversationId"] ?: return@mapNotNull null
+                    if (id != conversationId) return@mapNotNull null
+                    val clientId = payload["clientId"] ?: return@mapNotNull null
+                    clientId to
+                        if (entry.status == OutboxIntentRow.STATUS_FAILED) {
+                            ChatPending.Failed
+                        } else {
+                            ChatPending.Queued
+                        }
+                }
+                .toMap()
+        }
+
+    /** Re-arms one failed line, then asks the queue to send it. */
+    suspend fun retryMessage(conversationId: String, clientId: String): DrainReport =
+        withContext(Dispatchers.IO) {
+            dao()?.retryMessage(clientId)
+            drain()
+        }
+
+    /** Replays the queue once, with the web's rules rather than a second opinion. */
+    suspend fun drain(): DrainReport = withContext(Dispatchers.IO) {
+        drainMutex.withLock {
+            val expected = identity()
+            val dao = databases?.forIdentity(expected)?.dao() ?: return@withContext DrainReport(0, 0, 0)
+            val queue =
+                object : OutboxQueue {
+                    override suspend fun entries(): List<OutboxIntentRow> = dao.outbox()
+
+                    override suspend fun remove(seq: Long) = dao.deleteIntent(seq)
+
+                    override suspend fun patch(
+                        entry: OutboxIntentRow,
+                        attempts: Int,
+                        status: String,
+                        lastError: String?,
+                        nextAttemptAt: Long,
+                    ) = dao.patchIntent(entry.seq, attempts, status, lastError, nextAttemptAt)
+                }
+            OutboxDrainer(
+                queue = queue,
+                send = { entry -> replay(entry, dao) },
+                signedIn = signedIn,
+                online = online,
+                now = nowMillis,
+                random = random,
+                stillOurs = { identity() == expected },
+            ).drain()
+        }
+    }
+
+    /** A manual retry of every refused line, then a drain. */
+    suspend fun retryFailed(): DrainReport = withContext(Dispatchers.IO) {
+        dao()?.retryFailedIntents()
+        drain()
+    }
+
+    /** What the device owes, without sending anything (the background drain's question). */
+    suspend fun outboxStatus(): DrainReport = withContext(Dispatchers.IO) {
+        val dao = dao() ?: return@withContext DrainReport(0, 0, 0)
+        DrainReport(
+            replayed = 0,
+            pending = dao.countIntents(OutboxIntentRow.STATUS_PENDING),
+            failed = dao.countIntents(OutboxIntentRow.STATUS_FAILED),
+        )
+    }
+
+    // --- The rest of the surface (online, unchanged) ---------------------------
 
     /** The same message, rewritten inside the window the RLS policy allows. */
     suspend fun edit(messageId: String, body: String): ApiResult<Unit> =
@@ -246,6 +481,200 @@ class ChatsRepository(private val client: ApiClient) {
             is ApiResult.Failure -> result
         }
 
+    // --- Internals ------------------------------------------------------------
+
+    private fun dao(): ChatsDao? = databases?.forIdentity(identity())?.dao()
+
+    private suspend fun sendOnline(conversationId: String, body: String): ApiResult<Unit> =
+        when (val result = client.post<ChatMessageResponse>(messagesPath(conversationId), textOf(body))) {
+            is ApiResult.Success ->
+                if (!result.value.success || result.value.message == null) {
+                    refused(result.value.error)
+                } else {
+                    ApiResult.Success(Unit)
+                }
+            is ApiResult.Failure -> result
+        }
+
+    /**
+     * One replay. A 409 is the thread's own refusal (closed, left) and is
+     * permanent; the shared classifier retries it for the REST products, so chat
+     * names its exception here rather than changing the rule everyone else reads.
+     */
+    private suspend fun replay(entry: OutboxIntentRow, dao: ChatsDao): SendOutcome {
+        val payload = payloadOf(entry) ?: return SendOutcome.Permanent
+        val conversationId = payload["conversationId"] ?: return SendOutcome.Permanent
+        val clientId = payload["clientId"] ?: return SendOutcome.Permanent
+        val body = payload["body"] ?: return SendOutcome.Permanent
+        val request =
+            buildJsonObject {
+                    put("body", body)
+                    put("clientId", clientId)
+                }
+                .toString()
+
+        return when (val answer = client.send("POST", messagesPath(conversationId), request)) {
+            is ApiResult.Success -> {
+                when (
+                    val decoded =
+                        ContractCodec.decode(answer.value, ChatMessageResponse.serializer())
+                ) {
+                    is ApiResult.Success ->
+                        if (decoded.value.success && decoded.value.message != null) {
+                            dao.applyServerMessage(
+                                messageRow(pageItemOf(decoded.value.message)),
+                                LOCAL_PREFIX + clientId,
+                            )
+                            SendOutcome.Accepted
+                        } else {
+                            SendOutcome.Permanent
+                        }
+                    // The server took the request but the row is unreadable: a
+                    // retry would duplicate it, so it is kept and surfaced.
+                    is ApiResult.Failure -> SendOutcome.Permanent
+                }
+            }
+            is ApiResult.Failure ->
+                when (val error = answer.error) {
+                    is ApiError.Network -> SendOutcome.Transient
+                    is ApiError.NotSignedIn -> SendOutcome.Transient
+                    is ApiError.InvalidContract -> SendOutcome.Permanent
+                    is ApiError.Server ->
+                        if (error.status == 409) SendOutcome.Permanent
+                        else OutboxRules.classify(error.status)
+                }
+        }
+    }
+
+    private fun payloadOf(entry: OutboxIntentRow): Map<String, String>? =
+        runCatching {
+                json.parseToJsonElement(entry.payload).jsonObject.mapValues {
+                    it.value.jsonPrimitive.content
+                }
+            }
+            .getOrNull()
+
+    private suspend fun saveThreads(rows: List<ChatThreadsResponseThreadsItem>) {
+        val dao = dao() ?: return
+        prune(dao)
+        val storedAt = nowMillis()
+        dao.upsertThreads(
+            rows.map {
+                ChatThreadRow(
+                    id = it.id,
+                    json = json.encodeToString(ChatThreadsResponseThreadsItem.serializer(), it),
+                    lastMessageAt = it.lastMessageAt,
+                    createdAt = it.createdAt,
+                    storedAt = storedAt,
+                )
+            }
+        )
+        dao.trimThreads(CHAT_THREAD_WINDOW)
+        dao.dropOrphanHeaders()
+    }
+
+    private suspend fun saveHeader(thread: ChatThreadResponseThread) {
+        val dao = dao() ?: return
+        prune(dao)
+        dao.upsertHeader(
+            com.royaraqamia.app.store.chats.ChatHeaderRow(
+                id = thread.id,
+                json = json.encodeToString(ChatThreadResponseThread.serializer(), thread),
+                storedAt = nowMillis(),
+            )
+        )
+    }
+
+    /**
+     * The answered page and the device's queued lines, as one list.
+     *
+     * The server's page cannot contain a line the queue has not sent yet, and the
+     * bubble has to keep drawing it; a server row that carries a client id
+     * replaces its local twin, which is the replay arriving (#1115).
+     */
+    private suspend fun mergeAndSave(
+        conversationId: String,
+        page: List<ChatMessagePageResponseMessagesItem>,
+    ): List<ChatMessagePageResponseMessagesItem> {
+        val dao = dao() ?: return page
+        prune(dao)
+        dao.upsertMessages(page.map(::messageRow))
+
+        val arrived = page.mapNotNull { it.clientId }
+        if (arrived.isNotEmpty()) {
+            dao.deleteMessages(arrived.map { LOCAL_PREFIX + it })
+        }
+        dao.trimMessages(conversationId, CHAT_MESSAGE_WINDOW)
+
+        val merged =
+            dao.messages(conversationId)
+                .mapNotNull { decodeMessage(it) }
+                .associateBy { it.id }
+                .values
+                .sortedBy { it.createdAt }
+        return merged
+    }
+
+    private suspend fun prune(dao: ChatsDao) {
+        val cutoff = nowMillis() - CHAT_RETENTION_MS
+        dao.pruneThreads(cutoff)
+        dao.pruneHeaders(cutoff)
+        dao.pruneMessages(cutoff)
+        dao.dropOrphanHeaders()
+    }
+
+    private fun messageRow(message: ChatMessagePageResponseMessagesItem) =
+        ChatMessageRow(
+            id = message.id,
+            conversationId = message.conversationId,
+            clientId = message.clientId,
+            createdAt = message.createdAt,
+            json = json.encodeToString(ChatMessagePageResponseMessagesItem.serializer(), message),
+            storedAt = nowMillis(),
+        )
+
+    private fun decodeThread(row: ChatThreadRow): ChatThreadsResponseThreadsItem? =
+        runCatching {
+                json.decodeFromString(ChatThreadsResponseThreadsItem.serializer(), row.json)
+            }
+            .getOrNull()
+
+    private fun decodeMessage(row: ChatMessageRow): ChatMessagePageResponseMessagesItem? =
+        runCatching {
+                json.decodeFromString(ChatMessagePageResponseMessagesItem.serializer(), row.json)
+            }
+            .getOrNull()
+
+    /** The replay's row as the page's item, so the device keeps one shape. */
+    private fun pageItemOf(message: ChatMessageResponseMessage) =
+        ChatMessagePageResponseMessagesItem(
+            id = message.id,
+            conversationId = message.conversationId,
+            senderId = message.senderId,
+            senderKind = when (message.senderKind) {
+                ChatMessageResponseMessageSenderKind.USER ->
+                    ChatMessagePageResponseMessagesItemSenderKind.USER
+                ChatMessageResponseMessageSenderKind.AGENT ->
+                    ChatMessagePageResponseMessagesItemSenderKind.AGENT
+                ChatMessageResponseMessageSenderKind.SYSTEM ->
+                    ChatMessagePageResponseMessagesItemSenderKind.SYSTEM
+            },
+            body = message.body,
+            replyToId = message.replyToId,
+            editedAt = message.editedAt,
+            deletedAt = message.deletedAt,
+            createdAt = message.createdAt,
+            clientId = message.clientId,
+            attachments = message.attachments.map {
+                ChatMessagePageResponseMessagesItemAttachmentsItem(
+                    id = it.id,
+                    fileName = it.fileName,
+                    mimeType = it.mimeType,
+                    byteSize = it.byteSize,
+                )
+            },
+        )
+
     /** A write with no body to draw: only its refusal has words. */
     private fun ok(result: ApiResult<ChatOkResponse>): ApiResult<Unit> =
         when (result) {
@@ -267,6 +696,19 @@ class ChatsRepository(private val client: ApiClient) {
         const val MEMBERS_PATH = "/api/chats/members"
         const val BLOCKS_PATH = "/api/chats/blocks"
         const val ASSISTANT_PATH = "/api/chats/assistant"
+
+        /** What one account's list carries, and one thread's newest lines. */
+        const val CHAT_THREAD_WINDOW = 20
+        const val CHAT_MESSAGE_WINDOW = 200
+
+        /** Thirty days, the web's retention (#1033). */
+        const val CHAT_RETENTION_MS = 30L * 24 * 60 * 60 * 1_000
+
+        /** The discriminator the queue stores for a line. */
+        const val MESSAGE_SEND = "message.send"
+
+        /** A queued line's local row id; the server's id replaces it on replay. */
+        const val LOCAL_PREFIX = "local:"
 
         fun threadPath(conversationId: String): String = "$THREADS_PATH/$conversationId"
 
