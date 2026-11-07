@@ -59,7 +59,6 @@ export interface PushPayload {
 
 export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   certificate_issued: '/verify',
-  post_published: '/blogpress',
   habit_reminder: '/habitflow',
   recovery_nudge: '/habitflow',
   expense_alert: '/spendtrack',
@@ -86,12 +85,6 @@ export function toPushUrl(type: NotificationType, metadata?: Record<string, unkn
     const code = metadata?.certificateCode;
     if (typeof code === 'string' && code.length > 0) {
       return `${base}/${encodeURIComponent(code)}`;
-    }
-  }
-  if (type === 'post_published') {
-    const slug = metadata?.slug;
-    if (typeof slug === 'string' && slug.length > 0) {
-      return `/community/${encodeURIComponent(slug)}`;
     }
   }
   return base;

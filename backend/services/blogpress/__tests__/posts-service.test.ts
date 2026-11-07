@@ -1,11 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  BlogpressPostsService,
-  type PostPublishedNotifier,
-} from '@/backend/services/blogpress/posts-service';
+import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
-import { createPostPublishedNotifier } from '@/backend/config/blogpress';
-import { createNotificationFanout } from '@/backend/config/notifications';
 import type { Post, RestorePostSnapshot } from '@/shared/contracts/blogpress';
 
 const postFixture = {
@@ -26,10 +21,7 @@ const postFixture = {
   updated_at: '2026-08-01T00:00:00.000Z',
 } as unknown as Post;
 
-function makeRepo(
-  overrides: Partial<PostsRepository> = {},
-  onPostPublished?: PostPublishedNotifier
-) {
+function makeRepo(overrides: Partial<PostsRepository> = {}) {
   const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
     getPublishedFeed: vi.fn(),
@@ -76,7 +68,7 @@ function makeRepo(
   };
   return {
     repository,
-    service: new BlogpressPostsService(repository, onPostPublished),
+    service: new BlogpressPostsService(repository),
   };
 }
 
@@ -146,87 +138,6 @@ describe('BlogpressPostsService publish visibility', () => {
 
     await service.bulkActionPosts(['p-1'], 'u-1', 'unpublish');
     expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1'], 'u-1', 'unpublish');
-  });
-});
-
-describe('BlogpressPostsService publish notifier', () => {
-  it('fires after save-and-publish', async () => {
-    const onPostPublished = vi.fn();
-    const { repository, service } = makeRepo({}, onPostPublished);
-    (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
-      slug: 'post-1',
-    });
-
-    await service.saveAndPublishPost('p-1', 'u-1', postData);
-
-    expect(onPostPublished).toHaveBeenCalledWith({
-      postId: 'p-1',
-      authorId: 'u-1',
-      slug: 'post-1',
-    });
-  });
-
-  it('fires after a create-and-publish', async () => {
-    const onPostPublished = vi.fn();
-    const { repository, service } = makeRepo({}, onPostPublished);
-    (repository.createAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 'p-9',
-      slug: 'post-abc12345',
-    });
-
-    await service.createAndPublishPost('u-1', postData);
-
-    expect(onPostPublished).toHaveBeenCalledWith({
-      postId: 'p-9',
-      authorId: 'u-1',
-      slug: 'post-abc12345',
-    });
-  });
-
-  it('fires after publish', async () => {
-    const onPostPublished = vi.fn();
-    const { repository, service } = makeRepo({}, onPostPublished);
-    (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
-
-    await service.publishPost('p-1', 'u-1');
-
-    expect(onPostPublished).toHaveBeenCalledWith({
-      postId: 'p-1',
-      authorId: 'u-1',
-      slug: 'post-1',
-    });
-  });
-
-  it('does not fire when publish fails', async () => {
-    const onPostPublished = vi.fn();
-    const { repository, service } = makeRepo({}, onPostPublished);
-    (repository.publishPost as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db down'));
-
-    await expect(service.publishPost('p-1', 'u-1')).rejects.toThrow('db down');
-    expect(onPostPublished).not.toHaveBeenCalled();
-  });
-
-  it('still returns the published slug when the fan-out delivery fails', async () => {
-    const broadcast = vi.fn(async () => {
-      throw new Error('notifications down');
-    });
-    const onPostPublished = createPostPublishedNotifier(
-      createNotificationFanout({
-        deliver: { broadcast },
-        push: { sendToUsers: async () => undefined },
-        resolveAdminIds: async () => ['admin-1'],
-        schedule: (task) => {
-          void task();
-        },
-      })
-    );
-    const { repository, service } = makeRepo({}, onPostPublished);
-    (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
-
-    await expect(service.publishPost('p-1', 'u-1')).resolves.toEqual({
-      slug: 'post-1',
-    });
-    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(1));
   });
 });
 

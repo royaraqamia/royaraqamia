@@ -10,8 +10,8 @@ import type { Notification, NotificationType } from '@/shared/contracts/notifica
  * (the surface the notification is about), and a type with neither answers
  * `null`, which the page renders as a row that only marks itself read.
  *
- * `/verify/[code]` and `/community/[slug]` take the identifier in the path, so
- * the value is encoded: a slug or code that reached the database through a
+ * `/verify/[code]` and `/chats/[id]` take the identifier in the path, so
+ * the value is encoded: a code or id that reached the database through a
  * form is user data.
  */
 
@@ -46,10 +46,6 @@ export function notificationTarget(
     case 'certificate_issued': {
       const code = segment(metadata.certificateCode);
       return code ? `/verify/${code}` : null;
-    }
-    case 'post_published': {
-      const slug = segment(metadata.slug);
-      return slug ? `/community/${slug}` : null;
     }
     case 'chat_request': {
       const conversationId = segment(metadata.conversationId);

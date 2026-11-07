@@ -10,12 +10,8 @@ import type { PostsRepository } from '@/backend/repositories/blogpress/posts-rep
 export { createPostsRepository };
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
 import { getAdminSupabase } from '@/backend/config/supabase';
-import {
-  BlogpressPostsService,
-  type PostPublishedNotifier,
-} from '@/backend/services/blogpress/posts-service';
+import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
-import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
 
 /**
  * The Blogpress post module and the repository it rules over, wired to one
@@ -33,33 +29,12 @@ export function createBlogpressPostsModule(
   const repository = createPostsRepository(supabase);
   return {
     repository,
-    posts: new BlogpressPostsService(repository, createPostPublishedNotifier()),
+    posts: new BlogpressPostsService(repository),
   };
 }
 
 export function createBlogpressAdminPostsModule(): BlogpressPostsModule {
   return createBlogpressPostsModule(getAdminSupabase());
-}
-
-/**
- * Fire-and-forget: notifies the Admin audience (except the publishing author)
- * that a new post went live. No subscriber model exists, so admins are the
- * defined audience for blogpress; the author is subtracted as an exclusion.
- */
-export function createPostPublishedNotifier(
-  fanOut: NotificationFanout = createNotificationFanout()
-): PostPublishedNotifier {
-  return ({ postId, authorId, slug }) => {
-    void fanOut(
-      {
-        type: 'post_published',
-        title: 'تم نشر منشور جديد',
-        body: 'تم نشر منشور جديد على المجتمع.',
-        metadata: { postId, slug },
-      },
-      { excludeUserIds: [authorId] }
-    );
-  };
 }
 
 export function createBlogpressMediaService(

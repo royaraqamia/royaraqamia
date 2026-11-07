@@ -2,51 +2,40 @@ import type { PostsRepository } from '@/backend/repositories/blogpress/posts-rep
 import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 
-export interface PostPublishedNotifier {
-  (info: { postId: string; authorId: string; slug: string }): void;
-}
-
 /**
  * The Blogpress post module. Its interface is only the operations that carry
  * rules — publish visibility gating, duplication, restore, and the bulk
  * transition that reuses the publish gate. Pure reads and single-writes cross
  * the repository seam directly.
+ *
+ * Publishing is deliberately silent: it writes no notification, because a
+ * notice for every post is noise the Admin audience cannot afford.
  */
 export class BlogpressPostsService {
-  constructor(
-    private readonly repository: PostsRepository,
-    private readonly onPostPublished?: PostPublishedNotifier
-  ) {}
+  constructor(private readonly repository: PostsRepository) {}
 
   async saveAndPublishPost(
     postId: string,
     authorId: string,
     data: PostInput
   ): Promise<{ slug: string }> {
-    const result = await this.repository.saveAndPublishPost(postId, authorId, data);
-    this.onPostPublished?.({ postId, authorId, slug: result.slug });
-    return result;
+    return this.repository.saveAndPublishPost(postId, authorId, data);
   }
 
   /**
    * A brand-new post that is published in the same write (#527): the composer
    * no longer creates a draft first, so a free account holding its draft
-   * allowance can still publish. The server sets the publication columns; the
-   * published notifier fires exactly as it does for save-and-publish.
+   * allowance can still publish. The server sets the publication columns.
    */
   async createAndPublishPost(
     authorId: string,
     data: PostInput
   ): Promise<{ id: string; slug: string }> {
-    const result = await this.repository.createAndPublishPost(authorId, data);
-    this.onPostPublished?.({ postId: result.id, authorId, slug: result.slug });
-    return result;
+    return this.repository.createAndPublishPost(authorId, data);
   }
 
   async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
-    const result = await this.repository.publishPost(postId, authorId);
-    this.onPostPublished?.({ postId, authorId, slug: result.slug });
-    return result;
+    return this.repository.publishPost(postId, authorId);
   }
 
   async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {

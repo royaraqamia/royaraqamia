@@ -3,7 +3,6 @@ import { UserIdsSchema } from '@/shared/contracts/users';
 
 export type NotificationType =
   | 'certificate_issued'
-  | 'post_published'
   | 'habit_reminder'
   | 'recovery_nudge'
   | 'expense_alert'
