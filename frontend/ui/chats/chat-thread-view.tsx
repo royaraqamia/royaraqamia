@@ -26,7 +26,7 @@ import {
 import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
-import { blockChatUser, getChatAttachmentUrl, leaveChat, reportChat } from '@/frontend/api/chats';
+import { blockChatUser, leaveChat, reportChat } from '@/frontend/api/chats';
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
@@ -125,6 +125,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     loadOlder,
     send,
     retrySend,
+    attachmentUrl,
     edit,
     remove,
     respond,
@@ -255,14 +256,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     setFiles(staged.files);
   }
 
-  /** A chip asks the server for a URL a minute long, then hands it to the browser. */
+  /**
+   * A chip hands the browser a URL: the queued bytes from the device when the
+   * line is still owed (#1033), otherwise the server's minute-long one.
+   */
   async function handleDownload(attachmentId: string) {
-    const file = await getChatAttachmentUrl(conversationId, attachmentId);
-    if (!file) {
+    const url = await attachmentUrl(attachmentId);
+    if (!url) {
       setNotice(CHAT_THREAD_COPY.downloadFailed);
       return;
     }
-    window.location.assign(file.url);
+    window.location.assign(url);
   }
 
   /**
@@ -416,6 +420,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                     onResolve={(actionId, answer) => resolveAction(actionId, answer)}
                     onEdit={edit}
                     onDownload={(attachmentId) => void handleDownload(attachmentId)}
+                    resolveAttachmentUrl={attachmentUrl}
                     onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
                   />
                 </div>
@@ -1155,6 +1160,7 @@ function MessageRow({
   onResolve,
   onEdit,
   onDownload,
+  resolveAttachmentUrl,
   onDelete,
 }: {
   message: ChatMessage;
@@ -1169,6 +1175,8 @@ function MessageRow({
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
   onEdit: (id: string, body: string) => Promise<boolean>;
   onDownload: (attachmentId: string) => void;
+  /** The bytes a chip reads: the device's copy for a queued line, else the server's. */
+  resolveAttachmentUrl: (attachmentId: string) => Promise<string | null>;
   onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1248,6 +1256,7 @@ function MessageRow({
                       attachment={attachment}
                       mine={mine}
                       onDownload={onDownload}
+                      resolveUrl={resolveAttachmentUrl}
                     />
                   ) : (
                     <button

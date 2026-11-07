@@ -33,11 +33,17 @@ export function VoiceNotePlayer({
   attachment,
   mine,
   onDownload,
+  resolveUrl,
 }: {
   conversationId: string;
   attachment: ChatAttachment;
   mine: boolean;
   onDownload: (attachmentId: string) => void;
+  /**
+   * Where this note's bytes come from (#1033): a queued note is still on the
+   * device, so the thread hands its blob URL here instead of asking the server.
+   */
+  resolveUrl?: (attachmentId: string) => Promise<string | null>;
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -52,14 +58,16 @@ export function VoiceNotePlayer({
   async function open(): Promise<string | null> {
     if (url) return url;
 
-    const file = await getChatAttachmentUrl(conversationId, attachment.id);
-    if (!file) {
+    const source = resolveUrl
+      ? await resolveUrl(attachment.id)
+      : ((await getChatAttachmentUrl(conversationId, attachment.id))?.url ?? null);
+    if (!source) {
       setFailed(true);
       return null;
     }
-    setUrl(file.url);
-    void drawShape(file.url);
-    return file.url;
+    setUrl(source);
+    void drawShape(source);
+    return source;
   }
 
   async function drawShape(source: string) {

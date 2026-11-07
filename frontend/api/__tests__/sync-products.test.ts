@@ -3,6 +3,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
 
 import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
+import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
 import { LinksnapLocalStore } from '@/frontend/api/linksnap/local-store';
@@ -27,6 +28,7 @@ const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () =
   habitflow: (factory) => HabitLocalStore.open(userIdentity(SESSION.userId), factory),
   spendtrack: (factory) => SpendtrackLocalStore.open(userIdentity(SESSION.userId), factory),
   blogpress: (factory) => BlogpressLocalStore.open(userIdentity(SESSION.userId), factory),
+  chats: (factory) => ChatsLocalStore.open(userIdentity(SESSION.userId), factory),
   quran: (factory) => QuranLocalStore.open(userIdentity(SESSION.userId), factory),
   linksnap: (factory) => LinksnapLocalStore.open(userIdentity(SESSION.userId), factory),
   notes: (factory) => NotesLocalStore.open(userIdentity(SESSION.userId), factory),

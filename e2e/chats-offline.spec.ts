@@ -111,9 +111,22 @@ test('a thread reloads the same bubbles from the device', async ({ browser, base
   await expect(page.locator(`[data-chat-message]`).getByText(draft)).toBeVisible();
   await expect(page.getByText('قيد الإرسال').last()).toBeVisible();
 
-  // Durable, not just on screen: the queued line survives the reload too.
+  // A file is stored with the line that carries it, not after it (#1033): the
+  // composer accepts the pick while the API is cut, and the chip draws from the
+  // device until the outbox has uploaded the bytes.
+  const fileName = `E2E-${Date.now()}.txt`;
+  await page.locator('input[type="file"]').setInputFiles({
+    name: fileName,
+    mimeType: 'text/plain',
+    buffer: Buffer.from('queued offline'),
+  });
+  await page.getByRole('button', { name: 'إرسال' }).click();
+  await expect(page.locator(`[data-chat-message]`).getByText(fileName)).toBeVisible();
+
+  // Durable, not just on screen: the queued line and its file survive the reload.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator(`[data-chat-message]`).getByText(draft)).toBeVisible();
+  await expect(page.locator(`[data-chat-message]`).getByText(fileName)).toBeVisible();
 
   await context.close();
 });
