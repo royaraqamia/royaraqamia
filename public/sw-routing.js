@@ -214,6 +214,27 @@
     return NEVER_CACHE_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
   }
 
+  /**
+   * Documents that are data-free shells but rendered per request (#1128).
+   *
+   * `/notifications` and `/chats/[id]` paint every row on the client from the
+   * identity-scoped Local Store; the server document carries no account data.
+   * They are `force-dynamic`, so Next answers `no-store` and `isCacheable` would
+   * refuse the write, leaving a radio-off reload on an ancestor shell. The
+   * worker stores these documents anyway, keyed by their exact URL, and the
+   * sign-out purge deletes them with every other runtime entry.
+   *
+   * A prefix for `/chats/` covers the thread and the composer's new-conversation
+   * screen; `/api/chats` is a different path and keeps its own rules.
+   */
+  const RUNTIME_SHELL_EXACT = ['/notifications'];
+  const RUNTIME_SHELL_PREFIXES = ['/chats/'];
+
+  function isRuntimeShell(url) {
+    if (RUNTIME_SHELL_EXACT.includes(url.pathname)) return true;
+    return RUNTIME_SHELL_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
+  }
+
   self.SWRouting = {
     isNavigationRequest,
     isNextStaticAsset,
@@ -228,7 +249,10 @@
     isCacheable,
     isPubliclyCacheable,
     isNeverCache,
+    isRuntimeShell,
     NEVER_CACHE_PREFIXES,
     NEVER_CACHE_EXACT,
+    RUNTIME_SHELL_EXACT,
+    RUNTIME_SHELL_PREFIXES,
   };
 })();

@@ -662,6 +662,7 @@ const {
   isCacheable,
   isPubliclyCacheable,
   isNeverCache,
+  isRuntimeShell,
 } = self.SWRouting;
 
 // ---------------------------------------------------------------------------
@@ -1088,7 +1089,11 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
     staleBuild ? { cache: 'no-cache' } : undefined
   )
     .then(async (response) => {
-      if (response.ok && isCacheable(response)) {
+      // A data-free shell that Next rendered per request (#1128) is stored
+      // despite its `no-store`: the page carries no account data, and the
+      // sign-out purge deletes the entry with every other runtime entry.
+      const runtimeShell = isRuntimeShell(new URL(request.url));
+      if (response.ok && (runtimeShell || isCacheable(response))) {
         const write = (async () => {
           await store(CACHE, key, response.clone());
           await rememberImageFallback(new URL(request.url), response.clone());
