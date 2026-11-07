@@ -72,6 +72,24 @@ class BlogpressRepository(
         withContext(Dispatchers.IO) { dao().postByAnyId(id) }
 
     /**
+     * Stores a row the community feed already read, when this identity's store
+     * has never seen it (#925).
+     *
+     * The feed's page is a read of the same rows the blogpress sync would return,
+     * so seeding from it makes the editor open with the radio off without a
+     * second round trip. An existing row always wins: it may hold a queued draft,
+     * and the feed's copy is older by definition.
+     */
+    override suspend fun rememberPost(row: BlogpressPostRow): BlogpressPostRow? =
+        withContext(Dispatchers.IO) {
+            val dao = dao()
+            val existing = dao.postByAnyId(row.id) ?: dao.postByAnyId(row.clientId)
+            if (existing != null) return@withContext existing
+            dao.upsertPost(row)
+            row
+        }
+
+    /**
      * Autosaves the editor's fields (#954).
      *
      * The row and its `post.save` intent commit together, so a shut radio, a

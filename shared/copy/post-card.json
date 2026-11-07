@@ -17,6 +17,7 @@
   "strings": {
     "authorLink": "الملف الشَّخصي لـ {name}",
     "expand": "عرض المزيد",
-    "collapse": "عرض أقل"
+    "collapse": "عرض أقل",
+    "editAction": "تعديل"
   }
 }

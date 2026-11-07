@@ -126,6 +126,7 @@ export function PostCard({ post, index }: PostCardProps) {
             <SocialShare url={`/community/${post.slug}`} title={label} />
             <PostActionsMenu
               post={post}
+              editLabel={POST_CARD_COPY.editAction}
               onRemoved={() => setRemoved(true)}
               onRestored={() => setRemoved(false)}
             />

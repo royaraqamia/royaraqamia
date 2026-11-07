@@ -1,0 +1,34 @@
+{
+  "surface": "community",
+  "component": "community-editor",
+  "web": {
+    "file": "app/community/_components/community-editor-copy.ts",
+    "export": "COMMUNITY_EDITOR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityEditorCopy.kt",
+    "object": "CommunityEditorCopy"
+  },
+  "notes": {
+    "source": "The community post editor, in both clients (#925). The site's `PostComposerDialog` in edit mode is the reference: its title, its body field and counter, its save control and its four save states live here so neither client spells them.",
+    "placeholders": "`counter` carries `{count}` and `{max}`; `tooLong` carries `{max}`. Both clients format the number as ASCII `en-US`, so the sentence never depends on the phone's locale (ADR-0054).",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the dialog does not render or a state the app declares but never draws."
+  },
+  "strings": {
+    "title": "تعديل المنشور",
+    "bodyLabel": "النَّص",
+    "bodyPlaceholder": "اكتب ما يدور في ذهنك...",
+    "bodyAria": "نص المنشور",
+    "counter": "{count} / {max}",
+    "save": "حفظ التعديلات",
+    "saving": "جاري الحفظ...",
+    "saved": "تمَّ الحفظ",
+    "unsaved": "تغييرات غير محفوظة",
+    "saveFailed": "فشل حفظ التعديلات",
+    "saveSuccess": "تمَّ حفظ التعديلات",
+    "emptyBody": "اكتب نص المنشور أولاً",
+    "tooLong": "النَّصّ أطول من الحدّ المسموح ({max} حرفًا)",
+    "invalidFields": "تحقَّق من الحقول المطلوبة",
+    "cancel": "إلغاء"
+  }
+}

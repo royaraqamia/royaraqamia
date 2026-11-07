@@ -11,9 +11,26 @@ import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { createPost, updatePost } from '@/frontend/api/blogpress';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import { stripMarkdown } from '@/shared/reading-time';
+import { COMMUNITY_EDITOR_COPY } from './community-editor-copy';
 
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
+
+/** The edit dialog's four save faces, the same ones the app draws (#925). */
+type SaveState = 'atRest' | 'draft' | 'saving' | 'failed';
+
+function statusLabel(state: SaveState): string {
+  switch (state) {
+    case 'draft':
+      return COMMUNITY_EDITOR_COPY.unsaved;
+    case 'saving':
+      return COMMUNITY_EDITOR_COPY.saving;
+    case 'failed':
+      return COMMUNITY_EDITOR_COPY.saveFailed;
+    default:
+      return COMMUNITY_EDITOR_COPY.saved;
+  }
+}
 
 /**
  * The editor is Tiptap, `marked` and `turndown` — a third of `/community`'s
@@ -59,6 +76,10 @@ function buildSlug(): string {
  * Facebook-style composer for the public community. Renders the same form for a
  * brand-new post (`create`) and for editing an existing one (`edit`), so the FAB
  * and the per-post action menu share a single surface.
+ *
+ * The edit face owns the site's four save states, which the app draws from the
+ * same copy source (#925): at rest, a change the server has not accepted, saving
+ * and a refusal. A create is a single publish, so it has no draft state to show.
  */
 export function PostComposerDialog({
   open,
@@ -73,29 +94,38 @@ export function PostComposerDialog({
 }: PostComposerDialogProps) {
   const isEdit = mode === 'edit';
   const [body, setBody] = useState(initialBody);
+  const [saveState, setSaveState] = useState<SaveState>('atRest');
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
     setBody(initialBody);
+    setSaveState('atRest');
   }, [open, initialBody]);
 
   const charCount = body.length;
 
+  const handleBody = (value: string) => {
+    setBody(value);
+    if (isEdit) setSaveState(value === initialBody ? 'atRest' : 'draft');
+  };
+
   const handleSubmit = () => {
     const trimmedBody = body.trim();
     if (!trimmedBody) {
-      toast.error('اكتب نص المنشور أولاً');
+      toast.error(COMMUNITY_EDITOR_COPY.emptyBody);
       return;
     }
     if (charCount > BODY_MAX) {
-      toast.error(`النَّصّ أطول من الحدّ المسموح (${BODY_MAX} حرفًا)`);
+      toast.error(COMMUNITY_EDITOR_COPY.tooLong.replace('{max}', String(BODY_MAX)));
       return;
     }
 
     // What a reader sees in the feed and in a shared preview: the Markdown
     // syntax the editor writes is not part of it.
     const description = stripMarkdown(trimmedBody).slice(0, DESCRIPTION_PREVIEW);
+
+    if (isEdit) setSaveState('saving');
 
     startTransition(async () => {
       try {
@@ -109,13 +139,16 @@ export function PostComposerDialog({
             meta_desc: description,
           });
           if (result?.message === 'تمَّ حفظ المنشور') {
-            toast.success('تمَّ حفظ التعديلات');
+            setSaveState('atRest');
+            toast.success(COMMUNITY_EDITOR_COPY.saveSuccess);
             onOpenChange(false);
             onSaved(slug);
           } else if (result?.errors) {
-            toast.error('تحقَّق من الحقول المطلوبة');
+            setSaveState('failed');
+            toast.error(COMMUNITY_EDITOR_COPY.invalidFields);
           } else {
-            toast.error('فشل حفظ التعديلات');
+            setSaveState('failed');
+            toast.error(COMMUNITY_EDITOR_COPY.saveFailed);
           }
           return;
         }
@@ -133,7 +166,8 @@ export function PostComposerDialog({
         onOpenChange(false);
         onSaved(newSlug);
       } catch (error) {
-        showActionError(error, isEdit ? 'فشل حفظ التعديلات' : 'فشل نشر المنشور');
+        if (isEdit) setSaveState('failed');
+        showActionError(error, isEdit ? COMMUNITY_EDITOR_COPY.saveFailed : 'فشل نشر المنشور');
       }
     });
   };
@@ -143,22 +177,22 @@ export function PostComposerDialog({
       <DialogContent phone="sheet">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {isEdit ? 'تعديل المنشور' : 'منشور جديد'}
+            {isEdit ? COMMUNITY_EDITOR_COPY.title : 'منشور جديد'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="min-w-0 space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
           <div className="space-y-1.5 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
             <Label htmlFor="composer-body" required>
-              النَّص
+              {COMMUNITY_EDITOR_COPY.bodyLabel}
             </Label>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80">
               <NoteBodyEditor
                 initialMarkdown={initialBody}
-                onChange={setBody}
+                onChange={handleBody}
                 id="composer-body"
-                ariaLabel="نص المنشور"
-                placeholder="اكتب ما يدور في ذهنك..."
+                ariaLabel={COMMUNITY_EDITOR_COPY.bodyAria}
+                placeholder={COMMUNITY_EDITOR_COPY.bodyPlaceholder}
                 surfaceClassName="min-h-40 max-sm:min-h-0"
               />
             </div>
@@ -174,19 +208,38 @@ export function PostComposerDialog({
                   : 'text-end text-[11px] text-muted-foreground'
               }
             >
-              {charCount} / {BODY_MAX.toLocaleString('en-US')}
+              {COMMUNITY_EDITOR_COPY.counter
+                .replace('{count}', String(charCount))
+                .replace('{max}', BODY_MAX.toLocaleString('en-US'))}
             </p>
           </div>
         </div>
 
-        <DialogActions onCancel={() => onOpenChange(false)}>
+        {isEdit && (
+          <p
+            data-slot="composer-status"
+            aria-live="polite"
+            className={
+              saveState === 'failed'
+                ? 'text-end text-[11px] font-bold text-destructive'
+                : 'text-end text-[11px] text-muted-foreground'
+            }
+          >
+            {statusLabel(saveState)}
+          </p>
+        )}
+
+        <DialogActions
+          onCancel={() => onOpenChange(false)}
+          cancelLabel={COMMUNITY_EDITOR_COPY.cancel}
+        >
           <HeroCtaButton
             type="button"
             isLoading={pending}
             onClick={handleSubmit}
             className="w-full sm:w-auto"
           >
-            {isEdit ? 'حفظ التعديلات' : 'نشر'}
+            {isEdit ? COMMUNITY_EDITOR_COPY.save : 'نشر'}
           </HeroCtaButton>
         </DialogActions>
       </DialogContent>

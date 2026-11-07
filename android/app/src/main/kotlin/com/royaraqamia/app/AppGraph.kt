@@ -5,6 +5,7 @@ import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
+import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityFeedSnapshotStore
 import com.royaraqamia.app.consultation.ConsultationRepository
@@ -84,6 +85,8 @@ class AppGraph private constructor(
     val rates: RatesRepository,
     /** The community feed, and the last page this device saw (#658). */
     val community: CommunityFeedRepository,
+    /** The community editor over BlogPress's device store (#925). */
+    val communityEditor: CommunityEditorRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
     val chats: ChatsRepository,
     /** The services sheet's order, on this device (#806). */
@@ -248,6 +251,18 @@ class AppGraph private constructor(
             val signedIn = { session.signedIn }
             val online = { Connectivity.isOnline(context) }
 
+            // BlogPress's store is also the community editor's device store (#925):
+            // a community post is a BlogPress post, so the draft, its Outbox intent
+            // and the route that carries it are the ones the BlogPress editor uses.
+            val blogpress =
+                BlogpressRepository(
+                    databases = blogpressDatabases,
+                    identity = { session.storeIdentity },
+                    client = client,
+                    signedIn = signedIn,
+                    online = online,
+                )
+
             return AppGraph(
                 session = session,
                 usage = UsageRepository(client),
@@ -302,14 +317,8 @@ class AppGraph private constructor(
                         online = online,
                         passwordCipher = KeystoreLinkPasswordCipher(),
                     ),
-                blogpress =
-                    BlogpressRepository(
-                        databases = blogpressDatabases,
-                        identity = { session.storeIdentity },
-                        client = client,
-                        signedIn = signedIn,
-                        online = online,
-                    ),
+                blogpress = blogpress,
+                communityEditor = CommunityEditorRepository(blogpress),
                 leads =
                     LeadsRepository(
                         stores = leadStores,

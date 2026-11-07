@@ -13,6 +13,7 @@ export const POST_CARD_COPY = {
   authorLink: 'الملف الشَّخصي لـ {name}',
   expand: 'عرض المزيد',
   collapse: 'عرض أقل',
+  editAction: 'تعديل',
 } as const;
 
 export type PostCardCopyStrings = typeof POST_CARD_COPY;
