@@ -159,3 +159,93 @@ describe('ChatsLocalStore', () => {
     expect(await store.getMessages('c-1')).toEqual([]);
   });
 });
+
+/**
+ * The outbound queue (#1033): the line and its replay intent commit together, so
+ * a queued write cannot be lost or sent twice, and the list's preview moves with
+ * it while the connection is still away.
+ */
+describe('ChatsLocalStore queue', () => {
+  it('commits the line and its intent in one write', async () => {
+    const store = await open();
+
+    const message = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: 'مرحبا',
+      senderId: 'u-1',
+    });
+
+    expect(message.clientId).toBe(message.id);
+    expect((await store.getMessages('c-1')).map((row) => row.id)).toEqual([message.id]);
+
+    const outbox = await store.getOutbox();
+    expect(outbox).toHaveLength(1);
+    expect(outbox[0]).toMatchObject({
+      entity: 'chat_message',
+      type: 'message.send',
+      payload: { conversationId: 'c-1', body: 'مرحبا', clientId: message.clientId },
+    });
+    expect(await store.pendingStates()).toEqual({ [message.clientId!]: 'queued' });
+  });
+
+  it('swaps the server row in for the queued copy', async () => {
+    const store = await open();
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: 'مرحبا',
+      senderId: 'u-1',
+    });
+
+    await store.applyServerMessage({
+      ...queued,
+      id: 'm-1',
+      createdAt: '2026-11-01T10:05:00.000Z',
+    });
+
+    const rows = await store.getMessages('c-1');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe('m-1');
+  });
+
+  it('reports a refused intent as failed, and re-arms it on retry', async () => {
+    const store = await open();
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: 'مرحبا',
+      senderId: 'u-1',
+    });
+
+    const [entry] = await store.getOutbox();
+    await store.patchOutbox(entry!.seq, { status: 'failed', lastError: 'blocked' });
+    expect((await store.pendingStates())[queued.clientId!]).toBe('failed');
+
+    await store.retryFailedOutbox();
+    const [armed] = await store.getOutbox();
+    expect(armed).toMatchObject({ status: 'pending', attempts: 0, lastError: null });
+    expect((await store.pendingStates())[queued.clientId!]).toBe('queued');
+  });
+
+  it("moves the cached thread's preview with the queued line", async () => {
+    const store = await open();
+    await store.saveThreads([thread('c-1', '2026-11-01T10:00:00.000Z')]);
+
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: 'مرحبا',
+      senderId: 'u-1',
+    });
+
+    const cached = await store.getThread('c-1');
+    expect(cached?.lastMessage?.body).toBe('مرحبا');
+    expect(cached?.lastMessageAt).toBe(queued.createdAt);
+  });
+
+  it('drops the queue on the sign-out purge', async () => {
+    const store = await open();
+    await store.enqueueMessage({ conversationId: 'c-1', body: 'مرحبا', senderId: 'u-1' });
+
+    await store.clear();
+
+    expect(await store.getOutbox()).toEqual([]);
+  });
+});

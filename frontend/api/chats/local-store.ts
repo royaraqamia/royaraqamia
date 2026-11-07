@@ -7,6 +7,14 @@ import {
 } from '@/frontend/shared/local-store/idb';
 import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
+import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
+import {
+  OUTBOX_STORE,
+  type NewOutboxEntry,
+  type OutboxEntry,
+} from '@/frontend/shared/local-store/outbox';
+import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 
 const PRODUCT = 'chats';
 const THREADS_STORE = 'threads';
@@ -27,11 +35,12 @@ export type StoredThread = ChatConversationSummary | ChatThread;
 
 /**
  * Forward-only schema. v1 is what a read keeps: the list's rows and a window of
- * each thread's messages. The Outbox and the media blobs join it in the write
- * path (#1033's second half), which is why the version starts here rather than
- * at a shape that only ever cached.
+ * each thread's messages. v2 adds the Outbox, so a line written with no
+ * connection lands in the store and its replay intent commits with it — the
+ * shape every local-store product uses (#1033). The media blobs join it with the
+ * attachment half of the issue.
  */
-export const CHATS_STORE_VERSION = 1;
+export const CHATS_STORE_VERSION = 2;
 
 export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -47,7 +56,35 @@ export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
       db.createObjectStore(META_STORE, { keyPath: 'key' });
     },
   },
+  {
+    version: 2,
+    migrate: (db) => {
+      // `seq` is auto-increment so replay order is the exact write order.
+      db.createObjectStore(OUTBOX_STORE, { keyPath: 'seq', autoIncrement: true });
+    },
+  },
 ];
+
+/** What a queued line carries until the server accepts it (#1033). */
+export interface ChatSendIntent {
+  conversationId: string;
+  body: string;
+  /** The writer's own id for the line; the server's index makes a replay safe. */
+  clientId: string;
+  replyToId?: string | null;
+}
+
+export interface QueuedMessageInput {
+  conversationId: string;
+  body: string;
+  /** Who is writing. The store's own identity, never a caller's guess. */
+  senderId: string;
+  clientId?: string;
+  replyToId?: string | null;
+}
+
+/** What a message's row is doing, as the Outbox knows it. */
+export type ChatMessageState = 'queued' | 'failed';
 
 /** Newest activity first: the list's order, and the thread's tiebreaker. */
 function activityOf(thread: StoredThread): string {
@@ -76,6 +113,7 @@ function byCreatedAsc(a: ChatMessage, b: ChatMessage): number {
  */
 export class ChatsLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly outbox: OutboxStore;
   private readonly mirror: LocalStoreMirror;
   private readonly writeListeners = new Set<() => void>();
 
@@ -86,6 +124,7 @@ export class ChatsLocalStore {
     this.connection = connection;
     this.mirror = connection.mirror;
     this.mirror.declare({ [THREADS_STORE]: 'id' });
+    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
   }
 
   subscribeWrites(listener: () => void): () => void {
@@ -148,6 +187,45 @@ export class ChatsLocalStore {
       this.notifyWrites();
     }
     return committed;
+  }
+
+  /**
+   * Commits a write and the intent that replays it atomically (#1033): a crash
+   * between the two would either lose the line or send it twice.
+   */
+  private async commitWithIntent(
+    writes: ReadonlyArray<[store: string, value: unknown]>,
+    intent: { entity: string; type: string; payload: unknown }
+  ): Promise<boolean> {
+    const stores = [...new Set([...writes.map(([store]) => store), OUTBOX_STORE])];
+
+    const committed = await this.connection.run(async (db) => {
+      const transaction = db.transaction(stores, 'readwrite');
+      for (const [store, value] of writes) transaction.objectStore(store).put(value);
+      transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
+      await transactionDone(transaction);
+      return true;
+    }, false);
+
+    if (committed) {
+      for (const [store, value] of writes) this.mirror.put(store, value);
+      this.notifyWrites();
+    }
+    return committed;
+  }
+
+  private entry(intent: { entity: string; type: string; payload: unknown }): NewOutboxEntry {
+    return {
+      id: uuidv7(),
+      entity: intent.entity,
+      type: intent.type,
+      payload: intent.payload,
+      createdAt: Date.now(),
+      attempts: 0,
+      status: 'pending',
+      lastError: null,
+      nextAttemptAt: 0,
+    };
   }
 
   private async remove(store: string, keys: readonly IDBValidKey[]): Promise<void> {
@@ -269,6 +347,142 @@ export class ChatsLocalStore {
     await this.commit([[MESSAGES_STORE, { ...existing, ...patch }]]);
   }
 
+  /**
+   * A line written now, whether or not the server can take it (#1033).
+   *
+   * The message and its replay intent commit in one transaction, so the bubble
+   * on screen and the queued write cannot disagree. The row is keyed by the
+   * client id: the server's own row arrives with a different id and the same
+   * `clientId`, and {@link applyServerMessage} swaps it in.
+   */
+  async enqueueMessage(input: QueuedMessageInput): Promise<ChatMessage> {
+    const clientId = input.clientId ?? uuidv7();
+    const createdAt = new Date().toISOString();
+    const message: ChatMessage = {
+      id: clientId,
+      conversationId: input.conversationId,
+      senderId: input.senderId,
+      senderKind: 'user',
+      body: input.body,
+      replyToId: input.replyToId ?? null,
+      editedAt: null,
+      deletedAt: null,
+      createdAt,
+      clientId,
+      attachments: [],
+      replyTo: null,
+    };
+
+    const intent: ChatSendIntent = {
+      conversationId: input.conversationId,
+      body: input.body,
+      clientId,
+      replyToId: input.replyToId ?? null,
+    };
+
+    await this.commitWithIntent([[MESSAGES_STORE, message]], {
+      entity: 'chat_message',
+      type: 'message.send',
+      payload: intent,
+    });
+
+    // The list's preview is the same write seen from the other screen: patching
+    // it here keeps the tab honest while the connection is still away.
+    const thread = await this.getThread(input.conversationId);
+    if (thread) {
+      await this.commit([
+        [
+          THREADS_STORE,
+          {
+            ...thread,
+            lastMessage: {
+              body: message.body,
+              senderKind: message.senderKind,
+              createdAt: message.createdAt,
+              hasAttachments: false,
+            },
+            lastMessageAt: message.createdAt,
+          },
+        ],
+      ]);
+    }
+
+    return message;
+  }
+
+  /**
+   * Swaps the server's row in for the queued copy. Both carry the same
+   * `clientId`, so the synthetic bubble the member has been looking at is
+   * removed rather than drawn beside its own answer.
+   */
+  async applyServerMessage(message: ChatMessage): Promise<void> {
+    if (message.clientId) {
+      const rows = await this.getMessages(message.conversationId, Number.POSITIVE_INFINITY);
+      const shadows = rows.filter(
+        (row) => row.id !== message.id && row.clientId === message.clientId
+      );
+      if (shadows.length > 0)
+        await this.remove(
+          MESSAGES_STORE,
+          shadows.map((row) => row.id)
+        );
+    }
+
+    await this.commit([[MESSAGES_STORE, message]]);
+
+    const thread = await this.getThread(message.conversationId);
+    if (thread) {
+      await this.commit([
+        [
+          THREADS_STORE,
+          {
+            ...thread,
+            lastMessage: {
+              body: message.body,
+              senderKind: message.senderKind,
+              createdAt: message.createdAt,
+              hasAttachments: message.attachments.length > 0,
+            },
+            lastMessageAt: message.createdAt,
+          },
+        ],
+      ]);
+    }
+  }
+
+  /** Every client id with a queued intent, and whether the server refused it. */
+  async pendingStates(): Promise<Record<string, ChatMessageState>> {
+    const entries = await this.getOutbox();
+    const states: Record<string, ChatMessageState> = {};
+    for (const entry of entries) {
+      if (entry.entity !== 'chat_message') continue;
+      const payload = (entry.payload ?? {}) as { clientId?: unknown };
+      if (typeof payload.clientId !== 'string') continue;
+      states[payload.clientId] = entry.status === 'failed' ? 'failed' : 'queued';
+    }
+    return states;
+  }
+
+  // --- Outbox ---------------------------------------------------------------
+  // Data access is shared with the worker realm (`outbox-access.ts`); this store
+  // contributes only its write notification.
+
+  getOutbox(): Promise<OutboxEntry[]> {
+    return this.outbox.getOutbox();
+  }
+
+  removeOutbox(seq: number): Promise<void> {
+    return this.outbox.removeOutbox(seq);
+  }
+
+  patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
+    return this.outbox.patchOutbox(seq, patch);
+  }
+
+  retryFailedOutbox(): Promise<void> {
+    return this.outbox.retryFailedOutbox();
+  }
+
   /** Deletes a thread's cached messages, optionally sparing the incoming page. */
   private async removeConversationMessages(
     conversationId: string,
@@ -330,7 +544,7 @@ export class ChatsLocalStore {
 
   /** Empties every owned store — the sign-out purge (#1033). */
   async clear(): Promise<void> {
-    const stores = [THREADS_STORE, MESSAGES_STORE, META_STORE];
+    const stores = [THREADS_STORE, MESSAGES_STORE, OUTBOX_STORE, META_STORE];
     const cleared = await this.connection.run(async (db) => {
       const transaction = db.transaction(stores, 'readwrite');
       for (const store of stores) transaction.objectStore(store).clear();

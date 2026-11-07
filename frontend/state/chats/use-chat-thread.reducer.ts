@@ -39,6 +39,15 @@ export type ChatThreadAction =
   | { type: 'sendFinished' }
   | { type: 'messageAppended'; message: ChatMessage }
   | { type: 'messageReplaced'; message: ChatMessage }
+  | {
+      /**
+       * The store's newest window after a queued write landed (#1033): the
+       * server's row replaces the copy the device was drawing, and anything the
+       * member scrolled back to that the window no longer holds stays on screen.
+       */
+      type: 'messagesMerged';
+      messages: ChatMessage[];
+    }
   | { type: 'messageTombstoned'; messageId: string; deletedAt: string }
   | { type: 'actionReplaced'; action: ChatAgentAction }
   | { type: 'errorSet'; message: string | null };
@@ -99,6 +108,27 @@ export function chatThreadReducer(state: ChatThreadData, action: ChatThreadActio
           message.id === action.message.id ? action.message : message
         ),
       };
+
+    case 'messagesMerged': {
+      const incoming = new Map(action.messages.map((message) => [message.id, message]));
+      // A queued line and its server row share a `clientId`: the server's copy
+      // wins, so the synthetic bubble is dropped instead of drawn twice.
+      const replaced = new Set(
+        action.messages
+          .filter((message) => message.clientId && message.clientId !== message.id)
+          .map((message) => message.clientId)
+      );
+      const kept = state.messages.filter(
+        (message) =>
+          !incoming.has(message.id) && !(message.clientId && replaced.has(message.clientId))
+      );
+      return {
+        ...state,
+        messages: [...kept, ...incoming.values()].sort(
+          (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
+        ),
+      };
+    }
 
     case 'messageTombstoned':
       return {

@@ -73,6 +73,9 @@ export const CHAT_THREAD_COPY = {
   reportSent: 'تم إرسال الإبلاغ',
   reportFailed: 'تعذّر الإبلاغ',
   memberFallback: 'عضو',
+  queued: 'قيد الإرسال',
+  sendFailed: 'تعذّر إرسال الرسالة',
+  retry: 'إعادة المحاولة',
   loadFailed: 'تعذّر تحميل المحادثة. أعد المحاولة.',
 } as const;
 

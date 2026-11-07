@@ -70,6 +70,15 @@ import java.time.Duration
 import java.time.Instant
 
 /**
+ * What the outbox is doing with one of the member's lines (#1033).
+ *
+ * `Sent` is every line the server already holds, and every line the app has not
+ * queued: the queue itself is the web client's until the app's store lands, so
+ * this rendering path is here to keep the two clients worded the same.
+ */
+private enum class MessagePending { Sent, Queued, Failed }
+
+/**
  * `/chats/[id]`, as a screen (#819).
  *
  * It is the app's half of `frontend/ui/chats/chat-thread-view.tsx`: the same
@@ -870,12 +879,15 @@ private fun MessageRow(
     onEditSave: () -> Unit,
     onDownload: (String) -> Unit,
     onDelete: () -> Unit,
+    pending: MessagePending = MessagePending.Sent,
+    onRetry: () -> Unit = {},
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
     val deleted = message.deletedAt != null
+    val settled = pending == MessagePending.Sent
     val editable =
-        mine && !deleted && withinEditWindow(message.createdAt)
+        mine && !deleted && settled && withinEditWindow(message.createdAt)
     val receipt = ChatText.receiptOf(thread, message.createdAt, mine, deleted)
 
     Column(
@@ -973,6 +985,45 @@ private fun MessageRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 2.dp),
         ) {
+            when (pending) {
+                MessagePending.Queued -> {
+                    Icon(
+                        imageVector = LucideVectors.Clock,
+                        contentDescription = null,
+                        tint = RoyColors.mutedForeground.copy(alpha = 0.6f),
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        text = ChatThreadCopy.QUEUED,
+                        style = type.xs,
+                        color = RoyColors.mutedForeground.copy(alpha = 0.6f),
+                    )
+                }
+
+                MessagePending.Failed -> {
+                    Icon(
+                        imageVector = LucideVectors.CircleAlert,
+                        contentDescription = null,
+                        tint = RoyColors.destructive,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        text = ChatThreadCopy.SEND_FAILED,
+                        style = type.xs,
+                        color = RoyColors.destructive,
+                    )
+                    TextButton(onClick = onRetry, contentPadding = PaddingValues(0.dp)) {
+                        Text(
+                            text = ChatThreadCopy.RETRY,
+                            style = type.xs,
+                            fontWeight = FontWeight.Bold,
+                            color = RoyColors.destructive,
+                        )
+                    }
+                }
+
+                MessagePending.Sent -> Unit
+            }
             Text(
                 text = ChatText.timeAgo(message.createdAt),
                 style = type.xs,
@@ -992,7 +1043,7 @@ private fun MessageRow(
                     color = RoyColors.mutedForeground.copy(alpha = 0.6f),
                 )
             }
-            if (mine && !deleted) {
+            if (mine && !deleted && settled) {
                 if (editable) {
                     IconButton(
                         onClick = onEditStart,

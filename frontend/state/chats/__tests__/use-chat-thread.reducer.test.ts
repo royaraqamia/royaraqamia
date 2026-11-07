@@ -8,9 +8,34 @@ import {
 } from '@/frontend/state/chats/use-chat-thread.reducer';
 
 const THREAD = { id: 't-1', title: 'محادثة' } as unknown as ChatThread;
-const FIRST = { id: 'm-1', body: 'أولاً', attachments: [{ path: 'a' }] } as unknown as ChatMessage;
-const SECOND = { id: 'm-2', body: 'ثانياً' } as unknown as ChatMessage;
-const OLDER = { id: 'm-0', body: 'أقدم' } as unknown as ChatMessage;
+const FIRST = {
+  id: 'm-1',
+  body: 'أولاً',
+  createdAt: '2026-11-01T10:00:00.000Z',
+  attachments: [{ path: 'a' }],
+} as unknown as ChatMessage;
+const SECOND = {
+  id: 'm-2',
+  body: 'ثانياً',
+  createdAt: '2026-11-01T10:01:00.000Z',
+} as unknown as ChatMessage;
+const OLDER = {
+  id: 'm-0',
+  body: 'أقدم',
+  createdAt: '2026-10-31T10:00:00.000Z',
+} as unknown as ChatMessage;
+const QUEUED = {
+  id: 'c-9',
+  clientId: 'c-9',
+  body: 'قيد الإرسال',
+  createdAt: '2026-11-01T10:02:00.000Z',
+} as unknown as ChatMessage;
+const LANDED = {
+  id: 'm-9',
+  clientId: 'c-9',
+  body: 'قيد الإرسال',
+  createdAt: '2026-11-01T10:02:00.000Z',
+} as unknown as ChatMessage;
 const ACTION = { id: 'a-1', status: 'proposed' } as unknown as ChatAgentAction;
 const RESOLVED = { id: 'a-1', status: 'confirmed' } as unknown as ChatAgentAction;
 
@@ -78,6 +103,26 @@ describe('reading', () => {
     expect(state.messages).toEqual([OLDER, FIRST]);
     expect(state.actions).toEqual([ACTION]);
     expect(state.cursor).toBe('next-2');
+  });
+
+  it('swaps the queued copy for the server row that shares its client id', () => {
+    const state = chatThreadReducer(stateOf({ messages: [FIRST, QUEUED] }), {
+      type: 'messagesMerged',
+      messages: [LANDED],
+    });
+
+    const bodies = state.messages.map((message) => message.id);
+    expect(bodies).toContain('m-9');
+    expect(bodies).not.toContain('c-9');
+  });
+
+  it('keeps a scrolled-back line the store window no longer holds', () => {
+    const state = chatThreadReducer(stateOf({ messages: [OLDER, FIRST] }), {
+      type: 'messagesMerged',
+      messages: [FIRST],
+    });
+
+    expect(state.messages.map((message) => message.id)).toEqual(['m-0', 'm-1']);
   });
 });
 

@@ -5,15 +5,17 @@ import { signIn } from './sign-in';
 /**
  * Chats read from the device (#1033): once a conversation has been opened, the
  * list and the thread paint from `chats__<identity>` before the API answers, so
- * a reload whose read cannot complete still shows the same rows.
+ * a reload whose read cannot complete still shows the same rows — and a line
+ * written while the read is cut is queued where it is written, marked «قيد
+ * الإرسال», and still there after the next reload.
  *
  * The read is cut at the page's own `fetch` rather than with `setOffline(true)`,
  * because the radio also takes the document: `/notifications` and `/chats/<id>`
  * are `force-dynamic`, so the worker has no shell to serve and a radio-off reload
  * lands on the nearest cached ancestor instead of this screen. What this spec
- * holds is the half #1033 owns — the answered read is written down, and a failed
- * one is answered from what was written — and the route's offline shell is its
- * own decision.
+ * holds is the half #1033 owns — the answered read is written down, a failed one
+ * is answered from what was written, and a write is durable before it is sent —
+ * and the route's offline shell is its own decision.
  *
  * Gated behind CHATS_OFFLINE_E2E=1 because it needs a live Supabase project plus
  * the E2E test user:
@@ -97,7 +99,21 @@ test('a thread reloads the same bubbles from the device', async ({ browser, base
 
   // The same line, from the store, with the composer still in place.
   await expect(page.locator(`[data-chat-message="${newest}"]`)).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'نص الرسالة' })).toBeVisible();
+  const composer = page.getByRole('textbox', { name: 'نص الرسالة' });
+  await expect(composer).toBeVisible();
+
+  // A line written while the read cannot answer is kept and queued (#1033):
+  // the composer clears because the write is durable, and the bubble says the
+  // outbox still owes it to the server.
+  const draft = `E2E-${Date.now()}`;
+  await composer.fill(draft);
+  await page.getByRole('button', { name: 'إرسال' }).click();
+  await expect(page.locator(`[data-chat-message]`).getByText(draft)).toBeVisible();
+  await expect(page.getByText('قيد الإرسال').last()).toBeVisible();
+
+  // Durable, not just on screen: the queued line survives the reload too.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator(`[data-chat-message]`).getByText(draft)).toBeVisible();
 
   await context.close();
 });
