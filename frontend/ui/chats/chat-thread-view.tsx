@@ -5,6 +5,8 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Check,
+  CircleAlert,
+  Clock,
   Download,
   EllipsisVertical,
   Pencil,
@@ -16,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
+import type { ChatMessageState } from '@/frontend/api/chats/local-store';
 import {
   useChatAssistant,
   type ChatAssistantState,
@@ -113,8 +116,10 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     error,
     readFailed,
     hasOlder,
+    pending,
     loadOlder,
     send,
+    retrySend,
     edit,
     remove,
     respond,
@@ -400,6 +405,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                     mine={mine}
                     receipt={readReceiptOf(thread, message, mine)}
                     action={actionByMessage.get(message.id) ?? null}
+                    /* A line the server has not accepted yet (#1033). */
+                    state={message.clientId ? pending[message.clientId] : undefined}
+                    onRetry={retrySend}
                     onResolve={(actionId, answer) => resolveAction(actionId, answer)}
                     onEdit={edit}
                     onDownload={(attachmentId) => void handleDownload(attachmentId)}
@@ -1137,6 +1145,8 @@ function MessageRow({
   mine,
   receipt,
   action,
+  state,
+  onRetry,
   onResolve,
   onEdit,
   onDownload,
@@ -1148,6 +1158,9 @@ function MessageRow({
   receipt: ChatReadReceipt | null;
   /** The assistant's proposal on this line, or `null` (#818). */
   action: ChatAgentAction | null;
+  /** The queue's answer for this line, or undefined once the server has it (#1033). */
+  state: ChatMessageState | undefined;
+  onRetry: () => void;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
   onEdit: (id: string, body: string) => Promise<boolean>;
   onDownload: (attachmentId: string) => void;
@@ -1157,7 +1170,9 @@ function MessageRow({
   const [draft, setDraft] = useState(message.body ?? '');
 
   const deleted = message.deletedAt !== null;
-  const editable = mine && !deleted && canEditChatMessage(message.createdAt);
+  /** A queued line has no server row yet: nothing can be edited or deleted on it. */
+  const settled = state === undefined;
+  const editable = mine && !deleted && settled && canEditChatMessage(message.createdAt);
 
   return (
     <div
@@ -1255,6 +1270,25 @@ function MessageRow({
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
         <span>{chatTimeAgo(message.createdAt)}</span>
+        {state === 'queued' && (
+          <span className="inline-flex items-center gap-1">
+            <Clock size={12} />
+            {CHAT_THREAD_COPY.queued}
+          </span>
+        )}
+        {state === 'failed' && (
+          <span className="inline-flex items-center gap-1 text-destructive/80">
+            <CircleAlert size={12} />
+            {CHAT_THREAD_COPY.sendFailed}
+            <button
+              type="button"
+              onClick={onRetry}
+              className="font-bold underline-offset-2 hover:underline"
+            >
+              {CHAT_THREAD_COPY.retry}
+            </button>
+          </span>
+        )}
         {message.editedAt && !deleted && <span>· {CHAT_THREAD_COPY.edited}</span>}
         {receipt && (
           <span>
@@ -1264,7 +1298,7 @@ function MessageRow({
               : CHAT_THREAD_COPY.readReceipt}
           </span>
         )}
-        {mine && !deleted && !action && (
+        {mine && !deleted && !action && settled && (
           <>
             {editable && (
               <button

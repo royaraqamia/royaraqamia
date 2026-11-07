@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import {
   confirmChatAgentAction,
@@ -23,7 +23,12 @@ import {
   removeChatAttachmentObjects,
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
-import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
+import { ChatsLocalStore, type ChatMessageState } from '@/frontend/api/chats/local-store';
+import { createChatHttpSyncTransport } from '@/frontend/api/chats/sync-transport';
+import { ChatsSyncEngine } from '@/frontend/api/chats/sync-engine';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import { identityUserId } from '@/frontend/shared/local-store/identity';
+import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { logger } from '@/frontend/shared/logger';
 import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
@@ -50,9 +55,16 @@ export interface ChatThreadState {
   /** Whether the last read failed, so the screen can say so rather than "missing". */
   readFailed: boolean;
   hasOlder: boolean;
+  /**
+   * The lines the device is still holding for the server (#1033), keyed by the
+   * writer's own id: a clock while queued, a warning once the server refused.
+   */
+  pending: Record<string, ChatMessageState>;
   refresh: () => Promise<void>;
   loadOlder: () => Promise<void>;
   send: (body: string, files?: File[]) => Promise<boolean>;
+  /** Re-arms every refused line and flushes again. */
+  retrySend: () => void;
   edit: (messageId: string, body: string) => Promise<boolean>;
   /** The tombstone's refusal sentence, or `null` once the message is gone. */
   remove: (messageId: string) => Promise<string | null>;
@@ -82,6 +94,8 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const { thread, messages, actions, cursor, isLoading, isSending, error, readFailed } = state;
   const { identity } = useLocalIdentity();
   const storeRef = useRef<ChatsLocalStore | null>(null);
+  const engineRef = useRef<SyncEngine | null>(null);
+  const [pending, setPending] = useState<Record<string, ChatMessageState>>({});
   /** The newest line the screen holds, stamped or not. */
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
@@ -171,6 +185,47 @@ export function useChatThread(conversationId: string): ChatThreadState {
           });
         }
 
+        /**
+         * The queue's view of this thread: the store's newest window (a landed
+         * line's server row replaces the queued copy) and which client ids are
+         * still owed to the server (#1033).
+         */
+        const repaint = async () => {
+          const [rows, states] = await Promise.all([
+            store.getMessages(conversationId),
+            store.pendingStates(),
+          ]);
+          if (cancelled) return;
+          dispatch({ type: 'messagesMerged', messages: rows });
+          setPending(states);
+        };
+
+        engineRef.current = new ChatsSyncEngine({
+          store,
+          transport: createChatHttpSyncTransport(store),
+          // A guest has no server rows to write to; the queue waits.
+          isSignedIn: () => identityUserId(identity) !== null,
+          onStatus: () => {
+            void store.pendingStates().then((states) => {
+              if (!cancelled) setPending(states);
+            });
+          },
+        });
+        engineRef.current.onSync(() => {
+          void repaint();
+        });
+
+        store.subscribeWrites(() => {
+          // A write is a flush trigger while online, so a line typed here
+          // reaches the server promptly instead of waiting for a focus event.
+          void repaint();
+          flushOutbox(engineRef.current);
+        });
+
+        await repaint();
+        if (cancelled) return store.close();
+        void engineRef.current?.flush();
+
         await refresh();
       })
       .catch((cause) => {
@@ -182,6 +237,8 @@ export function useChatThread(conversationId: string): ChatThreadState {
 
     return () => {
       cancelled = true;
+      engineRef.current?.dispose();
+      engineRef.current = null;
       opened?.close();
       storeRef.current = null;
     };
@@ -247,6 +304,35 @@ export function useChatThread(conversationId: string): ChatThreadState {
       const trimmed = body.trim();
       if (!trimmed && files.length === 0) return false;
 
+      const store = storeRef.current;
+      const senderId = identityUserId(identity);
+
+      /**
+       * A line with no files is queued where it is written (#1033): the store
+       * and its replay intent commit in one transaction, so the bubble appears
+       * at once and the outbox sends it whenever the connection allows. The
+       * composer clears because the write is durable, not because it was
+       * delivered — the clock beside the bubble says which.
+       */
+      if (store && senderId && files.length === 0) {
+        dispatch({ type: 'sendStarted' });
+        try {
+          const message = await store.enqueueMessage({
+            conversationId,
+            body: trimmed,
+            senderId,
+          });
+          dispatch({ type: 'messageAppended', message });
+          void engineRef.current?.flush();
+          return true;
+        } catch (error) {
+          dispatch({ type: 'errorSet', message: failureOf(error, 'تعذّر إرسال الرسالة') });
+          return false;
+        } finally {
+          dispatch({ type: 'sendFinished' });
+        }
+      }
+
       dispatch({ type: 'sendStarted' });
 
       const uploaded: ChatAttachmentInput[] = [];
@@ -280,7 +366,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
         dispatch({ type: 'sendFinished' });
       }
     },
-    [conversationId, refresh]
+    [conversationId, identity, refresh]
   );
 
   const edit = useCallback(async (messageId: string, body: string) => {
@@ -381,6 +467,10 @@ export function useChatThread(conversationId: string): ChatThreadState {
    * the card shows what the service said without waiting for a broadcast — and
    * a refusal is that row, not an exception.
    */
+  const retrySend = useCallback(() => {
+    void engineRef.current?.retry();
+  }, []);
+
   const resolveAction = useCallback(
     async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
       dispatch({ type: 'errorSet', message: null });
@@ -410,9 +500,11 @@ export function useChatThread(conversationId: string): ChatThreadState {
     error,
     readFailed,
     hasOlder: cursor !== null,
+    pending,
     refresh,
     loadOlder,
     send,
+    retrySend,
     edit,
     remove,
     respond,

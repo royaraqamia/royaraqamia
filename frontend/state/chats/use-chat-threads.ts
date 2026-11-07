@@ -10,7 +10,11 @@ import {
   subscribeToChatList,
 } from '@/frontend/api/chats';
 import { ChatsLocalStore, type StoredThread } from '@/frontend/api/chats/local-store';
-import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import { createChatHttpSyncTransport } from '@/frontend/api/chats/sync-transport';
+import { ChatsSyncEngine } from '@/frontend/api/chats/sync-engine';
+import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
+import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
+import { identityUserId, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
   halveList,
   screenful,
@@ -82,6 +86,7 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
   const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
   const [error, setError] = useState<unknown>(null);
   const storeRef = useRef<ChatsLocalStore | null>(null);
+  const engineRef = useRef<SyncEngine | null>(null);
 
   const ready = readyFor === identity;
   // The last screen this identity painted (#495), read during render: the rows
@@ -142,7 +147,20 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
           void store.getThreads().then((rows) => {
             if (!cancelled) setThreads(rows);
           });
+          flushOutbox(engineRef.current);
         });
+
+        // Leaving a thread must not strand what was typed in it: the list opens
+        // the same queue and flushes it (#1033).
+        engineRef.current = new ChatsSyncEngine({
+          store,
+          transport: createChatHttpSyncTransport(store),
+          isSignedIn: () => identityUserId(identity) !== null,
+        });
+        engineRef.current.onSync(() => {
+          void refresh();
+        });
+        void engineRef.current.flush();
 
         await refresh();
       })
@@ -155,6 +173,8 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
 
     return () => {
       cancelled = true;
+      engineRef.current?.dispose();
+      engineRef.current = null;
       opened?.close();
       storeRef.current = null;
     };

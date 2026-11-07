@@ -57,6 +57,7 @@ vi.mock('@/frontend/state/use-local-identity', () => ({
 
 import { useChatThread, type ChatThreadState } from '@/frontend/state/chats/use-chat-thread';
 import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
+import { ApiError } from '@/frontend/transport/http';
 import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
 
 // A fresh factory per test: the store registry is keyed by it, so one test's
@@ -111,15 +112,21 @@ describe('useChatThread refused writes', () => {
     attachments.uploadChatAttachment.mockReset();
   });
 
-  it('answers a rejected send with the sentence and false', async () => {
+  it('queues a line instead of rejecting it, and lets the outbox carry the refusal', async () => {
+    // A member who writes while the server refuses keeps the line: the queue
+    // owns the failure from here (#1033), and the bubble says which state it is
+    // in. Nothing is thrown back at the composer.
     api.sendChatMessage.mockRejectedValue(new Error('حظرك هذا العضو، لا يمكن إرسال رسائل بينكما'));
     const state = await renderThread();
 
+    let queued = false;
     await act(async () => {
-      await expect(state.send('مرحبا')).resolves.toBe(false);
+      queued = await state.send('مرحبا');
     });
 
-    expect(captured!.error).toBe('حظرك هذا العضو، لا يمكن إرسال رسائل بينكما');
+    expect(queued).toBe(true);
+    expect(captured!.messages.some((message) => message.body === 'مرحبا')).toBe(true);
+    expect(captured!.error).toBeNull();
   });
 
   it('answers a rejected edit with the sentence and false', async () => {
@@ -367,5 +374,80 @@ describe('useChatThread cache', () => {
 
     expect(thread?.title).toBe('سارة');
     expect(messages.map((message) => message.id)).toEqual(['m-1']);
+  });
+});
+
+/**
+ * The outbound queue (#1033): a line is written to the device and replayed, so
+ * the composer keeps it even when the server cannot take it yet — and the bubble
+ * says what the queue is doing with it.
+ */
+describe('useChatThread queue', () => {
+  beforeEach(() => {
+    captured = null;
+    api.getChatThread.mockReset().mockResolvedValue(null);
+    api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+    api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
+  });
+
+  it('keeps a line the network cannot take, marked as queued', async () => {
+    api.sendChatMessage.mockReset().mockRejectedValue(new TypeError('offline'));
+    const state = await renderThread();
+
+    let queued = false;
+    await act(async () => {
+      queued = await state.send('مرحبا');
+    });
+    expect(queued).toBe(true);
+
+    const line = captured!.messages.find((message) => message.body === 'مرحبا');
+    expect(line).toBeDefined();
+    await waitFor(() => expect(captured!.pending[line!.clientId!]).toBe('queued'));
+  });
+
+  it('marks a refused line as failed, and retries it on demand', async () => {
+    api.sendChatMessage
+      .mockReset()
+      .mockRejectedValue(new ApiError('حظرك هذا العضو، لا يمكن إرسال رسائل بينكما', 403));
+    const state = await renderThread();
+
+    await act(async () => {
+      await state.send('مرحبا');
+    });
+
+    const line = captured!.messages.find((message) => message.body === 'مرحبا');
+    expect(line).toBeDefined();
+    await waitFor(() => expect(captured!.pending[line!.clientId!]).toBe('failed'));
+
+    // The retry re-arms the intent; this time the server answers with its own row.
+    api.sendChatMessage.mockReset().mockResolvedValue({
+      success: true,
+      message: {
+        id: 'm-server',
+        conversationId: 'c-1',
+        senderId: 'u-1',
+        senderKind: 'user',
+        body: 'مرحبا',
+        replyToId: null,
+        editedAt: null,
+        deletedAt: null,
+        createdAt: '2026-11-01T10:05:00.000Z',
+        clientId: line!.clientId,
+        attachments: [],
+        replyTo: null,
+      },
+    });
+
+    await act(async () => {
+      captured!.retrySend();
+    });
+
+    await waitFor(() => expect(captured!.pending).toEqual({}));
+    await waitFor(() =>
+      expect(captured!.messages.filter((message) => message.body === 'مرحبا')).toHaveLength(1)
+    );
+    expect(captured!.messages.find((message) => message.body === 'مرحبا')?.id).toBe('m-server');
   });
 });
