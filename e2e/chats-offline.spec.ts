@@ -15,7 +15,8 @@ import { signIn } from './sign-in';
  * opened directly rather than clicked through.
  *
  * The line written while the radio is off is queued where it is written, marked
- * «قيد الإرسال», and still there after the next reload.
+ * «قيد الإرسال», survives the next reload, and reaches the server when the radio
+ * returns: the server's row replaces the local twin and the marker goes.
  *
  * Gated behind CHATS_OFFLINE_E2E=1 because it needs a live Supabase project plus
  * the E2E test user and the chats fixture `e2e/setup-test-user.ts` creates:
@@ -121,8 +122,21 @@ test('a thread reloads the same bubbles from the device', async ({ browser, base
   // Durable, not just on screen: the queued line and its file survive the reload,
   // still with no radio.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-chat-message]').getByText(draft)).toBeVisible();
+  const queuedBubble = page.locator('[data-chat-message]').filter({ hasText: draft });
+  await expect(queuedBubble).toBeVisible();
   await expect(page.locator('[data-chat-message]').getByText(fileName)).toBeVisible();
+  const queuedId = await queuedBubble.getAttribute('data-chat-message');
+
+  // The radio returns. The thread's mount flushes its queue, the server accepts
+  // the line and its file, and the server's row replaces the local twin: the
+  // queued marker goes, the words stay, and the id is no longer the client's.
+  await context.setOffline(false);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const sentBubble = page.locator('[data-chat-message]').filter({ hasText: draft });
+  await expect(sentBubble).toBeVisible();
+  await expect(sentBubble.getByText('قيد الإرسال')).toHaveCount(0);
+  await expect(sentBubble.getByText(fileName)).toBeVisible();
+  expect(await sentBubble.getAttribute('data-chat-message')).not.toBe(queuedId);
 
   await context.close();
 });

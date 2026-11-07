@@ -570,7 +570,6 @@ class ChatsRepository(
             }
         )
         dao.trimThreads(CHAT_THREAD_WINDOW)
-        dao.dropOrphanHeaders()
     }
 
     private suspend fun saveHeader(thread: ChatThreadResponseThread) {
@@ -620,7 +619,6 @@ class ChatsRepository(
         dao.pruneThreads(cutoff)
         dao.pruneHeaders(cutoff)
         dao.pruneMessages(cutoff)
-        dao.dropOrphanHeaders()
     }
 
     private fun messageRow(message: ChatMessagePageResponseMessagesItem) =
