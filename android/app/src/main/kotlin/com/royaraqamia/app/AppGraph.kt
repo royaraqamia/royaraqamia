@@ -31,6 +31,7 @@ import com.royaraqamia.app.store.IdentityScopedStore
 import com.royaraqamia.app.store.PreferencesIdentityStorage
 import com.royaraqamia.app.store.blogpress.BlogpressRepository
 import com.royaraqamia.app.store.blogpress.BlogpressStores
+import com.royaraqamia.app.store.chats.ChatsStores
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
@@ -103,6 +104,7 @@ class AppGraph private constructor(
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
     private val blogpressDatabases: IdentityScopedStore<BlogpressStores>,
+    private val chatsDatabases: IdentityScopedStore<ChatsStores>,
     private val leadStores: LeadsStores,
     private val grant: SupabasePasswordGrant,
 ) {
@@ -141,10 +143,11 @@ class AppGraph private constructor(
         val spend = spendtrack.drain()
         val links = linksnap.drain()
         val posts = blogpress.drain()
+        val chatLines = chats.drain()
         return DrainReport(
-            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed + lead.replayed,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + lead.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + lead.failed,
+            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed + chatLines.replayed + lead.replayed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending + lead.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed + lead.failed,
         )
     }
 
@@ -154,11 +157,12 @@ class AppGraph private constructor(
         val spend = spendtrack.outboxStatus()
         val links = linksnap.outboxStatus()
         val posts = blogpress.outboxStatus()
+        val chatLines = chats.outboxStatus()
         val lead = leads.outboxStatus()
         return DrainReport(
             replayed = 0,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + lead.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + lead.failed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending + lead.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed + lead.failed,
         )
     }
 
@@ -182,6 +186,7 @@ class AppGraph private constructor(
         spendtrackDatabases.close()
         linksnapDatabases.close()
         blogpressDatabases.close()
+        chatsDatabases.close()
         // The lead queue is anonymous and belongs to the device, so it survives
         // a sign-out the way the web's guest store does (#929).
     }
@@ -198,6 +203,7 @@ class AppGraph private constructor(
         spendtrackDatabases.close()
         linksnapDatabases.close()
         blogpressDatabases.close()
+        chatsDatabases.close()
         leadStores.close()
     }
 
@@ -229,6 +235,8 @@ class AppGraph private constructor(
                 IdentityScopedStore { identity -> LinksnapStores.open(context, identity) }
             val blogpressDatabases =
                 IdentityScopedStore { identity -> BlogpressStores.open(context, identity) }
+            val chatsDatabases =
+                IdentityScopedStore { identity -> ChatsStores.open(context, identity) }
             // Leads are anonymous, so their queue is one file for the device and
             // is not opened per identity nor closed on a sign-out (#929).
             val leadStores = LeadsStores.open(context)
@@ -254,7 +262,14 @@ class AppGraph private constructor(
                         client,
                         CommunityFeedSnapshotStore(File(context.filesDir, "community")),
                     ),
-                chats = ChatsRepository(client),
+                chats =
+                    ChatsRepository(
+                        client = client,
+                        databases = chatsDatabases,
+                        identity = { session.storeIdentity },
+                        signedIn = signedIn,
+                        online = online,
+                    ),
                 quran =
                     AssetQuranRepository(
                         context = context,
@@ -309,6 +324,7 @@ class AppGraph private constructor(
                 spendtrackDatabases = spendtrackDatabases,
                 linksnapDatabases = linksnapDatabases,
                 blogpressDatabases = blogpressDatabases,
+                chatsDatabases = chatsDatabases,
                 leadStores = leadStores,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )

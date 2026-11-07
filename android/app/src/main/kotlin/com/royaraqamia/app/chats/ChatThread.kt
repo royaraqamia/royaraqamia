@@ -127,9 +127,21 @@ fun ChatThread(
     var invited by remember { mutableStateOf<Set<String>>(emptySet()) }
     /** The newest line already stamped read: a poll must not write again for it. */
     var markedLine by remember { mutableStateOf<String?>(null) }
+    /** The lines the queue still owes, by their client id (#1127). */
+    var pendingLines by remember { mutableStateOf<Map<String, ChatPending>>(emptyMap()) }
 
     /** One read of the thread and its lines, and the read watermark it stamps. */
     suspend fun load(): Boolean {
+        // The device's copy first (#1127): a reload with no radio keeps the
+        // thread it was reading, and the network is the revalidation.
+        if (read == null) {
+            repository.cachedThread(conversationId)?.let { read = ChatThreadUiState.Live(it) }
+        }
+        if (messages.isEmpty()) {
+            messages = repository.cachedMessages(conversationId)
+        }
+        pendingLines = repository.pending(conversationId)
+
         when (val result = repository.thread(conversationId)) {
             is ApiResult.Success -> {
                 if (result.value.kind == ChatThreadResponseThreadKind.AGENT) {
@@ -142,6 +154,7 @@ fun ChatThread(
                 when (val page = repository.messages(conversationId)) {
                     is ApiResult.Success -> {
                         messages = page.value.messages
+                        pendingLines = repository.pending(conversationId)
                         // Seen is stamped once per *new* line, the way the site's hook
                         // does: the badge is the reader's watermark (#816), and a poll
                         // that wrote again every few seconds would spend a write for
@@ -203,7 +216,14 @@ fun ChatThread(
         if (text.isEmpty() || sending) return
         scope.launch {
             sending = true
-            when (val result = repository.send(conversationId, text)) {
+            when (
+                val result =
+                    repository.send(
+                        conversationId,
+                        text,
+                        senderId = (read as? ChatThreadUiState.Live)?.thread?.me?.userId,
+                    )
+            ) {
                 is ApiResult.Success -> {
                     draft = ""
                     failure = null
@@ -237,6 +257,15 @@ fun ChatThread(
                     inviteQuery = inviteQuery,
                     inviteResults = inviteResults,
                     invited = invited,
+                    pendingLines = pendingLines,
+                    onRetry = { message ->
+                        message.clientId?.let { clientId ->
+                            scope.launch {
+                                repository.retryMessage(conversationId, clientId)
+                                load()
+                            }
+                        }
+                    },
                     onDraft = { draft = it },
                     onSend = ::send,
                     onMenu = { menuOpen = it },
@@ -410,6 +439,8 @@ private fun ThreadBody(
     inviteQuery: String,
     inviteResults: List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>,
     invited: Set<String>,
+    pendingLines: Map<String, ChatPending>,
+    onRetry: (ChatMessagePageResponseMessagesItem) -> Unit,
     onDraft: (String) -> Unit,
     onSend: () -> Unit,
     onMenu: (Boolean) -> Unit,
@@ -507,6 +538,12 @@ private fun ThreadBody(
                         onEditSave = { onEditSave(message) },
                         onDownload = onDownload,
                         onDelete = { onDialog(ChatDialog.Delete(message.id)) },
+                        pending = when (pendingLines[message.clientId]) {
+                            ChatPending.Queued -> MessagePending.Queued
+                            ChatPending.Failed -> MessagePending.Failed
+                            else -> MessagePending.Sent
+                        },
+                        onRetry = { onRetry(message) },
                     )
                 }
             }

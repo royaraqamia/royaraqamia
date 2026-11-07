@@ -91,7 +91,10 @@ fun ChatsScreen(
     var busy by remember { mutableStateOf(false) }
 
     LaunchedEffect(repository, attempts) {
-        state = null
+        // The device's last answer first (#1127): a cold launch with the radio
+        // off paints the rows the previous read wrote, then asks again.
+        val cached = repository.cachedThreads()
+        state = if (cached.isNotEmpty()) ChatsUiState.of(cached) else null
         failure = null
 
         state =
