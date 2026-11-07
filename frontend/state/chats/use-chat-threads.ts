@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { useSession } from '@/frontend/state/session-provider';
 import {
@@ -23,6 +23,7 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import type { ChatConversationSummary } from '@/shared/contracts/chat';
+import { chatThreadsInitialState, chatThreadsReducer } from './use-chat-threads.reducer';
 
 /**
  * A failed call's own sentence, or the caller's copy when it carries none.
@@ -82,9 +83,8 @@ export interface ChatThreadsState {
  */
 export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatThreadsState {
   const { user } = useSession();
-  const [threads, setThreads] = useState<ChatConversationSummary[]>([]);
-  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
-  const [error, setError] = useState<unknown>(null);
+  const [state, dispatch] = useReducer(chatThreadsReducer, undefined, chatThreadsInitialState);
+  const { threads, readyFor, error } = state;
   const storeRef = useRef<ChatsLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
 
@@ -95,8 +95,7 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
 
   const refresh = useCallback(async () => {
     if (!enabled) {
-      setThreads([]);
-      setError(null);
+      dispatch({ type: 'cleared' });
       return;
     }
 
@@ -105,21 +104,18 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
       // Write the answer down before painting it, so the next cold start reads
       // exactly what this one drew.
       await storeRef.current?.saveThreads(rows);
-      setThreads(rows);
-      setError(null);
+      dispatch({ type: 'refreshed', threads: rows });
     } catch (cause) {
       // The device's rows stay on screen; only a read with nothing cached is a
       // failure the tab draws.
-      setError(cause);
+      dispatch({ type: 'refreshFailed', error: cause });
     }
   }, [enabled]);
 
   useEffect(() => {
     if (!enabled) {
       storeRef.current = null;
-      setThreads([]);
-      setReadyFor(null);
-      setError(null);
+      dispatch({ type: 'reset' });
       return;
     }
 
@@ -140,12 +136,12 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
         if (cancelled) return store.close();
 
         storeRef.current = store;
-        if (cached.length > 0) setThreads(cached);
-        setReadyFor(identity);
+        if (cached.length > 0) dispatch({ type: 'storeRows', threads: cached });
+        dispatch({ type: 'storeAnswered', identity });
 
         store.subscribeWrites(() => {
           void store.getThreads().then((rows) => {
-            if (!cancelled) setThreads(rows);
+            if (!cancelled) dispatch({ type: 'storeRows', threads: rows });
           });
           flushOutbox(engineRef.current);
         });
@@ -168,7 +164,7 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
         // A store that cannot open is a cache that is not there, not a broken
         // tab: the read below is still what the member came for.
         logger.error('Failed to open the Chats Local Store', { error: String(cause) });
-        if (!cancelled) setReadyFor(identity);
+        if (!cancelled) dispatch({ type: 'storeAnswered', identity });
       });
 
     return () => {
