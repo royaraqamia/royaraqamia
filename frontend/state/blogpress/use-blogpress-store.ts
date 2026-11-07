@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import type { Post } from '@/shared/contracts/blogpress';
 import { BlogpressLocalStore, type BlogpressDraft } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine, type SyncStatus } from '@/frontend/api/blogpress/sync-engine';
+import { blogpressEditorInitialState, blogpressEditorReducer } from './use-blogpress-store.reducer';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
 import { pullBlogpressData } from '@/frontend/api/blogpress/pull';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
@@ -42,14 +43,6 @@ export interface BlogpressStoreState {
   sync: BlogpressSyncState;
 }
 
-const IDLE: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
-
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
@@ -78,11 +71,12 @@ async function claimGuestData(userStore: BlogpressLocalStore): Promise<void> {
  */
 export function useBlogpressStore(post: Post, userId: string): BlogpressStoreState {
   const identity: LocalIdentity = userIdentity(userId);
-  const [store, setStore] = useState<BlogpressLocalStore | null>(null);
-  const [ready, setReady] = useState(false);
-  const [draft, setDraft] = useState<BlogpressDraft | null>(null);
-  const [status, setStatus] = useState<SyncStatus>(IDLE);
-  const [online, setOnline] = useState(isOnline);
+  const [state, dispatch] = useReducer(
+    blogpressEditorReducer,
+    isOnline(),
+    blogpressEditorInitialState
+  );
+  const { store, ready, draft, status, online } = state;
   const engineRef = useRef<BlogpressSyncEngine | null>(null);
   const {
     error: refreshError,
@@ -92,7 +86,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
   } = useRefreshState();
 
   useEffect(() => {
-    const sync = () => setOnline(isOnline());
+    const sync = () => dispatch({ type: 'connectionChanged', online: isOnline() });
     sync();
     window.addEventListener('online', sync);
     window.addEventListener('offline', sync);
@@ -131,9 +125,9 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
         }
         const localDraft = await localStore.getDraft(post.id);
         if (cancelled) return;
-        setStore(localStore);
-        setDraft(localDraft);
-        setReady(true);
+        dispatch({ type: 'opened', store: localStore });
+        dispatch({ type: 'draftRead', draft: localDraft });
+        dispatch({ type: 'ready' });
       })
       .catch((error) => {
         logger.error('Failed to open BlogPress Local Store', { error: String(error) });
@@ -163,7 +157,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
       // account (#369).
       await runRefresh(async () => {
         await pullBlogpressData(store);
-        setDraft(await store.getDraft(post.id));
+        dispatch({ type: 'draftRead', draft: await store.getDraft(post.id) });
       }, 'BlogPress pull failed');
     };
 
@@ -192,8 +186,10 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
     );
 
     const unsubscribe = engine.subscribe((next) => {
-      setStatus(next);
-      void store.getDraft(post.id).then(setDraft);
+      dispatch({ type: 'syncStatus', status: next });
+      void store
+        .getDraft(post.id)
+        .then((nextDraft) => dispatch({ type: 'draftRead', draft: nextDraft }));
     });
     // A completed local save is itself a flush trigger while online, so an edit
     // reaches the server promptly instead of waiting for the next focus event.
