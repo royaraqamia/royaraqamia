@@ -99,6 +99,13 @@ const nextConfig = {
       '**/{README,CHANGELOG,LICENSE,license}*',
     ],
   },
+  // The assistant's specialist tools read the vendored roster at request time
+  // (`backend/services/chat/agency-skills.ts`); Next ships only what a function
+  // reaches, so the tree is named here. The terminal and the Telegram bot read
+  // the same directory from the checkout (ADR-0137).
+  outputFileTracingIncludes: {
+    '/api/chats/**': ['./.opencode/skills/agency/**'],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     // Optimized variants are content-addressed by URL; a long TTL lets the

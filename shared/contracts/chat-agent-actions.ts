@@ -53,6 +53,8 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'apply_training',
   'submit_project_request',
   'change_display_name',
+  'list_specialists',
+  'load_specialist',
 ] as const;
 
 export type ChatAgentToolName = (typeof CHAT_AGENT_TOOL_NAMES)[number];
@@ -89,6 +91,8 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   apply_training: { kind: 'write', label: 'تقديم طلب تدريب' },
   submit_project_request: { kind: 'write', label: 'إرسال طلب مشروع' },
   change_display_name: { kind: 'write', label: 'تغيير اسم العرض' },
+  list_specialists: { kind: 'read', label: 'قراءة دليل المتخصصين' },
+  load_specialist: { kind: 'read', label: 'تحميل متخصص' },
 };
 
 export function isChatAgentToolName(value: string): value is ChatAgentToolName {

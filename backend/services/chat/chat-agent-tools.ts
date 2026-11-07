@@ -11,6 +11,7 @@ import { createDefaultTrainingApplicationService } from '@/backend/config/traini
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import { createProfileService } from '@/backend/config/users';
 import { createUsageService } from '@/backend/config/plans';
+import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
@@ -57,6 +58,11 @@ export interface ChatAgentTool {
   schema: z.ZodTypeAny;
   /** Runs as the member, with the member's own client. */
   run(args: unknown, context: ChatAgentToolContext): Promise<unknown>;
+  /**
+   * How much of the answer reaches the model. Defaults to the service's bound;
+   * a tool returning a document (a specialist's instructions) raises it.
+   */
+  maxResultChars?: number;
 }
 
 const NoArgs = z.strictObject({});
@@ -68,6 +74,19 @@ const PostStatusArgs = z.strictObject({
 });
 
 const PostSlugArgs = z.strictObject({ slug: PostSlugSchema });
+
+const ListSpecialistsArgs = z.strictObject({
+  division: z.string().trim().min(1).max(40).optional(),
+});
+
+const LoadSpecialistArgs = z.strictObject({
+  id: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'معرّف المتخصص غير صالح'),
+});
 
 const CreateDraftArgs = z.strictObject({
   meta_title: z.string().trim().min(2, 'عنوان المنشور مطلوب').max(70, 'العنوان طويل جداً'),
@@ -517,6 +536,29 @@ const tools: ChatAgentTool[] = [
         input.name
       );
       return { name: updated.name };
+    },
+  },
+  {
+    name: 'list_specialists',
+    kind: 'read',
+    description:
+      'دليل المتخصصين: بلا وسيط يعرض الأقسام وعدد المتخصصين في كل قسم، وبوسيط division يعرض متخصصي ذلك القسم بأسمائهم ووصفهم. استخدمه حين يحتاج السؤال خبرة أضيق من العامة، ثم حمّل المتخصص المناسب.',
+    schema: ListSpecialistsArgs,
+    async run(args) {
+      const input = ListSpecialistsArgs.parse(args);
+      return listAgencySkills(input.division);
+    },
+  },
+  {
+    name: 'load_specialist',
+    kind: 'read',
+    description:
+      'تحميل تعليمات متخصص من الدليل بمعرّفه، لتتبعها في بقية الجواب. خذه من list_specialists، ولا تخترع معرّفاً.',
+    schema: LoadSpecialistArgs,
+    maxResultChars: 20_000,
+    async run(args) {
+      const input = LoadSpecialistArgs.parse(args);
+      return loadAgencySkill(input.id);
     },
   },
 ];
