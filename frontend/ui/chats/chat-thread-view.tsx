@@ -92,7 +92,12 @@ function stateOf(thread: ChatThread): ThreadState {
 /** The counterpart in a direct thread, for the header and the actions. */
 function counterpartOf(thread: ChatThread) {
   const meId = thread.me?.userId ?? null;
-  return thread.participants.find((participant) => participant.userId !== meId)?.peer ?? null;
+  // `participants` is required by the contract; the guard is for a row written
+  // by an older schema, which painted the list's summary as a thread and took
+  // the whole screen down with it (#1033).
+  return (
+    (thread.participants ?? []).find((participant) => participant.userId !== meId)?.peer ?? null
+  );
 }
 
 /** What a waiting answer says: a direct request, or a group invitation. */
