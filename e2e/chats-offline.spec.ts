@@ -18,13 +18,19 @@ import { signIn } from './sign-in';
  * and the route's offline shell is its own decision.
  *
  * Gated behind CHATS_OFFLINE_E2E=1 because it needs a live Supabase project plus
- * the E2E test user:
+ * the E2E test user and the chats fixture `e2e/setup-test-user.ts` creates:
  *   CHATS_OFFLINE_E2E=1 npx playwright test e2e/chats-offline.spec.ts
  */
 
 const ENABLED = process.env.CHATS_OFFLINE_E2E === '1';
 
 test.skip(!ENABLED, 'requires CHATS_OFFLINE_E2E=1 (live Supabase + auth)');
+
+/**
+ * The thread `e2e/setup-test-user.ts` creates. The list pins the assistant
+ * first, so the row is chosen by the peer's name rather than by its position.
+ */
+const FIXTURE_PEER = 'E2E Peer';
 
 /** Makes every chats read fail, from the first script the document runs. */
 async function cutChatReads(page: import('@playwright/test').Page) {
@@ -51,9 +57,9 @@ test('the chat list reloads from the device when the read cannot answer', async 
   const page = await context.newPage();
   await gotoUnderWorkerControl(page, `${baseURL}/notifications?tab=chats`);
 
-  const rows = page.locator('a[href^="/chats/"]');
+  const rows = page.locator('a[href^="/chats/"]').filter({ hasText: FIXTURE_PEER });
   if ((await rows.count()) === 0) {
-    test.skip(true, 'the E2E account has no conversation to cache');
+    test.skip(true, 'the chats fixture is missing (run e2e/setup-test-user.ts)');
   }
   const title = await rows.first().getAttribute('href');
   expect(title).toBeTruthy();
@@ -79,9 +85,9 @@ test('a thread reloads the same bubbles from the device', async ({ browser, base
   const page = await context.newPage();
   await gotoUnderWorkerControl(page, `${baseURL}/notifications?tab=chats`);
 
-  const rows = page.locator('a[href^="/chats/"]');
+  const rows = page.locator('a[href^="/chats/"]').filter({ hasText: FIXTURE_PEER });
   if ((await rows.count()) === 0) {
-    test.skip(true, 'the E2E account has no conversation to cache');
+    test.skip(true, 'the chats fixture is missing (run e2e/setup-test-user.ts)');
   }
 
   await rows.first().click();
