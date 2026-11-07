@@ -30,13 +30,23 @@ import {
   type ChatMessageState,
 } from '@/frontend/api/chats/local-store';
 import { createChatHttpSyncTransport } from '@/frontend/api/chats/sync-transport';
+import {
+  attachmentMediaKey,
+  cacheChatAttachment,
+  prefetchChatAttachments,
+} from '@/frontend/api/chats/media-cache';
 import { ChatsSyncEngine } from '@/frontend/api/chats/sync-engine';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { logger } from '@/frontend/shared/logger';
-import type { ChatAttachmentInput, ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type {
+  ChatAttachment,
+  ChatAttachmentInput,
+  ChatMessage,
+  ChatThread,
+} from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { chatThreadInitialState, chatThreadReducer } from './use-chat-thread.reducer';
 
@@ -70,8 +80,8 @@ export interface ChatThreadState {
   send: (body: string, files?: File[]) => Promise<boolean>;
   /** Re-arms every refused line and flushes again. */
   retrySend: () => void;
-  /** Where a chip opens from: the queued bytes on the device, or a signed URL. */
-  attachmentUrl: (attachmentId: string) => Promise<string | null>;
+  /** Where a chip opens from: the bytes on the device, or a signed URL. */
+  attachmentUrl: (attachment: ChatAttachment) => Promise<string | null>;
   edit: (messageId: string, body: string) => Promise<boolean>;
   /** The tombstone's refusal sentence, or `null` once the message is gone. */
   remove: (messageId: string) => Promise<string | null>;
@@ -107,6 +117,8 @@ export function useChatThread(conversationId: string): ChatThreadState {
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
   const markedRef = useRef<string | null>(null);
+  /** One Wi-Fi prefetch per open, not one per revalidation. */
+  const prefetchedRef = useRef(false);
 
   /**
    * A hidden tab has shown nobody anything, so it stamps nothing: the watermark
@@ -136,6 +148,19 @@ export function useChatThread(conversationId: string): ChatThreadState {
       if (store) {
         if (nextThread) await store.saveThread(nextThread);
         await store.saveMessages(conversationId, page.messages, { replace: true });
+
+        // The read is answered, so this is a good moment to keep the files it
+        // names (#1033) — on Wi-Fi only, and only once per open.
+        if (nextThread && !prefetchedRef.current) {
+          prefetchedRef.current = true;
+          void prefetchChatAttachments(
+            store,
+            conversationId,
+            page.messages,
+            async (attachmentId) =>
+              (await getChatAttachmentUrl(conversationId, attachmentId))?.url ?? null
+          ).catch(() => undefined);
+        }
       }
 
       dispatch({
@@ -165,6 +190,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
   useEffect(() => {
     let cancelled = false;
     let opened: ChatsLocalStore | null = null;
+    prefetchedRef.current = false;
 
     ChatsLocalStore.open(identity)
       .then(async (store) => {
@@ -484,20 +510,28 @@ export function useChatThread(conversationId: string): ChatThreadState {
   }, []);
 
   /**
-   * A queued line's chips open the bytes still on the device (#1033); a landed
-   * one asks the server for the minute-long URL the endpoint exists to hand out.
+   * A chip opens the bytes on the device when they are there — a queued line's
+   * file, or one this device has already read (#1033) — and otherwise asks the
+   * server for its minute-long URL, keeping the copy it downloads: a file read
+   * once is readable offline after that.
    */
   const attachmentUrl = useCallback(
-    async (attachmentId: string): Promise<string | null> => {
-      const key = localAttachmentMediaKey(attachmentId);
+    async (attachment: ChatAttachment): Promise<string | null> => {
       const store = storeRef.current;
-      if (key && store) {
-        const blob = await store.getMedia(key);
+      const localKey = localAttachmentMediaKey(attachment.id);
+      const cacheKey = attachmentMediaKey(attachment.id);
+
+      if (store) {
+        const blob = await store.getMedia(localKey ?? cacheKey);
         if (blob) return URL.createObjectURL(blob);
       }
 
-      const file = await getChatAttachmentUrl(conversationId, attachmentId);
-      return file?.url ?? null;
+      const file = await getChatAttachmentUrl(conversationId, attachment.id);
+      if (!file?.url) return null;
+      if (!store) return file.url;
+
+      const blob = await cacheChatAttachment(store, conversationId, attachment, file.url);
+      return blob ? URL.createObjectURL(blob) : file.url;
     },
     [conversationId]
   );

@@ -58,6 +58,7 @@ import {
   canEditChatMessage,
   chatAttachmentIsAudio,
   CHAT_GROUP_MEMBERS_MAX,
+  type ChatAttachment,
   type ChatMessage,
   type ChatPeer,
   type ChatThread,
@@ -260,8 +261,8 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
    * A chip hands the browser a URL: the queued bytes from the device when the
    * line is still owed (#1033), otherwise the server's minute-long one.
    */
-  async function handleDownload(attachmentId: string) {
-    const url = await attachmentUrl(attachmentId);
+  async function handleDownload(attachment: ChatAttachment) {
+    const url = await attachmentUrl(attachment);
     if (!url) {
       setNotice(CHAT_THREAD_COPY.downloadFailed);
       return;
@@ -419,7 +420,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                     onRetry={retrySend}
                     onResolve={(actionId, answer) => resolveAction(actionId, answer)}
                     onEdit={edit}
-                    onDownload={(attachmentId) => void handleDownload(attachmentId)}
+                    onDownload={(attachment) => void handleDownload(attachment)}
                     resolveAttachmentUrl={attachmentUrl}
                     onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
                   />
@@ -1174,9 +1175,9 @@ function MessageRow({
   onRetry: () => void;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
   onEdit: (id: string, body: string) => Promise<boolean>;
-  onDownload: (attachmentId: string) => void;
+  onDownload: (attachment: ChatAttachment) => void;
   /** The bytes a chip reads: the device's copy for a queued line, else the server's. */
-  resolveAttachmentUrl: (attachmentId: string) => Promise<string | null>;
+  resolveAttachmentUrl: (attachment: ChatAttachment) => Promise<string | null>;
   onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1261,7 +1262,7 @@ function MessageRow({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => onDownload(attachment.id)}
+                      onClick={() => onDownload(attachment)}
                       className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
                       aria-label={CHAT_THREAD_COPY.downloadFile.replace(
                         '{name}',
