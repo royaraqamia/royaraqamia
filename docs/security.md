@@ -15,6 +15,7 @@
 - `TURNSTILE_SECRET_KEY`
 - `CRON_SECRET`
 - `E2E_TEST_PASSWORD`
+- `E2E_VISUAL_PASSWORD` (the visual gate's own fixture account, #920 — separate from the offline suite's)
 - `MCP_TOKEN_ENCRYPTION_KEY`
 - `ANONYMOUS_IP_SALT` (the salt behind a visitor's allowance subject; falls back to the MCP key)
 - `AI_CHAT_API_KEY` (the assistant's provider key; absent means the assistant is off)

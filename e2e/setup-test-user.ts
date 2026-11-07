@@ -10,11 +10,20 @@ import { createClient } from '@supabase/supabase-js';
  *   node e2e/setup-test-user.ts                      # create/refresh the account, on Pro
  *   node e2e/setup-test-user.ts --purge-stale=90     # also drop fixtures older than 90 minutes
  *   node e2e/setup-test-user.ts --reset              # also purge everything the account owns
+ *   node e2e/setup-test-user.ts --visual             # the visual gate's own account (#920)
+ *
+ * `--visual` reads `E2E_VISUAL_EMAIL` / `E2E_VISUAL_PASSWORD` instead of the
+ * offline suite's pair. It provisions the gate's dedicated fixture account and
+ * purges what it owns, so a recording never sees a previous capture's rows. Its
+ * absence is a skip, not a failure: the capture then runs with no account and
+ * records no evidence, which is how the gate distinguishes "declared" from
+ * "captured" instead of recording the shared offline user.
  *
  * The chats fixture is a second, hidden account and one direct thread between
  * it and the test account, with one line from the peer: `e2e/chats-offline.spec.ts`
  * needs a conversation it owns, and the shared account otherwise holds none, so
- * the spec skipped on every run.
+ * the spec skipped on every run. `--visual` creates none of it: the visual
+ * account signs in and owns fixtures the capture itself seeds and removes.
  *
  * Kept standalone on purpose — it imports nothing from the app and uses no path
  * aliases, so `node` runs it directly. (It used to import the app's logger
@@ -528,47 +537,151 @@ async function ensureChatFixture(userId: string, peerId: string): Promise<string
   return conversationId;
 }
 
-async function ensureTestUser(): Promise<string> {
-  const email = process.env.E2E_TEST_EMAIL!;
-  const password = process.env.E2E_TEST_PASSWORD!;
+/** The project's password policy, as GoTrue words its refusal. */
+const PASSWORD_POLICY_ERROR = 'Password should contain at least one character of each';
 
-  // Check if user exists
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const existing = users?.users?.find((u) => u.email === email);
+function isPasswordPolicyError(error: { message: string }): boolean {
+  return error.message.includes(PASSWORD_POLICY_ERROR);
+}
+
+/**
+ * Whether the account can already sign in with the configured password.
+ *
+ * An existing account may have been provisioned outside this script (the
+ * visual fixture account is one), and the Admin API refuses to *set* a password
+ * the project's policy rejects even when the stored one is exactly that value.
+ * Signing in is the only way to tell "the policy refused the write" from "the
+ * credential is wrong", so a refused write does not leave a capture signing in
+ * with a password nobody checked.
+ */
+async function passwordWorks(email: string, password: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    console.warn(
+      'NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not set, so the stored password could not be verified against the configured one.'
+    );
+    return true;
+  }
+  const client = createClient(url, key, { auth: { persistSession: false } });
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  return !error;
+}
+
+/**
+ * Creates or refreshes one ordinary account: a confirmed `auth.users` row, the
+ * `public.users` profile the schema's foreign keys point at, and a Pro plan so
+ * the owned-item caps do not turn a fixture into a false red (ADR-0075).
+ *
+ * The password is reset on every run so a re-provisioned account is usable, and
+ * `ban_duration: 'none'` keeps a stale ban from turning the sign-in into a
+ * product-looking failure. The profile is hidden (ADR-0127) so the account is
+ * not a member any public listing names.
+ */
+async function ensureAccount(
+  email: string,
+  password: string,
+  name = 'E2E Test User'
+): Promise<string> {
+  const existing = await findAuthUserByEmail(email);
 
   if (existing) {
-    // Update password in case it changed
-    await supabase.auth.admin.updateUserById(existing.id, { password });
-    await ensureProfile(existing.id, email);
-    await ensurePlan(existing.id);
-    if (process.argv.includes('--reset')) await resetOwnedItems(existing.id);
-    else {
-      const stale = staleMinutes();
-      if (stale !== null) await resetOwnedItems(existing.id, stale);
+    const { error } = await supabase.auth.admin.updateUserById(existing.id, {
+      password,
+      email_confirm: true,
+      ban_duration: 'none',
+    });
+    if (error && isPasswordPolicyError(error)) {
+      if (!(await passwordWorks(email, password))) {
+        console.error(
+          `The existing account ${email} cannot sign in with the configured password, and the project's policy refuses to set it: ${error.message}`
+        );
+        process.exit(1);
+      }
+      console.warn(
+        `The configured password for ${email} is already in force but does not meet the project's policy, so it cannot be re-set; keeping it.`
+      );
+    } else if (error) {
+      console.error(`Failed to refresh the account ${email}: ${error.message}`);
+      process.exit(1);
     }
-    console.log(`Test user already exists: ${email} (id: ${existing.id})`);
+    await ensureProfile(existing.id, email, name);
+    await ensurePlan(existing.id);
+    console.log(`Account already exists: ${email} (id: ${existing.id})`);
     return existing.id;
   }
 
-  // Create the user with confirmed email
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
+    user_metadata: { name },
   });
 
   if (error) {
-    console.error(`Failed to create test user: ${error.message}`);
+    if (isPasswordPolicyError(error)) {
+      console.error(
+        `The configured password for ${email} does not meet the project's password policy: ${error.message}`
+      );
+    } else {
+      console.error(`Failed to create the account ${email}: ${error.message}`);
+    }
     process.exit(1);
   }
 
-  await ensureProfile(data.user.id, email);
+  await ensureProfile(data.user.id, email, name);
   await ensurePlan(data.user.id);
-  console.log(`Created test user: ${email} (id: ${data.user.id})`);
+  console.log(`Created account: ${email} (id: ${data.user.id})`);
   return data.user.id;
 }
 
+/** The purge the command line asked for: everything on `--reset`, the stale window otherwise. */
+async function purgeForRun(userId: string): Promise<void> {
+  if (process.argv.includes('--reset')) {
+    await resetOwnedItems(userId);
+    return;
+  }
+  const stale = staleMinutes();
+  if (stale !== null) await resetOwnedItems(userId, stale);
+}
+
+async function ensureTestUser(): Promise<string> {
+  const email = process.env.E2E_TEST_EMAIL!;
+  const password = process.env.E2E_TEST_PASSWORD!;
+
+  const userId = await ensureAccount(email, password);
+  await purgeForRun(userId);
+  return userId;
+}
+
+/**
+ * The visual gate's own account (#920). It reads the gate's pair, not the
+ * offline suite's, and does nothing when the pair is absent: the capture then
+ * skips with a message naming the variables rather than recording the shared
+ * account.
+ */
+async function ensureVisualAccount(): Promise<void> {
+  const email = process.env.E2E_VISUAL_EMAIL;
+  const password = process.env.E2E_VISUAL_PASSWORD;
+
+  if (!email || !password) {
+    console.log(
+      'E2E_VISUAL_EMAIL and E2E_VISUAL_PASSWORD are not set; the visual gate will skip rather than record the shared offline account.'
+    );
+    return;
+  }
+
+  const userId = await ensureAccount(email, password, 'E2E Visual User');
+  await purgeForRun(userId);
+  console.log(`Visual fixture account ready: ${email}`);
+}
+
 async function main() {
+  if (process.argv.includes('--visual')) {
+    await ensureVisualAccount();
+    return;
+  }
+
   const userId = await ensureTestUser();
   const peerId = await ensurePeer();
   const reset = process.argv.includes('--reset');

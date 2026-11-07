@@ -326,6 +326,8 @@ npx playwright test --ui
 
 Before running E2E tests, ensure `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set in `.env.local` — `e2e/setup-test-user.ts` creates (or refreshes) the test account via the Supabase Admin API, and puts it on the Pro plan so the owned-item caps (ADR-0075) do not gate the suite's fixtures. Run it with `--purge-stale=<minutes>` to drop the fixtures of runs that died mid-suite — the window is what keeps a concurrent run's rows; the offline job runs it at 90, past its own 40-minute timeout — or with `--reset` to purge every product row the account owns when it is already over a cap. The HTML report is written to `playwright-report/` and traces are captured on first retry.
 
+The visual gate records against its own account, not that shared one: set `E2E_VISUAL_EMAIL` and `E2E_VISUAL_PASSWORD` and run `npm run visual:capture`, which provisions the account with `e2e/setup-test-user.ts --visual --reset` before the browser. Without the pair the capture skips with a message naming both variables and writes no evidence (#920).
+
 ### CI
 
 `.github/workflows/code-quality.yml` runs on every push/PR to `main`/`master`: **Prettier check → ESLint → `tsc --noEmit` → `npm test` → `npm run build`** on Node 22.

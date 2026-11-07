@@ -26,11 +26,25 @@ let lastAttemptAt = 0;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function signIn(context: BrowserContext, baseURL: string): Promise<APIResponse> {
-  const email = process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD;
+/** Credentials for an account other than the shared offline one (the visual gate's, #920). */
+export interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
+export async function signIn(
+  context: BrowserContext,
+  baseURL: string,
+  credentials?: SignInCredentials
+): Promise<APIResponse> {
+  const email = credentials?.email ?? process.env.E2E_TEST_EMAIL;
+  const password = credentials?.password ?? process.env.E2E_TEST_PASSWORD;
   if (!email || !password) {
-    throw new Error('E2E_TEST_EMAIL and E2E_TEST_PASSWORD must be set to sign in');
+    throw new Error(
+      credentials
+        ? 'the supplied sign-in credentials are incomplete'
+        : 'E2E_TEST_EMAIL and E2E_TEST_PASSWORD must be set to sign in'
+    );
   }
 
   for (let attempt = 1; ; attempt += 1) {
