@@ -4,6 +4,15 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import type { ChatMessage, ChatPeer, ChatThread } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
+/** The composer's low-allowance line is a toast; these record what it said. */
+const toastSpies = vi.hoisted(() => ({
+  info: vi.fn(),
+  error: vi.fn(),
+  success: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({ toast: toastSpies }));
+
 // The header is under test, not Next's optimizer or the member's picture.
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
@@ -537,6 +546,8 @@ describe('ChatThreadView assistant', () => {
     api.getChatAssistant.mockReset();
     api.streamChatAgentTurn.mockReset();
     api.getChatAssistant.mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
+    toastSpies.info.mockClear();
+    toastSpies.error.mockClear();
   });
 
   it('gives the assistant the same composer as a member thread', async () => {
@@ -560,6 +571,8 @@ describe('ChatThreadView assistant', () => {
     expect(await screen.findByText('المساعد متاح لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
     expect(screen.queryByRole('textbox')).toBeNull();
+    // A plan that allows no turn has nothing to count down, so no "0 من 0".
+    expect(toastSpies.info).not.toHaveBeenCalled();
   });
 
   it('names the spent day instead of drawing a composer', async () => {
