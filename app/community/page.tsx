@@ -31,7 +31,11 @@ export default async function CommunityPage() {
           </SectionTitle>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+        {/* Both steps of the two-column pair are variants, never a base utility
+            plus a variant: whichever surface's stylesheet was appended last wins
+            a contest on a base class, and one that compiles `grid-cols-1` folds
+            the rail under the feed after a client-side navigation (ADR-0132). */}
+        <div className="grid items-start max-lg:grid-cols-1 max-lg:gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
           {/* Feed column */}
           <div className="min-w-0">
             <Suspense

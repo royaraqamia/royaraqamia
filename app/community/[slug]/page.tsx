@@ -213,10 +213,12 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
             </div>
           </div>
 
-          {/* Layout Grid: Article Body & Sticky Sidebar */}
+          {/* Layout Grid: Article Body & Sticky Sidebar. `max-lg:`/`lg:`, never
+              `grid-cols-1` + `lg:grid-cols-12`: a base utility loses the contest
+              to whichever surface loaded last (ADR-0132). */}
           <div
-            className={`grid grid-cols-1 gap-8 lg:gap-12 items-start ${
-              hasHeadings ? 'lg:grid-cols-12' : 'max-w-4xl mx-auto'
+            className={`grid max-lg:grid-cols-1 max-lg:gap-8 lg:gap-12 items-start ${
+              hasHeadings ? 'lg:grid-cols-12' : 'lg:grid-cols-1 max-w-4xl mx-auto'
             }`}
           >
             <div

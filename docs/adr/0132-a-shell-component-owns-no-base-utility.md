@@ -108,3 +108,26 @@ Three shapes follow:
   that removes the class of bug rather than containing it. It duplicates the shell
   into every route's chunk (about 266 KB raw), which is the same cost as the
   alternative above.
+
+## Amendment — 2026-11-07: the rule is about whoever is later, not about the shell
+
+The rule was written for shell components because the shell's stylesheet is always
+the first one in the document. What decides the contest is not "shell versus
+surface" but "the sheet that arrived later", and Next appends each surface's chunk
+when its route is first visited. So a surface can be outranked by a surface: after
+`/` → `/community` the landing sheet sits after the community one, and its bare
+`.grid-cols-1` beat the community page's `lg:grid-cols-[minmax(0,1fr)_20rem]` on
+the same element. The members rail did not lose a variant to the shell; it lost
+its multi-column row to the home page, and it stayed below a paged feed for the
+rest of the session — correct on reload, correct on a phone, wrong after one visit
+to `/`.
+
+`/community` and its post page now write both steps as variants
+(`max-lg:grid-cols-1 lg:grid-cols-[…]`), so no base utility is in the element's
+class list to lose, and `e2e/community-rail.spec.ts` walks the `/` → `/community`
+hop at desktop width. `npm run check:layers` still rules on shell components only:
+the same sweep over surface-owned files finds 85 unique layout pairs
+(`hidden md:block`, `grid-cols-1 lg:grid-cols-3`, `flex-col sm:flex-row`), and
+rewriting them is the 379-pair rejection above by another name. The guard for
+those is the one this amendment adds — a test per region a user can lose, not a
+check no branch can pass.
