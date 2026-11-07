@@ -70,9 +70,10 @@ export function chatThreadReducer(state: ChatThreadData, action: ChatThreadActio
       };
 
     case 'readFailed':
-      // Nothing to draw and nothing to send into: the screen says so instead of
-      // showing an empty conversation (ADR-0031).
-      return { ...state, thread: null, readFailed: true, isLoading: false };
+      // The reason is kept, but a thread the device already painted stays on
+      // screen (#1033): an unreachable server is not "this conversation is
+      // gone" — the failure face is for a thread there is nothing to draw.
+      return { ...state, readFailed: true, isLoading: false };
 
     case 'olderLoaded':
       return {

@@ -21,6 +21,7 @@ export const LOCAL_STORE_PRODUCTS: readonly LocalStoreProduct[] = [
   { product: 'blogpress', label: 'إدارة المنشورات' },
   { product: 'quran', label: 'القرآن الكريم' },
   { product: 'leads', label: 'طَلبات التَّواصل' },
+  { product: 'chats', label: 'المحادثات' },
 ];
 
 /** The surface a product resolves its boot identity in (#493), and its snapshot (#495). */
@@ -84,5 +85,10 @@ export const LOCAL_STORE_ROOTS: readonly LocalStoreRoot[] = [
     snapshot: null,
     exemption:
       'guest-pinned: frontend/api/leads/local-store.ts opens GUEST_IDENTITY only, so there is no user partition to reconcile and no per-identity first frame to carry',
+  },
+  {
+    product: 'chats',
+    root: 'frontend/ui/chats/chats-panel.tsx',
+    snapshot: 'frontend/state/chats/use-chat-threads.ts',
   },
 ];

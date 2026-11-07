@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Check, MessagesSquare, Plus, Users, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { createChatGroup, getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
@@ -64,7 +65,10 @@ import {
  */
 export function ChatsPanel() {
   const router = useRouter();
-  const { threads, isLoading, error, refresh, respond } = useChatThreads(true);
+  // The store is partitioned by identity, resolved before the session answers
+  // (#493), so the tab paints the rows this device already holds (#1033).
+  const { identity } = useLocalIdentity();
+  const { threads, isLoading, painted, error, refresh, respond } = useChatThreads(true, identity);
   const [panel, setPanel] = useState<'direct' | 'group' | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
@@ -148,7 +152,9 @@ export function ChatsPanel() {
     router.push(`/chats/${conversationId}`);
   }
 
-  if (error) {
+  // The failure face is for a tab with nothing to show (#1033): a list the
+  // device already holds stays on screen while the read is retried behind it.
+  if (error && !painted) {
     return (
       <ReadFailureNotice
         failure={toReadFailure(error, CHATS_LIST_COPY.listError)}
@@ -160,7 +166,10 @@ export function ChatsPanel() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
+      <div
+        data-local-store-skeleton=""
+        className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs"
+      >
         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
         <p className="text-sm font-medium text-muted-foreground">{CHATS_LIST_COPY.loading}</p>
       </div>
