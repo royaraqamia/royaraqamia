@@ -23,7 +23,9 @@
  *     `supabase/migrations/` are history and must not be rewritten (the
  *     digit-normalising migration carries the literals);
  *   - `android/gradle.properties` quotes an external Gradle error verbatim;
- *   - `.agents/` and `public/quran/` are vendored as published.
+ *   - `.agents/` and `public/quran/` are vendored as published;
+ *   - the vendored i18n engineer's prompt quotes an Arabic-locale number format
+ *     to show locale-aware output, so the digits are the example.
  *
  * Usage: `npm run check:digits`, or `npm run fix:digits` to rewrite.
  */
@@ -40,6 +42,9 @@ const ANY_DIGIT = /[\u0660-\u0669\u06f0-\u06f9]/;
 export const EXCLUDED = [
   '.agents/',
   'public/quran/',
+  // The vendored i18n engineer's prompt quotes an Arabic-locale number format to
+  // show locale-aware output; the Arabic-Indic digits there are the example.
+  '.opencode/skills/agency/engineering-i18n-engineer/SKILL.md',
   'supabase/migrations/',
   'android/gradle.properties',
   'docs/conventions.md',
