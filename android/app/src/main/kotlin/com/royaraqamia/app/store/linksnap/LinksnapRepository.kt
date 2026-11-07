@@ -77,6 +77,8 @@ class LinksnapRepository(
     private val clock: WriteClock = SystemWriteClock,
     private val random: () -> Double = { Math.random() },
     private val nowMillis: () -> Long = { System.currentTimeMillis() },
+    /** Seals a link's password before it reaches the plain SQLite Outbox (#921). */
+    private val passwordCipher: LinkPasswordCipher = KeystoreLinkPasswordCipher(),
 ) {
     /** One drain at a time, so two triggers cannot race for the same `seq`. */
     private val drainMutex = Mutex()
@@ -97,6 +99,7 @@ class LinksnapRepository(
         val code = ensureUniqueCode(customCode)
         val now = clock.nowIso()
         val clientId = clock.uuid()
+        val sealedPassword = sealPassword(password)
         val row =
             LinksnapLinkRow(
                 clientId = clientId,
@@ -106,7 +109,7 @@ class LinksnapRepository(
                 updatedAt = now,
                 expiresAt = null,
                 isBlocked = false,
-                passwordProtected = !password.isNullOrEmpty(),
+                passwordProtected = sealedPassword != null,
                 deletedAt = null,
             )
         val payload =
@@ -115,7 +118,7 @@ class LinksnapRepository(
                 customCode = code,
                 clientId = clientId,
                 expiresAt = null,
-                password = password,
+                password = sealedPassword,
                 updatedAt = now,
             )
         dao().commitLink(row, intent("link.create", payload, nowMillis()))
@@ -191,9 +194,11 @@ class LinksnapRepository(
                     throw IllegalArgumentException("هذا الرمز مستخدم بالفعل")
                 }
             }
+            val sealedPassword =
+                if (edit.passwordSet) sealPassword(edit.password) else null
             val passwordProtected =
                 when {
-                    edit.passwordSet -> !edit.password.isNullOrEmpty()
+                    edit.passwordSet -> sealedPassword != null
                     else -> existing.passwordProtected
                 }
             val row =
@@ -214,7 +219,7 @@ class LinksnapRepository(
                     expiresAtSet = edit.expiresAtSet,
                     expiresAt = row.expiresAt,
                     passwordSet = edit.passwordSet,
-                    password = edit.password,
+                    password = sealedPassword,
                     updatedAt = now,
                 )
             dao.commitLink(row, intent("link.update", payload, nowMillis()))
@@ -364,8 +369,11 @@ class LinksnapRepository(
 
     /** One intent, replayed, classified the way the web classifies it. */
     private suspend fun send(entry: OutboxIntentRow): SendOutcome {
+        // A key this device no longer holds cannot open the queued password. That
+        // is a permanent failure for the intent, never a request that carries the
+        // ciphertext as if it were the visitor's password (#921).
         val request =
-            runCatching { LinksnapWriteTransport.requestFor(entry) }.getOrNull()
+            runCatching { LinksnapWriteTransport.requestFor(entry, passwordCipher) }.getOrNull()
                 ?: return SendOutcome.Permanent
 
         return when (val answer = client.send(request.method, request.path, request.body)) {
@@ -379,6 +387,22 @@ class LinksnapRepository(
                     is ApiError.Network -> SendOutcome.Transient
                     is ApiError.InvalidContract -> SendOutcome.Permanent
                 }
+        }
+    }
+
+    /**
+     * The password as it goes into the queue: sealed, or null when there is none.
+     *
+     * The seal is what keeps a credential out of the plain SQLite Outbox (#921).
+     * A Keystore that refuses fails the write here, with a sentence the screen
+     * draws, rather than falling back to plaintext.
+     */
+    private fun sealPassword(password: String?): String? {
+        if (password.isNullOrEmpty()) return null
+        return try {
+            LinkPasswords.seal(passwordCipher, password)
+        } catch (error: Exception) {
+            throw LinkPasswordUnavailable(PASSWORD_CANNOT_BE_SEALED, error)
         }
     }
 
@@ -476,6 +500,14 @@ class LinksnapRepository(
 
         const val MIN_CODE_LENGTH = 3
         const val MAX_CODE_LENGTH = 16
+
+        /**
+         * What the screen says when the device will not seal a password (#921).
+         * The link is not queued, because a queue that cannot be sealed is not a
+         * queue that may fall back to plaintext.
+         */
+        const val PASSWORD_CANNOT_BE_SEALED =
+            "تعذَّر حفظ كلمة المرور بأمان على هذا الجهاز. لم يُضَف الرَّابط."
 
         private const val CODE_LENGTH = 6
         private const val MAX_CODE_ATTEMPTS = 8
