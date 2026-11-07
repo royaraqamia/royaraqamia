@@ -15,7 +15,6 @@ import {
   Link2,
   Megaphone,
   MessagesSquare,
-  SquarePen,
   X,
 } from 'lucide-react';
 
@@ -31,7 +30,6 @@ import { notificationTarget } from './notification-target';
 
 const typeIcons: Record<string, React.ReactNode> = {
   certificate_issued: <BadgeCheck size={18} />,
-  post_published: <SquarePen size={18} />,
   habit_reminder: <CircleCheck size={18} />,
   recovery_nudge: <CalendarClock size={18} />,
   expense_alert: <CircleDollarSign size={18} />,

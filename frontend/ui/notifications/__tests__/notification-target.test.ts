@@ -15,19 +15,16 @@ describe('notificationTarget', () => {
     ).toBe('/verify/COMP-2026-ABCDEFGH');
   });
 
-  it('encodes a code or slug that reached the database through a form', () => {
+  it('encodes a code that reached the database through a form', () => {
     expect(
       notificationTarget(notification('certificate_issued', { certificateCode: 'A/B C' }))
     ).toBe('/verify/A%2FB%20C');
-    expect(notificationTarget(notification('post_published', { slug: 'مقال جديد' }))).toBe(
-      `/community/${encodeURIComponent('مقال جديد')}`
-    );
   });
 
   it('answers null when the identifier the route needs is missing or blank', () => {
     expect(notificationTarget(notification('certificate_issued'))).toBeNull();
-    expect(notificationTarget(notification('post_published', { slug: '   ' }))).toBeNull();
-    expect(notificationTarget(notification('post_published', { slug: 42 }))).toBeNull();
+    expect(notificationTarget(notification('chat_request', { conversationId: '   ' }))).toBeNull();
+    expect(notificationTarget(notification('chat_request', { conversationId: 42 }))).toBeNull();
   });
 
   it.each([
@@ -50,7 +47,7 @@ describe('notificationTarget', () => {
 
   it('survives a null metadata column', () => {
     const row = {
-      type: 'post_published' as const,
+      type: 'certificate_issued' as const,
       metadata: null as unknown as Record<string, unknown>,
     };
 

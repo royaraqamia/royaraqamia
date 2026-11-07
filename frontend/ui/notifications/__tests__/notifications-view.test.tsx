@@ -96,7 +96,7 @@ beforeEach(() => {
 
 describe('NotificationsView tabs', () => {
   it('opens on Alerts when the feed has an unread row', () => {
-    state.notifications = [notification('n1', 'post_published')];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 1;
 
     render(<NotificationsView />);
@@ -107,7 +107,10 @@ describe('NotificationsView tabs', () => {
 
   it('opens on Chats when nothing is unread', () => {
     state.notifications = [
-      notification('n1', 'post_published', { is_read: true, read_at: '2026-10-01T00:00:00.000Z' }),
+      notification('n1', 'system_announcement', {
+        is_read: true,
+        read_at: '2026-10-01T00:00:00.000Z',
+      }),
     ];
 
     render(<NotificationsView />);
@@ -118,7 +121,7 @@ describe('NotificationsView tabs', () => {
 
   it('lets an explicit ?tab= win over the unread default', () => {
     state.search = 'tab=chats';
-    state.notifications = [notification('n1', 'post_published')];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 1;
 
     render(<NotificationsView />);
@@ -127,7 +130,7 @@ describe('NotificationsView tabs', () => {
   });
 
   it('replaces the URL rather than adding a history entry when a tab is picked', () => {
-    state.notifications = [notification('n1', 'post_published')];
+    state.notifications = [notification('n1', 'system_announcement')];
 
     render(<NotificationsView />);
     fireEvent.click(tab(/المحادثات/));
@@ -137,7 +140,7 @@ describe('NotificationsView tabs', () => {
   });
 
   it('shows an unread count on the tab that owns it, and none on an empty one', () => {
-    state.notifications = [notification('n1', 'post_published')];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 3;
 
     render(<NotificationsView />);
@@ -159,13 +162,16 @@ describe('NotificationsView tabs', () => {
 describe('NotificationsView rows', () => {
   it('links a row to the destination derived from its type and metadata', () => {
     state.notifications = [
-      notification('n1', 'post_published', { title: 'منشور', metadata: { slug: 'hello' } }),
+      notification('n1', 'certificate_issued', {
+        title: 'شهادة',
+        metadata: { certificateCode: 'hello' },
+      }),
     ];
     state.unreadCount = 1;
 
     render(<NotificationsView />);
 
-    expect(screen.getByRole('link', { name: /منشور/ })).toHaveAttribute('href', '/community/hello');
+    expect(screen.getByRole('link', { name: /شهادة/ })).toHaveAttribute('href', '/verify/hello');
   });
 
   it('marks an unread row read when it is opened', () => {
@@ -208,7 +214,7 @@ describe('NotificationsView rows', () => {
   });
 
   it('deletes from the row without opening it', () => {
-    state.notifications = [notification('n1', 'post_published', { metadata: { slug: 'hello' } })];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 1;
 
     render(<NotificationsView />);
@@ -219,7 +225,7 @@ describe('NotificationsView rows', () => {
   });
 
   it('anchors the delete control at the row inline end, inside the pe-8 gutter', () => {
-    state.notifications = [notification('n1', 'post_published', { metadata: { slug: 'hello' } })];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 1;
 
     render(<NotificationsView />);
@@ -233,7 +239,7 @@ describe('NotificationsView rows', () => {
   });
 
   it('marks every row read from the header', () => {
-    state.notifications = [notification('n1', 'post_published')];
+    state.notifications = [notification('n1', 'system_announcement')];
     state.unreadCount = 1;
 
     render(<NotificationsView />);

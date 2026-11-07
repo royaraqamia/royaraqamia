@@ -7,7 +7,6 @@ import {
 } from '@/backend/config/notifications';
 import { createTrainingApplicationNotifier } from '@/backend/config/training';
 import { createConsultationBookingNotifier } from '@/backend/config/consultation';
-import { createPostPublishedNotifier } from '@/backend/config/blogpress';
 import { createCertificateIssuedNotifier } from '@/backend/config/certificates';
 import { TRAINING_COURSE, type TrainingApplication } from '@/shared/contracts/training';
 import type { Certificate } from '@/shared/contracts/certificates';
@@ -110,21 +109,6 @@ describe('notification producer adapters', () => {
     });
 
     expect(fanout.mock.calls[0]?.[0].body).toBe('سارة — استشارة أعمال (CONS-2026-A7K2M9QX)');
-  });
-
-  it('excludes the publishing author from a post-published notice', () => {
-    const fanout = makeFanout();
-
-    createPostPublishedNotifier(fanout)({ postId: 'post-1', authorId: 'author-1', slug: 'hello' });
-
-    expect(fanout).toHaveBeenCalledTimes(1);
-    expect(fanout.mock.calls[0]?.[0]).toEqual({
-      type: 'post_published',
-      title: 'تم نشر منشور جديد',
-      body: 'تم نشر منشور جديد على المجتمع.',
-      metadata: { postId: 'post-1', slug: 'hello' },
-    });
-    expect(fanout.mock.calls[0]?.[1]).toEqual({ excludeUserIds: ['author-1'] });
   });
 
   it('hands certificate recipients to the fan-out as explicit recipients', () => {
@@ -250,62 +234,5 @@ describe('certificate-issued burst', () => {
         url: '/verify/COMP-2026-ABCDEFGH',
       });
     }
-  });
-});
-
-describe('post-published burst', () => {
-  it('produces one broadcast per publish over the whole Admin audience minus the author', async () => {
-    const admins = ['author-1', 'admin-2', 'admin-3'];
-    const audience = ['admin-2', 'admin-3'];
-    const broadcast = vi.fn<NotificationDelivery['broadcast']>(
-      async (_input, userIds) => userIds.length
-    );
-    const sendToUsers = vi.fn<PushNotifier['sendToUsers']>(async () => undefined);
-    const fanout = createNotificationFanout({
-      deliver: { broadcast },
-      push: { sendToUsers },
-      resolveAdminIds: async () => admins,
-      schedule: (task) => {
-        void task();
-      },
-    });
-    const notify = createPostPublishedNotifier(fanout);
-
-    notify({ postId: 'post-1', authorId: 'author-1', slug: 'hello-1' });
-    notify({ postId: 'post-2', authorId: 'author-1', slug: 'hello-2' });
-    notify({ postId: 'post-3', authorId: 'author-1', slug: 'hello-3' });
-
-    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(3));
-    await vi.waitFor(() => expect(sendToUsers).toHaveBeenCalledTimes(3));
-
-    // 3 publishes, not 3 × 3 Admins = 9 inserts; every broadcast covers the
-    // whole audience with the publishing author subtracted.
-    for (const call of broadcast.mock.calls) {
-      expect(call[1]).toEqual(audience);
-      expect(call[0]).toMatchObject({
-        type: 'post_published',
-        title: 'تم نشر منشور جديد',
-        body: 'تم نشر منشور جديد على المجتمع.',
-      });
-    }
-    for (const call of sendToUsers.mock.calls) {
-      expect(call[0]).toEqual(audience);
-      // The notice's type, title and body are unchanged; the deep-link follows.
-      expect(call[1]).toMatchObject({
-        type: 'post_published',
-        title: 'تم نشر منشور جديد',
-        body: 'تم نشر منشور جديد على المجتمع.',
-      });
-    }
-    expect(broadcast.mock.calls.map((call) => call[0].metadata?.postId).sort()).toEqual([
-      'post-1',
-      'post-2',
-      'post-3',
-    ]);
-    expect(sendToUsers.mock.calls.map((call) => call[1].url).sort()).toEqual([
-      '/community/hello-1',
-      '/community/hello-2',
-      '/community/hello-3',
-    ]);
   });
 });

@@ -165,7 +165,6 @@ describe('PushDeviceUnregisterSchema', () => {
 describe('toPushUrl', () => {
   it('maps every type to its base route', () => {
     expect(PUSH_URL_BY_TYPE.certificate_issued).toBe('/verify');
-    expect(PUSH_URL_BY_TYPE.post_published).toBe('/blogpress');
     expect(PUSH_URL_BY_TYPE.habit_reminder).toBe('/habitflow');
     expect(PUSH_URL_BY_TYPE.recovery_nudge).toBe('/habitflow');
     expect(PUSH_URL_BY_TYPE.expense_alert).toBe('/spendtrack');
@@ -191,10 +190,6 @@ describe('toPushUrl', () => {
 
   it('falls back to the base route when the certificate code is missing', () => {
     expect(toPushUrl('certificate_issued', {})).toBe('/verify');
-  });
-
-  it('resolves post_published to the public community post when a slug is present', () => {
-    expect(toPushUrl('post_published', { slug: 'my-post' })).toBe('/community/my-post');
   });
 
   it('URL-encodes metadata segments', () => {
