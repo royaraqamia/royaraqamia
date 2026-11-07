@@ -18,6 +18,12 @@ import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 
 const PRODUCT = 'chats';
 const THREADS_STORE = 'threads';
+/**
+ * The open thread's header, kept apart from the list's rows: a summary and a
+ * full thread share an id but not a shape, and painting one as the other is a
+ * crash (the thread draws `participants`, which a summary does not carry).
+ */
+const HEADERS_STORE = 'headers';
 const MESSAGES_STORE = 'messages';
 const META_STORE = 'meta';
 
@@ -37,10 +43,13 @@ export type StoredThread = ChatConversationSummary | ChatThread;
  * Forward-only schema. v1 is what a read keeps: the list's rows and a window of
  * each thread's messages. v2 adds the Outbox, so a line written with no
  * connection lands in the store and its replay intent commits with it — the
- * shape every local-store product uses (#1033). The media blobs join it with the
- * attachment half of the issue.
+ * shape every local-store product uses (#1033). v3 keeps the thread's header in
+ * its own store: v1 and v2 wrote the list's summaries and the open thread's
+ * header into the same object store, and a cached summary drawn as a thread is
+ * a missing `participants` (#1120's first production report). The media blobs
+ * join it with the attachment half of the issue.
  */
-export const CHATS_STORE_VERSION = 2;
+export const CHATS_STORE_VERSION = 3;
 
 export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -61,6 +70,14 @@ export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
     migrate: (db) => {
       // `seq` is auto-increment so replay order is the exact write order.
       db.createObjectStore(OUTBOX_STORE, { keyPath: 'seq', autoIncrement: true });
+    },
+  },
+  {
+    version: 3,
+    migrate: (db) => {
+      // A fresh store: whatever v2 left in `threads` is a list row, not a
+      // header, so nothing is carried over.
+      db.createObjectStore(HEADERS_STORE, { keyPath: 'id' });
     },
   },
 ];
@@ -255,12 +272,15 @@ export class ChatsLocalStore {
     return rows.sort(byActivityDesc).slice(0, CHAT_THREAD_WINDOW);
   }
 
-  /** One thread's header as the last read left it, or null. */
+  /**
+   * One thread's header as the last open left it, or null. Never a list row:
+   * a summary has no `participants`, and drawing it as a thread crashes.
+   */
   async getThread(id: string): Promise<ChatThread | null> {
     const row = await this.connection.run(async (db) => {
-      const transaction = db.transaction(THREADS_STORE, 'readonly');
+      const transaction = db.transaction(HEADERS_STORE, 'readonly');
       return promisifyRequest(
-        transaction.objectStore(THREADS_STORE).get(id) as IDBRequest<ChatThread | undefined>
+        transaction.objectStore(HEADERS_STORE).get(id) as IDBRequest<ChatThread | undefined>
       );
     }, undefined);
     return row ?? null;
@@ -306,7 +326,7 @@ export class ChatsLocalStore {
 
   /** Records the open thread's header — the participant roster and its limits. */
   async saveThread(thread: ChatThread): Promise<void> {
-    await this.commit([[THREADS_STORE, thread]]);
+    await this.commit([[HEADERS_STORE, thread]]);
   }
 
   /**
@@ -386,28 +406,41 @@ export class ChatsLocalStore {
       payload: intent,
     });
 
-    // The list's preview is the same write seen from the other screen: patching
-    // it here keeps the tab honest while the connection is still away.
-    const thread = await this.getThread(input.conversationId);
-    if (thread) {
-      await this.commit([
-        [
-          THREADS_STORE,
-          {
-            ...thread,
-            lastMessage: {
-              body: message.body,
-              senderKind: message.senderKind,
-              createdAt: message.createdAt,
-              hasAttachments: false,
-            },
-            lastMessageAt: message.createdAt,
-          },
-        ],
-      ]);
-    }
-
+    await this.patchPreview(input.conversationId, message);
     return message;
+  }
+
+  /**
+   * The list's preview moves with a line the thread wrote. It patches the
+   * cached summary — never the header, which its own read keeps — so the list
+   * and the open thread cannot disagree about what was last said.
+   */
+  private async patchPreview(conversationId: string, message: ChatMessage): Promise<void> {
+    const row = await this.connection.run(async (db) => {
+      const transaction = db.transaction(THREADS_STORE, 'readonly');
+      return promisifyRequest(
+        transaction.objectStore(THREADS_STORE).get(conversationId) as IDBRequest<
+          ChatConversationSummary | undefined
+        >
+      );
+    }, undefined);
+    if (!row) return;
+
+    await this.commit([
+      [
+        THREADS_STORE,
+        {
+          ...row,
+          lastMessage: {
+            body: message.body,
+            senderKind: message.senderKind,
+            createdAt: message.createdAt,
+            hasAttachments: message.attachments.length > 0,
+          },
+          lastMessageAt: message.createdAt,
+        },
+      ],
+    ]);
   }
 
   /**
@@ -429,25 +462,7 @@ export class ChatsLocalStore {
     }
 
     await this.commit([[MESSAGES_STORE, message]]);
-
-    const thread = await this.getThread(message.conversationId);
-    if (thread) {
-      await this.commit([
-        [
-          THREADS_STORE,
-          {
-            ...thread,
-            lastMessage: {
-              body: message.body,
-              senderKind: message.senderKind,
-              createdAt: message.createdAt,
-              hasAttachments: message.attachments.length > 0,
-            },
-            lastMessageAt: message.createdAt,
-          },
-        ],
-      ]);
-    }
+    await this.patchPreview(message.conversationId, message);
   }
 
   /** Every client id with a queued intent, and whether the server refused it. */
@@ -537,6 +552,7 @@ export class ChatsLocalStore {
       .map((thread) => thread.id);
     if (stale.length > 0) {
       await this.remove(THREADS_STORE, stale);
+      await this.remove(HEADERS_STORE, stale);
       for (const id of stale) await this.removeConversationMessages(id);
     }
     if (expired.length > 0) this.notifyWrites();
@@ -544,7 +560,7 @@ export class ChatsLocalStore {
 
   /** Empties every owned store — the sign-out purge (#1033). */
   async clear(): Promise<void> {
-    const stores = [THREADS_STORE, MESSAGES_STORE, OUTBOX_STORE, META_STORE];
+    const stores = [THREADS_STORE, HEADERS_STORE, MESSAGES_STORE, OUTBOX_STORE, META_STORE];
     const cleared = await this.connection.run(async (db) => {
       const transaction = db.transaction(stores, 'readwrite');
       for (const store of stores) transaction.objectStore(store).clear();

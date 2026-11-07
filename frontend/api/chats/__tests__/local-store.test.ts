@@ -119,6 +119,21 @@ describe('ChatsLocalStore', () => {
     expect(all).toHaveLength(4);
   });
 
+  it("never serves the list's row as a thread header", async () => {
+    // A summary and a thread share an id but not a shape; drawing the summary
+    // as the open thread is a missing `participants` (#1033's production bug).
+    const store = await open();
+    await store.saveThreads([thread('c-1', '2026-11-01T10:00:00.000Z')]);
+
+    expect(await store.getThread('c-1')).toBeNull();
+
+    await store.saveThread(thread('c-1', '2026-11-01T10:00:00.000Z'));
+
+    const header = await store.getThread('c-1');
+    expect(header?.participants).toEqual([]);
+    expect(header?.canWrite).toBe(true);
+  });
+
   it('keeps one thread out of another', async () => {
     const store = await open();
     await store.saveMessages('c-1', messages('c-1', 2));
@@ -137,6 +152,8 @@ describe('ChatsLocalStore', () => {
     const fresh = new Date(now - 60_000).toISOString();
 
     await store.saveThreads([thread('stale', stale), thread('fresh', fresh)]);
+    await store.saveThread(thread('stale', stale));
+    await store.saveThread(thread('fresh', fresh));
     await store.saveMessages('stale', [message('stale', 'm-stale', stale)]);
     await store.saveMessages('fresh', [message('fresh', 'm-fresh', fresh)]);
 
@@ -235,7 +252,7 @@ describe('ChatsLocalStore queue', () => {
       senderId: 'u-1',
     });
 
-    const cached = await store.getThread('c-1');
+    const [cached] = (await store.getThreads()).filter((row) => row.id === 'c-1');
     expect(cached?.lastMessage?.body).toBe('مرحبا');
     expect(cached?.lastMessageAt).toBe(queued.createdAt);
   });
