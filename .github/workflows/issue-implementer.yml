@@ -218,6 +218,15 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
+      - name: Build the Graphify code graph
+        # The structural half of the context: callers, imports and communities of the
+        # checked-out tree, parsed locally with tree-sitter (no model call, nothing
+        # leaves the runner). Code only, so the ADRs stay prose for whoever reads
+        # them. A build that fails is a warning, and `graphify-out/` is gitignored,
+        # so nothing it writes can reach the branch the action commits.
+        if: steps.guard.outputs.run == 'true'
+        uses: ./.github/actions/graphify
+
       - name: OpenCode Runner Setup
         if: steps.guard.outputs.run == 'true'
         uses: ./.github/actions/opencode-runner
@@ -576,6 +585,7 @@ jobs:
             - The Supabase MCP server is the only database surface: read with `list_tables`, `list_migrations` and `get_advisors`, and apply schema changes only through `apply_migration` exactly as described in step 3.
             - Playwright is installed with a Chromium build, and `playwright.config.ts` starts the app itself. Run the specs your change reaches: `npx playwright test <spec>`. `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set when the repository has them; a spec that needs a session and finds them empty is skipped, and the pull request body says so.
             - The Android toolchain is installed (JDK 21, the SDK and a Gradle cache), so `npm run check:visual` runs here. It is the measurement that switches a ported surface on (ADR-0118); a visual review is not a substitute for it.
+            - Graphify has already mapped this checkout: `graphify-out/` holds a code graph of the commit you started from, and 98% of its edges are read from source rather than inferred. Ask it before a file-by-file search — `graphify query "<question>"` for how something works, `graphify path "A" "B"` for how two things connect, `graphify explain "X"` for one symbol and its neighbours. Use grep for exact strings, such as an error message or a config key. Trust the code over the graph when they disagree, and `graphify update .` refreshes it in seconds after you add or move files.
 
             Steps:
             1. Read the selected issue in the current state above. If it is ambiguous, unsafe, already satisfied by the current code, or no longer matches the repository, do NOT guess: write /tmp/result.json as `{"status":"cannot","reason":"<one sentence>"}` and stop without touching the working tree.
