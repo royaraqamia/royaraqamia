@@ -73,6 +73,12 @@ Write for the user, in Arabic, not about the code: no file names, versions, comm
 
 **A native port is a pair.** Draw the app's component from the same route, the same generated copy and the same states as the site's, and list it in `docs/mobile/parity.json` in the same change — `npm run check:parity` and `npm run check:copy` fail a port that only exists on one side, and a Kotlin file that starts reading `Recipes`/`LucideVectors` without a row fails until it is listed (or exempted with a reason). Do not retype a user-facing string into Kotlin, and do not read a narrower endpoint than the web component does ([ADR-0098](docs/adr/0098-a-ported-component-is-a-pair.md), [ADR-0103](docs/adr/0103-a-port-is-discovered-by-what-it-reads.md), [two-clients.md](docs/mobile/two-clients.md)).
 
+## Graphify
+
+`graphify-out/` holds a code knowledge graph of this checkout, built with tree-sitter by `graphify extract . --code-only` — local, no model, no tokens. Answer structure, caller and dependency questions from it before a file-by-file search: `graphify query "<question>"`, `graphify path "A" "B"`, `graphify explain "X"`. Use grep for exact strings — an error message, a config key, a migration name — and trust the code over the graph when the two disagree.
+
+The graph is generated, ignored, and never committed, so a stale one is a local problem, not a shared one: `graphify update .` refreshes it after a pull or a batch of edits (a full rebuild of this tree measured ~1 minute), or `graphify watch .` keeps it current while you work. A worktree starts without one; build it there before relying on it.
+
 ## Detailed references
 
 - [Architecture & layering](docs/architecture.md)
