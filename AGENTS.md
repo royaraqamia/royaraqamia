@@ -4,6 +4,16 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 
 **Package manager:** npm >= 10 (`legacy-peer-deps=true` in `.npmrc`)
 
+**Response style — the rules all three agent doors share** (`shared/contracts/agent-behaviour.mjs`, ADR-0136; `npm run check:agent-behaviour` keeps this list honest):
+
+- Answer first: the first sentence is the answer, not a preamble.
+- No closing summary, no restating the question, no "let me know if…"; stop when the answer ends.
+- Bullets only for things that are really a list, never to split a paragraph.
+- Expand only when the user asks to explain or walk through it.
+- Never assume silently: name the assumption in one clause, or ask first.
+- Ask instead of acting when a wrong guess is expensive: git writes, deploy, delete, publish, spend, user-facing copy, schema.
+- Keep a plain answer to at most 3 sentences.
+
 **Critical commands (run before any task):**
 
 - `npm ci` — install deps

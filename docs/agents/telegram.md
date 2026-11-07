@@ -49,18 +49,18 @@ fail at once for a message to write `main`.
 
 ## The pieces
 
-| File                                  | Job                                                            |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `scripts/telegram/answer.mjs`         | one message: transcribe, attach, run, deliver, publish         |
-| `scripts/telegram/agent.mjs`          | spawns `opencode run`, reads the JSON event stream             |
-| `scripts/telegram/progress.mjs`       | the status message, chunking, the stop button                  |
-| `scripts/telegram/prompt.mjs`         | the instructions: language, tools, confirmations, formatting   |
-| `scripts/telegram/publish.mjs`        | issue, branch, push, pull request                              |
-| `scripts/telegram/merge.mjs`          | the confirmed merge, and the step machine behind it            |
-| `scripts/telegram/jobs.mjs`           | drain, reminders, digests, alerts, distillation, probe         |
-| `scripts/telegram/store.mjs`          | the message log, context, memory, confirmations                |
-| `scripts/telegram/text.mjs`           | markdown to Telegram HTML, chunking, time and language parsing |
-| `scripts/telegram/guard-decision.mjs` | which command is refused, and why                              |
+| File                                  | Job                                                                               |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `scripts/telegram/answer.mjs`         | one message: transcribe, attach, run, deliver, publish                            |
+| `scripts/telegram/agent.mjs`          | spawns `opencode run`, reads the JSON event stream                                |
+| `scripts/telegram/progress.mjs`       | the status message, chunking, the stop button                                     |
+| `scripts/telegram/prompt.mjs`         | the instructions: language, length, assumptions, tools, confirmations, formatting |
+| `scripts/telegram/publish.mjs`        | issue, branch, push, pull request                                                 |
+| `scripts/telegram/merge.mjs`          | the confirmed merge, and the step machine behind it                               |
+| `scripts/telegram/jobs.mjs`           | drain, reminders, digests, alerts, distillation, probe                            |
+| `scripts/telegram/store.mjs`          | the message log, context, memory, confirmations                                   |
+| `scripts/telegram/text.mjs`           | markdown to Telegram HTML, chunking, time and language parsing                    |
+| `scripts/telegram/guard-decision.mjs` | which command is refused, and why                                                 |
 
 ## The status message
 

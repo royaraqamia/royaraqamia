@@ -11,6 +11,7 @@ import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent
 import {
   ChatAgentError,
   ChatAgentService,
+  SYSTEM_PROMPT,
   allowanceSpentSentence,
   trimHistory,
   type ChatAgentServiceDeps,
@@ -20,6 +21,25 @@ import type { ChatService } from '@/backend/services/chat/chat-service';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import type { ChatAgentAllowance, ChatAgentEvent, ChatMessage } from '@/shared/contracts/chat';
+import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
+
+/**
+ * The assistant is one of three doors that answer by the same rules
+ * (ADR-0136). The terminal and the bot are asserted by
+ * `npm run check:agent-behaviour`; this prompt is TypeScript, so its copy of
+ * the rules is asserted here.
+ */
+describe('the assistant prompt', () => {
+  it('carries every shared length and assumption rule', () => {
+    for (const line of behaviourLines({ surface: 'assistant' })) {
+      expect(SYSTEM_PROMPT).toContain(line);
+    }
+  });
+
+  it('tells the member to confirm a write instead of claiming it', () => {
+    expect(SYSTEM_PROMPT).toContain('اقتراح');
+  });
+});
 
 const AGENT_THREAD = {
   id: 'conversation-1',

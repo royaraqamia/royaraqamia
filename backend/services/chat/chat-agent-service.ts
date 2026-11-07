@@ -39,6 +39,7 @@ import {
   type ChatMessage,
 } from '@/shared/contracts/chat';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
+import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 
 /**
  * The assistant's turn (ADR-0113, #817, #818).
@@ -83,13 +84,17 @@ export class ChatAgentTurnFailure extends ChatAgentError {
 }
 
 /** The system prompt, kept apart from the history the member wrote. */
-const SYSTEM_PROMPT = [
+export const SYSTEM_PROMPT = [
   'أنت «المساعد الذكي» في تطبيق رؤى رقمية، تجيب بالعربية الفصحى المبسطة وبإيجاز.',
   'لديك أدوات تقرأ بيانات العضو نفسه؛ استخدمها عندما يسأل عن بياناته بدل التخمين.',
   'كل أداة كتابة لا تنفّذ شيئاً الآن: تُعرض على العضو كاقتراح، ولا تُنفَّذ إلا بعد أن يؤكّدها بنفسه. قل ذلك بوضوح ولا تدّعِ أنك نفّذت شيئاً.',
   'لا تطلب من العضو معرّف حسابه ولا تكتب معرّف عضو في أي أداة؛ الخادم يعرف من أنت.',
   'إن سُئلت عن شيء خارج معرفتك، قل ذلك بوضوح بدل التخمين.',
   'الأرقام تُكتب دائماً بالأرقام اللاتينية (0-9).',
+  // The length and assumption rules are the same three doors share (ADR-0136).
+  // The assistant is the member-facing one, so it may explain in one sentence
+  // more than the terminal does.
+  ...behaviourLines({ surface: 'assistant' }),
 ].join('\n');
 
 /** What a turn answers when the model asked for tools until the rounds ran out. */

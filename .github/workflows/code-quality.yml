@@ -44,6 +44,11 @@ jobs:
       - name: The Bot Writes Fusha
         run: npm run check:fusha
 
+      # The terminal, the bot and the product assistant answer by the same rules
+      # (ADR-0136): a rule edited on one door and not the others fails here.
+      - name: Agent Doors Agree
+        run: npm run check:agent-behaviour
+
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 
