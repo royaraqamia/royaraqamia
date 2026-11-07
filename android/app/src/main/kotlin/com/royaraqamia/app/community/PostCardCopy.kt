@@ -15,4 +15,5 @@ object PostCardCopy {
     const val AUTHOR_LINK = "الملف الشَّخصي لـ {name}"
     const val EXPAND = "عرض المزيد"
     const val COLLAPSE = "عرض أقل"
+    const val EDIT_ACTION = "تعديل"
 }

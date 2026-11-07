@@ -17,6 +17,14 @@ interface BlogpressEditorStore {
     suspend fun editorPost(id: String): BlogpressPostRow?
 
     /**
+     * Remembers a row another surface already read, when this identity's store
+     * has never seen it. An existing row (and its draft) always wins, so the
+     * community feed's copy can seed the editor without clobbering a queued edit
+     * (#925).
+     */
+    suspend fun rememberPost(row: BlogpressPostRow): BlogpressPostRow?
+
+    /**
      * Commits the editor's fields and their `post.save` intent in one transaction,
      * so the draft survives the process before any request is attempted.
      */

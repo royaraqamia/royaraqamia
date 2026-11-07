@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,7 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,6 +71,7 @@ fun PostCard(
     modifier: Modifier = Modifier,
     onOpen: () -> Unit = {},
     onOpenAuthor: (String) -> Unit = {},
+    onEdit: (() -> Unit)? = null,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -234,6 +238,36 @@ fun PostCard(
                             style = type.xs.copy(fontWeight = FontWeight.Medium),
                             color = RoyColors.mutedForeground,
                         )
+                    }
+                    // The owner's way into the editor (#925). The page draws it
+                    // as the first item of its actions menu; the app names the
+                    // one action this slice ports.
+                    if (onEdit != null) {
+                        Spacer(Modifier.weight(1f))
+                        Row(
+                            modifier =
+                                Modifier.clip(CircleShape)
+                                    .clickable(onClick = onEdit)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .semantics {
+                                        role = Role.Button
+                                        contentDescription = PostCardCopy.EDIT_ACTION
+                                    },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                imageVector = LucideVectors.PenLine,
+                                contentDescription = null,
+                                tint = RoyColors.primary,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = PostCardCopy.EDIT_ACTION,
+                                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                                color = RoyColors.primary,
+                            )
+                        }
                     }
                 }
             }

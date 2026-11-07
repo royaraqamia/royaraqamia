@@ -58,6 +58,7 @@ import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
+import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.sync.SyncScheduler
 import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
@@ -373,6 +374,9 @@ class ShellActivity : ComponentActivity() {
                             "/community" ->
                                 CommunityFeedScreen(
                                     repository = graph.community,
+                                    editorStore = graph.communityEditor,
+                                    signedIn = signedIn,
+                                    currentUserId = (graph.session.storeIdentity as? Identity.User)?.id,
                                     onOpenPost = { slug -> openRoute(CommunityRoutes.postOf(slug)) },
                                     onOpenProfile = { username ->
                                         openRoute(ProfileRoutes.profileOf(username))

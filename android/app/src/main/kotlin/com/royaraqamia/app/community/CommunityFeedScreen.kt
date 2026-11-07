@@ -87,6 +87,9 @@ fun CommunityFeedScreen(
     modifier: Modifier = Modifier,
     onOpenPost: (String) -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
+    editorStore: CommunityEditorStore? = null,
+    signedIn: Boolean = false,
+    currentUserId: String? = null,
 ) {
     val spacing = LocalRoySpacing.current
     val scope = rememberCoroutineScope()
@@ -95,6 +98,11 @@ fun CommunityFeedScreen(
     var attempts by remember { mutableStateOf(0) }
     var loadingMore by remember { mutableStateOf(false) }
     var loadMoreFailed by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<CommunityIndexResponsePostsItem?>(null) }
+
+    /** The member's own posts are the ones the editor may open (#925). */
+    fun canEdit(post: CommunityIndexResponsePostsItem): Boolean =
+        editorStore != null && currentUserId != null && post.author_id == currentUserId
 
     LaunchedEffect(repository, attempts) {
         state = null
@@ -143,6 +151,8 @@ fun CommunityFeedScreen(
                     onRetryPage = { attempts += 1 },
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
+                    canEdit = ::canEdit,
+                    onEditPost = { editing = it },
                 )
             is CommunityFeedUiState.Live ->
                 Feed(
@@ -155,8 +165,30 @@ fun CommunityFeedScreen(
                     onRetryPage = { attempts += 1 },
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
+                    canEdit = ::canEdit,
+                    onEditPost = { editing = it },
                 )
         }
+    }
+
+    // The editor is a state of the feed rather than a route (#925): the page
+    // opens it as a dialog on the post it belongs to. A save repaints the card
+    // from the draft, so the feed shows what the server now holds without a read.
+    val store = editorStore
+    val target = editing
+    if (store != null && target != null) {
+        CommunityEditor(
+            post = target,
+            store = store,
+            signedIn = signedIn,
+            onDismiss = { draft ->
+                editing = null
+                val current = state
+                if (draft != null && current != null) {
+                    state = current.withBody(draft.id, draft.body)
+                }
+            },
+        )
     }
 }
 
@@ -172,6 +204,8 @@ private fun Feed(
     onRetryPage: () -> Unit,
     onOpenPost: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    canEdit: (CommunityIndexResponsePostsItem) -> Boolean,
+    onEditPost: (CommunityIndexResponsePostsItem) -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
 
@@ -203,6 +237,11 @@ private fun Feed(
                 post = post,
                 onOpen = { onOpenPost(post.slug) },
                 onOpenAuthor = onOpenProfile,
+                onEdit = if (canEdit(post)) {
+                    { onEditPost(post) }
+                } else {
+                    null
+                },
             )
         }
 
@@ -359,5 +398,20 @@ private fun FeedSkeleton() {
                         .background(Recipes.Skeleton.fill.copy(alpha = 0.5f), Recipes.Skeleton.radius),
             )
         }
+    }
+}
+
+/**
+ * The feed after the owner saved [body] (#925): the card paints what the server
+ * now holds, without a read that would need the radio.
+ */
+private fun CommunityFeedUiState.withBody(id: String, body: String): CommunityFeedUiState {
+    val metaDesc = PostText.stripMarkdown(body).take(160)
+    fun List<CommunityIndexResponsePostsItem>.edited() =
+        map { post -> if (post.id == id) post.copy(content = body, meta_desc = metaDesc) else post }
+    return when (this) {
+        is CommunityFeedUiState.Live -> copy(posts = posts.edited())
+        is CommunityFeedUiState.Snapshot -> copy(posts = posts.edited())
+        else -> this
     }
 }

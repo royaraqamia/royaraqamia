@@ -39,6 +39,8 @@ export interface ActionablePost {
 
 interface PostActionsMenuProps {
   post: ActionablePost;
+  /** The edit item's word. The feed card passes it from the shared copy source. */
+  editLabel?: string;
   /** Called after a successful delete so the host can hide the post optimistically. */
   onRemoved: () => void;
   /** Called after a successful undo so the host can bring the post back. */
@@ -60,7 +62,12 @@ function buildSnapshot(post: ActionablePost) {
  * Facebook/X-style per-post actions ("تعديل" / "حذف") shown only to the author.
  * Deletes optimistically and offers a "تراجع" undo that restores the snapshot.
  */
-export function PostActionsMenu({ post, onRemoved, onRestored }: PostActionsMenuProps) {
+export function PostActionsMenu({
+  post,
+  editLabel = 'تعديل',
+  onRemoved,
+  onRestored,
+}: PostActionsMenuProps) {
   const { user } = useSession();
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -114,7 +121,7 @@ export function PostActionsMenu({ post, onRemoved, onRestored }: PostActionsMenu
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             <PenLine className="size-4" />
-            <span>تعديل</span>
+            <span>{editLabel}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
