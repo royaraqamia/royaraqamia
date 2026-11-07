@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { Blob as NodeBlob } from 'node:buffer';
 import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -7,6 +8,10 @@ import {
   CHAT_RETENTION_MS,
   CHAT_THREAD_WINDOW,
   ChatsLocalStore,
+  localAttachmentMediaKey,
+  outboxMediaKey,
+  type ChatSendIntent,
+  type StoredMedia,
 } from '@/frontend/api/chats/local-store';
 import { GUEST_IDENTITY } from '@/frontend/shared/local-store/identity';
 import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
@@ -264,5 +269,139 @@ describe('ChatsLocalStore queue', () => {
     await store.clear();
 
     expect(await store.getOutbox()).toEqual([]);
+  });
+});
+
+/** One stored copy, for the budget tests. */
+function mediaRow(key: string, bytes: number, lastUsedAt: number): StoredMedia {
+  return {
+    key,
+    clientId: null,
+    conversationId: 'c-1',
+    fileName: `${key}.bin`,
+    mimeType: 'application/octet-stream',
+    bytes,
+    blob: new Blob([new Uint8Array(bytes)]),
+    kind: 'attachment',
+    storedAt: lastUsedAt,
+    lastUsedAt,
+  };
+}
+
+/**
+ * A `node:buffer` Blob on purpose: jsdom's own Blob does not survive
+ * `fake-indexeddb`'s structured clone, and the point of this suite is the bytes
+ * that come back, not the realm that made them.
+ */
+function fileOf(
+  contents: string,
+  name = 'a.pdf'
+): { blob: Blob; fileName: string; mimeType: string } {
+  return {
+    blob: new NodeBlob([contents]) as unknown as Blob,
+    fileName: name,
+    mimeType: 'application/pdf',
+  };
+}
+
+/**
+ * Attachment bytes (#1033): a queued line owns its files as durably as it owns
+ * its sentence, and the account's 250 MB wall is spent oldest-use first.
+ */
+describe('ChatsLocalStore media', () => {
+  it('writes the file with the line, and names it in the intent', async () => {
+    const store = await open();
+
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: '',
+      senderId: 'u-1',
+      attachments: [fileOf('abc')],
+    });
+
+    const [attachment] = queued.attachments;
+    expect(attachment?.fileName).toBe('a.pdf');
+    expect(attachment?.byteSize).toBe(3);
+    expect(attachment?.id.startsWith('local:')).toBe(true);
+
+    const key = localAttachmentMediaKey(attachment!.id)!;
+    expect(key).toBe(outboxMediaKey(queued.clientId!, 0));
+    expect(await (await store.getMedia(key))?.text()).toBe('abc');
+
+    const [entry] = await store.getOutbox();
+    expect((entry?.payload as ChatSendIntent).attachments?.[0]).toMatchObject({
+      key,
+      fileName: 'a.pdf',
+      byteSize: 3,
+    });
+  });
+
+  it('drops the queued bytes once the server has the row', async () => {
+    const store = await open();
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: '',
+      senderId: 'u-1',
+      attachments: [fileOf('abc')],
+    });
+    const key = localAttachmentMediaKey(queued.attachments[0]!.id)!;
+
+    await store.applyServerMessage({ ...queued, id: 'm-1' });
+
+    expect(await store.getMedia(key)).toBeNull();
+  });
+
+  it('evicts the least recently used copy to stay inside the budget', async () => {
+    const store = await open();
+    await store.saveMedia(mediaRow('a', 6, 1));
+
+    await store.saveMedia(mediaRow('b', 6, 2), { budget: 10 });
+
+    expect(await store.getMedia('a')).toBeNull();
+    expect(await store.getMedia('b')).not.toBeNull();
+  });
+
+  it('never evicts bytes a queued line has not uploaded yet', async () => {
+    const store = await open();
+    await store.saveMedia(mediaRow('old', 6, 1));
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: '',
+      senderId: 'u-1',
+      attachments: [fileOf('123456')],
+    });
+    const key = localAttachmentMediaKey(queued.attachments[0]!.id)!;
+
+    await store.saveMedia(mediaRow('new', 6, 3), { budget: 10 });
+
+    expect(await store.getMedia(key)).not.toBeNull();
+    expect(await store.getMedia('old')).toBeNull();
+  });
+
+  it('sweeps aged bytes with the retention window, and drops them on sign-out', async () => {
+    const store = await open();
+    const now = Date.UTC(2026, 11, 1);
+    const stale = now - CHAT_RETENTION_MS - 86_400_000;
+    await store.saveMedia(mediaRow('stale', 4, stale));
+    await store.saveMedia(mediaRow('fresh', 4, now));
+
+    // Queued bytes are the member's write, not an expired copy: the line is
+    // older than the window on purpose, and its file still goes up.
+    const queued = await store.enqueueMessage({
+      conversationId: 'c-1',
+      body: '',
+      senderId: 'u-1',
+      attachments: [fileOf('1234')],
+    });
+    const key = localAttachmentMediaKey(queued.attachments[0]!.id)!;
+
+    await store.prune(now);
+
+    expect(await store.getMedia('stale')).toBeNull();
+    expect(await store.getMedia('fresh')).not.toBeNull();
+    expect(await store.getMedia(key)).not.toBeNull();
+
+    await store.clear();
+    expect(await store.getMedia('fresh')).toBeNull();
   });
 });

@@ -32,7 +32,7 @@ export class ChatAttachmentUploadError extends Error {
  * the contract's absolute ceiling, which is what the upload itself refuses.
  */
 export function isChatAttachmentTooLarge(
-  file: File,
+  file: { size: number },
   limitBytes: number = CHAT_ATTACHMENT_MAX_BYTES
 ): boolean {
   return file.size > limitBytes;
@@ -52,28 +52,50 @@ export function chatAttachmentObjectName(fileName: string): string {
   return (flat || 'file').slice(0, 200);
 }
 
-export async function uploadChatAttachment(
+/** What the object is called once it is in the bucket, and what it claims to be. */
+export interface ChatAttachmentBlobMeta {
+  fileName: string;
+  mimeType: string;
+}
+
+/**
+ * The upload itself, over bytes rather than a `File`: a queued line keeps a
+ * `Blob` in the device's media store and hands it here on replay (#1033). A
+ * `File` is a `Blob`, so the direct online path goes through the same function.
+ */
+export async function uploadChatAttachmentBlob(
   conversationId: string,
-  file: File
+  blob: Blob,
+  meta: ChatAttachmentBlobMeta
 ): Promise<ChatAttachmentInput> {
-  if (isChatAttachmentTooLarge(file))
+  if (isChatAttachmentTooLarge(blob))
     throw new ChatAttachmentUploadError(CHAT_ATTACHMENT_TOO_LARGE);
 
-  const fileName = chatAttachmentObjectName(file.name);
+  const fileName = chatAttachmentObjectName(meta.fileName);
   const storagePath = `${conversationId}/${crypto.randomUUID()}/${fileName}`;
-  const mimeType = file.type || 'application/octet-stream';
+  const mimeType = meta.mimeType || 'application/octet-stream';
 
   const supabase = await createClient();
   const { error } = await supabase.storage
     .from(CHAT_ATTACHMENTS_BUCKET)
-    .upload(storagePath, file, { cacheControl: '3600', upsert: false, contentType: mimeType });
+    .upload(storagePath, blob, { cacheControl: '3600', upsert: false, contentType: mimeType });
 
   if (error) {
     logger.error('chat attachment upload failed', { conversationId, cause: error.message });
     throw new ChatAttachmentUploadError('تعذّر رفع الملف');
   }
 
-  return { storagePath, fileName, mimeType, byteSize: file.size };
+  return { storagePath, fileName, mimeType, byteSize: blob.size };
+}
+
+export async function uploadChatAttachment(
+  conversationId: string,
+  file: File
+): Promise<ChatAttachmentInput> {
+  return uploadChatAttachmentBlob(conversationId, file, {
+    fileName: file.name,
+    mimeType: file.type,
+  });
 }
 
 /**

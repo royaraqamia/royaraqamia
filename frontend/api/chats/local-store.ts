@@ -1,4 +1,10 @@
-import type { ChatConversationSummary, ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type {
+  ChatAttachment,
+  ChatAttachmentInput,
+  ChatConversationSummary,
+  ChatMessage,
+  ChatThread,
+} from '@/shared/contracts/chat';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
   promisifyRequest,
@@ -25,6 +31,8 @@ const THREADS_STORE = 'threads';
  */
 const HEADERS_STORE = 'headers';
 const MESSAGES_STORE = 'messages';
+/** Attachment bytes: what a queued line will upload, and what a read keeps. */
+const MEDIA_STORE = 'media';
 const META_STORE = 'meta';
 
 /** The list's window: the twenty conversations a member last touched (#1033). */
@@ -36,6 +44,12 @@ export const CHAT_MESSAGE_WINDOW = 200;
 /** How long a cached conversation stays on the device (#1033). */
 export const CHAT_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 
+/** What one account's attachments may cost on the device: 250 MB (#1033). */
+export const CHAT_MEDIA_BUDGET_BYTES = 250 * 1024 * 1024;
+
+/** The prefix a queued line's attachment ids carry until the server answers. */
+export const LOCAL_ATTACHMENT_PREFIX = 'local:';
+
 /** A thread as the store holds it: the list's row, or the open thread's header. */
 export type StoredThread = ChatConversationSummary | ChatThread;
 
@@ -46,10 +60,11 @@ export type StoredThread = ChatConversationSummary | ChatThread;
  * shape every local-store product uses (#1033). v3 keeps the thread's header in
  * its own store: v1 and v2 wrote the list's summaries and the open thread's
  * header into the same object store, and a cached summary drawn as a thread is
- * a missing `participants` (#1120's first production report). The media blobs
- * join it with the attachment half of the issue.
+ * a missing `participants` (#1120's first production report). v4 adds the media
+ * store: the attachment bytes a queued line owns, and the bytes a read keeps
+ * under the account's 250 MB.
  */
-export const CHATS_STORE_VERSION = 3;
+export const CHATS_STORE_VERSION = 4;
 
 export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -80,7 +95,29 @@ export const chatsStoreMigrations: readonly LocalStoreMigration[] = [
       db.createObjectStore(HEADERS_STORE, { keyPath: 'id' });
     },
   },
+  {
+    version: 4,
+    migrate: (db) => {
+      const media = db.createObjectStore(MEDIA_STORE, { keyPath: 'key' });
+      // The budget sweep walks this one; reading touches it for LRU eviction.
+      media.createIndex('by_last_used', 'lastUsedAt');
+      media.createIndex('by_stored', 'storedAt');
+    },
+  },
 ];
+
+/**
+ * One attachment a queued line still owes the bucket (#1033). The bytes live
+ * in the media store under `key`; `uploaded` is the object the server accepted,
+ * recorded so a replay after a partial upload does not send a second copy.
+ */
+export interface ChatSendAttachment {
+  key: string;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  uploaded?: ChatAttachmentInput;
+}
 
 /** What a queued line carries until the server accepts it (#1033). */
 export interface ChatSendIntent {
@@ -89,6 +126,14 @@ export interface ChatSendIntent {
   /** The writer's own id for the line; the server's index makes a replay safe. */
   clientId: string;
   replyToId?: string | null;
+  attachments?: ChatSendAttachment[];
+}
+
+/** One file the composer is holding: its bytes and the name they go up under. */
+export interface QueuedAttachmentInput {
+  blob: Blob;
+  fileName: string;
+  mimeType: string;
 }
 
 export interface QueuedMessageInput {
@@ -98,6 +143,25 @@ export interface QueuedMessageInput {
   senderId: string;
   clientId?: string;
   replyToId?: string | null;
+  attachments?: readonly QueuedAttachmentInput[];
+}
+
+/** A media row: the bytes, what they are called, and when they were last used. */
+export interface StoredMedia {
+  key: string;
+  /** The line that owns the bytes while they are still queued. */
+  clientId: string | null;
+  conversationId: string;
+  fileName: string;
+  mimeType: string;
+  bytes: number;
+  blob: Blob;
+  /** `outbox` is owed to the server; `attachment` is a copy kept for reading. */
+  kind: 'outbox' | 'attachment';
+  /** Present once the bucket has accepted the object. */
+  storagePath?: string;
+  storedAt: number;
+  lastUsedAt: number;
 }
 
 /** What a message's row is doing, as the Outbox knows it. */
@@ -115,6 +179,18 @@ function byActivityDesc(a: StoredThread, b: StoredThread): number {
 function byCreatedAsc(a: ChatMessage, b: ChatMessage): number {
   const byTime = a.createdAt.localeCompare(b.createdAt);
   return byTime !== 0 ? byTime : a.id.localeCompare(b.id);
+}
+
+/** The media key of a queued line's attachment: stable across retries. */
+export function outboxMediaKey(clientId: string, index: number): string {
+  return `out:${clientId}:${index}`;
+}
+
+/** The media key behind a queued bubble's attachment id, or null for a server row. */
+export function localAttachmentMediaKey(attachmentId: string): string | null {
+  return attachmentId.startsWith(LOCAL_ATTACHMENT_PREFIX)
+    ? attachmentId.slice(LOCAL_ATTACHMENT_PREFIX.length)
+    : null;
 }
 
 /**
@@ -378,6 +454,27 @@ export class ChatsLocalStore {
   async enqueueMessage(input: QueuedMessageInput): Promise<ChatMessage> {
     const clientId = input.clientId ?? uuidv7();
     const createdAt = new Date().toISOString();
+    const now = Date.now();
+
+    // The bytes are written with the line, not after it: an attachment the
+    // member picked is exactly as durable as the sentence typed beside it.
+    const media = (input.attachments ?? []).map((file, index) => {
+      const key = outboxMediaKey(clientId, index);
+      const row: StoredMedia = {
+        key,
+        clientId,
+        conversationId: input.conversationId,
+        fileName: file.fileName,
+        mimeType: file.mimeType,
+        bytes: file.blob.size,
+        blob: file.blob,
+        kind: 'outbox',
+        storedAt: now,
+        lastUsedAt: now,
+      };
+      return { key, file, row };
+    });
+
     const message: ChatMessage = {
       id: clientId,
       conversationId: input.conversationId,
@@ -389,7 +486,12 @@ export class ChatsLocalStore {
       deletedAt: null,
       createdAt,
       clientId,
-      attachments: [],
+      attachments: media.map(({ key, file }): ChatAttachment => ({
+        id: `${LOCAL_ATTACHMENT_PREFIX}${key}`,
+        fileName: file.fileName,
+        mimeType: file.mimeType,
+        byteSize: file.blob.size,
+      })),
       replyTo: null,
     };
 
@@ -398,16 +500,158 @@ export class ChatsLocalStore {
       body: input.body,
       clientId,
       replyToId: input.replyToId ?? null,
+      ...(media.length > 0
+        ? {
+            attachments: media.map(({ key, file }): ChatSendAttachment => ({
+              key,
+              fileName: file.fileName,
+              mimeType: file.mimeType,
+              byteSize: file.blob.size,
+            })),
+          }
+        : {}),
     };
 
-    await this.commitWithIntent([[MESSAGES_STORE, message]], {
-      entity: 'chat_message',
-      type: 'message.send',
-      payload: intent,
-    });
+    await this.commitWithIntent(
+      [
+        [MESSAGES_STORE, message],
+        ...media.map(({ row }) => [MEDIA_STORE, row] as [string, unknown]),
+      ],
+      {
+        entity: 'chat_message',
+        type: 'message.send',
+        payload: intent,
+      }
+    );
 
+    if (media.length > 0) await this.enforceMediaBudget();
     await this.patchPreview(input.conversationId, message);
     return message;
+  }
+
+  // --- Media ----------------------------------------------------------------
+
+  /** One attachment's bytes as the device holds them, or null. Reading is a use. */
+  async getMedia(key: string, now: number = Date.now()): Promise<Blob | null> {
+    const row = await this.readMedia(key);
+    if (!row) return null;
+
+    // A quiet write: reading a file must not wake the queue's subscribers or
+    // make a flush look like the member wrote something. A failed timestamp is
+    // not a failed read — the bytes are what was asked for.
+    try {
+      await this.connection.run(async (db) => {
+        const transaction = db.transaction(MEDIA_STORE, 'readwrite');
+        transaction.objectStore(MEDIA_STORE).put({ ...row, lastUsedAt: now });
+        await transactionDone(transaction);
+        return true;
+      }, false);
+    } catch {
+      // Eviction falls back to the timestamp it already had.
+    }
+    return row.blob;
+  }
+
+  /** Records a copy of attachment bytes, then keeps the account inside its budget. */
+  async saveMedia(media: StoredMedia, options: { budget?: number } = {}): Promise<void> {
+    await this.commit([[MEDIA_STORE, media]]);
+    await this.enforceMediaBudget(new Set([media.key]), options.budget);
+  }
+
+  /** What every attachment on this device costs together. */
+  async mediaUsageBytes(): Promise<number> {
+    const rows = await this.readAllMedia();
+    return rows.reduce((sum, row) => sum + row.bytes, 0);
+  }
+
+  /**
+   * Records that the bucket accepted one of a queued line's files, on the
+   * intent itself: a retry after a partial upload sends the object once, not
+   * twice, and the bytes stay until the message lands.
+   */
+  async recordAttachmentUpload(
+    seq: number,
+    key: string,
+    uploaded: ChatAttachmentInput
+  ): Promise<void> {
+    const entry = (await this.getOutbox()).find((row) => row.seq === seq);
+    if (!entry) return;
+
+    const payload = (entry.payload ?? {}) as ChatSendIntent;
+    const attachments = (payload.attachments ?? []).map((attachment) =>
+      attachment.key === key ? { ...attachment, uploaded } : attachment
+    );
+    await this.patchOutbox(seq, { payload: { ...payload, attachments } });
+
+    const row = await this.readMedia(key);
+    if (row) await this.commit([[MEDIA_STORE, { ...row, storagePath: uploaded.storagePath }]]);
+  }
+
+  /** Drops the bytes of a line the server has now taken. */
+  private async dropMediaForClient(clientId: string): Promise<void> {
+    const rows = await this.readAllMedia();
+    const owned = rows
+      .filter((row) => row.clientId === clientId && row.kind === 'outbox')
+      .map((row) => row.key);
+    await this.remove(MEDIA_STORE, owned);
+  }
+
+  /**
+   * The 250 MB wall (#1033): oldest use first, and never the file a queued line
+   * has not uploaded yet — evicting that would turn a budget into a lost write.
+   */
+  private async enforceMediaBudget(
+    keep: ReadonlySet<string> = new Set(),
+    budget: number = CHAT_MEDIA_BUDGET_BYTES
+  ): Promise<number> {
+    const rows = await this.readAllMedia();
+    let usage = rows.reduce((sum, row) => sum + row.bytes, 0);
+    if (usage <= budget) return 0;
+
+    const protectedKeys = new Set([...keep, ...(await this.pendingMediaKeys())]);
+    const candidates = rows
+      .filter((row) => !protectedKeys.has(row.key))
+      .sort((a, b) => a.lastUsedAt - b.lastUsedAt || a.key.localeCompare(b.key));
+
+    const dropped: string[] = [];
+    for (const candidate of candidates) {
+      if (usage <= budget) break;
+      dropped.push(candidate.key);
+      usage -= candidate.bytes;
+    }
+    if (dropped.length > 0) await this.remove(MEDIA_STORE, dropped);
+    return dropped.length;
+  }
+
+  /** Media keys a queued line has not uploaded yet. */
+  private async pendingMediaKeys(): Promise<Set<string>> {
+    const keys = new Set<string>();
+    for (const entry of await this.getOutbox()) {
+      if (entry.entity !== 'chat_message') continue;
+      const attachments = ((entry.payload ?? {}) as ChatSendIntent).attachments ?? [];
+      for (const attachment of attachments) {
+        if (!attachment.uploaded) keys.add(attachment.key);
+      }
+    }
+    return keys;
+  }
+
+  private readMedia(key: string): Promise<StoredMedia | undefined> {
+    return this.connection.run(async (db) => {
+      const transaction = db.transaction(MEDIA_STORE, 'readonly');
+      return promisifyRequest(
+        transaction.objectStore(MEDIA_STORE).get(key) as IDBRequest<StoredMedia | undefined>
+      );
+    }, undefined);
+  }
+
+  private readAllMedia(): Promise<StoredMedia[]> {
+    return this.connection.run(async (db) => {
+      const transaction = db.transaction(MEDIA_STORE, 'readonly');
+      return promisifyRequest(
+        transaction.objectStore(MEDIA_STORE).getAll() as IDBRequest<StoredMedia[]>
+      );
+    }, []);
   }
 
   /**
@@ -463,6 +707,9 @@ export class ChatsLocalStore {
 
     await this.commit([[MESSAGES_STORE, message]]);
     await this.patchPreview(message.conversationId, message);
+    // The server has the bytes now; the device keeps only what a read still
+    // needs, not the copy that was waiting for the post.
+    if (message.clientId) await this.dropMediaForClient(message.clientId);
   }
 
   /** Every client id with a queued intent, and whether the server refused it. */
@@ -555,12 +802,31 @@ export class ChatsLocalStore {
       await this.remove(HEADERS_STORE, stale);
       for (const id of stale) await this.removeConversationMessages(id);
     }
+
+    // Attachment bytes follow the same clock, except the ones a queued line has
+    // not uploaded: a file that waited longer than the cache window is still the
+    // member's write, not an expired copy.
+    const pending = await this.pendingMediaKeys();
+    const media = await this.readAllMedia();
+    const staleMedia = media
+      .filter((row) => row.storedAt < now - CHAT_RETENTION_MS && !pending.has(row.key))
+      .map((row) => row.key);
+    if (staleMedia.length > 0) await this.remove(MEDIA_STORE, staleMedia);
+    await this.enforceMediaBudget();
+
     if (expired.length > 0) this.notifyWrites();
   }
 
   /** Empties every owned store — the sign-out purge (#1033). */
   async clear(): Promise<void> {
-    const stores = [THREADS_STORE, HEADERS_STORE, MESSAGES_STORE, OUTBOX_STORE, META_STORE];
+    const stores = [
+      THREADS_STORE,
+      HEADERS_STORE,
+      MESSAGES_STORE,
+      MEDIA_STORE,
+      OUTBOX_STORE,
+      META_STORE,
+    ];
     const cleared = await this.connection.run(async (db) => {
       const transaction = db.transaction(stores, 'readwrite');
       for (const store of stores) transaction.objectStore(store).clear();

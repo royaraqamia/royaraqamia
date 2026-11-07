@@ -2,6 +2,9 @@ import { BlogpressLocalStore } from '@/frontend/api/blogpress/local-store';
 import { BlogpressSyncEngine } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
 import { pullBlogpressData } from '@/frontend/api/blogpress/pull';
+import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
+import { ChatsSyncEngine } from '@/frontend/api/chats/sync-engine';
+import { createChatHttpSyncTransport } from '@/frontend/api/chats/sync-transport';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { HabitSyncEngine } from '@/frontend/api/habitflow/sync-engine';
@@ -122,6 +125,24 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
       };
     },
     createEngine: (deps) => new BlogpressSyncEngine(deps),
+  },
+  {
+    product: 'chats',
+    identity: signedInIdentity,
+    /**
+     * The full store, like BlogPress: a replay records the server's row in it,
+     * and a queued line's attachment bytes live in the product's media store.
+     */
+    async open({ identity, existingDatabases, factory }) {
+      if (!existingDatabases?.includes(localStoreName('chats', identity))) return null;
+      const store = await ChatsLocalStore.open(identity, factory);
+      return {
+        store,
+        transport: createChatHttpSyncTransport(store),
+        close: () => store.close(),
+      };
+    },
+    createEngine: (deps) => new ChatsSyncEngine(deps),
   },
   {
     product: 'quran',

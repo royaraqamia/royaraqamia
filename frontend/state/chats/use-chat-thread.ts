@@ -6,6 +6,7 @@ import {
   confirmChatAgentAction,
   deleteChatMessage,
   editChatMessage,
+  getChatAttachmentUrl,
   getChatMessages,
   getChatThread,
   inviteChatMembers,
@@ -23,7 +24,11 @@ import {
   removeChatAttachmentObjects,
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
-import { ChatsLocalStore, type ChatMessageState } from '@/frontend/api/chats/local-store';
+import {
+  ChatsLocalStore,
+  localAttachmentMediaKey,
+  type ChatMessageState,
+} from '@/frontend/api/chats/local-store';
 import { createChatHttpSyncTransport } from '@/frontend/api/chats/sync-transport';
 import { ChatsSyncEngine } from '@/frontend/api/chats/sync-engine';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
@@ -65,6 +70,8 @@ export interface ChatThreadState {
   send: (body: string, files?: File[]) => Promise<boolean>;
   /** Re-arms every refused line and flushes again. */
   retrySend: () => void;
+  /** Where a chip opens from: the queued bytes on the device, or a signed URL. */
+  attachmentUrl: (attachmentId: string) => Promise<string | null>;
   edit: (messageId: string, body: string) => Promise<boolean>;
   /** The tombstone's refusal sentence, or `null` once the message is gone. */
   remove: (messageId: string) => Promise<string | null>;
@@ -308,19 +315,24 @@ export function useChatThread(conversationId: string): ChatThreadState {
       const senderId = identityUserId(identity);
 
       /**
-       * A line with no files is queued where it is written (#1033): the store
-       * and its replay intent commit in one transaction, so the bubble appears
-       * at once and the outbox sends it whenever the connection allows. The
-       * composer clears because the write is durable, not because it was
-       * delivered — the clock beside the bubble says which.
+       * A line is queued where it is written (#1033): the store and its replay
+       * intent commit in one transaction — the files' bytes included — so the
+       * bubble appears at once and the outbox uploads and sends it whenever
+       * the connection allows. The composer clears because the write is
+       * durable, not because it was delivered — the clock says which.
        */
-      if (store && senderId && files.length === 0) {
+      if (store && senderId) {
         dispatch({ type: 'sendStarted' });
         try {
           const message = await store.enqueueMessage({
             conversationId,
             body: trimmed,
             senderId,
+            attachments: files.map((file) => ({
+              blob: file,
+              fileName: file.name,
+              mimeType: file.type || 'application/octet-stream',
+            })),
           });
           dispatch({ type: 'messageAppended', message });
           void engineRef.current?.flush();
@@ -471,6 +483,25 @@ export function useChatThread(conversationId: string): ChatThreadState {
     void engineRef.current?.retry();
   }, []);
 
+  /**
+   * A queued line's chips open the bytes still on the device (#1033); a landed
+   * one asks the server for the minute-long URL the endpoint exists to hand out.
+   */
+  const attachmentUrl = useCallback(
+    async (attachmentId: string): Promise<string | null> => {
+      const key = localAttachmentMediaKey(attachmentId);
+      const store = storeRef.current;
+      if (key && store) {
+        const blob = await store.getMedia(key);
+        if (blob) return URL.createObjectURL(blob);
+      }
+
+      const file = await getChatAttachmentUrl(conversationId, attachmentId);
+      return file?.url ?? null;
+    },
+    [conversationId]
+  );
+
   const resolveAction = useCallback(
     async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
       dispatch({ type: 'errorSet', message: null });
@@ -505,6 +536,7 @@ export function useChatThread(conversationId: string): ChatThreadState {
     loadOlder,
     send,
     retrySend,
+    attachmentUrl,
     edit,
     remove,
     respond,

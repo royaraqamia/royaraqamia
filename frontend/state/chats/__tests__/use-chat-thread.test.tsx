@@ -407,6 +407,26 @@ describe('useChatThread queue', () => {
     await waitFor(() => expect(captured!.pending[line!.clientId!]).toBe('queued'));
   });
 
+  it('keeps a file with the line the network cannot take', async () => {
+    api.sendChatMessage.mockReset().mockRejectedValue(new TypeError('offline'));
+    const state = await renderThread();
+
+    let queued = false;
+    await act(async () => {
+      queued = await state.send('', [new File(['abc'], 'a.pdf', { type: 'application/pdf' })]);
+    });
+    expect(queued).toBe(true);
+
+    const line = captured!.messages.find((message) => message.attachments.length > 0);
+    expect(line?.attachments[0]).toMatchObject({
+      fileName: 'a.pdf',
+      mimeType: 'application/pdf',
+      byteSize: 3,
+    });
+    expect(line?.attachments[0]?.id.startsWith('local:')).toBe(true);
+    await waitFor(() => expect(captured!.pending[line!.clientId!]).toBe('queued'));
+  });
+
   it('marks a refused line as failed, and retries it on demand', async () => {
     api.sendChatMessage
       .mockReset()
