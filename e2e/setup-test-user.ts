@@ -1,13 +1,20 @@
 import 'dotenv/config';
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 /**
  * Bootstraps the Playwright test account: the `auth.users` row, the
- * `public.users` profile it owns, and the plan the suite runs on.
+ * `public.users` profile it owns, the plan the suite runs on, and the chats
+ * fixture the offline spec reads.
  *
  *   node e2e/setup-test-user.ts                      # create/refresh the account, on Pro
  *   node e2e/setup-test-user.ts --purge-stale=90     # also drop fixtures older than 90 minutes
  *   node e2e/setup-test-user.ts --reset              # also purge everything the account owns
+ *
+ * The chats fixture is a second, hidden account and one direct thread between
+ * it and the test account, with one line from the peer: `e2e/chats-offline.spec.ts`
+ * needs a conversation it owns, and the shared account otherwise holds none, so
+ * the spec skipped on every run.
  *
  * Kept standalone on purpose — it imports nothing from the app and uses no path
  * aliases, so `node` runs it directly. (It used to import the app's logger
@@ -57,6 +64,27 @@ const supabase = createClient(
 const PRO_DAYS = 3650;
 
 /**
+ * The other side of the chats fixture. A second confirmed account, hidden from
+ * every public listing like the test account itself, that the suite never signs
+ * in as: it exists so `chats-offline.spec.ts` has a conversation it owns.
+ */
+const PEER_EMAIL = 'e2e-peer@royaraqamia.test';
+const PEER_NAME = 'E2E Peer';
+
+/** The one line the peer leaves in the fixture thread, so the thread has a bubble. */
+const FIXTURE_BODY = 'رسالة اختبار';
+
+/** The pair key the participants trigger writes, sorted the same way it sorts. */
+function directKey(a: string, b: string): string {
+  return [a, b].sort().join('|');
+}
+
+/** A short wait, used only to let a concurrent run finish writing the same pair. */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * The account's own product rows, children first, so a purge does not trip a
  * foreign key. These are the tables the offline suite writes — and the ones the
  * owned-item caps count.
@@ -78,11 +106,11 @@ const OWNED_ITEMS: ReadonlyArray<{ table: string; owner: string; at?: string }> 
   { table: 'community_categories', owner: 'user_id' },
 ];
 
-async function ensureProfile(id: string, email: string) {
+async function ensureProfile(id: string, email: string, name = 'E2E Test User') {
   const { error } = await supabase.from('users').insert({
     id,
     email,
-    name: 'E2E Test User',
+    name,
     avatar_url: null,
     created_at: new Date().toISOString(),
   });
@@ -260,7 +288,247 @@ function staleMinutes(): number | null {
   return value;
 }
 
-async function ensureTestUser() {
+/** An auth user by email, paging past the admin API's default page size. */
+async function findAuthUserByEmail(email: string) {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) {
+      console.error(`Could not list the auth users: ${error.message}`);
+      process.exit(1);
+    }
+    const found = data.users.find((user) => user.email === email);
+    if (found) return found;
+    if (data.users.length < 200) return null;
+  }
+  return null;
+}
+
+/** The fixture's other member: confirmed, hidden, never signed in as. */
+async function ensurePeer(): Promise<string> {
+  const existing = await findAuthUserByEmail(PEER_EMAIL);
+  if (existing) {
+    await ensureProfile(existing.id, PEER_EMAIL, PEER_NAME);
+    return existing.id;
+  }
+
+  // The password is never used: the suite does not sign in as the peer. It
+  // still satisfies the project's character-class rule, or the Admin API refuses
+  // the account.
+  const generatedPassword = `${randomUUID()}Aa1!`;
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email: PEER_EMAIL,
+    password: generatedPassword,
+    email_confirm: true,
+    user_metadata: { name: PEER_NAME },
+  });
+
+  if (error || !data.user) {
+    console.error(`Failed to create the chats peer: ${error?.message ?? 'no user returned'}`);
+    process.exit(1);
+  }
+
+  await ensureProfile(data.user.id, PEER_EMAIL, PEER_NAME);
+  console.log(`Created the chats peer: ${PEER_EMAIL} (id: ${data.user.id})`);
+  return data.user.id;
+}
+
+/**
+ * Drops the direct thread between the two accounts, and any conversation a
+ * crashed run left before its participants were written.
+ *
+ * The fixture is recreated right after, so the spec always reads a thread with
+ * one line and an active peer rather than whatever an earlier run left.
+ */
+async function purgeChatFixture(
+  userId: string,
+  peerId: string,
+  options: { reset: boolean; staleMinutes: number | null }
+) {
+  if (!options.reset && options.staleMinutes === null) return;
+
+  const cutoff = options.reset ? 0 : Date.now() - (options.staleMinutes ?? 0) * 60_000;
+  const candidates = new Map<string, string>();
+
+  const byKey = await supabase
+    .from('chat_conversations')
+    .select('id, created_at')
+    .eq('direct_key', directKey(userId, peerId));
+  if (byKey.error) {
+    console.error(`Could not read the chats fixture: ${byKey.error.message}`);
+    process.exit(1);
+  }
+  for (const row of byKey.data ?? []) candidates.set(row.id, row.created_at);
+
+  const incomplete = await supabase
+    .from('chat_conversations')
+    .select('id, created_at')
+    .eq('created_by', userId)
+    .eq('kind', 'direct')
+    .is('direct_key', null);
+  if (incomplete.error) {
+    console.error(`Could not read unfinished chats fixtures: ${incomplete.error.message}`);
+    process.exit(1);
+  }
+  for (const row of incomplete.data ?? []) candidates.set(row.id, row.created_at);
+
+  let purged = 0;
+  for (const [id, createdAt] of candidates) {
+    if (Date.parse(createdAt) > cutoff) continue;
+    const { error } = await supabase.from('chat_conversations').delete().eq('id', id);
+    if (error) {
+      console.error(`Could not purge the chats fixture ${id}: ${error.message}`);
+      process.exit(1);
+    }
+    purged += 1;
+  }
+  if (purged > 0) console.log(`Purged ${purged} chats fixture row(s).`);
+}
+
+/**
+ * The direct thread `chats-offline.spec.ts` reads: both sides active, one line
+ * from the peer. Created once and reused while it is fresh; a participant write
+ * that loses the unique direct key is answered by the other run's thread.
+ */
+async function ensureChatFixture(userId: string, peerId: string): Promise<string> {
+  const key = directKey(userId, peerId);
+
+  const find = async (): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from('chat_conversations')
+      .select('id')
+      .eq('direct_key', key)
+      .maybeSingle();
+    if (error) {
+      console.error(`Could not read the chats fixture: ${error.message}`);
+      process.exit(1);
+    }
+    return data?.id ?? null;
+  };
+
+  const participantRows = (conversationId: string) => [
+    {
+      conversation_id: conversationId,
+      user_id: userId,
+      role: 'owner',
+      status: 'active',
+    },
+    {
+      conversation_id: conversationId,
+      user_id: peerId,
+      role: 'member',
+      status: 'active',
+    },
+  ];
+
+  /** A new row is stamped once; a state guard forbids moving it afterwards. */
+  const withJoinedAt = (rows: ReturnType<typeof participantRows>) =>
+    rows.map((row) => ({ ...row, joined_at: new Date().toISOString() }));
+
+  let conversationId = await find();
+
+  if (!conversationId) {
+    const created = await supabase
+      .from('chat_conversations')
+      .insert({ kind: 'direct', created_by: userId })
+      .select('id')
+      .single();
+    if (created.error || !created.data) {
+      console.error(`Failed to create the chats fixture: ${created.error?.message ?? 'no row'}`);
+      process.exit(1);
+    }
+    const createdId = created.data.id as string;
+
+    const joined = await supabase
+      .from('chat_participants')
+      .insert(withJoinedAt(participantRows(createdId)));
+    if (joined.error) {
+      // The other side of the unique direct key won the race: drop ours and
+      // read the thread it wrote instead.
+      await supabase.from('chat_conversations').delete().eq('id', createdId);
+      for (let attempt = 0; attempt < 10 && !conversationId; attempt += 1) {
+        await sleep(500);
+        conversationId = await find();
+      }
+      if (!conversationId) {
+        console.error(`Failed to join the chats fixture: ${joined.error.message}`);
+        process.exit(1);
+      }
+    } else {
+      conversationId = createdId;
+    }
+  }
+
+  if (!conversationId) {
+    console.error('The chats fixture did not resolve to a conversation.');
+    process.exit(1);
+  }
+
+  // A dead run can leave the request pending, or one row missing. Fill what is
+  // absent (stamped once), then answer the request on what is already there.
+  const present = await supabase
+    .from('chat_participants')
+    .select('user_id')
+    .eq('conversation_id', conversationId);
+  if (present.error) {
+    console.error(`Could not read the chats fixture's roster: ${present.error.message}`);
+    process.exit(1);
+  }
+
+  const presentIds = new Set((present.data ?? []).map((row) => row.user_id as string));
+  const rows = participantRows(conversationId);
+  const missing = rows.filter((row) => !presentIds.has(row.user_id));
+  if (missing.length > 0) {
+    const filled = await supabase.from('chat_participants').insert(withJoinedAt(missing));
+    if (filled.error) {
+      console.error(
+        `Failed to complete the chats fixture ${conversationId}: ${filled.error.message}`
+      );
+      process.exit(1);
+    }
+  }
+
+  const existing = rows.filter((row) => presentIds.has(row.user_id));
+  if (existing.length > 0) {
+    const reopened = await supabase
+      .from('chat_participants')
+      .upsert(existing, { onConflict: 'conversation_id,user_id' });
+    if (reopened.error) {
+      console.error(
+        `Failed to reopen the chats fixture ${conversationId}: ${reopened.error.message}`
+      );
+      process.exit(1);
+    }
+  }
+
+  const line = await supabase
+    .from('chat_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+    .is('deleted_at', null);
+  if (line.error) {
+    console.error(`Could not read the chats fixture's lines: ${line.error.message}`);
+    process.exit(1);
+  }
+
+  if ((line.count ?? 0) === 0) {
+    const written = await supabase.from('chat_messages').insert({
+      conversation_id: conversationId,
+      sender_id: peerId,
+      sender_kind: 'user',
+      body: FIXTURE_BODY,
+    });
+    if (written.error) {
+      console.error(`Failed to write the chats fixture's line: ${written.error.message}`);
+      process.exit(1);
+    }
+  }
+
+  console.log(`Chats fixture: ${conversationId} (peer ${PEER_EMAIL})`);
+  return conversationId;
+}
+
+async function ensureTestUser(): Promise<string> {
   const email = process.env.E2E_TEST_EMAIL!;
   const password = process.env.E2E_TEST_PASSWORD!;
 
@@ -279,7 +547,7 @@ async function ensureTestUser() {
       if (stale !== null) await resetOwnedItems(existing.id, stale);
     }
     console.log(`Test user already exists: ${email} (id: ${existing.id})`);
-    return;
+    return existing.id;
   }
 
   // Create the user with confirmed email
@@ -297,6 +565,16 @@ async function ensureTestUser() {
   await ensureProfile(data.user.id, email);
   await ensurePlan(data.user.id);
   console.log(`Created test user: ${email} (id: ${data.user.id})`);
+  return data.user.id;
 }
 
-ensureTestUser();
+async function main() {
+  const userId = await ensureTestUser();
+  const peerId = await ensurePeer();
+  const reset = process.argv.includes('--reset');
+  const stale = reset ? null : staleMinutes();
+  await purgeChatFixture(userId, peerId, { reset, staleMinutes: stale });
+  await ensureChatFixture(userId, peerId);
+}
+
+void main();
