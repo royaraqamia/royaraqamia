@@ -69,6 +69,13 @@ Use proactively when task matches. Load with the `skill` tool.
 - `loop-me` — Grill on workflow specs
 - `to-questionnaire` — Delegate decisions
 
+## Vendored agency roster (msitarzewski/agency-agents)
+
+- `agency-roster` — Start here: maps a task to one division file listing its specialists
+- 299 specialist prompts (engineering, design, marketing, product, sales, security, testing…), each a
+  hidden skill (`metadata.opencode/autoinvoke: false`) loaded by ID on demand, so they cost no prompt
+  tokens until used. Tree, provenance and the regeneration recipe: `.opencode/skills/agency/`
+
 ## Skill Versioning
 
 - All installed GitHub-sourced skills locked in `skills-lock.json` with content hashes

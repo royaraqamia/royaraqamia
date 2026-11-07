@@ -7,6 +7,9 @@ coverage/
 .git/
 .vercel/
 .agents/
+# Vendored from msitarzewski/agency-agents (MIT) with upstream formatting kept verbatim.
+# Provenance and the regeneration recipe: `.opencode/skills/agency/agency-roster/SOURCE.md`.
+.opencode/skills/agency/
 public/
 *.min.js
 package-lock.json
