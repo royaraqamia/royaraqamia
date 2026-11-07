@@ -84,7 +84,10 @@ export function AssistantComposer({
   // there. One `id` per subject, so each step down replaces the last instead of
   // stacking.
   useEffect(() => {
-    if (remaining === null || !allowance || remaining > TURNS_WORTH_SAYING) return;
+    // A plan that allows no turn has no allowance to count down: the locked
+    // panel below is the whole answer, and "0 من 0" would read as a spent day.
+    if (remaining === null || !allowance || allowance.member.cap === 0) return;
+    if (remaining > TURNS_WORTH_SAYING) return;
     toast.info(
       ASSISTANT_COPY.remaining
         .replace('{remaining}', String(remaining))
