@@ -87,6 +87,14 @@ stated limit.
   filtered or paginated Community page, whose reads are never-cache APIs. Nothing inside a snapshot is
   actionable: filters, compose and verify name the connection instead, and no snapshot ever queues a
   write. A reader's own digest is `no-store` and is deliberately never recorded.
+- **The Android app keeps the same rule (#928).** It has no service worker, so a public surface reads
+  the snapshot itself: one store (`PublicSnapshotStore`, a directory with one file per surface key)
+  and one named state (`NeedsConnection`). The key is the surface id — `community`, `rates`, and each
+  later public screen — so two surfaces cannot overwrite each other. A read the server answered is
+  kept; a failed read paints the kept rows read-only under the surface's own stale line, and with
+  nothing kept the surface draws the needs-connection state instead of an empty list. The state is
+  drawn once and reused: a surface supplies only its own sentence, never a second block. This is the
+  app's half of `public:<route>`, and the two scopes differ only in where the bytes live.
 - **A recitation is offline only where the reader kept it.** The text and the reading position paint
   from the Local Store, but an Ayah's audio is served by `audio.royaraqamia.com` (ADR-0062). Since
   #559 a reader can keep one sura on the device: the files are verified against the manifest's
@@ -260,7 +268,10 @@ Honest list of what stands between us and the bar, each with the file that shows
    those entries are LRU-capped at 20; a list surface has one per filter choice. The public scope is
    identity-free and survives a sign-out, because a signed-out device may still read the digest.
    Nothing a response marked `no-store` or `private` is ever written (the writer reads the
-   response's own header), and an entry whose schema version differs is ignored and pruned.
+   response's own header), and an entry whose schema version differs is ignored and pruned. The
+   Android app has no synchronous store to match `localStorage`, so its public surfaces share
+   `PublicSnapshotStore` instead — one directory, one file per surface key (#928) — and the bullet
+   above governs both clients.
 
 ### Cache tiers
 

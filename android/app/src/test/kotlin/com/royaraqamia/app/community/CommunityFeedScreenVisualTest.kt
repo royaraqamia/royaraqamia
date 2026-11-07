@@ -27,6 +27,7 @@ import com.royaraqamia.app.session.RefreshOutcome
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.session.TokenRefresher
 import com.royaraqamia.app.store.MemoryIdentityStorage
+import com.royaraqamia.app.store.PublicSnapshotStore
 import com.royaraqamia.app.support.RecordingTransport
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
@@ -118,7 +119,7 @@ class CommunityFeedScreenVisualTest {
             )
         return CommunityFeedRepository(
             ApiClient("https://app.test", session, RecordingTransport { HttpResponse(200, body) }),
-            CommunityFeedSnapshotStore(temporary.newFolder("community")),
+            PublicSnapshotStore(temporary.newFolder("public")),
         )
     }
 
