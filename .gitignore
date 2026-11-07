@@ -108,3 +108,8 @@ public/zxing_reader.wasm
 # Device evidence from `npm run spike:verify` (issue #500): screenshots and the
 # veto-table JSON, never committed.
 /spike-evidence/
+
+# The Graphify knowledge graph. It is rebuilt from the tree by `graphify extract` -
+# 28 MB of generated JSON, one line per node and edge - and the CI agent builds its
+# own copy, so no run ever depends on a committed one.
+/graphify-out/

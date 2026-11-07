@@ -1,0 +1,87 @@
+name: 'Graphify Code Graph'
+description: >-
+  Installs the pinned Graphify CLI and builds a code-only knowledge graph of the
+  checked-out tree, so an autonomous agent can ask for callers, dependencies and
+  structure instead of reading files one by one. Code is parsed locally with
+  tree-sitter: no model is called, nothing leaves the runner. Every step here is
+  best-effort — a graph that fails to build only leaves the agent with the tools
+  it already had.
+
+inputs:
+  version:
+    description: 'Pinned graphifyy version (the CLI is `graphify`, the extra maps PostgreSQL migrations)'
+    required: false
+    default: '0.9.103'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Graphify CLI
+      # pipx is preinstalled on the runner image. The symlink is what makes the CLI
+      # visible to the agent's own shell, not just to this step: a composite action
+      # cannot set PATH for the steps after it.
+      shell: bash
+      run: |
+        set -uo pipefail
+
+        if ! pipx install "graphifyy[sql]==${{ inputs.version }}"; then
+          echo "::warning title=Graphify is not installed::The code graph is unavailable this run; the agent falls back to grep."
+          exit 0
+        fi
+
+        # pipx's bin directory is not always on PATH, and a composite action cannot
+        # export one for the steps after it. A link in /usr/local/bin is visible to
+        # the agent's own shell, which is the one that has to find `graphify`.
+        bin="$(pipx environment --value PIPX_BIN_DIR 2>/dev/null || true)"
+        [ -n "${bin:-}" ] || bin="$HOME/.local/bin"
+        sudo ln -sf "$bin/graphify" /usr/local/bin/graphify || true
+
+        if ! command -v graphify >/dev/null; then
+          echo "::warning title=The Graphify CLI is not on PATH::The code graph is unavailable this run; the agent falls back to grep."
+          exit 0
+        fi
+        graphify --version
+
+        # Registers the skill and the first-command reminder in the runner's own
+        # OpenCode config ($HOME/.config/opencode), the same home opencode-runner
+        # writes. It installs to the user profile on purpose: a project-scoped
+        # install appends a `## Graphify` section to AGENTS.md and drops a plugin in
+        # the repository, and both would be committed into the pull request.
+        graphify install --platform opencode || \
+          echo "::warning title=The Graphify skill is not registered::The CLI still answers; only the automatic guidance is missing."
+
+    - name: Restore the Graphify AST cache
+      # 1.7 MB for this repository. A cache from an older commit is still useful:
+      # the manifest decides which files changed, so only those are re-parsed.
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          graphify-out/cache
+          graphify-out/manifest.json
+        key: graphify-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          graphify-${{ runner.os }}-
+
+    - name: Build the code graph
+      # `--code-only` keeps the docs, ADRs and images out: they belong to the
+      # semantic pass, which needs a model backend and is what the planner reads as
+      # prose anyway. The whole graph of this tree measured ~3 minutes on 8 workers;
+      # the timeout is the ceiling for a cold cache on a smaller runner.
+      shell: bash
+      run: |
+        set -uo pipefail
+
+        if ! command -v graphify >/dev/null; then
+          echo "::warning title=The Graphify CLI is missing::The agent runs without the graph."
+          exit 0
+        fi
+
+        # A non-zero exit here is not a failed build: graphify reports files it
+        # could not model as warnings and still writes the graph. The file check
+        # below is what distinguishes that from a run that produced nothing.
+        timeout 900 graphify extract . --code-only || \
+          echo "::notice title=Graphify reported warnings::See the lines above; a file with no symbols still leaves a usable graph."
+
+        if [ ! -s graphify-out/graph.json ]; then
+          echo "::warning title=The code graph did not build::The agent runs without it; the graph is a convenience, not a gate."
+        fi
