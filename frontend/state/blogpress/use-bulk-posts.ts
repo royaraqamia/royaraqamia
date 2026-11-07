@@ -1,52 +1,37 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useReducer } from 'react';
 import { bulkPostAction, type BulkPostAction } from '@/frontend/api/blogpress';
+import { bulkPostsInitialState, bulkPostsReducer } from './use-bulk-posts.reducer';
 
 export function useBulkPosts(ids: string[]) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(bulkPostsReducer, undefined, bulkPostsInitialState);
+  const { selected, busy, error } = state;
 
   const allSelected = ids.length > 0 && selected.size === ids.length;
 
-  const toggle = useCallback((id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  const toggle = useCallback((id: string) => dispatch({ type: 'toggled', id }), []);
 
-  const toggleAll = useCallback(() => {
-    setSelected((prev) => {
-      if (prev.size === ids.length && prev.size > 0) {
-        return new Set();
-      }
-      return new Set(ids);
-    });
-  }, [ids]);
+  const toggleAll = useCallback(() => dispatch({ type: 'allToggled', ids }), [ids]);
 
-  const clear = useCallback(() => setSelected(new Set()), []);
+  const clear = useCallback(() => dispatch({ type: 'cleared' }), []);
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
   const run = useCallback(
     async (action: BulkPostAction, categoryId?: string | null): Promise<number | null> => {
-      setBusy(true);
-      setError(null);
+      dispatch({ type: 'runStarted' });
       try {
         const result = await bulkPostAction(action, selectedIds, categoryId);
         return result.affected;
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على المنشورات.');
+        dispatch({
+          type: 'runFailed',
+          message: err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على المنشورات.',
+        });
         return null;
       } finally {
-        setBusy(false);
+        dispatch({ type: 'runFinished' });
       }
     },
     [selectedIds]
