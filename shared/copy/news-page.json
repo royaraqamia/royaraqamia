@@ -1,0 +1,19 @@
+{
+  "surface": "news",
+  "component": "news-page",
+  "web": {
+    "file": "app/news/news-page-copy.ts",
+    "export": "NEWS_PAGE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsPageCopy.kt",
+    "object": "NewsPageCopy"
+  },
+  "notes": {
+    "source": "The page's own heading (#926), rendered outside the client island so the prerendered document carries its h1 even while the board is suspended.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `app/news/page.tsx` does not render."
+  },
+  "strings": {
+    "pageTitle": "أخبار اليوم"
+  }
+}

@@ -54,10 +54,13 @@ import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.profile.ProfileRoutes
+import com.royaraqamia.app.profile.ProfileScreen
 import com.royaraqamia.app.quran.QuranIndexRoute
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
+import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.rates.RatesScreen
+import com.royaraqamia.app.scan.ScanScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.sync.SyncScheduler
@@ -346,6 +349,28 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // The Scanner (#932): the camera, its permission and a
+                            // decode that never leaves the phone. Drawn and off
+                            // until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/scan" ->
+                                ScanScreen(
+                                    siteUrl = BuildConfig.SITE_URL,
+                                    onOpenRoute = ::openRoute,
+                                    onOpenExternal = ::openExternal,
+                                )
+                            // The public digest and the reader's own (#926): the
+                            // page's day strip, cards and personal switch. Ported and
+                            // off until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/news" ->
+                                NewsDigestScreen(
+                                    repository = graph.newsDigest,
+                                    onOpenUrl = ::openExternal,
+                                    onSignIn = ::showSignIn,
+                                    onSeePlans = { openRoute("/pricing") },
+                                    onManageSources = { openRoute("/account/news") },
+                                )
                             // The three public lead forms (#929): the page's own
                             // steps, validation and confirmations, with an
                             // anonymous Outbox. Ported and off until the visual
@@ -398,6 +423,7 @@ class ShellActivity : ComponentActivity() {
                                 val unlock = LinksnapRoutes.codeOf(current)
                                 val quranSurah = QuranRoutes.surahOf(current)
                                 val postSlug = CommunityRoutes.slugOf(current)
+                                val profileUsername = ProfileRoutes.usernameOf(current)
                                 when {
                                     // One public post (#922): the page's own
                                     // Markdown body, drawn natively and off until
@@ -407,6 +433,21 @@ class ShellActivity : ComponentActivity() {
                                         CommunityPostScreen(
                                             slug = postSlug,
                                             repository = graph.communityPost,
+                                            onOpenProfile = { username ->
+                                                openRoute(ProfileRoutes.profileOf(username))
+                                            },
+                                        )
+                                    // A public member's profile (#927): the page's
+                                    // header and posts, drawn natively and off until
+                                    // the visual gate passes (ADR-0117), so the
+                                    // document still opens on top of it.
+                                    profileUsername != null ->
+                                        ProfileScreen(
+                                            username = profileUsername,
+                                            repository = graph.profile,
+                                            onOpenPost = { slug ->
+                                                openRoute(CommunityRoutes.postOf(slug))
+                                            },
                                             onOpenProfile = { username ->
                                                 openRoute(ProfileRoutes.profileOf(username))
                                             },

@@ -25,6 +25,21 @@ object ContractCodec {
         explicitNulls = false
     }
 
+    /**
+     * The same contract, written with its `null` fields present.
+     *
+     * A stored snapshot is read back by the same generated type, and a
+     * required-but-nullable field that [json] omitted would make the stored body
+     * unreadable. The news digest is the first surface whose snapshot strips
+     * fields rather than only trimming rows (#926), so the explicit form lives
+     * here rather than as a second encoder inside a repository.
+     */
+    @PublishedApi
+    internal val storage = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = true
+    }
+
     inline fun <reified T> decode(body: String): ApiResult<T> =
         decode(body, serializer<T>())
     fun <T> decode(body: String, serializer: KSerializer<T>): ApiResult<T> =
@@ -47,6 +62,10 @@ object ContractCodec {
      * an explicit `null` the server would have to accept.
      */
     inline fun <reified T> encode(value: T): String = json.encodeToString(serializer<T>(), value)
+
+    /** [encode] with `null` fields written out, for a body that is read back. */
+    inline fun <reified T> encodeForStorage(value: T): String =
+        storage.encodeToString(serializer<T>(), value)
 
     /**
      * The field the decoder objected to, when it names one. A missing field

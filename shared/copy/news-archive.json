@@ -1,0 +1,20 @@
+{
+  "surface": "news",
+  "component": "news-archive",
+  "web": {
+    "file": "frontend/ui/news/news-archive-copy.ts",
+    "export": "NEWS_ARCHIVE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveCopy.kt",
+    "object": "NewsArchiveCopy"
+  },
+  "notes": {
+    "source": "The day strip's words (#926): the chip that asks for the latest digest and the label the strip carries. The site renders them in `NewsFilters.tsx`, and the app draws the same two controls from this one source.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `NewsFilters.tsx` does not render."
+  },
+  "strings": {
+    "latest": "الأحدث",
+    "archiveLabel": "أرشيف الأيام"
+  }
+}

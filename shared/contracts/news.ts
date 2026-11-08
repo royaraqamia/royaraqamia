@@ -488,6 +488,95 @@ export interface NewsPreferencesEffect {
   fellBack: boolean;
 }
 
+/**
+ * The board as the app decodes it (#926).
+ *
+ * The page reads `GET /api/news/board` directly, and the app reads the same
+ * route, so the JSON the route answers is generated into Kotlin by
+ * `contracts:generate`. Only the read is a schema: the digest is written by the
+ * workflow with the service role, never by either client, so there is no write
+ * shape to share. The schemas mirror the interfaces above rather than replacing
+ * them, because the page consumes those types through its own loader and the
+ * generated Kotlin is the app's only consumer of the JSON form.
+ */
+const newsStorySchema = z.object({
+  id: z.string(),
+  position: z.number().int(),
+  category: z.enum(NEWS_CATEGORIES),
+  region: z.enum(NEWS_REGIONS),
+  headline: z.string(),
+  summary: z.string(),
+  whyItMatters: z.string().nullable(),
+  sourceId: z.string(),
+  sourceName: z.string(),
+  sourceUrl: z.string(),
+  sourcePublishedAt: z.string().nullable(),
+});
+
+const newsSearchHitSchema = newsStorySchema.extend({
+  digestDate: z.string(),
+});
+
+const newsDigestSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  title: z.string(),
+  lede: z.string(),
+  storyCount: z.number().int(),
+  model: z.string(),
+  publishedAt: z.string(),
+});
+
+export const newsBoardResponseSchema = z.object({
+  board: z.object({
+    day: z
+      .object({
+        digest: newsDigestSchema,
+        stories: z.array(newsStorySchema),
+      })
+      .nullable(),
+    dates: z.array(z.string()),
+    search: z
+      .object({
+        query: z.string(),
+        category: z.enum(NEWS_CATEGORIES).nullable(),
+        hits: z.array(newsSearchHitSchema),
+        truncated: z.boolean(),
+      })
+      .nullable(),
+    hasAnyDigest: z.boolean(),
+    preferences: z
+      .object({
+        selectedSources: z.number().int(),
+        filtered: z.boolean(),
+        fellBack: z.boolean(),
+      })
+      .nullable(),
+    personal: z
+      .object({
+        available: z.boolean(),
+        active: z.boolean(),
+        ownSources: z
+          .object({
+            total: z.number().int(),
+            contributed: z.number().int(),
+          })
+          .nullable(),
+      })
+      .nullable(),
+    cards: z
+      .object({
+        cap: z.number().int(),
+        total: z.number().int(),
+        shown: z.number().int(),
+        visitor: z.boolean(),
+      })
+      .nullable(),
+  }),
+});
+
+export type NewsBoardResponse = z.infer<typeof newsBoardResponseSchema>;
+
 export const NEWS_SEARCH_LIMIT = 60;
 
 /** How many suggestions the search combobox shows above the "view all" row. */

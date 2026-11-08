@@ -983,6 +983,38 @@
       ]
     },
     {
+      "id": "profile",
+      "surface": "profile",
+      "issue": "#927",
+      "web": {
+        "route": "app/u/[username]/page.tsx",
+        "component": "app/u/[username]/page.tsx",
+        "copyModule": "app/u/[username]/profile-copy.ts",
+        "copyExport": "PROFILE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCopy.kt",
+        "copyObject": "ProfileCopy"
+      },
+      "copySource": "shared/copy/profile.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "postsHeading"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        },
+        {
+          "name": "NotFound",
+          "copy": "notFoundTitle"
+        }
+      ]
+    },
+    {
       "id": "community-editor",
       "surface": "community",
       "issue": "#925",
@@ -1015,6 +1047,70 @@
         {
           "name": "Failed",
           "copy": "saveFailed"
+        }
+      ]
+    },
+    {
+      "id": "community-composer",
+      "surface": "community",
+      "issue": "#924",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/post-composer-dialog.tsx",
+        "copyModule": "app/community/_components/community-composer-copy.ts",
+        "copyExport": "COMMUNITY_COMPOSER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposer.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerCopy.kt",
+        "copyObject": "CommunityComposerCopy"
+      },
+      "copySource": "shared/copy/community-composer.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "publish"
+        },
+        {
+          "name": "Publishing",
+          "copy": "publishing"
+        },
+        {
+          "name": "Failed",
+          "copy": "publishFailed"
+        },
+        {
+          "name": "Published",
+          "copy": "published"
+        }
+      ]
+    },
+    {
+      "id": "community-compose-fab",
+      "surface": "community",
+      "issue": "#924",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/compose-fab.tsx",
+        "copyModule": "app/community/_components/community-compose-fab-copy.ts",
+        "copyExport": "COMMUNITY_COMPOSE_FAB_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFab.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabCopy.kt",
+        "copyObject": "CommunityComposeFabCopy"
+      },
+      "copySource": "shared/copy/community-compose-fab.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "newPostLabel"
+        },
+        {
+          "name": "Guest",
+          "copy": "guestTitle"
         }
       ]
     },
@@ -1595,66 +1691,106 @@
       ]
     },
     {
-      "id": "community-composer",
-      "surface": "community",
-      "issue": "#924",
+      "id": "news-digest",
+      "surface": "news",
+      "issue": "#926",
       "web": {
-        "route": "app/community/page.tsx",
-        "component": "app/community/_components/post-composer-dialog.tsx",
-        "copyModule": "app/community/_components/community-composer-copy.ts",
-        "copyExport": "COMMUNITY_COMPOSER_COPY"
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/NewsBoard.tsx",
+        "copyModule": "frontend/ui/news/news-digest-copy.ts",
+        "copyExport": "NEWS_DIGEST_COPY"
       },
       "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposer.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerCopy.kt",
-        "copyObject": "CommunityComposerCopy"
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestCopy.kt",
+        "copyObject": "NewsDigestCopy"
       },
-      "copySource": "shared/copy/community-composer.json",
+      "copySource": "shared/copy/news-digest.json",
       "states": [
         {
-          "name": "AtRest",
-          "copy": "publish"
+          "name": "Live",
+          "copy": "emptyTitle"
         },
         {
-          "name": "Publishing",
-          "copy": "publishing"
+          "name": "Snapshot",
+          "copy": "staleMessage"
         },
         {
-          "name": "Failed",
-          "copy": "publishFailed"
-        },
-        {
-          "name": "Published",
-          "copy": "published"
+          "name": "Unavailable",
+          "copy": "pageError"
         }
       ]
     },
     {
-      "id": "community-compose-fab",
-      "surface": "community",
-      "issue": "#924",
+      "id": "news-archive",
+      "surface": "news",
+      "issue": "#926",
       "web": {
-        "route": "app/community/page.tsx",
-        "component": "app/community/_components/compose-fab.tsx",
-        "copyModule": "app/community/_components/community-compose-fab-copy.ts",
-        "copyExport": "COMMUNITY_COMPOSE_FAB_COPY"
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/NewsFilters.tsx",
+        "copyModule": "frontend/ui/news/news-archive-copy.ts",
+        "copyExport": "NEWS_ARCHIVE_COPY"
       },
       "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFab.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabCopy.kt",
-        "copyObject": "CommunityComposeFabCopy"
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveRow.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveCopy.kt",
+        "copyObject": "NewsArchiveCopy"
       },
-      "copySource": "shared/copy/community-compose-fab.json",
+      "copySource": "shared/copy/news-archive.json",
       "states": [
         {
-          "name": "Ready",
-          "copy": "newPostLabel"
-        },
+          "name": "AtRest",
+          "copy": "latest"
+        }
+      ]
+    },
+    {
+      "id": "news-story",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/StoryCard.tsx",
+        "copyModule": "frontend/ui/news/news-story-copy.ts",
+        "copyExport": "NEWS_STORY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCardState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCopy.kt",
+        "copyObject": "NewsStoryCopy"
+      },
+      "copySource": "shared/copy/news-story.json",
+      "states": [
         {
-          "name": "Guest",
-          "copy": "guestTitle"
+          "name": "AtRest",
+          "copy": "source"
+        }
+      ]
+    },
+    {
+      "id": "news-page",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "app/news/page.tsx",
+        "copyModule": "app/news/news-page-copy.ts",
+        "copyExport": "NEWS_PAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsPageState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsPageCopy.kt",
+        "copyObject": "NewsPageCopy"
+      },
+      "copySource": "shared/copy/news-page.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
         }
       ]
     }
@@ -1667,6 +1803,10 @@
     {
       "path": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellUpdatePrompt.kt",
       "reason": "The update card is the app's alone (#652, ADR-0114): the site never offers an APK install, so a web deploy alone never prompts and no second client holds these words. It draws the site's card, glyphs and digit face — which is why the discovery sees it — and its copy is res/values/strings.xml, the app's own single source."
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt",
+      "reason": "The Scanner screen (#932) draws the site's tokens and glyphs and is switched off until the visual gate pairs it with `/scan` (ADR-0117). Its words are still the page's inline ones, so there is no second copy source to pair yet; the exemption names the slice that removes it, and `docs/mobile/screens.json` records that the route is still the document's."
     }
   ]
 }

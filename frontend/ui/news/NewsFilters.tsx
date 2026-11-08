@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
+import { NEWS_ARCHIVE_COPY } from './news-archive-copy';
 import { newsHref, type NewsView } from './news-url';
 import { formatDigestDayShort, type NewsCategory } from '@/shared/contracts/news';
 
@@ -78,7 +79,11 @@ export function NewsFilters({
       aria-disabled={disabled}
     >
       {!isSearching && dates.length > 0 ? (
-        <nav aria-label="أرشيف الأيام" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+        <nav
+          aria-label={NEWS_ARCHIVE_COPY.archiveLabel}
+          data-visual="news-archive"
+          className="scrollbar-none flex gap-2 overflow-x-auto pb-1"
+        >
           <button
             type="button"
             aria-pressed={date === null}
@@ -91,7 +96,7 @@ export function NewsFilters({
                 : 'border-border/60 bg-card/70 text-muted-foreground hover:text-foreground'
             )}
           >
-            الأحدث
+            {NEWS_ARCHIVE_COPY.latest}
           </button>
           {dates.map((value) => (
             <button

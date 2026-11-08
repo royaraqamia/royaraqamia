@@ -1,0 +1,81 @@
+{
+  "surface": "news",
+  "route": "/news",
+  "notes": "The digest's own boxes (#926), declared before the surface is switched on. `at-rest` measures the page title, the day strip, the first story card and its source link; `needs-connection` measures the named block a screen with nothing to show draws. The page's search box, its personal-digest banner and the plan's card allowance are not part of this contract: search is not ported in this slice, and the banner and the allowance are conditional rows rather than the digest's frame. Widths of the title are left out because its width is the run of text, not a decision; the raster is what proves colours and spacing the boxes do not name.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "story",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='news-title'] h1"
+          },
+          "app": {
+            "tag": "news-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "archive",
+          "web": {
+            "selector": "[data-visual='news-archive']"
+          },
+          "app": {
+            "tag": "news-archive"
+          },
+          "properties": ["top", "width", "height"]
+        },
+        {
+          "name": "story",
+          "web": {
+            "selector": "[data-visual='news-story']"
+          },
+          "app": {
+            "tag": "news-story"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "story-source",
+          "web": {
+            "selector": "[data-visual='news-story-source']"
+          },
+          "app": {
+            "tag": "news-story-source"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingLeft"]
+        }
+      ]
+    },
+    {
+      "name": "needs-connection",
+      "origin": "title",
+      "capture": "unavailable",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='news-title'] h1"
+          },
+          "app": {
+            "tag": "news-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "unavailable",
+          "web": {
+            "selector": "[data-visual='news-unavailable']"
+          },
+          "app": {
+            "tag": "news-unavailable"
+          },
+          "properties": ["top", "width", "paddingTop", "paddingLeft"]
+        }
+      ]
+    }
+  ]
+}

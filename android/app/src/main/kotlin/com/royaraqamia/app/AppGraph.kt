@@ -12,9 +12,11 @@ import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
+import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
+import com.royaraqamia.app.profile.ProfileRepository
 import com.royaraqamia.app.quran.AssetQuranRepository
 import com.royaraqamia.app.quran.PreferencesQuranPositionStore
 import com.royaraqamia.app.quran.QuranRepository
@@ -77,6 +79,8 @@ class AppGraph private constructor(
     val blockedMembers: BlockedMembersRepository,
     /** The account news page (#950): the checklist, private feeds and proposals. */
     val news: NewsRepository,
+    /** The `/news` digest and the last one this device saw (#926). */
+    val newsDigest: NewsDigestRepository,
     val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
@@ -88,6 +92,8 @@ class AppGraph private constructor(
     val community: CommunityFeedRepository,
     /** One published community post, read from the route the page serves (#922). */
     val communityPost: CommunityPostRepository,
+    /** One public member profile, read from the route the page serves (#927). */
+    val profile: ProfileRepository,
     /** The community editor over BlogPress's device store (#925). */
     val communityEditor: CommunityEditorRepository,
     /** The community composer's create-and-publish write (#924). */
@@ -284,6 +290,7 @@ class AppGraph private constructor(
                 connectedApps = ConnectedAppsRepository(client),
                 blockedMembers = BlockedMembersRepository(client),
                 news = NewsRepository(client),
+                newsDigest = NewsDigestRepository(client, publicSnapshots),
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
@@ -291,6 +298,7 @@ class AppGraph private constructor(
                 community = CommunityFeedRepository(client, publicSnapshots),
                 communityPost = communityPost,
                 communityComposer = CommunityComposerRepository(client, communityPost),
+                profile = ProfileRepository(client),
                 chats =
                     ChatsRepository(
                         client = client,

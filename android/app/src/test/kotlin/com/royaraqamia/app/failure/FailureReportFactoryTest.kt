@@ -85,6 +85,7 @@ class FailureReportFactoryTest {
             FailureReportFactory.crash(
                 errorOf(frame("com.x.Y", "run", "Y.kt", 1), message = "card 4111 refused at /p?token=abc"),
                 shell,
+                at = 1_700_000_000_000,
             )
 
         val body = ContractCodec.encode(report)
