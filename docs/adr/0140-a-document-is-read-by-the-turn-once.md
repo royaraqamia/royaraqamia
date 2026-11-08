@@ -34,8 +34,8 @@ never reached the model.
 5. **One document per turn.** `ChatAgentTurnSchema` bounds it beside the picture
    bound, and the assistant's composer refuses a second document before it
    uploads — a document is read once into the prompt and costs pages of tokens,
-   so a second one is a second question (ADR-0140's `attachments` array, shared
-   with the picture issue).
+   so a second one is a second question. Both bounds count the `attachments`
+   array ADR-0139 already had, rather than a field of their own.
 6. **The words are not stored.** The attachment row keeps the file; the extracted
    text is a part of that turn and dies with it. It is not written to the message,
    not put in the bucket, not kept on the attachment, and not re-sent from
