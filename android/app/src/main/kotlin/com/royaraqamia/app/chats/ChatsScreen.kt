@@ -68,8 +68,8 @@ import kotlinx.coroutines.launch
  * thread which refuses every question is a control that lies.
  *
  * The floating action opens the site's new-conversation screen: the member picker
- * and the group form are their own surface (`/chats/new`), and the app opens it
- * as the document until that is ported.
+ * and the group form are their own surface (`/chats/new`, [ChatNewScreen]), ported
+ * in #934 and drawn off until its gate passes.
  */
 @Composable
 fun ChatsScreen(

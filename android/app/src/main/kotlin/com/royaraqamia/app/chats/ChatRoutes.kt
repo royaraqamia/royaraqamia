@@ -7,8 +7,8 @@ import com.royaraqamia.app.shell.Routes
  *
  * `/chats/<id>` is the site's thread route, and the id is one segment: the same
  * grammar the shell already applies to `/community/<slug>` and `/u/<username>`.
- * `/chats/new` is the site's new-conversation screen, which the app opens as the
- * document, so it is deliberately *not* a thread.
+ * `/chats/new` is the site's new-conversation screen, which the app draws itself
+ * (#934), so it is deliberately *not* a thread.
  */
 object ChatRoutes {
     private val pattern = Regex("^/chats/([^/]+)$")

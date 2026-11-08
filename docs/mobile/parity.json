@@ -1319,6 +1319,34 @@
       ]
     },
     {
+      "id": "chat-new",
+      "surface": "chats",
+      "issue": "#934",
+      "web": {
+        "route": "app/notifications/page.tsx",
+        "component": "frontend/ui/chats/new-conversation-panel.tsx",
+        "copyModule": "frontend/ui/chats/chat-new-copy.ts",
+        "copyExport": "CHAT_NEW_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatNew.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatNewUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatNewCopy.kt",
+        "copyObject": "ChatNewCopy"
+      },
+      "copySource": "shared/copy/chat-new.json",
+      "states": [
+        {
+          "name": "Direct",
+          "copy": "typeDirect"
+        },
+        {
+          "name": "Group",
+          "copy": "typeGroup"
+        }
+      ]
+    },
+    {
       "id": "chat-thread",
       "surface": "chats",
       "issue": "#819",

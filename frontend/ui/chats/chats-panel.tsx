@@ -7,15 +7,15 @@ import { Check, MessagesSquare, Plus, Users, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
-import { createChatGroup, getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
+import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
-import { MemberPicker } from './member-picker';
 import { AssistantMark } from './assistant-mark';
+import { NewConversationPanel } from './new-conversation-panel';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
 /**
  * What a past instant is, in the chats surface's words (#819).
@@ -44,11 +44,7 @@ export function chatTimeAgo(iso: string): string {
   }
 }
 
-import {
-  CHAT_GROUP_MEMBERS_MAX,
-  type ChatConversationSummary,
-  type ChatPeer,
-} from '@/shared/contracts/chat';
+import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
 /**
  * The notifications page's Chats tab: the caller's threads, the requests that
@@ -330,191 +326,6 @@ export function ChatsPanel() {
       >
         <Plus className="size-6" />
       </FabButton>
-    </div>
-  );
-}
-
-/**
- * The floating action's panel: a direct thread or a named group. Both start from
- * the same member search, so the two flows cannot drift apart.
- */
-function NewConversationPanel({
-  mode,
-  onMode,
-  onPick,
-  onCreated,
-  onClose,
-}: {
-  mode: 'direct' | 'group';
-  onMode: (mode: 'direct' | 'group') => void;
-  onPick: (peer: ChatPeer) => void;
-  onCreated: (conversationId: string) => void;
-  onClose: () => void;
-}) {
-  const tabs: { mode: 'direct' | 'group'; label: string }[] = [
-    { mode: 'direct', label: CHATS_LIST_COPY.typeDirect },
-    { mode: 'group', label: CHATS_LIST_COPY.typeGroup },
-  ];
-
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card/60 p-3 shadow-xs">
-      <div
-        role="tablist"
-        aria-label={CHATS_LIST_COPY.conversationType}
-        className="mb-3 flex items-center gap-1"
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab.mode}
-            type="button"
-            role="tab"
-            aria-selected={mode === tab.mode}
-            onClick={() => onMode(tab.mode)}
-            className={cn(
-              'rounded-lg px-3 py-1 text-xs font-bold transition-safe',
-              mode === tab.mode
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {mode === 'direct' ? (
-        <MemberPicker onPick={onPick} onClose={onClose} />
-      ) : (
-        <GroupForm onCreated={onCreated} onClose={onClose} />
-      )}
-    </div>
-  );
-}
-
-/** A name and 1-31 members; the creator is the 32nd and never picked. */
-function GroupForm({
-  onCreated,
-  onClose,
-}: {
-  onCreated: (conversationId: string) => void;
-  onClose: () => void;
-}) {
-  const [title, setTitle] = useState('');
-  const [selected, setSelected] = useState<ChatPeer[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  function toggle(peer: ChatPeer) {
-    setSelected((current) =>
-      current.some((member) => member.id === peer.id)
-        ? current.filter((member) => member.id !== peer.id)
-        : [...current, peer]
-    );
-  }
-
-  async function submit() {
-    if (busy) return;
-
-    if (!title.trim()) {
-      setError(CHATS_LIST_COPY.groupNameRequired);
-      return;
-    }
-    if (selected.length === 0) {
-      setError(CHATS_LIST_COPY.groupMembersRequired);
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await createChatGroup(
-        title.trim(),
-        selected.map((member) => member.id)
-      );
-      if (result.conversationId) {
-        onCreated(result.conversationId);
-        return;
-      }
-      setError(result.error ?? CHATS_LIST_COPY.groupCreateFailed);
-    } catch (cause) {
-      setError(
-        cause instanceof Error && cause.message ? cause.message : CHATS_LIST_COPY.groupCreateFailed
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <label htmlFor="chat-group-title" className="sr-only">
-          {CHATS_LIST_COPY.groupName}
-        </label>
-        <input
-          id="chat-group-title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          maxLength={80}
-          placeholder={CHATS_LIST_COPY.groupName}
-          aria-label={CHATS_LIST_COPY.groupName}
-          className="min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-        />
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={CHATS_LIST_COPY.closeSearch}
-          className="rounded-lg p-1 text-muted-foreground/70 transition-safe hover:bg-accent hover:text-foreground"
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      <MemberPicker multiple selected={selected} onToggle={toggle} />
-
-      {selected.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label={CHATS_LIST_COPY.invitees}>
-          {selected.map((member) => (
-            <li
-              key={member.id}
-              className="flex max-w-56 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
-            >
-              <span className="truncate">{member.name ?? member.username}</span>
-              <button
-                type="button"
-                onClick={() => toggle(member)}
-                aria-label={CHATS_LIST_COPY.removeInvitee.replace(
-                  '{name}',
-                  member.name ?? member.username
-                )}
-                className="shrink-0 rounded p-0.5 hover:text-destructive"
-              >
-                <X size={11} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {error && (
-        <p role="alert" className="text-xs font-medium text-destructive">
-          {error}
-        </p>
-      )}
-
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] text-muted-foreground/70">
-          {CHATS_LIST_COPY.groupLimit.replace('{count}', String(CHAT_GROUP_MEMBERS_MAX - 1))}
-        </p>
-        <button
-          type="button"
-          onClick={() => void submit()}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
-        >
-          {busy ? CHATS_LIST_COPY.groupCreating : CHATS_LIST_COPY.groupCreate}
-        </button>
-      </div>
     </div>
   );
 }

@@ -77,6 +77,7 @@ export const CHAT_THREAD_COPY = {
   sendFailed: 'تعذّر إرسال الرسالة',
   retry: 'إعادة المحاولة',
   loadFailed: 'تعذّر تحميل المحادثة. أعد المحاولة.',
+  invitees: 'المدعوون',
 } as const;
 
 export type ChatThreadCopyStrings = typeof CHAT_THREAD_COPY;

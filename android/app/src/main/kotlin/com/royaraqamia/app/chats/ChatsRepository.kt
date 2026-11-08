@@ -439,6 +439,39 @@ class ChatsRepository(
         }
 
     /**
+     * A named group, then the thread it opened (#934).
+     *
+     * The body is the site's own `{ title, memberIds }`, and the cap is the
+     * server's: the creator is not one of the invitees, so the form never sends
+     * them. A refusal is the server's sentence, drawn rather than thrown.
+     */
+    suspend fun createGroup(title: String, memberIds: List<String>): ApiResult<String> =
+        when (
+            val result =
+                client.post<ChatStartResponse>(
+                    GROUPS_PATH,
+                    buildJsonObject {
+                            put("title", title)
+                            put(
+                                "memberIds",
+                                buildJsonArray { memberIds.forEach { add(JsonPrimitive(it)) } },
+                            )
+                        }
+                        .toString(),
+                )
+        ) {
+            is ApiResult.Success -> {
+                val conversationId = result.value.conversationId
+                if (!result.value.success || conversationId == null) {
+                    refused(result.value.error)
+                } else {
+                    ApiResult.Success(conversationId)
+                }
+            }
+            is ApiResult.Failure -> result
+        }
+
+    /**
      * Opening the assistant: idempotent on the server, which answers the one
      * thread this member has rather than creating a second (#817).
      */
@@ -692,6 +725,7 @@ class ChatsRepository(
     companion object {
         const val THREADS_PATH = "/api/chats"
         const val MEMBERS_PATH = "/api/chats/members"
+        const val GROUPS_PATH = "/api/chats/groups"
         const val BLOCKS_PATH = "/api/chats/blocks"
         const val ASSISTANT_PATH = "/api/chats/assistant"
 

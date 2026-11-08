@@ -13,18 +13,41 @@ import {
   memberSearchReducer,
 } from './member-picker.reducer';
 
+/** The words the search draws, so a port can read them from one copy source. */
+export interface MemberPickerCopy {
+  searchPlaceholder: string;
+  searchLabel: string;
+  closeSearch: string;
+  searching: string;
+  noResults: string;
+  inGroup: string;
+}
+
+/** The thread's invite panel, which has no new-conversation copy of its own. */
+const DEFAULT_COPY: MemberPickerCopy = {
+  searchPlaceholder: 'ابحث باسم العضو أو معرِّفه',
+  searchLabel: 'البحث عن عضو',
+  closeSearch: 'إغلاق البحث',
+  searching: 'جاري البحث...',
+  noResults: 'لا نتائج',
+  inGroup: 'في المجموعة',
+};
+
 /**
  * The one member search the chats surface offers: verified handles only, two
  * characters minimum.
  *
  * It is drawn twice — the "new chat" picker picks one member and opens their
  * thread, and the group flows pick several — so the search itself lives here
- * rather than being copied into each of them.
+ * rather than being copied into each of them. [copy] lets the new-conversation
+ * panel pass the words from its own generated source while the invite panel
+ * keeps the defaults.
  */
 export function MemberPicker({
   multiple = false,
   selected = [],
   excludeIds = [],
+  copy = DEFAULT_COPY,
   onPick,
   onToggle,
   onClose,
@@ -33,6 +56,7 @@ export function MemberPicker({
   selected?: ChatPeer[];
   /** Members already in the room: still found, but not offered again. */
   excludeIds?: string[];
+  copy?: MemberPickerCopy;
   onPick?: (peer: ChatPeer) => void;
   onToggle?: (peer: ChatPeer) => void;
   onClose?: () => void;
@@ -61,17 +85,20 @@ export function MemberPicker({
       <div className="flex items-center gap-2">
         <Search size={16} className="shrink-0 text-muted-foreground/70" />
         <input
+          name="chat-member-search"
           value={term}
           onChange={(event) => void searchFor(event.target.value)}
-          placeholder="ابحث باسم العضو أو معرِّفه"
-          aria-label="البحث عن عضو"
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+          placeholder={copy.searchPlaceholder}
+          aria-label={copy.searchLabel}
+          autoComplete="off"
+          spellCheck={false}
+          className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         />
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            aria-label="إغلاق البحث"
+            aria-label={copy.closeSearch}
             className="rounded-lg p-1 text-muted-foreground/70 transition-safe hover:bg-accent hover:text-foreground"
           >
             <X size={16} />
@@ -79,10 +106,10 @@ export function MemberPicker({
         )}
       </div>
 
-      {busy && <p className="mt-2 text-xs text-muted-foreground/70">جاري البحث...</p>}
+      {busy && <p className="mt-2 text-xs text-muted-foreground/70">{copy.searching}</p>}
 
       {!busy && isMemberSearchable(term) && results.length === 0 && (
-        <p className="mt-2 text-xs text-muted-foreground/70">لا نتائج</p>
+        <p className="mt-2 text-xs text-muted-foreground/70">{copy.noResults}</p>
       )}
 
       {results.length > 0 && (
@@ -115,7 +142,7 @@ export function MemberPicker({
                       {peer.name ?? peer.username}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground/70">
-                      {present ? 'في المجموعة' : `@${peer.username}`}
+                      {present ? copy.inGroup : `@${peer.username}`}
                     </span>
                   </span>
                   {multiple && !present && (

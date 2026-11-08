@@ -887,7 +887,7 @@ function GroupRoster({
           />
 
           {selected.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={CHATS_LIST_COPY.invitees}>
+            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={CHAT_THREAD_COPY.invitees}>
               {selected.map((member) => (
                 <li
                   key={member.id}

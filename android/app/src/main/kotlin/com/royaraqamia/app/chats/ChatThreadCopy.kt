@@ -79,4 +79,5 @@ object ChatThreadCopy {
     const val SEND_FAILED = "تعذّر إرسال الرسالة"
     const val RETRY = "إعادة المحاولة"
     const val LOAD_FAILED = "تعذّر تحميل المحادثة. أعد المحاولة."
+    const val INVITEES = "المدعوون"
 }
