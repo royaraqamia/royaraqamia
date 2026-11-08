@@ -138,8 +138,9 @@
     },
     {
       "surface": "community-post",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityPostScreen.kt",
+      "reason": "The post, its publisher and its Markdown body are drawn (#922), and switched off until the visual gate passes for it: the shell hands `/community/<slug>` to the document in the meantime (#872, ADR-0117).",
+      "enabled": false
     },
     {
       "surface": "news",

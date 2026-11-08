@@ -6,6 +6,7 @@ const RATE_LIMIT_MESSAGE = 'تم تجاوز حدّ الطلب: البحث في �
 
 const mockLoadCommunitySearch = vi.fn();
 const mockLoadCommunityIndex = vi.fn();
+const mockGetCommunityPost = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockGetClientIp = vi.fn((_request: NextRequest) => IP);
 const mockPolicy = vi.fn((ip: string) => ({
@@ -30,6 +31,10 @@ vi.mock('@/backend/loaders/community', () => ({
   loadCommunityIndex: (...args: unknown[]) => mockLoadCommunityIndex(...args),
 }));
 
+vi.mock('@/backend/controllers/community', () => ({
+  getCommunityPost: (...args: unknown[]) => mockGetCommunityPost(...args),
+}));
+
 vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: (config: unknown) => mockCheckRateLimitApi(config),
 }));
@@ -51,6 +56,7 @@ vi.mock('@/backend/transport/http-result', () => ({
 
 import { GET as searchGET } from '@/app/api/community/search/route';
 import { GET as indexGET } from '@/app/api/community/index/route';
+import { GET as postGET } from '@/app/api/community/[slug]/route';
 
 type RouteResponse = { status: number; data: unknown };
 
@@ -70,6 +76,7 @@ beforeEach(() => {
   mockCheckRateLimitApi.mockResolvedValue(null);
   mockLoadCommunitySearch.mockResolvedValue({ people: [], posts: [] });
   mockLoadCommunityIndex.mockResolvedValue({ posts: [], nextCursor: null });
+  mockGetCommunityPost.mockResolvedValue({ status: 200, body: { post: {}, postTags: [] } });
 });
 
 describe('GET /api/community/search', () => {
@@ -184,5 +191,29 @@ describe('GET /api/community/index', () => {
     expect(res.status).toBe(429);
     expect(body(res).error).toBe(RATE_LIMIT_MESSAGE);
     expect(mockLoadCommunityIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/community/[slug]', () => {
+  it('passes the route slug to the controller', async () => {
+    const res = (await postGET(request(), {
+      params: Promise.resolve({ slug: 'my-post' }),
+    })) as unknown as RouteResponse;
+
+    expect(mockGetCommunityPost).toHaveBeenCalledWith('my-post');
+    expect(res.status).toBe(200);
+  });
+
+  it('answers the controller’s refusal unchanged', async () => {
+    mockGetCommunityPost.mockResolvedValue({
+      status: 404,
+      body: { error: 'المنشور غير موجود.' },
+    });
+
+    const res = (await postGET(request(), {
+      params: Promise.resolve({ slug: 'missing-post' }),
+    })) as unknown as RouteResponse;
+
+    expect(res.status).toBe(404);
   });
 });

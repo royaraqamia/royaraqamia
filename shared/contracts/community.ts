@@ -55,6 +55,29 @@ export const CommunityIndexResponseSchema = z.object({
   nextCursor: z.string().nullable().optional(),
 });
 
+/** A public tag on a community post, projected the way the page draws it. */
+export const PostTagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+});
+
+/**
+ * `GET /api/community/[slug]`: one published post, as the post screen reads it.
+ *
+ * The page reads the same loader server-side; this route is that read as a body
+ * so the app decodes the post, its public publisher and its tags rather than a
+ * narrower projection. The post is the feed's row (`PostSummarySchema`) with its
+ * publisher joined, so the two community surfaces cannot disagree about what a
+ * post is.
+ */
+export const CommunityPostResponseSchema = z.object({
+  post: PostSummarySchema,
+  postTags: z.array(PostTagSchema),
+});
+
+export type CommunityPostResponse = z.infer<typeof CommunityPostResponseSchema>;
+
 export const PostSchema = z.object({
   slug: z
     .string()

@@ -170,7 +170,7 @@ export const CONTRACTS = [
   {
     module: 'shared/contracts/community',
     file: 'CommunityContracts.kt',
-    schemas: ['CommunityIndexResponseSchema'],
+    schemas: ['CommunityIndexResponseSchema', 'CommunityPostResponseSchema'],
   },
   // BlogPress (#952): the snapshot the app's store merges and the two bodies its
   // Outbox replays — the delete and the restore of a tombstoned post. The read is

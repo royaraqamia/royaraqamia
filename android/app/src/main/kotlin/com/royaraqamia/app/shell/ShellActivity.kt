@@ -40,6 +40,7 @@ import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
+import com.royaraqamia.app.community.CommunityPostScreen
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.consultation.ConsultationScreen
 import com.royaraqamia.app.contracts.ApiResult
@@ -394,7 +395,20 @@ class ShellActivity : ComponentActivity() {
                                 val conversationId = ChatRoutes.idOf(current)
                                 val unlock = LinksnapRoutes.codeOf(current)
                                 val quranSurah = QuranRoutes.surahOf(current)
+                                val postSlug = CommunityRoutes.slugOf(current)
                                 when {
+                                    // One public post (#922): the page's own
+                                    // Markdown body, drawn natively and off until
+                                    // the visual gate passes (ADR-0117), so the
+                                    // document still opens on top of it.
+                                    postSlug != null ->
+                                        CommunityPostScreen(
+                                            slug = postSlug,
+                                            repository = graph.communityPost,
+                                            onOpenProfile = { username ->
+                                                openRoute(ProfileRoutes.profileOf(username))
+                                            },
+                                        )
                                     quranSurah != null ->
                                         QuranSurahRoute(
                                             repository = graph.quran,
