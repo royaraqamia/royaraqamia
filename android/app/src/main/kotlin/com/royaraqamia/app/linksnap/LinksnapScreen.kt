@@ -76,9 +76,9 @@ import kotlinx.serialization.json.jsonPrimitive
  *
  * The page at `/account/links` is a member's own LinkSnap rows: the sync pill,
  * then one card per link carrying the code chip, the status pill, the protected
- * pill, the Hijri date pill and the destination. That is what this screen draws;
- * the bulk bar, the row actions and the edit dialog are the next slices (#942,
- * #943, #944) and are deliberately not here.
+ * pill, the Hijri date pill and the destination. The bulk bar (#942), the row
+ * actions and QR dialog (#943) and the edit dialog (#944) are the same page, and
+ * the surface is switched on in `docs/mobile/screens.json` by this change.
  *
  * The order of the reads is HabitFlow's (#649) and SpendTrack's (#653), not a
  * third opinion: [LinksnapRepository.links] answers from the database and is
@@ -87,9 +87,9 @@ import kotlinx.serialization.json.jsonPrimitive
  * pull run beside them and never in front of them: a failure is a
  * [SyncPillState], not an empty list.
  *
- * The screen stays off the shell's native routes (`docs/mobile/screens.json`
- * keeps `enabled: false`) until the whole dashboard is the page, so the document
- * still opens on top of it (ADR-0117).
+ * It is on the shell's native routes now (`NativeSurfaces`) because all four
+ * gated states - the row, the bulk bar, the QR dialog and the edit dialog - pass
+ * `check:visual` (ADR-0118).
  */
 @Composable
 fun LinksnapScreen(
@@ -109,6 +109,7 @@ fun LinksnapScreen(
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
     var copiedCode by remember { mutableStateOf<String?>(null) }
     var qrRow by remember { mutableStateOf<LinksnapLinkRow?>(null) }
+    var editing by remember { mutableStateOf<LinksnapLinkRow?>(null) }
     var qrState by remember { mutableStateOf<LinksnapQrUiState>(LinksnapQrUiState.Loading) }
     var qrAttempt by remember { mutableStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
@@ -292,7 +293,7 @@ fun LinksnapScreen(
             onCopyLink = ::copyLink,
             onShareLink = ::shareLink,
             onAnalyticsLink = { onOpenDocument() },
-            onEditLink = { onOpenDocument() },
+            onEditLink = { editing = it },
             onQrLink = ::openQr,
             onDeleteLink = ::deleteLink,
             modifier = Modifier.fillMaxSize(),
@@ -313,6 +314,18 @@ fun LinksnapScreen(
                 open = true,
                 onDismiss = { qrRow = null },
                 onRetry = { qrAttempt += 1 },
+            )
+        }
+
+        editing?.let { row ->
+            LinksnapEditDialog(
+                row = row,
+                siteUrl = siteUrl,
+                online = Connectivity.isOnline(context),
+                repository = repository,
+                onDismiss = { editing = null },
+                onSaved = { scope.launch { sync() } },
+                onCopy = onCopy,
             )
         }
     }

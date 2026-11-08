@@ -44,9 +44,10 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * page reads (ADR-0098). The toolbar owns the delete confirmation because the
  * page's row owns it; the screen above decides what the write is.
  *
- * The actions that the page draws as a drawer or a dialog - analytics (#918) and
- * edit (#944) - are handed to the caller, which hands the route to the document
- * until those slices draw them natively. QR is the dialog in [LinksnapQrDialog].
+ * The action the page draws as a drawer - analytics (#918) - is handed to the
+ * caller, which hands the route to the document until that slice draws it
+ * natively. Edit (#944) and QR (#943) are the dialogs in [LinksnapEditDialog]
+ * and [LinksnapQrDialog].
  */
 @Composable
 internal fun LinksnapRowActions(

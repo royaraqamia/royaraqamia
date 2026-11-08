@@ -1,0 +1,20 @@
+{
+  "surface": "account-links",
+  "elements": {
+    "title": {
+      "height": 24.000002,
+      "fontSize": 16.0,
+      "fontWeight": 700,
+      "lineHeight": 24.0
+    },
+    "description": {
+      "height": 32.0,
+      "fontSize": 12.0,
+      "lineHeight": 16.0
+    },
+    "header": {
+      "width": 358.9091,
+      "height": 94.90909
+    }
+  }
+}

@@ -7,7 +7,7 @@ import {
   CalendarClock,
   Globe,
   Link2,
-  AlertCircle,
+  CircleAlert,
   Clock,
   Check,
   Pencil,
@@ -47,6 +47,7 @@ import {
   linkEditReducer,
   type LinkEditBaseline,
 } from './link-edit-dialog.reducer';
+import { LINK_EDIT_DIALOG_COPY } from './link-edit-dialog-copy';
 
 interface LinkEditDialogProps {
   open: boolean;
@@ -191,7 +192,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
     } else if (!currentPasswordProtected) {
       dispatch({
         type: 'passwordErrorSet',
-        message: 'يرجى كتابة كلمة المرور لتفعيل الحماية، أو إيقاف تفعيل المفتاح.',
+        message: LINK_EDIT_DIALOG_COPY.passwordRequired,
       });
       return;
     }
@@ -263,23 +264,32 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
           />
 
           {/* Dialog Header */}
-          <DialogHeader className="px-6 py-4.5 sm:px-7 sm:py-5 text-start border-b border-border/50 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/40 shrink-0">
+          <DialogHeader
+            data-visual="link-edit-header"
+            className="px-6 py-4.5 sm:px-7 sm:py-5 text-start border-b border-border/50 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/40 shrink-0"
+          >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0 flex items-center justify-center">
                   <Pencil className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                    <span>تعديل الرَّابط المُختصر</span>
+                  <DialogTitle
+                    data-visual="link-edit-title"
+                    className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2"
+                  >
+                    <span>{LINK_EDIT_DIALOG_COPY.title}</span>
                     {hasChanges && (
                       <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         تعديلات معلقة
                       </span>
                     )}
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرَّابط.
+                  <DialogDescription
+                    data-visual="link-edit-description"
+                    className="text-xs text-muted-foreground mt-0.5"
+                  >
+                    {LINK_EDIT_DIALOG_COPY.description}
                   </DialogDescription>
                 </div>
               </div>
@@ -360,7 +370,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
                 >
                   <Globe className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                  <span>الرَّابط الوجهة المستهدف (Destination URL)</span>
+                  <span>{LINK_EDIT_DIALOG_COPY.urlLabel}</span>
                   <span className="text-destructive font-bold" aria-hidden="true">
                     *
                   </span>
@@ -402,7 +412,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
                 >
                   <Pencil className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                  <span>الرمز المُختصَر (Slug)</span>
+                  <span>{LINK_EDIT_DIALOG_COPY.slugLabel}</span>
                 </label>
                 <span className="text-[11px] font-mono text-muted-foreground">
                   {form.code.length}/16
@@ -450,29 +460,27 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
                       aria-hidden="true"
                     />
-                    جاري فحص توفر الرمز...
+                    {LINK_EDIT_DIALOG_COPY.slugChecking}
                   </span>
                 ) : slugStatus === 'available' ? (
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5" aria-hidden="true" />
                     {form.code === code
-                      ? 'هذا هو الرمز المخصص الحالي.'
-                      : 'الرمز متاح وجاهز للاستخدام!'}
+                      ? LINK_EDIT_DIALOG_COPY.slugCurrent
+                      : LINK_EDIT_DIALOG_COPY.slugAvailable}
                   </span>
                 ) : slugStatus === 'taken' ? (
                   <span className="text-destructive flex items-center gap-1.5">
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    {slugError || 'هذا الرمز مأخوذ من قبل رابط آخر.'}
+                    <CircleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {slugError || LINK_EDIT_DIALOG_COPY.slugTaken}
                   </span>
                 ) : slugStatus === 'offline' ? (
                   <span className="text-muted-foreground flex items-center gap-1.5">
                     <CloudOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    يتطلَّب الاتصال لفحص توفُّر الرمز؛ سيُحفظ وسيُتحقَّق عند المزامنة.
+                    {LINK_EDIT_DIALOG_COPY.slugOffline}
                   </span>
                 ) : (
-                  <span className="text-muted-foreground/70">
-                    يتيح من 3 إلى 16 حرفًا (أحرف إنجليزية، أرقام، - و _)
-                  </span>
+                  <span className="text-muted-foreground/70">{LINK_EDIT_DIALOG_COPY.slugHint}</span>
                 )}
               </div>
             </div>
@@ -502,7 +510,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-foreground">
-                        تاريخ ووقت انتهاء الصلاحية
+                        {LINK_EDIT_DIALOG_COPY.expiryTitle}
                       </h4>
                       <p className="text-[11px] text-muted-foreground">
                         تعطيل الرَّابط تلقائياً بعد حلول هذا الموعد
@@ -621,7 +629,9 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       <KeyRound className="w-4 h-4" aria-hidden="true" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-foreground">الحماية بكلمة مرور</h4>
+                      <h4 className="text-xs font-bold text-foreground">
+                        {LINK_EDIT_DIALOG_COPY.passwordTitle}
+                      </h4>
                       <p className="text-[11px] text-muted-foreground">
                         طلب رمز أمان سري قبل التوجيه إلى الرَّابط الأصلي
                       </p>
@@ -676,8 +686,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                         }
                         placeholder={
                           currentPasswordProtected
-                            ? '•••••••••••• (اتركه فارغاً للإبقاء على الحالية)'
-                            : 'أدخل كلمة مرور قوية'
+                            ? LINK_EDIT_DIALOG_COPY.passwordKeepPlaceholder
+                            : LINK_EDIT_DIALOG_COPY.passwordPlaceholder
                         }
                         autoComplete="new-password"
                         aria-invalid={form.passwordError ? true : undefined}
@@ -705,7 +715,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                         role="alert"
                         className="text-xs font-medium text-destructive flex items-center gap-1.5"
                       >
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        <CircleAlert className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                         {form.passwordError}
                       </p>
                     )}
@@ -722,7 +732,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                 aria-live="polite"
                 className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-xs font-medium leading-normal animate-in fade-in duration-200"
               >
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <CircleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <span className="flex-1">{updateError}</span>
               </div>
             )}
@@ -730,6 +740,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
             {/* Footer Action Buttons */}
             <DialogActions
               onCancel={onClose}
+              cancelLabel={LINK_EDIT_DIALOG_COPY.cancel}
               className="pt-4 sm:pt-5 border-t border-border/50 dark:border-neutral-800/80"
               leading={
                 <div className="text-[11px] text-muted-foreground/80 hidden sm:block">
@@ -754,10 +765,10 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                 {updateLoading ? (
                   <>
                     <LoaderCircle className="w-4 h-4 animate-spin opacity-90" aria-hidden="true" />
-                    <span>جاري حفظ التعديلات...</span>
+                    <span>{LINK_EDIT_DIALOG_COPY.saving}</span>
                   </>
                 ) : (
-                  <span>حفظ التغييرات</span>
+                  <span>{LINK_EDIT_DIALOG_COPY.save}</span>
                 )}
               </HeroCtaButton>
             </DialogActions>

@@ -130,7 +130,7 @@
     {
       "surface": "account-links",
       "phase": "core",
-      "state": "todo",
+      "state": "native",
       "issue": "#944"
     },
     {

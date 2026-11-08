@@ -1,0 +1,36 @@
+{
+  "surface": "account-links",
+  "component": "account-links-edit",
+  "web": {
+    "file": "frontend/ui/linksnap/link-edit-dialog-copy.ts",
+    "export": "LINK_EDIT_DIALOG_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEditCopy.kt",
+    "object": "LinksnapEditCopy"
+  },
+  "notes": {
+    "source": "The owned-link edit dialog's words, in both clients (#944). The page's `frontend/ui/linksnap/link-edit-dialog.tsx` is the reference: the title, the instruction, the destination and slug labels, the slug check's five faces, the expiry and password cards, and the save action. The app draws the same dialog from the same strings, so neither client spells a label.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "تعديل الرَّابط المُختصر",
+    "description": "قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرَّابط.",
+    "urlLabel": "الرَّابط الوجهة المستهدف (Destination URL)",
+    "slugLabel": "الرمز المُختصَر (Slug)",
+    "slugHint": "يتيح من 3 إلى 16 حرفًا (أحرف إنجليزية، أرقام، - و _)",
+    "slugChecking": "جاري فحص توفر الرمز...",
+    "slugAvailable": "الرمز متاح وجاهز للاستخدام!",
+    "slugCurrent": "هذا هو الرمز المخصص الحالي.",
+    "slugTaken": "هذا الرمز مأخوذ من قبل رابط آخر.",
+    "slugOffline": "يتطلَّب الاتصال لفحص توفُّر الرمز؛ سيُحفظ وسيُتحقق عند المزامنة.",
+    "expiryTitle": "تاريخ ووقت انتهاء الصلاحية",
+    "passwordTitle": "الحماية بكلمة مرور",
+    "passwordPlaceholder": "أدخل كلمة مرور قوية",
+    "passwordKeepPlaceholder": "•••••••••••• (اتركه فارغاً للإبقاء على الحالية)",
+    "passwordRequired": "يرجى كتابة كلمة المرور لتفعيل الحماية، أو إيقاف تفعيل المفتاح.",
+    "save": "حفظ التغييرات",
+    "saving": "جاري حفظ التعديلات...",
+    "cancel": "إلغاء"
+  }
+}

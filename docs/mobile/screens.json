@@ -67,9 +67,8 @@
     },
     {
       "surface": "account-links",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
-      "reason": "The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt"
     },
     {
       "surface": "account-posts",
