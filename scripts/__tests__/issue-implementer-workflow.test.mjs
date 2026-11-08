@@ -135,7 +135,7 @@ describe('the issue implementer merges what it watched go green', () => {
     const repairAt = workflow.indexOf('Repair the failing checks');
     const recheckAt = workflow.indexOf('Watch the repaired pull request');
     const repair = workflow.slice(repairAt, recheckAt);
-    expect(repair).toContain('gh pr checkout');
+    expect(repair).toContain('git checkout -B "$branch" FETCH_HEAD');
     expect(repair).toContain('opencode run --model');
     expect(repair).not.toContain('anomalyco/opencode/github@');
     expect(repair).toContain('x-access-token:${AGENT_PUSH_TOKEN}@github.com');
@@ -193,8 +193,42 @@ describe('the issue implementer merges what it watched go green', () => {
     const repairAt = workflow.indexOf('Repair the failing checks');
     const recheckAt = workflow.indexOf('Watch the repaired pull request');
     const repair = workflow.slice(repairAt, recheckAt);
+    // 2026-11-08: `gh pr checkout` died with "Invalid username or token" while the PAT
+    // push further down still worked. The opencode action leaves
+    // `http.https://github.com/.extraheader` in this repository's git config, and an
+    // extraheader outranks the helper `gh auth setup-git` writes - so the branch is
+    // fetched with its token inline in the URL and the stale header is dropped first.
+    expect(repair).toContain('git config --local --unset-all http.https://github.com/.extraheader');
     expect(repair).toContain('gh auth setup-git');
-    expect(repair.indexOf('gh auth setup-git')).toBeLessThan(repair.indexOf('gh pr checkout'));
+    expect(repair.indexOf('unset-all http.https://github.com/.extraheader')).toBeLessThan(
+      repair.indexOf('git fetch')
+    );
+    expect(repair).toContain('gh pr view "$PR" --json headRefName');
+    expect(repair).toContain('git fetch --no-tags "https://x-access-token:${GH_TOKEN}@github.com');
+    expect(repair).toContain('git checkout -B "$branch" FETCH_HEAD');
+  });
+
+  it('proves the push credential before the repair spends its time', () => {
+    const repairAt = workflow.indexOf('Repair the failing checks');
+    const recheckAt = workflow.indexOf('Watch the repaired pull request');
+    const repair = workflow.slice(repairAt, recheckAt);
+    // A secret that exists is not a secret that works, and a dead PAT is not something
+    // a repair can fix: the round warns, says so on the pull request, and stops.
+    expect(repair).toContain(
+      'git ls-remote "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com'
+    );
+    expect(repair.indexOf('git ls-remote')).toBeLessThan(repair.indexOf('opencode run --model'));
+    expect(repair).toContain('AGENT_PUSH_TOKEN does not authenticate');
+  });
+
+  it('reads a round the clock killed as a timeout, not as a missing result file', () => {
+    // 2026-11-07's round 4 spent 90 minutes on #924 and reported "produced no result
+    // file" - true, and useless: the implement step's own cap is what stopped it.
+    expect(workflow).toContain('ROUND_STARTED: ${{ steps.cut.outputs.started }}');
+    expect(workflow).toContain('timedOut');
+    expect(workflow).toContain('90-minute limit');
+    // The prompt has to say it too: the agent is the one who can stop in time.
+    expect(workflow).toContain('The clock is part of the spec');
   });
 
   it('resolves the conflict with main before it looks for a failing check', () => {

@@ -492,11 +492,16 @@ jobs:
       # goes inline in the fetch URL rather than into a credential helper: nothing is
       # persisted, so the opencode action's own token stays the only one it sees.
       - name: Cut the branch from the current main
+        id: cut
         if: steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          # The clock this round started, for the outcome step: a run the implement
+          # step's 90-minute cap kills writes no result file, and the elapsed time is
+          # the only thing that tells that apart from a run that never started.
+          echo "started=$(date +%s)" >> "$GITHUB_OUTPUT"
           git fetch --no-tags --depth=1 \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main
           git reset --hard FETCH_HEAD
@@ -608,6 +613,8 @@ jobs:
 
             When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`). When the issue names a gated surface, or the diff touches `shared/visual/`, `docs/mobile/screens.json` or the app's visual tests, run `npm run check:visual`. Do not run `npm run build` unless nothing cheaper would catch a broken build - next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
             5. Write /tmp/result.json with the Write tool: `{"status":"implemented"}` on success, or `{"status":"cannot","reason":"<one sentence>"}` on any failure. This file is how the workflow learns the outcome, so it is required.
+
+            The clock is part of the spec. This step is killed at 90 minutes, and a run the clock kills writes no result file at all: the round reports nothing, the issue keeps nothing, and the next round starts from the same place. #924 spent a whole round that way on 2026-11-07. So when you are past roughly an hour and the issue's remaining acceptance criteria are not close, stop instead of starting another slice, and write `cannot` naming what is left. A `cannot` that names the rest is how a large issue gets sliced; a timeout spends the round for nothing.
             6. Your final response becomes the pull request. Its first line becomes the title: start it with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. The body MUST contain a line `Closes #${{ steps.select.outputs.issue_number }}`, then (1) what you changed and why, including any migration applied and its exact name, (2) an `## Evidence` section: every command you ran, its final output, and the files that changed - the claim lives here or it is not claimed, (3) the gates you ran and any you deliberately skipped and why, and (4) when the diff draws or changes a screen, one line per screen naming what you checked for RTL, keyboard and focus, the empty state, the error state and the loading state - with `web-design-guidelines` as the review that produced it. A screen line you cannot write honestly is a screen you have not finished. The checks on this pull request run the whole suite, so do not claim more than you ran.
 
             Do not create scratch files or logs in the repository. Leave the working tree otherwise clean.
@@ -816,23 +823,43 @@ jobs:
             exit 0
           fi
 
+          # A secret that exists is not a secret that works, and a dead or un-scoped PAT
+          # is not a code defect: no amount of repair changes it. 2026-11-08's round 3
+          # spent the repair on it and only the last line failed. Proving the credential
+          # now, with the cheapest read git can make, turns that into one warning and a
+          # comment a person can act on.
+          if ! git ls-remote "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" >/dev/null 2>&1; then
+            gh pr comment "$PR" --body "A repair is needed, but \`AGENT_PUSH_TOKEN\` does not authenticate any more, so a repaired commit could not start CI. Replace the secret with a fine-grained PAT (\`Contents: Read and write\`) and the next round repairs #$PR."
+            echo "::warning title=AGENT_PUSH_TOKEN does not authenticate::No repair can be measured; the landing workflow takes over."
+            exit 0
+          fi
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
           # Checkout ran with `persist-credentials: false` (the opencode action needs a
           # remote with no stored credential), so this step starts with no way to
-          # authenticate: `GH_TOKEN` is read by `gh`, not by `git`, and the first run of
-          # this step died on the very next line with "Invalid username or token". The
-          # helper is configured here, after the action has finished, so it cannot collide
-          # with the action's own token.
+          # authenticate. `gh auth setup-git` alone is not enough: the opencode action
+          # leaves `http.https://github.com/.extraheader` — an `Authorization` header
+          # carrying the app token it pushed the branch with — in this repository's git
+          # config, and an extraheader outranks a credential helper. So `gh pr checkout`
+          # presented that token, by then dead, and the step died mid-checkout with
+          # "Invalid username or token" while the PAT push below still worked.
+          git config --local --unset-all http.https://github.com/.extraheader || true
           gh auth setup-git
-          gh pr checkout "$PR"
+
+          # And the branch is fetched with its token inline in the URL, the way "Cut the
+          # branch from the current main" already does it: no helper, no stored credential,
+          # nothing for a leftover header to outrank.
+          branch=$(gh pr view "$PR" --json headRefName --jq .headRefName)
+          git fetch --no-tags "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
+          git checkout -B "$branch" FETCH_HEAD
 
           # A pull request that conflicts with `main` gets no checks at all: GitHub cannot
           # build the merge ref the workflows run against, so the watch steps above saw a
           # rollup of skipped checks, called it green, and the merge was refused. The
           # conflict is the failure, so resolve it here before looking for anything else.
-          git fetch origin main
+          git fetch --no-tags "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main
           if ! git merge --no-edit FETCH_HEAD >/dev/null; then
             echo "::notice title=The base moved::The conflict with main is part of this repair."
           fi
@@ -928,6 +955,7 @@ jobs:
           CHECKS: ${{ steps.recheck.outputs.status || steps.checks.outputs.status }}
           PR_NUMBER: ${{ steps.checks.outputs.pr }}
           CHECK_REASON: ${{ steps.recheck.outputs.reason || steps.checks.outputs.reason }}
+          ROUND_STARTED: ${{ steps.cut.outputs.started }}
         with:
           script: |
             const fs = require('fs');
@@ -936,7 +964,23 @@ jobs:
             const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null;
             const checkReason = process.env.CHECK_REASON || '';
 
-            let result = { status: 'cannot', reason: 'The implementer produced no result file.' };
+            // A round the clock killed leaves no result file, exactly like a round that
+            // never started work. The elapsed time is what tells them apart: the implement
+            // step is capped at 90 minutes, so a round still silent at 85 spent its whole
+            // budget on an issue that did not fit one round - which slicing fixes and
+            // another attempt does not.
+            const started = Number(process.env.ROUND_STARTED || '0');
+            const minutes = started ? Math.round((Date.now() / 1000 - started) / 60) : 0;
+            const timedOut = minutes >= 85;
+
+            let result = {
+              status: 'cannot',
+              reason: timedOut
+                ? 'The round hit the implement step\u2019s 90-minute limit (' +
+                  minutes +
+                  ' min) before it wrote a result file. The issue is too large for one round: slice it rather than retry it.'
+                : 'The implementer produced no result file.',
+            };
             if (fs.existsSync('/tmp/result.json')) {
               let raw = fs.readFileSync('/tmp/result.json', 'utf8').trim();
               raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
