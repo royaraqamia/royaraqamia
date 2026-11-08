@@ -71,7 +71,7 @@ export const LOCAL_STORE_ROOTS: readonly LocalStoreRoot[] = [
   },
   {
     product: 'blogpress',
-    root: 'frontend/ui/blogpress/blogpress-dashboard.tsx',
+    root: 'frontend/ui/account/account-posts-view.tsx',
     snapshot: 'frontend/state/blogpress/use-blogpress-dashboard.ts',
   },
   {
