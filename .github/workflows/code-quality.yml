@@ -49,6 +49,12 @@ jobs:
       - name: Agent Doors Agree
         run: npm run check:agent-behaviour
 
+      # A headless run has nobody to answer a permission prompt, so every surface
+      # must resolve to allow or deny (ADR-0142): the config is checked against the
+      # CLI's own defaults, and one probe that resolves to `ask` fails the job.
+      - name: No Permission Prompt Is Reachable
+        run: npm run check:runner-permissions
+
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 

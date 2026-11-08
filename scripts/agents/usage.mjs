@@ -203,22 +203,7 @@ export async function record() {
       ? `${env('GITHUB_SERVER_URL')}/${env('GITHUB_REPOSITORY')}/actions/runs/${env('GITHUB_RUN_ID')}`
       : null);
 
-  if (!stats) {
-    log(`no usage reported by the CLI for ${workflow}/${round}; nothing recorded.`);
-    summary(`- ${workflow} (${round}): no usage reported (the CLI is absent or printed no JSON).`);
-    return;
-  }
-
-  const dollars = allowance === null ? 'unknown' : `$${allowance.toFixed(4)}`;
-  summary(`- ${workflow} (${round}): ${dollars} against the Go allowance.`);
-
-  const db = supabase();
-  if (!db) {
-    log('no Supabase credentials; the measurement stays in the run summary.');
-    return;
-  }
-
-  const row = {
+  const identity = {
     workflow,
     run_id: String(runId),
     attempt,
@@ -226,6 +211,35 @@ export async function record() {
     run_url: runUrl,
     model: env('MODEL') || null,
     billing_source: env('BILLING_SOURCE') || null,
+  };
+
+  // A step the clock killed reports nothing, and for a long time that meant it
+  // left no row either: a round could spend ninety minutes of the allowance and
+  // be invisible to the cap it is measured against. The row is written with no
+  // dollar figure rather than a guess, so the ledger can be asked how many
+  // rounds went unmeasured (ADR-0142).
+  if (!stats) {
+    const reason = 'the CLI reported no usage for this step (no readable `opencode stats` payload)';
+    log(`no usage reported by the CLI for ${workflow}/${round}; recording it as unreported.`);
+    summary(`- ${workflow} (${round}): usage unreported (${reason}).`);
+    await writeRow({
+      ...identity,
+      cost_usd: null,
+      allowance_usd: null,
+      input_tokens: null,
+      output_tokens: null,
+      cache_read_tokens: null,
+      source: 'unreported',
+      raw: { reason },
+    });
+    return;
+  }
+
+  const dollars = allowance === null ? 'unknown' : `$${allowance.toFixed(4)}`;
+  summary(`- ${workflow} (${round}): ${dollars} against the Go allowance.`);
+
+  await writeRow({
+    ...identity,
     cost_usd: cost,
     allowance_usd: allowance,
     input_tokens: tokens.input,
@@ -233,7 +247,17 @@ export async function record() {
     cache_read_tokens: tokens.cacheRead,
     source: 'opencode-stats',
     raw: stats,
-  };
+  });
+  log(`recorded ${workflow}/${round}: ${dollars}.`);
+}
+
+/** Upsert one ledger row. Best-effort: a missing secret or a refused row is a line, not a failure. */
+async function writeRow(row) {
+  const db = supabase();
+  if (!db) {
+    log('no Supabase credentials; the measurement stays in the run summary.');
+    return false;
+  }
 
   const response = await fetch(
     `${db.url}/rest/v1/agent_usage?on_conflict=workflow,run_id,attempt,round`,
@@ -246,9 +270,9 @@ export async function record() {
 
   if (!response.ok) {
     log(`the ledger refused the row: ${response.status} ${(await response.text()).slice(0, 200)}`);
-    return;
+    return false;
   }
-  log(`recorded ${workflow}/${round}: ${dollars}.`);
+  return true;
 }
 
 /** The sum of `allowance_usd` since `sinceMs` ago. `null` when unreadable. */

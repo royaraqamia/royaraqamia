@@ -1,9 +1,9 @@
 name: 'OpenCode Runner Setup'
 description: >-
   Prepares a runner for an OpenCode agent job: installs the pinned Vercel CLI and
-  writes the runner-only OpenCode config (Supabase MCP server, compaction pruning
-  and the headless permission block). Shared by the autonomous agent workflows so
-  the setup cannot drift between them.
+  writes the runner-only OpenCode config from `.github/opencode/runner.json`
+  (Supabase MCP server, compaction pruning and the headless permission block).
+  Shared by the autonomous agent workflows so the setup cannot drift between them.
 
 inputs:
   supabase-project-ref:
@@ -25,37 +25,14 @@ runs:
         vercel --version
 
     - name: Configure OpenCode (runner-only)
-      # The repository carries no OpenCode config of its own, so the settings an
-      # autonomous run needs live here instead. `compaction.prune` is not a
-      # default (it is off upstream): pruning old tool output is what keeps the
-      # context of a long implementer or repair run from filling with stale reads.
+      # The settings an autonomous run needs live in `.github/opencode/runner.json`
+      # rather than in a heredoc here, so a pull request can diff them and
+      # `npm run check:runner-permissions` can prove no permission prompt is
+      # reachable: a runner has nobody to answer one, and round 3 of 2026-11-08
+      # spent 72 minutes proving it (ADR-0142). `compaction.prune` is not a
+      # default upstream, and pruning old tool output is what keeps the context
+      # of a long implementer or repair run from filling with stale reads.
       shell: bash
       env:
         SUPABASE_PROJECT_REF: ${{ inputs.supabase-project-ref }}
-      run: |
-        mkdir -p "$HOME/.config/opencode"
-        cat > "$HOME/.config/opencode/opencode.json" <<EOF
-        {
-          "\$schema": "https://opencode.ai/config.json",
-          "compaction": {
-            "prune": true
-          },
-          "mcp": {
-            "supabase": {
-              "type": "remote",
-              "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}&features=database,debugging,docs",
-              "enabled": true,
-              "oauth": false,
-              "headers": {
-                "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
-              }
-            }
-          },
-          "permission": {
-            "external_directory": {
-              "/tmp/*": "allow"
-            },
-            "doom_loop": "deny"
-          }
-        }
-        EOF
+      run: node "$GITHUB_WORKSPACE/scripts/agents/runner-config.mjs" --write

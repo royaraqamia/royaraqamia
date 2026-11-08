@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "compaction": {
+    "prune": true
+  },
+  "mcp": {
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=__SUPABASE_PROJECT_REF__&features=database,debugging,docs",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
+      }
+    }
+  },
+  "permission": {
+    "*": "allow",
+    "external_directory": {
+      "*": "deny",
+      "/tmp/*": "allow",
+      "/home/runner/work/_temp/*": "allow",
+      "$HOME/.local/share/opencode/*": "allow"
+    },
+    "read": {
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow"
+    },
+    "doom_loop": "deny"
+  }
+}
