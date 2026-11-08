@@ -1,7 +1,7 @@
 {
   "surface": "account-links",
   "route": "/account/links",
-  "notes": "The owned-link list at rest (#941): the code chip, the status pill, the protected pill, the Hijri date pill and the destination the page draws for a link. `origin` is the code chip, because the page's frame and the app's frame are different heights and the design this contract owns is the row's own boxes. `capture` is the destination line, because its box is the width the row gives it on both clients and does not depend on whether the badges wrapped: the row's action toolbar is a later slice (#943) and is outside this contract. The destination's width is the row's width on the page and is measured; its height is one line of `text-[13px] leading-relaxed`. Widths of the code chip and the pills are left out deliberately - they are the run of the words and the glyphs, not a decision - and colours are left out too, because they are what the raster proves. The protected pill is drawn for a link the fixture gives a password, so the state records every pill the page's row draws. `bulk-bar` is the bar above the rows with its one fixture row selected (#942): the page's 44-high select-all, its 18-high checkbox, the count line and the four 30-high actions. The bar's height is measured because it is the wrap the page draws at 393 - select-all, the count and the spacer share the first line with clear and copy, and expiry and delete wrap to the second - and `capture` is the bar so the raster proves that wrap. The buttons' widths are left out: they are the run of the words and the glyphs, and the raster is what proves them. The `qr` state (#943) is the dialog the row's QR action opens: the page's title, instruction, short-link label and value, and the header box that holds them. The capture is the header, because the dialog's container is the page's Radix surface and the two clients' chrome is not the same box; the QR matrix itself is proven by the encoder's own round-trip test, not by a raster.",
+  "notes": "The owned-link list at rest (#941): the code chip, the status pill, the protected pill, the Hijri date pill and the destination the page draws for a link. `origin` is the code chip, because the page's frame and the app's frame are different heights and the design this contract owns is the row's own boxes. `capture` is the destination line, because its box is the width the row gives it on both clients and does not depend on whether the badges wrapped: the row's action toolbar is a later slice (#943) and is outside this contract. The destination's width is the row's width on the page and is measured; its height is one line of `text-[13px] leading-relaxed`. Widths of the code chip and the pills are left out deliberately - they are the run of the words and the glyphs, not a decision - and colours are left out too, because they are what the raster proves. The protected pill is drawn for a link the fixture gives a password, so the state records every pill the page's row draws. `bulk-bar` is the bar above the rows with its one fixture row selected (#942): the page's 44-high select-all, its 18-high checkbox, the count line and the four 30-high actions. The bar's height is measured because it is the wrap the page draws at 393 - select-all, the count and the spacer share the first line with clear and copy, and expiry and delete wrap to the second - and `capture` is the bar so the raster proves that wrap. The buttons' widths are left out: they are the run of the words and the glyphs, and the raster is what proves them. The `qr` state (#943) is the dialog the row's QR action opens: the page's title, instruction, short-link label and value, and the header box that holds them. The capture is the header, because the dialog's container is the page's Radix surface and the two clients' chrome is not the same box; the QR matrix itself is proven by the encoder's own round-trip test, not by a raster. The `edit` state (#944) is the dialog the row's edit action opens: the page's title, instruction and the header box that holds them. The capture is the header, because the dialog's container is the page's Radix surface and the app's window is not the same box; the rest of the form is measured by the adapter rather than by a raster.",
   "states": [
     {
       "name": "at-rest",
@@ -226,6 +226,42 @@
             "rowGap",
             "columnGap"
           ]
+        }
+      ]
+    },
+    {
+      "name": "edit",
+      "capture": "header",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='link-edit-title']"
+          },
+          "app": {
+            "tag": "linksnap-edit-title"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "description",
+          "web": {
+            "selector": "[data-visual='link-edit-description']"
+          },
+          "app": {
+            "tag": "linksnap-edit-description"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "header",
+          "web": {
+            "selector": "[data-visual='link-edit-header']"
+          },
+          "app": {
+            "tag": "linksnap-edit-header"
+          },
+          "properties": ["width", "height"]
         }
       ]
     }

@@ -40,6 +40,7 @@ object NativeSurfaces {
             "/account/plan",
             "/account/connected-apps",
             "/linksnap",
+            "/account/links",
             "/rates",
             "/habitflow",
             "/community",

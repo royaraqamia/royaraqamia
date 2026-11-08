@@ -1,0 +1,27 @@
+{
+  "surface": "account-links",
+  "state": "edit",
+  "route": "/account/links",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "height": 24,
+      "fontSize": 16,
+      "fontWeight": 700,
+      "lineHeight": 24
+    },
+    "description": {
+      "height": 32,
+      "fontSize": 12,
+      "lineHeight": 16
+    },
+    "header": {
+      "width": 359,
+      "height": 95
+    }
+  }
+}

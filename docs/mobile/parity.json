@@ -1355,6 +1355,46 @@
       ]
     },
     {
+      "id": "account-links-edit",
+      "surface": "account-links",
+      "issue": "#944",
+      "web": {
+        "route": "app/account/links/page.tsx",
+        "component": "frontend/ui/linksnap/link-edit-dialog.tsx",
+        "copyModule": "frontend/ui/linksnap/link-edit-dialog-copy.ts",
+        "copyExport": "LINK_EDIT_DIALOG_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEditDialog.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEditUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapEditCopy.kt",
+        "copyObject": "LinksnapEditCopy"
+      },
+      "copySource": "shared/copy/account-links-edit.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "slugHint"
+        },
+        {
+          "name": "Checking",
+          "copy": "slugChecking"
+        },
+        {
+          "name": "Available",
+          "copy": "slugAvailable"
+        },
+        {
+          "name": "Taken",
+          "copy": "slugTaken"
+        },
+        {
+          "name": "Offline",
+          "copy": "slugOffline"
+        }
+      ]
+    },
+    {
       "id": "linksnap-unlock",
       "surface": "linksnap-unlock",
       "issue": "#919",

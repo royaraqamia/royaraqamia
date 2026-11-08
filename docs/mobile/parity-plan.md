@@ -43,7 +43,7 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 
 - [ ] **home** `/` — todo
 - [ ] **account** `/account` — todo · #948
-- [ ] **account-links** `/account/links` — todo · #944
+- [x] **account-links** `/account/links` — native · #944
 - [ ] **account-posts** `/account/posts` — todo
 - [ ] **account-submissions** `/account/submissions` — todo · #931
 - [x] **account-plan** `/account/plan` — native · #900
@@ -81,7 +81,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 63 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 64 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -123,10 +123,11 @@ A component is finished when the surface that draws it is native: 63 ported comp
 - [x] `linksnap-page` on **linksnap** · #654
 - [x] `linksnap-shortener` on **linksnap** · #916
 - [x] `linksnap-empty` on **linksnap** · #654
-- [ ] `account-links-row` on **account-links** · #941
-- [ ] `account-links-bulk` on **account-links** · #942
-- [ ] `account-links-actions` on **account-links** · #943
-- [ ] `account-links-qr` on **account-links** · #943
+- [x] `account-links-row` on **account-links** · #941
+- [x] `account-links-bulk` on **account-links** · #942
+- [x] `account-links-actions` on **account-links** · #943
+- [x] `account-links-qr` on **account-links** · #943
+- [x] `account-links-edit` on **account-links** · #944
 - [x] `linksnap-unlock` on **linksnap-unlock** · #919
 - [ ] `chats-list` on **chats** · #819
 - [ ] `chat-new` on **chats** · #934
@@ -149,4 +150,4 @@ A component is finished when the surface that draws it is native: 63 ported comp
 
 ## Where this stands
 
-12 native · 24 to do · 1 blocked of 37 surfaces.
+13 native · 23 to do · 1 blocked of 37 surfaces.

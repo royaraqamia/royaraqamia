@@ -10,6 +10,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.royaraqamia.app.store.linksnap.LinksnapLinkRow
@@ -313,6 +314,62 @@ class LinksnapAccountScreenVisualTest {
         File(dir, "app.json").writeText("$json\n")
         compose
             .onNodeWithTag(LinksnapQrMetrics.HEADER, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
+
+    /**
+     * The edit dialog the row's action opens (#944).
+     *
+     * The dialog is drawn in its resting face on the fixture row: the header
+     * carries the page's title and instruction, and that header is what the
+     * contract measures and captures. The rest of the form is the page's own
+     * fields, written through the store by the adapter rather than by the gate.
+     */
+    @Test
+    fun `the edit dialog records the same numbers as the page`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        LinksnapEditContent(
+                            row = row,
+                            siteUrl = "http://localhost:3000",
+                            online = true,
+                            onDismiss = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val json =
+            """
+            {
+              "surface": "account-links",
+              "elements": {
+                "title": {
+                  "height": ${height(LinksnapEditMetrics.TITLE)},
+                  "fontSize": ${LinksnapEditMetrics.titleSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight},
+                  "lineHeight": ${LinksnapEditMetrics.titleLineHeight.value}
+                },
+                "description": {
+                  "height": ${height(LinksnapEditMetrics.DESCRIPTION)},
+                  "fontSize": ${LinksnapEditMetrics.descriptionSize.value},
+                  "lineHeight": ${LinksnapEditMetrics.descriptionLineHeight.value}
+                },
+                "header": {
+                  "width": ${width(LinksnapEditMetrics.HEADER)},
+                  "height": ${height(LinksnapEditMetrics.HEADER)}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/account-links/edit").apply { mkdirs() }
+        File(dir, "app.json").writeText("$json\n")
+        compose
+            .onNodeWithTag(LinksnapEditMetrics.HEADER, useUnmergedTree = true)
             .captureRoboImage(File(dir, "app.png").path)
     }
 
