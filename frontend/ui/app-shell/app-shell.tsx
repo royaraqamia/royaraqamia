@@ -4,7 +4,7 @@ import * as React from 'react';
 import { GuestModeBanner } from '@/frontend/ui/app-shell/guest-mode-banner';
 
 /**
- * The shell the product apps (BlogPress, LinkSnap, HabitFlow, SpendTrack) mount
+ * The shell the product apps (LinkSnap, HabitFlow, SpendTrack) mount
  * their dashboards in. Every one of them is a secondary page, so the chrome
  * around this content — the floating back control, and the absence of the tab
  * bar — comes from the route-aware pieces in the root layout, not from here.

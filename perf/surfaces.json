@@ -65,26 +65,6 @@
       "specs": []
     },
     {
-      "id": "blogpress",
-      "routes": ["/blogpress", "/blogpress/calendar"],
-      "owner": "local-store",
-      "read": "store",
-      "write": "outbox",
-      "shell": "precached",
-      "specs": ["e2e/product-offline-render.spec.ts", "e2e/blogpress-offline.spec.ts"],
-      "issue": "#493",
-      "paint": "blogpress"
-    },
-    {
-      "id": "blogpress-editor",
-      "routes": ["/blogpress/editor/[id]"],
-      "owner": "local-store",
-      "read": "store",
-      "write": "outbox",
-      "shell": "swr",
-      "specs": []
-    },
-    {
       "id": "quran",
       "routes": ["/quran"],
       "owner": "local-store",

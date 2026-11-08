@@ -4,6 +4,7 @@ import type {
   PostTag,
   PostAuthor,
   PostAuthorSummary,
+  PostSummary,
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
@@ -69,6 +70,11 @@ export interface PostsRepository {
     authorId: string,
     action: 'publish' | 'unpublish' | 'delete'
   ): Promise<{ affected: number; slugs: string[] }>;
+  /**
+   * The author's pinned published post, if any. The member profile prepends it
+   * so a pin survives the first page's keyset cursor.
+   */
+  getFeaturedPublishedByAuthor(authorId: string): Promise<PostSummary | null>;
   /**
    * Splits a bulk-publish selection into the owned posts that still have to
    * transition and the owned posts that are already published. Ids the caller

@@ -205,47 +205,6 @@ test('LinkSnap reloads offline and reports the link it queued', async ({ browser
   await context.close();
 });
 
-test('BlogPress reloads offline and paints its posts and stats', async ({ browser, baseURL }) => {
-  test.setTimeout(180_000);
-
-  const context = await browser.newContext({ serviceWorkers: 'allow' });
-  await signIn(context, baseURL!);
-
-  const stamp = Date.now();
-  const slug = `e2e-${stamp}`;
-  const name = `E2E-${stamp}`;
-
-  const created = await context.request.fetch(`${baseURL}/api/blogpress/posts`, {
-    method: 'POST',
-    data: { slug, content: name, status: 'draft' },
-  });
-  const createdBody = (await created.json()) as { id?: string };
-  const postId = createdBody.id;
-  expect(postId).toBeTruthy();
-
-  const page = await context.newPage();
-  // The first online visit caches the document and pulls the post into the
-  // Local Store.
-  await gotoUnderWorkerControl(page, `${baseURL}/blogpress`);
-  await expect(page.getByRole('link', { name })).toBeVisible({ timeout: 30_000 });
-
-  await context.setOffline(true);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('إجمالي المنشورات')).toBeVisible();
-  await expect(page.getByRole('link', { name })).toBeVisible();
-  await expectNoStoreSkeleton(page);
-  await expectNoOfflineNotice(page);
-
-  // Clean up so the suite is idempotent.
-  await context.setOffline(false);
-  await context.request.fetch(`${baseURL}/api/blogpress/posts/${postId}`, {
-    method: 'DELETE',
-    data: {},
-  });
-
-  await context.close();
-});
-
 /**
  * The fifth Local-Store product, and the one whose bug was the mirror image
  * (#493).

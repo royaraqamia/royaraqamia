@@ -12,7 +12,9 @@ describe('authLink', () => {
   });
 
   it('appends a single redirect param', () => {
-    expect(authLink('/auth/signup', '/blogpress')).toBe('/auth/signup?redirect=%2Fblogpress');
+    expect(authLink('/auth/signup', '/account/posts')).toBe(
+      '/auth/signup?redirect=%2Faccount%2Fposts'
+    );
   });
 
   it('preserves extra params alongside redirect', () => {

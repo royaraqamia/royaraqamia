@@ -29,7 +29,6 @@ const APP_PATHS = {
   '/habitflow/(app)/page': '/habitflow',
   '/spendtrack/(app)/page': '/spendtrack',
   '/linksnap/(app)/page': '/linksnap',
-  '/blogpress/(app)/page': '/blogpress',
   '/mcp/guide/page': '/mcp/guide',
   '/api/rates/route': '/api/rates',
   '/robots.txt/route': '/robots.txt',
@@ -53,7 +52,6 @@ const NEVER_CACHE = [
   '/mcp/connect',
   '/spendtrack/api',
   '/spendtrack/categories',
-  '/blogpress/editor',
 ];
 
 function select(overrides = {}) {
@@ -71,7 +69,6 @@ describe('public route shell derivation', () => {
       '/account',
       '/auth/error',
       '/auth/login',
-      '/blogpress',
       '/community',
       '/habitflow',
       '/linksnap',

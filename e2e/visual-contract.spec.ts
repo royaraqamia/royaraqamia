@@ -192,7 +192,7 @@ async function measure(page: Page, elements: Measured[]) {
  */
 async function seedCommunityPosts(context: BrowserContext, baseURL: string): Promise<void> {
   for (let index = 1; index <= 10; index += 1) {
-    const response = await context.request.post(`${baseURL}/api/blogpress/posts`, {
+    const response = await context.request.post(`${baseURL}/api/community/posts`, {
       data: {
         slug: `${COMMUNITY_SEED_PREFIX}${index}`,
         content: `منشور تجريبي للبوابة ${index}`,

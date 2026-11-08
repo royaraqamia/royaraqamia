@@ -14,7 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * A queued BlogPress intent as the request the web's Outbox sends (#952).
  *
- * The endpoints are the ones `frontend/api/blogpress/sync-transport.ts` already
+ * The endpoints are the ones `frontend/api/community/sync-transport.ts` already
  * drains to, so the server keeps one implementation and the two clients cannot
  * disagree about what a delete is. A delete is a `DELETE` whose id rides in the
  * path and whose body carries only the write time, which is the shape the route
@@ -22,7 +22,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * the content half of the tombstoned row.
  */
 object BlogpressWriteTransport {
-    const val POSTS_PATH = "/api/blogpress/posts"
+    const val POSTS_PATH = "/api/community/posts"
     const val RESTORE_PATH = "$POSTS_PATH/restore"
 
     fun requestFor(intent: OutboxIntentRow): WriteRequest = when (intent.type) {
@@ -33,7 +33,7 @@ object BlogpressWriteTransport {
     }
 
     /**
-     * `PATCH /api/blogpress/posts/{id}` with the editor's five fields.
+     * `PATCH /api/community/posts/{id}` with the editor's five fields.
      *
      * The id rides in the path and in the body: the path is what the route reads,
      * and the body is the generated save shape the server's schema validates. A
@@ -53,7 +53,7 @@ object BlogpressWriteTransport {
     }
 
     /**
-     * `DELETE /api/blogpress/posts/{id}` with `{"updatedAt": …}` as the body.
+     * `DELETE /api/community/posts/{id}` with `{"updatedAt": …}` as the body.
      *
      * Only the field the route reads travels: the rest of the payload would be a
      * lie about what a delete does, and the server would have to ignore it.

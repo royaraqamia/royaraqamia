@@ -56,7 +56,7 @@ royaraqamia/
 │   ├── app-info/                 #   Application information page
 │   ├── auth/                     #   Login, signup, OTP, password reset/update
 │   ├── community/                #   Public community (list + [slug] article)
-│   ├── blogpress/                #   Blog editor product (app + editor/[id])
+│   ├── community/                #   The public community feed and composer
 │   ├── habitflow/                #   Habit tracker product (+ api/)
 │   ├── linksnap/                 #   URL shortener product (+ api/, landing)
 │   ├── spendtrack/               #   Expense tracker product (+ categories/)

@@ -55,7 +55,15 @@ export function ComposeFab() {
         <PenLine className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
       </button>
 
-      <PostComposerDialog open={open} onOpenChange={setOpen} onSaved={handleSaved} />
+      <PostComposerDialog
+        open={open}
+        onOpenChange={setOpen}
+        onSaved={handleSaved}
+        onDraftSaved={() => {
+          setOpen(false);
+          router.push('/account/posts');
+        }}
+      />
 
       <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
         <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>

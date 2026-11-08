@@ -34,13 +34,6 @@
       }
     },
     {
-      "id": "blogpress",
-      "path": "/blogpress",
-      "auth": true,
-      "ceiling": { "cold": 2200, "warm": 450 },
-      "tapNote": "The dashboard has no local mutation of its own; its editor is a separate dynamic route."
-    },
-    {
       "id": "quran",
       "path": "/quran",
       "auth": false,

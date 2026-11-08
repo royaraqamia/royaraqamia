@@ -35,7 +35,7 @@ import org.robolectric.RobolectricTestRunner
  * JVM tests against real SQLite files (Robolectric), because the claims are about
  * rows on disk surviving a process: a draft typed with the radio off is the text
  * the next open paints, an unchanged draft queues nothing, and the write that
- * does leave is the same `PATCH /api/blogpress/posts/{id}` the site's composer
+ * does leave is the same `PATCH /api/community/posts/{id}` the site's composer
  * sends.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -108,7 +108,7 @@ class CommunityEditorTest {
 
         val sent = transport.requests.single()
         assertEquals("PATCH", sent.method)
-        assertTrue(sent.url, sent.url.endsWith("/api/blogpress/posts/post-1"))
+        assertTrue(sent.url, sent.url.endsWith("/api/community/posts/post-1"))
         assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("the edited post"))
         assertTrue(
             "the write carries its logical time: ${sent.body}",

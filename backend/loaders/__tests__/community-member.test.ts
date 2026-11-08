@@ -19,7 +19,10 @@ vi.mock('@/backend/config/supabase', () => ({
 
 vi.mock('@/backend/config/blogpress', () => ({
   createBlogpressPostsModule: () => ({
-    repository: { getPublishedFeed: (...args: unknown[]) => mockFeed(...args) },
+    repository: {
+      getPublishedFeed: (...args: unknown[]) => mockFeed(...args),
+      getFeaturedPublishedByAuthor: async () => null,
+    },
   }),
   createBlogpressAdminPostsModule: () => ({
     repository: { getPostAuthor: async () => null },

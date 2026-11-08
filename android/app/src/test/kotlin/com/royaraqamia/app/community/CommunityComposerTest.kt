@@ -20,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
  * The community composer's publish, from the field to the page's route (#924).
  *
  * The claims are the acceptance criteria: a publish is the same
- * `POST /api/blogpress/posts` with `status: 'published'` the page sends, and a
+ * `POST /api/community/posts` with `status: 'published'` the page sends, and a
  * retry after an answer that never arrived reads the slug back instead of
  * creating a second post.
  */
@@ -36,7 +36,7 @@ class CommunityComposerTest {
         assertEquals(CommunityComposerResult.Published("post-abc12345"), result)
         val sent = transport.requests.single()
         assertEquals("POST", sent.method)
-        assertTrue(sent.url, sent.url.endsWith("/api/blogpress/posts"))
+        assertTrue(sent.url, sent.url.endsWith("/api/community/posts"))
         val body = sent.body.orEmpty()
         assertTrue(body, body.contains("\"slug\":\"post-abc12345\""))
         assertTrue(body, body.contains("\"content\":\"محتوى المنشور.\""))

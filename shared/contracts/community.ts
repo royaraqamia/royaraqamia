@@ -161,35 +161,16 @@ export const PostSlugSchema = z
 
 export type PostSlug = z.infer<typeof PostSlugSchema>;
 
-export const TagInputSchema = z.object({
-  name: z.string().trim().min(1, 'اسم الوسم مطلوب').max(30, 'الاسم طويل جداً'),
-  slug: z
-    .string()
-    .trim()
-    .min(1, 'رابط الوسم مطلوب')
-    .max(60, 'الرَّابط طويل جداً')
-    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرَّابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
-});
-
-export type TagInput = z.infer<typeof TagInputSchema>;
-
-export const PostTagIdsSchema = z.object({
-  tagIds: z.array(z.string().uuid('معرِّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم'),
-});
-
-export type PostTagIdsInput = z.infer<typeof PostTagIdsSchema>;
-
 /** Upper bound on one bulk request, so a malformed client cannot fan out an unbounded batch. */
 export const BULK_POSTS_MAX = 100;
 
 export const BulkPostsActionSchema = z.object({
-  action: z.enum(['publish', 'unpublish', 'delete', 'setCategory']),
+  action: z.enum(['publish', 'unpublish', 'delete']),
   postIds: z
     .array(z.string().uuid('معرِّف منشور غير صالح'))
     .min(1, 'اختر منشوراً واحداً على الأقل')
     .max(BULK_POSTS_MAX, `الحد الأقصى ${BULK_POSTS_MAX} منشور`)
     .transform((ids) => Array.from(new Set(ids))),
-  categoryId: z.string().uuid('معرِّف تصنيف غير صالح').nullable().optional(),
 });
 
 export type BulkPostsActionInput = z.infer<typeof BulkPostsActionSchema>;

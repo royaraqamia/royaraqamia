@@ -3,7 +3,7 @@
    Every other route-level stylesheet in the app compiles against the same
    preamble (`tailwind.css`) and adds only the sources its own surface uses, so
    a visitor reading `/terms` no longer parses the utilities of HabitFlow,
-   SpendTrack, LinkSnap, BlogPress, Community, the admin dialogs and the editor
+   SpendTrack, LinkSnap, Community, the admin dialogs and the editor
    (issue #497).
 
    The shell imports Tailwind unwrapped, and so does every surface
@@ -1852,7 +1852,7 @@ body:has([data-secondary-header]) #main-content {
   }
 }
 
-/* BlogPress transition utilities */
+/* Product transition utilities */
 .transition-smooth {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

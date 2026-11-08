@@ -26,9 +26,7 @@ import { SERVICES_COPY } from './services-copy';
  *
  * The words are [SERVICES_COPY] — one generated source, both clients, the app
  * drawing the same rows in `android/.../shell/ShellServices.kt` (#647) — and the
- * glyphs are the site's own `lucide-react` imports, converted for the app. The one
- * product the site hides (`blogpress`) has no row here, because a row a user cannot
- * reach is not a row.
+ * glyphs are the site's own `lucide-react` imports, converted for the app.
  *
  * This used to be a mapping over `APP_PRODUCTS`; the table lives here now because
  * the menu is the only thing that ever read it, and a second copy of a label is

@@ -176,6 +176,9 @@
     '/api/me',
     '/api/notifications',
     '/quran/api',
+    '/api/community/posts',
+    '/api/community/media',
+    '/api/community/sync',
     '/api/blogpress',
     '/api/downloader',
     '/auth/api',
@@ -202,7 +205,6 @@
     '/notes/api',
     '/linksnap/api',
     '/spendtrack/categories',
-    '/blogpress/editor',
   ];
 
   // Paths that are exactly a never-cache surface: a prefix would also swallow

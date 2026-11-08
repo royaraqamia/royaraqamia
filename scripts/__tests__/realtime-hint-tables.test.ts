@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { SYNC_HINT_TABLES as BLOGPRESS } from '@/frontend/state/blogpress/use-blogpress-store';
+import { SYNC_HINT_TABLES as BLOGPRESS } from '@/frontend/state/blogpress/use-blogpress-dashboard';
 import { SYNC_HINT_TABLES as HABITFLOW } from '@/frontend/state/habitflow/use-habit-sync';
 import { SYNC_HINT_TABLES as LINKSNAP } from '@/frontend/state/linksnap/use-linksnap';
 import { SYNC_HINT_TABLES as NOTES } from '@/frontend/state/notes/use-notes';

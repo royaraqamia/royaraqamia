@@ -10,7 +10,7 @@ import kotlinx.serialization.json.put
  * The community composer's one write (#924).
  *
  * A community post *is* a BlogPress post, so this calls the same route the
- * page's composer calls (`POST /api/blogpress/posts`) with the fields the page
+ * page's composer calls (`POST /api/community/posts`) with the fields the page
  * sends: the client-minted slug, the Markdown body, the description the site
  * derives from it, and `status: 'published'` so the server creates and publishes
  * in one transaction (#527) rather than leaving a draft behind.
@@ -57,6 +57,6 @@ class CommunityComposerRepository(
 
     companion object {
         /** The route the page's composer posts to (#527). */
-        const val POSTS_PATH = "/api/blogpress/posts"
+        const val POSTS_PATH = "/api/community/posts"
     }
 }

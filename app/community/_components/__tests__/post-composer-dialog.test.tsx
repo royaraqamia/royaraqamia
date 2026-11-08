@@ -5,6 +5,11 @@ const mocks = vi.hoisted(() => ({
   createPost: vi.fn(),
   saveAndPublishPost: vi.fn(),
   updatePost: vi.fn(),
+  saveDraft: vi.fn(),
+  publishDraft: vi.fn(),
+  scheduleDraft: vi.fn(),
+  deleteDraft: vi.fn(),
+  flush: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
 }));
@@ -13,6 +18,22 @@ vi.mock('@/frontend/api/blogpress', () => ({
   createPost: mocks.createPost,
   saveAndPublishPost: mocks.saveAndPublishPost,
   updatePost: mocks.updatePost,
+}));
+
+vi.mock('@/frontend/state/use-local-identity', () => ({
+  useLocalIdentity: () => ({ identity: 'guest', sessionUserId: null }),
+}));
+
+vi.mock('@/frontend/state/blogpress/use-composer-drafts', () => ({
+  useComposerDrafts: () => ({
+    ready: true,
+    online: true,
+    saveDraft: mocks.saveDraft,
+    publishDraft: mocks.publishDraft,
+    scheduleDraft: mocks.scheduleDraft,
+    deleteDraft: mocks.deleteDraft,
+    flush: mocks.flush,
+  }),
 }));
 
 vi.mock('sonner', () => ({
@@ -105,6 +126,32 @@ describe('PostComposerDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
     expect(mocks.toastError).toHaveBeenCalledWith('اكتب نص المنشور أولاً');
+    expect(mocks.createPost).not.toHaveBeenCalled();
+  });
+
+  it('saves a new post as a local draft', async () => {
+    mocks.saveDraft.mockResolvedValue({ id: 'd1', slug: 'post-draft1' });
+    const onDraftSaved = vi.fn();
+
+    render(
+      <PostComposerDialog
+        open
+        onOpenChange={vi.fn()}
+        onSaved={vi.fn()}
+        onDraftSaved={onDraftSaved}
+      />
+    );
+
+    fireEvent.change(await screen.findByLabelText(/النَّص/), {
+      target: { value: 'مسودَّة غير منشورة.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /حفظ كمسود/ }));
+
+    await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(1));
+    expect(mocks.saveDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'مسودَّة غير منشورة.', status: 'draft' })
+    );
+    expect(onDraftSaved).toHaveBeenCalled();
     expect(mocks.createPost).not.toHaveBeenCalled();
   });
 });

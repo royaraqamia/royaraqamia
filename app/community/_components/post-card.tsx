@@ -14,9 +14,11 @@ import { PostActionsMenu } from './post-actions-menu';
 interface PostCardProps {
   post: PostSummary;
   index: number;
+  /** The author's own page marks a pinned post; the public feed never does. */
+  showPinned?: boolean;
 }
 
-export function PostCard({ post, index }: PostCardProps) {
+export function PostCard({ post, index, showPinned = false }: PostCardProps) {
   const [removed, setRemoved] = useState(false);
   const body = post.content?.trim() ? stripMarkdown(post.content) : (post.meta_desc ?? '');
   const label = postExcerpt(post.content, post.meta_desc ?? '');
@@ -54,6 +56,11 @@ export function PostCard({ post, index }: PostCardProps) {
         className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative"
       >
         <div>
+          {showPinned && post.featured ? (
+            <span className="relative z-20 mb-3 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-600">
+              مثبَّت
+            </span>
+          ) : null}
           {post.author?.name && (
             <Link
               href={`/u/${encodeURIComponent(post.author.username)}`}
@@ -104,23 +111,35 @@ export function PostCard({ post, index }: PostCardProps) {
         </div>
 
         <div className="mt-6 pt-5 border-t border-border flex items-center justify-between text-xs relative z-20">
-          {post.published_at ? (
-            <time
-              dateTime={post.published_at}
-              className="text-muted-foreground font-medium flex items-center gap-1.5"
+          <div className="flex items-center gap-3">
+            {post.published_at ? (
+              <time
+                dateTime={post.published_at}
+                className="text-muted-foreground font-medium flex items-center gap-1.5"
+              >
+                <Calendar className="size-3.5 text-muted-foreground" />
+                {new Intl.DateTimeFormat('ar-SA', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  calendar: 'islamic-umalqura',
+                  numberingSystem: 'latn',
+                }).format(new Date(post.published_at))}
+              </time>
+            ) : (
+              <span />
+            )}
+            <span
+              className="inline-flex items-center gap-1 text-muted-foreground"
+              title="عدد المشاهدات"
+              aria-label={`${post.view_count.toLocaleString('en-US')} مشاهدة`}
             >
-              <Calendar className="size-3.5 text-muted-foreground" />
-              {new Intl.DateTimeFormat('ar-SA', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                calendar: 'islamic-umalqura',
-                numberingSystem: 'latn',
-              }).format(new Date(post.published_at))}
-            </time>
-          ) : (
-            <span />
-          )}
+              <span className="font-digits" dir="ltr">
+                {(post.view_count ?? 0).toLocaleString('en-US')}
+              </span>
+              <span>مشاهدة</span>
+            </span>
+          </div>
 
           <div className="flex items-center gap-2">
             <SocialShare url={`/community/${post.slug}`} title={label} />

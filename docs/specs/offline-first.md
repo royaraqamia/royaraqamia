@@ -38,7 +38,7 @@ messenger is_.
 | Public content read on the client (news digest, filtered Community feed) | Yes — last-seen snapshot, marked stale and read-only (#555)     | No            |
 | Auth shells (login, signup, OTP, reset, password update)                 | Yes — SWR cache since #447; every submit still needs the server | No            |
 | Scanner (decodes on the device; owns no server surface)                  | Yes — once the engine is cached                                 | No            |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress, Notes        | Yes — from Local Store                                          | Yes — Outbox  |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, Notes                   | Yes — from Local Store                                          | Yes — Outbox  |
 | Non-inventory leads — Training Application, Project Request, Retainer    | n/a                                                             | Yes — Outbox  |
 | Consultation Booking (reserves Availability Slots)                       | No — a live read, refused offline with a needs-connection state | No            |
 | Auth, Push, Media Downloader, Rates refresh, MCP, Admin                  | No                                                              | No            |
@@ -60,7 +60,7 @@ content).
 Being honest about the floor is part of the spec, because a promise we cannot keep is worse than a
 stated limit.
 
-- **A native surface is offline by construction, not by cache.** The owned products (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran text) are Compose screens over the app's Room store — there is no document to download, no worker, header or cache in the read, and a content change reaches the app only through the next `versionCode` ([ADR-0089](../adr/0089-the-android-app-is-native.md)). Everything in this section about shells, revalidation and cache naming governs the **web**; the app's transient reads draw the named needs-connection state instead.
+- **A native surface is offline by construction, not by cache.** The owned products (HabitFlow, SpendTrack, LinkSnap, the Quran text) are Compose screens over the app's Room store — there is no document to download, no worker, header or cache in the read, and a content change reaches the app only through the next `versionCode` ([ADR-0089](../adr/0089-the-android-app-is-native.md)). Everything in this section about shells, revalidation and cache naming governs the **web**; the app's transient reads draw the named needs-connection state instead.
 - **A route never visited, opened offline for the first time, cannot render its own document — but it
   no longer replaces the screen.** There is no cached HTML or RSC payload for it, and nothing can
   synthesise one. The worker refreshes every _static_ route's shell in the background after it
@@ -131,7 +131,7 @@ stated limit.
   paint stays instant — and never-cache API reads inside a painted page rely on the page's own
   states rather than on this rule.
 - **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
-  `/spendtrack`, `/linksnap`, `/blogpress` and `/notes` used to be in the worker's never-cache list
+  `/spendtrack`, `/linksnap` and `/notes` used to be in the worker's never-cache list
   (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
   session's data to the next on a shared device), and an offline reload landed on `/offline`.
   #449 made them data-free static shells with a client gate that paints the Local Store into
@@ -141,7 +141,7 @@ stated limit.
   and the device's copy were inspectable and removable with no network, precisely because that
   page rendered no account data on the server. `/account` took the same step in #448 (ADR-0031's
   #448 amendment). The first visit still needs the network — there is no document before it — and
-  server-owned values inside these pages (SpendTrack's currency, BlogPress's categories and tags)
+  server-owned values inside these pages (SpendTrack's currency, an account's categories)
   answer only when their own never-cache read does.
 - **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
@@ -166,7 +166,7 @@ Honest list of what stands between us and the bar, each with the file that shows
    high-priority FCM wake, and the receiver enqueues that same drain. What the native drain replays is
    HabitFlow, because HabitFlow is the product whose store the app has; the shell's drain page still
    exists for shells installed before the update, and it is the one that covers SpendTrack, the Quran
-   Reader, LinkSnap (#385) and — since #384, whose client pull it reuses — BlogPress. The remaining
+   Reader, LinkSnap (#385) and the account's posts (the surface that replaced BlogPress). The remaining
    open item on the device side is delivery badges, and each product gains its native background path
    with the screen that ports it.
 2. **The offline e2e suite's owned-data half runs in CI, and the sign-in is paced to the product's
@@ -181,7 +181,7 @@ Honest list of what stands between us and the bar, each with the file that shows
    so the job still says what it covered. What the repairs had accumulated is the argument for keeping
    it wired: a failed lazy chunk replaced the whole HabitFlow route with an error card; LinkSnap's spec
    clicked a button whose Arabic label it spelled differently from the component, and waited for a menu
-   item spelled differently from the one the component renders; BlogPress could not create a draft at
+   item spelled differently from the one the component renders; BlogPress (retired since) could not create a draft at
    all against a test account that had no `public.users` profile row — and proved convergence by
    reloading a page that paints from the Local Store either way. Each was invisible to every other
    check in the repo.
@@ -199,7 +199,7 @@ Honest list of what stands between us and the bar, each with the file that shows
    [Limits of instant](#limits-of-instant) records. The mechanical leftovers (Community's read failures,
    one raw error string) were closed by #475: the feed's page, search and "load more" reads now go through
    the transport, so an unreachable server names the connection and an answered failure is an ordinary
-   error card — each with its own retry — and the BlogPress upload replay speaks Arabic instead of an
+   error card — each with its own retry — and the retired BlogPress upload replay speaks Arabic instead of an
    English literal.
 4. **A dynamic detail deep link keeps its parent's chrome, and the item itself still needs one
    visit.** The worker answers a navigation it has no copy of with the longest cached ancestor
@@ -253,7 +253,7 @@ Honest list of what stands between us and the bar, each with the file that shows
    channel per table, filtered to `user_id`, dropped while the document is hidden, and a burst of
    changes folded into one pull. It listens only to tables whose surface has a pull to trigger
    (HabitFlow's `habits`/`habit_logs`, SpendTrack's four, LinkSnap's `short_links`, the Quran Reader's
-   `quran_reading_positions`/`quran_bookmarks`, and BlogPress's `posts` — filtered on `author_id`,
+   `quran_reading_positions`/`quran_bookmarks`, and the account surfaces' `posts` — filtered on `author_id`,
    since posts key ownership there), published by
    `supabase/migrations/*_publish_*_realtime_hints.sql` — one file per slice that adds tables, because
    an applied migration never runs again; the lead forms read on the server through their loader, so
@@ -281,7 +281,7 @@ Honest list of what stands between us and the bar, each with the file that shows
 | App shell, icons, fonts                                                                     | cache-first                                                                                                        |
 | Public navigation / RSC payloads                                                            | stale-while-revalidate (+ "updated X ago")                                                                         |
 | Auth + account document shells                                                              | stale-while-revalidate (#447, #448; shell only, no account-bearing render)                                         |
-| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap, BlogPress)                       | stale-while-revalidate (#449; shell only, painted from the Local Store)                                            |
+| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap)                                  | stale-while-revalidate (#449; shell only, painted from the Local Store)                                            |
 | Consultation booking + media downloader shells                                              | stale-while-revalidate (#450; shell only — packages and the link probe are client reads on their never-cache APIs) |
 | MCP guide                                                                                   | stale-while-revalidate (#450; static instructions, no server action)                                               |
 | Public read APIs that declare `public`                                                      | SWR; an absent header is not permission                                                                            |
@@ -435,18 +435,19 @@ network, and `/admin` — and both now end in a plain 503, since the page was wi
 
 **Phase 1 (#448) landed the same day:** the `/account` subtree's shells joined the SWR cache. The
 layout is no longer dynamic (`headers()` moved into `AccountFooter`), the guarded children guard
-on the client through the session provider, `/account/posts` reads its feed through the
-never-cache `/api/me/posts` seam, and the account views render the shared needs-connection state
+on the client through the session provider, `/account/posts` read its feed through the
+never-cache `/api/me/posts` seam at the time (it now paints the local-first post store and pulls
+`/api/community/sync`), and the account views render the shared needs-connection state
 for a failed read instead of routing the failure to `/offline`. The boundary the audit guards —
 no account fragment in a cached response — is held by the never-cache API prefixes, not by the
 documents.
 
 **Phase 2 (#449) landed on 2026-10-21:** the four product dashboard roots are static data-free
-shells painted from their Local Stores (ADR-0073). BlogPress's layout guard moved client-side (its
-editor keeps the server guard and the never-cache prefix), `/blogpress/calendar` follows the root,
-and the worker's never-cache list narrows from the product prefixes to their APIs and the two
-data-bearing subroutes. With it, `/offline` serves only a brand-new install hit with no network,
-`/admin`, and the server-guarded editor.
+shells painted from their Local Stores (ADR-0073). BlogPress was one of them until it retired as a
+UI door: its dashboard, calendar and editor moved to `/account/posts`, which keeps the same
+local-first store and the same never-cache API prefixes. The worker's never-cache list narrows from
+the product prefixes to their APIs and the two data-bearing subroutes. With it, `/offline` serves
+only a brand-new install hit with no network and `/admin`.
 
 **Phase 3 (#450) landed the same day:** `/consultation/book` and `/downloader` stopped being
 `force-dynamic` documents — the package read, the optional sign-in hint and the link probe are
@@ -502,7 +503,6 @@ surface the app does not draw natively is the document.
   | SpendTrack                 | expense written offline, server row after reconnect                                                                                                              | `spendtrack-offline.spec.ts`                           |
   | HabitFlow                  | habit written offline, server row after reconnect                                                                                                                | `habitflow-sync-resume.spec.ts`                        |
   | LinkSnap                   | link created offline, server row after reconnect — and a second proof that the list paints from the Local Store offline; the drain registry now covers it (#385) | `linksnap-offline.spec.ts`                             |
-  | BlogPress                  | draft edit made offline, server body after reconnect                                                                                                             | `blogpress-offline.spec.ts`                            |
   | Quran Reader               | mark made offline, account row after reconnect                                                                                                                   | `quran-sync.spec.ts`                                   |
   | Public shell + breakpoints | cached read at 320 / 375 / 428 / 768 px, never a 503; a never-visited public route deep-links to its own shell offline                                           | `public-offline.spec.ts`, `responsive-offline.spec.ts` |
 
@@ -610,12 +610,11 @@ surface the app does not draw natively is the document.
 
 ## Open questions
 
-1. **BlogPress media upload** cannot queue offline — drafts queue, images need a live upload. What is
-   the offline state of an un-uploaded image?
-2. **Community compose/publish** offline: queue drafts, or online-only?
-3. **LinkSnap analytics** are server-side; offline visits cannot be counted. Accept, or buffer?
-4. **Rates** offline: last snapshot read-only with "refresh" disabled — confirm the affordance.
-5. **Consultation availability** cached read-only offline — needed at all?
-6. **Android flush mechanism** — _answered by [ADR-0089](../adr/0089-the-android-app-is-native.md):_
+1. **Post media upload** cannot queue offline in the composer — draft bodies queue, an existing
+   queued image still uploads on replay. What is the offline state of an un-uploaded image?
+2. **LinkSnap analytics** are server-side; offline visits cannot be counted. Accept, or buffer?
+3. **Rates** offline: last snapshot read-only with "refresh" disabled — confirm the affordance.
+4. **Consultation availability** cached read-only offline — needed at all?
+5. **Android flush mechanism** — _answered by [ADR-0089](../adr/0089-the-android-app-is-native.md):_
    the app mirrors the Outbox natively and replays it in Kotlin. The WebView drain ADR-0059 chose
    remains only for shells installed before the update floor moves.

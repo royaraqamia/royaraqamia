@@ -207,18 +207,6 @@
       "state": "native"
     },
     {
-      "surface": "blogpress",
-      "phase": "products",
-      "state": "todo",
-      "issue": "#952"
-    },
-    {
-      "surface": "blogpress-editor",
-      "phase": "products",
-      "state": "todo",
-      "issue": "#954"
-    },
-    {
       "surface": "quran",
       "phase": "products",
       "state": "native",

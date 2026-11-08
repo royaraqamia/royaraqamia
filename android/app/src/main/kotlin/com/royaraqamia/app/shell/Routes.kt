@@ -39,7 +39,6 @@ object Routes {
             listOf("admin", "consultations"),
             listOf("admin", "training"),
             listOf("auth"),
-            listOf("blogpress", "editor"),
             listOf("consultation"),
             listOf("linksnap", "unlock"),
             listOf("mcp"),

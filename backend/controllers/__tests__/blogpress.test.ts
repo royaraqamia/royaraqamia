@@ -57,7 +57,6 @@ import {
   bulkPostsAction,
   createPost,
   deletePost,
-  listBlogTags,
   publishPost,
   restorePost,
   saveAndPublishPost,
@@ -83,7 +82,6 @@ describe('blogpress controller', () => {
     mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
     mockRepository.unpublishPost.mockResolvedValue({ slug: 'hello' });
     mockRepository.countPostsInStatus.mockResolvedValue(0);
-    mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.saveAndPublishPost.mockResolvedValue({ slug: 'hello' });
     mockPosts.createAndPublishPost.mockResolvedValue({ id: 'p-9', slug: 'post-abc12345' });
@@ -218,14 +216,6 @@ describe('blogpress controller', () => {
     expect(mockRepository.updatePost).not.toHaveBeenCalled();
   });
 
-  it('maps a listing failure to 500', async () => {
-    mockRepository.listTagsByAuthor.mockRejectedValue(new Error('db down'));
-
-    const result = await listBlogTags();
-
-    expect(result).toEqual(expect.objectContaining({ status: 500, body: { error: 'db down' } }));
-  });
-
   it('threads the Outbox write time into the delete so the tombstone keeps order', async () => {
     const result = await deletePost('p-1', { updatedAt: '2026-10-18T09:00:00.000Z' });
 
@@ -237,7 +227,11 @@ describe('blogpress controller', () => {
     expect(result).toMatchObject({
       status: 200,
       body: { success: true },
-      revalidate: [{ path: '/blogpress' }, { path: '/community/hello' }, { path: '/community' }],
+      revalidate: [
+        { path: '/account/posts' },
+        { path: '/community/hello' },
+        { path: '/community' },
+      ],
     });
   });
 

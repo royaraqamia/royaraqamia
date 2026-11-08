@@ -84,7 +84,7 @@ class BlogpressWritesTest {
         assertEquals(0, report.pending)
         val sent = transport.requests.single()
         assertEquals("DELETE", sent.method)
-        assertTrue(sent.url, sent.url.endsWith("/api/blogpress/posts/post-1"))
+        assertTrue(sent.url, sent.url.endsWith("/api/community/posts/post-1"))
         assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"updatedAt\""))
     }
 
@@ -117,7 +117,7 @@ class BlogpressWritesTest {
 
         repository.drain()
 
-        val sent = transport.requests.map { it.method to it.url.substringAfter("/api/blogpress") }
+        val sent = transport.requests.map { it.method to it.url.substringAfter("/api/community") }
         assertEquals(
             listOf(
                 "DELETE" to "/posts/post-1",
@@ -162,7 +162,7 @@ class BlogpressWritesTest {
             1,
             databases.forIdentity(alice).dao().allPosts().count { it.deletedAt != null },
         )
-        assertTrue(path, path.endsWith("/api/blogpress/sync"))
+        assertTrue(path, path.endsWith("/api/community/sync"))
     }
 
     @Test
@@ -213,7 +213,7 @@ class BlogpressWritesTest {
         repository.setFeatured(row.id, true)
         repository.duplicatePost(row.id)
 
-        val sent = transport.requests.map { it.method to it.url.substringAfter("/api/blogpress") }
+        val sent = transport.requests.map { it.method to it.url.substringAfter("/api/community") }
         assertEquals(
             listOf(
                 "POST" to "/posts/post-1/publish",
@@ -296,7 +296,7 @@ class BlogpressWritesTest {
         assertEquals(2, report.replayed)
         assertEquals(
             listOf("PATCH" to "/posts/post-1", "PATCH" to "/posts/post-1"),
-            transport.requests.map { it.method to it.url.substringAfter("/api/blogpress") },
+            transport.requests.map { it.method to it.url.substringAfter("/api/community") },
         )
         val bodies = transport.requests.map { it.body.orEmpty() }
         assertTrue("the first write is the first intent: ${bodies[0]}", bodies[0].contains("first edit"))
@@ -333,7 +333,7 @@ class BlogpressWritesTest {
                     "https://app.test",
                     session,
                     RecordingTransport { request ->
-                        if (sync != null && request.url.endsWith("/api/blogpress/sync")) {
+                        if (sync != null && request.url.endsWith("/api/community/sync")) {
                             HttpResponse(200, sync)
                         } else {
                             transport.send(

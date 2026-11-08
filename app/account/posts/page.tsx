@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { MyPostsView } from '@/frontend/ui/account/my-posts-view';
+import { AccountPostsView } from '@/frontend/ui/account/account-posts-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * A data-free shell: the guard and the read live in `MyPostsView` on the client
- * (#448), so the document carries nothing account-bearing and the worker may
- * cache it. The read runs on the never-cache `/api/me` prefix, so offline the
- * view answers with its own needs-connection state instead of the stale list a
- * cached response would replay.
+ * A data-free shell: the guard and the read live in `AccountPostsView` on the
+ * client. The read is the Local Store, seeded by the never-cache
+ * `/api/community/sync` pull, so the document carries nothing account-bearing
+ * and the worker may cache it. A draft written offline is on disk and paints
+ * before any network answer.
  */
 export default function AccountPostsPage() {
   return (
@@ -24,7 +24,7 @@ export default function AccountPostsPage() {
         </SectionTitle>
       </div>
 
-      <MyPostsView />
+      <AccountPostsView />
     </div>
   );
 }

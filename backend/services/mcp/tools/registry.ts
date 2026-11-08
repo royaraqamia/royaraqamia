@@ -25,8 +25,6 @@ import { toolErrorResponse } from './tool-utils';
 const CAPPED_TOOLS: Record<string, OwnedItemKey> = {
   [`${MCP_SERVER_NAME}_linksnap_create_link`]: OWNED_ITEMS.shortLinks,
   [`${MCP_SERVER_NAME}_community_create_post`]: OWNED_ITEMS.communityDrafts,
-  [`${MCP_SERVER_NAME}_community_create_tag`]: OWNED_ITEMS.communityTags,
-  [`${MCP_SERVER_NAME}_community_create_category`]: OWNED_ITEMS.communityCategories,
   [`${MCP_SERVER_NAME}_spendtrack_create_expense`]: OWNED_ITEMS.expenses,
   [`${MCP_SERVER_NAME}_spendtrack_create_category`]: OWNED_ITEMS.expenseCategories,
   [`${MCP_SERVER_NAME}_habitflow_create_habit`]: OWNED_ITEMS.habits,

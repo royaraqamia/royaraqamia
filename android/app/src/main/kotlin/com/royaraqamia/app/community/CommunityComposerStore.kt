@@ -6,7 +6,7 @@ import com.royaraqamia.app.contracts.ApiError
  * What the community composer asks the server, and nothing else (#924).
  *
  * The composer is the one public write (#658): it creates a published community
- * post through the same `POST /api/blogpress/posts` the page's own composer
+ * post through the same `POST /api/community/posts` the page's own composer
  * calls, with `status: 'published'` so the row takes a published slot rather than
  * a draft one. HTTP, the bearer and the retry decision stay behind this seam,
  * which is what lets a JVM test drive the whole publish story with a recording

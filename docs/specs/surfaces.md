@@ -15,8 +15,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #493 |
 | `linksnap` | `/linksnap` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`linksnap-offline.spec.ts` | `paint:linksnap` | #493 |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | server | needs-connection | none | swr | _ungated_ |  |  |
-| `blogpress` | `/blogpress`<br>`/blogpress/calendar` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`blogpress-offline.spec.ts` | `paint:blogpress` | #493 |
-| `blogpress-editor` | `/blogpress/editor/[id]` | local-store | store | outbox | swr | _ungated_ |  |  |
 | `quran` | `/quran` | local-store | store | outbox | precached | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |
 | `notes` | `/notes` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`notes-offline.spec.ts`<br>`notes.spec.ts` | `paint:notes` |  |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | `quran-reader.spec.ts` |  | #559 |

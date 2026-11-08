@@ -120,7 +120,6 @@ describe('parentRouteOf', () => {
     ['/training/apply', '/'],
     ['/u/someone', '/'],
     ['/linksnap/unlock/abc123', '/linksnap'],
-    ['/blogpress/editor/post-1', '/blogpress'],
     ['/admin/clients/retainers', '/admin'],
     ['/admin/consultations/bookings', '/admin'],
     ['/admin/training/cohorts', '/admin'],

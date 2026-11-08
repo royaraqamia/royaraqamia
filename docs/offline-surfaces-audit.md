@@ -34,14 +34,14 @@ Each route's client path was read rather than its intent:
 
 ## The spec's scope table, checked
 
-| Surface                                                    | Verdict                                                                                                                                                                                                             |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public content — Community, Rates, Certificates, Showcase  | **Holds.** `/rates` renders the last snapshot with the staleness badge (`app/rates/page.tsx:94`); `/scan` and `/quran` are `force-static`; cached documents serve offline.                                          |
-| Scanner                                                    | **Holds.** A certificate lookup that cannot resolve degrades to a link rather than an error.                                                                                                                        |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress | **Holds**, with the exception the spec records: BlogPress's list/calendar are server reads behind a publish gate (LinkSnap joined the background drain in #385).                                                    |
-| Non-inventory leads — Training, Project Request, Retainer  | **Holds.** All three render `LeadQueuedPanel` when a lead is waiting and the pill for the count.                                                                                                                    |
-| Consultation Booking                                       | **Did not hold.** Booking was refused offline with a banner, but the availability read had no failure state: a request that never reached the server rendered as "no appointments are open". Closed in this change. |
-| Auth, Push, Media Downloader, Rates refresh, MCP, Admin    | **Partly.** Three of the six needed work; see the next table.                                                                                                                                                       |
+| Surface                                                   | Verdict                                                                                                                                                                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public content — Community, Rates, Certificates, Showcase | **Holds.** `/rates` renders the last snapshot with the staleness badge (`app/rates/page.tsx:94`); `/scan` and `/quran` are `force-static`; cached documents serve offline.                                          |
+| Scanner                                                   | **Holds.** A certificate lookup that cannot resolve degrades to a link rather than an error.                                                                                                                        |
+| Account tools — HabitFlow, SpendTrack, LinkSnap           | **Holds** (LinkSnap joined the background drain in #385). BlogPress retired as a UI door; `/account/posts` keeps its local-first store.                                                                             |
+| Non-inventory leads — Training, Project Request, Retainer | **Holds.** All three render `LeadQueuedPanel` when a lead is waiting and the pill for the count.                                                                                                                    |
+| Consultation Booking                                      | **Did not hold.** Booking was refused offline with a banner, but the availability read had no failure state: a request that never reached the server rendered as "no appointments are open". Closed in this change. |
+| Auth, Push, Media Downloader, Rates refresh, MCP, Admin   | **Partly.** Three of the six needed work; see the next table.                                                                                                                                                       |
 
 Two route-level reads outside the table also failed silently at the time of the audit (Community's "load
 more" and search; closed since, see [the mechanical leftovers](#the-mechanical-leftovers-closed-2026-10-21-475)).
@@ -110,11 +110,10 @@ Each is a fix in the file named rather than a decision, so none of them needs an
   (`frontend/ui/admin/user-select.tsx:60`; also under #368, closed there).
 - Admin certificate edit swallows its failure — the page loads into an empty form
   (`app/admin/certificates/[id]/edit/page.tsx:26`; closed in #368).
-- A failed BlogPress media upload surfaces the raw English `Failed to fetch`
-  (`frontend/state/blogpress/use-post-upload.ts:94` from `frontend/api/blogpress.ts:41`; closed by the
-  transport wrapper in #402, and the last English literal on the replay path in #475).
+- A failed post media upload used to surface the raw English `Failed to fetch`; it was closed by the
+  transport wrapper in #402, and the last English literal on the replay path in #475.
 - A Local Store that fails to open only logs; the lead path still degrades to the network
-  (`frontend/state/leads/use-lead-submission.ts:141`, `frontend/state/blogpress/use-blogpress-store.ts:103`).
+  (`frontend/state/leads/use-lead-submission.ts:141`).
 
 ### Limits, not gaps
 
@@ -199,7 +198,7 @@ The audit's last two mechanical rows needed a cause, not a string.
   their retry in place: the page re-runs its cursor/query, the combobox re-issues the same term, "load
   more" asks for the same cursor again. #416 had already stopped both from swallowing the failure;
   this is the half that stops them from blaming the connection for a 400 or a 429.
-- **BlogPress keeps the Arabic message.** The raw `Failed to fetch` was the transport's own unwrapped
+- **The post upload replay keeps the Arabic message.** The raw `Failed to fetch` was the transport's own unwrapped
   rejection, fixed for every product by #402. What remained was the queued-attachment replay, whose
   "answered without a URL" branch threw an English literal the sync pill renders; it now
   says `فشل رفع الصُّورة. أعد المحاولة.`, and a unit test pins that a media upload that never left
