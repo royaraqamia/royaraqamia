@@ -1,5 +1,10 @@
 # The shell has a WebView floor and a local page beneath it
 
+> **History for the app since [ADR-0089](0089-the-android-app-is-native.md):** the app is one binary,
+> not a renderer host, so there is no WebView floor and no fallback page to draw beneath it. The web
+> keeps the browser baseline this ADR named; the below-floor page is kept as the record of the shell
+> that shipped.
+
 The Android shell is a remote-URL WebView (ADR-0036), so a launch with no network, or on a WebView the
 site cannot run on, used to end in a blank WebView or a page that rendered but never hydrated. We set
 `android.minWebViewVersion` to **111** and point `server.errorPath` at a page bundled in `capacitor-web/`

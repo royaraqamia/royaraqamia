@@ -174,8 +174,9 @@ export function renderMarkdown(inventory, matrix) {
     'and only when [the visual gate](../adr/0118-a-port-is-switched-on-by-two-measurements.md) ' +
     'passes. The ' +
     'offline half of the same question — whether the app can show a ' +
-    'surface with the radio off — is the `Bundle` column of ' +
-    '[the surface matrix](../specs/surfaces.md), not this table.\n\n';
+    'surface with the radio off — is stated natively in ' +
+    '[offline-first.md](../specs/offline-first.md#limits-of-instant); the app has no bundle, so ' +
+    'there is no bundle column to read.\n\n';
 
   const rows = (inventory.screens ?? [])
     .map((row) => `| ${cells(row, byId.get(row.surface)).join(' | ')} |`)

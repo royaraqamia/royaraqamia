@@ -30,4 +30,3 @@ android/app/src/main/res/values/colors.xml
 # committed so a migration-less version bump is reviewed, not reformatted: formatting it
 # by hand fails the format check again the next time the app exports (#773).
 android/app/schemas/
-/capacitor-web/spike/

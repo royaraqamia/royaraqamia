@@ -1,7 +1,7 @@
 # Spec: Offline-first web and Android app
 
 **Status:** accepted.
-**Decisions:** ADR-0027 … ADR-0031, ADR-0058 … ADR-0061. Vocabulary: `CONTEXT.md` → _Offline_.
+**Decisions:** ADR-0027 … ADR-0031, ADR-0058 … ADR-0061 for the web, and ADR-0089 for the native app. Vocabulary: `CONTEXT.md` → _Offline_.
 **Surfaces audit:** [`offline-surfaces-audit.md`](offline-surfaces-audit.md) — every route against the
 scope table, and every ADR-0031 surface against the needs-connection state it promises (phase 4).
 
@@ -60,7 +60,7 @@ content).
 Being honest about the floor is part of the spec, because a promise we cannot keep is worse than a
 stated limit.
 
-- **A bundled surface is offline by construction, not by cache.** The owned products (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran text) ship inside the Android APK — the document is in the package, its staleness is `versionCode`, and no worker, header or cache participates ([ADR-0088](../adr/0088-the-app-bundles-the-surfaces-whose-rows-are-local.md)). Everything in this section about shells, revalidation and cache naming governs the **remote** surfaces: Community, News, rates, verify, the marketing pages.
+- **A native surface is offline by construction, not by cache.** The owned products (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran text) are Compose screens over the app's Room store — there is no document to download, no worker, header or cache in the read, and a content change reaches the app only through the next `versionCode` ([ADR-0089](../adr/0089-the-android-app-is-native.md)). Everything in this section about shells, revalidation and cache naming governs the **web**; the app's transient reads draw the named needs-connection state instead.
 - **A route never visited, opened offline for the first time, cannot render its own document — but it
   no longer replaces the screen.** There is no cached HTML or RSC payload for it, and nothing can
   synthesise one. The worker refreshes every _static_ route's shell in the background after it
@@ -104,10 +104,10 @@ stated limit.
   separate download control, and a metered connection keeps nothing — the sura streams and no copy is
   written or asked about. The page that listed and removed kept recitations is withdrawn (ADR-0084),
   so freeing that space is clearing site data. What remains out of reach: a sura nobody downloaded.
-- **The Android app's cold start is capped by the WebView.** The shell loads a remote URL (ADR-0036),
-  so launch is a WebView start plus a first remote frame — structurally slower than a natively drawn
-  messenger. We close the _visible_ part of it with the app's own skeleton as the launch screen
-  (ADR-0061) rather than by bundling, and we do not pretend it is a native-first render.
+- **The Android app's cold start is its own budget, not the WebView's.** A launch is a process start
+  and the first Compose frame; the target is 400 ms cold and 300 ms warm, with 550 ms cold as the
+  measured budget on the reference phone ([native-app.md](../mobile/native-app.md#budgets)). No
+  document is downloaded before the first frame and no skeleton covers one.
 - **The floor is a plain 503.** A navigation with no cached document answers with a 503 and the
   browser's own offline error: a brand-new install's first hit with no network (nothing has been
   cached yet, by definition), and a never-cache surface such as `/admin`, whose guard answers on the
@@ -146,7 +146,7 @@ stated limit.
 - **Background delivery on the web is Chromium-only.** Safari and Firefox have no `SyncManager`, so
   there a closed tab flushes nothing: the in-page triggers are the whole story, and the pending count
   says so rather than implying a delivery that will not happen. We do not gate a feature on it, and the
-  Android shell covers the same ground natively (ADR-0059).
+  Android app covers the same ground natively (ADR-0089).
 - **A product whose writes need a credential the browser will not attach cannot drain in the
   background.** Every wired product now replays through the session cookie, which the browser sends on
   a same-origin fetch from any realm. LinkSnap used to be the exception — its API took a bearer token
@@ -242,8 +242,9 @@ Honest list of what stands between us and the bar, each with the file that shows
       (ADR-0058). The page registers the tag only when its own flush left intents queued, so a write it
       already delivered never wakes the worker. Absent in Safari and Firefox, where tier 1 is the whole
       story.
-   3. **Native Android** — a silent high-priority FCM data message wakes a WorkManager job that drains
-      the Outbox (ADR-0059). This is the only tier that works with the app killed.
+   3. **Native Android** — a silent high-priority FCM data message wakes a WorkManager job that replays
+      the Local Store's Outbox in the app process (ADR-0089). This is the only tier that works with
+      the app killed.
 6. **Sync hints** (ADR-0060) — a server→client signal that there is new data to pull: Supabase Realtime
    `postgres_changes` while foregrounded, and the FCM data message while backgrounded. A hint triggers a
    **pull**, never a blind merge: the payload is ignored beyond "something changed", so our own write
@@ -464,8 +465,8 @@ the server is unreachable, and the [Verification](#verification) section for wha
 
 Notes joined the Local-Store row without changing the program (ADR-0092): it is the sixth owned
 product, its root is a data-free precached shell, and it is wired to the drain, the background pull
-and the Realtime hint tier. It ships as a remote shell rather than a bundled surface, which
-`perf/surfaces.json` records as `bundle: remote`; the APK's bundled list is unchanged.
+and the Realtime hint tier. Its web half is a remote shell; the app has no bundled document, and a
+surface the app does not draw natively is the document.
 
 0. **Baseline** — this spec, ADR-0058 … ADR-0061, and the `CONTEXT.md` vocabulary.
 1. **Close the web gaps** — flush-on-write in all five products, `persist()` on a real save, and the
@@ -486,8 +487,8 @@ and the Realtime hint tier. It ships as a remote shell rather than a bundled sur
    app receives in the background, asks once with the reason in the notification's copy, and the tap
    opens the platform's one-tap exemption dialog (ADR-0059's amendment; #381). The delivery badges in
    the shell are the open half.
-6. **Android launch** — extend the launch theme into the app's own chrome skeleton so cold start reads
-   as content arriving, staying stateless and OTA-free (ADR-0061).
+6. **Android launch** — a native launch is the process start and the first Compose frame, so the
+   launch theme hands over directly; there is no skeleton between them (ADR-0089).
 7. **Verify and harden** — the device matrix below, chaos tests, and the offline suite as a CI gate.
 
 ## Verification
@@ -615,6 +616,6 @@ and the Realtime hint tier. It ships as a remote shell rather than a bundled sur
 3. **LinkSnap analytics** are server-side; offline visits cannot be counted. Accept, or buffer?
 4. **Rates** offline: last snapshot read-only with "refresh" disabled — confirm the affordance.
 5. **Consultation availability** cached read-only offline — needed at all?
-6. **Android flush mechanism**: drain the Outbox by running the web sync code in a headless WebView
-   (one implementation), or mirror the Outbox natively and replay in Java (no WebView dependency)?
-   ADR-0059 commits to the first and names the second as the revisit trigger.
+6. **Android flush mechanism** — _answered by [ADR-0089](../adr/0089-the-android-app-is-native.md):_
+   the app mirrors the Outbox natively and replays it in Kotlin. The WebView drain ADR-0059 chose
+   remains only for shells installed before the update floor moves.

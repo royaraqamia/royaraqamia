@@ -61,7 +61,6 @@ npm run android:release   # signed APK  → android/app/build/outputs/apk/releas
 npm run android:aab       # signed AAB  → android/app/build/outputs/bundle/release/app-release.aab
 npm run android:publish   # the release APK + public/android/latest.json, stamped from the file (ADR-0044)
 npm run android:test      # the shell's JVM tests: the update decision and the download (ADR-0043, ADR-0044)
-npm run android:verify-bridge   # on a connected device: is the native bridge live?
 ```
 
 **A release build cannot be inspected.** `capacitor.config.ts` opens the WebView to `chrome://inspect`
@@ -456,8 +455,9 @@ Two consequences worth carrying:
   into the cookie jar). Supabase cookie auth survives it — but if a session ever works in
   a browser and not in the app on an old device, this is the machinery to suspect.
 
-`npm run android:verify-bridge` re-checks all of the above on whatever device is
-connected, so none of it is carried forward on trust.
+The bridge probe (`scripts/verify-bridge.mjs`, once `npm run android:verify-bridge`) left the tree
+with the native app (ADR-0089): the app has no bridge to check, and this page is the record of the
+shell that shipped.
 
 ### The background drain
 

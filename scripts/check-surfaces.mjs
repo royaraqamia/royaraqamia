@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
  * its data, what it does with the radio off, and which spec proves it. It lives
  * in the repository rather than an issue body because three other checks have to
  * read it — the precache coverage (#557), the paint budgets (#558) and the
- * Android bundle split (#502/#504) — and a list no script can read is a wish.
+ * screen inventory (#665) — and a list no script can read is a wish.
  *
  * This check answers four questions, all from the working tree, with no build:
  *
@@ -39,7 +39,6 @@ export const OWNERS = ['local-store', 'server', 'static', 'device'];
 export const READS = ['store', 'snapshot', 'swr', 'needs-connection'];
 export const WRITES = ['outbox', 'none'];
 export const SHELLS = ['precached', 'swr', 'pinned', 'none'];
-export const BUNDLES = ['bundled', 'remote'];
 
 /**
  * The build-time markers that make a route render per request. A route that
@@ -186,15 +185,8 @@ function checkEnums(surface, errors) {
   if (!READS.includes(surface.read)) errors.push(`${where}: read must be one of ${READS}`);
   if (!WRITES.includes(surface.write)) errors.push(`${where}: write must be one of ${WRITES}`);
   if (!SHELLS.includes(surface.shell)) errors.push(`${where}: shell must be one of ${SHELLS}`);
-  if (!BUNDLES.includes(surface.bundle)) errors.push(`${where}: bundle must be one of ${BUNDLES}`);
   if (!Array.isArray(surface.routes) && typeof surface.prefix !== 'string') {
     errors.push(`${where}: needs routes[] or prefix`);
-  }
-  // The Android split's own rule (#504): bundling ships documents, so the one
-  // thing that cannot be in the bundle is a surface the worker may not cache —
-  // `/admin` and `/mcp/connect`, whose guards answer on the server.
-  if (surface.bundle === 'bundled' && surface.shell === 'none') {
-    errors.push(`${where}: a surface with no cacheable document cannot be bundled (#504)`);
   }
 }
 
@@ -275,7 +267,6 @@ function cells(surface) {
     surface.read,
     surface.write,
     surface.shell,
-    surface.bundle,
     (surface.specs ?? []).length > 0
       ? surface.specs.map((spec) => `\`${spec.split('/').pop()}\``).join('<br>')
       : '_ungated_',
@@ -293,8 +284,8 @@ export function renderMarkdown(matrix) {
     'Every user-facing route, what owns its data, and what it owes the user with the radio off. ' +
     'This is the scope of the offline program (#486): a route added without a row fails ' +
     '`npm run check:surfaces`, and so does a `precached` claim on a page that cannot be prerendered.\n\n' +
-    '`shell` describes the remote document; `bundle` describes the Android app, where a bundled SPA ' +
-    'routes client-side and so handles dynamic segments the remote precache cannot. `Paint` names the ' +
+    '`shell` describes the remote document. The app has no bundle, so there is no `bundle` column: a ' +
+    'surface the app does not draw natively is the document. `Paint` names the ' +
     'row in `perf/paint-budget.json` that the paint gate measures (#558); an empty cell is a row the ' +
     'gate cannot see yet.\n\n';
 
@@ -302,8 +293,8 @@ export function renderMarkdown(matrix) {
     .map((surface) => `| ${cells(surface).join(' | ')} |`)
     .join('\n');
   const table =
-    '| Surface | Routes | Owner | Offline read | Offline write | Shell | Bundle | Verified by | Paint | Issue |\n' +
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n' +
+    '| Surface | Routes | Owner | Offline read | Offline write | Shell | Verified by | Paint | Issue |\n' +
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n' +
     `${rows}\n\n`;
 
   const ungated = matrix.defaultUngated ? `_ungated_ — ${matrix.defaultUngated}\n` : '';

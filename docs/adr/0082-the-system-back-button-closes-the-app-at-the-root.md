@@ -1,5 +1,10 @@
 # The system back button closes the app at the root
 
+> **History for the app since [ADR-0089](0089-the-android-app-is-native.md):** the app draws its own
+> navigation, and the rule this ADR established — only the root closes the app — is now its own
+> back stack (`ShellBackStack`), not a WebView's history. The Capacitor press it answered is kept as
+> the record of the shell that shipped.
+
 Nothing could leave the Android shell with Back. Capacitor's App plugin owns the press (`AppPlugin`,
 `EVENT_BACK_BUTTON`): with no `backButton` listener in the page it calls `WebView.canGoBack()` and
 `goBack()`, and when the history is exhausted it returns without doing anything. The press is consumed

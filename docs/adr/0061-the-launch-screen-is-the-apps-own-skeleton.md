@@ -1,5 +1,10 @@
 # The launch screen is the app's own skeleton, not a logo
 
+> **History for the app since [ADR-0089](0089-the-android-app-is-native.md):** the launch is a process
+> start and the first Compose frame, so there is no WebView and no skeleton between them. The sequence
+> this ADR established — the launch theme hands over without a flash — survives natively; the
+> skeleton and the remote document behind it do not.
+
 The shell is a remote-URL WebView (ADR-0036), so its cold start is the WebView's launch plus the first
 remote frame, and the only thing covering that gap today is the launch theme: the background colour
 and the icon, dismissed when the WebView draws its first frame (ADR-0054). We extend that surface into

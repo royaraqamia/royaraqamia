@@ -1,5 +1,9 @@
 # The app bundles the surfaces whose rows are local
 
+> **Superseded by [ADR-0089](0089-the-android-app-is-native.md):** the native app replaces the bundled
+> document entirely. That ADR records why the measured ceiling of the two-origin spike did not justify
+> keeping it. This decision is kept as the record of the bundle that shipped.
+
 The Android app was a Capacitor **remote-URL shell**: the WebView loaded
 `https://royaraqamia.com` and the site stayed the single implementation of every surface
 (ADR-0036). That shape has a floor no cache can move — a document the shell never downloaded cannot

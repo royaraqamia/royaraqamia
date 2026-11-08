@@ -1,5 +1,10 @@
 # The Android shell loads the live site
 
+> **History for the app since [ADR-0089](0089-the-android-app-is-native.md):** the Android app is a
+> native Compose application and no longer loads the live site in a WebView. The web half of this
+> decision still holds — the site stays server-rendered and nothing is statically exported — but the
+> remote-URL shell it describes is kept as the record of what shipped, not as a runbook.
+
 The Android app is a Capacitor **remote-URL shell**: the WebView loads
 `https://royaraqamia.com` (Capacitor's `server.url`), and the site stays the single
 implementation of every product surface. Nothing is statically exported, and no page is

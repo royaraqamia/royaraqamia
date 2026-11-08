@@ -1,5 +1,11 @@
 # The two-origin shell spike (issue #500)
 
+> **History (issue #940).** The spike was decided and not promoted: [ADR-0089](../adr/0089-the-android-app-is-native.md)
+> replaced the bundled document with native screens, so `app-native/`, `vite.config.ts`,
+> `capacitor.config.spike.json`, `scripts/android-spike.mjs`, `scripts/verify-two-origin.mjs` and the
+> `spike:*` aliases left the tree. This page is kept as the record of what was measured; the commands
+> below no longer exist.
+
 Plan B for the Android shell is decided, not being weighed: the app's **owned** surfaces ship
 inside the APK and the public/server-guarded ones stay remote. What is still unknown is whether
 one Capacitor app can hold a **local** origin (`https://localhost`, the bundled document) and a

@@ -14,8 +14,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * NOTE: `server.url` means the native bridge is injected into a *remote*
  * document. Capacitor only does that for origins it knows about, and there is a
  * long-standing upstream bug for origins that are not the configured app URL
- * (ionic-team/capacitor#7454). `scripts/verify-bridge.mjs` exists to prove the
- * bridge is live on the installed build before anything depends on it.
+ * (ionic-team/capacitor#7454). The bridge probe script left with the native app
+ * (ADR-0089); this config is kept for the shell that still ships.
  */
 const serverUrl = process.env.CAPACITOR_SERVER_URL ?? 'https://royaraqamia.com';
 
