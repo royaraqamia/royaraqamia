@@ -323,6 +323,8 @@ class ShellActivity : ComponentActivity() {
                                     siteUrl = BuildConfig.SITE_URL,
                                     signedIn = signedIn,
                                     onCopy = ::copyToClipboard,
+                                    onShare = ::shareText,
+                                    onOpenDocument = ::handOver,
                                     onSignIn = ::showSignIn,
                                 )
                             // The certificate check (#658): public by design, so it

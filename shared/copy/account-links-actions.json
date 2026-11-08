@@ -1,0 +1,40 @@
+{
+  "surface": "account-links",
+  "component": "account-links-actions",
+  "web": {
+    "file": "frontend/ui/linksnap/link-row-card-copy.ts",
+    "export": "LINK_ROW_CARD_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowActionsCopy.kt",
+    "object": "LinksnapRowActionsCopy"
+  },
+  "notes": {
+    "source": "The owned-link row's actions and the words they carry (#943), in both clients. The page's `frontend/ui/linksnap/link-row-card.tsx` is the reference: copy, share, the analytics toggle, the edit, QR and delete menu, the delete confirmation and the undo after it. The app draws the same toolbar natively, so neither client spells a string.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render."
+  },
+  "strings": {
+    "copyAction": "نسخ الرَّابط",
+    "shareAction": "مشاركة الرَّابط",
+    "analyticsAction": "التَّحليلات",
+    "actionsMenu": "إجراءات الرَّابط",
+    "moreActions": "مزيد من الإجراءات",
+    "editAction": "تعديل الرَّابط",
+    "qrAction": "رمز الـ QR",
+    "deleteAction": "حذف الرَّابط",
+    "deleteTitle": "حذف الرَّابط",
+    "deleteMessage": "هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟ هذا الإجراء دائم.",
+    "deleteConfirm": "حذف الرَّابط",
+    "deleteCancel": "إلغاء",
+    "copyDone": "تم نسخ الرَّابط!",
+    "copyFailed": "فشل نسخ الرَّابط",
+    "shareTitle": "رابط مُختصَر من LinkSnap",
+    "shareDone": "تمت المشاركة!",
+    "shareFailed": "تعذر فتح لوحة المشاركة",
+    "deleted": "تم حذف الرَّابط",
+    "undo": "تراجع",
+    "restored": "تم استرجاع الرَّابط",
+    "restoreFailed": "فشل استرجاع الرَّابط",
+    "deleteFailed": "خطأ في حذف الرَّابط."
+  }
+}

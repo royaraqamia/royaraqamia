@@ -1,0 +1,25 @@
+{
+  "surface": "account-links",
+  "component": "account-links-qr",
+  "web": {
+    "file": "frontend/ui/linksnap/link-qr-modal-copy.ts",
+    "export": "LINK_QR_MODAL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapQrCopy.kt",
+    "object": "LinksnapQrCopy"
+  },
+  "notes": {
+    "source": "The owned-link QR dialog's words, in both clients (#943). The page's `frontend/ui/linksnap/link-qr-modal.tsx` is the reference: the title, the instruction, the short-link label, and the three faces the dialog has while it encodes, after it has a code, and when it cannot. The app draws the same dialog from the same encoder parameters, so neither client spells a string.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "رمز الـ QR",
+    "description": "امسح الرَّمز لعرض الرَّابط",
+    "urlLabel": "الرَّابط:",
+    "loading": "جاري جلب رمز الـ QR...",
+    "errorTitle": "تعذَّر إنشاء رمز الـ QR",
+    "errorBody": "حدث خطأ غير مُتوقَّع أثناء إعداد الرَّمز، يُرجَى المحاولة مرَّة أخرى.",
+    "retry": "إعادة المحاولة"
+  }
+}

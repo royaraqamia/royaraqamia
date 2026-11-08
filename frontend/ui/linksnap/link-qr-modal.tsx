@@ -10,11 +10,12 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import { getShortLinkUrl } from '@/frontend/shared/linksnap/get-short-link-url';
 import { cn } from '@/frontend/shared/cn';
-import { Loader2, AlertCircle, RotateCcw, QrCode } from 'lucide-react';
+import { LoaderCircle, CircleAlert, RotateCcw, QrCode } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
+import { LINK_QR_MODAL_COPY } from './link-qr-modal-copy';
 
 interface LinkQrModalProps {
   code: string;
@@ -81,25 +82,43 @@ export const LinkQrModal = memo(function LinkQrModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {open && (
-        <DialogContent className="sm:max-w-105 p-6 gap-6 rounded-3xl border border-border/80 bg-background shadow-2xl">
-          <DialogHeader className="space-y-3 text-right">
+        <DialogContent
+          data-visual="link-qr-dialog"
+          className="sm:max-w-105 p-6 gap-6 rounded-3xl border border-border/80 bg-background shadow-2xl"
+        >
+          <DialogHeader data-visual="link-qr-header" className="space-y-3 text-right">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/15 shadow-xs">
                 <QrCode className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
-                  رمز الـ QR
+                <DialogTitle
+                  data-visual="link-qr-title"
+                  className="text-lg font-bold tracking-tight text-foreground"
+                >
+                  {LINK_QR_MODAL_COPY.title}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  امسح الرَّمز لعرض الرَّابط
+                <DialogDescription
+                  data-visual="link-qr-description"
+                  className="text-xs text-muted-foreground mt-0.5"
+                >
+                  {LINK_QR_MODAL_COPY.description}
                 </DialogDescription>
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-xs">
-              <span className="text-muted-foreground shrink-0 font-medium">الرَّابط:</span>
+            <div
+              data-visual="link-qr-url-line"
+              className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-xs"
+            >
               <span
+                data-visual="link-qr-url-label"
+                className="text-muted-foreground shrink-0 font-medium"
+              >
+                {LINK_QR_MODAL_COPY.urlLabel}
+              </span>
+              <span
+                data-visual="link-qr-url"
                 dir="ltr"
                 className="font-mono text-xs font-bold text-foreground truncate max-w-60 text-left select-all hover:text-primary transition-colors"
                 title={shortUrl}
@@ -121,12 +140,14 @@ export const LinkQrModal = memo(function LinkQrModal({
               ) : error ? (
                 <div className="flex flex-col items-center justify-center w-full text-center gap-3 p-4 animate-in fade-in-50 duration-200">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                    <AlertCircle className="h-5 w-5" aria-hidden="true" />
+                    <CircleAlert className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-destructive">تعذَّر إنشاء رمز الـ QR</p>
+                    <p className="text-xs font-bold text-destructive">
+                      {LINK_QR_MODAL_COPY.errorTitle}
+                    </p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      حدث خطأ غير مُتوقَّع أثناء إعداد الرَّمز، يُرجَى المحاولة مرَّة أخرى.
+                      {LINK_QR_MODAL_COPY.errorBody}
                     </p>
                   </div>
                   <button
@@ -144,19 +165,19 @@ export const LinkQrModal = memo(function LinkQrModal({
                     )}
                   >
                     <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>إعادة المحاولة</span>
+                    <span>{LINK_QR_MODAL_COPY.retry}</span>
                   </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 py-10 animate-in fade-in-50 duration-200">
                   <div className="relative flex items-center justify-center">
-                    <Loader2
+                    <LoaderCircle
                       className="relative size-6 animate-spin text-primary"
                       aria-hidden="true"
                     />
                   </div>
                   <p className="text-xs font-medium text-muted-foreground">
-                    جاري جلب رمز الـ QR...
+                    {LINK_QR_MODAL_COPY.loading}
                   </p>
                 </div>
               )}

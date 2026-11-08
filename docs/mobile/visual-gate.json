@@ -395,6 +395,21 @@
               "dy": 2
             }
           }
+        },
+        {
+          "name": "qr",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-08",
+            "measured": 0.0802,
+            "alignment": {
+              "dx": 0,
+              "dy": -1
+            }
+          }
         }
       ]
     }

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.royaraqamia.app.store.linksnap.LinksnapLinkRow
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
+import com.royaraqamia.app.verify.VerifyQrCode
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -234,4 +235,85 @@ class LinksnapAccountScreenVisualTest {
             .onNodeWithTag(LinksnapBulkBarMetrics.BAR, useUnmergedTree = true)
             .captureRoboImage(File(dir, "app.png").path)
     }
+
+    /**
+     * The QR dialog the row's action opens (#943).
+     *
+     * The dialog encodes the same short URL the page's fixture records, with the
+     * page's own encoder parameters (error correction M, a one-module quiet
+     * zone), and is drawn in its ready face. The contract measures the header and
+     * its words; the matrix is the encoder's output and is not a measured box,
+     * because Chromium's and Skia's rasterisation of a dense matrix never agree
+     * pixel for pixel.
+     */
+    @Test
+    fun `the qr dialog records the same numbers as the page`() {
+        val shortUrl = "http://localhost:3000/${row.code}"
+        val matrix = VerifyQrCode.matrix(shortUrl, size = 240, quietZone = 1)
+        checkNotNull(matrix) { "the fixture URL must encode" }
+
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        LinksnapQrContent(
+                            shortUrl = shortUrl,
+                            state = LinksnapQrUiState.Ready(matrix),
+                            onRetry = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val json =
+            """
+            {
+              "surface": "account-links",
+              "elements": {
+                "title": {
+                  "height": ${height(LinksnapQrMetrics.TITLE)},
+                  "fontSize": ${LinksnapQrMetrics.titleSize.value},
+                  "fontWeight": 700,
+                  "lineHeight": ${LinksnapQrMetrics.titleLineHeight.value}
+                },
+                "description": {
+                  "height": ${height(LinksnapQrMetrics.DESCRIPTION)},
+                  "fontSize": ${LinksnapQrMetrics.descriptionSize.value},
+                  "lineHeight": ${LinksnapQrMetrics.descriptionLineHeight.value}
+                },
+                "url-label": {
+                  "height": ${height(LinksnapQrMetrics.URL_LABEL)},
+                  "fontSize": ${LinksnapQrMetrics.urlTextSize.value},
+                  "fontWeight": ${500}
+                },
+                "url": {
+                  "height": ${height(LinksnapQrMetrics.URL)},
+                  "fontSize": ${LinksnapQrMetrics.urlTextSize.value},
+                  "fontWeight": ${700}
+                },
+                "header": {
+                  "width": ${width(LinksnapQrMetrics.HEADER)},
+                  "height": ${height(LinksnapQrMetrics.HEADER)}
+                },
+                "url-line": {
+                  "height": ${height(LinksnapQrMetrics.URL_LINE)},
+                  "width": ${width(LinksnapQrMetrics.URL_LINE)},
+                  "radius": ${LinksnapQrMetrics.urlLineRadius.value},
+                  "paddingTop": ${LinksnapQrMetrics.urlLinePaddingY.value},
+                  "paddingLeft": ${LinksnapQrMetrics.urlLinePaddingX.value},
+                  "rowGap": ${LinksnapQrMetrics.columnGap.value},
+                  "columnGap": ${LinksnapQrMetrics.columnGap.value}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/account-links/qr").apply { mkdirs() }
+        File(dir, "app.json").writeText("$json\n")
+        compose
+            .onNodeWithTag(LinksnapQrMetrics.HEADER, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
+
 }

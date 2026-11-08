@@ -1299,6 +1299,62 @@
       ]
     },
     {
+      "id": "account-links-actions",
+      "surface": "account-links",
+      "issue": "#943",
+      "web": {
+        "route": "app/account/links/page.tsx",
+        "component": "frontend/ui/linksnap/link-row-card.tsx",
+        "copyModule": "frontend/ui/linksnap/link-row-card-copy.ts",
+        "copyExport": "LINK_ROW_CARD_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowActions.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowActionsUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowActionsCopy.kt",
+        "copyObject": "LinksnapRowActionsCopy"
+      },
+      "copySource": "shared/copy/account-links-actions.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "copyAction"
+        }
+      ]
+    },
+    {
+      "id": "account-links-qr",
+      "surface": "account-links",
+      "issue": "#943",
+      "web": {
+        "route": "app/account/links/page.tsx",
+        "component": "frontend/ui/linksnap/link-qr-modal.tsx",
+        "copyModule": "frontend/ui/linksnap/link-qr-modal-copy.ts",
+        "copyExport": "LINK_QR_MODAL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapQrDialog.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapQrUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapQrCopy.kt",
+        "copyObject": "LinksnapQrCopy"
+      },
+      "copySource": "shared/copy/account-links-qr.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "Ready",
+          "copy": "title"
+        },
+        {
+          "name": "Failed",
+          "copy": "errorTitle"
+        }
+      ]
+    },
+    {
       "id": "linksnap-unlock",
       "surface": "linksnap-unlock",
       "issue": "#919",

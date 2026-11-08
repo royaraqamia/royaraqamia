@@ -5,13 +5,13 @@ import {
   Copy,
   Check,
   Pencil,
-  BarChart3,
-  Trash2,
+  ChartColumn,
+  Trash,
   ChevronUp,
   ChevronDown,
-  AlertTriangle,
+  TriangleAlert,
   QrCode,
-  MoreHorizontal,
+  Ellipsis,
   Share2,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
@@ -19,6 +19,7 @@ import { LinkRowSummary } from './link-row-summary';
 import { LinkEditDialog } from './link-edit-dialog';
 import { LinkAnalyticsDrawer } from './link-analytics-drawer';
 import { LinkQrModal } from './link-qr-modal';
+import { LINK_ROW_CARD_COPY } from './link-row-card-copy';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import {
   DropdownMenu,
@@ -91,26 +92,26 @@ export const LinkRowCard = memo(function LinkRowCard({
     try {
       await navigator.clipboard.writeText(fullShortUrl);
       setCopiedCode(code);
-      toast.success('تم نسخ الرَّابط!');
+      toast.success(LINK_ROW_CARD_COPY.copyDone);
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
       logger.error('Copy failed', { error: String(err) });
-      toast.error('فشل نسخ الرَّابط');
+      toast.error(LINK_ROW_CARD_COPY.copyFailed);
     }
   };
 
   const handleShare = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'رابط مُختصَر من LinkSnap', url: fullShortUrl });
-        toast.success('تمت المشاركة!');
+        await navigator.share({ title: LINK_ROW_CARD_COPY.shareTitle, url: fullShortUrl });
+        toast.success(LINK_ROW_CARD_COPY.shareDone);
       } else {
         await handleCopy();
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
       logger.error('Share failed', { error: String(err) });
-      toast.error('تعذر فتح لوحة المشاركة');
+      toast.error(LINK_ROW_CARD_COPY.shareFailed);
     }
   };
 
@@ -120,9 +121,9 @@ export const LinkRowCard = memo(function LinkRowCard({
     try {
       await deleteLink(clientId);
       onDeleted(clientId);
-      toast('تم حذف الرَّابط', {
+      toast(LINK_ROW_CARD_COPY.deleted, {
         action: {
-          label: 'تراجع',
+          label: LINK_ROW_CARD_COPY.undo,
           onClick: async () => {
             try {
               if (linksnap) {
@@ -131,15 +132,15 @@ export const LinkRowCard = memo(function LinkRowCard({
                 await shorten(originalUrl, code, token);
               }
               onRestored?.();
-              toast.success('تم استرجاع الرَّابط');
+              toast.success(LINK_ROW_CARD_COPY.restored);
             } catch {
-              toast.error('فشل استرجاع الرَّابط');
+              toast.error(LINK_ROW_CARD_COPY.restoreFailed);
             }
           },
         },
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.';
+      const msg = err instanceof Error ? err.message : LINK_ROW_CARD_COPY.deleteFailed;
       toast.error(msg);
     }
   };
@@ -200,8 +201,8 @@ export const LinkRowCard = memo(function LinkRowCard({
           <button
             onClick={handleCopy}
             type="button"
-            aria-label="نسخ الرَّابط"
-            title="نسخ الرَّابط"
+            aria-label={LINK_ROW_CARD_COPY.copyAction}
+            title={LINK_ROW_CARD_COPY.copyAction}
             className={cn(
               'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
@@ -224,8 +225,8 @@ export const LinkRowCard = memo(function LinkRowCard({
           <button
             onClick={handleShare}
             type="button"
-            aria-label="مشاركة الرَّابط"
-            title="مشاركة الرَّابط"
+            aria-label={LINK_ROW_CARD_COPY.shareAction}
+            title={LINK_ROW_CARD_COPY.shareAction}
             className={cn(
               'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
@@ -249,8 +250,8 @@ export const LinkRowCard = memo(function LinkRowCard({
                 : 'border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
             )}
           >
-            <BarChart3 aria-hidden="true" className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">التَّحليلات</span>
+            <ChartColumn aria-hidden="true" className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{LINK_ROW_CARD_COPY.analyticsAction}</span>
             {isExpanded ? (
               <ChevronUp
                 aria-hidden="true"
@@ -268,8 +269,9 @@ export const LinkRowCard = memo(function LinkRowCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={`إجراءات الرَّابط /${code}`}
-                title="مزيد من الإجراءات"
+                data-visual="link-row-more"
+                aria-label={`${LINK_ROW_CARD_COPY.actionsMenu} /${code}`}
+                title={LINK_ROW_CARD_COPY.moreActions}
                 className={cn(
                   'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
                   'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
@@ -277,26 +279,35 @@ export const LinkRowCard = memo(function LinkRowCard({
                   'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
                 )}
               >
-                <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+                <Ellipsis aria-hidden="true" className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 font-medium">
-              <DropdownMenuItem onClick={() => setEditing(true)} className="cursor-pointer">
+              <DropdownMenuItem
+                data-visual="link-row-edit"
+                onClick={() => setEditing(true)}
+                className="cursor-pointer"
+              >
                 <Pencil className="me-2 h-4 w-4" />
-                <span>تعديل الرَّابط</span>
+                <span>{LINK_ROW_CARD_COPY.editAction}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowQr(true)} className="cursor-pointer">
+              <DropdownMenuItem
+                data-visual="link-row-qr"
+                onClick={() => setShowQr(true)}
+                className="cursor-pointer"
+              >
                 <QrCode className="me-2 h-4 w-4" />
-                <span>رمز الـ QR</span>
+                <span>{LINK_ROW_CARD_COPY.qrAction}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
               <DropdownMenuItem
+                data-visual="link-row-delete"
                 variant="destructive"
                 onClick={() => setShowDeleteConfirm(true)}
                 className="cursor-pointer text-rose-600 focus:bg-rose-50 dark:text-rose-400 dark:focus:bg-rose-950/40"
               >
-                <Trash2 className="me-2 h-4 w-4" />
-                <span>حذف الرَّابط</span>
+                <Trash className="me-2 h-4 w-4" />
+                <span>{LINK_ROW_CARD_COPY.deleteAction}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -310,7 +321,7 @@ export const LinkRowCard = memo(function LinkRowCard({
           aria-live="polite"
           className="mx-4 mb-4 flex items-center gap-2.5 rounded-xl border border-rose-200/80 bg-rose-50/70 p-3 text-xs font-medium text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
         >
-          <AlertTriangle
+          <TriangleAlert
             aria-hidden="true"
             className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400"
           />
@@ -336,11 +347,11 @@ export const LinkRowCard = memo(function LinkRowCard({
 
       <ConfirmDialog
         open={showDeleteConfirm}
-        title="حذف الرَّابط"
-        message="هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟ هذا الإجراء دائم."
-        confirmLabel="حذف الرَّابط"
-        cancelLabel="إلغاء"
-        icon={Trash2}
+        title={LINK_ROW_CARD_COPY.deleteTitle}
+        message={LINK_ROW_CARD_COPY.deleteMessage}
+        confirmLabel={LINK_ROW_CARD_COPY.deleteConfirm}
+        cancelLabel={LINK_ROW_CARD_COPY.deleteCancel}
+        icon={Trash}
         variant="danger"
         onConfirm={handleDeleteConfirmed}
         onCancel={() => setShowDeleteConfirm(false)}

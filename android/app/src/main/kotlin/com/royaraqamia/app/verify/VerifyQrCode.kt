@@ -34,7 +34,7 @@ object VerifyQrCode {
         "${siteUrl.trimEnd('/')}/verify/${code.trim().uppercase()}"
 
     /** [content] as a square QR matrix, or null when the encoder refuses it. */
-    fun matrix(content: String, size: Int = 512): BitMatrix? =
+    fun matrix(content: String, size: Int = 512, quietZone: Int = QUIET_ZONE): BitMatrix? =
         runCatching {
             QRCodeWriter()
                 .encode(
@@ -44,7 +44,7 @@ object VerifyQrCode {
                     size,
                     mapOf(
                         EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
-                        EncodeHintType.MARGIN to QUIET_ZONE,
+                        EncodeHintType.MARGIN to quietZone,
                     ),
                 )
         }
