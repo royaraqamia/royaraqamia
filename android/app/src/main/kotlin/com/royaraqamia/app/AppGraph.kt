@@ -4,7 +4,9 @@ import android.content.Context
 import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.chats.ChatHintSource
 import com.royaraqamia.app.chats.ChatsRepository
+import com.royaraqamia.app.chats.RealtimeChatHints
 import com.royaraqamia.app.chats.SupabaseChatAttachmentStorage
 import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
@@ -22,6 +24,9 @@ import com.royaraqamia.app.quran.AssetQuranRepository
 import com.royaraqamia.app.quran.PreferencesQuranPositionStore
 import com.royaraqamia.app.quran.QuranRepository
 import com.royaraqamia.app.rates.RatesRepository
+import com.royaraqamia.app.realtime.RealtimeClient
+import com.royaraqamia.app.realtime.RealtimeSession
+import com.royaraqamia.app.realtime.RealtimeToken
 import com.royaraqamia.app.shell.PreferencesServicesOrderStore
 import com.royaraqamia.app.shell.ServicesOrderStore
 import com.royaraqamia.app.session.EncryptedTokenStore
@@ -50,6 +55,7 @@ import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.store.spendtrack.SpendtrackStores
 import com.royaraqamia.app.verify.VerifyRepository
 import java.io.File
+import java.net.URLEncoder
 
 /**
  * The app's composition root (#501): the one place that decides which
@@ -101,6 +107,10 @@ class AppGraph private constructor(
     val communityComposer: CommunityComposerRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
     val chats: ChatsRepository,
+    /** The app's one Realtime client (ADR-0060, ADR-0141). */
+    val realtime: RealtimeClient,
+    /** The open thread's hint channels, on that one client. */
+    val chatHints: ChatHintSource,
     /** The services sheet's order, on this device (#806). */
     val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
@@ -215,6 +225,10 @@ class AppGraph private constructor(
      * is deliberately untouched — closing a handle is not signing out.
      */
     fun close() {
+        // A worker's graph holds no subscriptions, so this only releases the
+        // socket if a caller happened to open one. The UI graph is not closed
+        // here; the thread's own subscription is what closes its socket.
+        realtime.close()
         databases.close()
         spendtrackDatabases.close()
         linksnapDatabases.close()
@@ -240,6 +254,27 @@ class AppGraph private constructor(
                     identities = PreferencesIdentityStorage(context),
                 )
             val client = ApiClient(siteUrl, session)
+
+            // The app's one Realtime socket (ADR-0060, ADR-0141). It reads the
+            // session's token at every join, so a refresh mid-session is the
+            // token the next subscribe carries, and it renews once when a topic
+            // is refused. The base is the project's, derived from the auth base
+            // the caller already passed, exactly as the storage base below is.
+            val realtime =
+                RealtimeClient(
+                    url = realtimeUrlOf(authUrl, anonKey),
+                    session =
+                        object : RealtimeSession {
+                            override fun token(): RealtimeToken? =
+                                session.attempt()?.let {
+                                    RealtimeToken(it.accessToken, it.generation)
+                                }
+
+                            override suspend fun renew(seenGeneration: Int): Boolean =
+                                session.renew(seenGeneration)
+                        },
+                )
+            val chatHints = RealtimeChatHints(realtime)
 
             // The composer's files go to the same bucket the site writes, on the
             // session the bucket's policy admits (#933). The storage base is the
@@ -316,6 +351,8 @@ class AppGraph private constructor(
                         online = online,
                         attachmentStorage = chatAttachmentStorage,
                     ),
+                realtime = realtime,
+                chatHints = chatHints,
                 quran =
                     AssetQuranRepository(
                         context = context,
@@ -369,6 +406,26 @@ class AppGraph private constructor(
                 leadStores = leadStores,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
+        }
+
+        /**
+         * The project's Realtime socket, from the auth base the app already has.
+         *
+         * Supabase serves Realtime at `/realtime/v1/websocket` on the same
+         * origin as auth, with the publishable key as `apikey` and protocol
+         * `vsn=1.0.0` (ADR-0141). Only the scheme changes: `https` becomes `wss`.
+         */
+        private fun realtimeUrlOf(authUrl: String, anonKey: String): String {
+            val origin = authUrl.substringBefore("/auth/v1").trimEnd('/')
+            val socket =
+                when {
+                    origin.startsWith("https://") -> "wss://" + origin.removePrefix("https://")
+                    origin.startsWith("http://") -> "ws://" + origin.removePrefix("http://")
+                    else -> origin
+                }
+            return "$socket/realtime/v1/websocket?apikey=" +
+                URLEncoder.encode(anonKey, "UTF-8") +
+                "&vsn=1.0.0"
         }
     }
 }

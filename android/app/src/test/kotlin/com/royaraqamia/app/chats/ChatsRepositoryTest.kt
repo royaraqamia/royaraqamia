@@ -96,6 +96,21 @@ class ChatsRepositoryTest {
     }
 
     @Test
+    fun `a hinted re-read merges by id instead of drawing the line twice`() = runBlocking {
+        // A Realtime hint is only "pull again" (ADR-0060). A reconnect can replay
+        // a change, so the pull must be idempotent: the same page twice is still
+        // one line, keyed by the server's id.
+        val repository = repository(RecordingTransport { HttpResponse(200, MESSAGES_BODY) })
+
+        assertTrue(repository.messages("c-1") is ApiResult.Success)
+        val second = repository.messages("c-1")
+
+        assertTrue(second is ApiResult.Success)
+        assertEquals(listOf("m-1"), (second as ApiResult.Success).value.messages.map { it.id })
+        assertEquals(1, repository.cachedMessages("c-1").size)
+    }
+
+    @Test
     fun `an offline send is durable and says the queue owes it`() = runBlocking {
         val repository = repository(RecordingTransport { throw IOException("no radio") }, online = { false })
 
