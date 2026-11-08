@@ -390,6 +390,46 @@ object LucideVectors {
         }.build()
     }
 
+    /** `chart-column`, the site's own drawing. */
+    val ChartColumn: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "chart-column",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M3 3v16a2 2 0 0 0 2 2h16"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M18 17V9"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M13 17V5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M8 17v-3"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `chart-pie`, the site's own drawing. */
     val ChartPie: ImageVector by lazy {
         ImageVector.Builder(
@@ -446,6 +486,25 @@ object LucideVectors {
         ).apply {
             addPath(
                 addPathNodes("m6 9 6 6 6-6"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `chevron-up`, the site's own drawing. */
+    val ChevronUp: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "chevron-up",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("m18 15-6-6-6 6"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -809,6 +868,39 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("m7 10 5 5 5-5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `ellipsis`, the site's own drawing. */
+    val Ellipsis: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "ellipsis",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

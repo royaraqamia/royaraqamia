@@ -1,0 +1,46 @@
+{
+  "surface": "account-links",
+  "state": "qr",
+  "route": "/account/links",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "height": 28,
+      "fontSize": 18,
+      "fontWeight": 700,
+      "lineHeight": 28
+    },
+    "description": {
+      "height": 16,
+      "fontSize": 12,
+      "lineHeight": 16
+    },
+    "url-label": {
+      "height": 16,
+      "fontSize": 12,
+      "fontWeight": 500
+    },
+    "url": {
+      "height": 16,
+      "fontSize": 12,
+      "fontWeight": 700
+    },
+    "header": {
+      "width": 339,
+      "height": 104
+    },
+    "url-line": {
+      "height": 38,
+      "width": 307,
+      "radius": 12,
+      "paddingTop": 10,
+      "paddingLeft": 14,
+      "rowGap": 8,
+      "columnGap": 8
+    }
+  }
+}

@@ -19,6 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,8 +60,12 @@ import com.royaraqamia.app.sync.SyncPill
 import com.royaraqamia.app.sync.SyncPillState
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import com.royaraqamia.app.verify.VerifyQrCode
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -90,6 +98,8 @@ fun LinksnapScreen(
     signedIn: Boolean,
     modifier: Modifier = Modifier,
     onCopy: (String) -> Unit = {},
+    onShare: (String) -> Unit = {},
+    onOpenDocument: () -> Unit = {},
     onSignIn: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -97,6 +107,11 @@ fun LinksnapScreen(
 
     var rows by remember { mutableStateOf<List<LinksnapLinkRow>>(emptyList()) }
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
+    var copiedCode by remember { mutableStateOf<String?>(null) }
+    var qrRow by remember { mutableStateOf<LinksnapLinkRow?>(null) }
+    var qrState by remember { mutableStateOf<LinksnapQrUiState>(LinksnapQrUiState.Loading) }
+    var qrAttempt by remember { mutableStateOf(0) }
+    val snackbar = remember { SnackbarHostState() }
 
     // The bar's selection outlives a scroll because it lives here rather than in
     // a row, and outlives a rotation because the saver writes the slugs to the
@@ -187,32 +202,120 @@ fun LinksnapScreen(
         }
     }
 
+    /** The page's copy action on one row, with the tick the page shows after it. */
+    fun copyLink(row: LinksnapLinkRow) {
+        onCopy(LinksnapRoutes.shortUrl(siteUrl, row.code))
+        copiedCode = row.code
+        scope.launch {
+            delay(2_000)
+            if (copiedCode == row.code) copiedCode = null
+        }
+    }
+
+    fun shareLink(row: LinksnapLinkRow) {
+        onShare(LinksnapRoutes.shortUrl(siteUrl, row.code))
+    }
+
+    /**
+     * The page's delete-then-undo (#943). The undo clears the same row's
+     * tombstone through [LinksnapRepository.restoreLink], so the code is the one
+     * the member deleted rather than a second short link.
+     */
+    fun deleteLink(row: LinksnapLinkRow) {
+        scope.launch {
+            val removed = repository.deleteLink(row.clientId)
+            if (!removed) return@launch
+            sync()
+            val answer =
+                snackbar.showSnackbar(
+                    message = LinksnapRowActionsCopy.DELETED,
+                    actionLabel = LinksnapRowActionsCopy.UNDO,
+                    duration = SnackbarDuration.Long,
+                )
+            if (answer == SnackbarResult.ActionPerformed) {
+                val restored = repository.restoreLink(row.clientId)
+                sync()
+                snackbar.showSnackbar(
+                    if (restored != null) LinksnapRowActionsCopy.RESTORED
+                    else LinksnapRowActionsCopy.RESTORE_FAILED
+                )
+            }
+        }
+    }
+
+    fun openQr(row: LinksnapLinkRow) {
+        qrRow = row
+        qrAttempt += 1
+    }
+
+    LaunchedEffect(qrRow?.clientId, qrAttempt) {
+        val row = qrRow ?: return@LaunchedEffect
+        qrState = LinksnapQrUiState.Loading
+        qrState =
+            withContext(Dispatchers.Default) {
+                val matrix =
+                    VerifyQrCode.matrix(
+                        content = LinksnapRoutes.shortUrl(siteUrl, row.code),
+                        size = 240,
+                        quietZone = 1,
+                    )
+                if (matrix != null) LinksnapQrUiState.Ready(matrix) else LinksnapQrUiState.Failed
+            }
+    }
+
     fun copySelected() {
         val urls = rows.filter { it.code in selection.codes }.map { "$siteUrl/${it.code}" }
         if (urls.isNotEmpty()) onCopy(urls.joinToString("\n"))
     }
 
-    LinksnapAccountList(
-        rows = rows,
-        pill = pill,
-        signedIn = signedIn,
-        onRetry = {
-            scope.launch {
-                repository.retryFailed()
-                sync()
-            }
-        },
-        onSignIn = onSignIn,
-        selectedCodes = selection.codes,
-        allSelected = selection.allSelected(rows.map { it.code }),
-        onToggleSelect = selection::toggle,
-        onToggleAll = { selection.toggleAll(rows.map { it.code }) },
-        onClearSelection = selection::clear,
-        onCopySelected = ::copySelected,
-        onApplyExpiry = ::applyExpiry,
-        onDeleteSelected = ::deleteSelected,
-        modifier = modifier,
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        LinksnapAccountList(
+            rows = rows,
+            pill = pill,
+            signedIn = signedIn,
+            onRetry = {
+                scope.launch {
+                    repository.retryFailed()
+                    sync()
+                }
+            },
+            onSignIn = onSignIn,
+            selectedCodes = selection.codes,
+            allSelected = selection.allSelected(rows.map { it.code }),
+            onToggleSelect = selection::toggle,
+            onToggleAll = { selection.toggleAll(rows.map { it.code }) },
+            onClearSelection = selection::clear,
+            onCopySelected = ::copySelected,
+            onApplyExpiry = ::applyExpiry,
+            onDeleteSelected = ::deleteSelected,
+            copiedCode = copiedCode,
+            onCopyLink = ::copyLink,
+            onShareLink = ::shareLink,
+            onAnalyticsLink = { onOpenDocument() },
+            onEditLink = { onOpenDocument() },
+            onQrLink = ::openQr,
+            onDeleteLink = ::deleteLink,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        // The one bottom transient the list shows: the delete's undo (#943).
+        SnackbarHost(
+            hostState = snackbar,
+            modifier =
+                Modifier.align(Alignment.BottomCenter)
+                    .padding(LinksnapRowMetrics.pagePadding),
+        )
+
+        qrRow?.let { row ->
+            LinksnapQrDialog(
+                shortUrl = LinksnapRoutes.shortUrl(siteUrl, row.code),
+                state = qrState,
+                open = true,
+                onDismiss = { qrRow = null },
+                onRetry = { qrAttempt += 1 },
+            )
+        }
+    }
 }
 
 /**
@@ -236,6 +339,13 @@ internal fun LinksnapAccountList(
     onCopySelected: () -> Unit = {},
     onApplyExpiry: (String) -> Unit = {},
     onDeleteSelected: () -> Unit = {},
+    copiedCode: String? = null,
+    onCopyLink: (LinksnapLinkRow) -> Unit = {},
+    onShareLink: (LinksnapLinkRow) -> Unit = {},
+    onAnalyticsLink: (LinksnapLinkRow) -> Unit = {},
+    onEditLink: (LinksnapLinkRow) -> Unit = {},
+    onQrLink: (LinksnapLinkRow) -> Unit = {},
+    onDeleteLink: (LinksnapLinkRow) -> Unit = {},
 ) {
     Column(
         modifier =
@@ -272,7 +382,14 @@ internal fun LinksnapAccountList(
                     LinksnapRowCard(
                         row = row,
                         selected = row.code in selectedCodes,
+                        copied = copiedCode == row.code,
                         onToggleSelect = { onToggleSelect(row.code) },
+                        onCopy = { onCopyLink(row) },
+                        onShare = { onShareLink(row) },
+                        onAnalytics = { onAnalyticsLink(row) },
+                        onEdit = { onEditLink(row) },
+                        onQr = { onQrLink(row) },
+                        onDelete = { onDeleteLink(row) },
                     )
                 }
             }
@@ -294,7 +411,14 @@ internal fun LinksnapAccountList(
 private fun LinksnapRowCard(
     row: LinksnapLinkRow,
     selected: Boolean,
+    copied: Boolean,
     onToggleSelect: () -> Unit,
+    onCopy: () -> Unit,
+    onShare: () -> Unit,
+    onAnalytics: () -> Unit,
+    onEdit: () -> Unit,
+    onQr: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     Column(
         modifier =
@@ -315,6 +439,24 @@ private fun LinksnapRowCard(
                 modifier = Modifier.weight(1f),
             )
         }
+
+        Box(
+            Modifier.fillMaxWidth()
+                .padding(top = LinksnapRowMetrics.actionSeparatorGap)
+                .height(LinksnapRowMetrics.actionSeparatorHeight)
+                .background(LinksnapRowMetrics.actionSeparator),
+        )
+        LinksnapRowActions(
+            code = row.code,
+            copied = copied,
+            analyticsExpanded = false,
+            onCopy = onCopy,
+            onShare = onShare,
+            onAnalytics = onAnalytics,
+            onEdit = onEdit,
+            onQr = onQr,
+            onDelete = onDelete,
+        )
     }
 }
 
@@ -574,6 +716,9 @@ internal object LinksnapRowMetrics {
     val listGap = 24.dp
     val summaryGap = 6.dp
     val badgeGap = 8.dp
+    val actionSeparatorGap = 8.dp
+    val actionSeparatorHeight = 1.dp
+    val actionSeparator = Color(0xFF1F1F1F)
     val iconGap = 6.dp
 
     val cardRadius = 16.dp
