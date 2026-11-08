@@ -474,6 +474,7 @@ class ShellActivity : ComponentActivity() {
                                         ChatThread(
                                             conversationId = conversationId,
                                             repository = graph.chats,
+                                            hints = graph.chatHints,
                                             onOpenAttachment = ::openExternal,
                                             // The assistant's thread is the
                                             // document: it streams rather than

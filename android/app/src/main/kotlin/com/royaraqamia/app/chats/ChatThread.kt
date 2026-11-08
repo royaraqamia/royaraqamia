@@ -64,6 +64,7 @@ import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -103,6 +104,12 @@ fun ChatThread(
     conversationId: String,
     repository: ChatsRepository,
     modifier: Modifier = Modifier,
+    /**
+     * The thread's live hint (ADR-0060, ADR-0141). Absent in a test or a tree
+     * whose Realtime client is not wired, and then the screen simply has no
+     * live line — it still reads once on open and answers every write.
+     */
+    hints: ChatHintSource? = null,
     onOpenAttachment: (String) -> Unit = {},
     onOpenAssistantThread: (String) -> Unit = {},
 ) {
@@ -127,13 +134,13 @@ fun ChatThread(
         mutableStateOf<List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>>(emptyList())
     }
     var invited by remember { mutableStateOf<Set<String>>(emptySet()) }
-    /** The newest line already stamped read: a poll must not write again for it. */
+    /** The newest line already stamped read: a re-read must not write again for it. */
     var markedLine by remember { mutableStateOf<String?>(null) }
     /** The lines the queue still owes, by their client id (#1127). */
     var pendingLines by remember { mutableStateOf<Map<String, ChatPending>>(emptyMap()) }
 
     /** One read of the thread and its lines, and the read watermark it stamps. */
-    suspend fun load(): Boolean {
+    suspend fun load() {
         // The device's copy first (#1127): a reload with no radio keeps the
         // thread it was reading, and the network is the revalidation.
         if (read == null) {
@@ -147,10 +154,10 @@ fun ChatThread(
         when (val result = repository.thread(conversationId)) {
             is ApiResult.Success -> {
                 if (result.value.kind == ChatThreadResponseThreadKind.AGENT) {
-                    // Handed over, and stoppable: a poll that kept running under
-                    // the document would open it again every few seconds.
+                    // Handed over: the document streams its own answer, so the
+                    // app does not draw a second, worse conversation.
                     onOpenAssistantThread(conversationId)
-                    return false
+                    return
                 }
                 read = ChatThreadUiState.Live(result.value)
                 when (val page = repository.messages(conversationId)) {
@@ -158,8 +165,8 @@ fun ChatThread(
                         messages = page.value.messages
                         pendingLines = repository.pending(conversationId)
                         // Seen is stamped once per *new* line, the way the site's hook
-                        // does: the badge is the reader's watermark (#816), and a poll
-                        // that wrote again every few seconds would spend a write for
+                        // does: the badge is the reader's watermark (#816), and a read
+                        // that wrote again for the same line would spend a write for
                         // nothing.
                         val newest = page.value.messages.lastOrNull()?.id
                         if (newest != null && newest != markedLine) {
@@ -172,8 +179,8 @@ fun ChatThread(
                 }
             }
             is ApiResult.Failure -> {
-                // Only the first read decides the face: a poll that fails while a
-                // thread is drawn must not replace it with an error.
+                // Only the first read decides the face: a later read that fails
+                // while a thread is drawn must not replace it with an error.
                 if (read == null) {
                     val missing = (result.error as? ApiError.Server)?.status == NOT_FOUND
                     read =
@@ -185,21 +192,43 @@ fun ChatThread(
                 }
             }
         }
-        return true
     }
 
     /**
-     * The read, and then the same read again every few seconds.
-     *
-     * The site pulls on a Realtime hint; the app has no socket, so it asks again
-     * on a bounded interval while the thread is on screen. The observable promise
-     * is the same one — a line the peer sent appears without a reload — and the
-     * mechanism is the one this client can keep (a Realtime client is its own
-     * stage, not a line in a screen).
+     * A burst of hints is one pull, the same 400 ms window the site's hook uses.
+     * The payload never reaches the screen: a hint says "something changed" and
+     * the read that follows merges by id, so a reconnect cannot draw a message
+     * that is already there (ADR-0060, ADR-0141).
      */
+    val hint = remember(conversationId) { Channel<Unit>(Channel.CONFLATED) }
+
+    // One read on open (and again after every write), never on a clock.
     LaunchedEffect(repository, conversationId, attempts) {
-        while (load()) {
-            delay(POLL_MS)
+        load()
+    }
+
+    // The assistant's thread is the document, so it has no live line here: the
+    // previous poll had to stop before handing over, and a hint would open the
+    // document again for a thread this screen must not draw (#819).
+    val liveThread = (read as? ChatThreadUiState.Live)?.thread
+    val hintable = liveThread != null && liveThread.kind != ChatThreadResponseThreadKind.AGENT
+
+    // The site's behaviour, made the app's: pull on a hint, never on a payload.
+    LaunchedEffect(hints, conversationId, hintable) {
+        val source = hints ?: return@LaunchedEffect
+        if (!hintable) return@LaunchedEffect
+        val subscription = source.subscribe(conversationId) { hint.trySend(Unit) }
+        try {
+            while (true) {
+                hint.receive()
+                delay(HINT_DEBOUNCE_MS)
+                while (hint.tryReceive().isSuccess) {
+                    // Fold the burst into the one pull below.
+                }
+                load()
+            }
+        } finally {
+            subscription.close()
         }
     }
 
@@ -432,8 +461,8 @@ private fun faceOf(thread: ChatThreadResponseThread): ThreadFace {
 /** What the assistant's thread says: it is the document, so the app says so. */
 private const val NOT_FOUND = 404
 
-/** How often the open thread asks again. The site's socket is the difference. */
-private const val POLL_MS = 5_000L
+/** The site's burst window (`HINT_DEBOUNCE_MS`): many hints, one pull. */
+private const val HINT_DEBOUNCE_MS = 400L
 
 /** The site's edit window (`CHAT_EDIT_WINDOW_MS`), mirrored by the RLS policy. */
 private val EDIT_WINDOW: Duration = Duration.ofMinutes(15)
