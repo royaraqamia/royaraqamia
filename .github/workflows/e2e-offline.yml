@@ -52,7 +52,6 @@ on:
       - 'frontend/shared/persistent-storage.ts'
       - 'frontend/state/**'
       - 'frontend/api/spendtrack/**'
-      - 'frontend/api/blogpress/**'
       - 'frontend/api/habitflow/**'
       - 'frontend/api/leads/**'
       - 'frontend/api/quran/**'
@@ -72,13 +71,13 @@ on:
       - 'scripts/build-sw-outbox.mjs'
       - 'frontend/ui/shared/lazy-chunk.ts'
       - 'frontend/ui/linksnap/**'
-      - 'app/blogpress/**'
+      - 'app/account/posts/**'
       - 'app/habitflow/**'
       - 'app/spendtrack/**'
       - 'app/linksnap/**'
       - 'frontend/ui/spendtrack/**'
       - 'frontend/ui/habitflow/**'
-      - 'frontend/ui/blogpress/**'
+      - 'frontend/ui/account/**'
       - 'e2e/setup-test-user.ts'
       - 'e2e/sign-in.ts'
       - 'e2e/worker-control.ts'
@@ -176,7 +175,6 @@ jobs:
           e2e/spendtrack-offline.spec.ts
           e2e/habitflow-sync-resume.spec.ts
           e2e/linksnap-offline.spec.ts
-          e2e/blogpress-offline.spec.ts
           e2e/chats-offline.spec.ts
           e2e/product-offline-render.spec.ts
           e2e/quran-sync.spec.ts

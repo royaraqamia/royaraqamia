@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
  * no row of its own in `docs/mobile/screens.json`: the composer is a state of
  * `community`, opened from the feed's compose control.
  *
- * A publish is one `POST /api/blogpress/posts` with `status: 'published'`, the
+ * A publish is one `POST /api/community/posts` with `status: 'published'`, the
  * route and body the page sends, behind [CommunityComposerStore]. The slug is
  * minted once and kept for the composer's whole life, so a retry after an answer
  * that never arrived reads the row back instead of creating a second post. A

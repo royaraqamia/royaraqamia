@@ -230,8 +230,8 @@ describe('proxy', () => {
   it('redirects unauthenticated users from protected routes to login', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockNextUrl.pathname = '/blogpress';
-    mockRequest.url = 'https://royaraqamia.com/blogpress';
+    mockNextUrl.pathname = '/admin';
+    mockRequest.url = 'https://royaraqamia.com/admin';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
@@ -243,7 +243,7 @@ describe('proxy', () => {
     mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
-    mockNextUrl.pathname = '/blogpress';
+    mockNextUrl.pathname = '/admin';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
@@ -336,14 +336,14 @@ describe('proxy', () => {
   it('redirects unauthenticated users from a nested editor route with the full path', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockNextUrl.pathname = '/blogpress/editor/abc123';
-    mockRequest.url = 'https://royaraqamia.com/blogpress/editor/abc123';
+    mockNextUrl.pathname = '/admin/certificates/ABC/edit';
+    mockRequest.url = 'https://royaraqamia.com/admin/certificates/ABC/edit';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
     expect(result.status).toBe(307);
     expect(result.url).toContain('/auth/login');
-    expect(result.url).toContain('redirect=%2Fblogpress%2Feditor%2Fabc123');
+    expect(result.url).toContain('redirect=%2Fadmin%2Fcertificates%2FABC%2Fedit');
   });
 
   it('redirects a logged-in user away from /auth/login to the requested safe redirect', async () => {

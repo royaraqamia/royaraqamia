@@ -62,8 +62,6 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **habitflow** `/habitflow` — native · #898
 - [ ] **spendtrack** `/spendtrack` `/spendtrack/categories` — todo
 - [x] **linksnap** `/linksnap` — native
-- [ ] **blogpress** `/blogpress` `/blogpress/calendar` — todo · #952
-- [ ] **blogpress-editor** `/blogpress/editor/[id]` — todo · #954
 - [x] **quran** `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
 - [ ] **notes** `/notes` — todo
@@ -83,7 +81,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 61 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 59 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -138,10 +136,8 @@ A component is finished when the surface that draws it is native: 61 ported comp
 - [ ] `account-news-preferences` on **account-news** · #950
 - [ ] `account-news-private` on **account-news** · #950
 - [ ] `account-news-request` on **account-news** · #950
-- [ ] `blogpress-list` on **blogpress** · #952
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
-- [ ] `blogpress-editor` on **blogpress-editor** · #954
 - [ ] `news-digest` on **news** · #926
 - [ ] `news-archive` on **news** · #926
 - [ ] `news-story` on **news** · #926
@@ -149,4 +145,4 @@ A component is finished when the surface that draws it is native: 61 ported comp
 
 ## Where this stands
 
-12 native · 26 to do · 1 blocked of 39 surfaces.
+12 native · 24 to do · 1 blocked of 37 surfaces.

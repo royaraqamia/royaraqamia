@@ -28,7 +28,6 @@ export const LAYOUT_ONLY_PATHS: readonly (readonly string[])[] = [
   ['admin', 'consultations'],
   ['admin', 'training'],
   ['auth'],
-  ['blogpress', 'editor'],
   ['chats'],
   ['consultation'],
   ['linksnap', 'unlock'],

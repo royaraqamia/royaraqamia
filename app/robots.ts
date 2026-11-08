@@ -15,7 +15,6 @@ const DISALLOWED_PATHS = [
   '/linksnap',
   '/habitflow',
   '/spendtrack',
-  '/blogpress',
 ];
 
 /**

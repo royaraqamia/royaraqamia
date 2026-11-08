@@ -1,5 +1,4 @@
 export const PROTECTED_ROUTES: Record<string, string> = {
-  '/blogpress': '/auth/login',
   '/admin': '/auth/login',
 };
 

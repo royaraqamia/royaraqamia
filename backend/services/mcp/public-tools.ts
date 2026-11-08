@@ -15,6 +15,4 @@ export const PUBLIC_TOOL_NAMES: ReadonlySet<string> = new Set([
   `${MCP_SERVER_NAME}_certificates_verify`,
   `${MCP_SERVER_NAME}_community_list_posts`,
   `${MCP_SERVER_NAME}_community_get_post`,
-  `${MCP_SERVER_NAME}_community_list_categories`,
-  `${MCP_SERVER_NAME}_community_list_tags`,
 ]);

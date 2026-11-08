@@ -381,7 +381,7 @@ launcher; back never exits from a non-root destination; RTL correct at 320 dp.
 
 ## Phase 3 — the owned products
 
-SpendTrack, LinkSnap, BlogPress, the Quran reader, the account pages that read owned rows, and
+SpendTrack, LinkSnap, the Quran reader, the account pages that read owned rows, and
 the recitation player's controller.
 
 Order follows the surface matrix's `Owner = local-store` rows, and the reference for each screen is

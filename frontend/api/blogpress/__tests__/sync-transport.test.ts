@@ -60,7 +60,7 @@ describe('createBlogpressHttpSyncTransport', () => {
       })
     );
 
-    expect(request).toHaveBeenCalledWith('/api/blogpress/posts', {
+    expect(request).toHaveBeenCalledWith('/api/community/posts', {
       method: 'POST',
       body: JSON.stringify({
         id: 'p-1',
@@ -91,7 +91,7 @@ describe('createBlogpressHttpSyncTransport', () => {
       })
     );
 
-    expect(request).toHaveBeenCalledWith('/api/blogpress/posts/p-1', {
+    expect(request).toHaveBeenCalledWith('/api/community/posts/p-1', {
       method: 'PATCH',
       body: JSON.stringify({
         slug: 'p-1',
@@ -110,7 +110,7 @@ describe('createBlogpressHttpSyncTransport', () => {
       entry('post.delete', { id: 'p-1', updatedAt: '2026-08-01T00:00:00Z' })
     );
 
-    expect(request).toHaveBeenCalledWith('/api/blogpress/posts/p-1', {
+    expect(request).toHaveBeenCalledWith('/api/community/posts/p-1', {
       method: 'DELETE',
       body: JSON.stringify({ updatedAt: '2026-08-01T00:00:00Z' }),
     });

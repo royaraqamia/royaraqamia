@@ -35,7 +35,6 @@ import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.account.AccountServicesScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
-import com.royaraqamia.app.blogpress.BlogpressScreen
 import com.royaraqamia.app.chats.ChatNewScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
@@ -237,17 +236,6 @@ class ShellActivity : ComponentActivity() {
                                     onSignOut = ::signOut,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
-                            // BlogPress's posts list (#952), drawn from the
-                            // device and off until its gate passes (ADR-0117):
-                            // the document still opens on top of it.
-                            "/blogpress" ->
-                                BlogpressScreen(
-                                    repository = graph.blogpress,
-                                    signedIn = signedIn,
-                                    onOpenEditor = { id -> openRoute("/blogpress/editor/$id") },
-                                    onOpenPost = { slug -> openRoute("/community/$slug") },
-                                    onExport = ::sharePost,
-                                )
                             // SpendTrack's two routes are one screen (#653): the
                             // total and list, and the categories that list files
                             // against — the pair the site's surface matrix gives

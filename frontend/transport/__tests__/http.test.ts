@@ -88,7 +88,7 @@ describe('request', () => {
         .mockResolvedValue(jsonResponse(503, { success: false, message: 'الخدمة متوقفة مؤقتًا.' }))
     );
 
-    const error = await captureError(request('/api/blogpress/posts'));
+    const error = await captureError(request('/api/community/posts'));
 
     expect(error.message).toBe('الخدمة متوقفة مؤقتًا.');
     expect(error.status).toBe(503);

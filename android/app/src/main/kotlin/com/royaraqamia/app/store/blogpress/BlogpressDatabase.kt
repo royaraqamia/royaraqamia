@@ -54,7 +54,7 @@ abstract class BlogpressDatabase : RoomDatabase() {
 /**
  * One owned post as the store holds it, tombstones included.
  *
- * The columns are the web draft's own (`frontend/api/blogpress/local-store.ts`)
+ * The columns are the web draft's own (`frontend/api/community/local-store.ts`)
  * so a device dump reads the same on both clients. `status` stays the wire's
  * word (`draft` | `published` | `scheduled`) rather than an enum: a row written
  * by a newer server must be readable here, not a migration.

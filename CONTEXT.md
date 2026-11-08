@@ -612,7 +612,7 @@ _Avoid_: Disabled service, removed service, favourite services, pinned services
 **Bundled surface**:
 A product surface whose document ships inside the Android APK and is served by the shell from
 `https://localhost/`. Its staleness is the APK's `versionCode`, never a cache header. The surfaces
-whose rows live in the Local Store are bundled (HabitFlow, SpendTrack, LinkSnap, BlogPress, the Quran
+whose rows live in the Local Store are bundled (HabitFlow, SpendTrack, LinkSnap, the Quran
 text), by the split in ADR-0088.
 _Avoid_: Local app, offline app, native screen
 

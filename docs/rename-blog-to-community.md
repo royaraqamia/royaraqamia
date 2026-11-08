@@ -1,8 +1,9 @@
 # Rename `blog` → `community`
 
 Plan for renaming the public blog surface and its supporting identifiers to
-**community**. BlogPress (the authoring CMS) keeps its name. The DB and the
-public URL are renamed for real — no `/blog` redirect is kept.
+**community**. BlogPress kept its name through this rename; it has since retired
+as a UI door (ADR-0140). The DB and the public URL are renamed for real — no
+`/blog` redirect is kept.
 
 Status: **proposed** — do not execute until approved.
 
@@ -11,7 +12,7 @@ Status: **proposed** — do not execute until approved.
 | Question    | Decision                                                                          |
 | ----------- | --------------------------------------------------------------------------------- |
 | Target term | `community`                                                                       |
-| BlogPress   | Keep `blogpress` names, routes and product brand as-is                            |
+| BlogPress   | Kept `blogpress` names through this rename; retired as a UI door in ADR-0140      |
 | Database    | Full rename via migration (tables, columns, policies, indexes, functions, bucket) |
 | Public URL  | Hard switch `/blog` → `/community`; no redirect                                   |
 | Execution   | Plan first, then staged changes with verification gates                           |

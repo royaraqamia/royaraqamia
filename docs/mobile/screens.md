@@ -16,15 +16,13 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `spendtrack` | `/spendtrack`<br>`/spendtrack/categories` | `SpendtrackScreen.kt` (off) | Ported, and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `linksnap` | `/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
-| `blogpress` | `/blogpress`<br>`/blogpress/calendar` | `BlogpressScreen.kt` (off) | The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page. |
-| `blogpress-editor` | `/blogpress/editor/[id]` | `BlogpressEditorScreen.kt` (off) | The editor's fields, its autosave and its server save are drawn (#954), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948); the profile card (#946) and the allowance card (#947) are still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` (off) | The owned links list is LinkSnap's dashboard (#654), drawn by the same screen and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `account-posts` | `/account/posts` | _web only_ | The list draws BlogPress's post card, so it arrives with the community feed in the app (#658). |
+| `account-posts` | `/account/posts` | _web only_ | The account's post management page is web-only in this phase; it arrives with the native account surface (#658). |
 | `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
 | `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |

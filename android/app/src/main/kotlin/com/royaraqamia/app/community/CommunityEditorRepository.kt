@@ -13,7 +13,7 @@ import com.royaraqamia.app.store.outbox.DrainReport
  * A community post *is* a BlogPress post, so this is an adapter rather than a
  * second store: the row, the `post.save` intent and the queue are the ones the
  * BlogPress editor already writes, and the server route (`PATCH
- * /api/blogpress/posts/{id}`) is the one the page's own composer calls. The
+ * /api/community/posts/{id}`) is the one the page's own composer calls. The
  * adapter's whole job is the community editor's narrower field set — the body,
  * and the description the site derives from it — plus seeding the store from the
  * feed's copy so a post can be edited with the radio off.

@@ -372,7 +372,7 @@ class BlogpressRepository(
 
     companion object {
         /** The route both clients pull from. */
-        const val SYNC_PATH = "/api/blogpress/sync"
+        const val SYNC_PATH = "/api/community/sync"
     }
 }
 

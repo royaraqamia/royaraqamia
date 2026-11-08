@@ -38,7 +38,7 @@ import {
  * which is what makes an offline reload render the same posts.
  */
 
-const SYNC_HINT_TABLES = ['posts'] as const;
+export const SYNC_HINT_TABLES = ['posts'] as const;
 
 interface DashboardSyncState extends SyncStatus {
   online: boolean;
@@ -54,6 +54,8 @@ export interface BlogpressDashboardState {
   posts: Post[];
   sync: DashboardSyncState;
   refresh: () => Promise<void>;
+  /** Flushes queued writes, pulls the account's rows and repaints from the store. */
+  syncNow: () => Promise<void>;
 }
 
 /** The surface's snapshot (#495): the posts the dashboard last painted. */
@@ -248,6 +250,15 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
     if (store) await readIntoState(store);
   }, [store, readIntoState]);
 
+  const syncNow = useCallback(async () => {
+    if (!store || isGuest || !isOnline()) return;
+    await engineRef.current?.flush();
+    await runRefresh(async () => {
+      await pullBlogpressData(store);
+      await readIntoState(store);
+    }, 'BlogPress pull failed');
+  }, [store, isGuest, readIntoState, runRefresh]);
+
   const recorded = useMemo(() => (ready ? { posts: screenful(posts) } : null), [ready, posts]);
   useSnapshotRecorder(identity, BLOGPRESS_SNAPSHOT_ROUTE, recorded, { trim: trimBlogpress });
 
@@ -265,5 +276,6 @@ export function useBlogpressDashboard(identity: LocalIdentity): BlogpressDashboa
       retryRefresh,
     },
     refresh,
+    syncNow,
   };
 }

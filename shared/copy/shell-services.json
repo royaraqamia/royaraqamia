@@ -10,7 +10,7 @@
     "object": "ServicesCopy"
   },
   "notes": {
-    "source": "The `خدماتنا` menu, in both clients (#647): its trigger and its sixteen rows. The rows are the ones the site ships, in its order, and the hidden product (`blogpress`) is absent from both — a row a user cannot reach is not a row. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "source": "The `خدماتنا` menu, in both clients (#647): its trigger and its sixteen rows. The rows are the ones the site ships, in its order. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
     "placeholders": "None: every row is a name, not a sentence.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key whose row neither client draws."
   },

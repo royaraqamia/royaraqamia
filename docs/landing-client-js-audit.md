@@ -95,7 +95,7 @@ it:
 - The landing page's only motion consumer is `frontend/ui/AnimatedCounter.tsx`
   (`useInView`, `animate`).
 - Every other consumer is a product route: `verify/*`, `linksnap/*`,
-  `habitflow/*`, `admin/*`, `blogpress/*`, `UpdatePopup`.
+  `habitflow/*`, `admin/*`, the retired `blogpress/*`, `UpdatePopup`.
 
 So the provider is paid for globally and needed locally. Moving it to the routes
 that animate removes ~65 KB from the landing page (and from every route that

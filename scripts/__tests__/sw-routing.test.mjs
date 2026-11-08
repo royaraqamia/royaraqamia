@@ -93,6 +93,8 @@ describe('sw-routing predicates', () => {
       '/api/push/subscribe',
       '/api/me/retainers',
       '/api/notifications/unread-count',
+      '/api/community/posts',
+      '/api/community/sync',
       '/api/blogpress/posts',
       '/api/downloader/jobs',
       // The auth API keeps its own prefix while the document shells became
@@ -106,7 +108,6 @@ describe('sw-routing predicates', () => {
       // their APIs and the two server-rendered subroutes keep the prefix.
       '/spendtrack/categories',
       '/spendtrack/categories/new',
-      '/blogpress/editor/9f1c2b3a-0000-4000-8000-000000000000',
       '/habitflow/api/habits',
       '/spendtrack/api/sync',
       '/linksnap/api/links',
@@ -133,8 +134,7 @@ describe('sw-routing predicates', () => {
       '/habitflow',
       '/spendtrack',
       '/linksnap',
-      '/blogpress',
-      '/blogpress/calendar',
+      '/account/posts',
       '/linksnap/unlock/ABC',
     ]) {
       expect(routing.isNeverCache(u(path))).toBe(false);

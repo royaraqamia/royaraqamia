@@ -175,22 +175,27 @@ export const loadCommunityMember = unstable_cache(
     const member = await createPublicUsersRepositoryServer().getByUsername(username);
     if (!member || !member.verified || member.is_hidden) return null;
 
-    const feed = await pub().getPublishedFeed(
-      null,
-      '',
-      COMMUNITY_MEMBER_POSTS_PAGE_SIZE,
-      undefined,
-      member.id
-    );
+    const [feed, featured] = await Promise.all([
+      pub().getPublishedFeed(null, '', COMMUNITY_MEMBER_POSTS_PAGE_SIZE, undefined, member.id),
+      pub().getFeaturedPublishedByAuthor(member.id),
+    ]);
     const author = {
       username: member.username,
       name: member.name,
       avatar_url: member.avatar_url,
     };
 
+    const page = feed.posts.map((post) => ({ ...post, author }));
+    const posts =
+      featured && !page.some((post) => post.id === featured.id)
+        ? [{ ...featured, author }, ...page]
+        : page;
+
     return {
       member,
-      posts: feed.posts.map((post) => ({ ...post, author })),
+      // A pin sorts first on the author's page; the community feed keeps its
+      // chronological order (the pin is the profile's, not everyone's).
+      posts: [...posts].sort((a, b) => Number(b.featured) - Number(a.featured)),
       nextCursor: feed.nextCursor,
     };
   },

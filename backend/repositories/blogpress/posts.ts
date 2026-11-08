@@ -226,6 +226,23 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       };
     },
 
+    async getFeaturedPublishedByAuthor(authorId: string): Promise<PostSummary | null> {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(POST_SUMMARY_COLUMNS)
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('community_visible', true)
+        .is('deleted_at', null)
+        .eq('author_id', authorId)
+        .eq('featured', true)
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw repositoryFailure('blogpress.getFeaturedPublishedByAuthor', error);
+      return (data as PostSummary | null) ?? null;
+    },
+
     async getPublishedPostSlugs(): Promise<string[]> {
       const { data, error } = await supabase
         .from('posts')

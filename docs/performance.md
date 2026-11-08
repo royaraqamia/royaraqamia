@@ -108,7 +108,7 @@ budget; only growth does, which is the point.
 ## Stylesheets by surface
 
 Every route used to ship one stylesheet: the union of every product's utilities
-(HabitFlow, SpendTrack, LinkSnap, BlogPress, Community, the Quran reader, the
+(HabitFlow, SpendTrack, LinkSnap, Community, the Quran reader, the
 admin dialogs, the editor), so a visitor reading `/terms` parsed all of it
 (issue #497). Tailwind compiles utilities from the files it can see, and the old
 `@import 'tailwindcss'` could see the whole repository.
@@ -239,7 +239,7 @@ log query (#487).
 - **`shell`** is the app chrome's first committed frame, marked once by
   `AppPerfObserver` in the root layout.
 - **`content`** is owned rows painted from the Local Store, marked by the product
-  dashboards (SpendTrack, HabitFlow, BlogPress, LinkSnap) and by the Quran reader
+  dashboards (SpendTrack, HabitFlow, LinkSnap, the account's posts) and by the Quran reader
   — the surfaces ADR-0073 made cached shells.
 - **`tap` → `paint`** brackets a local mutation's tap to the first frame after it
   updated the UI. Today that is the HabitFlow check-in (optimistic) and LinkSnap's

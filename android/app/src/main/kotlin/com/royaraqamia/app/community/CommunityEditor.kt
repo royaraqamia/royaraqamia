@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
  * the post row **and** its `post.save` Outbox intent in one transaction
  * ([CommunityEditorStore.save]) before a request is attempted, so a process
  * killed mid-sentence reopens with the words typed. A later drain sends the
- * newest intent last through the same `PATCH /api/blogpress/posts/{id}` the web
+ * newest intent last through the same `PATCH /api/community/posts/{id}` the web
  * composer calls; the server's last-write-wins guard refuses an older replay
  * (ADR-0029), so a stale write cannot overwrite a newer draft.
  *
@@ -344,7 +344,7 @@ fun CommunityEditor(
                                 if (state is CommunityEditorUiState.Saving) {
                                     LucideVectors.LoaderCircle
                                 } else {
-                                    LucideVectors.Save
+                                    LucideVectors.Check
                                 },
                             contentDescription = null,
                             modifier = Modifier.size(Recipes.Glyph.sm),

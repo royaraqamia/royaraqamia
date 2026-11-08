@@ -7,8 +7,6 @@ import { errorResult, errorResultAt } from '@/backend/middleware/http';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   PostSchema,
-  TagInputSchema,
-  PostTagIdsSchema,
   BulkPostsActionSchema,
   SchedulePostSchema,
   type PostInput,
@@ -24,7 +22,7 @@ import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { COMMUNITY_MUTATION_TAGS } from '@/backend/shared/community-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
-  return [{ path: '/blogpress' }, { path: `/community/${slug}` }, { path: '/community' }];
+  return [{ path: '/account/posts' }, { path: `/community/${slug}` }, { path: '/community' }];
 }
 
 function publishRevalidation(slug: string): RevalidationHint[] {
@@ -248,7 +246,7 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
         200,
         { success: true },
         {
-          revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }],
+          revalidate: postRevalidation(slug),
           tags: COMMUNITY_MUTATION_TAGS,
         }
       );
@@ -262,7 +260,7 @@ export async function setPostFeatured(id: string, featured: boolean): Promise<Ht
     async ({ userId, supabase }) => {
       const { repository } = createBlogpressPostsModule(supabase);
       await repository.setPostFeatured(id, userId, featured);
-      return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
+      return jsonResult(200, { success: true }, { revalidate: [{ path: '/account/posts' }] });
     },
     { mapError: messageError(500, 'فشل تحديث تثبيت المنشور') }
   );
@@ -276,19 +274,9 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         return jsonResult(400, { error: 'بيانات الإجراء غير صالحة' });
       }
 
-      const { action, postIds, categoryId } = validated.data;
+      const { action, postIds } = validated.data;
       const { posts, repository } = createBlogpressPostsModule(supabase);
       const plan = createPlanGate();
-
-      if (action === 'setCategory') {
-        if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
-        await repository.bulkSetPostCategories(postIds, userId, categoryId);
-        return jsonResult(
-          200,
-          { success: true, affected: postIds.length },
-          { revalidate: [{ path: '/blogpress' }], tags: COMMUNITY_MUTATION_TAGS }
-        );
-      }
 
       let targets = postIds;
 
@@ -379,69 +367,5 @@ export async function uploadMedia(formData: FormData): Promise<HttpResult> {
       return jsonResult(200, result);
     },
     { mapError: errorResult }
-  );
-}
-
-export async function listBlogTags(): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const { repository } = createBlogpressPostsModule(supabase);
-      const tags = await repository.listTagsByAuthor(userId);
-      return jsonResult(200, { tags });
-    },
-    { mapError: messageError(500, 'فشل جلب الوسوم') }
-  );
-}
-
-export async function createBlogTag(body: Record<string, unknown>): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const validated = TagInputSchema.safeParse(body);
-      if (!validated.success) {
-        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-      }
-
-      const { repository } = createBlogpressPostsModule(supabase);
-      await createPlanGate().cap(userId, OWNED_ITEMS.communityTags);
-      const tag = await repository.createTag(userId, validated.data.name, validated.data.slug);
-
-      return jsonResult(200, { tag });
-    },
-    { mapError: errorResult }
-  );
-}
-
-export async function deleteBlogTag(id: string): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const { repository } = createBlogpressPostsModule(supabase);
-      await repository.deleteTag(id, userId);
-      return jsonResult(200, { success: true });
-    },
-    { mapError: messageError(500, 'فشل حذف الوسم') }
-  );
-}
-
-export async function setBlogPostTags(
-  id: string,
-  body: Record<string, unknown>
-): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const validated = PostTagIdsSchema.safeParse(body);
-      if (!validated.success) {
-        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-      }
-
-      const { repository } = createBlogpressPostsModule(supabase);
-      await repository.setPostTags(id, userId, validated.data.tagIds);
-
-      return jsonResult(
-        200,
-        { success: true },
-        { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: COMMUNITY_MUTATION_TAGS }
-      );
-    },
-    { mapError: messageError(500, 'فشل تحديث وسوم المنشور') }
   );
 }

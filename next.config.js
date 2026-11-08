@@ -126,20 +126,18 @@ const nextConfig = {
     // The product dashboards moved from `/<product>/app` to `/<product>` when
     // their marketing landing pages were removed. Keep old bookmarks and
     // indexed URLs working with a permanent redirect.
-    const productAppRedirects = ['linksnap', 'habitflow', 'blogpress', 'spendtrack'].flatMap(
-      (product) => [
-        {
-          source: `/${product}/app`,
-          destination: `/${product}`,
-          permanent: true,
-        },
-        {
-          source: `/${product}/app/:path*`,
-          destination: `/${product}/:path*`,
-          permanent: true,
-        },
-      ]
-    );
+    const productAppRedirects = ['linksnap', 'habitflow', 'spendtrack'].flatMap((product) => [
+      {
+        source: `/${product}/app`,
+        destination: `/${product}`,
+        permanent: true,
+      },
+      {
+        source: `/${product}/app/:path*`,
+        destination: `/${product}/:path*`,
+        permanent: true,
+      },
+    ]);
 
     return [
       {
@@ -157,6 +155,28 @@ const nextConfig = {
       {
         source: '/account/changelog',
         destination: '/account',
+        permanent: true,
+      },
+      // BlogPress retired as a UI door: its dashboard, calendar and editor now
+      // live on the account's posts page, and old links follow them there.
+      {
+        source: '/blogpress/editor/:id',
+        destination: '/account/posts?edit=:id',
+        permanent: true,
+      },
+      {
+        source: '/blogpress/calendar',
+        destination: '/account/posts?status=scheduled',
+        permanent: true,
+      },
+      {
+        source: '/blogpress/app/:path*',
+        destination: '/account/posts',
+        permanent: true,
+      },
+      {
+        source: '/blogpress/:path*',
+        destination: '/account/posts',
         permanent: true,
       },
       ...productAppRedirects,

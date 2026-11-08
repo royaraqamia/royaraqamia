@@ -84,7 +84,7 @@ export function createBlogpressHttpSyncTransport(store: BlogpressLocalStore): Sy
           const payload = entry.payload as PostSavePayload;
           const content = await resolveMedia(store, payload.id, payload.content);
           if (payload.isNew) {
-            await request('/api/blogpress/posts', {
+            await request('/api/community/posts', {
               method: 'POST',
               body: JSON.stringify({
                 id: payload.id,
@@ -100,7 +100,7 @@ export function createBlogpressHttpSyncTransport(store: BlogpressLocalStore): Sy
             await store.confirmDraft(payload.id);
             return;
           }
-          await request(`/api/blogpress/posts/${encodeURIComponent(payload.id)}`, {
+          await request(`/api/community/posts/${encodeURIComponent(payload.id)}`, {
             method: 'PATCH',
             body: JSON.stringify({
               slug: payload.slug,
@@ -116,7 +116,7 @@ export function createBlogpressHttpSyncTransport(store: BlogpressLocalStore): Sy
         }
         case 'post.delete': {
           const { id, updatedAt } = entry.payload as PostDeletePayload;
-          await request(`/api/blogpress/posts/${encodeURIComponent(id)}`, {
+          await request(`/api/community/posts/${encodeURIComponent(id)}`, {
             method: 'DELETE',
             body: JSON.stringify({ updatedAt }),
           });

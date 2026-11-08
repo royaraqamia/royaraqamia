@@ -129,7 +129,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
         ) : (
           <div className="flex flex-col gap-6">
             {posts.map((post, index) => (
-              <PostCard key={post.id} post={post} index={index} />
+              <PostCard key={post.id} post={post} index={index} showPinned />
             ))}
           </div>
         )}

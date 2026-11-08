@@ -18,21 +18,15 @@ import {
 
 /**
  * BlogPress + Community read tools. BlogPress is the content product (manage
- * your own posts under /blogpress) and Community is its public reader
- * (published posts under /community) — both share the `blogpress` contract and
- * repository. These tools operate on the caller's own posts/categories/tags
- * when authenticated, and on public published content when anonymous. The
- * user-scoped client enforces `posts_select_own_or_published` RLS and the
- * per-author community_categories / community_tags policies.
+ * your own posts) and Community is its public reader (published posts under
+ * /community) — both share the `blogpress` contract and repository. These tools
+ * operate on the caller's own posts when authenticated, and on public published
+ * content when anonymous. The user-scoped client enforces
+ * `posts_select_own_or_published` RLS.
  */
 
 const ListPostsInputSchema = z
   .object({
-    category_slug: z
-      .string()
-      .min(1)
-      .optional()
-      .describe('Filter by category slug (own posts only)'),
     page_size: z
       .number()
       .int()
@@ -53,14 +47,8 @@ const GetPostInputSchema = z
   })
   .strict();
 
-const ListCategoriesInputSchema = z.object({ format: ResponseFormatSchema }).strict();
-
-const ListTagsInputSchema = z.object({ format: ResponseFormatSchema }).strict();
-
 type ListPostsInput = z.infer<typeof ListPostsInputSchema>;
 type GetPostInput = z.infer<typeof GetPostInputSchema>;
-type ListCategoriesInput = z.infer<typeof ListCategoriesInputSchema>;
-type ListTagsInput = z.infer<typeof ListTagsInputSchema>;
 
 function serializePost(post: PostSummary) {
   return {
@@ -90,7 +78,7 @@ export async function listPostsHandler(
 
     if (ctx.userId) {
       requireAnyScope(ctx, ['community.read']);
-      const posts = await repo.listPostsByAuthor(ctx.userId, params.category_slug);
+      const posts = await repo.listPostsByAuthor(ctx.userId);
       const start = params.offset;
       const page = posts.slice(start, start + params.page_size);
       const meta = buildPaginationMeta(posts.length, page.length, params.offset);
@@ -101,7 +89,7 @@ export async function listPostsHandler(
       }
 
       const lines = [
-        `# Your Community Posts${params.category_slug ? ` (category: ${params.category_slug})` : ''}`,
+        '# Your Community Posts',
         '',
         `Found ${meta.total} post${meta.total === 1 ? '' : 's'}.`,
         '',
@@ -221,63 +209,6 @@ export async function getPostHandler(
   }
 }
 
-export async function listCategoriesHandler(
-  params: ListCategoriesInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    const repo = createPostsRepository(ctx.supabase as never);
-
-    if (ctx.userId) {
-      requireAnyScope(ctx, ['community.read']);
-      const categories = await repo.listCategoriesByAuthor(ctx.userId);
-      if (params.format === 'json') {
-        return structuredResponse(jsonText(categories), { categories });
-      }
-      const lines = ['# Your Community Categories', ''];
-      for (const c of categories) {
-        lines.push(`- **${c.name}** (\`${c.slug}\`)`);
-      }
-      return structuredResponse(lines.join('\n'), { categories });
-    }
-
-    const categories = await repo.getPublishedCategories();
-    if (params.format === 'json') {
-      return structuredResponse(jsonText(categories), { categories });
-    }
-    const lines = ['# Published Community Categories', ''];
-    for (const c of categories) {
-      lines.push(`- **${c.name}** (\`${c.slug}\`)`);
-    }
-    return structuredResponse(lines.join('\n'), { categories });
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
-export async function listTagsHandler(
-  params: ListTagsInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    requireAnyScope(ctx, ['community.read']);
-    const userId = requireUserId(ctx, 'Listing tags');
-    const repo = createPostsRepository(ctx.supabase as never);
-    const tags = await repo.listTagsByAuthor(userId);
-
-    if (params.format === 'json') {
-      return structuredResponse(jsonText(tags), { tags });
-    }
-    const lines = ['# Your Community Tags', ''];
-    for (const t of tags) {
-      lines.push(`- **${t.name}** (\`${t.slug}\`)`);
-    }
-    return structuredResponse(lines.join('\n'), { tags });
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
 export function registerCommunityTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
     `${MCP_SERVER_NAME}_community_list_posts`,
@@ -287,7 +218,6 @@ export function registerCommunityTools(server: McpServer, ctx: McpUserContext): 
 Requires the "community.read" scope when authenticated.
 
 Args:
-  - category_slug (string, optional): filter own posts by category slug
   - page_size (number, default 20, max 100): results per page
   - offset (number, default 0): 0-based pagination offset
   - format ('markdown' | 'json', default 'markdown'): output format
@@ -334,54 +264,6 @@ Examples:
     },
     (params) => getPostHandler(params, ctx)
   );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_list_categories`,
-    {
-      title: 'List Community Categories',
-      description: `Lists community categories. Authenticated callers get their own categories (requires "community.read"); anonymous callers get published categories.
-
-Args:
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "categories": PostCategory[] }
-
-Examples:
-  - Use when: "what categories do I have"`,
-      inputSchema: ListCategoriesInputSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    (params) => listCategoriesHandler(params, ctx)
-  );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_list_tags`,
-    {
-      title: 'List Community Tags',
-      description: `Lists your community tags. Requires the "community.read" scope and an authenticated session.
-
-Args:
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "tags": PostTag[] }
-
-Examples:
-  - Use when: "what tags do I have"`,
-      inputSchema: ListTagsInputSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    (params) => listTagsHandler(params, ctx)
-  );
 }
 
 // ============================================================
@@ -427,57 +309,11 @@ const DeletePostInputSchema = z
   })
   .strict();
 
-const CreateCategoryInputSchema = z
-  .object({
-    name: z.string().trim().min(1).max(50).describe('Category name'),
-    slug: z
-      .string()
-      .trim()
-      .min(1)
-      .max(60)
-      .regex(/^[\w\u0600-\u06FF-]+$/)
-      .describe('Category slug'),
-    format: ResponseFormatSchema,
-  })
-  .strict();
-
-const DeleteCategoryInputSchema = z
-  .object({
-    id: z.string().min(1).describe('The category id to delete'),
-    format: ResponseFormatSchema,
-  })
-  .strict();
-
-const CreateTagInputSchema = z
-  .object({
-    name: z.string().trim().min(1).max(30).describe('Tag name'),
-    slug: z
-      .string()
-      .trim()
-      .min(1)
-      .max(60)
-      .regex(/^[\w\u0600-\u06FF-]+$/)
-      .describe('Tag slug'),
-    format: ResponseFormatSchema,
-  })
-  .strict();
-
-const DeleteTagInputSchema = z
-  .object({
-    id: z.string().min(1).describe('The tag id to delete'),
-    format: ResponseFormatSchema,
-  })
-  .strict();
-
 type CreatePostInput = z.infer<typeof CreatePostInputSchema>;
 type UpdatePostInput = z.infer<typeof UpdatePostInputSchema>;
 type PublishPostInput = z.infer<typeof PublishPostInputSchema>;
 type UnpublishPostInput = z.infer<typeof UnpublishPostInputSchema>;
 type DeletePostInput = z.infer<typeof DeletePostInputSchema>;
-type CreateCategoryInput = z.infer<typeof CreateCategoryInputSchema>;
-type DeleteCategoryInput = z.infer<typeof DeleteCategoryInputSchema>;
-type CreateTagInput = z.infer<typeof CreateTagInputSchema>;
-type DeleteTagInput = z.infer<typeof DeleteTagInputSchema>;
 
 export async function createPostHandler(
   params: CreatePostInput,
@@ -589,88 +425,6 @@ export async function deletePostHandler(
             : `# Post Deleted\n\nPost \`${params.id}\` was deleted.`,
           output
         );
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
-export async function createCategoryHandler(
-  params: CreateCategoryInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    requireAnyScope(ctx, ['community.write']);
-    const userId = requireUserId(ctx, 'Creating a category');
-    const repo = createPostsRepository(ctx.supabase as never);
-    const category = await repo.createCategory(userId, params.name, params.slug);
-
-    const output = { id: category.id, name: category.name, slug: category.slug };
-    return params.format === 'json'
-      ? structuredResponse(jsonText(output), output)
-      : structuredResponse(
-          `# Category Created\n\n**${category.name}** (\`${category.slug}\`), id \`${category.id}\`.`,
-          output
-        );
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
-export async function deleteCategoryHandler(
-  params: DeleteCategoryInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    requireAnyScope(ctx, ['community.write']);
-    const userId = requireUserId(ctx, 'Deleting a category');
-    const repo = createPostsRepository(ctx.supabase as never);
-    await repo.deleteCategory(params.id, userId);
-
-    const output = { id: params.id, message: 'Category deleted.' };
-    return params.format === 'json'
-      ? structuredResponse(jsonText(output), output)
-      : structuredResponse(`# Category Deleted\n\nCategory \`${params.id}\` was deleted.`, output);
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
-export async function createTagHandler(
-  params: CreateTagInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    requireAnyScope(ctx, ['community.write']);
-    const userId = requireUserId(ctx, 'Creating a tag');
-    const repo = createPostsRepository(ctx.supabase as never);
-    const tag = await repo.createTag(userId, params.name, params.slug);
-
-    const output = { id: tag.id, name: tag.name, slug: tag.slug };
-    return params.format === 'json'
-      ? structuredResponse(jsonText(output), output)
-      : structuredResponse(
-          `# Tag Created\n\n**${tag.name}** (\`${tag.slug}\`), id \`${tag.id}\`.`,
-          output
-        );
-  } catch (error) {
-    return toolErrorResponse(error);
-  }
-}
-
-export async function deleteTagHandler(
-  params: DeleteTagInput,
-  ctx: McpUserContext
-): Promise<ToolResult> {
-  try {
-    requireAnyScope(ctx, ['community.write']);
-    const userId = requireUserId(ctx, 'Deleting a tag');
-    const repo = createPostsRepository(ctx.supabase as never);
-    await repo.deleteTag(params.id, userId);
-
-    const output = { id: params.id, message: 'Tag deleted.' };
-    return params.format === 'json'
-      ? structuredResponse(jsonText(output), output)
-      : structuredResponse(`# Tag Deleted\n\nTag \`${params.id}\` was deleted.`, output);
   } catch (error) {
     return toolErrorResponse(error);
   }
@@ -805,122 +559,14 @@ Examples:
     },
     (params) => deletePostHandler(params, ctx)
   );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_create_category`,
-    {
-      title: 'Create Community Category',
-      description: `Creates a community category for you. Requires "community.write" and an authenticated session.
-
-Args:
-  - name (string, required): category name (max 50)
-  - slug (string, required): URL slug (letters, numbers, dashes; max 60)
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "id": string, "name": string, "slug": string }
-
-Examples:
-  - Use when: "create a category called Guides" -> name="Guides", slug="guides"`,
-      inputSchema: CreateCategoryInputSchema,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    (params) => createCategoryHandler(params, ctx)
-  );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_delete_category`,
-    {
-      title: 'Delete Community Category',
-      description: `Deletes one of your community categories. Requires "community.write" and an authenticated session.
-
-Args:
-  - id (string, required): the category id
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "id": string, "message": string }
-
-Examples:
-  - Use when: "delete my category cat123" -> id="cat123"`,
-      inputSchema: DeleteCategoryInputSchema,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    (params) => deleteCategoryHandler(params, ctx)
-  );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_create_tag`,
-    {
-      title: 'Create Community Tag',
-      description: `Creates a community tag for you. Requires "community.write" and an authenticated session.
-
-Args:
-  - name (string, required): tag name (max 30)
-  - slug (string, required): URL slug (letters, numbers, dashes; max 60)
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "id": string, "name": string, "slug": string }
-
-Examples:
-  - Use when: "create a tag called Tutorials" -> name="Tutorials", slug="tutorials"`,
-      inputSchema: CreateTagInputSchema,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    (params) => createTagHandler(params, ctx)
-  );
-
-  server.registerTool(
-    `${MCP_SERVER_NAME}_community_delete_tag`,
-    {
-      title: 'Delete Community Tag',
-      description: `Deletes one of your community tags. Requires "community.write" and an authenticated session.
-
-Args:
-  - id (string, required): the tag id
-  - format ('markdown' | 'json', default 'markdown'): output format
-
-Returns (JSON): { "id": string, "message": string }
-
-Examples:
-  - Use when: "delete my tag tag123" -> id="tag123"`,
-      inputSchema: DeleteTagInputSchema,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-    },
-    (params) => deleteTagHandler(params, ctx)
-  );
 }
 
 export type {
   ListPostsInput,
   GetPostInput,
-  ListCategoriesInput,
-  ListTagsInput,
   CreatePostInput,
   UpdatePostInput,
   PublishPostInput,
   UnpublishPostInput,
   DeletePostInput,
-  CreateCategoryInput,
-  DeleteCategoryInput,
-  CreateTagInput,
-  DeleteTagInput,
 };
