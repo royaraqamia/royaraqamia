@@ -99,3 +99,57 @@ data class CommunityPostResponsePostTagsItem(
     val name: String,
     val slug: String,
 )
+
+@Serializable
+data class CommunityMemberResponse(
+    val member: CommunityMemberResponseMember,
+    val posts: List<CommunityMemberResponsePostsItem>,
+    val nextCursor: String? = null,
+)
+
+@Serializable
+data class CommunityMemberResponseMember(
+    val id: String,
+    val username: String,
+    val name: String?,
+    val avatar_url: String?,
+    val bio: String?,
+    val verified: Boolean,
+)
+
+@Serializable
+data class CommunityMemberResponsePostsItem(
+    val id: String,
+    val author_id: String,
+    val client_id: String? = null,
+    val deleted_at: String? = null,
+    val slug: String,
+    val content: String?,
+    val status: CommunityMemberResponsePostsItemStatus,
+    val cover_image: String?,
+    val meta_title: String?,
+    val meta_desc: String?,
+    val published_at: String?,
+    val publish_at: String?,
+    val view_count: Long,
+    val featured: Boolean,
+    val community_visible: Boolean,
+    val reading_time_minutes: Long,
+    val created_at: String,
+    val updated_at: String,
+    val author: CommunityMemberResponsePostsItemAuthor? = null,
+)
+
+@Serializable
+enum class CommunityMemberResponsePostsItemStatus {
+    @SerialName("draft") DRAFT,
+    @SerialName("published") PUBLISHED,
+    @SerialName("scheduled") SCHEDULED,
+}
+
+@Serializable
+data class CommunityMemberResponsePostsItemAuthor(
+    val username: String,
+    val name: String?,
+    val avatar_url: String?,
+)

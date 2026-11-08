@@ -3,10 +3,15 @@ import { NO_STORE, PUBLIC_CACHEABLE } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { recordCommunityPostView } from '@/backend/config/community';
-import { loadAccountPosts, loadCommunityPost } from '@/backend/loaders/community';
+import {
+  loadAccountPosts,
+  loadCommunityMember,
+  loadCommunityPost,
+} from '@/backend/loaders/community';
 import { CommunityPostViewRateLimitError } from '@/backend/services/blogpress/community-view-recorder';
 import { isRepositoryError } from '@/backend/shared/repository-error';
 import { PostSlugSchema } from '@/shared/contracts/community';
+import { UsernameSchema } from '@/shared/contracts/users';
 
 export async function recordPostView(slug: string, ip: string): Promise<HttpResult> {
   const parsed = PostSlugSchema.safeParse(slug);
@@ -68,6 +73,59 @@ export async function getCommunityPost(slug: string): Promise<HttpResult> {
   } catch (error) {
     if (!isRepositoryError(error)) Sentry.captureException(error);
     return jsonResult(500, { error: 'تعذَّر تحميل المنشور.' }, { headers: NO_STORE });
+  }
+}
+
+/** A handle may arrive percent-encoded (Arabic handles are), so accept both. */
+function decodeHandle(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * One public member profile and their first page of posts (#927).
+ *
+ * The page reads the same loader in its server component; this is that read as a
+ * body, so the app draws the member's header and their published posts instead of
+ * a narrower projection of the same rows. A handle the loader refuses — unknown
+ * or hidden (ADR-0127) — is the page's `notFound()`, answered here as `404` with
+ * the same sentence the app draws.
+ */
+export async function getCommunityMember(username: string): Promise<HttpResult> {
+  const parsed = UsernameSchema.safeParse(decodeHandle(username));
+  if (!parsed.success) {
+    return jsonResult(404, { error: 'الملف غير موجود.' }, { headers: NO_STORE });
+  }
+
+  try {
+    const page = await loadCommunityMember(parsed.data);
+    if (!page) {
+      return jsonResult(404, { error: 'الملف غير موجود.' }, { headers: NO_STORE });
+    }
+
+    const { member, posts, nextCursor } = page;
+    return jsonResult(
+      200,
+      {
+        member: {
+          id: member.id,
+          username: member.username,
+          name: member.name,
+          avatar_url: member.avatar_url,
+          bio: member.bio,
+          verified: member.verified,
+        },
+        posts,
+        nextCursor,
+      },
+      { headers: PUBLIC_CACHEABLE }
+    );
+  } catch (error) {
+    if (!isRepositoryError(error)) Sentry.captureException(error);
+    return jsonResult(500, { error: 'تعذَّر تحميل الملف.' }, { headers: NO_STORE });
   }
 }
 

@@ -77,7 +77,8 @@
     {
       "surface": "profile",
       "phase": "public-content",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#927"
     },
     {
       "surface": "news",

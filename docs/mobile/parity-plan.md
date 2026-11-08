@@ -23,7 +23,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **downloader** `/downloader` — todo
 - [x] **community** `/community` — native
 - [ ] **community-post** `/community/[slug]` — todo
-- [ ] **profile** `/u/[username]` — todo
+- [ ] **profile** `/u/[username]` — todo · #927
 - [ ] **news** `/news` — todo
 - [ ] **scan** `/scan` — todo
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 55 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 56 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -116,6 +116,7 @@ A component is finished when the surface that draws it is native: 55 ported comp
 - [x] `post-card` on **community** · #658
 - [x] `community-feed` on **community** · #658
 - [x] `community-post` on **community** · #922
+- [ ] `profile` on **profile** · #927
 - [x] `community-editor` on **community** · #925
 - [x] `needs-connection` on **community** · #658
 - [x] `read-failure` on **community** · #658

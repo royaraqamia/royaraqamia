@@ -78,6 +78,39 @@ export const CommunityPostResponseSchema = z.object({
 
 export type CommunityPostResponse = z.infer<typeof CommunityPostResponseSchema>;
 
+/**
+ * A member's public identity, as `/u/[username]` draws its header (#927).
+ *
+ * The single-row read carries `is_hidden` so the server can refuse a hidden
+ * member (ADR-0127), but the flag stops there: a page that exists is a page
+ * whose member is visible, so the contract the app decodes carries the identity
+ * the header prints and nothing a viewer would have to judge.
+ */
+export const CommunityMemberSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  name: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+  bio: z.string().nullable(),
+  verified: z.boolean(),
+});
+
+/**
+ * `GET /api/u/[username]`: a public profile and its first page of posts (#927).
+ *
+ * The page reads the same loader server-side; this route is that read as a body,
+ * so the app draws the member's header and their published posts rather than a
+ * narrower projection of the same rows. A hidden or absent handle is a `404`, the
+ * page's `notFound()`, and the app draws the same sentence.
+ */
+export const CommunityMemberResponseSchema = z.object({
+  member: CommunityMemberSchema,
+  posts: z.array(PostSummarySchema),
+  nextCursor: z.string().nullable().optional(),
+});
+
+export type CommunityMemberResponse = z.infer<typeof CommunityMemberResponseSchema>;
+
 export const PostSchema = z.object({
   slug: z
     .string()

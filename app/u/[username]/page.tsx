@@ -6,6 +6,7 @@ import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
+import { PROFILE_COPY } from './profile-copy';
 
 export const revalidate = 300;
 
@@ -49,7 +50,10 @@ export async function generateMetadata(props: {
   const page = await loadCommunityMember(decodeHandle(username));
 
   if (!page) {
-    return { title: 'الملف غير موجود' };
+    return {
+      title: PROFILE_COPY.notFoundTitle,
+      description: PROFILE_COPY.notFoundBody,
+    };
   }
 
   const name = displayName(page.member);
@@ -71,7 +75,10 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-6 shadow-sm sm:p-8">
+      <header
+        data-visual="profile-header"
+        className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-6 shadow-sm sm:p-8"
+      >
         <span
           className="glow-orb pointer-events-none absolute -top-16 inset-e-[-10%] h-48 w-48 text-violet-500/20"
           aria-hidden="true"
@@ -85,7 +92,10 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             className="group"
           />
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h1
+              data-visual="profile-name"
+              className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+            >
               {name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
@@ -101,15 +111,20 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
         </div>
       </header>
 
-      <section className="mt-10" aria-label={`منشورات ${name}`}>
-        <h2 className="mb-6 text-lg font-bold tracking-tight text-foreground">المنشورات</h2>
+      <section className="mt-10" aria-label={PROFILE_COPY.postsAriaLabel.replace('{name}', name)}>
+        <h2
+          data-visual="profile-posts"
+          className="mb-6 text-lg font-bold tracking-tight text-foreground"
+        >
+          {PROFILE_COPY.postsHeading}
+        </h2>
 
         {posts.length === 0 ? (
           <EmptyState
             icon={FileText}
             variant="card"
-            title="لا توجد منشورات بعد"
-            description={`لم ينشر ${name} أيَّ منشور على المجتمع حتَّى الآن.`}
+            title={PROFILE_COPY.emptyTitle}
+            description={PROFILE_COPY.emptyBody.replace('{name}', name)}
           />
         ) : (
           <div className="flex flex-col gap-6">
