@@ -26,6 +26,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -264,6 +266,67 @@ class LinksnapRepository(
     }
 
     /**
+     * Tombstones the selected links as one bulk write (#942).
+     *
+     * The rows and the single `link.bulk` intent commit together, so the bar's
+     * delete is durable before it is sent and survives a process kill. The route
+     * is `POST /linksnap/api/links/bulk`, the one the page's fallback calls, and
+     * it identifies the rows by slug and the session's user.
+     */
+    suspend fun bulkDelete(clientIds: List<String>): Int = withContext(Dispatchers.IO) {
+        val dao = dao()
+        val now = clock.nowIso()
+        val rows = clientIds.distinct().mapNotNull { dao.link(it) }
+        if (rows.isEmpty()) return@withContext 0
+        val updated = rows.map { it.copy(deletedAt = now, updatedAt = now) }
+        dao.commitLinks(
+            updated,
+            intent(
+                type = "link.bulk",
+                payload =
+                    LinksnapPayloads.bulk(
+                        action = "delete",
+                        codes = rows.map { it.code },
+                        clientIds = rows.map { it.clientId },
+                    ),
+                createdAt = nowMillis(),
+            ),
+        )
+        updated.size
+    }
+
+    /**
+     * Sets the selected links' expiry as one bulk write (#942).
+     *
+     * The local rows are painted first, exactly as the page's local-store bulk
+     * expiry does, and the one intent re-sends the same decision to the bulk
+     * route. `expiresAt` is the ISO instant the date picker chose.
+     */
+    suspend fun bulkSetExpiry(clientIds: List<String>, expiresAt: String): Int =
+        withContext(Dispatchers.IO) {
+            val dao = dao()
+            val now = clock.nowIso()
+            val rows = clientIds.distinct().mapNotNull { dao.link(it) }
+            if (rows.isEmpty()) return@withContext 0
+            val updated = rows.map { it.copy(expiresAt = expiresAt, updatedAt = now) }
+            dao.commitLinks(
+                updated,
+                intent(
+                    type = "link.bulk",
+                    payload =
+                        LinksnapPayloads.bulk(
+                            action = "setExpiry",
+                            codes = rows.map { it.code },
+                            expiresAt = expiresAt,
+                            clientIds = rows.map { it.clientId },
+                        ),
+                    createdAt = nowMillis(),
+                ),
+            )
+            updated.size
+        }
+
+    /**
      * Replays the queue once (#654).
      *
      * The DAO is resolved **once**, for the identity the drain started under, and
@@ -417,19 +480,25 @@ class LinksnapRepository(
 
     private fun dao(): LinksnapDao = databases.forIdentity(identity()).dao()
 
-    /** The row whose write is still queued, read from the intent itself. */
+    /**
+     * The rows whose write is still queued, read from the intent itself.
+     *
+     * A single-row intent carries `clientId`; a bulk intent (#942) carries the
+     * `clientIds` it touched, so a pull cannot resurrect a pending tombstone or
+     * revert a pending expiry even when the server's copy looks newer.
+     */
     private fun pendingClientIds(outbox: List<OutboxIntentRow>): Set<String> {
         val keys = mutableSetOf<String>()
         for (entry in outbox) {
-            runCatching {
-                    LinksnapPayloads.withNulls
-                        .parseToJsonElement(entry.payload)
-                        .jsonObject["clientId"]
-                        ?.jsonPrimitive
-                        ?.content
-                }
-                .getOrNull()
-                ?.let(keys::add)
+            val body =
+                runCatching {
+                        LinksnapPayloads.withNulls.parseToJsonElement(entry.payload).jsonObject
+                    }
+                    .getOrNull() ?: continue
+            body["clientId"]?.jsonPrimitive?.content?.let(keys::add)
+            body["clientIds"]?.jsonArray?.forEach { element ->
+                (element as? JsonPrimitive)?.content?.let(keys::add)
+            }
         }
         return keys
     }

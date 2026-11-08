@@ -277,6 +277,26 @@ class LinksnapWritesTest {
     }
 
     @Test
+    fun `a pull cannot resurrect a bulk tombstone that has not drained`() = runBlocking {
+        val repository = repository(
+            RecordingTransport { request ->
+                if (request.url.contains("/linksnap/api/links/sync")) HttpResponse(200, SYNC_FUTURE_BODY)
+                else HttpResponse(200, "{}")
+            }
+        )
+        repository.pull()
+        assertEquals(listOf("client-1"), repository.links().map { it.clientId })
+
+        repository.bulkDelete(listOf("client-1"))
+
+        // The server's copy is newer than the local tombstone; only the pending
+        // bulk intent keeps the row from being written back.
+        repository.pull()
+
+        assertEquals("the pending bulk tombstone survives the pull", 0, repository.links().size)
+    }
+
+    @Test
     fun `a permanent refusal is kept, surfaced, and can be retried`() = runBlocking {
         var answer = 400
         val transport = RecordingTransport { HttpResponse(answer, """{"error":"not like this"}""") }
@@ -320,6 +340,86 @@ class LinksnapWritesTest {
         assertEquals("active", LinksnapStatus.of(active, NOW))
         assertEquals("expired", LinksnapStatus.of(expired, NOW))
         assertEquals("blocked", LinksnapStatus.of(blocked, NOW))
+    }
+
+    @Test
+    fun `a bulk delete queued before the process died drains after it`() = runBlocking {
+        val before = repository(RecordingTransport { HttpResponse(200, "{}") })
+        val first = before.createLink("https://example.com/one")
+        val second = before.createLink("https://example.com/two")
+        before.drain()
+
+        assertEquals(
+            "both rows are tombstoned at once",
+            2,
+            before.bulkDelete(listOf(first.clientId, second.clientId)),
+        )
+
+        // The process dies: the connection goes, the file does not.
+        databases.close()
+
+        val transport = RecordingTransport { HttpResponse(200, "{}") }
+        val after = repository(transport)
+        assertEquals("the bulk intent survived", 1, after.outboxStatus().pending)
+
+        val report = after.drain()
+
+        assertEquals(1, report.replayed)
+        assertEquals(0, report.pending)
+        val sent = transport.requests.single()
+        assertEquals("POST", sent.method)
+        assertTrue(sent.url, sent.url.endsWith("/linksnap/api/links/bulk"))
+        assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"action\":\"delete\""))
+        assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"${first.code}\""))
+        assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"${second.code}\""))
+        assertFalse(
+            "the route's body is action + codes, not the intent's bookkeeping",
+            sent.body.orEmpty().contains("clientIds"),
+        )
+        assertEquals("the list hides both tombstones", 0, after.links().size)
+        assertEquals(
+            "the tombstones are kept for the next pull",
+            2,
+            databases.forIdentity(alice).dao().allLinks().count { it.deletedAt != null },
+        )
+    }
+
+    @Test
+    fun `a bulk expiry queued before the process died drains with its date`() = runBlocking {
+        val before = repository(RecordingTransport { HttpResponse(200, "{}") })
+        val first = before.createLink("https://example.com/one")
+        val second = before.createLink("https://example.com/two")
+        before.drain()
+
+        val expiresAt = "2027-01-01T00:00:00Z"
+        assertEquals(
+            "both rows are repainted at once",
+            2,
+            before.bulkSetExpiry(listOf(first.clientId, second.clientId), expiresAt),
+        )
+
+        // The process dies: the connection goes, the file does not.
+        databases.close()
+
+        val transport = RecordingTransport { HttpResponse(200, "{}") }
+        val after = repository(transport)
+        assertEquals(1, after.outboxStatus().pending)
+
+        assertEquals(1, after.drain().replayed)
+
+        val sent = transport.requests.single()
+        assertEquals("POST", sent.method)
+        assertTrue(sent.url, sent.url.endsWith("/linksnap/api/links/bulk"))
+        assertTrue(sent.body.orEmpty(), sent.body.orEmpty().contains("\"action\":\"setExpiry\""))
+        assertTrue(
+            sent.body.orEmpty(),
+            sent.body.orEmpty().contains("\"expiresAt\":\"$expiresAt\""),
+        )
+        assertEquals(
+            "the local rows carry the expiry the intent carries",
+            setOf(expiresAt),
+            after.links().map { it.expiresAt }.toSet(),
+        )
     }
 
     private fun row(label: String, isBlocked: Boolean, expiresAt: String?) =
@@ -412,6 +512,15 @@ class LinksnapWritesTest {
           "links": [
             {"code":"abc123","originalUrl":"https://example.com/server","createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z","isBlocked":false,"expiresAt":null,"passwordProtected":false,"clientId":"client-1","deletedAt":null},
             {"code":"gone99","originalUrl":"https://example.com/gone","createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-02T00:00:00.000Z","isBlocked":false,"expiresAt":null,"passwordProtected":false,"clientId":"client-2","deletedAt":"2026-01-02T00:00:00.000Z"}
+          ]
+        }
+        """
+
+        /** One live row whose server copy is newer than this device's clock. */
+        const val SYNC_FUTURE_BODY = """
+        {
+          "links": [
+            {"code":"abc123","originalUrl":"https://example.com/server","createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2027-01-01T00:00:00.000Z","isBlocked":false,"expiresAt":null,"passwordProtected":false,"clientId":"client-1","deletedAt":null}
           ]
         }
         """

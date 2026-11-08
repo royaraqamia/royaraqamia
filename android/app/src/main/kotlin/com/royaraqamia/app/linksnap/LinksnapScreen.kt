@@ -2,19 +2,18 @@ package com.royaraqamia.app.linksnap
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +56,8 @@ import com.royaraqamia.app.sync.SyncPill
 import com.royaraqamia.app.sync.SyncPillState
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -95,9 +98,18 @@ fun LinksnapScreen(
     var rows by remember { mutableStateOf<List<LinksnapLinkRow>>(emptyList()) }
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
 
+    // The bar's selection outlives a scroll because it lives here rather than in
+    // a row, and outlives a rotation because the saver writes the slugs to the
+    // instance state (#942).
+    val selection =
+        rememberSaveable(saver = LinksnapBulkSelection.Saver) { LinksnapBulkSelection() }
+
     /** Repaint from the store alone: no network, no session, no wait. */
     suspend fun paint() {
         rows = if (signedIn) repository.links() else emptyList()
+        // A pull or a drain can remove a selected row; the count must never say
+        // more than the list shows.
+        selection.retain(rows.map { it.code })
     }
 
     /**
@@ -138,6 +150,48 @@ fun LinksnapScreen(
         onDispose { watch.close() }
     }
 
+    fun clientIdsFor(codes: Collection<String>): List<String> =
+        rows.filter { it.code in codes }.map { it.clientId }
+
+    /**
+     * A bulk delete is one unordered set of tombstones, so it queues one intent.
+     * The selection is cleared only after the rows and that intent are on disk,
+     * which is the point the write is durable even if the process dies next.
+     */
+    fun deleteSelected() {
+        val codes = selection.codes.toList()
+        if (codes.isEmpty()) return
+        scope.launch {
+            repository.bulkDelete(clientIdsFor(codes))
+            sync()
+            // The bar's work is done once the write has been drained (or the
+            // radio has answered that it cannot be), so the selection clears
+            // then rather than lingering over rows that already changed.
+            selection.clear()
+        }
+    }
+
+    /** The page's bulk expiry, from the calendar day the bar's picker returned. */
+    fun applyExpiry(day: String) {
+        val codes = selection.codes.toList()
+        if (codes.isEmpty()) return
+        val instant =
+            runCatching {
+                    LocalDate.parse(day).atStartOfDay(ZoneOffset.UTC).toInstant().toString()
+                }
+                .getOrNull() ?: return
+        scope.launch {
+            repository.bulkSetExpiry(clientIdsFor(codes), instant)
+            sync()
+            selection.clear()
+        }
+    }
+
+    fun copySelected() {
+        val urls = rows.filter { it.code in selection.codes }.map { "$siteUrl/${it.code}" }
+        if (urls.isNotEmpty()) onCopy(urls.joinToString("\n"))
+    }
+
     LinksnapAccountList(
         rows = rows,
         pill = pill,
@@ -149,6 +203,14 @@ fun LinksnapScreen(
             }
         },
         onSignIn = onSignIn,
+        selectedCodes = selection.codes,
+        allSelected = selection.allSelected(rows.map { it.code }),
+        onToggleSelect = selection::toggle,
+        onToggleAll = { selection.toggleAll(rows.map { it.code }) },
+        onClearSelection = selection::clear,
+        onCopySelected = ::copySelected,
+        onApplyExpiry = ::applyExpiry,
+        onDeleteSelected = ::deleteSelected,
         modifier = modifier,
     )
 }
@@ -165,6 +227,15 @@ internal fun LinksnapAccountList(
     onRetry: () -> Unit,
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
+    selectedCodes: Set<String> = emptySet(),
+    allSelected: Boolean = false,
+    bulkBusy: Boolean = false,
+    onToggleSelect: (String) -> Unit = {},
+    onToggleAll: () -> Unit = {},
+    onClearSelection: () -> Unit = {},
+    onCopySelected: () -> Unit = {},
+    onApplyExpiry: (String) -> Unit = {},
+    onDeleteSelected: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -186,7 +257,24 @@ internal fun LinksnapAccountList(
             if (rows.isEmpty()) {
                 LinksnapEmptyState()
             } else {
-                rows.forEach { row -> LinksnapRowCard(row) }
+                LinksnapBulkBar(
+                    total = rows.size,
+                    selectedCount = selectedCodes.size,
+                    allSelected = allSelected,
+                    busy = bulkBusy,
+                    onToggleAll = onToggleAll,
+                    onClear = onClearSelection,
+                    onCopy = onCopySelected,
+                    onApplyExpiry = onApplyExpiry,
+                    onDelete = onDeleteSelected,
+                )
+                rows.forEach { row ->
+                    LinksnapRowCard(
+                        row = row,
+                        selected = row.code in selectedCodes,
+                        onToggleSelect = { onToggleSelect(row.code) },
+                    )
+                }
             }
         } else {
             Row(
@@ -203,7 +291,11 @@ internal fun LinksnapAccountList(
 
 /** One owned link's card: the page's box around the resting details. */
 @Composable
-private fun LinksnapRowCard(row: LinksnapLinkRow) {
+private fun LinksnapRowCard(
+    row: LinksnapLinkRow,
+    selected: Boolean,
+    onToggleSelect: () -> Unit,
+) {
     Column(
         modifier =
             Modifier.fillMaxWidth()
@@ -217,12 +309,44 @@ private fun LinksnapRowCard(row: LinksnapLinkRow) {
                 .padding(LinksnapRowMetrics.cardPadding),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.checkboxGap)) {
-            // The selection checkbox is the bulk bar's slice (#942); the slot is
-            // kept so the row's details sit exactly where the page puts them.
-            Spacer(Modifier.width(LinksnapRowMetrics.checkboxWidth))
+            LinksnapRowCheckbox(selected = selected, onClick = onToggleSelect)
             LinksnapRowSummary(
                 state = LinksnapRowUiState.Painted(row),
                 modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * The row's selection box (#942), the page's `h-5 w-5` checkbox with its 2px
+ * top inset. It is a checkbox a reader can press, so it carries the toggle role
+ * rather than being a decorative square; the row's own words say which link it
+ * belongs to.
+ */
+@Composable
+private fun LinksnapRowCheckbox(selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier =
+            Modifier.testTag(LinksnapRowMetrics.CHECKBOX)
+                .padding(top = 2.dp)
+                .size(LinksnapRowMetrics.checkboxWidth)
+                .clip(RoundedCornerShape(LinksnapRowMetrics.checkboxRadius))
+                .background(if (selected) RoyColors.foreground else LinksnapRowMetrics.checkboxSurface)
+                .border(
+                    LinksnapRowMetrics.cardBorderWidth,
+                    if (selected) RoyColors.foreground else LinksnapRowMetrics.checkboxBorder,
+                    RoundedCornerShape(LinksnapRowMetrics.checkboxRadius),
+                )
+                .toggleable(value = selected, role = Role.Checkbox, onValueChange = { onClick() }),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) {
+            Icon(
+                imageVector = LucideVectors.Check,
+                contentDescription = null,
+                modifier = Modifier.size(LinksnapRowMetrics.checkboxIconSize),
+                tint = RoyColors.background,
             )
         }
     }
@@ -444,6 +568,7 @@ internal object LinksnapRowMetrics {
     const val PROTECTED = "linksnap-row-protected"
     const val DATE = "linksnap-row-date"
     const val DESTINATION = "linksnap-row-destination"
+    const val CHECKBOX = "linksnap-row-checkbox"
 
     val pagePadding = 16.dp
     val listGap = 24.dp
@@ -460,6 +585,10 @@ internal object LinksnapRowMetrics {
     val cardBorder = Color(0xFF262626)
     val checkboxWidth = 20.dp
     val checkboxGap = 14.dp
+    val checkboxRadius = 6.dp
+    val checkboxIconSize = 14.dp
+    val checkboxSurface = Color(0x66141414)
+    val checkboxBorder = Color(0xFF404040)
 
     val codeHeight = 30.dp
     val codeRadius = 8.dp

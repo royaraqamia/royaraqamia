@@ -105,6 +105,17 @@ interface LinksnapDao {
         insertIntent(intent)
     }
 
+    /**
+     * A bulk write and its one replay intent, committed together (#942): every
+     * row the bar acted on is durable before the intent that sends them is, and
+     * the intent can never describe a row that is not on disk.
+     */
+    @Transaction
+    suspend fun commitLinks(links: List<LinksnapLinkRow>, intent: OutboxIntentRow) {
+        upsertLinks(links)
+        insertIntent(intent)
+    }
+
     // --- Outbox --------------------------------------------------------------
 
     /** Every intent, in strict replay order: the order the writes were made. */

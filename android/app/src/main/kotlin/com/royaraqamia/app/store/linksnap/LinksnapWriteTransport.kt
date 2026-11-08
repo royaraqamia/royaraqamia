@@ -8,10 +8,12 @@ import com.royaraqamia.app.store.outbox.WriteRequest
 import java.net.URLEncoder
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -28,6 +30,7 @@ import kotlinx.serialization.json.put
 object LinksnapWriteTransport {
     const val SHORTEN_PATH = "/linksnap/api/shorten"
     const val LINKS_PATH = "/linksnap/api/links"
+    const val BULK_PATH = "/linksnap/api/links/bulk"
     const val UNLOCK_PATH = "/linksnap/api/unlock"
 
     /**
@@ -43,6 +46,7 @@ object LinksnapWriteTransport {
         "link.create" -> WriteRequest("POST", SHORTEN_PATH, openPassword(intent.payload, passwords))
         "link.update" -> WriteRequest("PATCH", LINKS_PATH, openPassword(intent.payload, passwords))
         "link.delete" -> deleteRequest(intent.payload)
+        "link.bulk" -> bulkRequest(intent.payload)
         else -> throw IllegalArgumentException("Unknown outbox intent type: ${intent.type}")
     }
 
@@ -86,6 +90,34 @@ object LinksnapWriteTransport {
             path = "$LINKS_PATH?code=${URLEncoder.encode(code, "UTF-8")}",
             body = LinksnapPayloads.delete(code, clientId, updatedAt),
         )
+    }
+
+    /**
+     * `POST /linksnap/api/links/bulk` with `{action, codes, expiresAt}` (#942).
+     *
+     * This is the route the dashboard's bulk bar already writes to, so the app
+     * and the page cannot disagree about what a bulk delete or expiry is. A
+     * malformed payload is a permanent failure rather than a request the server
+     * has to parse and refuse.
+     */
+    private fun bulkRequest(payload: String): WriteRequest {
+        val body = LinksnapPayloads.withNulls.parseToJsonElement(payload).jsonObject
+        val action =
+            body["action"]?.jsonPrimitive?.content
+                ?: throw IllegalArgumentException("a link.bulk intent carries no action")
+        require(action == "delete" || action == "setExpiry") {
+            "a link.bulk intent names action '$action'"
+        }
+        val codes = body["codes"]?.jsonArray ?: throw IllegalArgumentException("a link.bulk intent carries no codes")
+        val expiresAt =
+            body["expiresAt"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.content
+        val normalized =
+            LinksnapPayloads.bulk(
+                action = action,
+                codes = codes.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content },
+                expiresAt = expiresAt,
+            )
+        return WriteRequest("POST", BULK_PATH, normalized)
     }
 }
 
@@ -164,6 +196,28 @@ object LinksnapPayloads {
         withNulls.encodeToString(
             LinksnapDeleteWrite(code = code, clientId = clientId, updatedAt = updatedAt)
         )
+
+    /**
+     * The bulk intent's payload (#942): the action, the slugs, the expiry for a
+     * `setExpiry`, and the row identities the pull uses to leave a pending write
+     * alone. The route reads only the first three - the endpoint looks the row
+     * up by code and the session's user - so [LinksnapWriteTransport] rebuilds
+     * the wire body without `clientIds`.
+     */
+    fun bulk(
+        action: String,
+        codes: List<String>,
+        expiresAt: String? = null,
+        clientIds: List<String> = emptyList(),
+    ): String =
+        buildJsonObject {
+            put("action", action)
+            put("codes", JsonArray(codes.map { JsonPrimitive(it) }))
+            if (expiresAt != null) put("expiresAt", expiresAt)
+            if (clientIds.isNotEmpty()) {
+                put("clientIds", JsonArray(clientIds.map { JsonPrimitive(it) }))
+            }
+        }.toString()
 
     /** The unlock body: the slug from the route and the password a visitor typed. */
     fun unlock(code: String, password: String): String =

@@ -1,7 +1,7 @@
 {
   "surface": "account-links",
   "route": "/account/links",
-  "notes": "The owned-link list at rest (#941): the code chip, the status pill, the protected pill, the Hijri date pill and the destination the page draws for a link. `origin` is the code chip, because the page's frame and the app's frame are different heights and the design this contract owns is the row's own boxes. `capture` is the destination line, because its box is the width the row gives it on both clients and does not depend on whether the badges wrapped: the row's action toolbar and selection checkbox are later slices (#942, #943) and are outside this contract. The destination's width is the row's width on the page and is measured; its height is one line of `text-[13px] leading-relaxed`. Widths of the code chip and the pills are left out deliberately - they are the run of the words and the glyphs, not a decision - and colours are left out too, because they are what the raster proves. The protected pill is drawn for a link the fixture gives a password, so the state records every pill the page's row draws.",
+  "notes": "The owned-link list at rest (#941): the code chip, the status pill, the protected pill, the Hijri date pill and the destination the page draws for a link. `origin` is the code chip, because the page's frame and the app's frame are different heights and the design this contract owns is the row's own boxes. `capture` is the destination line, because its box is the width the row gives it on both clients and does not depend on whether the badges wrapped: the row's action toolbar is a later slice (#943) and is outside this contract. The destination's width is the row's width on the page and is measured; its height is one line of `text-[13px] leading-relaxed`. Widths of the code chip and the pills are left out deliberately - they are the run of the words and the glyphs, not a decision - and colours are left out too, because they are what the raster proves. The protected pill is drawn for a link the fixture gives a password, so the state records every pill the page's row draws. `bulk-bar` is the bar above the rows with its one fixture row selected (#942): the page's 44-high select-all, its 18-high checkbox, the count line and the four 30-high actions. The bar's height is measured because it is the wrap the page draws at 393 - select-all, the count and the spacer share the first line with clear and copy, and expiry and delete wrap to the second - and `capture` is the bar so the raster proves that wrap. The buttons' widths are left out: they are the run of the words and the glyphs, and the raster is what proves them.",
   "states": [
     {
       "name": "at-rest",
@@ -57,6 +57,100 @@
             "tag": "linksnap-row-destination"
           },
           "properties": ["width", "height", "fontSize", "lineHeight"]
+        }
+      ]
+    },
+    {
+      "name": "bulk-bar",
+      "capture": "bar",
+      "elements": [
+        {
+          "name": "bar",
+          "web": {
+            "selector": "[data-visual='link-bulk-bar']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-bar"
+          },
+          "properties": [
+            "width",
+            "height",
+            "radius",
+            "paddingTop",
+            "paddingLeft",
+            "rowGap",
+            "columnGap"
+          ]
+        },
+        {
+          "name": "select-all",
+          "web": {
+            "selector": "[data-visual='link-bulk-select-all']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-select-all"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "checkbox",
+          "web": {
+            "selector": "[data-visual='link-bulk-checkbox']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-checkbox"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "count",
+          "web": {
+            "selector": "[data-visual='link-bulk-count']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-count"
+          },
+          "properties": ["height", "fontSize"]
+        },
+        {
+          "name": "clear",
+          "web": {
+            "selector": "[data-visual='link-bulk-clear']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-clear"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "copy",
+          "web": {
+            "selector": "[data-visual='link-bulk-copy']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-copy"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "expiry",
+          "web": {
+            "selector": "[data-visual='link-bulk-expiry']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-expiry"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "delete",
+          "web": {
+            "selector": "[data-visual='link-bulk-delete']"
+          },
+          "app": {
+            "tag": "linksnap-bulk-delete"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
         }
       ]
     }

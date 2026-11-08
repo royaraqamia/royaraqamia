@@ -1,0 +1,63 @@
+{
+  "surface": "account-links",
+  "state": "bulk-bar",
+  "route": "/account/links",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "bar": {
+      "width": 361,
+      "height": 112,
+      "radius": 12,
+      "paddingTop": 12,
+      "paddingLeft": 12,
+      "rowGap": 12,
+      "columnGap": 12
+    },
+    "select-all": {
+      "height": 44,
+      "fontSize": 12,
+      "fontWeight": 700
+    },
+    "checkbox": {
+      "width": 18,
+      "height": 18,
+      "radius": 4
+    },
+    "count": {
+      "height": 16,
+      "fontSize": 12
+    },
+    "clear": {
+      "height": 30,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10
+    },
+    "copy": {
+      "height": 30,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10
+    },
+    "expiry": {
+      "height": 30,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10
+    },
+    "delete": {
+      "height": 30,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10
+    }
+  }
+}

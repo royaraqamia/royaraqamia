@@ -1,0 +1,56 @@
+{
+  "surface": "account-links",
+  "elements": {
+    "bar": {
+      "width": 360.72726,
+      "height": 112.0,
+      "radius": 12.0,
+      "paddingTop": 12,
+      "paddingLeft": 12,
+      "rowGap": 12.0,
+      "columnGap": 12.0
+    },
+    "select-all": {
+      "height": 44.000004,
+      "fontSize": 12.0,
+      "fontWeight": 700
+    },
+    "checkbox": {
+      "width": 18.181793,
+      "height": 18.18182,
+      "radius": 4.0
+    },
+    "count": {
+      "height": 16.363636,
+      "fontSize": 12.0
+    },
+    "clear": {
+      "height": 30.181816,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10.0
+    },
+    "copy": {
+      "height": 30.181816,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10.0
+    },
+    "expiry": {
+      "height": 29.818176,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10.0
+    },
+    "delete": {
+      "height": 29.818176,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "paddingTop": 6,
+      "paddingLeft": 10.0
+    }
+  }
+}
