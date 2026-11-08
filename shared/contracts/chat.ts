@@ -87,9 +87,10 @@ export function chatAttachmentIsAudio(mimeType: string): boolean {
 }
 
 /**
- * A file the assistant can read as words. Binary formats (PDF, archives,
- * documents) are not decoded on the server: there is no parser in this runtime,
- * and a guess at their contents is worse than a sentence saying so (ADR-0127).
+ * A file the assistant can read as words. Binary formats (PDF, documents,
+ * archives) are not read here: they are the turn's own work, and the extractor
+ * either returns their text or a sentence saying why it could not (ADR-0127,
+ * ADR-0140).
  */
 export function chatAttachmentIsReadableText(mimeType: string): boolean {
   const mime = mimeType.trim().toLowerCase();
@@ -100,6 +101,43 @@ export function chatAttachmentIsReadableText(mimeType: string): boolean {
     mime === 'application/x-yaml' ||
     mime === 'application/javascript'
   );
+}
+
+/**
+ * The documents the assistant reads itself (#1037, ADR-0140): a model cannot
+ * take any of them as it stands, and the page cannot read them either, so the
+ * turn extracts their words and hands those over as text. The page still
+ * uploads the file, and the thread keeps it.
+ */
+export const CHAT_DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+] as const;
+
+export function chatAttachmentIsDocument(mimeType: string): boolean {
+  const mime = mimeType.trim().toLowerCase();
+  return (CHAT_DOCUMENT_MIME_TYPES as readonly string[]).includes(mime);
+}
+
+/**
+ * A PDF and nothing else. Its pages are its text or a picture of it, so a PDF
+ * that reads as empty is the one document whose answer names the scan
+ * (ADR-0140).
+ */
+export function chatAttachmentIsPdf(mimeType: string): boolean {
+  return mimeType.trim().toLowerCase() === CHAT_DOCUMENT_MIME_TYPES[0];
+}
+
+/** A document a turn may carry. A second one is a second question (ADR-0140). */
+export const CHAT_AGENT_DOCUMENTS_PER_TURN_MAX = 1;
+
+/** The documents among a turn's files, counted the way the contract bounds them. */
+export function chatTurnDocuments(attachments: { mimeType: string }[] | undefined): number {
+  return (attachments ?? []).filter((attachment) => chatAttachmentIsDocument(attachment.mimeType))
+    .length;
 }
 
 /**
@@ -347,13 +385,15 @@ export function chatTurnImages(attachments: { mimeType: string }[] | undefined):
 
 /**
  * A turn is text, files, or both. A voice note is transcribed before the model
- * sees it, an image reaches it as an image part, and a text file as text — the
- * recording and the file still stay in the thread either way (ADR-0126,
- * ADR-0127). A file no model can read is refused with a sentence, not guessed
- * at.
+ * sees it, an image reaches it as an image part, a text file as text, and a
+ * document as the words its turn extracts — the recording and the file still
+ * stay in the thread either way (ADR-0126, ADR-0127, ADR-0140). A file no model
+ * can read is refused with a sentence, not guessed at.
  *
  * The picture bound is the one number a turn adds to a message's: three images,
- * because each is a part the model re-reads on every round (ADR-0139).
+ * because each is a part the model re-reads on every round (ADR-0139). The
+ * document bound is one, because a document is read once into the prompt and
+ * costs pages of tokens (ADR-0140).
  */
 export const ChatAgentTurnSchema = z
   .object({
@@ -368,6 +408,9 @@ export const ChatAgentTurnSchema = z
   })
   .refine((value) => chatTurnImages(value.attachments) <= CHAT_AGENT_IMAGES_PER_TURN_MAX, {
     message: 'ثلاث صور في السؤال الواحد',
+  })
+  .refine((value) => chatTurnDocuments(value.attachments) <= CHAT_AGENT_DOCUMENTS_PER_TURN_MAX, {
+    message: 'مستند واحد في السؤال الواحد',
   });
 
 export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;

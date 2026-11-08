@@ -1,8 +1,10 @@
 import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { isChatAttachmentTooLarge } from '@/frontend/transport/supabase/chat-attachments';
 import {
+  CHAT_AGENT_DOCUMENTS_PER_TURN_MAX,
   CHAT_AGENT_IMAGES_PER_TURN_MAX,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
+  chatAttachmentIsDocument,
   chatAttachmentIsInlineImage,
   type ChatAttachmentQuota,
 } from '@/shared/contracts/chat';
@@ -18,6 +20,8 @@ export const ATTACHMENT_REFUSALS = {
   tooMany: 'خمسة مرفقات في الرسالة الواحدة',
   /** The turn's own bound: three pictures, because each one is a prompt (ADR-0139). */
   tooManyImages: 'ثلاث صور في السؤال الواحد، أرسل الباقي في سؤال آخر',
+  /** The turn's other bound: one document, because it is read into the prompt (ADR-0140). */
+  tooManyDocuments: 'مستند واحد في السؤال الواحد، أرسل الباقي في سؤال آخر',
   today: 'بلغت حدّ المرفقات اليوم، يعود غداً',
   total: 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات',
   project: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
@@ -37,6 +41,21 @@ export function exceedsImageLimit(
     chatAttachmentIsInlineImage(file.type)
   ).length;
   return images > max;
+}
+
+/**
+ * The same count for the turn's documents, and for the same reason: a second
+ * document spends its bytes before the server can say no (ADR-0140).
+ */
+export function exceedsDocumentLimit(
+  current: File[],
+  picked: File[],
+  max: number = CHAT_AGENT_DOCUMENTS_PER_TURN_MAX
+): boolean {
+  const documents = [...current, ...picked].filter((file) =>
+    chatAttachmentIsDocument(file.type)
+  ).length;
+  return documents > max;
 }
 
 /**

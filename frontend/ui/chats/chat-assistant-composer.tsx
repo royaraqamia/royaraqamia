@@ -7,7 +7,12 @@ import { toast } from 'sonner';
 
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
 import type { ChatAttachmentQuota } from '@/shared/contracts/chat';
-import { ATTACHMENT_REFUSALS, exceedsImageLimit, stageFiles } from './attachment-quota';
+import {
+  ATTACHMENT_REFUSALS,
+  exceedsDocumentLimit,
+  exceedsImageLimit,
+  stageFiles,
+} from './attachment-quota';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { ChatComposer } from './chat-composer';
 import { shrinkChatImage } from './image-downscale';
@@ -119,14 +124,19 @@ export function AssistantComposer({
 
   /**
    * A pick is bounded before it is uploaded (ADR-0139): at most three pictures,
-   * and each shrunk to a prompt the model can read. The shrink runs before
-   * `stageFiles`, so the checks that already exist — the per-file ceiling, the
-   * day's allowance — judge the bytes that would actually be stored.
+   * each shrunk to a prompt the model can read, and at most one document
+   * (ADR-0140). The shrink runs before `stageFiles`, so the checks that already
+   * exist — the per-file ceiling, the day's allowance — judge the bytes that
+   * would actually be stored.
    */
   async function addFiles(picked: File[]) {
     if (picked.length === 0) return;
     if (exceedsImageLimit(stagedRef.current, picked)) {
       toast.error(ATTACHMENT_REFUSALS.tooManyImages, { id: 'assistant-composer-attachment' });
+      return;
+    }
+    if (exceedsDocumentLimit(stagedRef.current, picked)) {
+      toast.error(ATTACHMENT_REFUSALS.tooManyDocuments, { id: 'assistant-composer-attachment' });
       return;
     }
 
