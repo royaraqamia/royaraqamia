@@ -1,0 +1,64 @@
+{
+  "surface": "account-links",
+  "route": "/account/links",
+  "notes": "The owned-link list at rest (#941): the code chip, the status pill, the protected pill, the Hijri date pill and the destination the page draws for a link. `origin` is the code chip, because the page's frame and the app's frame are different heights and the design this contract owns is the row's own boxes. `capture` is the destination line, because its box is the width the row gives it on both clients and does not depend on whether the badges wrapped: the row's action toolbar and selection checkbox are later slices (#942, #943) and are outside this contract. The destination's width is the row's width on the page and is measured; its height is one line of `text-[13px] leading-relaxed`. Widths of the code chip and the pills are left out deliberately - they are the run of the words and the glyphs, not a decision - and colours are left out too, because they are what the raster proves. The protected pill is drawn for a link the fixture gives a password, so the state records every pill the page's row draws.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "code",
+      "capture": "destination",
+      "elements": [
+        {
+          "name": "code",
+          "web": {
+            "selector": "[data-visual='link-row-code']"
+          },
+          "app": {
+            "tag": "linksnap-row-code"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "status",
+          "web": {
+            "selector": "[data-visual='link-row-status']"
+          },
+          "app": {
+            "tag": "linksnap-row-status"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "protected",
+          "web": {
+            "selector": "[data-visual='link-row-protected']"
+          },
+          "app": {
+            "tag": "linksnap-row-protected"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "date",
+          "web": {
+            "selector": "[data-visual='link-row-date']"
+          },
+          "app": {
+            "tag": "linksnap-row-date"
+          },
+          "properties": ["height", "fontSize", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "destination",
+          "web": {
+            "selector": "[data-visual='link-row-destination']"
+          },
+          "app": {
+            "tag": "linksnap-row-destination"
+          },
+          "properties": ["width", "height", "fontSize", "lineHeight"]
+        }
+      ]
+    }
+  ]
+}

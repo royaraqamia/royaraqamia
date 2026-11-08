@@ -166,6 +166,28 @@ export async function seedVisualLink(
 }
 
 /**
+ * Marks the fixture link protected (#941).
+ *
+ * The account-links row draws a protected pill only for a link that carries a
+ * password, and the fixture link is clicked through the real redirect to settle
+ * its analytics — which a protected link would answer with the unlock page. So
+ * the password is written after the clicks: the row then has the pill, and the
+ * click history the analytics state reads is unchanged. The hash is a marker,
+ * not a password anyone unlocks with; the capture never opens the link again.
+ */
+export async function protectVisualLink(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const { error } = await serviceClient()
+    .from('short_links')
+    .update({ password_hash: 'scrypt:e2e-visual-gate:marker' })
+    .eq('user_id', userId)
+    .eq('code', VISUAL_LINK.code);
+  if (error) {
+    throw new Error(`could not protect the visual gate fixture link: ${error.message}`);
+  }
+}
+
+/**
  * Removes the community rows this capture seeds, tombstones included.
  *
  * The page's own delete is a tombstone, and `posts.slug` is unique across the

@@ -1251,6 +1251,30 @@
       ]
     },
     {
+      "id": "account-links-row",
+      "surface": "account-links",
+      "issue": "#941",
+      "web": {
+        "route": "app/account/links/page.tsx",
+        "component": "frontend/ui/linksnap/link-row-summary.tsx",
+        "copyModule": "frontend/ui/linksnap/link-row-summary-copy.ts",
+        "copyExport": "LINK_ROW_SUMMARY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowCopy.kt",
+        "copyObject": "LinksnapRowCopy"
+      },
+      "copySource": "shared/copy/account-links.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "statusActive"
+        }
+      ]
+    },
+    {
       "id": "linksnap-unlock",
       "surface": "linksnap-unlock",
       "issue": "#919",

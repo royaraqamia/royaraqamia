@@ -9,15 +9,13 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  Calendar,
   AlertTriangle,
   QrCode,
   MoreHorizontal,
-  ExternalLink,
   Share2,
-  Lock,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
+import { LinkRowSummary } from './link-row-summary';
 import { LinkEditDialog } from './link-edit-dialog';
 import { LinkAnalyticsDrawer } from './link-analytics-drawer';
 import { LinkQrModal } from './link-qr-modal';
@@ -37,27 +35,6 @@ import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
 import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
 import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
-
-const STATUS_META: Record<LinkStatus, { label: string; className: string; dotClass: string }> = {
-  active: {
-    label: 'نشط',
-    className:
-      'text-emerald-700 bg-emerald-50/80 border-emerald-200/60 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/50',
-    dotClass: 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]',
-  },
-  expired: {
-    label: 'منتهي الصلاحية',
-    className:
-      'text-neutral-600 bg-neutral-100/80 border-neutral-200/60 dark:text-neutral-400 dark:bg-neutral-800/60 dark:border-neutral-700/50',
-    dotClass: 'bg-neutral-400 dark:bg-neutral-500',
-  },
-  blocked: {
-    label: 'محظور',
-    className:
-      'text-rose-700 bg-rose-50/80 border-rose-200/60 dark:text-rose-400 dark:bg-rose-950/40 dark:border-rose-800/50',
-    dotClass: 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]',
-  },
-};
 
 interface LinkRowCardProps {
   clientId: string;
@@ -207,81 +184,15 @@ export const LinkRowCard = memo(function LinkRowCard({
             </button>
           ) : null}
 
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            {/* Top Row: Short Slug Code + Status + Date Badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.open(fullShortUrl, '_blank')}
-                className={cn(
-                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-bold tracking-tight text-neutral-900 transition-safe duration-200',
-                  'hover:border-blue-500/40 hover:bg-blue-50/50 hover:text-blue-600 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-blue-500/40 dark:hover:bg-blue-950/30 dark:hover:text-blue-400',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950'
-                )}
-                title={`فتح ${fullShortUrl}`}
-              >
-                <span>/{code}</span>
-                <ExternalLink
-                  aria-hidden="true"
-                  className="h-3 w-3 opacity-40 transition-opacity duration-200 group-hover/code:opacity-100"
-                />
-              </button>
-
-              {/* Status Badge */}
-              {(() => {
-                const meta = STATUS_META[status] ?? STATUS_META.active;
-                return (
-                  <span
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-safe duration-200',
-                      meta.className
-                    )}
-                    title={expiresAt ? `ينتهي في ${expiresAt}` : undefined}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn('h-1.5 w-1.5 rounded-full', meta.dotClass)}
-                    />
-                    {meta.label}
-                  </span>
-                );
-              })()}
-
-              {/* Password Protected Badge */}
-              {passwordProtected && (
-                <span
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-50/80 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-400"
-                  title="هذا الرَّابط محمي بكلمة مرور"
-                >
-                  <Lock aria-hidden="true" className="h-3 w-3" />
-                  محمي
-                </span>
-              )}
-
-              {/* Date Badge */}
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200/70 bg-neutral-50/80 px-2.5 py-0.5 text-xs font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
-                <Calendar
-                  aria-hidden="true"
-                  className="h-3 w-3 text-neutral-400 dark:text-neutral-500"
-                />
-                {new Intl.DateTimeFormat('ar-SA', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  calendar: 'islamic-umalqura',
-                  numberingSystem: 'latn',
-                }).format(new Date(createdAt))}
-              </span>
-            </div>
-
-            {/* Target Destination URL */}
-            <p
-              className="truncate text-[13px] leading-relaxed text-neutral-500 transition-colors duration-200 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
-              title={originalUrl}
-            >
-              {originalUrl}
-            </p>
-          </div>
+          <LinkRowSummary
+            code={code}
+            originalUrl={originalUrl}
+            createdAt={createdAt}
+            status={status}
+            expiresAt={expiresAt}
+            passwordProtected={passwordProtected}
+            onOpen={() => window.open(fullShortUrl, '_blank')}
+          />
         </div>
 
         {/* Action Controls Toolbar */}

@@ -1,19 +1,25 @@
 package com.royaraqamia.app.linksnap
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,29 +32,42 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.royaraqamia.app.auth.SignInCopy
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.net.Connectivity
-import com.royaraqamia.app.store.linksnap.LinksnapEdit
+import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.store.linksnap.LinksnapLinkRow
 import com.royaraqamia.app.store.linksnap.LinksnapRepository
 import com.royaraqamia.app.store.linksnap.LinksnapStatus
 import com.royaraqamia.app.sync.SyncPill
 import com.royaraqamia.app.sync.SyncPillState
-import java.time.LocalDate
-import java.time.ZoneId
+import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.ui.vectors.LucideVectors
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * LinkSnap, drawn from the device (#654).
+ * The owned-link list at rest (#941, #654).
+ *
+ * The page at `/account/links` is a member's own LinkSnap rows: the sync pill,
+ * then one card per link carrying the code chip, the status pill, the protected
+ * pill, the Hijri date pill and the destination. That is what this screen draws;
+ * the bulk bar, the row actions and the edit dialog are the next slices (#942,
+ * #943, #944) and are deliberately not here.
  *
  * The order of the reads is HabitFlow's (#649) and SpendTrack's (#653), not a
  * third opinion: [LinksnapRepository.links] answers from the database and is
@@ -57,21 +76,9 @@ import kotlinx.serialization.json.jsonPrimitive
  * pull run beside them and never in front of them: a failure is a
  * [SyncPillState], not an empty list.
  *
- * Every signed-in write commits the row **and** its replay intent in one
- * transaction, so what the user sees happen has already survived the process
- * before the request is attempted. The queue also drains with the app closed
- * ([com.royaraqamia.app.sync.OutboxDrainWorker]) and on reconnection
- * ([com.royaraqamia.app.shell.ShellActivity]), which is what makes an offline
- * write reach the server without this screen being open.
- *
- * A guest's link is only meaningful on the server, so it is the public
- * shortener's answer rather than a queued write; offline, the form says it needs
- * a connection. The unlock screen is the same kind of live read
- * ([LinksnapUnlockScreen]).
- *
- * What the site draws and this slice does not: the analytics drawer, the QR
- * modal, the share sheet and bulk selection. They are listed in the pull request
- * that landed the screen rather than implied by a missing button.
+ * The screen stays off the shell's native routes (`docs/mobile/screens.json`
+ * keeps `enabled: false`) until the whole dashboard is the page, so the document
+ * still opens on top of it (ADR-0117).
  */
 @Composable
 fun LinksnapScreen(
@@ -85,21 +92,12 @@ fun LinksnapScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var state by remember { mutableStateOf<LinksnapUiState>(LinksnapUiState.Painted(emptyList())) }
+    var rows by remember { mutableStateOf<List<LinksnapLinkRow>>(emptyList()) }
     var pill by remember { mutableStateOf<SyncPillState?>(null) }
-    var urlInput by remember { mutableStateOf("") }
-    var codeInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
-    var notice by remember { mutableStateOf<String?>(null) }
-    var created by remember { mutableStateOf<LinksnapLinkRow?>(null) }
-    var editing by remember { mutableStateOf<LinksnapLinkRow?>(null) }
-    var deleting by remember { mutableStateOf<LinksnapLinkRow?>(null) }
-    var undo by remember { mutableStateOf<LinksnapLinkRow?>(null) }
-    var busy by remember { mutableStateOf(false) }
 
     /** Repaint from the store alone: no network, no session, no wait. */
     suspend fun paint() {
-        state = LinksnapUiState.of(if (signedIn) repository.links() else emptyList())
+        rows = if (signedIn) repository.links() else emptyList()
     }
 
     /**
@@ -140,467 +138,396 @@ fun LinksnapScreen(
         onDispose { watch.close() }
     }
 
-    fun submit() {
-        if (busy) return
-        scope.launch {
-            busy = true
-            notice = null
-            try {
-                val row =
-                    if (signedIn) {
-                        runCatching {
-                                repository.createLink(
-                                    originalUrl = urlInput,
-                                    customCode = codeInput.takeIf { it.isNotBlank() },
-                                    password = passwordInput.takeIf { it.isNotBlank() },
-                                )
-                            }
-                            .getOrElse {
-                                notice = it.message ?: "تعذَّر إنشاء الرَّابط."
-                                null
-                            }
-                    } else {
-                        when (
-                            val answer =
-                                repository.createOnlineLink(
-                                    originalUrl = urlInput,
-                                    customCode = codeInput.takeIf { it.isNotBlank() },
-                                    password = passwordInput.takeIf { it.isNotBlank() },
-                                )
-                        ) {
-                            is ApiResult.Success -> answer.value
-                            is ApiResult.Failure -> {
-                                notice = messageFor(answer.error)
-                                null
-                            }
-                        }
-                    }
-                if (row != null) {
-                    created = row
-                    urlInput = ""
-                    codeInput = ""
-                    passwordInput = ""
-                    if (signedIn) sync()
-                }
-            } finally {
-                busy = false
+    LinksnapAccountList(
+        rows = rows,
+        pill = pill,
+        signedIn = signedIn,
+        onRetry = {
+            scope.launch {
+                repository.retryFailed()
+                sync()
             }
-        }
-    }
-
-    val rows = (state as? LinksnapUiState.Painted)?.rows.orEmpty()
-    val fullUrl: (String) -> String = { code -> "${siteUrl.trimEnd('/')}/$code" }
-
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Text(
-                    text = LinksnapPageCopy.PAGE_TITLE,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-            }
-
-            if (signedIn) {
-                pill?.let { current ->
-                    item {
-                        SyncPill(
-                            state = current,
-                            onRetry = {
-                                scope.launch {
-                                    repository.retryFailed()
-                                    sync()
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-
-            item {
-                ShortenerForm(
-                    url = urlInput,
-                    code = codeInput,
-                    password = passwordInput,
-                    busy = busy,
-                    notice = notice,
-                    onUrlChange = { urlInput = it },
-                    onCodeChange = {
-                        codeInput = it.replace(Regex("[^a-zA-Z0-9_-]"), "").take(16)
-                    },
-                    onPasswordChange = { passwordInput = it },
-                    onSubmit = ::submit,
-                )
-            }
-
-            created?.let { link ->
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "رابطك المُختصَر جاهز!",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = fullUrl(link.code),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        TextButton(onClick = { onCopy(fullUrl(link.code)) }) {
-                            Text("نسخ الرَّابط")
-                        }
-                    }
-                }
-            }
-
-            if (signedIn) {
-                if (rows.isEmpty()) {
-                    item { LinksnapEmptyState() }
-                } else {
-                    items(rows, key = { it.clientId }) { row ->
-                        LinksnapRowCard(
-                            row = row,
-                            onCopy = { onCopy(fullUrl(row.code)) },
-                            onEdit = { editing = row },
-                            onDelete = { deleting = row },
-                        )
-                    }
-                }
-            } else {
-                item {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.large,
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = "سجِّل الدُّخول لإدارة روابطك ومزامنتها.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            TextButton(onClick = onSignIn) { Text("تسجيل الدُّخول") }
-                        }
-                    }
-                }
-            }
-
-            undo?.let { removed ->
-                item {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth().testTag("linksnap-undo"),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = "تم حذف الرَّابط",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            TextButton(
-                                onClick = {
-                                    scope.launch {
-                                        repository.restoreLink(removed.clientId)
-                                        undo = null
-                                        sync()
-                                    }
-                                }
-                            ) {
-                                Text("تراجع")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    editing?.let { row ->
-        LinksnapEditDialog(
-            row = row,
-            onDismiss = { editing = null },
-            onSave = { edit ->
-                editing = null
-                scope.launch {
-                    runCatching { repository.updateLink(row.clientId, edit) }
-                        .onFailure { notice = it.message ?: "تعذَّر تعديل الرَّابط." }
-                    sync()
-                }
-            },
-        )
-    }
-
-    deleting?.let { row ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text("حذف الرَّابط") },
-            text = { Text("هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        deleting = null
-                        scope.launch {
-                            if (repository.deleteLink(row.clientId)) undo = row
-                            sync()
-                        }
-                    }
-                ) {
-                    Text("حذف")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text("إلغاء") }
-            },
-        )
-    }
+        },
+        onSignIn = onSignIn,
+        modifier = modifier,
+    )
 }
 
+/**
+ * The list over its data, so the visual gate can draw it without a client
+ * (#874, ADR-0118). `siteUrl` and the platform services are the caller's.
+ */
 @Composable
-private fun ShortenerForm(
-    url: String,
-    code: String,
-    password: String,
-    busy: Boolean,
-    notice: String?,
-    onUrlChange: (String) -> Unit,
-    onCodeChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onSubmit: () -> Unit,
+internal fun LinksnapAccountList(
+    rows: List<LinksnapLinkRow>,
+    pill: SyncPillState?,
+    signedIn: Boolean,
+    onRetry: () -> Unit,
+    onSignIn: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = url,
-            onValueChange = onUrlChange,
-            label = { Text("الرَّابط") },
-            placeholder = { Text("https://example.com/very-long-url-path") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("linksnap-url"),
-        )
-        OutlinedTextField(
-            value = code,
-            onValueChange = onCodeChange,
-            label = { Text("رمز مُخصَّص (اختياري)") },
-            placeholder = { Text("my-promo") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("linksnap-code"),
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = onPasswordChange,
-            label = { Text("كلمة مرور (اختياري)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("linksnap-password"),
-        )
-        Button(
-            onClick = onSubmit,
-            enabled = !busy && url.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(if (busy) "جاري الاختصار..." else "اختصار الرَّابط")
-        }
-        notice?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-    }
-}
-
-@Composable
-private fun LinksnapRowCard(
-    row: LinksnapLinkRow,
-    onCopy: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth().testTag("linksnap-row"),
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(RoyColors.background)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = LinksnapRowMetrics.pagePadding),
+        verticalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.listGap),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+        if (signedIn) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
             ) {
-                Text(
-                    text = "/${row.code}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = statusLabel(row),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                pill?.let { SyncPill(state = it, onRetry = onRetry) }
             }
-            Text(
-                text = row.originalUrl,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+
+            if (rows.isEmpty()) {
+                LinksnapEmptyState()
+            } else {
+                rows.forEach { row -> LinksnapRowCard(row) }
+            }
+        } else {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(top = LinksnapRowMetrics.listGap),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onSignIn) { Text(SignInCopy.TITLE) }
+            }
+        }
+    }
+}
+
+/** One owned link's card: the page's box around the resting details. */
+@Composable
+private fun LinksnapRowCard(row: LinksnapLinkRow) {
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(LinksnapRowMetrics.cardRadius))
+                .background(LinksnapRowMetrics.cardSurface)
+                .border(
+                    LinksnapRowMetrics.cardBorderWidth,
+                    LinksnapRowMetrics.cardBorder,
+                    RoundedCornerShape(LinksnapRowMetrics.cardRadius),
+                )
+                .padding(LinksnapRowMetrics.cardPadding),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.checkboxGap)) {
+            // The selection checkbox is the bulk bar's slice (#942); the slot is
+            // kept so the row's details sit exactly where the page puts them.
+            Spacer(Modifier.width(LinksnapRowMetrics.checkboxWidth))
+            LinksnapRowSummary(
+                state = LinksnapRowUiState.Painted(row),
+                modifier = Modifier.weight(1f),
             )
-            if (row.passwordProtected) {
+        }
+    }
+}
+
+/**
+ * The resting half of a row: the code chip, the status pill, the protected pill,
+ * the Hijri date pill and the destination (#941). Ported from
+ * `frontend/ui/linksnap/link-row-summary.tsx`; every visible word is
+ * [LinksnapRowCopy], generated from the same source the page reads.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun LinksnapRowSummary(
+    state: LinksnapRowUiState,
+    modifier: Modifier = Modifier,
+) {
+    when (state) {
+        is LinksnapRowUiState.Painted -> {
+            val row = state.row
+            Column(
+                modifier = modifier.testTag(LinksnapRowMetrics.SUMMARY),
+                verticalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.summaryGap),
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.badgeGap),
+                    verticalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.badgeGap),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CodeChip(row.code)
+                    StatusPill(row)
+                    if (row.passwordProtected) ProtectedPill()
+                    DatePill(row.createdAt)
+                }
+
                 Text(
-                    text = "محمي بكلمة مرور",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = row.originalUrl,
+                    modifier =
+                        Modifier.testTag(LinksnapRowMetrics.DESTINATION)
+                            .fillMaxWidth()
+                            .height(LinksnapRowMetrics.destinationHeight),
+                    style =
+                        TextStyle(
+                            fontSize = LinksnapRowMetrics.destinationSize,
+                            lineHeight = LinksnapRowMetrics.destinationLineHeight,
+                            color = LinksnapRowMetrics.destinationColor,
+                        ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = onCopy) { Text("نسخ") }
-                TextButton(onClick = onEdit) { Text("تعديل") }
-                TextButton(onClick = onDelete) { Text("حذف") }
             }
         }
     }
 }
 
 @Composable
-private fun LinksnapEditDialog(
-    row: LinksnapLinkRow,
-    onDismiss: () -> Unit,
-    onSave: (LinksnapEdit) -> Unit,
-) {
-    var url by remember(row.clientId) { mutableStateOf(row.originalUrl) }
-    var code by remember(row.clientId) { mutableStateOf(row.code) }
-    var expiry by remember(row.clientId) { mutableStateOf(row.expiresAt?.take(10).orEmpty()) }
-    var clearExpiry by remember(row.clientId) { mutableStateOf(false) }
-    var password by remember(row.clientId) { mutableStateOf("") }
-    var clearPassword by remember(row.clientId) { mutableStateOf(false) }
-    var error by remember(row.clientId) { mutableStateOf<String?>(null) }
+private fun CodeChip(code: String) {
+    Row(
+        modifier =
+            Modifier.testTag(LinksnapRowMetrics.CODE)
+                .height(LinksnapRowMetrics.codeHeight)
+                .clip(RoundedCornerShape(LinksnapRowMetrics.codeRadius))
+                .background(LinksnapRowMetrics.codeSurface)
+                .border(
+                    LinksnapRowMetrics.badgeBorderWidth,
+                    LinksnapRowMetrics.codeBorder,
+                    RoundedCornerShape(LinksnapRowMetrics.codeRadius),
+                )
+                .padding(
+                    horizontal = LinksnapRowMetrics.codePaddingX,
+                    vertical = LinksnapRowMetrics.codePaddingY,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.iconGap),
+    ) {
+        Text(
+            text = "/$code",
+            style =
+                TextStyle(
+                    fontSize = LinksnapRowMetrics.codeTextSize,
+                    lineHeight = LinksnapRowMetrics.codeLineHeight,
+                    fontWeight = LinksnapRowMetrics.codeWeight,
+                    fontFamily = FontFamily.Monospace,
+                    color = LinksnapRowMetrics.codeText,
+                ),
+        )
+        Icon(
+            imageVector = LucideVectors.ExternalLink,
+            contentDescription = null,
+            modifier = Modifier.size(LinksnapRowMetrics.iconSize).alpha(0.4f),
+            tint = LinksnapRowMetrics.codeText,
+        )
+    }
+}
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("تعديل الرَّابط") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text("الرَّابط") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = {
-                        code = it.replace(Regex("[^a-zA-Z0-9_-]"), "").take(16)
-                    },
-                    label = { Text("الرمز") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = expiry,
-                    onValueChange = { expiry = it; clearExpiry = false },
-                    label = { Text("تاريخ الانتهاء (YYYY-MM-DD)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = clearExpiry,
-                        onCheckedChange = {
-                            clearExpiry = it
-                            if (it) expiry = ""
-                        },
-                    )
-                    Text("إزالة تاريخ الانتهاء")
-                }
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it; clearPassword = false },
-                    label = { Text("كلمة مرور جديدة") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = clearPassword,
-                        onCheckedChange = {
-                            clearPassword = it
-                            if (it) password = ""
-                        },
-                    )
-                    Text("إزالة كلمة المرور")
-                }
-                error?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val iso =
-                        if (clearExpiry || expiry.isBlank()) {
-                            null
-                        } else {
-                            parseExpiry(expiry) ?: run {
-                                error = "تاريخ غير صالح، استخدم YYYY-MM-DD."
-                                return@TextButton
-                            }
-                        }
-                    onSave(
-                        LinksnapEdit(
-                            newCode = code.takeIf { it != row.code },
-                            originalUrl = url,
-                            expiresAtSet = clearExpiry || expiry.isNotBlank(),
-                            expiresAt = iso,
-                            passwordSet = clearPassword || password.isNotBlank(),
-                            password = if (clearPassword) null else password.takeIf { it.isNotBlank() },
-                        )
-                    )
-                }
-            ) {
-                Text("حفظ")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("إلغاء") }
+@Composable
+private fun StatusPill(row: LinksnapLinkRow) {
+    val status = LinksnapStatus.of(row, System.currentTimeMillis())
+    val tone =
+        when (status) {
+            "blocked" -> LinksnapRowMetrics.blocked
+            "expired" -> LinksnapRowMetrics.expired
+            else -> LinksnapRowMetrics.active
+        }
+    val label =
+        when (status) {
+            "blocked" -> LinksnapRowCopy.STATUS_BLOCKED
+            "expired" -> LinksnapRowCopy.STATUS_EXPIRED
+            else -> LinksnapRowCopy.STATUS_ACTIVE
+        }
+    Pill(
+        tag = LinksnapRowMetrics.STATUS,
+        surface = tone.surface,
+        border = tone.border,
+        content = tone.content,
+        label = label,
+        leading = { Dot(tone.dot) },
+    )
+}
+
+@Composable
+private fun ProtectedPill() {
+    Pill(
+        tag = LinksnapRowMetrics.PROTECTED,
+        surface = LinksnapRowMetrics.protectedPill.surface,
+        border = LinksnapRowMetrics.protectedPill.border,
+        content = LinksnapRowMetrics.protectedPill.content,
+        label = LinksnapRowCopy.PROTECTED_LABEL,
+        leading = {
+            Icon(
+                imageVector = LucideVectors.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(LinksnapRowMetrics.iconSize),
+                tint = LinksnapRowMetrics.protectedPill.content,
+            )
         },
     )
 }
 
-private fun parseExpiry(value: String): String? =
-    runCatching {
-            LocalDate.parse(value.trim())
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toString()
-        }
-        .getOrNull()
+@Composable
+private fun DatePill(createdAt: String) {
+    Pill(
+        tag = LinksnapRowMetrics.DATE,
+        surface = LinksnapRowMetrics.datePill.surface,
+        border = LinksnapRowMetrics.datePill.border,
+        content = LinksnapRowMetrics.datePill.content,
+        label = PlanDates.label(createdAt),
+        leading = {
+            Icon(
+                imageVector = LucideVectors.Calendar,
+                contentDescription = null,
+                modifier = Modifier.size(LinksnapRowMetrics.iconSize),
+                tint = LinksnapRowMetrics.dateIcon,
+            )
+        },
+    )
+}
 
-private fun statusLabel(row: LinksnapLinkRow): String =
-    when (LinksnapStatus.of(row, System.currentTimeMillis())) {
-        "blocked" -> "محظور"
-        "expired" -> "منتهي الصلاحية"
-        else -> "نشط"
+@Composable
+private fun Pill(
+    tag: String,
+    surface: Color,
+    border: Color,
+    content: Color,
+    label: String,
+    leading: @Composable () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier.testTag(tag)
+                .height(LinksnapRowMetrics.pillHeight)
+                .clip(CircleShape)
+                .background(surface)
+                .border(LinksnapRowMetrics.badgeBorderWidth, border, CircleShape)
+                .padding(
+                    horizontal = LinksnapRowMetrics.pillPaddingX,
+                    vertical = LinksnapRowMetrics.pillPaddingY,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.iconGap),
+    ) {
+        leading()
+        Text(
+            text = label,
+            style =
+                TextStyle(
+                    fontSize = LinksnapRowMetrics.pillTextSize,
+                    lineHeight = LinksnapRowMetrics.pillLineHeight,
+                    fontWeight = LinksnapRowMetrics.pillWeight,
+                    color = content,
+                ),
+        )
     }
+}
+
+@Composable
+private fun Dot(color: Color) {
+    Box(
+        modifier =
+            Modifier.size(LinksnapRowMetrics.dotSize)
+                .clip(CircleShape)
+                .background(color),
+    )
+}
+
+/**
+ * The page's own numbers, which the visual gate compares box by box
+ * (`shared/visual/account-links.json`, ADR-0118).
+ *
+ * The colours are the page's dark-theme Tailwind values, transcribed because the
+ * contract does not measure colour: the raster proves them. The card is
+ * `dark:bg-neutral-950`, the destination `dark:text-neutral-400`, and each pill
+ * carries the tone the site's `STATUS_META` and badges carry.
+ */
+internal object LinksnapRowMetrics {
+    const val SUMMARY = "linksnap-row-summary"
+    const val CODE = "linksnap-row-code"
+    const val STATUS = "linksnap-row-status"
+    const val PROTECTED = "linksnap-row-protected"
+    const val DATE = "linksnap-row-date"
+    const val DESTINATION = "linksnap-row-destination"
+
+    val pagePadding = 16.dp
+    val listGap = 24.dp
+    val summaryGap = 6.dp
+    val badgeGap = 8.dp
+    val iconGap = 6.dp
+
+    val cardRadius = 16.dp
+    // The page's content box is its 16px padding inside a 1px border; Compose
+    // draws the border on the bounds, so the inset is 17dp for the same width.
+    val cardPadding = 17.dp
+    val cardBorderWidth = 1.dp
+    val cardSurface = Color(0xFF0A0A0A)
+    val cardBorder = Color(0xFF262626)
+    val checkboxWidth = 20.dp
+    val checkboxGap = 14.dp
+
+    val codeHeight = 30.dp
+    val codeRadius = 8.dp
+    val codePaddingX = 10.dp
+    val codePaddingY = 4.dp
+    val codeTextSize = 14.sp
+    val codeLineHeight = 20.sp
+    val codeWeight = FontWeight.Bold
+    val codeSurface = Color(0xFF141414)
+    val codeBorder = Color(0xFF262626)
+    val codeText = Color(0xFFF5F5F5)
+
+    val pillHeight = 22.dp
+    val pillPaddingX = 10.dp
+    val pillPaddingY = 2.dp
+    val pillTextSize = 12.sp
+    val pillLineHeight = 16.sp
+    val pillWeight = FontWeight.Medium
+    val badgeBorderWidth = 1.dp
+    val iconSize = 12.dp
+    val dotSize = 6.dp
+
+    val destinationSize = 13.sp
+    val destinationLineHeight = 21.13.sp
+    val destinationHeight = 21.13.dp
+    val destinationColor = Color(0xFFA3A3A3)
+
+    val dateIcon = Color(0xFF737373)
+
+    data class Tone(val surface: Color, val border: Color, val content: Color, val dot: Color)
+
+    val active =
+        Tone(
+            surface = Color(0xFF071814),
+            border = Color(0xFF083428),
+            content = Color(0xFF34D399),
+            dot = Color(0xFF10B981),
+        )
+    val expired =
+        Tone(
+            surface = Color(0xFF0E0E0E),
+            border = Color(0xFF262626),
+            content = Color(0xFFA3A3A3),
+            dot = Color(0xFF737373),
+        )
+    val blocked =
+        Tone(
+            surface = Color(0xFF1A0A0F),
+            border = Color(0xFF4C0519),
+            content = Color(0xFFFB7185),
+            dot = Color(0xFFF43F5E),
+        )
+
+    val protectedPill =
+        Tone(
+            surface = Color(0xFF221007),
+            border = Color(0xFF4E250C),
+            content = Color(0xFFFBBF24),
+            dot = Color(0xFFFBBF24),
+        )
+    val datePill =
+        Tone(
+            surface = Color(0xFF0E0E0E),
+            border = Color(0xFF262626),
+            content = Color(0xFFA3A3A3),
+            dot = Color(0xFF737373),
+        )
+}
 
 internal fun messageFor(error: ApiError): String =
     when (error) {

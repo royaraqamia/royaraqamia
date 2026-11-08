@@ -1,0 +1,39 @@
+{
+  "surface": "account-links",
+  "elements": {
+    "code": {
+      "height": 30.18182,
+      "fontSize": 14.0,
+      "fontWeight": 700,
+      "radius": 8.0,
+      "paddingTop": 4.0,
+      "paddingLeft": 10.0
+    },
+    "status": {
+      "height": 22.18182,
+      "fontSize": 12.0,
+      "fontWeight": 500,
+      "paddingTop": 2.0,
+      "paddingLeft": 10.0
+    },
+    "protected": {
+      "height": 22.181816,
+      "fontSize": 12.0,
+      "fontWeight": 500,
+      "paddingTop": 2.0,
+      "paddingLeft": 10.0
+    },
+    "date": {
+      "height": 22.181816,
+      "fontSize": 12.0,
+      "paddingTop": 2.0,
+      "paddingLeft": 10.0
+    },
+    "destination": {
+      "width": 292.36365,
+      "height": 21.09092,
+      "fontSize": 13.0,
+      "lineHeight": 21.13
+    }
+  }
+}
