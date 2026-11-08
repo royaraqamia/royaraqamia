@@ -12,6 +12,7 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { requestWithMeta } from '@/frontend/transport/http';
 import { formatCount } from '@/frontend/shared/format';
+import { NEWS_DIGEST_COPY } from './news-digest-copy';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
 import { StoryCard } from '@/frontend/ui/news/StoryCard';
@@ -37,7 +38,7 @@ import {
   type NewsPersonalView,
 } from '@/shared/contracts/news';
 
-const BOARD_ERROR = 'تعذّر تحميل ملخّص الأخبار. جرّب المحاولة مرة أخرى.';
+const BOARD_ERROR = NEWS_DIGEST_COPY.pageError;
 
 /**
  * One read's answer, and the URL it answered.
@@ -183,10 +184,12 @@ export function NewsBoard() {
       <div className="space-y-8">
         <NewsLoadingSkeleton />
         {failure ? (
-          <ReadFailureNotice failure={failure} onRetry={retry} />
+          <div data-visual="news-unavailable">
+            <ReadFailureNotice failure={failure} onRetry={retry} />
+          </div>
         ) : (
           <p className="sr-only" role="status">
-            جاري تحميل مُلخَّص الأخبار.
+            {NEWS_DIGEST_COPY.loading}
           </p>
         )}
       </div>
@@ -200,13 +203,13 @@ export function NewsBoard() {
   return (
     <div className="space-y-4">
       {readOnly ? (
-        <div className="space-y-2">
+        <div className="space-y-2" data-visual="news-stale">
           <NeedsConnection
             variant="inline"
             message={
               capturedLabel
-                ? `هذه نسخة محفوظة من المُلخَّص كما ظهر في ${capturedLabel}. لا يمكن تحديثه أو تغيير المرشّحات بلا اتصال.`
-                : 'هذه نسخة محفوظة من المُلخَّص. لا يمكن تحديثه أو تغيير المرشّحات بلا اتصال.'
+                ? NEWS_DIGEST_COPY.staleCaptured.replace('{time}', capturedLabel)
+                : NEWS_DIGEST_COPY.staleMessage
             }
             onRetry={retry}
           />
@@ -231,13 +234,13 @@ export function NewsBoard() {
             <>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-bold text-primary">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-                مُلخَّصك الخاص
+                {NEWS_DIGEST_COPY.personalActive}
               </span>
               <Link
                 href={otherViewHref(query, 'public')}
                 className="font-bold text-primary underline-offset-4 hover:underline"
               >
-                عرض المُلخَّص العام
+                {NEWS_DIGEST_COPY.showPublic}
               </Link>
             </>
           ) : (
@@ -245,7 +248,7 @@ export function NewsBoard() {
               href={otherViewHref(query, 'mine')}
               className="font-bold text-primary underline-offset-4 hover:underline"
             >
-              لديك مُلخَّص خاص لهذا اليوم — اعرضه
+              {NEWS_DIGEST_COPY.personalAvailable}
             </Link>
           )}
         </div>
@@ -253,12 +256,12 @@ export function NewsBoard() {
 
       {view.search === null && personal?.ownSources && personal.ownSources.contributed === 0 ? (
         <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-          <span>لم يُنشَر شيء من مصادرك الخاصّة اليوم.</span>
+          <span>{NEWS_DIGEST_COPY.ownSourcesEmpty}</span>
           <Link
             href="/account/news"
             className="font-bold text-primary underline-offset-4 hover:underline"
           >
-            إدارة المصادر
+            {NEWS_DIGEST_COPY.manageSources}
           </Link>
         </p>
       ) : null}
@@ -301,41 +304,51 @@ export function NewsBoard() {
               </div>
             ) : (
               <p className="rounded-2xl border border-border/60 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-                لا أخبار في هذا القسم لهذا اليوم.
+                {NEWS_DIGEST_COPY.categoryEmpty}
               </p>
             )}
           </section>
         ) : (
-          <section className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center">
-            <h2 className="text-xl font-extrabold">لا يوجد مُلخَّص لهذا اليوم</h2>
+          <section
+            data-visual="news-empty"
+            className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center"
+          >
+            <h2 className="text-xl font-extrabold">{NEWS_DIGEST_COPY.emptyTitle}</h2>
             <p className="mt-3 text-sm leading-7 text-muted-foreground">
               {view.hasAnyDigest
-                ? `قد يكون هذا اليوم خارج مدة الاحتفاظ (${NEWS_RETENTION_DAYS} أيام) أو لم يُنشَر فيه مُلخَّص بعد.`
-                : 'لم يُنشَر أي مُلخَّص بعد. يُنشَر المُلخَّص كل صباح بعد السَّاعة السَّادسة بتوقيت دمشق.'}
+                ? NEWS_DIGEST_COPY.emptyRetention.replace('{days}', String(NEWS_RETENTION_DAYS))
+                : NEWS_DIGEST_COPY.emptyFirst}
             </p>
             {view.hasAnyDigest ? (
               <Link
                 href="/news"
                 className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                أحدث مُلخَّص
+                {NEWS_DIGEST_COPY.latestDigest}
               </Link>
             ) : null}
           </section>
         )}
 
         {cards ? (
-          <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
+          <div
+            data-visual="news-cards"
+            className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center"
+          >
             <p className="text-sm leading-7 text-muted-foreground">
               {cards.visitor
-                ? `تعرض لك الصفحة ${formatCount(cards.shown)} من ${formatCount(cards.total)} بطاقة كزائر. سجِّل الدُّخول لرؤية المزيد.`
-                : `تعرض لك الصفحة ${formatCount(cards.shown)} من ${formatCount(cards.total)} بطاقة، وهو حدّ خطتك الحالية.`}
+                ? NEWS_DIGEST_COPY.cardsVisitor
+                    .replace('{shown}', formatCount(cards.shown))
+                    .replace('{total}', formatCount(cards.total))
+                : NEWS_DIGEST_COPY.cardsMember
+                    .replace('{shown}', formatCount(cards.shown))
+                    .replace('{total}', formatCount(cards.total))}
             </p>
             <HeroCtaButton asChild className="mt-4">
               <Link href={cards.visitor ? '/auth/login?redirect=%2Fnews' : '/pricing'}>
                 <HeroCtaSheen />
                 <span className="relative z-10">
-                  {cards.visitor ? 'تسجيل الدُّخول' : 'الاطّلاع على الخطط'}
+                  {cards.visitor ? NEWS_DIGEST_COPY.signIn : NEWS_DIGEST_COPY.seePlans}
                 </span>
               </Link>
             </HeroCtaButton>
@@ -343,10 +356,14 @@ export function NewsBoard() {
         ) : null}
       </div>
 
-      {failure && !readOnly ? <ReadFailureNotice failure={failure} onRetry={retry} /> : null}
+      {failure && !readOnly ? (
+        <div data-visual="news-unavailable">
+          <ReadFailureNotice failure={failure} onRetry={retry} />
+        </div>
+      ) : null}
       {loading && !readOnly ? (
         <p className="sr-only" role="status">
-          جاري تحديث المُلخَّص.
+          {NEWS_DIGEST_COPY.refreshing}
         </p>
       ) : null}
     </div>

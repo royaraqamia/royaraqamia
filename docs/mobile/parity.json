@@ -1593,6 +1593,110 @@
           "copy": "saveFailed"
         }
       ]
+    },
+    {
+      "id": "news-digest",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/NewsBoard.tsx",
+        "copyModule": "frontend/ui/news/news-digest-copy.ts",
+        "copyExport": "NEWS_DIGEST_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestCopy.kt",
+        "copyObject": "NewsDigestCopy"
+      },
+      "copySource": "shared/copy/news-digest.json",
+      "states": [
+        {
+          "name": "Live",
+          "copy": "emptyTitle"
+        },
+        {
+          "name": "Snapshot",
+          "copy": "staleMessage"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "pageError"
+        }
+      ]
+    },
+    {
+      "id": "news-archive",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/NewsFilters.tsx",
+        "copyModule": "frontend/ui/news/news-archive-copy.ts",
+        "copyExport": "NEWS_ARCHIVE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveRow.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsArchiveCopy.kt",
+        "copyObject": "NewsArchiveCopy"
+      },
+      "copySource": "shared/copy/news-archive.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "latest"
+        }
+      ]
+    },
+    {
+      "id": "news-story",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "frontend/ui/news/StoryCard.tsx",
+        "copyModule": "frontend/ui/news/news-story-copy.ts",
+        "copyExport": "NEWS_STORY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCardState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCopy.kt",
+        "copyObject": "NewsStoryCopy"
+      },
+      "copySource": "shared/copy/news-story.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "source"
+        }
+      ]
+    },
+    {
+      "id": "news-page",
+      "surface": "news",
+      "issue": "#926",
+      "web": {
+        "route": "app/news/page.tsx",
+        "component": "app/news/page.tsx",
+        "copyModule": "app/news/news-page-copy.ts",
+        "copyExport": "NEWS_PAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsPageState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsPageCopy.kt",
+        "copyObject": "NewsPageCopy"
+      },
+      "copySource": "shared/copy/news-page.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
+        }
+      ]
     }
   ],
   "exempt": [

@@ -2,13 +2,29 @@ import { ArrowUpLeft } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { NEWS_CATEGORY_ICONS, NEWS_CATEGORY_TONES, formatRelativeTime } from './news-format';
+import { NEWS_STORY_COPY } from './news-story-copy';
 import {
-  NEWS_CATEGORY_LABELS,
-  NEWS_REGION_LABELS,
   formatDigestDayShort,
+  type NewsCategory,
+  type NewsRegion,
   type NewsSearchHit,
   type NewsStory,
 } from '@/shared/contracts/news';
+
+const CATEGORY_LABELS: Record<NewsCategory, string> = {
+  tech: NEWS_STORY_COPY.categoryTech,
+  politics: NEWS_STORY_COPY.categoryPolitics,
+  religion: NEWS_STORY_COPY.categoryReligion,
+  economy: NEWS_STORY_COPY.categoryEconomy,
+  world: NEWS_STORY_COPY.categoryWorld,
+  other: NEWS_STORY_COPY.categoryOther,
+};
+
+const REGION_LABELS: Record<NewsRegion, string> = {
+  arab: NEWS_STORY_COPY.regionArab,
+  islamic: NEWS_STORY_COPY.regionIslamic,
+  world: NEWS_STORY_COPY.regionWorld,
+};
 
 interface StoryCardProps {
   story: NewsStory | NewsSearchHit;
@@ -39,7 +55,10 @@ export function StoryCard({ story, digestDate }: StoryCardProps) {
   const day = digestDate ?? (isSearchHit(story) ? story.digestDate : undefined);
 
   return (
-    <article className="cv-auto group rounded-2xl border border-border/60 bg-card/85 p-5 shadow-sm transition-colors hover:border-border">
+    <article
+      data-visual="news-story"
+      className="cv-auto group rounded-2xl border border-border/60 bg-card/85 p-5 shadow-sm transition-colors hover:border-border"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
@@ -48,10 +67,10 @@ export function StoryCard({ story, digestDate }: StoryCardProps) {
           )}
         >
           <CategoryIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          {NEWS_CATEGORY_LABELS[story.category]}
+          {CATEGORY_LABELS[story.category]}
         </span>
         <span className="text-[11px] font-medium text-muted-foreground">
-          {NEWS_REGION_LABELS[story.region]}
+          {REGION_LABELS[story.region]}
         </span>
       </div>
 
@@ -66,10 +85,11 @@ export function StoryCard({ story, digestDate }: StoryCardProps) {
           href={story.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`فتح المصدر الأصلي: ${story.sourceName}`}
+          data-visual="news-story-source"
+          aria-label={NEWS_STORY_COPY.sourceAria.replace('{sourceName}', story.sourceName)}
           className="ms-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 font-bold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
-          المصدر
+          {NEWS_STORY_COPY.source}
           <ArrowUpLeft className="h-3.5 w-3.5" aria-hidden="true" />
         </a>
       </div>

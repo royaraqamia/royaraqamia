@@ -201,6 +201,10 @@ export const CONTRACTS = [
       'newsPrivateSourcesResponseSchema',
       'newsSourceRequestResponseSchema',
       'newsOkResponseSchema',
+      // The public digest and the reader's own (#926): the app draws the
+      // board the page draws, from the same `GET /api/news/board` answer, so
+      // the JSON is a generated type rather than fields retyped in Kotlin.
+      'newsBoardResponseSchema',
     ],
   },
   // Chats (#819): the list's rows, the open thread, the page of messages and the

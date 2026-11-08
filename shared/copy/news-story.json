@@ -1,0 +1,30 @@
+{
+  "surface": "news",
+  "component": "news-story",
+  "web": {
+    "file": "frontend/ui/news/news-story-copy.ts",
+    "export": "NEWS_STORY_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsStoryCopy.kt",
+    "object": "NewsStoryCopy"
+  },
+  "notes": {
+    "source": "One story card's own words (#926): the source link's label and the sentence a screen reader hears for it. The site renders them in `StoryCard.tsx`, so the app draws the same link from the same source rather than retyping «المصدر».",
+    "placeholders": "`sourceAria` carries `{sourceName}`: the publisher's name the card already holds.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `StoryCard.tsx` does not render."
+  },
+  "strings": {
+    "source": "المصدر",
+    "sourceAria": "فتح المصدر الأصلي: {sourceName}",
+    "categoryTech": "تقنية",
+    "categoryPolitics": "سياسة",
+    "categoryReligion": "دين",
+    "categoryEconomy": "اقتصاد",
+    "categoryWorld": "العالم",
+    "categoryOther": "منوّع",
+    "regionArab": "العالم العربي",
+    "regionIslamic": "العالم الإسلامي",
+    "regionWorld": "العالم"
+  }
+}

@@ -89,6 +89,32 @@ object LucideVectors {
         }.build()
     }
 
+    /** `arrow-up-left`, the site's own drawing. */
+    val ArrowUpLeft: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "arrow-up-left",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M7 17V7h10"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M17 17 7 7"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `bell`, the site's own drawing. */
     val Bell: ImageVector by lazy {
         ImageVector.Builder(
