@@ -103,7 +103,7 @@
     "@capacitor/share": "^8.0.3",
     "@capacitor/status-bar": "^8.0.4",
     "@capgo/capacitor-native-biometric": "^8.9.1",
-    "@hookform/resolvers": "^6.0.2",
+    "@hookform/resolvers": "^7.0.3",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-dialog": "^1.1.15",
