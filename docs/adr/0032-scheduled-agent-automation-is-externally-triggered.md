@@ -73,3 +73,23 @@ filed as an issue — because the schedule is on time and a single retry is not 
 degradation; the `opencode:alert` issue still means the heartbeat lapsed, which is what a retry
 that keeps failing turns into within a day. The bound is the check's own cadence: at most four
 retries a day per workflow, each of which that workflow's `Daily guard` makes cheap to answer.
+
+## Amendment (2026-11-08): a merged pull request is a heartbeat, not just a green run
+
+The heartbeat above is a run with `conclusion: success`, and for the implementer that is the wrong
+witness. Its six rounds run as one matrix, so a single round that times out marks the whole run
+`failure` after the other five merged — run 42471280585 on 2026-11-08 landed five pull requests and
+still concluded `failure`. Worse, a run can leave the record altogether: the successful runs from
+2026-11-03 to 2026-11-08 had been deleted by hand by the time the alert was read, so the newest
+`success` the API could return was 2026-11-03 while thirty-three agent pull requests had merged
+since. The alert said five days dead about a pipeline that was merging hourly.
+
+The consequence was not only a false alarm. `lapsed` being permanently true also made the recovery
+path unreachable: every re-dispatch it confirmed (41974018828, 42128797928, 42228638128, 42436752576) was a run that never executed and no longer exists, so the check reported catch-ups that
+had done nothing.
+
+So a heartbeat is now the newer of the last successful run and — for a target that lands work — the
+last pull request its agent merged (`opencode-agent[bot]`, label `opencode`, read from
+`pulls.list` rather than the search index, which lags a merge by minutes). A merge can only raise the
+heartbeat, never lower it, and it cannot be deleted out of the record the way a run can. The alert
+body now names which of the two it read, so a lapse can still be diagnosed from the issue alone.
