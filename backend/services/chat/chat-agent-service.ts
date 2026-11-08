@@ -306,6 +306,15 @@ export class ChatAgentService {
       });
 
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
+      // The typed question is a part of its own when the turn also carries
+      // files: a screenshot and "what are the totals?" are one question, and
+      // sending only the picture asks the model to guess what it is looking
+      // for. A turn with nothing but words stays the string it always was.
+      const content: AiChatContentPart[] | string =
+        read.parts.length > 0
+          ? [...(typed ? [{ type: 'text' as const, text: typed }] : []), ...read.parts]
+          : question;
+
       yield* this.answer({
         userId,
         conversationId,
@@ -317,7 +326,7 @@ export class ChatAgentService {
           // The line just stored is replaced by its own reading, so an image or a
           // file reaches the model as a part rather than as an empty body.
           ...trimHistory(page.messages.filter((message) => message.id !== sent.id)),
-          { role: 'user', content: read.parts.length > 0 ? read.parts : question },
+          { role: 'user', content },
         ],
       });
     } catch (error) {

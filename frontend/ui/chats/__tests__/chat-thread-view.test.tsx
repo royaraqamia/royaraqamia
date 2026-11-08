@@ -420,6 +420,70 @@ describe('ChatThreadView voice notes', () => {
 });
 
 /**
+ * A picture is drawn where it sits (ADR-0139): the member attached it to ask
+ * about it, so the bubble shows the picture rather than a file name they would
+ * have to open to recognise. Every other file stays the chip it always was.
+ */
+describe('ChatThreadView pictures', () => {
+  beforeEach(() => {
+    hook.messages.current = [];
+    thread.current = makeThread('direct');
+  });
+
+  it('draws an image inline and leaves a document a chip', async () => {
+    api.getChatAttachmentUrl.mockResolvedValueOnce({ url: 'blob:shot' });
+    hook.messages.current = [
+      {
+        ...mineMessage(),
+        body: null,
+        attachments: [
+          {
+            id: 'a-1',
+            fileName: 'shot.webp',
+            mimeType: 'image/webp',
+            byteSize: 2_048,
+          },
+          {
+            id: 'a-2',
+            fileName: 'تقرير.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 4_000,
+          },
+        ],
+      },
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const picture = await screen.findByRole('img', { name: 'shot.webp' });
+    expect(picture).toHaveAttribute('src', 'blob:shot');
+    expect(screen.getByRole('button', { name: 'تنزيل تقرير.pdf' })).toBeInTheDocument();
+  });
+
+  it('keeps the chip when the bytes cannot be read', async () => {
+    api.getChatAttachmentUrl.mockResolvedValueOnce(null);
+    hook.messages.current = [
+      {
+        ...mineMessage(),
+        body: null,
+        attachments: [
+          {
+            id: 'a-1',
+            fileName: 'shot.webp',
+            mimeType: 'image/webp',
+            byteSize: 2_048,
+          },
+        ],
+      },
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('button', { name: 'تنزيل shot.webp' })).toBeInTheDocument();
+  });
+});
+
+/**
  * One back control, and it is the app's: the thread header is the only back
  * affordance on this page (`SecondaryHeader` stands down). It pops the entry the
  * thread was opened from, and when there is none it *replaces* itself with the

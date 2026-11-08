@@ -7,7 +7,6 @@ import {
   Check,
   CircleAlert,
   Clock,
-  Download,
   EllipsisVertical,
   Pencil,
   Send,
@@ -27,7 +26,6 @@ import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, leaveChat, reportChat } from '@/frontend/api/chats';
-import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -50,6 +48,8 @@ import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
 import { ChatComposer } from './chat-composer';
 import { VoiceNotePlayer } from './voice-note-player';
+import { AttachmentChip } from './attachment-chip';
+import { ChatImage } from './chat-image';
 import { stageFiles } from './attachment-quota';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
@@ -57,6 +57,7 @@ import { chatTimeAgo } from './chats-panel';
 import {
   canEditChatMessage,
   chatAttachmentIsAudio,
+  chatAttachmentIsInlineImage,
   CHAT_GROUP_MEMBERS_MAX,
   type ChatAttachment,
   type ChatMessage,
@@ -1247,37 +1248,43 @@ function MessageRow({
 
           {message.attachments.length > 0 && !deleted && (
             <ul className="mt-2 space-y-1">
-              {message.attachments.map((attachment) => (
-                <li key={attachment.id}>
-                  {/* A voice note is played where it sits; every other file stays
-                    a chip, because no type is drawn inline (ADR-0113, ADR-0127). */}
-                  {chatAttachmentIsAudio(attachment.mimeType) ? (
-                    <VoiceNotePlayer
-                      conversationId={message.conversationId}
-                      attachment={attachment}
-                      mine={mine}
-                      onDownload={onDownload}
-                      resolveUrl={resolveAttachmentUrl}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onDownload(attachment)}
-                      className="flex w-full items-center gap-1.5 rounded-lg bg-background/20 px-2 py-1 text-right text-[11px] hover:bg-background/30"
-                      aria-label={CHAT_THREAD_COPY.downloadFile.replace(
-                        '{name}',
-                        attachment.fileName
-                      )}
-                    >
-                      <Download size={12} className="shrink-0" />
-                      <span className="max-w-48 truncate">{attachment.fileName}</span>
-                      <span className="shrink-0 opacity-70">
-                        {formatAttachmentSize(attachment.byteSize)}
-                      </span>
-                    </button>
-                  )}
-                </li>
-              ))}
+              {message.attachments.map((attachment) => {
+                const downloadLabel = CHAT_THREAD_COPY.downloadFile.replace(
+                  '{name}',
+                  attachment.fileName
+                );
+
+                return (
+                  <li key={attachment.id}>
+                    {/* A voice note is played where it sits and a picture is
+                      drawn where it sits (ADR-0113, ADR-0127, ADR-0139); every
+                      other file stays a chip. */}
+                    {chatAttachmentIsAudio(attachment.mimeType) ? (
+                      <VoiceNotePlayer
+                        conversationId={message.conversationId}
+                        attachment={attachment}
+                        mine={mine}
+                        onDownload={onDownload}
+                        resolveUrl={resolveAttachmentUrl}
+                      />
+                    ) : chatAttachmentIsInlineImage(attachment.mimeType) ? (
+                      <ChatImage
+                        conversationId={message.conversationId}
+                        attachment={attachment}
+                        label={downloadLabel}
+                        onDownload={onDownload}
+                        resolveUrl={resolveAttachmentUrl}
+                      />
+                    ) : (
+                      <AttachmentChip
+                        attachment={attachment}
+                        label={downloadLabel}
+                        onDownload={onDownload}
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { Send } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
 import type { ChatAttachmentQuota } from '@/shared/contracts/chat';
-import { stageFiles } from './attachment-quota';
+import { ATTACHMENT_REFUSALS, exceedsImageLimit, stageFiles } from './attachment-quota';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { ChatComposer } from './chat-composer';
+import { shrinkChatImage } from './image-downscale';
 
 const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
   hour: 'numeric',
@@ -63,6 +64,19 @@ export function AssistantComposer({
 }) {
   const allowance = assistant.allowance;
   const [files, setFiles] = useState<File[]>([]);
+  /**
+   * The staged list as the writers see it. `files` is the render's copy, and a
+   * pick that awaits a downscale would otherwise stage against a list from
+   * before another pick landed.
+   */
+  const stagedRef = useRef<File[]>([]);
+  /** True while a picked picture is being shrunk, which is not instant. */
+  const [preparing, setPreparing] = useState(false);
+
+  function setStaged(next: File[]) {
+    stagedRef.current = next;
+    setFiles(next);
+  }
 
   const remaining = allowance
     ? Math.max(
@@ -100,16 +114,39 @@ export function AssistantComposer({
   function send(staged: File[] = files) {
     if (assistant.isStreaming || (!draft.trim() && staged.length === 0)) return;
     onAsk(draft, staged);
-    setFiles([]);
+    setStaged([]);
   }
 
-  function addFiles(picked: File[]) {
-    const staged = stageFiles(files, picked, quota);
-    if ('refusal' in staged) {
-      toast.error(staged.refusal, { id: 'assistant-composer-attachment' });
+  /**
+   * A pick is bounded before it is uploaded (ADR-0139): at most three pictures,
+   * and each shrunk to a prompt the model can read. The shrink runs before
+   * `stageFiles`, so the checks that already exist — the per-file ceiling, the
+   * day's allowance — judge the bytes that would actually be stored.
+   */
+  async function addFiles(picked: File[]) {
+    if (picked.length === 0) return;
+    if (exceedsImageLimit(stagedRef.current, picked)) {
+      toast.error(ATTACHMENT_REFUSALS.tooManyImages, { id: 'assistant-composer-attachment' });
       return;
     }
-    setFiles(staged.files);
+
+    // Decoding and re-encoding a phone photo is not instant, and a send that
+    // fires before it lands would post without the picture.
+    setPreparing(true);
+    try {
+      const shrunken = await Promise.all(picked.map((file) => shrinkChatImage(file)));
+      // The ref, not the render's copy: two picks made while a picture was
+      // still being shrunk would otherwise each stage against the list they saw
+      // before it, and the second would drop the first.
+      const staged = stageFiles(stagedRef.current, shrunken, quota);
+      if ('refusal' in staged) {
+        toast.error(staged.refusal, { id: 'assistant-composer-attachment' });
+        return;
+      }
+      setStaged(staged.files);
+    } finally {
+      setPreparing(false);
+    }
   }
 
   if (!assistant.available) {
@@ -161,16 +198,16 @@ export function AssistantComposer({
         onSend={() => send()}
         files={files}
         onAddFiles={addFiles}
-        onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
+        onRemoveFile={(index) => setStaged(stagedRef.current.filter((_, at) => at !== index))}
         onRecorded={(clip) => {
-          const staged = stageFiles(files, [clip], quota);
+          const staged = stageFiles(stagedRef.current, [clip], quota);
           if ('refusal' in staged) {
             toast.error(staged.refusal, { id: 'assistant-composer-attachment' });
             return;
           }
           send(staged.files);
         }}
-        disabled={assistant.isStreaming}
+        disabled={assistant.isStreaming || preparing}
         placeholder={ASSISTANT_COPY.placeholder}
         ariaLabel={ASSISTANT_COPY.placeholder}
         sendLabel={ASSISTANT_COPY.send}

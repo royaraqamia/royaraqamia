@@ -147,4 +147,35 @@ describe('the assistant provider', () => {
     const stream = createAiChatClient()!.streamReply([], new AbortController().signal);
     await expect(stream.next()).rejects.toMatchObject({ status: 429 });
   });
+
+  /**
+   * A turn's user message is words or parts (ADR-0127, ADR-0139): an image rides
+   * as an `image_url` data URL inside the request body, and the client must send
+   * it as the array it was given rather than flattening it to text.
+   */
+  it('sends a turn’s parts — text and images — in the request body', async () => {
+    vi.stubEnv('AI_CHAT_API_KEY', 'key');
+    const calls: { messages: unknown }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        calls.push(JSON.parse(String(init.body)) as { messages: unknown });
+        return new Response(sse('[DONE]\n\n'), { status: 200 });
+      })
+    );
+
+    const parts = [
+      { type: 'text' as const, text: 'ما في هذه الصورة؟' },
+      { type: 'image_url' as const, image_url: { url: 'data:image/webp;base64,AQID' } },
+    ];
+    for await (const _ of createAiChatClient()!.streamWithTools(
+      [{ role: 'user', content: parts }],
+      [],
+      new AbortController().signal
+    )) {
+      // No text in the fixture.
+    }
+
+    expect(calls[0]?.messages).toEqual([{ role: 'user', content: parts }]);
+  });
 });
