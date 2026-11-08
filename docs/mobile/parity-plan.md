@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 59 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 61 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -129,6 +129,8 @@ A component is finished when the surface that draws it is native: 59 ported comp
 - [ ] `chats-list` on **chats** · #819
 - [ ] `chat-new` on **chats** · #934
 - [ ] `chat-thread` on **chats** · #819
+- [ ] `chat-compose-attachments` on **chats** · #933
+- [ ] `chat-attachments` on **chats** · #933
 - [ ] `account-blocked` on **account-blocked** · #977
 - [ ] `account-services` on **account-services** · #978
 - [ ] `account-rows` on **account** · #948
