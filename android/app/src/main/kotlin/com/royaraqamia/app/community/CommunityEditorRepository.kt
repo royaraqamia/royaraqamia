@@ -37,7 +37,10 @@ class CommunityEditorRepository(private val store: BlogpressEditorStore) : Commu
                     metaTitle = row.metaTitle,
                     // What the site's composer sends as the description: the
                     // Markdown stripped and cut to the feed's preview length.
-                    metaDesc = PostText.stripMarkdown(body).take(DESCRIPTION_PREVIEW),
+                    metaDesc =
+                        PostText.stripMarkdown(body).take(
+                            CommunityLimits.DESCRIPTION_PREVIEW
+                        ),
                 ),
             ) ?: return null
         return CommunityEditorDraft(saved.id, saved.content)
@@ -46,11 +49,6 @@ class CommunityEditorRepository(private val store: BlogpressEditorStore) : Commu
     override suspend fun outboxStatus(): DrainReport = store.outboxStatus()
 
     override suspend fun drain(): DrainReport = store.drain()
-
-    companion object {
-        /** The site's `DESCRIPTION_PREVIEW` (`post-composer-dialog.tsx`). */
-        const val DESCRIPTION_PREVIEW = 160
-    }
 }
 
 /**

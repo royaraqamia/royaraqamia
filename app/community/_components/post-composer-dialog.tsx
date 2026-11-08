@@ -12,12 +12,16 @@ import { createPost, updatePost } from '@/frontend/api/blogpress';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import { stripMarkdown } from '@/shared/reading-time';
 import { COMMUNITY_EDITOR_COPY } from './community-editor-copy';
+import { COMMUNITY_COMPOSER_COPY } from './community-composer-copy';
 
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
 
 /** The edit dialog's four save faces, the same ones the app draws (#925). */
 type SaveState = 'atRest' | 'draft' | 'saving' | 'failed';
+
+/** The composer's publish faces, the same ones the app draws (#924). */
+type PublishState = 'atRest' | 'publishing' | 'published' | 'failed';
 
 function statusLabel(state: SaveState): string {
   switch (state) {
@@ -29,6 +33,19 @@ function statusLabel(state: SaveState): string {
       return COMMUNITY_EDITOR_COPY.saveFailed;
     default:
       return COMMUNITY_EDITOR_COPY.saved;
+  }
+}
+
+function publishLabel(state: PublishState): string {
+  switch (state) {
+    case 'publishing':
+      return COMMUNITY_COMPOSER_COPY.publishing;
+    case 'published':
+      return COMMUNITY_COMPOSER_COPY.published;
+    case 'failed':
+      return COMMUNITY_COMPOSER_COPY.publishFailed;
+    default:
+      return COMMUNITY_COMPOSER_COPY.publish;
   }
 }
 
@@ -95,19 +112,27 @@ export function PostComposerDialog({
   const isEdit = mode === 'edit';
   const [body, setBody] = useState(initialBody);
   const [saveState, setSaveState] = useState<SaveState>('atRest');
+  const [publishState, setPublishState] = useState<PublishState>('atRest');
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
     setBody(initialBody);
     setSaveState('atRest');
+    setPublishState('atRest');
   }, [open, initialBody]);
 
   const charCount = body.length;
 
   const handleBody = (value: string) => {
     setBody(value);
-    if (isEdit) setSaveState(value === initialBody ? 'atRest' : 'draft');
+    if (isEdit) {
+      setSaveState(value === initialBody ? 'atRest' : 'draft');
+    } else if (publishState === 'failed') {
+      // A change after a refusal is an attempt to try again: the sentence about
+      // the last failure belongs to the text that produced it.
+      setPublishState('atRest');
+    }
   };
 
   const handleSubmit = () => {
@@ -126,6 +151,7 @@ export function PostComposerDialog({
     const description = stripMarkdown(trimmedBody).slice(0, DESCRIPTION_PREVIEW);
 
     if (isEdit) setSaveState('saving');
+    else setPublishState('publishing');
 
     startTransition(async () => {
       try {
@@ -162,12 +188,22 @@ export function PostComposerDialog({
           meta_desc: description,
           status: 'published',
         });
-        toast.success('تمَّ نشر منشورك');
+        setPublishState('published');
+        toast.success(COMMUNITY_COMPOSER_COPY.published);
         onOpenChange(false);
         onSaved(newSlug);
       } catch (error) {
-        if (isEdit) setSaveState('failed');
-        showActionError(error, isEdit ? COMMUNITY_EDITOR_COPY.saveFailed : 'فشل نشر المنشور');
+        if (isEdit) {
+          setSaveState('failed');
+          showActionError(error, COMMUNITY_EDITOR_COPY.saveFailed);
+        } else {
+          setPublishState('failed');
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            toast.error(COMMUNITY_COMPOSER_COPY.needsConnection);
+          } else {
+            showActionError(error, COMMUNITY_COMPOSER_COPY.publishFailed);
+          }
+        }
       }
     });
   };
@@ -177,7 +213,7 @@ export function PostComposerDialog({
       <DialogContent phone="sheet">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {isEdit ? COMMUNITY_EDITOR_COPY.title : 'منشور جديد'}
+            {isEdit ? COMMUNITY_EDITOR_COPY.title : COMMUNITY_COMPOSER_COPY.title}
           </DialogTitle>
         </DialogHeader>
 
@@ -215,7 +251,7 @@ export function PostComposerDialog({
           </div>
         </div>
 
-        {isEdit && (
+        {isEdit ? (
           <p
             data-slot="composer-status"
             aria-live="polite"
@@ -227,6 +263,20 @@ export function PostComposerDialog({
           >
             {statusLabel(saveState)}
           </p>
+        ) : (
+          publishState !== 'atRest' && (
+            <p
+              data-slot="composer-status"
+              aria-live="polite"
+              className={
+                publishState === 'failed'
+                  ? 'text-end text-[11px] font-bold text-destructive'
+                  : 'text-end text-[11px] text-muted-foreground'
+              }
+            >
+              {publishLabel(publishState)}
+            </p>
+          )
         )}
 
         <DialogActions
@@ -239,7 +289,11 @@ export function PostComposerDialog({
             onClick={handleSubmit}
             className="w-full sm:w-auto"
           >
-            {isEdit ? COMMUNITY_EDITOR_COPY.save : 'نشر'}
+            {isEdit
+              ? COMMUNITY_EDITOR_COPY.save
+              : publishState === 'publishing'
+                ? COMMUNITY_COMPOSER_COPY.publishing
+                : COMMUNITY_COMPOSER_COPY.publish}
           </HeroCtaButton>
         </DialogActions>
       </DialogContent>

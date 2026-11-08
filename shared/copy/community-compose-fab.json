@@ -1,0 +1,21 @@
+{
+  "surface": "community",
+  "component": "community-compose-fab",
+  "web": {
+    "file": "app/community/_components/community-compose-fab-copy.ts",
+    "export": "COMMUNITY_COMPOSE_FAB_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabCopy.kt",
+    "object": "CommunityComposeFabCopy"
+  },
+  "notes": {
+    "source": "The community feed's compose trigger, in both clients (#924). The site's `ComposeFab` is the reference: the button's accessible name and the sentence a guest gets instead of a redirect. They live here rather than in the composer's source because the dialog never draws them.",
+    "placeholders": "None.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key `compose-fab.tsx` does not render."
+  },
+  "strings": {
+    "newPostLabel": "إضافة منشور جديد",
+    "guestTitle": "سجِّل الدُّخول للنَّشر في المجتمع"
+  }
+}

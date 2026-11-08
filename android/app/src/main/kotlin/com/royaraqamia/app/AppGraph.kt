@@ -5,6 +5,7 @@ import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
+import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityPostRepository
@@ -89,6 +90,8 @@ class AppGraph private constructor(
     val communityPost: CommunityPostRepository,
     /** The community editor over BlogPress's device store (#925). */
     val communityEditor: CommunityEditorRepository,
+    /** The community composer's create-and-publish write (#924). */
+    val communityComposer: CommunityComposerRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
     val chats: ChatsRepository,
     /** The services sheet's order, on this device (#806). */
@@ -271,6 +274,10 @@ class AppGraph private constructor(
                     online = online,
                 )
 
+            // The composer's retry reads the post back through the same public
+            // route the post screen uses (#924), so it is one instance.
+            val communityPost = CommunityPostRepository(client)
+
             return AppGraph(
                 session = session,
                 usage = UsageRepository(client),
@@ -282,7 +289,8 @@ class AppGraph private constructor(
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),
-                communityPost = CommunityPostRepository(client),
+                communityPost = communityPost,
+                communityComposer = CommunityComposerRepository(client, communityPost),
                 chats =
                     ChatsRepository(
                         client = client,

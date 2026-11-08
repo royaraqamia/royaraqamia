@@ -170,7 +170,14 @@ export const CONTRACTS = [
   {
     module: 'shared/contracts/community',
     file: 'CommunityContracts.kt',
-    schemas: ['CommunityIndexResponseSchema', 'CommunityPostResponseSchema'],
+    schemas: [
+      'CommunityIndexResponseSchema',
+      'CommunityPostResponseSchema',
+      // The composer's create-and-publish answer (#924): the id and slug the
+      // route mints, so the app decodes the write's result rather than reading
+      // a field name it typed by hand.
+      'CommunityPostCreateResponseSchema',
+    ],
   },
   // BlogPress (#952): the snapshot the app's store merges and the two bodies its
   // Outbox replays — the delete and the restore of a tombstoned post. The read is

@@ -88,6 +88,8 @@ fun CommunityFeedScreen(
     onOpenPost: (String) -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
     editorStore: CommunityEditorStore? = null,
+    composerStore: CommunityComposerStore? = null,
+    onSignIn: () -> Unit = {},
     signedIn: Boolean = false,
     currentUserId: String? = null,
 ) {
@@ -99,6 +101,8 @@ fun CommunityFeedScreen(
     var loadingMore by remember { mutableStateOf(false) }
     var loadMoreFailed by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<CommunityIndexResponsePostsItem?>(null) }
+    var composing by remember { mutableStateOf(false) }
+    var publishedSlug by remember { mutableStateOf<String?>(null) }
 
     /** The member's own posts are the ones the editor may open (#925). */
     fun canEdit(post: CommunityIndexResponsePostsItem): Boolean =
@@ -169,6 +173,38 @@ fun CommunityFeedScreen(
                     onEditPost = { editing = it },
                 )
         }
+
+        // The page's compose button, and the guest prompt it opens instead of a
+        // redirect (#924). It floats over the cards the way the page's own FAB
+        // does, so the feed keeps the column the visual contract measures.
+        if (composerStore != null) {
+            CommunityComposeFab(
+                signedIn = signedIn,
+                onCompose = { composing = true },
+                onSignIn = onSignIn,
+                modifier =
+                    Modifier.align(Alignment.BottomEnd)
+                        .padding(spacing.containerPadding),
+            )
+        }
+    }
+
+    // The composer is a state of the feed rather than a route (#924): the page
+    // opens it from the FAB. A published post is opened when the composer closes,
+    // the same destination the page pushes to.
+    val composer = composerStore
+    if (composer != null && composing) {
+        CommunityComposer(
+            store = composer,
+            onPublished = { slug -> publishedSlug = slug },
+            onDismiss = {
+                composing = false
+                publishedSlug?.let { slug ->
+                    publishedSlug = null
+                    onOpenPost(slug)
+                }
+            },
+        )
     }
 
     // The editor is a state of the feed rather than a route (#925): the page

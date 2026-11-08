@@ -1,0 +1,25 @@
+{
+  "surface": "community",
+  "component": "community-composer",
+  "web": {
+    "file": "app/community/_components/community-composer-copy.ts",
+    "export": "COMMUNITY_COMPOSER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerCopy.kt",
+    "object": "CommunityComposerCopy"
+  },
+  "notes": {
+    "source": "The community composer's own words, in both clients (#924). The site's `PostComposerDialog` in create mode is the reference: its title, its publish control and the pending, published, refused and offline sentences live here so neither client spells them. The body field's label, placeholder, counter and validation sentences stay in `community-editor.json`, because the same composer in edit mode draws them and the two surfaces must not word them twice.",
+    "placeholders": "None: every sentence is complete. The editor's `{count}`/`{max}` and `{max}` placeholders belong to `community-editor.json`.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the dialog does not render or a state the app declares but never draws."
+  },
+  "strings": {
+    "title": "منشور جديد",
+    "publish": "نشر",
+    "publishing": "جاري النشر...",
+    "published": "تمَّ نشر منشورك",
+    "publishFailed": "فشل نشر المنشور",
+    "needsConnection": "النَّشر يتطلَّب اتصالاً بالإنترنت"
+  }
+}

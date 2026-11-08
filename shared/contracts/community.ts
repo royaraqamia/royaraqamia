@@ -78,6 +78,21 @@ export const CommunityPostResponseSchema = z.object({
 
 export type CommunityPostResponse = z.infer<typeof CommunityPostResponseSchema>;
 
+/**
+ * The answer to the composer's create-and-publish write (#924).
+ *
+ * `POST /api/blogpress/posts` takes the post's fields with `status: 'published'`
+ * and answers the row it minted. The page reads the same `id` and `slug`; this
+ * is that answer as a schema, so the app cannot mistake a body without them for
+ * a post that landed.
+ */
+export const CommunityPostCreateResponseSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+});
+
+export type CommunityPostCreateResponse = z.infer<typeof CommunityPostCreateResponseSchema>;
+
 export const PostSchema = z.object({
   slug: z
     .string()

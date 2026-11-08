@@ -99,3 +99,9 @@ data class CommunityPostResponsePostTagsItem(
     val name: String,
     val slug: String,
 )
+
+@Serializable
+data class CommunityPostCreateResponse(
+    val id: String,
+    val slug: String,
+)
