@@ -3,6 +3,7 @@ package com.royaraqamia.app.chats
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.session.MemoryTokenStore
@@ -17,6 +18,7 @@ import com.royaraqamia.app.store.chats.ChatsDatabase
 import com.royaraqamia.app.store.chats.ChatsStores
 import com.royaraqamia.app.store.outbox.WriteClock
 import com.royaraqamia.app.support.RecordingTransport
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -178,10 +180,94 @@ class ChatsRepositoryTest {
         assertEquals("عدد الأعضاء يتجاوز الحد", ChatFailure.sentenceOf(error))
     }
 
+    @Test
+    fun `an attachment is uploaded before the row and both carry the site's path`() = runBlocking {
+        val transport = RecordingTransport { HttpResponse(200, SEND_BODY_WITH_ATTACHMENT) }
+        val storage = RecordingAttachmentStorage()
+        val repository = repository(transport, storage = storage)
+
+        val result =
+            repository.sendWithAttachments(
+                conversationId = "c-1",
+                body = "look",
+                files = listOf(composeFile("report.pdf")),
+                senderId = "me-1",
+            )
+
+        assertTrue("send: $result", result is ApiResult.Success)
+        assertEquals(listOf("c-1/storage-1/report.pdf"), storage.uploaded.map { it.storagePath })
+        val sent = transport.requests.single()
+        assertEquals("POST", sent.method)
+        assertTrue(sent.url.endsWith("/api/chats/c-1/messages"))
+        val body = sent.body.orEmpty()
+        assertTrue("the row names the object: $body", body.contains("c-1/storage-1/report.pdf"))
+        assertTrue("the row names the file: $body", body.contains("report.pdf"))
+        assertTrue("the row carries the client id: $body", body.contains("client-1"))
+        assertTrue("nothing was cleaned up", storage.removed.isEmpty())
+        assertEquals(listOf("server-1"), repository.cachedMessages("c-1").map { it.id })
+    }
+
+    @Test
+    fun `a refused message leaves no object behind`() = runBlocking {
+        val transport =
+            RecordingTransport { HttpResponse(403, """{"success":false,"error":"blocked"}""") }
+        val storage = RecordingAttachmentStorage()
+        val repository = repository(transport, storage = storage)
+
+        val result =
+            repository.sendWithAttachments(
+                conversationId = "c-1",
+                body = "look",
+                files = listOf(composeFile("report.pdf")),
+                senderId = "me-1",
+            )
+
+        assertTrue("send: $result", result is ApiResult.Failure)
+        assertEquals(listOf("c-1/storage-1/report.pdf"), storage.removed)
+        assertEquals(
+            ApiError.Server(403, """{"success":false,"error":"blocked"}"""),
+            (result as ApiResult.Failure).error,
+        )
+    }
+
+    private fun composeFile(name: String) =
+        ChatComposeFile(
+            fileName = name,
+            mimeType = "application/pdf",
+            byteSize = 4,
+            open = { ByteArrayInputStream(ByteArray(4)) },
+        )
+
+    /** The storage the send drives instead of a bucket. */
+    private class RecordingAttachmentStorage : ChatAttachmentStorage {
+        val uploaded = mutableListOf<ChatAttachmentInput>()
+        val removed = mutableListOf<String>()
+
+        override suspend fun upload(
+            conversationId: String,
+            file: ChatComposeFile,
+        ): ApiResult<ChatAttachmentInput> {
+            val input =
+                ChatAttachmentInput(
+                    storagePath = "$conversationId/storage-${uploaded.size + 1}/${file.fileName}",
+                    fileName = file.fileName,
+                    mimeType = file.mimeType,
+                    byteSize = file.byteSize,
+                )
+            uploaded += input
+            return ApiResult.Success(input)
+        }
+
+        override suspend fun remove(paths: List<String>) {
+            removed += paths
+        }
+    }
+
     private suspend fun repository(
         transport: RecordingTransport,
         online: () -> Boolean = { true },
         identity: () -> Identity = { alice },
+        storage: ChatAttachmentStorage? = null,
     ): ChatsRepository {
         val session =
             Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused }, identities)
@@ -203,6 +289,7 @@ class ChatsRepositoryTest {
             clock = FixedClock,
             nowMillis = { NOW },
             random = { 0.0 },
+            attachmentStorage = storage,
         )
     }
 
@@ -300,6 +387,27 @@ class ChatsRepositoryTest {
             }
           ],
           "nextCursor": null
+        }
+        """
+
+        const val SEND_BODY_WITH_ATTACHMENT = """
+        {
+          "success": true,
+          "message": {
+            "id": "server-1",
+            "conversationId": "c-1",
+            "senderId": "me-1",
+            "senderKind": "user",
+            "body": "look",
+            "replyToId": null,
+            "editedAt": null,
+            "deletedAt": null,
+            "createdAt": "2026-11-01T00:00:00.000Z",
+            "clientId": "client-1",
+            "attachments": [
+              {"id": "a-1", "fileName": "report.pdf", "mimeType": "application/pdf", "byteSize": 4}
+            ]
+          }
         }
         """
 

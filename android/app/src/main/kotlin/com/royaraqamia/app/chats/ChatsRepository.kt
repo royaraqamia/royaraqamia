@@ -99,6 +99,8 @@ class ChatsRepository(
     private val clock: WriteClock = SystemWriteClock,
     private val nowMillis: () -> Long = { System.currentTimeMillis() },
     private val random: () -> Double = { Math.random() },
+    /** The storage put and its cleanup; absent in a route test that never uploads. */
+    private val attachmentStorage: ChatAttachmentStorage? = null,
 ) {
     /** One drain at a time, so two triggers cannot race for the same `seq`. */
     private val drainMutex = Mutex()
@@ -273,6 +275,89 @@ class ChatsRepository(
         )
         drain()
         ApiResult.Success(Unit)
+    }
+
+    /**
+     * One line and its files, uploaded before the row is written (#933).
+     *
+     * The bytes go up first, on the session the bucket's policy admits, and the
+     * message that follows carries only the metadata — the same order and the same
+     * object path the site writes. A refused message removes what it uploaded, so
+     * the storage holds no orphan the member cannot see; the daily sweep is the
+     * backstop for a cleanup the network drops.
+     *
+     * A file needs the radio, unlike a line's words: there is no queued copy of a
+     * pick, so an upload that fails answers its sentence instead of pretending
+     * the queue owes it.
+     */
+    suspend fun sendWithAttachments(
+        conversationId: String,
+        body: String,
+        files: List<ChatComposeFile>,
+        senderId: String? = null,
+    ): ApiResult<Unit> = withContext(Dispatchers.IO) {
+        if (files.isEmpty()) return@withContext send(conversationId, body, senderId)
+
+        val storage =
+            attachmentStorage
+                ?: return@withContext ApiResult.Failure(ApiError.Server(500, ""))
+
+        val uploaded = mutableListOf<ChatAttachmentInput>()
+        for (file in files) {
+            when (val put = storage.upload(conversationId, file)) {
+                is ApiResult.Success -> uploaded += put.value
+                is ApiResult.Failure -> {
+                    storage.remove(uploaded.map { it.storagePath })
+                    return@withContext put
+                }
+            }
+        }
+
+        val clientId = clock.uuid()
+        val payload =
+            buildJsonObject {
+                    put("body", body)
+                    put("clientId", clientId)
+                    put(
+                        "attachments",
+                        buildJsonArray {
+                            uploaded.forEach { attachment ->
+                                add(
+                                    buildJsonObject {
+                                        put("storagePath", attachment.storagePath)
+                                        put("fileName", attachment.fileName)
+                                        put("mimeType", attachment.mimeType)
+                                        put("byteSize", attachment.byteSize)
+                                    }
+                                )
+                            }
+                        },
+                    )
+                }
+                .toString()
+
+        when (
+            val result =
+                client.post<ChatMessageResponse>(messagesPath(conversationId), payload)
+        ) {
+            is ApiResult.Success -> {
+                val message = result.value.message
+                if (!result.value.success || message == null) {
+                    storage.remove(uploaded.map { it.storagePath })
+                    refused(result.value.error)
+                } else {
+                    dao()?.applyServerMessage(
+                        messageRow(pageItemOf(message)),
+                        LOCAL_PREFIX + clientId,
+                    )
+                    ApiResult.Success(Unit)
+                }
+            }
+            is ApiResult.Failure -> {
+                storage.remove(uploaded.map { it.storagePath })
+                result
+            }
+        }
     }
 
     /** The line's state while the queue holds it, keyed by its client id. */

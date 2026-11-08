@@ -8,23 +8,30 @@ import {
   chatAttachmentIsInlineImage,
   type ChatAttachmentQuota,
 } from '@/shared/contracts/chat';
+import { CHAT_ATTACHMENTS_COPY } from './chat-attachments-copy';
 
 /**
  * The refusals both composers show before a file is staged (ADR-0113,
  * ADR-0127). They live here so the member's thread and the assistant's cannot
  * refuse the same file in two different sentences.
+ *
+ * The allowance sentences come from `shared/copy/chat-attachments.json`, the same
+ * source that generates the app's `ChatAttachmentsCopy` (#933), so the app's
+ * refusal is the site's sentence rather than a retyped one. The turn's two bounds
+ * stay inline because they belong to the assistant's composer, which the app
+ * opens as the document.
  */
 export const ATTACHMENT_REFUSALS = {
   tooLarge: (limitBytes: number) =>
-    `حجم الملف يتجاوز ${formatAttachmentSize(limitBytes)}، اختر ملفاً أصغر`,
-  tooMany: 'خمسة مرفقات في الرسالة الواحدة',
+    CHAT_ATTACHMENTS_COPY.tooLarge.replace('{size}', formatAttachmentSize(limitBytes)),
+  tooMany: CHAT_ATTACHMENTS_COPY.tooMany,
   /** The turn's own bound: three pictures, because each one is a prompt (ADR-0139). */
   tooManyImages: 'ثلاث صور في السؤال الواحد، أرسل الباقي في سؤال آخر',
   /** The turn's other bound: one document, because it is read into the prompt (ADR-0140). */
   tooManyDocuments: 'مستند واحد في السؤال الواحد، أرسل الباقي في سؤال آخر',
-  today: 'بلغت حدّ المرفقات اليوم، يعود غداً',
-  total: 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات',
-  project: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
+  today: CHAT_ATTACHMENTS_COPY.today,
+  total: CHAT_ATTACHMENTS_COPY.total,
+  project: CHAT_ATTACHMENTS_COPY.project,
 } as const;
 
 /**

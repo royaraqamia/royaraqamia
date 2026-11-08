@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { Lock, Mic, Paperclip, Square, X } from 'lucide-react';
+import { Lock, Mic, Square, X } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
-import { formatAttachmentSize } from '@/frontend/shared/format-bytes';
 import { Button } from '@/frontend/ui/primitives/button';
 import { useVoiceRecorder, VOICE_NOTE_MAX_MS } from '@/frontend/state/chats/use-voice-recorder';
-import { CHAT_VOICE_NOTE_SAMPLE_RATE, chatAttachmentIsAudio } from '@/shared/contracts/chat';
 import { formatVoiceDuration, VOICE_COPY } from './voice-copy';
+import { ChatAttachButton, ChatStagedFiles } from './chat-attach-control';
 
 /** How far a pressed pointer travels before the release counts as a cancel. */
 const CANCEL_DISTANCE_PX = 64;
@@ -70,7 +69,6 @@ export function ChatComposer({
   const recorder = useVoiceRecorder();
   const [locked, setLocked] = useState(false);
   const [pressing, setPressing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const cancelling = useRef(false);
   /** What a release asked for while the microphone was still opening. */
@@ -153,52 +151,9 @@ export function ChatComposer({
 
   return (
     <>
-      {files.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5">
-          {files.map((file, index) => (
-            <li
-              key={`${file.name}-${index}`}
-              className="flex max-w-64 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
-            >
-              {chatAttachmentIsAudio(file.type) ? (
-                <Mic size={11} className="shrink-0" />
-              ) : (
-                <Paperclip size={11} className="shrink-0" />
-              )}
-              <span className="truncate">
-                {chatAttachmentIsAudio(file.type) ? VOICE_COPY.voiceNote : file.name}
-              </span>
-              <span className="shrink-0 text-muted-foreground/70">
-                {chatAttachmentIsAudio(file.type)
-                  ? formatVoiceDuration(wavDurationMs(file.size))
-                  : formatAttachmentSize(file.size)}
-              </span>
-              <button
-                type="button"
-                onClick={() => onRemoveFile(index)}
-                aria-label={VOICE_COPY.removeFile.replace('{name}', file.name)}
-                className="shrink-0 rounded p-0.5 hover:text-destructive"
-              >
-                <X size={11} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ChatStagedFiles files={files} onRemoveFile={onRemoveFile} />
 
       <div className="flex items-end gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(event) => {
-            onAddFiles(Array.from(event.target.files ?? []));
-            // Reset so picking the same file twice still fires a change.
-            event.target.value = '';
-          }}
-        />
-
         {recorder.isRecording ? (
           <>
             <div className="flex min-h-10 flex-1 items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-foreground">
@@ -281,15 +236,11 @@ export function ChatComposer({
                 // The clip lives inside the field, so the text keeps clear of it.
                 className="max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pe-10 ps-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
-              <button
-                type="button"
-                aria-label={VOICE_COPY.attach}
+              <ChatAttachButton
+                onAddFiles={onAddFiles}
                 disabled={disabled}
-                onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-1 end-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
-              >
-                <Paperclip size={16} />
-              </button>
+              />
             </div>
 
             {showSend ? (
@@ -334,12 +285,4 @@ export function ChatComposer({
       )}
     </>
   );
-}
-
-/**
- * A WAV's length from its size alone: 24 kHz mono, 16 bits. The staged chip can
- * therefore show a duration before anything has decoded it.
- */
-function wavDurationMs(bytes: number): number {
-  return (bytes / (CHAT_VOICE_NOTE_SAMPLE_RATE * 2)) * 1_000;
 }

@@ -1379,6 +1379,74 @@
       ]
     },
     {
+      "id": "chat-compose-attachments",
+      "surface": "chats",
+      "issue": "#933",
+      "web": {
+        "route": "app/chats/[id]/page.tsx",
+        "component": "frontend/ui/chats/chat-attach-control.tsx",
+        "copyModule": "frontend/ui/chats/chat-compose-attachments-copy.ts",
+        "copyExport": "CHAT_COMPOSE_ATTACHMENTS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatComposer.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatComposerUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatComposeAttachmentsCopy.kt",
+        "copyObject": "ChatComposeAttachmentsCopy"
+      },
+      "copySource": "shared/copy/chat-compose-attachments.json",
+      "states": [
+        {
+          "name": "Empty",
+          "copy": "attach"
+        },
+        {
+          "name": "Staged",
+          "copy": "removeFile"
+        }
+      ]
+    },
+    {
+      "id": "chat-attachments",
+      "surface": "chats",
+      "issue": "#933",
+      "web": {
+        "route": "app/chats/[id]/page.tsx",
+        "component": "frontend/ui/chats/attachment-quota.ts",
+        "copyModule": "frontend/ui/chats/chat-attachments-copy.ts",
+        "copyExport": "CHAT_ATTACHMENTS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatAttachments.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatAttachmentQuotaUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatAttachmentsCopy.kt",
+        "copyObject": "ChatAttachmentsCopy"
+      },
+      "copySource": "shared/copy/chat-attachments.json",
+      "states": [
+        {
+          "name": "TooLarge",
+          "copy": "tooLarge"
+        },
+        {
+          "name": "TooMany",
+          "copy": "tooMany"
+        },
+        {
+          "name": "Today",
+          "copy": "today"
+        },
+        {
+          "name": "Total",
+          "copy": "total"
+        },
+        {
+          "name": "Project",
+          "copy": "project"
+        }
+      ]
+    },
+    {
       "id": "account-blocked",
       "surface": "account-blocked",
       "issue": "#977",
