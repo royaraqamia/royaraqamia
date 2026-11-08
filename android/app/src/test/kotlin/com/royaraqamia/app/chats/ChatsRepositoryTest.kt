@@ -135,6 +135,49 @@ class ChatsRepositoryTest {
         assertEquals("the line is still on the device", 1, repository.cachedMessages("c-1").size)
     }
 
+    @Test
+    fun `the directory is read with the member's term`() = runBlocking {
+        val transport = RecordingTransport { HttpResponse(200, MEMBERS_BODY) }
+        val repository = repository(transport)
+
+        val answer = repository.members(" al ")
+
+        assertEquals(listOf("p-1"), (answer as ApiResult.Success).value.map { it.id })
+        assertTrue(transport.requests.single().url.endsWith("/api/chats/members?q=al"))
+    }
+
+    @Test
+    fun `a group is created with its title and members and answers its thread`() = runBlocking {
+        val transport =
+            RecordingTransport { HttpResponse(201, """{"success":true,"conversationId":"g-1"}""") }
+        val repository = repository(transport)
+
+        val answer = repository.createGroup("فريق التصميم", listOf("p-1", "p-2"))
+
+        assertEquals("g-1", (answer as ApiResult.Success).value)
+        val sent = transport.requests.single()
+        assertEquals("POST", sent.method)
+        assertTrue(sent.url.endsWith("/api/chats/groups"))
+        assertTrue(sent.body.orEmpty().contains("فريق التصميم"))
+        assertTrue(sent.body.orEmpty().contains("p-1"))
+        assertTrue(sent.body.orEmpty().contains("p-2"))
+    }
+
+    @Test
+    fun `a refused group carries the server's sentence`() = runBlocking {
+        val transport =
+            RecordingTransport {
+                HttpResponse(400, """{"success":false,"error":"عدد الأعضاء يتجاوز الحد"}""")
+            }
+        val repository = repository(transport)
+
+        val answer = repository.createGroup("فريق", List(32) { "p-$it" })
+
+        assertTrue(answer is ApiResult.Failure)
+        val error = (answer as ApiResult.Failure).error
+        assertEquals("عدد الأعضاء يتجاوز الحد", ChatFailure.sentenceOf(error))
+    }
+
     private suspend fun repository(
         transport: RecordingTransport,
         online: () -> Boolean = { true },
@@ -174,6 +217,21 @@ class ChatsRepositoryTest {
 
     private companion object {
         const val NOW = 1_800_000_000_000L
+
+        const val MEMBERS_BODY = """
+        {
+          "success": true,
+          "members": [
+            {
+              "id": "p-1",
+              "username": "alber",
+              "name": "Alber",
+              "avatarUrl": null,
+              "verified": true
+            }
+          ]
+        }
+        """
 
         const val THREADS_BODY = """
         {

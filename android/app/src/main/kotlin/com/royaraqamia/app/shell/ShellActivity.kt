@@ -36,6 +36,7 @@ import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.account.AccountServicesScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
 import com.royaraqamia.app.blogpress.BlogpressScreen
+import com.royaraqamia.app.chats.ChatNewScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
 import com.royaraqamia.app.chats.ChatsScreen
@@ -392,6 +393,17 @@ class ShellActivity : ComponentActivity() {
                                     online = Connectivity.isOnline(this@ShellActivity),
                                     onCopy = ::copyToClipboard,
                                 )
+                            // The new-conversation panel (#934): the member
+                            // directory, the direct picker and the group form.
+                            // Ported and off until the visual gate passes
+                            // (ADR-0117), so the document still opens on top of
+                            // it; the direct pick opens the site's own preview.
+                            "/chats/new" ->
+                                ChatNewScreen(
+                                    repository = graph.chats,
+                                    onOpenPeer = ::openChatPreview,
+                                    onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
+                                )
                             // The community feed (#658): public like the page, so
                             // a guest reads it, and the last page read is painted
                             // with the banner that says it is one when the radio is
@@ -415,9 +427,8 @@ class ShellActivity : ComponentActivity() {
                             // is the one destination the shell reads out of a route
                             // rather than matching whole.
                             // A thread (#819): the conversation the site's row
-                            // opens, drawn from the same three routes. A card's
-                            // destinations are routes, not screens: the member
-                            // picker is `/chats/new`, which is the document.
+                            // opens, drawn from the same three routes. The member
+                            // picker is its own screen above (#934).
                             else -> {
                                 val conversationId = ChatRoutes.idOf(current)
                                 val unlock = LinksnapRoutes.codeOf(current)
@@ -732,6 +743,21 @@ class ShellActivity : ComponentActivity() {
             Intent(this, ShellActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         )
+    }
+
+    /**
+     * The new-conversation screen's direct pick (#934): the site's own empty chat
+     * screen, which sends the request from its one button.
+     *
+     * The route is the same normalized destination with the member's handle in
+     * the query, so the stack entry is replaced rather than pushed — opening
+     * `/chats/new` again would be a no-op — and the document is handed the query.
+     */
+    private fun openChatPreview(username: String) {
+        val encoded = java.net.URLEncoder.encode(username, "UTF-8")
+        stack.replace("/chats/new?to=$encoded")
+        current = stack.route
+        handOver()
     }
 
     /**
