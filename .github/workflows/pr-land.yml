@@ -316,12 +316,23 @@ jobs:
             exit 0
           fi
 
+          # A secret that exists is not a secret that works: a dead or un-scoped PAT is not
+          # a code defect, and an hour of repair cannot change it. One cheap read proves the
+          # credential before the agent spends the hour.
+          if ! git ls-remote "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" >/dev/null 2>&1; then
+            echo "::warning title=AGENT_PUSH_TOKEN does not authenticate::A repair cannot be measured without it."
+            gh pr comment "$PR" --body "A repair is needed, but \`AGENT_PUSH_TOKEN\` does not authenticate any more, so a repaired commit could not start CI. Replace the secret with a fine-grained PAT (\`Contents: Read and write\`) and the next landing pass repairs #$PR."
+            exit 0
+          fi
+
           gh pr comment "$PR" --body "<!-- pr-land-attempt -->Landing attempt $((attempts + 1)): ${REASON}"
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          git fetch origin main
+          # The token goes inline in the URL, as it does for the push below: no helper and
+          # no stored credential for a leftover header to outrank.
+          git fetch --no-tags "https://x-access-token:${AGENT_PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main
           if ! git merge --no-edit FETCH_HEAD >/dev/null; then
             echo "::notice title=The base moved::The conflict with main is part of this repair."
           fi
