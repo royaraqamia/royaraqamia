@@ -4,9 +4,15 @@
 # dropped for a whole day, which is exactly the failure the planner/implementer
 # pipeline cannot detect on its own (a run that never starts cannot report that it
 # never started). This workflow is the dead-man's switch: every six hours it checks
-# the age of the last successful run of each agent workflow, re-dispatches any that
-# lapsed, and opens (or closes) a single tracking issue so a human notices a
-# recurring outage.
+# the age of each agent workflow's last heartbeat, re-dispatches any that lapsed, and
+# opens (or closes) a single tracking issue so a human notices a recurring outage.
+#
+# A heartbeat is the newer of the last successful run and — for a workflow that lands
+# work — the last pull request its agent merged. Run history alone is not enough: a
+# six-round matrix run is marked `failure` when a single round times out after the
+# others merged, and a deleted run stops being evidence at all, which is how a working
+# implementer read as five days dead on 2026-11-08. A merge cannot be erased from git,
+# so it is the durable half of the signal.
 #
 # A run that failed is re-dispatched too, and on a shorter fuse than the 26-hour
 # heartbeat: the planner dies on a transient upstream refusal often enough to matter
@@ -70,7 +76,20 @@ jobs:
             const FAILED = new Set(['failure', 'timed_out']);
             const targets = [
               { name: 'Issue Planner', file: 'issue-planner.yml' },
-              { name: 'Issue Implementer', file: 'issue-implementer.yml' },
+              {
+                name: 'Issue Implementer',
+                file: 'issue-implementer.yml',
+                // Run history is the weaker proof for this target, twice over. Its six
+                // rounds run as a matrix, so a single round that times out marks the whole
+                // run `failure` after the other five merged; and a run can leave the record
+                // entirely, which on 2026-11-08 hid five merged pull requests and made a
+                // five-day-old success look like the most recent thing that ever worked.
+                // A merged pull request the agent authored cannot be erased from git
+                // history, so it counts as a heartbeat of its own. The author is the app's
+                // bot user as the REST API spells it (`opencode-agent[bot]`); the web UI
+                // shows it as `app/opencode-agent`.
+                mergedPullRequest: { author: 'opencode-agent[bot]', label: 'opencode' },
+              },
             ];
 
             // Newest first. `conclusion` is null while a run is queued or in flight,
@@ -83,19 +102,60 @@ jobs:
                 per_page: 30,
               });
 
-            const inspect = async (file) => {
-              const runs = await history(file);
+            // The newest pull request this agent merged and a person did not undo. One page
+            // of the most recently updated closed pull requests is enough: the repository
+            // merges dozens a day, so 100 reaches well past the 26-hour window, and a page
+            // that somehow missed it only costs a stale merge that the run history below
+            // still covers. Reading `pulls.list` rather than search avoids the search
+            // index's lag on a pull request merged minutes ago.
+            const lastMerged = async ({ author, label }) => {
+              const { data } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'closed',
+                sort: 'updated',
+                direction: 'desc',
+                per_page: 100,
+              });
+              const merged = data.filter(
+                (pr) =>
+                  pr.merged_at &&
+                  pr.user &&
+                  pr.user.login === author &&
+                  pr.labels.some((l) => l.name === label)
+              );
+              if (merged.length === 0) return null;
+              const newest = merged.reduce((a, b) =>
+                Date.parse(a.merged_at) >= Date.parse(b.merged_at) ? a : b
+              );
+              return { at: newest.merged_at, number: newest.number };
+            };
+
+            const inspect = async (target) => {
+              const runs = await history(target.file);
               const success = runs.find((r) => r.conclusion === 'success') || null;
               const latest = runs.find((r) => r.conclusion !== null) || null;
-              const ageMs = success
-                ? Date.now() - Date.parse(success.created_at)
-                : Number.POSITIVE_INFINITY;
+              const merged = target.mergedPullRequest
+                ? await lastMerged(target.mergedPullRequest)
+                : null;
+              // Whichever proof of life is newer. A merge only ever raises the heartbeat,
+              // never lowers it: the pipeline working is not undone by a later run failing.
+              const beats = [];
+              if (success) beats.push({ at: success.created_at, run: success });
+              if (merged) beats.push({ at: merged.at, number: merged.number });
+              const beat = beats.reduce(
+                (newest, candidate) =>
+                  !newest || Date.parse(candidate.at) > Date.parse(newest.at) ? candidate : newest,
+                null
+              );
+              const ageMs = beat ? Date.now() - Date.parse(beat.at) : Number.POSITIVE_INFINITY;
               return {
                 success,
                 latest,
+                beat,
                 inFlight: runs.some((r) => r.status === 'queued' || r.status === 'in_progress'),
-                ageHours: success ? (ageMs / 3600000).toFixed(1) : 'never',
-                lapsed: !success || ageMs > STALE_MS,
+                ageHours: beat ? (ageMs / 3600000).toFixed(1) : 'never',
+                lapsed: !beat || ageMs > STALE_MS,
                 failed: latest ? FAILED.has(latest.conclusion) : false,
               };
             };
@@ -104,16 +164,19 @@ jobs:
             const queue = [];
             const lines = [];
             for (const target of targets) {
-              const state = await inspect(target.file);
-              const last = state.success
-                ? 'last success `' + state.success.created_at + '` (' + state.ageHours +
-                  'h ago, run ' + state.success.id + ')'
-                : 'no successful run on record';
+              const state = await inspect(target);
+              const beat = state.beat
+                ? 'last heartbeat `' + state.beat.at + '` (' + state.ageHours + 'h ago, ' +
+                  (state.beat.run
+                    ? 'run ' + state.beat.run.id
+                    : 'merged pull request #' + state.beat.number) +
+                  ')'
+                : 'no heartbeat on record';
               const latest = state.latest && (!state.success || state.latest.id !== state.success.id)
                 ? '; most recent run ' + state.latest.id + ' (' + state.latest.conclusion +
                   ', `' + state.latest.created_at + '`)'
                 : '';
-              lines.push('- ' + target.name + ': ' + last + latest);
+              lines.push('- ' + target.name + ': ' + beat + latest);
               // A lapsed target is dispatched once, whatever its last run concluded:
               // the retry below is for the schedule that is on time and still failed.
               if (state.lapsed) {
@@ -234,7 +297,7 @@ jobs:
             const body = [
               'The heartbeat for the autonomous issue automation is late. Checked every six hours.',
               '',
-              'Last success and most recent run:',
+              'Last heartbeat and most recent run:',
               ...lines,
               '',
               'Catch-up:',
