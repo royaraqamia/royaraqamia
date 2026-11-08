@@ -23,6 +23,14 @@ export const CHAT_AGENT_TURN_TIMEOUT_MS = 55_000;
  * itself (#818).
  */
 export const CHAT_AGENT_MAX_ROUNDS = 3;
+/**
+ * Pictures in one turn. A picture is a prompt the model reads again on every
+ * round, and it rides inside the request body as base64, so the page bounds it
+ * before upload (ADR-0139): at most three, each 1600 px on its longest side and
+ * under 4 MB. A screenshot and the two pages around it is the case this exists
+ * for; a fourth is a second question.
+ */
+export const CHAT_AGENT_IMAGES_PER_TURN_MAX = 3;
 
 /** A group's name, and the ceiling on its members (ADR-0113). */
 export const CHAT_GROUP_TITLE_MAX = 80;
@@ -46,6 +54,15 @@ export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
 
 /** Attachments in one message: one bubble, five chips. */
 export const CHAT_ATTACHMENTS_PER_MESSAGE_MAX = 5;
+
+/**
+ * What the page does to a picture before it uploads it (ADR-0139). A phone
+ * photo is 8–12 MB and 4000 px wide; a screenshot a model can read needs
+ * neither, and both are paid for twice — once in the bucket, once in the
+ * request body.
+ */
+export const CHAT_IMAGE_LONGEST_SIDE_PX = 1_600;
+export const CHAT_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 
 /**
  * A voice note's bounds, in one place because both composers draw the same
@@ -319,11 +336,24 @@ export const ChatAttachmentInputSchema = z.object({
 });
 
 /**
+ * The pictures among a turn's files — the ones the model sees as image parts.
+ * Both the contract and the composer count them the same way (ADR-0139).
+ */
+export function chatTurnImages(attachments: { mimeType: string }[] | undefined): number {
+  return (attachments ?? []).filter((attachment) =>
+    chatAttachmentIsInlineImage(attachment.mimeType)
+  ).length;
+}
+
+/**
  * A turn is text, files, or both. A voice note is transcribed before the model
  * sees it, an image reaches it as an image part, and a text file as text — the
  * recording and the file still stay in the thread either way (ADR-0126,
  * ADR-0127). A file no model can read is refused with a sentence, not guessed
  * at.
+ *
+ * The picture bound is the one number a turn adds to a message's: three images,
+ * because each is a part the model re-reads on every round (ADR-0139).
  */
 export const ChatAgentTurnSchema = z
   .object({
@@ -335,6 +365,9 @@ export const ChatAgentTurnSchema = z
   })
   .refine((value) => Boolean(value.body) || (value.attachments?.length ?? 0) > 0, {
     message: 'اكتب سؤالك أو أرسل ملفاً',
+  })
+  .refine((value) => chatTurnImages(value.attachments) <= CHAT_AGENT_IMAGES_PER_TURN_MAX, {
+    message: 'ثلاث صور في السؤال الواحد',
   });
 
 export type ChatAgentTurnInput = z.infer<typeof ChatAgentTurnSchema>;

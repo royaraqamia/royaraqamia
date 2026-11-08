@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CHAT_EDIT_WINDOW_MS,
   CHAT_GROUP_MEMBERS_MAX,
+  ChatAgentTurnSchema,
   ChatMessageSendSchema,
   ChatReportSchema,
   CreateGroupChatSchema,
@@ -107,6 +108,58 @@ describe('ChatMessageSendSchema', () => {
       ],
     });
     expect(parsed.success).toBe(false);
+  });
+});
+
+describe('ChatAgentTurnSchema', () => {
+  function image(index: number) {
+    return {
+      storagePath: `chat/user/shot-${index}.webp`,
+      fileName: `shot-${index}.webp`,
+      mimeType: 'image/webp',
+      byteSize: 2048,
+    };
+  }
+
+  function textFile(index: number) {
+    return {
+      storagePath: `chat/user/notes-${index}.txt`,
+      fileName: `notes-${index}.txt`,
+      mimeType: 'text/plain',
+      byteSize: 32,
+    };
+  }
+
+  /**
+   * The issue's own case: a screenshot carries the question, and the typed
+   * question is optional exactly as it is for a voice note (ADR-0139).
+   */
+  it('accepts three pictures with no typed question', () => {
+    expect(
+      ChatAgentTurnSchema.safeParse({ attachments: [image(1), image(2), image(3)] }).success
+    ).toBe(true);
+  });
+
+  it('refuses a fourth picture with a sentence, before any allowance is spent', () => {
+    const parsed = ChatAgentTurnSchema.safeParse({
+      body: 'ما في هذه الصور؟',
+      attachments: [image(1), image(2), image(3), image(4)],
+    });
+
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0]?.message).toBe('ثلاث صور في السؤال الواحد');
+  });
+
+  it('counts pictures, not files: three images and two text files still fit', () => {
+    expect(
+      ChatAgentTurnSchema.safeParse({
+        attachments: [image(1), image(2), image(3), textFile(1), textFile(2)],
+      }).success
+    ).toBe(true);
+  });
+
+  it('refuses a turn that carries neither words nor a file', () => {
+    expect(ChatAgentTurnSchema.safeParse({ body: '  ' }).success).toBe(false);
   });
 });
 

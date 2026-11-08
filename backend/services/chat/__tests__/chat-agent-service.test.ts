@@ -482,6 +482,49 @@ describe('the assistant turn', () => {
     });
   });
 
+  it('hands two pictures of one turn to the model as two parts, and keeps both attached', async () => {
+    const client = scriptedClient([textStream('المجموع 120.')]);
+    const { service, chats, agent } = makeService({ client });
+
+    const first = {
+      storagePath: 'conversation-1/img/totals.png',
+      fileName: 'totals.png',
+      mimeType: 'image/png',
+      byteSize: 3,
+    };
+    const second = {
+      storagePath: 'conversation-1/img/table.png',
+      fileName: 'table.png',
+      mimeType: 'image/png',
+      byteSize: 3,
+    };
+
+    const events = await collect(
+      service.turn('user-1', 'conversation-1', 'ما في هاتين الصورتين؟', TURN_CONTEXT, [
+        first,
+        second,
+      ])
+    );
+
+    // One user turn: the question, then the pictures in the order they were staged.
+    expect(client.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'ما في هاتين الصورتين؟' },
+        { type: 'image_url', image_url: { url: 'data:image/png;base64,AQID' } },
+        { type: 'image_url', image_url: { url: 'data:image/png;base64,AQID' } },
+      ],
+    });
+    // The thread keeps what the member sent: both attachments, on the one line.
+    expect(chats.sendMessage).toHaveBeenCalledWith('user-1', 'conversation-1', {
+      body: 'ما في هاتين الصورتين؟',
+      attachments: [first, second],
+    });
+    // And the turn closes as it does for any answer.
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(events.at(-1)?.type).toBe('done');
+  });
+
   it('hands a text file to the model as its words', async () => {
     const client = scriptedClient([textStream('قرأت الملف.')]);
     const download = vi.fn(async () => new TextEncoder().encode('مرحبا'));
