@@ -101,6 +101,12 @@ data class CommunityPostResponsePostTagsItem(
 )
 
 @Serializable
+data class CommunityPostCreateResponse(
+    val id: String,
+    val slug: String,
+)
+
+@Serializable
 data class CommunityMemberResponse(
     val member: CommunityMemberResponseMember,
     val posts: List<CommunityMemberResponsePostsItem>,

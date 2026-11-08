@@ -9,6 +9,7 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { PostComposerDialog } from './post-composer-dialog';
+import { COMMUNITY_COMPOSE_FAB_COPY } from './community-compose-fab-copy';
 
 /**
  * Facebook/X-style composer for the public community. Signed-in users can publish a
@@ -48,7 +49,7 @@ export function ComposeFab() {
       <button
         type="button"
         onClick={handleFabClick}
-        aria-label="إضافة منشور جديد"
+        aria-label={COMMUNITY_COMPOSE_FAB_COPY.newPostLabel}
         className="compose-fab-btn visible group"
       >
         <PenLine className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
@@ -62,7 +63,9 @@ export function ComposeFab() {
             <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
               <PenLine size={24} />
             </div>
-            <DialogTitle className="leading-snug!">سجِّل الدُّخول للنَّشر في المجتمع</DialogTitle>
+            <DialogTitle className="leading-snug!">
+              {COMMUNITY_COMPOSE_FAB_COPY.guestTitle}
+            </DialogTitle>
           </div>
 
           <DialogActions onCancel={() => setAuthPromptOpen(false)}>

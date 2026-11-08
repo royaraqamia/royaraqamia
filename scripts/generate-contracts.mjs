@@ -173,6 +173,10 @@ export const CONTRACTS = [
     schemas: [
       'CommunityIndexResponseSchema',
       'CommunityPostResponseSchema',
+      // The composer's create-and-publish answer (#924): the id and slug the
+      // route mints, so the app decodes the write's result rather than reading
+      // a field name it typed by hand.
+      'CommunityPostCreateResponseSchema',
       'CommunityMemberResponseSchema',
     ],
   },

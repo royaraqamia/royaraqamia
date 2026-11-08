@@ -401,6 +401,8 @@ class ShellActivity : ComponentActivity() {
                                 CommunityFeedScreen(
                                     repository = graph.community,
                                     editorStore = graph.communityEditor,
+                                    composerStore = graph.communityComposer,
+                                    onSignIn = ::showSignIn,
                                     signedIn = signedIn,
                                     currentUserId = (graph.session.storeIdentity as? Identity.User)?.id,
                                     onOpenPost = { slug -> openRoute(CommunityRoutes.postOf(slug)) },

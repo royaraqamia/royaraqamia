@@ -1051,6 +1051,70 @@
       ]
     },
     {
+      "id": "community-composer",
+      "surface": "community",
+      "issue": "#924",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/post-composer-dialog.tsx",
+        "copyModule": "app/community/_components/community-composer-copy.ts",
+        "copyExport": "COMMUNITY_COMPOSER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposer.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposerCopy.kt",
+        "copyObject": "CommunityComposerCopy"
+      },
+      "copySource": "shared/copy/community-composer.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "publish"
+        },
+        {
+          "name": "Publishing",
+          "copy": "publishing"
+        },
+        {
+          "name": "Failed",
+          "copy": "publishFailed"
+        },
+        {
+          "name": "Published",
+          "copy": "published"
+        }
+      ]
+    },
+    {
+      "id": "community-compose-fab",
+      "surface": "community",
+      "issue": "#924",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/compose-fab.tsx",
+        "copyModule": "app/community/_components/community-compose-fab-copy.ts",
+        "copyExport": "COMMUNITY_COMPOSE_FAB_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFab.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityComposeFabCopy.kt",
+        "copyObject": "CommunityComposeFabCopy"
+      },
+      "copySource": "shared/copy/community-compose-fab.json",
+      "states": [
+        {
+          "name": "Ready",
+          "copy": "newPostLabel"
+        },
+        {
+          "name": "Guest",
+          "copy": "guestTitle"
+        }
+      ]
+    },
+    {
       "id": "needs-connection",
       "surface": "community",
       "issue": "#658",

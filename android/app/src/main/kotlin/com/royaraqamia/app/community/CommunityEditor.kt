@@ -46,9 +46,6 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** The site's `BODY_MAX` (`post-composer-dialog.tsx`). */
-private const val BODY_MAX = 20000
-
 /**
  * The community editor over an existing post (#925), the app's half of
  * `app/community/_components/post-composer-dialog.tsx` in edit mode.
@@ -111,8 +108,12 @@ fun CommunityEditor(
             state = CommunityEditorUiState.Failed(CommunityEditorCopy.EMPTY_BODY)
             return false
         }
-        if (text.length > BODY_MAX) {
-            val message = CommunityEditorCopy.TOO_LONG.replace("{max}", BODY_MAX.toString())
+        if (text.length > CommunityLimits.BODY_MAX) {
+            val message =
+                CommunityEditorCopy.TOO_LONG.replace(
+                    "{max}",
+                    CommunityLimits.BODY_MAX.toString(),
+                )
             notice = message
             state = CommunityEditorUiState.Failed(message)
             return false
@@ -255,10 +256,13 @@ fun CommunityEditor(
                     text =
                         CommunityEditorCopy.COUNTER
                             .replace("{count}", body.length.toString())
-                            .replace("{max}", String.format(Locale.US, "%,d", BODY_MAX)),
+                            .replace(
+                                "{max}",
+                                String.format(Locale.US, "%,d", CommunityLimits.BODY_MAX),
+                            ),
                     style = type.xs.copy(textDirection = TextDirection.Ltr),
                     color =
-                        if (body.length > BODY_MAX) {
+                        if (body.length > CommunityLimits.BODY_MAX) {
                             RoyColors.destructive
                         } else {
                             RoyColors.mutedForeground
