@@ -5,7 +5,7 @@
 
 Every surface the site serves, and which client draws it. A screen that exists in the app and not the site — or the other way round — is a row here with the ticket that lands it or the reason it never will, because a gap found on a device is a bug and a gap listed here is a decision (#665, [two-clients.md](two-clients.md)).
 
-`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not route to it yet: it is switched on by the change that makes it the same screen as the page (#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)), and only when [the visual gate](../adr/0118-a-port-is-switched-on-by-two-measurements.md) passes. The offline half of the same question — whether the app can show a surface with the radio off — is the `Bundle` column of [the surface matrix](../specs/surfaces.md), not this table.
+`App` names the Kotlin screen that draws the surface. `_web only_` means the app shows it as a web surface in the shell; the reason says why, and the phases are in [native-app.md](native-app.md). `(off)` means the port exists in the app and the shell does not route to it yet: it is switched on by the change that makes it the same screen as the page (#872, [ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)), and only when [the visual gate](../adr/0118-a-port-is-switched-on-by-two-measurements.md) passes. The offline half of the same question — whether the app can show a surface with the radio off — is stated natively in [offline-first.md](../specs/offline-first.md#limits-of-instant); the app has no bundle, so there is no bundle column to read.
 
 | Screen | Routes | App | Why / ticket |
 | --- | --- | --- | --- |
@@ -19,7 +19,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `blogpress` | `/blogpress`<br>`/blogpress/calendar` | `BlogpressScreen.kt` (off) | The owned posts list, its row actions and its offline delete are drawn (#952); the stats, the calendar, categories and the editor are still the document, so the surface stays off until it is the whole page. |
 | `blogpress-editor` | `/blogpress/editor/[id]` | `BlogpressEditorScreen.kt` (off) | The editor's fields, its autosave and its server save are drawn (#954), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |
-| `notes` | `/notes` | _web only_ | The app serves the bundled web surface; the product's native screens land in phase 3 (#646). |
+| `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
 | `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948); the profile card (#946) and the allowance card (#947) are still the page's, so the surface stays off until it is the whole page. |

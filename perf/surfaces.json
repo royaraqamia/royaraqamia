@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "The surface matrix. Every app/**/page.tsx route must be covered by exactly one surface (an exact `routes` entry wins over a `prefix`). This file is authoritative: docs/specs/surfaces.md is generated from it, and scripts/check-surfaces.mjs fails the build when a route is uncovered, a claimed spec does not exist, or a surface marked `shell: precached` reads `searchParams`/cookies (which would mean it can never be precached). `shell` describes the REMOTE document; `bundle` describes the Android app, where a bundled SPA routes client-side and therefore handles dynamic segments the remote precache cannot. See #561, #557, #558 and #486.",
+  "notes": "The surface matrix. Every app/**/page.tsx route must be covered by exactly one surface (an exact `routes` entry wins over a `prefix`). This file is authoritative: docs/specs/surfaces.md is generated from it, and scripts/check-surfaces.mjs fails the build when a route is uncovered, a claimed spec does not exist, or a surface marked `shell: precached` reads `searchParams`/cookies (which would mean it can never be precached). `shell` describes the REMOTE document. The app has no bundle: a surface it does not draw natively is the document, so there is no second column. See #561, #557, #558 and #486.",
   "defaultUngated": "No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.",
   "surfaces": [
     {
@@ -10,7 +10,6 @@
       "read": "swr",
       "write": "none",
       "shell": "pinned",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#487"
     },
@@ -21,7 +20,6 @@
       "read": "swr",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"]
     },
     {
@@ -31,7 +29,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/habitflow-sync-resume.spec.ts"],
       "issue": "#493",
       "paint": "habitflow"
@@ -43,7 +40,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/spendtrack-offline.spec.ts"],
       "issue": "#493",
       "paint": "spendtrack"
@@ -55,7 +51,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/linksnap-offline.spec.ts"],
       "issue": "#493",
       "paint": "linksnap"
@@ -67,7 +62,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": []
     },
     {
@@ -77,7 +71,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/blogpress-offline.spec.ts"],
       "issue": "#493",
       "paint": "blogpress"
@@ -89,7 +82,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "swr",
-      "bundle": "bundled",
       "specs": []
     },
     {
@@ -99,7 +91,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": ["e2e/quran-reader.spec.ts", "e2e/quran-marks.spec.ts", "e2e/quran-sync.spec.ts"],
       "issue": "#493",
       "paint": "quran"
@@ -111,7 +102,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "remote",
       "specs": [
         "e2e/product-offline-render.spec.ts",
         "e2e/notes-offline.spec.ts",
@@ -126,7 +116,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "swr",
-      "bundle": "bundled",
       "specs": ["e2e/quran-reader.spec.ts"],
       "issue": "#559"
     },
@@ -137,7 +126,6 @@
       "read": "swr",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/athkar.spec.ts"],
       "ungated": "No paint budget measures this row yet (#558). The document is a prerendered shell and the only state is the day's count, which is device-local: no server read, no outbox."
     },
@@ -148,7 +136,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -159,7 +146,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -170,7 +156,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -181,7 +166,6 @@
       "read": "store",
       "write": "outbox",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -192,7 +176,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -203,7 +186,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -214,7 +196,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "swr",
-      "bundle": "bundled",
       "specs": [],
       "ungated": "A data-free shell: the list comes from a client read of the account's blocked members, so with the radio off the page reports the missing connection. It is not in the precache list — the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document at runtime after the first visit."
     },
@@ -225,7 +206,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -236,7 +216,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "swr",
-      "bundle": "bundled",
       "specs": [],
       "ungated": "A data-free shell: the switches and the set come from a client read of `/api/me/hidden-services`, so with the radio off the page reports the missing connection. It is not in the precache list — the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document at runtime after the first visit."
     },
@@ -247,7 +226,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#493"
     },
@@ -258,7 +236,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": [],
       "ungated": "The feed is per-identity and read on the client (`/api/notifications`), so with the radio off the panel reports the missing connection. There is no snapshot to render: read and delete are writes the server owns, and the page caches nothing between visits. The worker caches the document at runtime, not in the precache list — that slot stays with `/verify` (DYNAMIC_BY_DESIGN)."
     },
@@ -269,7 +246,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": [],
       "ungated": "A conversation is per-identity and read on the client (`/api/chats/…`), so with the radio off the thread reports the missing connection. There is no snapshot to render on purpose: messages are other members' writes, and a cached copy would outlive the membership RLS that scopes them (ADR-0113). The worker caches the document at runtime, not in the precache list (DYNAMIC_BY_DESIGN)."
     },
@@ -280,7 +256,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -291,7 +266,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -302,7 +276,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -313,7 +286,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -324,7 +296,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -335,7 +306,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -346,7 +316,6 @@
       "read": "snapshot",
       "write": "none",
       "shell": "swr",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -357,7 +326,6 @@
       "read": "store",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/scan.spec.ts"]
     },
     {
@@ -367,7 +335,6 @@
       "read": "needs-connection",
       "write": "outbox",
       "shell": "swr",
-      "bundle": "remote",
       "specs": ["e2e/lead-offline.spec.ts"],
       "ungated": "The lead forms render per request (getOptionalUser + price), so the document is SWR-cached after a visit rather than precached; the outbox write is the offline promise."
     },
@@ -378,7 +345,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/lead-offline.spec.ts"]
     },
     {
@@ -388,7 +354,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": ["e2e/downloader.spec.ts"]
     },
     {
@@ -405,7 +370,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "precached",
-      "bundle": "bundled",
       "specs": [],
       "issue": "#501"
     },
@@ -416,7 +380,6 @@
       "read": "swr",
       "write": "none",
       "shell": "precached",
-      "bundle": "remote",
       "specs": []
     },
     {
@@ -426,7 +389,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "none",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"]
     },
     {
@@ -436,7 +398,6 @@
       "read": "needs-connection",
       "write": "none",
       "shell": "none",
-      "bundle": "remote",
       "specs": ["e2e/public-offline.spec.ts"]
     }
   ]

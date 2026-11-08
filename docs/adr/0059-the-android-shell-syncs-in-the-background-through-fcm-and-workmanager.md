@@ -1,5 +1,10 @@
 # The Android shell syncs in the background through FCM and WorkManager
 
+> **History for the app since [ADR-0089](0089-the-android-app-is-native.md):** the app's drain is
+> native, not a headless WebView — `OutboxDrainWorker` replays the Local Store's own Outbox in the app
+> process. The FCM wake, the two schedules and the battery prompt this ADR decided survive; the
+> WebView drain it describes is kept as the record for shells installed before the update floor moves.
+
 The shell is a remote-URL WebView (ADR-0036) with no native background components, so a write queued
 while the app is backgrounded or killed waits until the user reopens it. To close that, the server
 sends a **silent high-priority FCM data message** to the user's registered devices when the user has

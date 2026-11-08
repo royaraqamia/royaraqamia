@@ -31,7 +31,6 @@ const surface = (overrides = {}) => ({
   read: 'swr',
   write: 'none',
   shell: 'precached',
-  bundle: 'remote',
   specs: [],
   ungated: 'no spec yet',
   ...overrides,
@@ -136,18 +135,6 @@ describe('matrix validation', () => {
     expect(errors.some((error) => error.includes('/unclaimed'))).toBe(true);
     expect(errors.some((error) => error.includes('await searchParams'))).toBe(true);
     expect(errors.some((error) => error.includes('e2e/missing.spec.ts'))).toBe(true);
-  });
-
-  it('refuses a bundle for a surface with no cacheable document', () => {
-    const root = makeRepo({
-      'app/admin/page.tsx': 'export default function Page() { return null; }',
-    });
-    const errors = validate({
-      matrix: { surfaces: [surface({ routes: ['/admin'], shell: 'none', bundle: 'bundled' })] },
-      repoRoot: root,
-      routes: ['/admin'],
-    });
-    expect(errors.some((error) => error.includes('no cacheable document'))).toBe(true);
   });
 
   it('demands a paint budget or an ungated reason', () => {

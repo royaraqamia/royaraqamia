@@ -37,9 +37,8 @@ the app and a red check here instead.
 `npm run check:tokens` fails a stale output and fails a stylesheet that re-declares a generated
 property by hand.
 
-The bundled app needs nothing extra: `app-native/habitflow/spike.css` imports `app/global.css`, which
-imports the generated `app/tokens.css`, so the annotations a token change reaches the APK through the
-site's own stylesheet rather than a second copy.
+The app needs no second stylesheet: it is Compose, and the generated theme above is its only copy of
+the tokens.
 
 What those outputs resolve to is pinned as well — `e2e/visual-baseline.spec.ts` reads every generated
 custom property and one real surface back out of a browser
@@ -149,6 +148,6 @@ narrower route to read.
   `/api/notifications/unread-count`, the generated `UnreadNotificationCount` contract, and the same
   words in `shared/copy/notification-bell.json`). A bell that cannot say how many are unread would be
   a control that lies, so it is drawn only once there is a count to draw.
-- **The bundled app's parity.** Whether the app can show a surface with the radio off is the `Bundle`
-  column of [the surface matrix](../specs/surfaces.md) — a different question from which client draws
-  it, with its own check.
+- **The app's offline parity.** Whether the app can show a surface with the radio off is stated
+  natively in [offline-first.md](../specs/offline-first.md#limits-of-instant), not in a bundle column:
+  the app has no bundle to record.

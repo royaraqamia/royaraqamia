@@ -100,15 +100,6 @@ public/zxing_reader.wasm
 *.jks
 *.keystore
 
-# The bundled-surface build (issue #500): Vite output packed into the APK, never
-# committed. `npm run spike:build` writes it; `npm run spike:apk` copies it into
-# android/app/src/main/assets/public (already ignored above).
-/capacitor-web/spike/
-
-# Device evidence from `npm run spike:verify` (issue #500): screenshots and the
-# veto-table JSON, never committed.
-/spike-evidence/
-
 # The Graphify knowledge graph. It is rebuilt from the tree by `graphify extract` -
 # 28 MB of generated JSON, one line per node and edge - and the CI agent builds its
 # own copy, so no run ever depends on a committed one.
