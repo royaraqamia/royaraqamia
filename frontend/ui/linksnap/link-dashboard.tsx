@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { m, useReducedMotion } from 'motion/react';
-import { AlertTriangle, Check, Copy, Trash2, Calendar, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
+import { BulkActionBar } from './bulk-action-bar';
 import { shorten } from '@/frontend/api/linksnap';
 import { DashboardEmptyState } from './dashboard-empty-state';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
-import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
-import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { useLinks } from '@/frontend/state/linksnap/use-links';
 import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
 import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
@@ -33,7 +32,6 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   const bulk = useBulkLinks(codes, token);
   const [expiryOpen, setExpiryOpen] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const copySelectedUrls = async () => {
     const base = getBaseUrl();
@@ -61,7 +59,6 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   };
 
   const deleteSelected = async () => {
-    setShowDeleteConfirm(false);
     const deletedLinks = links.filter((l) => bulk.selectedCodes.includes(l.code));
     const result = await bulk.runDelete();
     if (!result) return;
@@ -116,7 +113,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           expiryDate={expiryDate}
           onExpiryDateChange={setExpiryDate}
           onApplyExpiry={applyExpiry}
-          onOpenDelete={() => setShowDeleteConfirm(true)}
+          onDelete={deleteSelected}
           busy={bulk.busy}
         />
       ) : null}
@@ -186,137 +183,6 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           ))}
         </m.div>
       )}
-
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        title="حذف روابط مختارة"
-        message={`هل أنت متأكد من حذف ${bulk.selectedCount} روابط؟ هذا الإجراء دائم.`}
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
-        icon={Trash2}
-        variant="danger"
-        onConfirm={deleteSelected}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
-    </div>
-  );
-}
-
-interface BulkActionBarProps {
-  allSelected: boolean;
-  total: number;
-  selectedCount: number;
-  onToggleAll: () => void;
-  onClear: () => void;
-  onCopyAll: () => void;
-  onOpenExpiry: () => void;
-  expiryOpen: boolean;
-  expiryDate: string;
-  onExpiryDateChange: (value: string) => void;
-  onApplyExpiry: () => void;
-  onOpenDelete: () => void;
-  busy: boolean;
-}
-
-function BulkActionBar({
-  allSelected,
-  total,
-  selectedCount,
-  onToggleAll,
-  onClear,
-  onCopyAll,
-  onOpenExpiry,
-  expiryOpen,
-  expiryDate,
-  onExpiryDateChange,
-  onApplyExpiry,
-  onOpenDelete,
-  busy,
-}: BulkActionBarProps) {
-  return (
-    <div className="sticky top-3 z-20 bg-card/90 border border-border rounded-xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
-      <button
-        type="button"
-        onClick={onToggleAll}
-        aria-pressed={allSelected}
-        className="inline-flex items-center gap-2 text-xs font-bold text-foreground hover:text-primary transition-colors cursor-pointer focus-ring touch-target p-1 rounded-md"
-      >
-        <span
-          className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-colors ${
-            allSelected
-              ? 'bg-primary border-primary text-primary-foreground'
-              : 'border-muted-foreground/40'
-          }`}
-        >
-          <Check aria-hidden="true" className="w-3 h-3" strokeWidth={3} />
-        </span>
-        تحديد الكل
-      </button>
-
-      <span className="text-xs text-muted-foreground">
-        {selectedCount > 0 ? `${selectedCount} من ${total}` : `إجمالي ${total}`}
-      </span>
-
-      <div className="flex-1" />
-
-      <button
-        type="button"
-        onClick={onClear}
-        disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
-      >
-        مسح
-      </button>
-
-      <button
-        type="button"
-        onClick={onCopyAll}
-        disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
-      >
-        <Copy aria-hidden="true" className="w-3.5 h-3.5" />
-        نسخ الروابط
-      </button>
-
-      <button
-        type="button"
-        onClick={onOpenExpiry}
-        disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
-      >
-        <Calendar aria-hidden="true" className="w-3.5 h-3.5" />
-        انتهاء
-      </button>
-
-      {expiryOpen ? (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <DatePicker
-            value={expiryDate}
-            onChange={onExpiryDateChange}
-            aria-label="تاريخ انتهاء الصلاحية"
-            placeholder="اختر التاريخ"
-            className="h-8 rounded-lg px-2.5 text-xs"
-          />
-          <button
-            type="button"
-            onClick={onApplyExpiry}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press"
-          >
-            {busy ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : 'تطبيق'}
-          </button>
-        </div>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={onOpenDelete}
-        disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
-      >
-        <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
-        حذف
-      </button>
     </div>
   );
 }

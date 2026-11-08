@@ -380,6 +380,21 @@
               "dy": 3
             }
           }
+        },
+        {
+          "name": "bulk-bar",
+          "tolerance": {
+            "pixels": 0.05,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-08",
+            "measured": 0.049,
+            "alignment": {
+              "dx": -1,
+              "dy": 2
+            }
+          }
         }
       ]
     }

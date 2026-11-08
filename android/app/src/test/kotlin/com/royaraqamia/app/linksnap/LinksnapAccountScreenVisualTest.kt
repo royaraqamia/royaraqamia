@@ -147,4 +147,91 @@ class LinksnapAccountScreenVisualTest {
             .onNodeWithTag(LinksnapRowMetrics.DESTINATION, useUnmergedTree = true)
             .captureRoboImage(File(dir, "app.png").path)
     }
+
+    @Test
+    fun `the bulk bar records the same numbers as the page`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        LinksnapAccountList(
+                            rows = listOf(row),
+                            pill = null,
+                            signedIn = true,
+                            onRetry = {},
+                            onSignIn = {},
+                            selectedCodes = setOf(row.code),
+                            allSelected = true,
+                        )
+                    }
+                }
+            }
+        }
+
+        val json =
+            """
+            {
+              "surface": "account-links",
+              "elements": {
+                "bar": {
+                  "width": ${width(LinksnapBulkBarMetrics.BAR)},
+                  "height": ${height(LinksnapBulkBarMetrics.BAR)},
+                  "radius": ${LinksnapBulkBarMetrics.radius.value},
+                  "paddingTop": ${LinksnapBulkBarMetrics.designPadding},
+                  "paddingLeft": ${LinksnapBulkBarMetrics.designPadding},
+                  "rowGap": ${LinksnapBulkBarMetrics.gap.value},
+                  "columnGap": ${LinksnapBulkBarMetrics.gap.value}
+                },
+                "select-all": {
+                  "height": ${height(LinksnapBulkBarMetrics.SELECT_ALL)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value},
+                  "fontWeight": ${LinksnapBulkBarMetrics.text.fontWeight?.weight}
+                },
+                "checkbox": {
+                  "width": ${width(LinksnapBulkBarMetrics.CHECKBOX)},
+                  "height": ${height(LinksnapBulkBarMetrics.CHECKBOX)},
+                  "radius": ${LinksnapBulkBarMetrics.checkboxRadius.value}
+                },
+                "count": {
+                  "height": ${height(LinksnapBulkBarMetrics.COUNT)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value}
+                },
+                "clear": {
+                  "height": ${height(LinksnapBulkBarMetrics.CLEAR)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value},
+                  "fontWeight": ${LinksnapBulkBarMetrics.text.fontWeight?.weight},
+                  "paddingTop": ${LinksnapBulkBarMetrics.designButtonPaddingTop},
+                  "paddingLeft": ${LinksnapBulkBarMetrics.buttonPaddingX.value}
+                },
+                "copy": {
+                  "height": ${height(LinksnapBulkBarMetrics.COPY)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value},
+                  "fontWeight": ${LinksnapBulkBarMetrics.text.fontWeight?.weight},
+                  "paddingTop": ${LinksnapBulkBarMetrics.designButtonPaddingTop},
+                  "paddingLeft": ${LinksnapBulkBarMetrics.buttonPaddingX.value}
+                },
+                "expiry": {
+                  "height": ${height(LinksnapBulkBarMetrics.EXPIRY)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value},
+                  "fontWeight": ${LinksnapBulkBarMetrics.text.fontWeight?.weight},
+                  "paddingTop": ${LinksnapBulkBarMetrics.designButtonPaddingTop},
+                  "paddingLeft": ${LinksnapBulkBarMetrics.buttonPaddingX.value}
+                },
+                "delete": {
+                  "height": ${height(LinksnapBulkBarMetrics.DELETE)},
+                  "fontSize": ${LinksnapBulkBarMetrics.textSize.value},
+                  "fontWeight": ${LinksnapBulkBarMetrics.text.fontWeight?.weight},
+                  "paddingTop": ${LinksnapBulkBarMetrics.designButtonPaddingTop},
+                  "paddingLeft": ${LinksnapBulkBarMetrics.buttonPaddingX.value}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/account-links/bulk-bar").apply { mkdirs() }
+        File(dir, "app.json").writeText("$json\n")
+        compose
+            .onNodeWithTag(LinksnapBulkBarMetrics.BAR, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
 }

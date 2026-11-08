@@ -1,0 +1,32 @@
+{
+  "surface": "account-links",
+  "component": "account-links-bulk",
+  "web": {
+    "file": "frontend/ui/linksnap/bulk-action-bar-copy.ts",
+    "export": "BULK_ACTION_BAR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapBulkBarCopy.kt",
+    "object": "LinksnapBulkBarCopy"
+  },
+  "notes": {
+    "source": "The owned-link bulk bar's words, in both clients (#942). The site's `frontend/ui/linksnap/bulk-action-bar.tsx` is the reference: select-all, the count, clear, copy, the expiry control and the delete confirmation. The app draws the same bar natively, so neither client spells a string.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "selectAll": "تحديد الكل",
+    "countSelected": "{selected} من {total}",
+    "countTotal": "إجمالي {total}",
+    "clear": "مسح",
+    "copy": "نسخ الروابط",
+    "expiry": "انتهاء",
+    "apply": "تطبيق",
+    "expiryLabel": "تاريخ انتهاء الصلاحية",
+    "expiryPlaceholder": "اختر التاريخ",
+    "delete": "حذف",
+    "deleteTitle": "حذف روابط مختارة",
+    "deleteMessage": "هل أنت متأكد من حذف {count} روابط؟ هذا الإجراء دائم.",
+    "deleteConfirm": "حذف",
+    "deleteCancel": "إلغاء"
+  }
+}

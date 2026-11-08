@@ -269,6 +269,20 @@ const PREPARE: Record<
     await visit(baseURL);
     await page.locator('[data-visual="link-row-summary"]').first().waitFor({ timeout: 20_000 });
   },
+  // The bulk bar with its one row selected (#942), so the count is the
+  // `{selected} من {total}` form and the actions are enabled. The bar itself is
+  // drawn whenever the account owns a row; the selection is what makes the state
+  // the page's bulk bar rather than the list at rest.
+  'account-links/bulk-bar': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualLink(page.context(), baseURL);
+    await protectVisualLink(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="link-bulk-bar"]').waitFor({ timeout: 20_000 });
+    await page.locator('[data-visual="link-bulk-select-all"]').click();
+    await expect(page.locator('[data-visual="link-bulk-copy"]')).toBeEnabled();
+  },
   // The community feed's load-more is the region the gate measures, and it only
   // exists past the first page. The fixture account seeds ten rows and the
   // cleanup below removes them, so the feed after the run is the feed before it.
@@ -288,6 +302,9 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
     await clearVisualLink(page.context(), projectBaseURL());
   },
   'account-links/at-rest': async (page) => {
+    await clearVisualLink(page.context(), projectBaseURL());
+  },
+  'account-links/bulk-bar': async (page) => {
     await clearVisualLink(page.context(), projectBaseURL());
   },
   'community/at-rest': async (page) => {
