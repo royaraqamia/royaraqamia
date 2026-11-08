@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 import { BUDGET_GZIP_BYTES, BUDGET_RAW_BYTES, build } from '../build-quran-search-index.mjs';
+import { maskComments } from '../check-layers.mjs';
 import {
   QURAN_SEARCH_MIN_QUERY,
   findAyahs,
@@ -47,6 +48,21 @@ function places(query, limit = 50) {
     const place = surahAyahOf(hit.position, counts);
     return `${place?.surah}:${place?.ayah}${hit.loose ? ' (loose)' : ''}`;
   });
+}
+
+/**
+ * The string literals in a module that are long enough, and Arabic enough, to be
+ * the corpus inlined into the bundle.
+ *
+ * Comments are masked first. A doc comment is not inlined into the bundle, and a
+ * backtick in one pairs with the next backtick forty lines later, so an unmasked
+ * scan read two comments as one template literal and reported a contract module
+ * for the prose between them (#1150).
+ */
+function literalsThatCarryCorpora(source) {
+  const literals =
+    maskComments(source).match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) ?? [];
+  return literals.filter((literal) => literal.length > 500 && /[\u0600-\u06FF]/.test(literal));
 }
 
 describe('the built search index', () => {
@@ -97,17 +113,25 @@ describe('the built search index', () => {
     for (const directory of sources) {
       for (const file of readdirSync(resolve(ROOT, directory), { withFileTypes: true })) {
         if (!file.isFile() || !/\.(ts|tsx)$/.test(file.name)) continue;
-        const source = readFileSync(join(ROOT, directory, file.name), 'utf8');
-        const literals =
-          source.match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) ?? [];
-        for (const literal of literals) {
-          if (literal.length > 500 && /[\u0600-\u06FF]/.test(literal)) {
-            inlined.push(`${directory}/${file.name}`);
-          }
+        for (const _literal of literalsThatCarryCorpora(
+          readFileSync(join(ROOT, directory, file.name), 'utf8')
+        )) {
+          inlined.push(`${directory}/${file.name}`);
         }
       }
     }
     expect(inlined).toEqual([]);
+  });
+
+  it('still sees a corpus a module really inlines', () => {
+    // The guard above is only worth its runtime if it still fails on the thing it
+    // exists for: the same long Arabic text is a corpus in code and prose in a
+    // comment, and only the first one rides in the bundle.
+    const long = 'ب'.repeat(501);
+    expect(literalsThatCarryCorpora(`export const corpus = '${long}';`)).toHaveLength(1);
+    expect(literalsThatCarryCorpora('/**\n * `' + long + '`\n */\nexport const x = 1;')).toEqual(
+      []
+    );
   });
 });
 
