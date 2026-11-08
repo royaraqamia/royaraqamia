@@ -41,6 +41,11 @@ describe('the assistant prompt', () => {
   it('tells the member to confirm a write instead of claiming it', () => {
     expect(SYSTEM_PROMPT).toContain('اقتراح');
   });
+
+  it('says the turn may already carry an attachment it has read', () => {
+    expect(SYSTEM_PROMPT).toContain('مرفق');
+    expect(SYSTEM_PROMPT).toContain('ولا تقل إنك لا تستقبل المرفقات');
+  });
 });
 
 const AGENT_THREAD = {
