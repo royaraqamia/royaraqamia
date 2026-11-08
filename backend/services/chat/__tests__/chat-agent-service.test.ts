@@ -17,11 +17,13 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import type { ChatAgentAllowance, ChatAgentEvent, ChatMessage } from '@/shared/contracts/chat';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
+import { pdfDocument, scannedPdf } from './document-fixtures';
 
 /**
  * The assistant is one of three doors that answer by the same rules
@@ -548,15 +550,53 @@ describe('the assistant turn', () => {
     });
   });
 
-  it('refuses a file no model can read with a sentence, and gives the count back', async () => {
-    const { service, chats, release } = makeService();
+  it('reads a document and hands its words to the model, keeping the file attached', async () => {
+    const client = scriptedClient([textStream('الإجمالي 120.')]);
+    const download = vi.fn(async () => pdfDocument(['Invoice total 120.00']));
+    const { service, chats, agent } = makeService({ client, attachments: { download } });
+
+    const invoice = {
+      storagePath: 'conversation-1/docs/invoice.pdf',
+      fileName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      byteSize: 40,
+    };
+
+    const events = await collect(
+      service.turn('user-1', 'conversation-1', 'كم الإجمالي؟', TURN_CONTEXT, [invoice])
+    );
+
+    expect(download).toHaveBeenCalledWith('conversation-1/docs/invoice.pdf');
+    // The words are a part of their own, framed as what they are, and the
+    // typed question still leads the turn (ADR-0140).
+    const content = client.calls[0]?.at(-1)?.content;
+    expect(Array.isArray(content)).toBe(true);
+    expect(content?.[0]).toEqual({ type: 'text', text: 'كم الإجمالي؟' });
+    expect(content?.[1]).toMatchObject({ type: 'text' });
+    const part = (content?.[1] as { text: string }).text;
+    expect(part).toContain('هذا نصّ المستند الذي أرفقه العضو:');
+    expect(part).toContain('Invoice total 120.00');
+
+    // The thread keeps the file, and the turn closes like any other answer.
+    expect(chats.sendMessage).toHaveBeenCalledWith('user-1', 'conversation-1', {
+      body: 'كم الإجمالي؟',
+      attachments: [invoice],
+    });
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(events.at(-1)?.type).toBe('done');
+  });
+
+  it('answers a scanned document with a sentence, calls no model, and gives the count back', async () => {
+    const client = scriptedClient([textStream('unreachable')]);
+    const download = vi.fn(async () => scannedPdf());
+    const { service, chats, release } = makeService({ client, attachments: { download } });
 
     await expect(
       collect(
-        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+        service.turn('user-1', 'conversation-1', 'ما مجموع الفاتورة؟', TURN_CONTEXT, [
           {
-            storagePath: 'conversation-1/docs/report.pdf',
-            fileName: 'report.pdf',
+            storagePath: 'conversation-1/docs/scan.pdf',
+            fileName: 'scan.pdf',
             mimeType: 'application/pdf',
             byteSize: 40,
           },
@@ -564,7 +604,56 @@ describe('the assistant turn', () => {
       )
     ).rejects.toMatchObject({
       status: 422,
-      message: 'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو ملفاً نصياً أو رسالة صوتية.',
+      message: expect.stringContaining('صور ممسوحة'),
+    });
+
+    // Never a guess at what the scan says, and nothing spent to make one.
+    expect(client.calls).toHaveLength(0);
+    expect(chats.sendMessage).not.toHaveBeenCalled();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('says it stopped at the cap when the document is longer than one turn reads', async () => {
+    const client = scriptedClient([textStream('قرأت الصفحات الأولى.')]);
+    const pages = Array.from({ length: DOCUMENT_PAGES_MAX + 4 }, (_, index) => `page ${index + 1}`);
+    const download = vi.fn(async () => pdfDocument(pages));
+    const { service } = makeService({ client, attachments: { download } });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+        {
+          storagePath: 'conversation-1/docs/report.pdf',
+          fileName: 'report.pdf',
+          mimeType: 'application/pdf',
+          byteSize: 40,
+        },
+      ])
+    );
+
+    const part = (client.calls[0]?.at(-1)?.content as { text: string }[])[0]?.text ?? '';
+    expect(part).toContain(`عرضتُ أول ${DOCUMENT_PAGES_MAX} صفحة من ${pages.length}`);
+    expect(part).toContain('أخبر العضو أنك لم تقرأ المستند كله.');
+    expect(part).not.toContain(`page ${DOCUMENT_PAGES_MAX + 1}`);
+  });
+
+  it('refuses a file no model can read with a sentence, and gives the count back', async () => {
+    const { service, chats, release } = makeService();
+
+    await expect(
+      collect(
+        service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
+          {
+            storagePath: 'conversation-1/docs/archive.zip',
+            fileName: 'archive.zip',
+            mimeType: 'application/zip',
+            byteSize: 40,
+          },
+        ])
+      )
+    ).rejects.toMatchObject({
+      status: 422,
+      message:
+        'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو مستنداً أو ملفاً نصياً أو رسالة صوتية.',
     });
 
     expect(chats.sendMessage).not.toHaveBeenCalled();

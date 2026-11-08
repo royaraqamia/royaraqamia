@@ -6,6 +6,11 @@ import type {
 } from '@/backend/repositories/chat/chat-agent-repository';
 import type { ChatAgentActionService } from '@/backend/services/chat/chat-agent-action-service';
 import {
+  DocumentReadError,
+  readDocumentText,
+  type DocumentReading,
+} from '@/backend/services/chat/document-text';
+import {
   chatAgentTool,
   chatAgentToolDefinitions,
   type ChatAgentTool,
@@ -30,7 +35,9 @@ import {
   CHAT_AGENT_TOKEN_BUDGET,
   CHAT_AGENT_TURN_TIMEOUT_MS,
   chatAttachmentIsAudio,
+  chatAttachmentIsDocument,
   chatAttachmentIsInlineImage,
+  chatAttachmentIsPdf,
   chatAttachmentIsReadableText,
   normalizeChatBody,
   type ChatAgentAllowance,
@@ -130,9 +137,22 @@ const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من المسا�
 const COULD_NOT_TRANSCRIBE = 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.';
 /** A file whose bytes could not be read back from the bucket. */
 const COULD_NOT_READ = 'لم أستطع قراءة المرفق. أعد إرساله أو اكتب سؤالك.';
-/** A format no model on this deployment can read: PDF, archives, documents. */
+/** A format no reader on this deployment can open: archives and the like. */
 const UNREADABLE_FILE =
-  'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو ملفاً نصياً أو رسالة صوتية.';
+  'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو مستنداً أو ملفاً نصياً أو رسالة صوتية.';
+/** A PDF whose pages are a scan: no text layer, and no OCR in this stack. */
+const NO_TEXT_LAYER =
+  'هذا المستند صور ممسوحة بلا نصّ يمكن قراءته، ولا أستطيع قراءة الصور الممسوحة. أرسل نسخة نصية منه.';
+/** A document that opened and says nothing at all. */
+const EMPTY_DOCUMENT = 'لا أجد نصاً في هذا المستند. أرسل نسخة أخرى أو اكتب سؤالك.';
+/** A document no reader could open. */
+const BROKEN_DOCUMENT = 'لم أستطع فتح هذا المستند. أرسل نسخة أخرى أو اكتب سؤالك.';
+/** A document that asks for a password. */
+const LOCKED_DOCUMENT = 'هذا المستند محمي بكلمة سر، ولا أستطيع فتحه. أرسل نسخة غير محمية.';
+/** The label a document's words carry inside the turn, so the model knows their origin. */
+const DOCUMENT_FRAME = 'هذا نصّ المستند الذي أرفقه العضو:';
+/** What the model is told when the reading stopped at one of the caps. */
+const DOCUMENT_CUT = 'أخبر العضو أنك لم تقرأ المستند كله.';
 /** The label a transcript carries inside the turn, so the model sees its origin. */
 const SPOKEN_LABEL = 'تسجيل صوتي';
 /** A text file's ceiling in the turn: enough for a long note, not a whole book. */
@@ -157,6 +177,16 @@ function isProjectAllowanceRefusal(error: unknown): boolean {
 /** Roughly four characters a token, which is the estimate the budget is stated in. */
 function approximateTokens(text: string): number {
   return Math.ceil(text.length / 4);
+}
+
+/**
+ * A document's words as the part the model reads: the file's name, the frame
+ * that says where they came from, and — when the reader stopped at a cap — the
+ * line that makes the answer say it did (ADR-0140).
+ */
+function documentPart(attachment: ChatAttachmentInput, reading: DocumentReading): string {
+  const head = `[${attachment.fileName}]\n${DOCUMENT_FRAME}\n${reading.text}`;
+  return reading.cut ? `${head}\n\n[${reading.cut}. ${DOCUMENT_CUT}]` : head;
 }
 
 /**
@@ -288,8 +318,9 @@ export class ChatAgentService {
 
     try {
       // A voice note is transcribed, an image reaches the model as an image part,
-      // and a text file as text — while the recording and the file stay attached,
-      // so the member still hears (and sees) what they sent (ADR-0126, ADR-0127).
+      // a text file as text, and a document as the words its reader extracts —
+      // while the recording and the file stay attached, so the member still hears
+      // (and sees) what they sent (ADR-0126, ADR-0127, ADR-0140).
       const read = await this.readAttachments(attachments);
       const question = [typed, read.words].filter(Boolean).join('\n');
       if (!question && read.parts.length === 0) throw new ChatAgentError(422, COULD_NOT_READ);
@@ -359,8 +390,9 @@ export class ChatAgentService {
    * Everything the turn's files say, in the form the model reads (ADR-0127).
    *
    * Audio is transcribed into words — the recording itself is never sent to the
-   * model — an image travels as an image part, and a text file as text. A file
-   * no model can read is refused with a sentence rather than guessed at, and the
+   * model — an image travels as an image part, a text file as text, and a
+   * document as the words its own reader extracts (ADR-0140). A file no model
+   * can read is refused with a sentence rather than guessed at, and the
    * allowance the turn reserved is given back by the caller's catch.
    */
   private async readAttachments(attachments: ChatAttachmentInput[]): Promise<{
@@ -402,6 +434,16 @@ export class ChatAgentService {
         continue;
       }
 
+      if (chatAttachmentIsDocument(attachment.mimeType)) {
+        // The bytes are read here and dropped with the turn: the text a document
+        // hands the model is never stored beside the file (ADR-0140).
+        parts.push({
+          type: 'text',
+          text: documentPart(attachment, await this.documentOf(attachment, bytes)),
+        });
+        continue;
+      }
+
       if (chatAttachmentIsReadableText(attachment.mimeType)) {
         const text = new TextDecoder().decode(bytes).slice(0, ATTACHMENT_TEXT_MAX);
         parts.push({ type: 'text', text: `[${attachment.fileName}]\n${text}` });
@@ -412,6 +454,36 @@ export class ChatAgentService {
     }
 
     return { words: words.join('\n'), parts, spoken };
+  }
+
+  /**
+   * A document's words, or the sentence that stands in for them. A file with no
+   * text layer, a locked file and a broken one are three different answers, and
+   * none of them is a guess at what the document says.
+   */
+  private async documentOf(
+    attachment: ChatAttachmentInput,
+    bytes: Uint8Array
+  ): Promise<DocumentReading> {
+    let reading: DocumentReading | null;
+    try {
+      reading = await readDocumentText(bytes, attachment.mimeType);
+    } catch (error) {
+      if (!(error instanceof DocumentReadError)) throw error;
+      throw new ChatAgentError(
+        422,
+        error.reason === 'encrypted' ? LOCKED_DOCUMENT : BROKEN_DOCUMENT
+      );
+    }
+
+    if (reading) return reading;
+
+    // A page of a scan carries no text at all; anything else that reads as empty
+    // is a document with nothing in it.
+    throw new ChatAgentError(
+      422,
+      chatAttachmentIsPdf(attachment.mimeType) ? NO_TEXT_LAYER : EMPTY_DOCUMENT
+    );
   }
 
   /**

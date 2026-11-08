@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ATTACHMENT_REFUSALS,
+  exceedsDocumentLimit,
   exceedsImageLimit,
   stageFiles,
 } from '@/frontend/ui/chats/attachment-quota';
@@ -53,6 +54,32 @@ describe('exceedsImageLimit', () => {
    */
   it('does not count an SVG, which is a file here', () => {
     expect(exceedsImageLimit([], [file('logo.svg', 'image/svg+xml')])).toBe(false);
+  });
+});
+
+/**
+ * A document is read into the prompt once, so a turn carries one (ADR-0140).
+ * The count is made before the upload, so a second document costs nothing, and
+ * the contract refuses the same count again on the server.
+ */
+describe('exceedsDocumentLimit', () => {
+  const invoice = file('invoice.pdf', 'application/pdf');
+  const memo = file(
+    'memo.docx',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  );
+
+  it('lets one document through and refuses a second', () => {
+    expect(exceedsDocumentLimit([], [invoice])).toBe(false);
+    expect(exceedsDocumentLimit([], [invoice, memo])).toBe(true);
+  });
+
+  it('counts the document already staged', () => {
+    expect(exceedsDocumentLimit([invoice], [memo])).toBe(true);
+  });
+
+  it('counts documents, not files: pictures and text files are free', () => {
+    expect(exceedsDocumentLimit([], [shot(1), shot(2), notes(1), invoice])).toBe(false);
   });
 });
 

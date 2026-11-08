@@ -158,8 +158,48 @@ describe('ChatAgentTurnSchema', () => {
     ).toBe(true);
   });
 
+  function documentFile(index: number, mimeType = 'application/pdf') {
+    return {
+      storagePath: `chat/user/doc-${index}.pdf`,
+      fileName: `doc-${index}.pdf`,
+      mimeType,
+      byteSize: 4096,
+    };
+  }
+
   it('refuses a turn that carries neither words nor a file', () => {
     expect(ChatAgentTurnSchema.safeParse({ body: '  ' }).success).toBe(false);
+  });
+
+  it('accepts one document, with or without a typed question', () => {
+    expect(ChatAgentTurnSchema.safeParse({ attachments: [documentFile(1)] }).success).toBe(true);
+    expect(
+      ChatAgentTurnSchema.safeParse({
+        body: 'كم الإجمالي؟',
+        attachments: [documentFile(1)],
+      }).success
+    ).toBe(true);
+  });
+
+  it('refuses a second document with a sentence, before any allowance is spent', () => {
+    const parsed = ChatAgentTurnSchema.safeParse({
+      body: 'قارن المستندين',
+      attachments: [
+        documentFile(1),
+        documentFile(2, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+      ],
+    });
+
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0]?.message).toBe('مستند واحد في السؤال الواحد');
+  });
+
+  it('counts documents, not files: a document with a text file still fits', () => {
+    expect(
+      ChatAgentTurnSchema.safeParse({
+        attachments: [documentFile(1), textFile(1)],
+      }).success
+    ).toBe(true);
   });
 });
 
