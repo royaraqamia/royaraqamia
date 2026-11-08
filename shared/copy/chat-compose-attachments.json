@@ -1,0 +1,21 @@
+{
+  "surface": "chats",
+  "component": "chat-compose-attachments",
+  "web": {
+    "file": "frontend/ui/chats/chat-compose-attachments-copy.ts",
+    "export": "CHAT_COMPOSE_ATTACHMENTS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatComposeAttachmentsCopy.kt",
+    "object": "ChatComposeAttachmentsCopy"
+  },
+  "notes": {
+    "source": "The composer's attachment control, in both clients (#933): the paperclip that opens the picker, and the removal label a staged chip's close button reads. The site renders them in `frontend/ui/chats/chat-composer.tsx`, which draws the same row for the member's thread and the assistant's; the app draws the control in `ChatComposer.kt` and mounts it from `ChatThread.kt`.",
+    "placeholders": "`removeFile` carries `{name}`.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `chat-composer.tsx` does not render, or a state the app's `ChatComposerUiState` declares that the row does not list."
+  },
+  "strings": {
+    "attach": "إرفاق ملف",
+    "removeFile": "إزالة {name}"
+  }
+}

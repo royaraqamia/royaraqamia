@@ -114,6 +114,8 @@ fun ChatThread(
     var failure by remember { mutableStateOf<String?>(null) }
     var sending by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
+    /** The files the composer has staged, validated before they were added (#933). */
+    var attached by remember { mutableStateOf<List<ChatComposeFile>>(emptyList()) }
     var menuOpen by remember { mutableStateOf(false) }
     var dialog by remember { mutableStateOf<ChatDialog?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -211,21 +213,40 @@ fun ChatThread(
         if (result is ApiResult.Success) attempts += 1
     }
 
+    /** A pick joins the staged list, or says which allowance refused it (#933). */
+    fun addFiles(picked: List<ChatComposeFile>) {
+        if (picked.isEmpty()) return
+        val quota = (read as? ChatThreadUiState.Live)?.thread?.attachmentQuota ?: return
+        when (val staged = ChatAttachments.stage(attached, picked, quota)) {
+            is ChatAttachmentStage.Staged -> {
+                attached = staged.files
+                failure = null
+            }
+            is ChatAttachmentStage.Refused -> failure = staged.sentence
+        }
+    }
+
     fun send() {
         val text = draft.trim()
-        if (text.isEmpty() || sending) return
+        if ((text.isEmpty() && attached.isEmpty()) || sending) return
         scope.launch {
             sending = true
-            when (
-                val result =
-                    repository.send(
+            val senderId = (read as? ChatThreadUiState.Live)?.thread?.me?.userId
+            val result =
+                if (attached.isEmpty()) {
+                    repository.send(conversationId, text, senderId = senderId)
+                } else {
+                    repository.sendWithAttachments(
                         conversationId,
                         text,
-                        senderId = (read as? ChatThreadUiState.Live)?.thread?.me?.userId,
+                        attached,
+                        senderId = senderId,
                     )
-            ) {
+                }
+            when (result) {
                 is ApiResult.Success -> {
                     draft = ""
+                    attached = emptyList()
                     failure = null
                     load()
                 }
@@ -248,6 +269,7 @@ fun ChatThread(
                     thread = shown.thread,
                     messages = messages,
                     draft = draft,
+                    attached = attached,
                     sending = sending,
                     failure = failure,
                     menuOpen = menuOpen,
@@ -268,6 +290,10 @@ fun ChatThread(
                     },
                     onDraft = { draft = it },
                     onSend = ::send,
+                    onPick = ::addFiles,
+                    onRemoveAttachment = { index ->
+                        attached = attached.filterIndexed { at, _ -> at != index }
+                    },
                     onMenu = { menuOpen = it },
                     onDialog = { menuOpen = false; dialog = it },
                     onEditStart = { message ->
@@ -430,6 +456,7 @@ private fun ThreadBody(
     thread: ChatThreadResponseThread,
     messages: List<ChatMessagePageResponseMessagesItem>,
     draft: String,
+    attached: List<ChatComposeFile>,
     sending: Boolean,
     failure: String?,
     menuOpen: Boolean,
@@ -443,6 +470,8 @@ private fun ThreadBody(
     onRetry: (ChatMessagePageResponseMessagesItem) -> Unit,
     onDraft: (String) -> Unit,
     onSend: () -> Unit,
+    onPick: (List<ChatComposeFile>) -> Unit,
+    onRemoveAttachment: (Int) -> Unit,
     onMenu: (Boolean) -> Unit,
     onDialog: (ChatDialog) -> Unit,
     onEditStart: (ChatMessagePageResponseMessagesItem) -> Unit,
@@ -554,9 +583,12 @@ private fun ThreadBody(
             face = face,
             counterpart = counterpart,
             draft = draft,
+            attached = attached,
             sending = sending,
             onDraft = onDraft,
             onSend = onSend,
+            onPick = onPick,
+            onRemoveAttachment = onRemoveAttachment,
             onRespond = onRespond,
             onWithdraw = { onDialog(ChatDialog.Withdraw) },
             onRequest = onRequest,
@@ -1114,9 +1146,12 @@ private fun Footer(
     face: ThreadFace,
     counterpart: com.royaraqamia.app.contracts.generated.ChatThreadResponseThreadParticipantsItemPeer?,
     draft: String,
+    attached: List<ChatComposeFile>,
     sending: Boolean,
     onDraft: (String) -> Unit,
     onSend: () -> Unit,
+    onPick: (List<ChatComposeFile>) -> Unit,
+    onRemoveAttachment: (Int) -> Unit,
     onRespond: (Boolean) -> Unit,
     onWithdraw: () -> Unit,
     onRequest: () -> Unit,
@@ -1132,7 +1167,13 @@ private fun Footer(
         verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
     ) {
         when (face) {
-            ThreadFace.WRITE ->
+            ThreadFace.WRITE -> {
+                ChatComposerAttach(
+                    files = attached,
+                    enabled = !sending,
+                    onPicked = onPick,
+                    onRemove = onRemoveAttachment,
+                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
                     verticalAlignment = Alignment.Bottom,
@@ -1150,7 +1191,7 @@ private fun Footer(
                     )
                     IconButton(
                         onClick = onSend,
-                        enabled = !sending && draft.trim().isNotEmpty(),
+                        enabled = !sending && (draft.trim().isNotEmpty() || attached.isNotEmpty()),
                         modifier =
                             Modifier.size(44.dp)
                                 .background(RoyColors.primary, CircleShape),
@@ -1163,6 +1204,7 @@ private fun Footer(
                         )
                     }
                 }
+            }
             ThreadFace.ANSWER -> {
                 Text(
                     text =

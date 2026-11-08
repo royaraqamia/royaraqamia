@@ -8,9 +8,13 @@
  * (#937). When it does, this file is what moves to `shared/copy/`.
  */
 export const VOICE_COPY = {
-  /** The paperclip, on both composers. */
-  attach: 'إرفاق ملف',
-  removeFile: 'إزالة {name}',
+  /**
+   * The paperclip and a staged file's removal label moved to
+   * `shared/copy/chat-compose-attachments.json` when the app gained a composer
+   * that can stage a file (#933); the rest of this object is still the voice
+   * note's, which the assistant's composer owns on the site and the app opens
+   * as the document.
+   */
   /** The microphone and the bar it opens. */
   record: 'تسجيل رسالة صوتية',
   recording: 'جاري التسجيل',

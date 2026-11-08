@@ -1,0 +1,24 @@
+{
+  "surface": "chats",
+  "component": "chat-attachments",
+  "web": {
+    "file": "frontend/ui/chats/chat-attachments-copy.ts",
+    "export": "CHAT_ATTACHMENTS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatAttachmentsCopy.kt",
+    "object": "ChatAttachmentsCopy"
+  },
+  "notes": {
+    "source": "The allowance sentences both composers show before a file is staged (#933, ADR-0113, ADR-0127): the per-file ceiling, the five-per-message ceiling, and the three spent allowances — today, the caller's own, and the project's. They lived only on the site (`frontend/ui/chats/attachment-quota.ts`) until the app could stage a file; now one source writes both, so a refusal reads the same in either client.",
+    "placeholders": "`tooLarge` carries `{size}`, the per-file ceiling already formatted by the client.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `attachment-quota.ts` does not render, or a state the app's `ChatAttachmentQuotaUiState` declares that the row does not list."
+  },
+  "strings": {
+    "tooLarge": "حجم الملف يتجاوز {size}، اختر ملفاً أصغر",
+    "tooMany": "خمسة مرفقات في الرسالة الواحدة",
+    "today": "بلغت حدّ المرفقات اليوم، يعود غداً",
+    "total": "مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات",
+    "project": "مساحة مرفقات الموقع ممتلئة، حاول لاحقاً"
+  }
+}

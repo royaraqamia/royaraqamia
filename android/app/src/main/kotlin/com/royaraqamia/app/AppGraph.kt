@@ -5,6 +5,7 @@ import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
+import com.royaraqamia.app.chats.SupabaseChatAttachmentStorage
 import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
@@ -240,6 +241,13 @@ class AppGraph private constructor(
                 )
             val client = ApiClient(siteUrl, session)
 
+            // The composer's files go to the same bucket the site writes, on the
+            // session the bucket's policy admits (#933). The storage base is the
+            // project's, derived from the auth base the caller already passed.
+            val storageUrl = authUrl.substringBefore("/auth/v1").trimEnd('/') + "/storage/v1"
+            val chatAttachmentStorage =
+                SupabaseChatAttachmentStorage(storageUrl, anonKey, session)
+
             // One snapshot store for every public surface (#928): a surface names
             // its key, so the feed and the rates board cannot overwrite each
             // other and the rule in docs/specs/offline-first.md is one
@@ -306,6 +314,7 @@ class AppGraph private constructor(
                         identity = { session.storeIdentity },
                         signedIn = signedIn,
                         online = online,
+                        attachmentStorage = chatAttachmentStorage,
                     ),
                 quran =
                     AssetQuranRepository(

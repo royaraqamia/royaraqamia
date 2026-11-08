@@ -1557,6 +1557,39 @@ object LucideVectors {
         }.build()
     }
 
+    /** `mic`, the site's own drawing. */
+    val Mic: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "mic",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M12 19v3"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M19 10v2a7 7 0 0 1-14 0v-2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M12 2h0a3 0 0 0 1 3 0v13a3 0 0 0 1 -3 0h0a3 0 0 0 1 -3 0v-13a3 0 0 0 1 3 0z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `newspaper`, the site's own drawing. */
     val Newspaper: ImageVector by lazy {
         ImageVector.Builder(
@@ -1629,6 +1662,25 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("m7.5 4.27 9 5.15"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `paperclip`, the site's own drawing. */
+    val Paperclip: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "paperclip",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
