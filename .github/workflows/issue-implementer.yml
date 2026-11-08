@@ -619,6 +619,17 @@ jobs:
 
             Do not create scratch files or logs in the repository. Leave the working tree otherwise clean.
 
+      - name: Read the permission request that stopped the run
+        id: ask
+        # A run blocked on a permission prompt looks exactly like a slow one from
+        # outside: the step times out and no result file exists. The CLI's own log
+        # records the request, so the outcome step can name it instead of blaming
+        # the size of an issue that was never attempted (ADR-0142).
+        if: always() && steps.guard.outputs.run == 'true' && steps.select.outputs.issue_number != ''
+        continue-on-error: true
+        shell: bash
+        run: echo "ask=$(node scripts/agents/permission-ask.mjs)" >> "$GITHUB_OUTPUT"
+
       - name: Record what the round spent
         # Best-effort: the ledger is what turns next month's cap into a measured
         # number. An unknown CLI shape or a missing secret leaves the round
@@ -956,6 +967,7 @@ jobs:
           PR_NUMBER: ${{ steps.checks.outputs.pr }}
           CHECK_REASON: ${{ steps.recheck.outputs.reason || steps.checks.outputs.reason }}
           ROUND_STARTED: ${{ steps.cut.outputs.started }}
+          PERMISSION_ASK: ${{ steps.ask.outputs.ask }}
         with:
           script: |
             const fs = require('fs');
@@ -963,12 +975,13 @@ jobs:
             const checks = process.env.CHECKS || 'none';
             const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null;
             const checkReason = process.env.CHECK_REASON || '';
+            const permissionAsk = (process.env.PERMISSION_ASK || '').trim();
 
             // A round the clock killed leaves no result file, exactly like a round that
             // never started work. The elapsed time is what tells them apart: the implement
             // step is capped at 90 minutes, so a round still silent at 85 spent its whole
-            // budget on an issue that did not fit one round - which slicing fixes and
-            // another attempt does not.
+            // budget - which slicing fixes only when the issue did not fit, and not at all
+            // when the run was blocked (ADR-0142).
             const started = Number(process.env.ROUND_STARTED || '0');
             const minutes = started ? Math.round((Date.now() / 1000 - started) / 60) : 0;
             const timedOut = minutes >= 85;
@@ -976,10 +989,20 @@ jobs:
             let result = {
               status: 'cannot',
               reason: timedOut
-                ? 'The round hit the implement step\u2019s 90-minute limit (' +
-                  minutes +
-                  ' min) before it wrote a result file. The issue is too large for one round: slice it rather than retry it.'
-                : 'The implementer produced no result file.',
+                ? permissionAsk
+                  ? 'The round waited ' +
+                    minutes +
+                    ' min on a permission request nothing could answer (' +
+                    permissionAsk +
+                    ') and the implement step\u2019s 90-minute limit killed it. The issue was never the problem: the runner asked, and a runner has nobody to ask. Fix the rule in .github/opencode/runner.json rather than slicing the issue.'
+                  : 'The round hit the implement step\u2019s 90-minute limit (' +
+                    minutes +
+                    ' min) before it wrote a result file. The issue is too large for one round: slice it rather than retry it.'
+                : permissionAsk
+                  ? 'The round stopped on a permission request nothing could answer (' +
+                    permissionAsk +
+                    '). Fix the rule in .github/opencode/runner.json; the issue itself is untouched.'
+                  : 'The implementer produced no result file.',
             };
             if (fs.existsSync('/tmp/result.json')) {
               let raw = fs.readFileSync('/tmp/result.json', 'utf8').trim();
