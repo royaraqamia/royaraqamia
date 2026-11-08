@@ -1,0 +1,22 @@
+{
+  "surface": "account-links",
+  "component": "account-links-row",
+  "web": {
+    "file": "frontend/ui/linksnap/link-row-summary-copy.ts",
+    "export": "LINK_ROW_SUMMARY_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapRowCopy.kt",
+    "object": "LinksnapRowCopy"
+  },
+  "notes": {
+    "source": "The owned LinkSnap row's resting text, in both clients (#941). The page is the reference: the status, the protected pill and its sentence are what the app's list draws, so neither client spells them.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the row does not render."
+  },
+  "strings": {
+    "statusActive": "نشط",
+    "statusExpired": "منتهي الصلاحية",
+    "statusBlocked": "محظور",
+    "protectedLabel": "محمي"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "surface": "account-links",
+  "state": "at-rest",
+  "route": "/account/links",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "code": {
+      "height": 30,
+      "fontSize": 14,
+      "fontWeight": 700,
+      "radius": 8,
+      "paddingTop": 4,
+      "paddingLeft": 10
+    },
+    "status": {
+      "height": 22,
+      "fontSize": 12,
+      "fontWeight": 500,
+      "paddingTop": 2,
+      "paddingLeft": 10
+    },
+    "protected": {
+      "height": 22,
+      "fontSize": 12,
+      "fontWeight": 500,
+      "paddingTop": 2,
+      "paddingLeft": 10
+    },
+    "date": {
+      "height": 22,
+      "fontSize": 12,
+      "paddingTop": 2,
+      "paddingLeft": 10
+    },
+    "destination": {
+      "width": 293,
+      "height": 21.13,
+      "fontSize": 13,
+      "lineHeight": 21.13
+    }
+  }
+}

@@ -7,6 +7,7 @@ import {
   clearVisualCommunityPosts,
   clearVisualLink,
   COMMUNITY_SEED_PREFIX,
+  protectVisualLink,
   seedVisualLink,
   signInAsVisualAccount,
   VISUAL_ACCOUNT_MISSING,
@@ -256,6 +257,18 @@ const PREPARE: Record<
     // or nothing: waiting for its first field is what makes the recording that state.
     await page.locator('[data-visual="custom-label"]').waitFor({ timeout: 20_000 });
   },
+  // The owned list's row at rest (#941). The fixture link gives the account one
+  // settled row, and the password marker is what makes the row draw the pill the
+  // contract measures - the clicks that settle the analytics were written before
+  // it, because a protected link answers a click with the unlock page.
+  'account-links/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualLink(page.context(), baseURL);
+    await protectVisualLink(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="link-row-summary"]').first().waitFor({ timeout: 20_000 });
+  },
   // The community feed's load-more is the region the gate measures, and it only
   // exists past the first page. The fixture account seeds ten rows and the
   // cleanup below removes them, so the feed after the run is the feed before it.
@@ -272,6 +285,9 @@ const PREPARE: Record<
 /** What a state removes after its recording, so a seed is never left behind. */
 const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   'linksnap/signed-in': async (page) => {
+    await clearVisualLink(page.context(), projectBaseURL());
+  },
+  'account-links/at-rest': async (page) => {
     await clearVisualLink(page.context(), projectBaseURL());
   },
   'community/at-rest': async (page) => {
