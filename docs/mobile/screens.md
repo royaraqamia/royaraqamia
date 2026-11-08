@@ -40,7 +40,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
 | `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
 | `profile` | `/u/[username]` | `ProfileScreen.kt` (off) | The header and the member's public posts are drawn (#927), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `scan` | `/scan` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `scan` | `/scan` | `ScanScreen.kt` (off) | The camera, its permission and the on-device decoder are drawn (#932), and switched off until the page is pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | `LeadsScreen.kt` (off) | The three lead forms, their validation and their anonymous Outbox are ported (#929), and switched off until they are the pages pixel for pixel: the shell hands the routes to the document in the meantime (#872, ADR-0117). |
 | `consultation` | `/consultation/book` | `ConsultationScreen.kt` (off) | The booking wizard, its live reads and its never-queued write are ported (#930), and switched off until the visual gate pairs it with the page: the shell hands `/consultation/book` to the document in the meantime (#872, ADR-0117). |
 | `downloader` | `/downloader` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
