@@ -596,21 +596,25 @@ describe('the assistant turn', () => {
     const download = vi.fn(async () => scannedPdf());
     const { service, chats, release } = makeService({ client, attachments: { download } });
 
-    await expect(
-      collect(
-        service.turn('user-1', 'conversation-1', 'ما مجموع الفاتورة؟', TURN_CONTEXT, [
-          {
-            storagePath: 'conversation-1/docs/scan.pdf',
-            fileName: 'scan.pdf',
-            mimeType: 'application/pdf',
-            byteSize: 40,
-          },
-        ])
-      )
-    ).rejects.toMatchObject({
-      status: 422,
-      message: expect.stringContaining('صور ممسوحة'),
-    });
+    const failure = await collect(
+      service.turn('user-1', 'conversation-1', 'ما مجموع الفاتورة؟', TURN_CONTEXT, [
+        {
+          storagePath: 'conversation-1/docs/scan.pdf',
+          fileName: 'scan.pdf',
+          mimeType: 'application/pdf',
+          byteSize: 40,
+        },
+      ])
+    ).then(
+      () => null,
+      (error: { status?: number; message?: string }) => error
+    );
+
+    expect(failure?.status).toBe(422);
+    expect(failure?.message).toContain('صور ممسوحة');
+    // The remedy is one the paperclip already offers -- the pages as pictures,
+    // not a text copy the member may not be able to produce.
+    expect(failure?.message).toContain('صور الصفحات');
 
     // Never a guess at what the scan says, and nothing spent to make one.
     expect(client.calls).toHaveLength(0);
