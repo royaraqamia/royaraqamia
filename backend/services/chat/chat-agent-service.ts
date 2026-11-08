@@ -140,9 +140,9 @@ const COULD_NOT_READ = 'لم أستطع قراءة المرفق. أعد إرسا
 /** A format no reader on this deployment can open: archives and the like. */
 const UNREADABLE_FILE =
   'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو مستنداً أو ملفاً نصياً أو رسالة صوتية.';
-/** A PDF whose pages are a scan: no text layer, and no OCR in this stack. */
+/** A PDF whose pages are a scan: no text layer, so the answer names the remedy. */
 const NO_TEXT_LAYER =
-  'هذا المستند صور ممسوحة بلا نصّ يمكن قراءته، ولا أستطيع قراءة الصور الممسوحة. أرسل نسخة نصية منه.';
+  'هذا المستند صور ممسوحة بلا نصّ يمكن قراءته. أرسل صور الصفحات نفسها، حتى ثلاث صور في الرسالة الواحدة، وسأقرأها.';
 /** A document that opened and says nothing at all. */
 const EMPTY_DOCUMENT = 'لا أجد نصاً في هذا المستند. أرسل نسخة أخرى أو اكتب سؤالك.';
 /** A document no reader could open. */
