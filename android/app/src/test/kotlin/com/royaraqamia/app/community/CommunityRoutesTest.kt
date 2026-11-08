@@ -1,5 +1,6 @@
 package com.royaraqamia.app.community
 
+import com.royaraqamia.app.shell.DeepLink
 import com.royaraqamia.app.shell.NativeSurfaces
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,6 +35,22 @@ class CommunityRoutesTest {
         assertFalse(CommunityRoutes.matches("/community"))
         assertTrue(CommunityRoutes.matches("/community/first-post"))
         assertEquals("/community/first-post", CommunityRoutes.postOf("first-post"))
+    }
+
+    @Test
+    fun `a link from outside the app resolves to the post's slug`() {
+        assertEquals(
+            "first-post",
+            CommunityRoutes.slugOf(DeepLink.targetOf("https://royaraqamia.com/community/first-post")),
+        )
+        assertEquals(
+            "منشور",
+            CommunityRoutes.slugOf(
+                DeepLink.targetOf(
+                    "https://royaraqamia.com/community/%D9%85%D9%86%D8%B4%D9%88%D8%B1"
+                )
+            ),
+        )
     }
 
     @Test

@@ -15,8 +15,10 @@ import bash from 'highlight.js/lib/languages/bash';
 import sql from 'highlight.js/lib/languages/sql';
 import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
-import { BookOpen, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { SocialShare } from '../_components/social-share';
+import { PostTableOfContents } from './_components/post-table-of-contents';
+import { COMMUNITY_POST_COPY } from './community-post-copy';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
 import { PostOwnerActions } from '../_components/post-owner-actions';
@@ -100,8 +102,8 @@ export async function generateMetadata(props: {
 
   if (!post) {
     return {
-      title: 'المنشور غير موجود',
-      description: 'عذرًا، المنشور الذي تبحث عنه غير موجود أو تمَّ حذفه.',
+      title: COMMUNITY_POST_COPY.notFoundTitle,
+      description: COMMUNITY_POST_COPY.notFoundBody,
     };
   }
 
@@ -174,14 +176,15 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
       <CodeBlockEnhancer />
 
       <div className="max-w-7xl mx-auto">
-        <article aria-label={excerpt}>
+        <article aria-label={excerpt} data-visual="community-post">
           {/* The publisher chip; the back control lives in the sticky header. */}
           <div className="mb-8 sm:mb-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
             <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               {author?.name && (
                 <Link
                   href={`/u/${encodeURIComponent(author.username)}`}
-                  aria-label={`الملف الشَّخصي لـ ${author.name}`}
+                  aria-label={COMMUNITY_POST_COPY.authorProfileLabel.replace('{name}', author.name)}
+                  data-visual="community-post-author"
                   className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   {author.avatar_url?.trim() ? (
@@ -227,7 +230,10 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
             >
               <header className="mb-10 sm:mb-12">
                 {p.cover_image && (
-                  <div className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80">
+                  <div
+                    data-visual="community-post-cover"
+                    className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80"
+                  >
                     <Image
                       src={p.cover_image}
                       alt={excerpt}
@@ -241,7 +247,10 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 )}
 
                 {postTags.length > 0 && (
-                  <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5">
+                  <div
+                    data-visual="community-post-tags"
+                    className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5"
+                  >
                     {postTags.map((tag) => (
                       <span
                         key={tag.id}
@@ -260,7 +269,10 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 </div>
               )}
 
-              <div className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50">
+              <div
+                data-visual="community-post-body"
+                className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50"
+              >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[[rehypeHighlight, highlightOptions]]}
@@ -272,37 +284,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
             </div>
 
             {/* Sticky Table of Contents Sidebar */}
-            {hasHeadings && (
-              <aside
-                className="max-lg:hidden lg:col-span-4 self-start sticky top-28"
-                aria-label="فهرس المحتويات"
-              >
-                <div className="rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm transition-safe duration-300 hover:border-border/90 hover:shadow-md">
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/40">
-                    <BookOpen className="size-4 text-primary shrink-0" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      فهرس المحتويات
-                    </h4>
-                  </div>
-                  <nav className="space-y-1 max-h-[calc(100vh_-_200px)] overflow-y-auto pr-1 scrollbar-thin">
-                    {headings.map((h, i) => (
-                      <a
-                        key={i}
-                        href={`#${h.id}`}
-                        className={`group flex items-center gap-2 text-xs leading-relaxed rounded-lg px-2.5 py-2 transition-safe duration-200 hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary ${
-                          h.level === 2
-                            ? 'font-medium text-foreground/85 hover:text-primary'
-                            : 'text-muted-foreground/75 pr-6 hover:text-primary'
-                        }`}
-                      >
-                        <span className="size-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-primary transition-colors shrink-0" />
-                        <span className="truncate">{h.text}</span>
-                      </a>
-                    ))}
-                  </nav>
-                </div>
-              </aside>
-            )}
+            {hasHeadings && <PostTableOfContents headings={headings} />}
           </div>
         </article>
       </div>

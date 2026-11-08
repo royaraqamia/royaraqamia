@@ -1,0 +1,64 @@
+{
+  "surface": "community-post",
+  "route": "/community/e2e-visual-post",
+  "notes": "One public post at rest (#922): the publisher chip, the cover, the tags and the Markdown body, which are the boxes both clients draw. The body's text is data, so the contract names its column rather than its words; the table of contents is hidden on the phone layout and is not part of this contract. The surface is still off (ADR-0117), so this names the comparison a later recording makes rather than evidence that already passes.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "post",
+      "capture": "body",
+      "elements": [
+        {
+          "name": "post",
+          "web": {
+            "selector": "[data-visual='community-post']"
+          },
+          "app": {
+            "tag": "community-post"
+          },
+          "properties": ["width"]
+        },
+        {
+          "name": "author",
+          "web": {
+            "selector": "[data-visual='community-post-author']"
+          },
+          "app": {
+            "tag": "community-post-author"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "cover",
+          "web": {
+            "selector": "[data-visual='community-post-cover']"
+          },
+          "app": {
+            "tag": "community-post-cover"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "tags",
+          "web": {
+            "selector": "[data-visual='community-post-tags']"
+          },
+          "app": {
+            "tag": "community-post-tags"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "body",
+          "web": {
+            "selector": "[data-visual='community-post-body']"
+          },
+          "app": {
+            "tag": "community-post-body"
+          },
+          "properties": ["width", "top"]
+        }
+      ]
+    }
+  ]
+}

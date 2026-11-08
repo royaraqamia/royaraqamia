@@ -7,6 +7,7 @@ import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
+import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
@@ -84,6 +85,8 @@ class AppGraph private constructor(
     val rates: RatesRepository,
     /** The community feed, and the last page this device saw (#658). */
     val community: CommunityFeedRepository,
+    /** One published community post, read from the route the page serves (#922). */
+    val communityPost: CommunityPostRepository,
     /** The community editor over BlogPress's device store (#925). */
     val communityEditor: CommunityEditorRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
@@ -279,6 +282,7 @@ class AppGraph private constructor(
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),
+                communityPost = CommunityPostRepository(client),
                 chats =
                     ChatsRepository(
                         client = client,

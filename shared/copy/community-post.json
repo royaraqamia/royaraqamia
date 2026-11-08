@@ -1,0 +1,22 @@
+{
+  "surface": "community",
+  "component": "community-post",
+  "web": {
+    "file": "app/community/[slug]/community-post-copy.ts",
+    "export": "COMMUNITY_POST_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityPostCopy.kt",
+    "object": "CommunityPostCopy"
+  },
+  "notes": {
+    "source": "The post screen's own words, in both clients (#922): the author link's accessible name and the sentence a missing post says. The page renders them in `app/community/[slug]/page.tsx`; the app draws the same two faces from the same source.",
+    "placeholders": "`authorProfileLabel` carries `{name}`: the screen substitutes the publisher's name, so the sentence stays in one place on both clients.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference page does not render."
+  },
+  "strings": {
+    "authorProfileLabel": "الملف الشَّخصي لـ {name}",
+    "notFoundTitle": "الصَّفحة غير موجودة",
+    "notFoundBody": "عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها."
+  }
+}

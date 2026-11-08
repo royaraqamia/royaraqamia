@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 50 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 51 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -115,6 +115,7 @@ A component is finished when the surface that draws it is native: 50 ported comp
 - [x] `verify-code-page` on **verify-code** · #658
 - [x] `post-card` on **community** · #658
 - [x] `community-feed` on **community** · #658
+- [x] `community-post` on **community** · #922
 - [x] `community-editor` on **community** · #925
 - [x] `needs-connection` on **community** · #658
 - [x] `read-failure` on **community** · #658
