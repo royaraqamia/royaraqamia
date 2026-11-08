@@ -35,7 +35,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` (off) | The post, its publisher and its Markdown body are drawn (#922), and switched off until the visual gate passes for it: the shell hands `/community/<slug>` to the document in the meantime (#872, ADR-0117). |
-| `news` | `/news` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `news` | `/news` | `NewsDigestScreen.kt` (off) | The public digest, its day strip and the personal switch are ported (#926), and switched off until they are the page pixel for pixel: the shell hands `/news` to the document in the meantime (#872, ADR-0117). |
 | `rates` | `/rates` | `RatesScreen.kt` |  |
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
 | `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |

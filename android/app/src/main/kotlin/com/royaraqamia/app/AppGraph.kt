@@ -11,6 +11,7 @@ import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.net.Connectivity
+import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
@@ -76,6 +77,8 @@ class AppGraph private constructor(
     val blockedMembers: BlockedMembersRepository,
     /** The account news page (#950): the checklist, private feeds and proposals. */
     val news: NewsRepository,
+    /** The `/news` digest and the last one this device saw (#926). */
+    val newsDigest: NewsDigestRepository,
     val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
@@ -277,6 +280,7 @@ class AppGraph private constructor(
                 connectedApps = ConnectedAppsRepository(client),
                 blockedMembers = BlockedMembersRepository(client),
                 news = NewsRepository(client),
+                newsDigest = NewsDigestRepository(client, publicSnapshots),
                 hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { NewsBoard } from '@/frontend/ui/news/NewsBoard';
+import { NEWS_PAGE_COPY } from './news-page-copy';
 import { NewsSettingsFab } from '@/frontend/ui/news/NewsSettingsFab';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
@@ -49,9 +50,9 @@ export default function NewsPage() {
     <div className="relative flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
       <main id="main-content" dir="rtl" className="flex-1 pt-10 pb-20 md:pb-28">
         <div className="mx-auto max-w-4xl px-4">
-          <header className="mb-8 text-center">
+          <header className="mb-8 text-center" data-visual="news-title">
             <SectionTitle as="h1">
-              <SectionTitleHighlight>أخبار اليوم</SectionTitleHighlight>
+              <SectionTitleHighlight>{NEWS_PAGE_COPY.pageTitle}</SectionTitleHighlight>
             </SectionTitle>
           </header>
 

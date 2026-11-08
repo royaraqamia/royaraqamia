@@ -57,6 +57,7 @@ import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.quran.QuranIndexRoute
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
+import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
@@ -346,6 +347,18 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // The public digest and the reader's own (#926): the
+                            // page's day strip, cards and personal switch. Ported and
+                            // off until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/news" ->
+                                NewsDigestScreen(
+                                    repository = graph.newsDigest,
+                                    onOpenUrl = ::openExternal,
+                                    onSignIn = ::showSignIn,
+                                    onSeePlans = { openRoute("/pricing") },
+                                    onManageSources = { openRoute("/account/news") },
+                                )
                             // The three public lead forms (#929): the page's own
                             // steps, validation and confirmations, with an
                             // anonymous Outbox. Ported and off until the visual

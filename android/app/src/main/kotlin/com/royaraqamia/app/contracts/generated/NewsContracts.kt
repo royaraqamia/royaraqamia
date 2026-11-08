@@ -175,3 +175,147 @@ data class NewsOkResponse(
     val error: String? = null,
     val code: String? = null,
 )
+
+@Serializable
+data class NewsBoardResponse(
+    val board: NewsBoardResponseBoard,
+)
+
+@Serializable
+data class NewsBoardResponseBoard(
+    val day: NewsBoardResponseBoardDay?,
+    val dates: List<String>,
+    val search: NewsBoardResponseBoardSearch?,
+    val hasAnyDigest: Boolean,
+    val preferences: NewsBoardResponseBoardPreferences?,
+    val personal: NewsBoardResponseBoardPersonal?,
+    val cards: NewsBoardResponseBoardCards?,
+)
+
+@Serializable
+data class NewsBoardResponseBoardDay(
+    val digest: NewsBoardResponseBoardDayDigest,
+    val stories: List<NewsBoardResponseBoardDayStoriesItem>,
+)
+
+@Serializable
+data class NewsBoardResponseBoardDayDigest(
+    val id: String,
+    val date: String,
+    val title: String,
+    val lede: String,
+    val storyCount: Long,
+    val model: String,
+    val publishedAt: String,
+)
+
+@Serializable
+data class NewsBoardResponseBoardDayStoriesItem(
+    val id: String,
+    val position: Long,
+    val category: NewsBoardResponseBoardDayStoriesItemCategory,
+    val region: NewsBoardResponseBoardDayStoriesItemRegion,
+    val headline: String,
+    val summary: String,
+    val whyItMatters: String?,
+    val sourceId: String,
+    val sourceName: String,
+    val sourceUrl: String,
+    val sourcePublishedAt: String?,
+)
+
+@Serializable
+enum class NewsBoardResponseBoardDayStoriesItemCategory {
+    @SerialName("tech") TECH,
+    @SerialName("politics") POLITICS,
+    @SerialName("religion") RELIGION,
+    @SerialName("economy") ECONOMY,
+    @SerialName("world") WORLD,
+    @SerialName("other") OTHER,
+}
+
+@Serializable
+enum class NewsBoardResponseBoardDayStoriesItemRegion {
+    @SerialName("arab") ARAB,
+    @SerialName("islamic") ISLAMIC,
+    @SerialName("world") WORLD,
+}
+
+@Serializable
+data class NewsBoardResponseBoardSearch(
+    val query: String,
+    val category: NewsBoardResponseBoardSearchCategory?,
+    val hits: List<NewsBoardResponseBoardSearchHitsItem>,
+    val truncated: Boolean,
+)
+
+@Serializable
+enum class NewsBoardResponseBoardSearchCategory {
+    @SerialName("tech") TECH,
+    @SerialName("politics") POLITICS,
+    @SerialName("religion") RELIGION,
+    @SerialName("economy") ECONOMY,
+    @SerialName("world") WORLD,
+    @SerialName("other") OTHER,
+}
+
+@Serializable
+data class NewsBoardResponseBoardSearchHitsItem(
+    val id: String,
+    val position: Long,
+    val category: NewsBoardResponseBoardSearchHitsItemCategory,
+    val region: NewsBoardResponseBoardSearchHitsItemRegion,
+    val headline: String,
+    val summary: String,
+    val whyItMatters: String?,
+    val sourceId: String,
+    val sourceName: String,
+    val sourceUrl: String,
+    val sourcePublishedAt: String?,
+    val digestDate: String,
+)
+
+@Serializable
+enum class NewsBoardResponseBoardSearchHitsItemCategory {
+    @SerialName("tech") TECH,
+    @SerialName("politics") POLITICS,
+    @SerialName("religion") RELIGION,
+    @SerialName("economy") ECONOMY,
+    @SerialName("world") WORLD,
+    @SerialName("other") OTHER,
+}
+
+@Serializable
+enum class NewsBoardResponseBoardSearchHitsItemRegion {
+    @SerialName("arab") ARAB,
+    @SerialName("islamic") ISLAMIC,
+    @SerialName("world") WORLD,
+}
+
+@Serializable
+data class NewsBoardResponseBoardPreferences(
+    val selectedSources: Long,
+    val filtered: Boolean,
+    val fellBack: Boolean,
+)
+
+@Serializable
+data class NewsBoardResponseBoardPersonal(
+    val available: Boolean,
+    val active: Boolean,
+    val ownSources: NewsBoardResponseBoardPersonalOwnSources?,
+)
+
+@Serializable
+data class NewsBoardResponseBoardPersonalOwnSources(
+    val total: Long,
+    val contributed: Long,
+)
+
+@Serializable
+data class NewsBoardResponseBoardCards(
+    val cap: Long,
+    val total: Long,
+    val shown: Long,
+    val visitor: Boolean,
+)
