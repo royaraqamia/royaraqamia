@@ -25,7 +25,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **community-post** `/community/[slug]` — todo
 - [ ] **profile** `/u/[username]` — todo · #927
 - [ ] **news** `/news` — todo
-- [ ] **scan** `/scan` — todo
+- [ ] **scan** `/scan` — todo · #932
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo

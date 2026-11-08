@@ -60,6 +60,7 @@ import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.rates.RatesScreen
+import com.royaraqamia.app.scan.ScanScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.sync.SyncScheduler
@@ -348,6 +349,16 @@ class ShellActivity : ComponentActivity() {
                             // on arrival and painted from the last board kept when the
                             // read fails.
                             "/rates" -> RatesScreen(repository = graph.rates)
+                            // The Scanner (#932): the camera, its permission and a
+                            // decode that never leaves the phone. Drawn and off
+                            // until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/scan" ->
+                                ScanScreen(
+                                    siteUrl = BuildConfig.SITE_URL,
+                                    onOpenRoute = ::openRoute,
+                                    onOpenExternal = ::openExternal,
+                                )
                             // The public digest and the reader's own (#926): the
                             // page's day strip, cards and personal switch. Ported and
                             // off until the visual gate passes (ADR-0117), so the
