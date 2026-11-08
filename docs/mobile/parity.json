@@ -983,6 +983,38 @@
       ]
     },
     {
+      "id": "profile",
+      "surface": "profile",
+      "issue": "#927",
+      "web": {
+        "route": "app/u/[username]/page.tsx",
+        "component": "app/u/[username]/page.tsx",
+        "copyModule": "app/u/[username]/profile-copy.ts",
+        "copyExport": "PROFILE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCopy.kt",
+        "copyObject": "ProfileCopy"
+      },
+      "copySource": "shared/copy/profile.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "postsHeading"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        },
+        {
+          "name": "NotFound",
+          "copy": "notFoundTitle"
+        }
+      ]
+    },
+    {
       "id": "community-editor",
       "surface": "community",
       "issue": "#925",

@@ -1,0 +1,25 @@
+{
+  "surface": "profile",
+  "component": "profile",
+  "web": {
+    "file": "app/u/[username]/profile-copy.ts",
+    "export": "PROFILE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCopy.kt",
+    "object": "ProfileCopy"
+  },
+  "notes": {
+    "source": "A public member's profile in both clients (#927): the posts heading, the sentence a member with no posts reads, and the root not-found sentence a hidden or absent handle gets. The page renders them in `app/u/[username]/page.tsx`, and the app draws the same faces from the same source (ADR-0098).",
+    "placeholders": "`postsAriaLabel` and `emptyBody` carry `{name}`: the screen substitutes the member's display name, so the sentence stays in one place on both clients.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference page does not render."
+  },
+  "strings": {
+    "postsHeading": "المنشورات",
+    "postsAriaLabel": "منشورات {name}",
+    "emptyTitle": "لا توجد منشورات بعد",
+    "emptyBody": "لم ينشر {name} أيَّ منشور على المجتمع حتَّى الآن.",
+    "notFoundTitle": "الصَّفحة غير موجودة",
+    "notFoundBody": "عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "surface": "profile",
+  "route": "/u/e2e-test-user",
+  "notes": "A public member's profile at rest (#927): the header card, the member's display name and the posts heading, which are the boxes both clients draw. The avatar, the handle and the posts themselves are data, so the contract names the structure rather than their words; the chat control the page adds for a signed-in viewer is not part of this slice. The surface is still off (ADR-0117), so this names the comparison a later recording makes rather than evidence that already passes.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "profile-header",
+      "capture": "profile-header",
+      "elements": [
+        {
+          "name": "profile-header",
+          "web": {
+            "selector": "[data-visual='profile-header']"
+          },
+          "app": {
+            "tag": "profile-header"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "profile-name",
+          "web": {
+            "selector": "[data-visual='profile-name']"
+          },
+          "app": {
+            "tag": "profile-name"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "profile-posts",
+          "web": {
+            "selector": "[data-visual='profile-posts']"
+          },
+          "app": {
+            "tag": "profile-posts"
+          },
+          "properties": ["width", "top"]
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { CommunityPostViewRateLimitError } from '@/backend/services/blogpress/co
 
 const mockRecordCommunityPostView = vi.fn();
 const mockLoadCommunityPost = vi.fn();
+const mockLoadCommunityMember = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
@@ -12,10 +13,15 @@ vi.mock('@/backend/config/community', () => ({
 
 vi.mock('@/backend/loaders/community', () => ({
   loadCommunityPost: (...args: unknown[]) => mockLoadCommunityPost(...args),
+  loadCommunityMember: (...args: unknown[]) => mockLoadCommunityMember(...args),
   loadAccountPosts: vi.fn(),
 }));
 
-import { getCommunityPost, recordPostView } from '@/backend/controllers/community';
+import {
+  getCommunityMember,
+  getCommunityPost,
+  recordPostView,
+} from '@/backend/controllers/community';
 
 describe('community view controller', () => {
   beforeEach(() => {
@@ -135,6 +141,105 @@ describe('community post controller', () => {
       expect.objectContaining({
         status: 500,
         body: expect.objectContaining({ error: 'تعذَّر تحميل المنشور.' }),
+      })
+    );
+  });
+});
+
+describe('community member controller', () => {
+  const member = {
+    id: 'u-1',
+    username: 'ahmad',
+    name: 'أحمد',
+    avatar_url: null,
+    bio: 'كاتب',
+    verified: true,
+    is_hidden: false,
+  };
+  const post = {
+    id: 'p-1',
+    author_id: 'u-1',
+    slug: 'my-post',
+    content: '## مرحبًا',
+    status: 'published',
+    cover_image: null,
+    meta_title: null,
+    meta_desc: null,
+    published_at: '2026-01-01T00:00:00.000Z',
+    publish_at: null,
+    view_count: 3,
+    featured: false,
+    community_visible: true,
+    reading_time_minutes: 2,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('answers the member and their first page without the hidden flag', async () => {
+    mockLoadCommunityMember.mockResolvedValue({
+      member,
+      posts: [post],
+      nextCursor: null,
+    });
+
+    const result = await getCommunityMember('ahmad');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 200,
+        body: {
+          member: {
+            id: 'u-1',
+            username: 'ahmad',
+            name: 'أحمد',
+            avatar_url: null,
+            bio: 'كاتب',
+            verified: true,
+          },
+          posts: [post],
+          nextCursor: null,
+        },
+      })
+    );
+    expect(mockLoadCommunityMember).toHaveBeenCalledWith('ahmad');
+  });
+
+  it('decodes a percent-encoded Arabic handle before the read', async () => {
+    mockLoadCommunityMember.mockResolvedValue({ member, posts: [], nextCursor: null });
+
+    await getCommunityMember(encodeURIComponent('أحمد'));
+
+    expect(mockLoadCommunityMember).toHaveBeenCalledWith('أحمد');
+  });
+
+  it('answers 404 for an unknown or hidden handle', async () => {
+    mockLoadCommunityMember.mockResolvedValue(null);
+
+    const result = await getCommunityMember('missing');
+
+    expect(result).toEqual(expect.objectContaining({ status: 404 }));
+  });
+
+  it('rejects an invalid handle without reading the loader', async () => {
+    const result = await getCommunityMember('bad handle!!');
+
+    expect(result).toEqual(expect.objectContaining({ status: 404 }));
+    expect(mockLoadCommunityMember).not.toHaveBeenCalled();
+  });
+
+  it('answers 500 with the page-level sentence when the read fails', async () => {
+    mockLoadCommunityMember.mockRejectedValue(new Error('db down'));
+
+    const result = await getCommunityMember('ahmad');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 500,
+        body: expect.objectContaining({ error: 'تعذَّر تحميل الملف.' }),
       })
     );
   });

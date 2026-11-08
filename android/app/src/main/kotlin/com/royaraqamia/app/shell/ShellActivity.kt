@@ -54,6 +54,7 @@ import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.profile.ProfileRoutes
+import com.royaraqamia.app.profile.ProfileScreen
 import com.royaraqamia.app.quran.QuranIndexRoute
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
@@ -409,6 +410,7 @@ class ShellActivity : ComponentActivity() {
                                 val unlock = LinksnapRoutes.codeOf(current)
                                 val quranSurah = QuranRoutes.surahOf(current)
                                 val postSlug = CommunityRoutes.slugOf(current)
+                                val profileUsername = ProfileRoutes.usernameOf(current)
                                 when {
                                     // One public post (#922): the page's own
                                     // Markdown body, drawn natively and off until
@@ -418,6 +420,21 @@ class ShellActivity : ComponentActivity() {
                                         CommunityPostScreen(
                                             slug = postSlug,
                                             repository = graph.communityPost,
+                                            onOpenProfile = { username ->
+                                                openRoute(ProfileRoutes.profileOf(username))
+                                            },
+                                        )
+                                    // A public member's profile (#927): the page's
+                                    // header and posts, drawn natively and off until
+                                    // the visual gate passes (ADR-0117), so the
+                                    // document still opens on top of it.
+                                    profileUsername != null ->
+                                        ProfileScreen(
+                                            username = profileUsername,
+                                            repository = graph.profile,
+                                            onOpenPost = { slug ->
+                                                openRoute(CommunityRoutes.postOf(slug))
+                                            },
                                             onOpenProfile = { username ->
                                                 openRoute(ProfileRoutes.profileOf(username))
                                             },

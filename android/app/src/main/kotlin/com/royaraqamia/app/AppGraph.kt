@@ -15,6 +15,7 @@ import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.preferences.HiddenServicesRepository
+import com.royaraqamia.app.profile.ProfileRepository
 import com.royaraqamia.app.quran.AssetQuranRepository
 import com.royaraqamia.app.quran.PreferencesQuranPositionStore
 import com.royaraqamia.app.quran.QuranRepository
@@ -90,6 +91,8 @@ class AppGraph private constructor(
     val community: CommunityFeedRepository,
     /** One published community post, read from the route the page serves (#922). */
     val communityPost: CommunityPostRepository,
+    /** One public member profile, read from the route the page serves (#927). */
+    val profile: ProfileRepository,
     /** The community editor over BlogPress's device store (#925). */
     val communityEditor: CommunityEditorRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
@@ -287,6 +290,7 @@ class AppGraph private constructor(
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),
                 communityPost = CommunityPostRepository(client),
+                profile = ProfileRepository(client),
                 chats =
                     ChatsRepository(
                         client = client,

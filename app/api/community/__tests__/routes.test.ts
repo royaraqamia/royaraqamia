@@ -7,6 +7,7 @@ const RATE_LIMIT_MESSAGE = 'تم تجاوز حدّ الطلب: البحث في �
 const mockLoadCommunitySearch = vi.fn();
 const mockLoadCommunityIndex = vi.fn();
 const mockGetCommunityPost = vi.fn();
+const mockGetCommunityMember = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockGetClientIp = vi.fn((_request: NextRequest) => IP);
 const mockPolicy = vi.fn((ip: string) => ({
@@ -33,6 +34,7 @@ vi.mock('@/backend/loaders/community', () => ({
 
 vi.mock('@/backend/controllers/community', () => ({
   getCommunityPost: (...args: unknown[]) => mockGetCommunityPost(...args),
+  getCommunityMember: (...args: unknown[]) => mockGetCommunityMember(...args),
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
@@ -57,6 +59,7 @@ vi.mock('@/backend/transport/http-result', () => ({
 import { GET as searchGET } from '@/app/api/community/search/route';
 import { GET as indexGET } from '@/app/api/community/index/route';
 import { GET as postGET } from '@/app/api/community/[slug]/route';
+import { GET as profileGET } from '@/app/api/u/[username]/route';
 
 type RouteResponse = { status: number; data: unknown };
 
@@ -77,6 +80,7 @@ beforeEach(() => {
   mockLoadCommunitySearch.mockResolvedValue({ people: [], posts: [] });
   mockLoadCommunityIndex.mockResolvedValue({ posts: [], nextCursor: null });
   mockGetCommunityPost.mockResolvedValue({ status: 200, body: { post: {}, postTags: [] } });
+  mockGetCommunityMember.mockResolvedValue({ status: 200, body: { member: {}, posts: [] } });
 });
 
 describe('GET /api/community/search', () => {
@@ -212,6 +216,30 @@ describe('GET /api/community/[slug]', () => {
 
     const res = (await postGET(request(), {
       params: Promise.resolve({ slug: 'missing-post' }),
+    })) as unknown as RouteResponse;
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/u/[username]', () => {
+  it('passes the route handle to the controller', async () => {
+    const res = (await profileGET(request(), {
+      params: Promise.resolve({ username: 'ahmad' }),
+    })) as unknown as RouteResponse;
+
+    expect(mockGetCommunityMember).toHaveBeenCalledWith('ahmad');
+    expect(res.status).toBe(200);
+  });
+
+  it('answers the controller’s refusal unchanged', async () => {
+    mockGetCommunityMember.mockResolvedValue({
+      status: 404,
+      body: { error: 'الملف غير موجود.' },
+    });
+
+    const res = (await profileGET(request(), {
+      params: Promise.resolve({ username: 'missing' }),
     })) as unknown as RouteResponse;
 
     expect(res.status).toBe(404);
