@@ -1,7 +1,9 @@
 package com.royaraqamia.app
 
 import android.content.Context
+import com.royaraqamia.app.account.AccountProfileRepository
 import com.royaraqamia.app.account.BlockedMembersRepository
+import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatHintSource
@@ -84,6 +86,8 @@ class AppGraph private constructor(
     val connectedApps: ConnectedAppsRepository,
     /** The account's blocked members (#977): the list and the unblock. */
     val blockedMembers: BlockedMembersRepository,
+    /** The account profile's two writes and its avatar read (#945). */
+    val accountProfile: AccountProfileRepository,
     /** The account news page (#950): the checklist, private feeds and proposals. */
     val news: NewsRepository,
     /** The `/news` digest and the last one this device saw (#926). */
@@ -332,6 +336,7 @@ class AppGraph private constructor(
                 usage = UsageRepository(client),
                 connectedApps = ConnectedAppsRepository(client),
                 blockedMembers = BlockedMembersRepository(client),
+                accountProfile = AccountProfileRepository(client, TransportAvatarLoader()),
                 news = NewsRepository(client),
                 newsDigest = NewsDigestRepository(client, publicSnapshots),
                 hiddenServices = HiddenServicesRepository(client),

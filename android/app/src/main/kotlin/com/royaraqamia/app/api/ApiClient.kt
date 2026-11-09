@@ -5,6 +5,8 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.net.HttpTransport
+import com.royaraqamia.app.net.MultipartBody
+import com.royaraqamia.app.net.MultipartFile
 import com.royaraqamia.app.net.Transport
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.update.ShellUpdateChannel
@@ -14,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import java.io.IOException
+import java.net.URI
 
 /** What one attempt to send a request came to. */
 private sealed interface Answer {
@@ -48,6 +51,14 @@ class ApiClient(
     private val session: Session,
     private val transport: Transport = HttpTransport,
 ) {
+    /**
+     * The origin the app speaks for, which the write routes' `isSameOrigin`
+     * guard asks for. A native client sets no browser origin, so without this a
+     * route that refuses a cross-site form refuses the app too (#945).
+     */
+    private val origin: String? =
+        runCatching { URI(baseUrl).let { "${it.scheme}://${it.authority}" } }.getOrNull()
+
     suspend fun <T> get(path: String, serializer: KSerializer<T>): ApiResult<T> =
         decodeAfter("GET", path, null, serializer)
 
@@ -89,8 +100,29 @@ class ApiClient(
      */
     suspend fun send(method: String, path: String, body: String? = null): ApiResult<String> =
         withContext(Dispatchers.IO) {
-            when (val answer = exchange(method, path, body)) {
+            when (val answer = exchange(method, path, body?.toByteArray(Charsets.UTF_8), JSON)) {
                 is ApiResult.Success -> ApiResult.Success(answer.value.body)
+                is ApiResult.Failure -> answer
+            }
+        }
+
+    /**
+     * A `POST` whose body is a `multipart/form-data` file part (#945).
+     *
+     * The avatar upload is the first write that is not text: the route reads the
+     * part through `req.formData().get('file')`, exactly as it reads the page's,
+     * so the body is built by [MultipartBody] rather than spelled here. The
+     * answer is decoded like any other write's.
+     */
+    suspend fun <T> postFile(
+        path: String,
+        file: MultipartFile,
+        serializer: KSerializer<T>,
+    ): ApiResult<T> =
+        withContext(Dispatchers.IO) {
+            val body = MultipartBody.of(file)
+            when (val answer = exchange("POST", path, body.bytes, body.contentType)) {
+                is ApiResult.Success -> ContractCodec.decode(answer.value.body, serializer)
                 is ApiResult.Failure -> answer
             }
         }
@@ -102,7 +134,7 @@ class ApiClient(
         serializer: KSerializer<T>,
     ): ApiResult<T> =
         withContext(Dispatchers.IO) {
-            when (val answer = exchange(method, path, body)) {
+            when (val answer = exchange(method, path, body?.toByteArray(Charsets.UTF_8), JSON)) {
                 is ApiResult.Success -> ContractCodec.decode(answer.value.body, serializer)
                 is ApiResult.Failure -> answer
             }
@@ -114,11 +146,19 @@ class ApiClient(
      * Everything a caller can do with the result is either "decode this body" or
      * "this is the answer", so the exchange stops at the `HttpResponse` and the
      * two public shapes above decide what to make of it.
+     *
+     * The body is bytes because one write is a file (#945); a JSON body is its
+     * UTF-8 bytes with [JSON] as the declared type.
      */
-    private suspend fun exchange(method: String, path: String, body: String?): ApiResult<HttpResponse> {
+    private suspend fun exchange(
+        method: String,
+        path: String,
+        body: ByteArray?,
+        contentType: String?,
+    ): ApiResult<HttpResponse> {
         val sent = session.attempt() ?: return ApiResult.Failure(ApiError.NotSignedIn)
 
-        val first = send(method, path, sent.accessToken, body)
+        val first = send(method, path, sent.accessToken, body, contentType)
         if (first is Answer.Unreachable) {
             return ApiResult.Failure(ApiError.Network(first.detail))
         }
@@ -130,7 +170,7 @@ class ApiClient(
             }
             val renewed = session.attempt() ?: return ApiResult.Failure(ApiError.NotSignedIn)
 
-            val retry = send(method, path, renewed.accessToken, body)
+            val retry = send(method, path, renewed.accessToken, body, contentType)
             if (retry is Answer.Unreachable) {
                 return ApiResult.Failure(ApiError.Network(retry.detail))
             }
@@ -179,21 +219,36 @@ class ApiClient(
     suspend inline fun <reified T> put(path: String, body: String?): ApiResult<T> =
         put(path, body, serializer<T>())
 
-    private fun send(method: String, path: String, accessToken: String, body: String?): Answer =
+    /** [postFile] with the serializer taken from the type the caller asked for. */
+    suspend inline fun <reified T> postFile(
+        path: String,
+        file: MultipartFile,
+    ): ApiResult<T> = postFile(path, file, serializer<T>())
+
+    private fun send(
+        method: String,
+        path: String,
+        accessToken: String,
+        body: ByteArray?,
+        contentType: String?,
+    ): Answer =
         try {
             Answer.Sent(
-                transport.send(
+                transport.sendBytes(
                     method = method,
                     url = urlFor(path),
-                    headers =
-                        if (body == null) {
-                            mapOf("Authorization" to "Bearer $accessToken")
-                        } else {
-                            mapOf(
-                                "Authorization" to "Bearer $accessToken",
-                                "Content-Type" to "application/json",
-                            )
-                        },
+                    headers = buildMap {
+                        put("Authorization", "Bearer $accessToken")
+                        if (contentType != null) put("Content-Type", contentType)
+                        // The write routes guard against a cross-site browser
+                        // form (`isSameOrigin`). The app is not a browser and
+                        // carries a bearer, so it names the origin it speaks for
+                        // rather than being refused as a stranger (#945).
+                        origin?.let { spokenFor ->
+                            put("Origin", spokenFor)
+                            put("Sec-Fetch-Site", "same-origin")
+                        }
+                    },
                     body = body,
                 )
             )
@@ -299,6 +354,9 @@ class ApiClient(
     private fun urlFor(path: String): String = "${baseUrl.trimEnd('/')}/${path.trimStart('/')}"
 
     private companion object {
+        /** The type of every write whose body is a generated contract. */
+        const val JSON = "application/json"
+
         /** Enough of an error body to read, never enough to fill a log line. */
         const val MAX_DETAIL = 300
     }

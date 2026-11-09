@@ -269,6 +269,17 @@ export const CONTRACTS = [
       'BookingResultSchema',
     ],
   },
+  // The account profile's two writes (#945): the name it keeps and the avatar
+  // URL it points the row at. Both are the routes the page's own `ProfileEditor`
+  // posts to (`PATCH /api/me/name`, `POST /api/me/avatar`), so the app decodes
+  // the page's answer rather than inventing a second contract (#721's rule,
+  // ADR-0098). The request body is generated too, so a field the schema stops
+  // accepting is a compile error rather than a write the server refuses.
+  {
+    module: 'shared/contracts/users',
+    file: 'UsersContracts.kt',
+    schemas: ['UpdateNameSchema', 'UpdateNameResponseSchema', 'AvatarUploadResponseSchema'],
+  },
 ];
 
 const KOTLIN_KEYWORDS = new Set([
