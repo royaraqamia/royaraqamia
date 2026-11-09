@@ -160,9 +160,8 @@
   //   next on the same browser.
   // - The product dashboard roots since #449 (ADR-0073): their documents are
   //   static shells painted from the Local Store, and every account-bearing
-  //   read under them is on an `/api` prefix below. Two subroutes still render
-  //   server-side data and keep their own entries: the SpendTrack categories
-  //   page and the BlogPress editor.
+  //   read under them is on an `/api` prefix below. One subroute still renders
+  //   server-side data and keeps its own entry: the SpendTrack categories page.
   // - The `/mcp` root since #450 is an exact entry rather than a prefix: the
   //   protocol endpoint itself must never be read from a cache, while
   //   `/mcp/guide` is static instructions with nothing to lose and now rides the
@@ -179,7 +178,6 @@
     '/api/community/posts',
     '/api/community/media',
     '/api/community/sync',
-    '/api/blogpress',
     '/api/downloader',
     '/auth/api',
     // The OAuth callback is the code exchange itself — a one-time redirect
