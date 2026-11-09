@@ -95,7 +95,6 @@ describe('sw-routing predicates', () => {
       '/api/notifications/unread-count',
       '/api/community/posts',
       '/api/community/sync',
-      '/api/blogpress/posts',
       '/api/downloader/jobs',
       // The auth API keeps its own prefix while the document shells became
       // cacheable (#447): `/auth/api/session` is session state and must never

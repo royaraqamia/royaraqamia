@@ -67,7 +67,7 @@ export interface BlogpressSyncSnapshot {
 }
 
 /**
- * `GET /api/blogpress/sync`, as the app decodes it (#952).
+ * `GET /api/community/sync`, as the app decodes it (#952).
  *
  * The site's pull reads the same route; the app holds the rows it paints from
  * this body, so the shape it holds them from is a schema rather than a retyped
@@ -99,7 +99,7 @@ export type BlogpressDelete = z.infer<typeof BlogpressDeleteSchema>;
  * The editor owns five fields and the logical write time; everything else on the
  * row — status, the publication dates, the counters and the pins — is
  * server-owned and every transition to it has a route of its own. The server
- * accepts this body as a `PATCH /api/blogpress/posts/{id}`, through the same
+ * accepts this body as a `PATCH /api/community/posts/{id}`, through the same
  * `PostSchema` the site's editor sends, so the app cannot queue a field the
  * site has stopped accepting.
  *

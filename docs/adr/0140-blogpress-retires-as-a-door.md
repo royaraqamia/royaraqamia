@@ -57,5 +57,17 @@ it still added, and those are API/MCP concerns now.
   stores an ISO instant.
 - Categories and tags remain in the database for existing rows, but no client
   can list, create or assign them through the API any more.
-- `/api/blogpress/*` is debt with an end date: it exists for the installed APKs,
-  not for the web.
+- `/api/blogpress/*` was debt with an end date: it existed for the installed APKs,
+  not for the web, and it left on 2026-11-09 (#1167) once no build the update
+  channel could still reach called it.
+
+## Amendment (2026-11-09, #1167): the alias left
+
+`/api/blogpress/*`, its `/api/blogpress` service-worker entry and the test that
+named it are gone. No released APK ever called the alias: `android-1.2.0`
+(2026-11-02) predates the Kotlin `blogpress` store, whose write transport went
+straight to `/api/community/*`, and no cut was published between those two
+dates. The web has requested `/api/community/*` since the change that minted the
+alias. The internal names stay — `backend/*/blogpress`,
+`shared/contracts/blogpress`, the Kotlin store and `frontend/api/blogpress` —
+because they file storage keys and modules, not HTTP paths.

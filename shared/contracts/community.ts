@@ -81,7 +81,7 @@ export type CommunityPostResponse = z.infer<typeof CommunityPostResponseSchema>;
 /**
  * The answer to the composer's create-and-publish write (#924).
  *
- * `POST /api/blogpress/posts` takes the post's fields with `status: 'published'`
+ * `POST /api/community/posts` takes the post's fields with `status: 'published'`
  * and answers the row it minted. The page reads the same `id` and `slug`; this
  * is that answer as a schema, so the app cannot mistake a body without them for
  * a post that landed.
