@@ -18,7 +18,6 @@ object AccountRowsCopy {
     const val NEWS = "مصادر الأخبار"
     const val LINKS = "الرَّوابط المختصَرة"
     const val CONNECTED_APPS = "التَّطبيقات المتَّصلة بالـ MCP"
-    const val SERVICES = "الخدمات الظَّاهرة"
     const val BLOCKED = "الأعضاء المحظورون"
     const val PRICING = "خطط التَّسعير"
     const val ADMIN = "الإدارة"

@@ -169,12 +169,6 @@
       "state": "native"
     },
     {
-      "surface": "account-services",
-      "phase": "core",
-      "state": "todo",
-      "issue": "#978"
-    },
-    {
       "surface": "account-news",
       "phase": "core",
       "state": "todo",

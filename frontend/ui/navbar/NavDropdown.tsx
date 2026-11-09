@@ -36,7 +36,6 @@ const LazyServicesSheet = dynamic(
 interface NavDropdownProps {
   link: NavLink;
   isActive: boolean;
-  handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
   /** Positioning classes for the trigger, e.g. centring it inside the top bar. */
   className?: string;
   /** The visual gate's handle on this control, when the frame is being recorded. */
@@ -54,13 +53,7 @@ interface NavDropdownProps {
  * `aria-haspopup`, `aria-expanded`, `aria-controls` and `data-state` — so the
  * styles and the accessible role read the same as before.
  */
-export function NavDropdown({
-  link,
-  isActive,
-  handleHashClick,
-  className = '',
-  visual,
-}: NavDropdownProps) {
+export function NavDropdown({ link, isActive, className = '', visual }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSheetMounted, setIsSheetMounted] = useState(false);
   const hasPrefetched = useRef(false);
@@ -118,7 +111,6 @@ export function NavDropdown({
           open={isOpen}
           onOpenChange={setIsOpen}
           link={link}
-          handleHashClick={handleHashClick}
           triggerId={triggerId}
           contentId={contentId}
         />

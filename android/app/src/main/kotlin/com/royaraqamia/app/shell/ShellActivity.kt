@@ -35,7 +35,6 @@ import java.io.File
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
-import com.royaraqamia.app.account.AccountServicesScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
 import com.royaraqamia.app.chats.ChatNewScreen
 import com.royaraqamia.app.chats.ChatRoutes
@@ -116,13 +115,6 @@ class ShellActivity : ComponentActivity() {
 
     /** Whether the restored session answered, which decides what the frame holds. */
     private var signedIn by mutableStateOf(false)
-
-    /**
-     * The services this member hid from `خدماتنا`, read once the session answers
-     * (ADR-0112). Empty is the whole menu, which is also what a failed read
-     * answers: a network blip must not make the app look like it lost its rows.
-     */
-    private var hiddenRoutes by mutableStateOf<Set<String>>(emptySet())
 
     /**
      * The bell's number (#659), or null while there is no session to ask.
@@ -236,8 +228,6 @@ class ShellActivity : ComponentActivity() {
                 ) {
                     ShellFrame(
                         currentRoute = current,
-                        hiddenRoutes = hiddenRoutes,
-                        servicesOrder = graph.servicesOrder,
                         unreadCount = unreadCount,
                         showAssistant = assistantVisible(current),
                         onOpenAssistant = {
@@ -307,18 +297,6 @@ class ShellActivity : ComponentActivity() {
                                     repository = graph.blockedMembers,
                                     signedIn = signedIn,
                                     onSignIn = ::showSignIn,
-                                )
-                            // The services a member hid from `خدماتنا` (#978): the
-                            // page's own read and write, drawn natively and off
-                            // until its gate passes (ADR-0117), so the document
-                            // still opens on top of it. A switch also moves the
-                            // shell's menu, because both read the same set.
-                            "/account/services" ->
-                                AccountServicesScreen(
-                                    repository = graph.hiddenServices,
-                                    signedIn = signedIn,
-                                    onSignIn = ::showSignIn,
-                                    onHiddenChanged = { hiddenRoutes = it },
                                 )
                             // The account news page (#950): the checklist, the
                             // private feeds and the proposal form. Ported and
@@ -549,9 +527,6 @@ class ShellActivity : ComponentActivity() {
                         // The count is a second read rather than part of the frame:
                         // a slow answer must not hold up the menu or the queue.
                         lifecycleScope.launch { refreshUnreadCount() }
-                        // The menu is drawn before the queue drains, so it is
-                        // right on the first open rather than after a sync.
-                        refreshHiddenRoutes()
                     }
                     // The lead queue is anonymous, so a guest's unsent lead drains
                     // too; the owned queues inside return early when there is no
@@ -680,9 +655,6 @@ class ShellActivity : ComponentActivity() {
         if (signedIn) {
             lifecycleScope.launch {
                 refreshUnreadCount()
-                // The services page is still the document, so a switch there is
-                // the one change the frame underneath cannot hear otherwise (#978).
-                refreshHiddenRoutes()
             }
         }
         update.maybeCheck(false)
@@ -729,19 +701,6 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * The services this member hid, from the route the account screen writes
-     * (#978). A failed read answers the whole menu, the safe failure ADR-0112
-     * records: a network blip must not make the app look like it lost its rows.
-     */
-    private suspend fun refreshHiddenRoutes() {
-        hiddenRoutes =
-            when (val hidden = graph.hiddenServices.list()) {
-                is ApiResult.Success -> hidden.value
-                is ApiResult.Failure -> emptySet()
-            }
-    }
-
-    /**
      * A screen's guest prompt asked to sign in: the site's own login page, opened
      * in the document (#872).
      *
@@ -772,7 +731,6 @@ class ShellActivity : ComponentActivity() {
             graph.signOut()
             signedIn = false
             unreadCount = null
-            hiddenRoutes = emptySet()
             assistantOpen = false
             assistantSnapshot = null
             stack.reset(Routes.HOME)

@@ -24,7 +24,7 @@ test.use({ serviceWorkers: 'allow' });
 
 test.skip(!ENABLED, 'requires PUBLIC_OFFLINE_E2E=1 (production build)');
 
-const HERO_HEADING = 'شريكك الاستراتيجي';
+const HOME_HEADING = 'ابدأ بتطبيقك الأوَّل';
 
 /**
  * An `img` that has finished loading with no intrinsic size is the browser's
@@ -71,15 +71,15 @@ test('a visited public page paints offline with its heading and content', async 
   const imageFailures = collectImageFailures(page);
 
   await gotoUnderWorkerControl(page, '/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
-  await expect(page.getByText('نُقدِّم حزمةً متكاملة', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(HOME_HEADING);
+  await expect(page.getByText('القرآن، الأذكار، ملاحظاتك', { exact: false })).toBeVisible();
 
   // Radio off: both the document and any image the page paints must come from cache.
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
-  await expect(page.getByText('نُقدِّم حزمةً متكاملة', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(HOME_HEADING);
+  await expect(page.getByText('القرآن، الأذكار، ملاحظاتك', { exact: false })).toBeVisible();
 
   expect(await brokenImages(page)).toEqual([]);
   expect(imageFailures).toEqual([]);
@@ -118,7 +118,7 @@ test('a width first used offline falls back gracefully, never with a 503', async
   );
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(HERO_HEADING);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(HOME_HEADING);
   expect(await brokenImages(page)).toEqual([]);
   expect(imageFailures).toEqual([]);
 });

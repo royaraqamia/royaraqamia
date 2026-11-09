@@ -8,7 +8,7 @@ import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
-import { HiddenServicesProvider } from '../frontend/state/hidden-services-provider';
+import { HomeServicesProvider } from '../frontend/state/home-services-provider';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
@@ -170,7 +170,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DirectionProvider dir={DIRECTION}>
             <QuranPlayerProvider>
               <SessionProvider>
-                <HiddenServicesProvider>
+                <HomeServicesProvider>
                   <UIProvider>
                     <NotificationProvider>
                       <SpeedInsights />
@@ -194,7 +194,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <RoyaToaster />
                     </NotificationProvider>
                   </UIProvider>
-                </HiddenServicesProvider>
+                </HomeServicesProvider>
               </SessionProvider>
             </QuranPlayerProvider>
           </DirectionProvider>

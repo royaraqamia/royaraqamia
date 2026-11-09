@@ -148,16 +148,16 @@ export function avatarUploadRateLimitPolicy(userId: string): RateLimitPolicy {
 }
 
 /**
- * The hidden-services page saves the whole set on every toggle, so a member who
- * flips sixteen switches spends sixteen writes — bounded per account, generously
- * enough for that page and not for a loop that calls it instead.
+ * The app sheet saves the whole ordered set on every add or remove, so a member
+ * who builds a strip of eleven spends eleven writes — bounded per account,
+ * generously enough for that sheet and not for a loop that calls it instead.
  */
-export function hiddenServicesRateLimitPolicy(userId: string): RateLimitPolicy {
+export function homeServicesRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
-    key: `hidden-services:${userId}`,
+    key: `home-services:${userId}`,
     limit: 30,
     windowMs: 60 * 1000,
-    message: 'تم تجاوز حدّ الطلب: تعديل الخدمات الظَّاهرة محدود بـ 30 مرّة في الدقيقة.',
+    message: 'تم تجاوز حدّ الطلب: تعديل تطبيقاتك محدود بـ 30 مرّة في الدقيقة.',
   };
 }
 

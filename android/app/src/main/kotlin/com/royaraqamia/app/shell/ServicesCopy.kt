@@ -12,20 +12,16 @@ package com.royaraqamia.app.shell
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ServicesCopy {
-    const val TRIGGER = "خدماتنا"
-    const val REQUEST_PROJECT = "طلب بناء مشروع"
-    const val HIRE = "طلب التَّعاقُد الشَّهري"
+    const val TRIGGER = "تطبيقاتنا"
     const val NEWS = "أخبار اليوم"
-    const val TRAINING = "التَّسجيل في التَّدريب"
     const val VERIFY = "التَّحقُّق من الشَّهادة"
-    const val CONSULTATION = "حجز استشارة"
     const val RATES = "أسعار الصَّرف"
     const val SCAN = "ماسح QR و Barcode"
     const val QURAN = "القرآن الكريم"
     const val ATHKAR = "أذكار الصَّباح والمساء"
-    const val NOTES = "الملاحظات"
-    const val MCP_GUIDE = "ربط الـ MCP"
     const val LINK_SNAP = "اختصار الرَّوابط"
     const val HABIT_FLOW = "تتبُّع العادات"
     const val SPEND_TRACK = "تتبُّع المصاريف"
+    const val NOTES = "الملاحظات"
+    const val MCP_GUIDE = "ربط الـ MCP"
 }

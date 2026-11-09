@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { TopNav } from './navbar/TopNav';
-import { useVisibleServices } from './navbar/use-visible-services';
+import { SERVICES_LINK } from './navbar/services-link';
 import { isPrimaryRoute } from './navbar/route-kind';
-import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 
 /**
  * The app's top nav, for the three primary routes only.
@@ -35,19 +34,10 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
-  const scrollCancelRef = useRef<{ cancel: () => void } | null>(null);
 
   const pathname = usePathname();
-  const router = useRouter();
   const isHomePage = pathname === '/';
-  // The rows this member hid, so the trigger and the menu agree (ADR-0112).
-  const { link: servicesLink } = useVisibleServices();
-
-  useEffect(() => {
-    return () => {
-      scrollCancelRef.current?.cancel();
-    };
-  }, []);
+  const servicesLink = SERVICES_LINK;
 
   useEffect(() => {
     let ticking = false;
@@ -82,26 +72,6 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [isReviewSheetOpen]);
-
-  // Scroll Helpers
-  const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
-    e.preventDefault();
-    scrollCancelRef.current?.cancel();
-
-    const cleanHash = hash.startsWith('/') ? hash.substring(1) : hash;
-    const sectionId = cleanHash.replace('#', '');
-
-    if (isHomePage) {
-      scrollCancelRef.current = scrollToSectionWithRetry(sectionId, 5, 200);
-    } else {
-      scrollCancelRef.current = scrollToSectionAfterNavigation(
-        sectionId,
-        () => router.push('/'),
-        10,
-        100
-      );
-    }
-  };
 
   const isLinkActive = (href: string) => {
     if (href.startsWith('#')) return false;
@@ -175,7 +145,6 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
             <TopNav
               servicesLink={servicesLink}
               isServicesActive={isServicesActive}
-              handleHashClick={handleHashClick}
               logo="/logo.webp"
               isHomePage={isHomePage}
             />

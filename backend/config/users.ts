@@ -12,12 +12,12 @@ import {
 } from '@/backend/repositories/users/public-users-repository';
 import { createAvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
 import {
-  createHiddenServicesRepository,
-  type HiddenServicesRepository,
-} from '@/backend/repositories/users/hidden-services-repository';
+  createHomeServicesRepository,
+  type HomeServicesRepository,
+} from '@/backend/repositories/users/home-services-repository';
 import { AdminUsersService } from '@/backend/services/users/admin-users-service';
 import { ProfileService } from '@/backend/services/users/profile-service';
-import { HiddenServicesService } from '@/backend/services/users/hidden-services-service';
+import { HomeServicesService } from '@/backend/services/users/home-services-service';
 
 export function createAdminUsersService(supabase?: SupabaseClient<Database>): AdminUsersService {
   return new AdminUsersService(createAdminUsersRepository(supabase ?? getAdminSupabase()));
@@ -46,15 +46,15 @@ export function createProfileService(supabase?: SupabaseClient<Database>): Profi
 }
 
 /**
- * The caller's hidden services (ADR-0112). User-scoped on purpose: the rows are
+ * The caller's homepage apps (ADR-0143). User-scoped on purpose: the rows are
  * guarded by RLS as well, so the service is not the only thing keeping one
- * member's preference off another's screen.
+ * member's strip off another's screen.
  */
-export function createHiddenServicesService(
+export function createHomeServicesService(
   supabase?: SupabaseClient<Database>
-): HiddenServicesService {
-  const hiddenServices: HiddenServicesRepository = createHiddenServicesRepository(
+): HomeServicesService {
+  const homeServices: HomeServicesRepository = createHomeServicesRepository(
     supabase ?? getAdminSupabase()
   );
-  return new HiddenServicesService({ hiddenServices });
+  return new HomeServicesService({ homeServices });
 }

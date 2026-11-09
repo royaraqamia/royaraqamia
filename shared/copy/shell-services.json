@@ -10,26 +10,22 @@
     "object": "ServicesCopy"
   },
   "notes": {
-    "source": "The `خدماتنا` menu, in both clients (#647): its trigger and its rows. The rows are the ones the site ships, in its order. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "source": "The `تطبيقاتنا` sheet and the homepage strip, in both clients (#647, ADR-0146): its trigger and its app names. The rows are the apps the site ships, in its order. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
     "placeholders": "None: every row is a name, not a sentence.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key whose row neither client draws."
   },
   "strings": {
-    "trigger": "خدماتنا",
-    "requestProject": "طلب بناء مشروع",
-    "hire": "طلب التَّعاقُد الشَّهري",
+    "trigger": "تطبيقاتنا",
     "news": "أخبار اليوم",
-    "training": "التَّسجيل في التَّدريب",
     "verify": "التَّحقُّق من الشَّهادة",
-    "consultation": "حجز استشارة",
     "rates": "أسعار الصَّرف",
     "scan": "ماسح QR و Barcode",
     "quran": "القرآن الكريم",
     "athkar": "أذكار الصَّباح والمساء",
-    "notes": "الملاحظات",
-    "mcpGuide": "ربط الـ MCP",
     "linkSnap": "اختصار الرَّوابط",
     "habitFlow": "تتبُّع العادات",
-    "spendTrack": "تتبُّع المصاريف"
+    "spendTrack": "تتبُّع المصاريف",
+    "notes": "الملاحظات",
+    "mcpGuide": "ربط الـ MCP"
   }
 }

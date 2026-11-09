@@ -10,7 +10,6 @@ import { ServiceCard, type ServiceCardModel } from './services/ServiceCard';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import type { NavLink } from './navbar/NavDropdown';
 import { SERVICES_LINK } from './navbar/services-link';
-import { useHiddenServices } from '@/frontend/state/hidden-services-provider';
 
 /**
  * Presentation-only copy for each entry of the `خدماتنا` menu. Titles, icons and
@@ -94,16 +93,15 @@ function toServiceCard(item: NavLink): ServiceCardModel {
 }
 
 /**
- * The home row of `خدماتنا`: the same rows as the menu, minus the ones this
- * member hid (ADR-0112). Hiding every row takes the section — heading, pattern
- * and anchors included — rather than leaving a heading over an empty track.
+ * The marketing row that used to sit on the homepage. It is unmounted now that
+ * the homepage is the app door (ADR-0146); the component stays in the tree for
+ * the marketing page the sections may return to.
  */
 const services = (SERVICES_LINK.subItems ?? []).map(toServiceCard);
 
 export function Services() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(360);
-  const { hidden } = useHiddenServices();
-  const visible = services.filter((service) => !hidden.has(service.href));
+  const visible = services;
 
   if (visible.length === 0) return null;
 

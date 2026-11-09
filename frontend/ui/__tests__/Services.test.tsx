@@ -2,29 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Services } from '../Services';
 import { UIProvider } from '../../state/UIContext';
+import { SERVICES_LINK } from '../navbar/services-link';
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<UIProvider>{ui}</UIProvider>);
 }
 
-/** Every visible entry of the `خدماتنا` menu, in the menu's own order. */
-const MENU_ENTRIES: [name: string, href: string][] = [
-  ['طلب بناء مشروع', '/request-project'],
-  ['طلب التَّعاقُد الشَّهري', '/hire'],
-  ['أخبار اليوم', '/news'],
-  ['التَّسجيل في التَّدريب', '/training/apply'],
-  ['التَّحقُّق من الشَّهادة', '/verify'],
-  ['حجز استشارة', '/consultation/book'],
-  ['أسعار الصَّرف', '/rates'],
-  ['ماسح QR و Barcode', '/scan'],
-  ['القرآن الكريم', '/quran'],
-  ['أذكار الصَّباح والمساء', '/athkar'],
-  ['اختصار الرَّوابط', '/linksnap'],
-  ['تتبُّع العادات', '/habitflow'],
-  ['تتبُّع المصاريف', '/spendtrack'],
-  ['الملاحظات', '/notes'],
-  ['ربط الـ MCP', '/mcp/guide'],
-];
+/** The app rows the `تطبيقاتنا` sheet ships, in its own order. */
+const MENU_ENTRIES = (SERVICES_LINK.subItems ?? []).map((item) => [item.label, item.href] as const);
 
 describe('Services', () => {
   it('renders the section heading', () => {
@@ -34,7 +19,7 @@ describe('Services', () => {
     expect(heading).toHaveTextContent(/نُقدِّم/);
   });
 
-  it('lists every service from the خدماتنا menu as its own link', () => {
+  it('lists every app from the تطبيقاتنا menu as its own link', () => {
     renderWithProviders(<Services />);
 
     for (const [name, href] of MENU_ENTRIES) {

@@ -4,7 +4,6 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   ClipboardList,
-  EyeOff,
   FileText,
   CircleQuestionMark,
   Link2,
@@ -91,13 +90,6 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
           href="/account/connected-apps"
           icon={Plug}
           label={ACCOUNT_ROWS_COPY.connectedApps}
-          onRequireAuth={onRequireAuth}
-        />
-
-        <AccountRow
-          href="/account/services"
-          icon={EyeOff}
-          label={ACCOUNT_ROWS_COPY.services}
           onRequireAuth={onRequireAuth}
         />
 

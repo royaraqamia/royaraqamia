@@ -1067,19 +1067,22 @@ export type Database = {
         };
         Relationships: [];
       };
-      hidden_services: {
+      home_services: {
         Row: {
-          hidden_at: string;
+          added_at: string;
+          position: number;
           service_key: string;
           user_id: string;
         };
         Insert: {
-          hidden_at?: string;
+          added_at?: string;
+          position: number;
           service_key: string;
           user_id: string;
         };
         Update: {
-          hidden_at?: string;
+          added_at?: string;
+          position?: number;
           service_key?: string;
           user_id?: string;
         };
