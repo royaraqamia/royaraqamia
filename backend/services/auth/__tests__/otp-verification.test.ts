@@ -58,6 +58,7 @@ function createService(
           : (overrides.rateLimitAllowed ?? true)
       ),
     getRateLimitRemaining: vi.fn().mockResolvedValue(5),
+    getRateLimitDecision: vi.fn().mockResolvedValue({ allowed: true, retryAfterMs: 0 }),
   };
   const gateway = {
     getUser: vi.fn().mockResolvedValue({ user: null }),

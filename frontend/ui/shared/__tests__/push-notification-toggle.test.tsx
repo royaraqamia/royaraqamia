@@ -6,8 +6,10 @@ const { mocks } = vi.hoisted(() => ({
   mocks: {
     isPushSupported: vi.fn(),
     isPushDisabledByUser: vi.fn(),
+    isPushSubscriptionPendingSync: vi.fn(),
     setPushDisabledByUser: vi.fn(),
     applicationServerKeyMatches: vi.fn(),
+    pushRetryKind: vi.fn(),
     subscribeToPush: vi.fn(),
     unsubscribeFromPush: vi.fn(),
     refreshSubscriptionLiveness: vi.fn(),
@@ -56,8 +58,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.isPushSupported.mockReturnValue(true);
   mocks.isPushDisabledByUser.mockReturnValue(false);
+  mocks.isPushSubscriptionPendingSync.mockReturnValue(false);
   mocks.applicationServerKeyMatches.mockReturnValue(true);
-  mocks.refreshSubscriptionLiveness.mockResolvedValue(undefined);
+  mocks.pushRetryKind.mockReturnValue(null);
+  mocks.refreshSubscriptionLiveness.mockResolvedValue('subscribed');
   mocks.subscribeToPush.mockResolvedValue('subscribed');
   mocks.unsubscribeFromPush.mockResolvedValue(undefined);
   nativeMocks.isNativePushSupported.mockReturnValue(false);
@@ -156,6 +160,48 @@ describe('PushNotificationToggle auto-heal', () => {
     await waitFor(() => {
       expect(mocks.subscribeToPush).toHaveBeenCalledTimes(2);
     });
+  });
+
+  /**
+   * A 429 used to render the connection sentence, and the visit after it asked
+   * again — which kept the sliding window full and made the refusal permanent.
+   */
+  it('names the rate limit instead of the connection, and stops auto-retrying', async () => {
+    mocks.subscribeToPush.mockResolvedValue('rateLimited');
+    render(<PushNotificationToggle />);
+
+    expect(await screen.findByText(/تجاوزتَ حدَّ محاولات/)).toBeInTheDocument();
+    expect(screen.queryByText(/تحقَّق من اتِّصالك/)).not.toBeInTheDocument();
+    expect(mocks.subscribeToPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the remembered refusal on the next visit without asking again', async () => {
+    mocks.pushRetryKind.mockReturnValue('rateLimited');
+    render(<PushNotificationToggle />);
+
+    expect(await screen.findByText(/تجاوزتَ حدَّ محاولات/)).toBeInTheDocument();
+    expect(mocks.subscribeToPush).not.toHaveBeenCalled();
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('asks for a fresh session when the server answers 401', async () => {
+    mocks.subscribeToPush.mockResolvedValue('unauthorized');
+    render(<PushNotificationToggle />);
+
+    expect(await screen.findByText(/انتهت جلستك/)).toBeInTheDocument();
+  });
+
+  it('does not advertise enabled while the browser holds an unconfirmed subscription', async () => {
+    installGlobals({ existing: true });
+    mocks.isPushSubscriptionPendingSync.mockReturnValue(true);
+    mocks.refreshSubscriptionLiveness.mockResolvedValue('unreachable');
+
+    render(<PushNotificationToggle />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/تعذَّر تفعيل الإشعارات/)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
   });
 });
 

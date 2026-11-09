@@ -1,11 +1,101 @@
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 
 const PUSH_DISABLED_KEY = 'royaraqamia.push.disabled';
 const PUSH_LAST_SYNC_KEY = 'royaraqamia.push.lastSync';
+const PUSH_PENDING_SYNC_KEY = 'royaraqamia.push.pendingSync';
+const PUSH_RETRY_KEY = 'royaraqamia.push.retry';
 const PUSH_LAST_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000;
+/** A failed save waits this long before the next visit retries it on its own. */
+const RETRY_COOLDOWN_MS = 5 * 60 * 1000;
+/**
+ * The subscribe route allows 20 calls an hour per account, and a sliding window
+ * counts the refused calls too. Backing off for half an hour leaves the bucket
+ * room to drain instead of refilling it on every visit.
+ */
+const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
+const MIN_COOLDOWN_MS = 60 * 1000;
+const MAX_COOLDOWN_MS = 60 * 60 * 1000;
 const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
 const PUSH_DISABLED_CACHE_URL = '/__push_disabled__';
+
+/** Why the last attempt to save this browser's subscription did not land. */
+export type PushFailure =
+  'denied' | 'unsupported' | 'unreachable' | 'rateLimited' | 'unauthorized' | 'failed';
+
+export type PushSubscribeResult = 'subscribed' | PushFailure;
+
+/** A failure worth remembering, so the next visit does not repeat it at once. */
+export type PushRetryKind = Exclude<PushFailure, 'denied' | 'unsupported'>;
+
+interface PushRetryRecord {
+  kind: PushRetryKind;
+  until: number;
+}
+
+function readStorage(key: string): string | null {
+  if (typeof window === 'undefined' || !('localStorage' in window)) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null): void {
+  if (typeof window === 'undefined' || !('localStorage' in window)) return;
+  try {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch {
+    return;
+  }
+}
+
+function isRetryKind(value: unknown): value is PushRetryKind {
+  return (
+    value === 'unreachable' ||
+    value === 'rateLimited' ||
+    value === 'unauthorized' ||
+    value === 'failed'
+  );
+}
+
+function readRetry(now: number): PushRetryRecord | null {
+  const raw = readStorage(PUSH_RETRY_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<PushRetryRecord>;
+    if (typeof parsed.until !== 'number' || parsed.until <= now) {
+      writeStorage(PUSH_RETRY_KEY, null);
+      return null;
+    }
+    return isRetryKind(parsed.kind) ? { kind: parsed.kind, until: parsed.until } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The failure a previous attempt left behind, while its cooldown is still
+ * running. The row uses it instead of asking again: an automatic retry on every
+ * visit is what kept a refused bucket full and made one 429 permanent.
+ */
+export function pushRetryKind(now = Date.now()): PushRetryKind | null {
+  return readRetry(now)?.kind ?? null;
+}
+
+export function clearPushRetry(): void {
+  writeStorage(PUSH_RETRY_KEY, null);
+}
+
+function recordPushFailure(result: PushRetryKind, retryAfterMs?: number): void {
+  const requested =
+    result === 'rateLimited' ? (retryAfterMs ?? RATE_LIMIT_COOLDOWN_MS) : RETRY_COOLDOWN_MS;
+  const cooldown = Math.min(MAX_COOLDOWN_MS, Math.max(MIN_COOLDOWN_MS, requested));
+  const record: PushRetryRecord = { kind: result, until: Date.now() + cooldown };
+  writeStorage(PUSH_RETRY_KEY, JSON.stringify(record));
+}
 
 /**
  * Mirrors the opt-out flag into Cache Storage, which — unlike localStorage —
@@ -24,23 +114,25 @@ async function syncDisabledCache(disabled: boolean): Promise<void> {
 }
 
 export function isPushDisabledByUser(): boolean {
-  if (typeof window === 'undefined' || !('localStorage' in window)) return false;
-  try {
-    return window.localStorage.getItem(PUSH_DISABLED_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return readStorage(PUSH_DISABLED_KEY) === '1';
 }
 
 export function setPushDisabledByUser(disabled: boolean): void {
-  if (typeof window === 'undefined' || !('localStorage' in window)) return;
-  try {
-    if (disabled) window.localStorage.setItem(PUSH_DISABLED_KEY, '1');
-    else window.localStorage.removeItem(PUSH_DISABLED_KEY);
-  } catch {
-    return;
-  }
+  writeStorage(PUSH_DISABLED_KEY, disabled ? '1' : null);
   void syncDisabledCache(disabled);
+}
+
+/**
+ * True when the browser holds a subscription the server has never acknowledged.
+ * It cannot deliver, so the toggle must not read it as "enabled"; the marker
+ * clears as soon as the POST lands, without creating a second endpoint.
+ */
+export function isPushSubscriptionPendingSync(): boolean {
+  return readStorage(PUSH_PENDING_SYNC_KEY) === '1';
+}
+
+function setPushPendingSync(pending: boolean): void {
+  writeStorage(PUSH_PENDING_SYNC_KEY, pending ? '1' : null);
 }
 
 export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -97,14 +189,17 @@ export function applicationServerKeyMatches(
 }
 
 /**
- * `denied` is the browser refusing permission and nothing else. A subscription
- * that could not be registered because the server was unreachable is
- * `unreachable`: reporting it as a permission denial told the user to change a
- * browser setting that was never the problem, and left no way to retry
- * (ADR-0031 — a server-owned surface names the connection, not a cause it
- * invented).
+ * `denied` is the browser refusing permission and nothing else. A refusal from
+ * the server is named by its own cause: `rateLimited` when it asked us to wait,
+ * `unauthorized` when the session is gone, and `unreachable` only when `fetch`
+ * itself rejected — a surface must name the cause it actually has (ADR-0031).
  */
-export type PushSubscribeResult = 'subscribed' | 'denied' | 'unsupported' | 'unreachable';
+function failureFrom(error: unknown): PushRetryKind {
+  if (!(error instanceof ApiError) || error.status === undefined) return 'unreachable';
+  if (error.code === 'RATE_LIMITED' || error.status === 429) return 'rateLimited';
+  if (error.code === 'UNAUTHORIZED' || error.status === 401) return 'unauthorized';
+  return 'failed';
+}
 
 async function postSubscription(subscription: PushSubscription): Promise<void> {
   await request('/api/push/subscribe', {
@@ -126,22 +221,44 @@ async function deleteSubscriptionRow(endpoint: string): Promise<void> {
 }
 
 /**
- * Idempotent re-POST of an existing, still-valid subscription. Refreshes the
- * server-side liveness timestamp so the stale-subscription sweep never drops
- * rows of users who visit but simply have not received a push recently.
- * Throttled to once per day per browser.
+ * Saves a subscription the browser already holds, and records the refusal when
+ * the server will not take it.
+ *
+ * The subscription is deliberately kept on failure: it is still valid, so the
+ * next attempt only has to repeat this idempotent POST. The old code
+ * unsubscribed here, which made every retry mint a new endpoint — churn against
+ * the push service — and left nothing for the retry to reuse. The pending marker
+ * is what keeps the toggle honest in between: a subscription the server has not
+ * acknowledged is not enabled.
  */
-export async function refreshSubscriptionLiveness(existing: PushSubscription): Promise<void> {
+async function saveSubscription(subscription: PushSubscription): Promise<PushSubscribeResult> {
   try {
-    const last = Number(window.localStorage.getItem(PUSH_LAST_SYNC_KEY));
-    const throttled = Number.isFinite(last) && Date.now() - last < PUSH_LAST_SYNC_THROTTLE_MS;
-    if (!throttled) {
-      await postSubscription(existing);
-      window.localStorage.setItem(PUSH_LAST_SYNC_KEY, String(Date.now()));
-    }
-  } catch {
-    // Liveness refresh is best-effort; the next visit or dispatch retries.
+    await postSubscription(subscription);
+    writeStorage(PUSH_LAST_SYNC_KEY, String(Date.now()));
+    setPushPendingSync(false);
+    clearPushRetry();
+    return 'subscribed';
+  } catch (error) {
+    const result = failureFrom(error);
+    setPushPendingSync(true);
+    recordPushFailure(result, error instanceof ApiError ? error.retryAfterMs : undefined);
+    return result;
   }
+}
+
+/**
+ * Idempotent re-POST of an existing subscription, which both refreshes its
+ * liveness timestamp server-side and retries a save that never landed. Throttled
+ * to once per day per browser once it has succeeded, so a visit does not spend
+ * the subscribe bucket.
+ */
+export async function refreshSubscriptionLiveness(
+  existing: PushSubscription
+): Promise<PushSubscribeResult> {
+  const last = Number(readStorage(PUSH_LAST_SYNC_KEY));
+  const throttled = Number.isFinite(last) && Date.now() - last < PUSH_LAST_SYNC_THROTTLE_MS;
+  if (throttled) return 'subscribed';
+  return saveSubscription(existing);
 }
 
 export async function subscribeToPush(): Promise<PushSubscribeResult> {
@@ -149,7 +266,6 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
 
   const registration = await navigator.serviceWorker.ready;
   let subscription = await registration.pushManager.getSubscription();
-  let created = false;
 
   if (!subscription) {
     const permission = await Notification.requestPermission();
@@ -158,24 +274,19 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-    created = true;
   }
 
-  try {
-    await postSubscription(subscription);
-    setPushDisabledByUser(false);
-    return 'subscribed';
-  } catch {
-    // Only revoke a subscription we just created; a pre-existing one may
-    // still be valid server-side and will be pruned on 404/410 if not.
-    if (created) await subscription.unsubscribe();
-    return 'unreachable';
-  }
+  const result = await saveSubscription(subscription);
+  if (result === 'subscribed') setPushDisabledByUser(false);
+  return result;
 }
 
 export async function unsubscribeFromPush(): Promise<void> {
   if (!isPushSupported()) return;
   setPushDisabledByUser(true);
+  setPushPendingSync(false);
+  clearPushRetry();
+  writeStorage(PUSH_LAST_SYNC_KEY, null);
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
@@ -209,7 +320,9 @@ export async function releasePushSubscription(): Promise<void> {
 
     await deleteSubscriptionRow(subscription.endpoint);
     await subscription.unsubscribe();
-    window.localStorage.removeItem(PUSH_LAST_SYNC_KEY);
+    setPushPendingSync(false);
+    clearPushRetry();
+    writeStorage(PUSH_LAST_SYNC_KEY, null);
   } catch {
     // Push never gets a vote on whether the user can sign out.
   }

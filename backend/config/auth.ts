@@ -12,7 +12,11 @@ import {
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
 import { SupabasePasswordResetTokenRepository } from '@/backend/repositories/password-reset/supabase-password-reset-token-repository';
 import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
-import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
+import {
+  checkRateLimit,
+  getRateLimitDecision,
+  getRateLimitRemaining,
+} from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { getPasswordBreachChecker } from '@/backend/config/password-breach';
 import { env } from '@/backend/config/env';
@@ -47,6 +51,8 @@ export function createAuthService(
         checkRateLimit(key, limit, windowMs, { failClosed: true }),
       getRateLimitRemaining: (key, limit, windowMs) =>
         getRateLimitRemaining(key, limit, windowMs, { failClosed: true }),
+      getRateLimitDecision: (key, limit, windowMs) =>
+        getRateLimitDecision(key, limit, windowMs, { failClosed: true }),
     },
     verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
     passwordBreachChecker: getPasswordBreachChecker(),
