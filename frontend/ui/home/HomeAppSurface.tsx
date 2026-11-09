@@ -116,7 +116,7 @@ const SURFACES: Record<HomeServiceKey, ComponentType> = {
 
 /** The frame the route draws around a surface, repeated for the tab. */
 const FRAMES: Record<HomeServiceKey, string> = {
-  '/news': 'pt-10',
+  '/news': 'mx-auto w-full max-w-4xl px-4 pt-10',
   '/rates': 'pt-6',
   '/scan': '',
   '/quran': '',
