@@ -23,6 +23,32 @@ import androidx.compose.ui.unit.dp
 object LucideVectors {
     private val stroke = SolidColor(Color.Black)
 
+    /** `arrow-left`, the site's own drawing. */
+    val ArrowLeft: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "arrow-left",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("m12 19-7-7 7-7"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M19 12H5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `arrow-right`, the site's own drawing. */
     val ArrowRight: ImageVector by lazy {
         ImageVector.Builder(

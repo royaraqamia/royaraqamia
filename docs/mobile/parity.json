@@ -1727,6 +1727,42 @@
       ]
     },
     {
+      "id": "account-usage",
+      "surface": "account",
+      "issue": "#947",
+      "web": {
+        "route": "app/account/page.tsx",
+        "component": "frontend/ui/account/usage-card.tsx",
+        "copyModule": "frontend/ui/account/account-usage-copy.ts",
+        "copyExport": "ACCOUNT_USAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUsageCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUsageUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUsageCopy.kt",
+        "copyObject": "AccountUsageCopy"
+      },
+      "copySource": "shared/copy/account-usage.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "Ready",
+          "copy": "details"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        },
+        {
+          "name": "Hidden",
+          "copy": "title"
+        }
+      ]
+    },
+    {
       "id": "account-faq",
       "surface": "account-faq",
       "issue": "#949",

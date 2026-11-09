@@ -77,6 +77,31 @@ class AccountScreenTest {
         )
     }
 
+    /** The allowance read the card makes, answered with a free plan. */
+    private fun usageRepository(): AccountUsageRepository {
+        val session =
+            runBlocking {
+                Session(
+                        MemoryTokenStore("refresh-1"),
+                        TokenRefresher { RefreshOutcome.Refused },
+                        MemoryIdentityStorage(),
+                    )
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
+            }
+        return AccountUsageRepository(
+            ApiClient(
+                "https://app.test",
+                session,
+                RecordingTransport {
+                    HttpResponse(
+                        200,
+                        """{"success":true,"state":{"plan":"free","unlimited":false,"expiresAt":null,"counters":[]}}""",
+                    )
+                },
+            )
+        )
+    }
+
     private fun draw(
         state: AccountUiState = AccountUiState.Member,
         isAdmin: Boolean = false,
@@ -91,6 +116,7 @@ class AccountScreenTest {
                             state = state,
                             isAdmin = isAdmin,
                             profileRepository = profileRepository(),
+                            usageRepository = usageRepository(),
                             onOpenRoute = onOpenRoute,
                             onSignOut = onSignOut,
                         )
