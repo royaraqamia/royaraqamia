@@ -24,7 +24,11 @@
  *     privilege list, not a TRUNCATE — hence anchoring on the statement start;
  *   - `drop policy if exists x; create policy x ...` is the idempotent
  *     redefinition idiom this repo uses everywhere, so a drop whose object the
- *     same file recreates is routine, and one that is not, is not.
+ *     same file recreates is routine, and one that is not, is not. The same
+ *     holds when a merge replaces a table's policies with a differently named
+ *     one: dropping `a` and `b` to create `c` is routine when `c` is a policy on
+ *     the same relation, because the relation still leaves the file with a
+ *     policy set rather than losing one.
  *
  * It reads and compares; it never writes. `check-migration-drift.mjs` owns the
  * readers it shares with the drift gate, so the two can never disagree about
@@ -51,6 +55,21 @@ const CREATES = {
 };
 
 const identifier = (token) => token.replace(/"/g, '').toLowerCase();
+
+/**
+ * Relations the file creates a policy on. A merge replaces a table's policies
+ * with one whose name is new, so the drop name is not recreated while the
+ * relation still leaves the file with a policy.
+ */
+const CREATED_POLICY_RELATION =
+  /create\s+policy\s+(?:if\s+not\s+exists\s+)?(?:"[^"]+"|[A-Za-z_][\w.]*)\s+on\s+([A-Za-z_][\w."]*)/gi;
+
+/** The relation a drop policy names: `on <relation>`. */
+const DROPPED_POLICY_RELATION =
+  /^drop\s+policy\s+(?:if\s+exists\s+)?(?:"[^"]+"|[A-Za-z_][\w.]*)\s+on\s+([A-Za-z_][\w."]*)/i;
+
+/** A relation name without its schema, lowercased: public.widgets -> widgets. */
+const relation = (token) => identifier(token).split('.').pop();
 
 /** Every identifier in a statement, with schema-qualified names unqualified too. */
 function identifiers(statement) {
@@ -83,6 +102,9 @@ export function findUnsafeStatements(sql) {
   const parts = statements(sql);
   const whole = parts.join('; ').toLowerCase();
 
+  const policyTables = new Set(
+    [...whole.matchAll(CREATED_POLICY_RELATION)].map(([, name]) => relation(name))
+  );
   const recreated = {};
   for (const kind of DROPPABLE) {
     recreated[kind] = new Set(
@@ -119,7 +141,11 @@ export function findUnsafeStatements(sql) {
     const dropped = /^drop\s+(policy|function|procedure|trigger|view|index|type)\b/.exec(head);
     if (dropped) {
       const kind = dropped[1];
-      const redefines = [...identifiers(statement)].some((name) => recreated[kind].has(name));
+      let redefines = [...identifiers(statement)].some((name) => recreated[kind].has(name));
+      if (!redefines && kind === 'policy') {
+        const matching = DROPPED_POLICY_RELATION.exec(statement);
+        redefines = Boolean(matching && policyTables.has(relation(matching[1])));
+      }
       if (!redefines) {
         refuse(statement, `drops a ${kind} the same file does not recreate`);
       }

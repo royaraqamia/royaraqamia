@@ -94,6 +94,25 @@ describe('findUnsafeStatements', () => {
     ).toEqual([]);
   });
 
+  it('allows two policies on one table to be replaced by one with a new name', () => {
+    expect(
+      reasons(`
+        drop policy if exists "widgets admins" on public.widgets;
+        drop policy if exists "widgets owners" on public.widgets;
+        create policy "widgets readers" on public.widgets for select using (true);
+      `)
+    ).toEqual([]);
+  });
+
+  it('refuses a policy drop on a table the file creates no policy on', () => {
+    expect(
+      reasons(`
+        drop policy if exists "widgets read" on public.widgets;
+        create policy "gadgets read" on public.gadgets for select using (true);
+      `)
+    ).toEqual(['drops a policy the same file does not recreate']);
+  });
+
   it('refuses a drop whose object the file does not recreate', () => {
     expect(reasons('drop policy if exists "widgets read" on public.widgets;')).toEqual([
       'drops a policy the same file does not recreate',

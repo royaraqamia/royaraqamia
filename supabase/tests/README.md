@@ -127,6 +127,15 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
   is not executable by `anon`.
 - A client cannot DELETE a roster row.
 
+`permissive_select_policies_test.sql` (#1188):
+
+- `certificates` and `chat_conversations` each carry exactly one permissive `SELECT` policy for
+  `authenticated`, which is the advisor lint the merge closes.
+- A recipient reads their own certificate and no other recipient's, an Admin reads every certificate,
+  a signed-in non-recipient reads none, and `anon` still verifies one by code.
+- A creator reads the thread they opened before anyone joined, a participant reads theirs through
+  `chat_has_conversation_access`, and a non-participant reads neither.
+
 `chat_groups_test.sql` (#814, ADR-0113):
 
 - The owned-item cap: three groups are allowed on Free, a fourth raises `PL001`, and a direct thread
@@ -267,6 +276,11 @@ scoped.
 `chat_agent_thread_test.sql` (#890) is unrun too, and it is the second file here that seeds with its
 own trigger live. If `plan(6)` and the run disagree, the second agent insert is the place to look:
 the refusal depends on the trigger seeing the row the same transaction wrote just before it.
+
+`permissive_select_policies_test.sql` (#1188) is in the same position: no Docker on the writing
+machine, so the catalog counts and the read matrix are unrun. The expressions it asserts are the two
+the merge in `20261116130000` writes, and the Admin assertion reads `app_settings.admin_emails` the
+same way `rls_authorization_test.sql` does.
 
 ## Worth adding next
 

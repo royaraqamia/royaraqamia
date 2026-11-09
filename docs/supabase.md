@@ -109,7 +109,9 @@ therefore reviewed) still lands in production without anyone driving it:
   nothing but `SUPABASE_ACCESS_TOKEN`, and it reports rather than gates.
 - **Vet:** `scripts/check-migration-safety.mjs` reads the pending files and refuses the whole run if
   any of them drops a table or column, truncates, turns row level security off, writes to `auth.users`
-  or Storage, drops an object it does not recreate, or deletes rows without a `WHERE`. Those are the
+  or Storage, drops an object it does not recreate, or deletes rows without a `WHERE`. A dropped
+  policy counts as recreated when the same file creates a policy on the same table — the shape of a
+  merge that folds two permissive policies into one. Those are the
   entries in "Forbidden without explicit human approval" below, and they stay pending: a person reads
   the file and applies it with `supabase db push` after approving it.
 - **Apply:** `supabase db push --linked --yes`. It runs on `SUPABASE_ACCESS_TOKEN`, which is enough for the CLI to mint a login role for the linked project — the plan step above proves that connection with the same credentials on every push. `SUPABASE_DB_PASSWORD` is passed through when the repository has one, which is the path the CLI's own documentation recommends for CI. If the apply cannot connect or write, the verify step below reports the migration as still pending and the alert issue links to the run.
