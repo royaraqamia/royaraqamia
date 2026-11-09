@@ -27,18 +27,22 @@ export const metadata: Metadata = {
 };
 
 function StepCard({
+  id,
   step,
   title,
   children,
 }: {
+  /** The section's address (ADR-0147): `/mcp/guide#install`, `#connect`, … */
+  id: string;
   step: number;
   title: string;
   children: React.ReactNode;
 }) {
   return (
     <section
+      id={id}
       aria-label={title}
-      className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs"
+      className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs"
     >
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
@@ -67,7 +71,7 @@ export default function McpGuidePage() {
           </div>
 
           <div className="space-y-4 sm:space-y-5">
-            <StepCard step={1} title="عنوان الخادم">
+            <StepCard id="install" step={1} title="عنوان الخادم">
               <p>
                 جميع وكلاء البرمجة تحتاج إلى عنوان URL واحد. أضِفه إلى العميل مرة واحدة، وسيهتم
                 العميل بكل الباقي — بما فيه فتح المتصفح لتسجيل الدخول أول مرة.
@@ -75,7 +79,7 @@ export default function McpGuidePage() {
               <CodeSnippet code={SERVER_URL} label="عنوان الخادم" copyLabel="نسخ عنوان الخادم" />
             </StepCard>
 
-            <StepCard step={2} title="Claude Code">
+            <StepCard id="connect" step={2} title="Claude Code">
               <p>من داخل طرفية Claude Code شغّل أمر الربط التالي:</p>
               <CodeSnippet
                 code={`claude mcp add --transport http royaraqamia ${SERVER_URL}`}
@@ -83,7 +87,7 @@ export default function McpGuidePage() {
               />
             </StepCard>
 
-            <StepCard step={3} title="OpenCode">
+            <StepCard id="opencode" step={3} title="OpenCode">
               <p>
                 أضِف الخادم إلى ملف <code className="font-mono">opencode.json</code> في مجلد المشروع
                 (أو الإعدادات العامة):
@@ -105,7 +109,7 @@ export default function McpGuidePage() {
               />
             </StepCard>
 
-            <StepCard step={4} title="Codex">
+            <StepCard id="codex" step={4} title="Codex">
               <p>من طرفية Codex شغّل أمر الربط التالي:</p>
               <CodeSnippet
                 code={`codex mcp add royaraqamia --url ${SERVER_URL}`}
@@ -125,7 +129,7 @@ url = "${SERVER_URL}"
               />
             </StepCard>
 
-            <StepCard step={5} title="أي عميل آخر">
+            <StepCard id="other-client" step={5} title="أي عميل آخر">
               <p>
                 إن كان عميلك يدعم MCP عبر «Streamable HTTP» — وهذا يشمل Cursor وGemini CLI ومعظم
                 الوكلاء الحديثين — فكل ما تحتاجه هو عنوان الخادم في الخطوة 1. النظام يعتمد OAuth 2.1

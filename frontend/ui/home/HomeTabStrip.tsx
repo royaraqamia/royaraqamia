@@ -77,6 +77,7 @@ export function HomeTabStrip() {
                   <button
                     type="button"
                     aria-label={HOME_COPY.newApp}
+                    data-visual="home-new-app"
                     className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-neutral-700 px-4 text-sm font-bold text-neutral-400 transition-safe duration-200 ease-out hover:border-violet-500/60 hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
                   >
                     <Plus className="size-4" aria-hidden="true" />

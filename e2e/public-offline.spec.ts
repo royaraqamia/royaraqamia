@@ -544,6 +544,43 @@ test('the news digest paints from its snapshot with the radio off', async ({
 });
 
 /**
+ * The door offline (ADR-0146): the touchpoint is the homepage document, which is
+ * the same account-free shell for every visitor, and the strip is the guest's
+ * own `localStorage` list. An offline open therefore still paints the apps the
+ * member kept — not the offline card, and not an empty state they never chose.
+ */
+test('the door paints the apps a guest kept with the radio off', async ({ browser, baseURL }) => {
+  test.setTimeout(120_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 393, height: 852 },
+  });
+  const page = await context.newPage();
+
+  await gotoUnderWorkerControl(page, `${baseURL}/`);
+  await page.evaluate(() =>
+    window.localStorage.setItem('royaraqamia:home-services:v1', JSON.stringify(['/athkar']))
+  );
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForAppHydrated(page);
+
+  const athkar = page.getByRole('link', { name: 'أذكار الصَّباح والمساء' });
+  await expect(athkar).toBeVisible();
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(athkar).toBeVisible();
+  // The door is still the door: an empty strip would be the empty state, and the
+  // offline card is a route miss, not the app.
+  await expect(page.getByRole('heading', { name: /ابدأ بتطبيقك الأوَّل/ })).toHaveCount(0);
+
+  await context.close();
+});
+
+/**
  * The filtered Community feed (#555).
  *
  * Page one of `/community` is prerendered into the document, so it came back
