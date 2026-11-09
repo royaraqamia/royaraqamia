@@ -1,12 +1,8 @@
 import { request } from '@/frontend/transport/http';
 import type { PublishedFeedResult } from '@/shared/contracts/blogpress';
+import type { MeResponse } from '@/shared/contracts/users';
 
-export interface Me {
-  isAdmin: boolean;
-  name: string | null;
-  avatarUrl: string | null;
-  username: string | null;
-}
+export type Me = MeResponse;
 
 export async function getMe(): Promise<Me> {
   return request<Me>('/api/me', {

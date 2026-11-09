@@ -78,6 +78,22 @@ export type UpdateUsernameInput = z.infer<typeof UpdateUsernameSchema>;
 /** Display name shown beside a member's avatar across the site. */
 export const ProfileNameSchema = z.string().trim().min(1, 'الاسم مطلوب').max(80, 'الاسم طويل جدًا');
 
+/**
+ * What `GET /api/me` answers: the caller's identity as the account card draws
+ * it. The app reads the same route the page's session provider reads, so the
+ * profile card cannot show a name or an avatar the page would not (#946,
+ * ADR-0098). `isAdmin` is a boolean, never the allowlist.
+ */
+export const MeResponseSchema = z.object({
+  isAdmin: z.boolean(),
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  username: z.string().nullable(),
+});
+
+export type MeResponse = z.infer<typeof MeResponseSchema>;
+
 export const UpdateNameSchema = z.object({
   name: ProfileNameSchema,
 });

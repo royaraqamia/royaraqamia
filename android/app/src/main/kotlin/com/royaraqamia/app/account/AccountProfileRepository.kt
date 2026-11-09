@@ -4,6 +4,7 @@ import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.contracts.generated.AvatarUploadResponse
+import com.royaraqamia.app.contracts.generated.MeResponse
 import com.royaraqamia.app.contracts.generated.UpdateName
 import com.royaraqamia.app.contracts.generated.UpdateNameResponse
 import com.royaraqamia.app.net.MultipartFile
@@ -33,6 +34,9 @@ class AccountProfileRepository(
     private val client: ApiClient,
     private val avatars: AvatarLoader,
 ) : AvatarLoader {
+    /** The member the card draws: the same read the page's session provider makes. */
+    suspend fun profile(): ApiResult<MeResponse> = client.get(PATH_ME)
+
     suspend fun updateName(name: String): ApiResult<UpdateNameResponse> =
         client.patch<UpdateNameResponse>(PATH_NAME, ContractCodec.encode(UpdateName(name)))
 
@@ -42,15 +46,25 @@ class AccountProfileRepository(
             file = MultipartFile(AVATAR_FIELD, file.fileName, file.mimeType, file.bytes),
         )
 
+    /** Removes the picture the profile row points at, the page's `DELETE /api/me/avatar`. */
+    suspend fun removeAvatar(): ApiResult<AvatarUploadResponse> = client.delete(PATH_AVATAR)
+
     /** The avatar's bytes, or `null` when the picture cannot be read. */
     override suspend fun load(url: String): ByteArray? =
         url.trim().takeIf { it.isNotEmpty() }?.let { avatars.load(it) }
 
     companion object {
+        const val PATH_ME = "/api/me"
         const val PATH_NAME = "/api/me/name"
         const val PATH_AVATAR = "/api/me/avatar"
 
         /** The field the page's `FormData` and the route's `formData.get` both name. */
         const val AVATAR_FIELD = "file"
+
+        /**
+         * The page's own ceiling (`AVATAR_MAX_BYTES` in `shared/contracts/users`):
+         * the card refuses an oversized pick before spending a request on it.
+         */
+        const val AVATAR_MAX_BYTES = 5 * 1024 * 1024
     }
 }

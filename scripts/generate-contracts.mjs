@@ -278,7 +278,12 @@ export const CONTRACTS = [
   {
     module: 'shared/contracts/users',
     file: 'UsersContracts.kt',
-    schemas: ['UpdateNameSchema', 'UpdateNameResponseSchema', 'AvatarUploadResponseSchema'],
+    schemas: [
+      'MeResponseSchema',
+      'UpdateNameSchema',
+      'UpdateNameResponseSchema',
+      'AvatarUploadResponseSchema',
+    ],
   },
 ];
 

@@ -121,4 +121,43 @@ class AccountProfileRepositoryTest {
             (result as ApiResult.Failure).error,
         )
     }
+
+    @Test
+    fun `the card reads the member from the page's own me route`() {
+        val transport =
+            RecordingTransport {
+                HttpResponse(
+                    200,
+                    """{"isAdmin":false,"name":"أحمد","email":"a@b.test","avatarUrl":null,"username":"ahmad"}""",
+                )
+            }
+
+        val result = runBlocking { repository(transport).profile() }
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("أحمد", (result as ApiResult.Success).value.name)
+        assertEquals("a@b.test", result.value.email)
+
+        val request = transport.requests.single()
+        assertEquals("GET", request.method)
+        assertEquals("https://app.test/api/me", request.url)
+        assertEquals("Bearer access-1", request.bearer)
+    }
+
+    @Test
+    fun `removing the avatar is the page's DELETE on the same route`() {
+        val transport =
+            RecordingTransport { HttpResponse(200, """{"success":true,"avatarUrl":null}""") }
+
+        val result = runBlocking { repository(transport).removeAvatar() }
+
+        assertTrue(result is ApiResult.Success)
+
+        val request = transport.requests.single()
+        assertEquals("DELETE", request.method)
+        assertEquals("https://app.test/api/me/avatar", request.url)
+        assertEquals("Bearer access-1", request.bearer)
+        assertEquals("https://app.test", request.headers["Origin"])
+        assertEquals("same-origin", request.headers["Sec-Fetch-Site"])
+    }
 }

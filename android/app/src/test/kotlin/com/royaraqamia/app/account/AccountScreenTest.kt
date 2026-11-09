@@ -12,7 +12,17 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.net.HttpResponse
+import com.royaraqamia.app.session.MemoryTokenStore
+import com.royaraqamia.app.session.RefreshOutcome
+import com.royaraqamia.app.session.Session
+import com.royaraqamia.app.session.TokenPair
+import com.royaraqamia.app.session.TokenRefresher
+import com.royaraqamia.app.store.MemoryIdentityStorage
+import com.royaraqamia.app.support.RecordingTransport
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -40,6 +50,33 @@ import org.robolectric.annotation.GraphicsMode
 class AccountScreenTest {
     @get:Rule val compose = createComposeRule()
 
+    /** The profile read the card makes, answered with the fixture member. */
+    private fun profileRepository(): AccountProfileRepository {
+        val session =
+            runBlocking {
+                Session(
+                        MemoryTokenStore("refresh-1"),
+                        TokenRefresher { RefreshOutcome.Refused },
+                        MemoryIdentityStorage(),
+                    )
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
+            }
+        return AccountProfileRepository(
+            client =
+                ApiClient(
+                    "https://app.test",
+                    session,
+                    RecordingTransport {
+                        HttpResponse(
+                            200,
+                            """{"isAdmin":false,"name":"أحمد","email":"a@b.test","avatarUrl":null,"username":"ahmad"}""",
+                        )
+                    },
+                ),
+            avatars = AvatarLoader { null },
+        )
+    }
+
     private fun draw(
         state: AccountUiState = AccountUiState.Member,
         isAdmin: Boolean = false,
@@ -53,6 +90,7 @@ class AccountScreenTest {
                         AccountScreen(
                             state = state,
                             isAdmin = isAdmin,
+                            profileRepository = profileRepository(),
                             onOpenRoute = onOpenRoute,
                             onSignOut = onSignOut,
                         )

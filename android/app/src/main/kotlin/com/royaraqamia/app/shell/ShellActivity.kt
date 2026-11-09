@@ -244,6 +244,7 @@ class ShellActivity : ComponentActivity() {
                                     // #974), so the row is drawn only when a later
                                     // slice can verify it against the server.
                                     isAdmin = false,
+                                    profileRepository = graph.accountProfile,
                                     onOpenRoute = ::openRoute,
                                     onSignOut = ::signOut,
                                 )
