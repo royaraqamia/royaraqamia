@@ -53,6 +53,9 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  // A fresh test is a fresh page load: the open tafsir lives in the address bar
+  // (ADR-0147), and jsdom keeps one URL for the whole file.
+  window.history.replaceState(null, '', '/');
 });
 
 describe('the tafsir in the reader', () => {
