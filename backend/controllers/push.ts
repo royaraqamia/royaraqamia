@@ -47,7 +47,7 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
     if (!user) {
       return jsonResult(401, {
         success: false,
-        code: 'UNAUTHORIZED',
+        code: 'session_expired',
         error: 'غير مصرح. يرجى تسجيل الدخول.',
       });
     }
@@ -70,7 +70,7 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
       // schedule keeps a sliding window full and locks itself out for good.
       return jsonResult(
         429,
-        { success: false, code: 'RATE_LIMITED', error: 'تم تجاوز حد الاشتراك في الإشعارات' },
+        { success: false, code: 'rate_limited', error: 'تم تجاوز حد الاشتراك في الإشعارات' },
         { headers: { 'Retry-After': retryAfterSeconds(decision.retryAfterMs) } }
       );
     }

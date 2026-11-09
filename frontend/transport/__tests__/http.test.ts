@@ -231,7 +231,7 @@ describe('requestWithMeta', () => {
         headers: new Headers({ 'Retry-After': '120' }),
         json: vi.fn().mockResolvedValue({
           success: false,
-          code: 'RATE_LIMITED',
+          code: 'rate_limited',
           error: 'تم تجاوز الحد',
         }),
       })
@@ -240,7 +240,7 @@ describe('requestWithMeta', () => {
     const error = await captureError(request('/api/push/subscribe'));
 
     expect(error.status).toBe(429);
-    expect(error.code).toBe('RATE_LIMITED');
+    expect(error.code).toBe('rate_limited');
     expect(error.retryAfterMs).toBe(120_000);
   });
 

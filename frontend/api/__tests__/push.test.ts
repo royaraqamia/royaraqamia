@@ -155,7 +155,7 @@ describe('a refused save', () => {
     const { subscription } = installPushGlobals();
     mockRequest.mockRejectedValue(
       new ApiError('تم تجاوز حد الاشتراك في الإشعارات', 429, {
-        code: 'RATE_LIMITED',
+        code: 'rate_limited',
         retryAfterMs: 600_000,
       })
     );
@@ -169,7 +169,7 @@ describe('a refused save', () => {
 
   it('retries the save, not the subscription, so the endpoint is not minted twice', async () => {
     const { registration } = installPushGlobals({ existing: true });
-    mockRequest.mockRejectedValueOnce(new ApiError('حد', 429, { code: 'RATE_LIMITED' }));
+    mockRequest.mockRejectedValueOnce(new ApiError('حد', 429, { code: 'rate_limited' }));
     expect(await subscribeToPush()).toBe('rateLimited');
 
     mockRequest.mockResolvedValue({ success: true });
@@ -182,7 +182,7 @@ describe('a refused save', () => {
 
   it('names an expired session instead of the connection', async () => {
     installPushGlobals();
-    mockRequest.mockRejectedValue(new ApiError('غير مصرح', 401, { code: 'UNAUTHORIZED' }));
+    mockRequest.mockRejectedValue(new ApiError('غير مصرح', 401, { code: 'session_expired' }));
 
     expect(await subscribeToPush()).toBe('unauthorized');
   });
@@ -210,7 +210,7 @@ describe('a refused save', () => {
 
   it('forgets the pending save when the user turns the device off', async () => {
     installPushGlobals({ existing: true });
-    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'RATE_LIMITED' }));
+    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'rate_limited' }));
     await subscribeToPush();
 
     await unsubscribeFromPush();
@@ -221,7 +221,7 @@ describe('a refused save', () => {
 
   it('falls back to its own cooldown when the server sends no wait', async () => {
     installPushGlobals();
-    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'RATE_LIMITED' }));
+    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'rate_limited' }));
 
     await subscribeToPush();
 

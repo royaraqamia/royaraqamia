@@ -196,8 +196,8 @@ export function applicationServerKeyMatches(
  */
 function failureFrom(error: unknown): PushRetryKind {
   if (!(error instanceof ApiError) || error.status === undefined) return 'unreachable';
-  if (error.code === 'RATE_LIMITED' || error.status === 429) return 'rateLimited';
-  if (error.code === 'UNAUTHORIZED' || error.status === 401) return 'unauthorized';
+  if (error.code === 'rate_limited' || error.status === 429) return 'rateLimited';
+  if (error.code === 'session_expired' || error.status === 401) return 'unauthorized';
   return 'failed';
 }
 

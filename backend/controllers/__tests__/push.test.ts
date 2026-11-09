@@ -102,7 +102,7 @@ describe('push controller', () => {
       const result = await subscribePush(validBody, sameOriginHeaders());
 
       expect(result.status).toBe(401);
-      expect(result).toMatchObject({ body: expect.objectContaining({ code: 'UNAUTHORIZED' }) });
+      expect(result).toMatchObject({ body: expect.objectContaining({ code: 'session_expired' }) });
       expect(mockUpsert).not.toHaveBeenCalled();
     });
 
@@ -143,7 +143,7 @@ describe('push controller', () => {
 
       expect(result).toMatchObject({
         status: 429,
-        body: expect.objectContaining({ success: false, code: 'RATE_LIMITED' }),
+        body: expect.objectContaining({ success: false, code: 'rate_limited' }),
         headers: { 'Retry-After': '90' },
       });
       expect(mockGetRateLimitDecision).toHaveBeenCalledWith('push:subscribe:u-1', 20, 3600_000);
