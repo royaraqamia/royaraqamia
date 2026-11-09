@@ -38,6 +38,7 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
           return (
             <li
               key={item.href}
+              data-visual="services-row"
               className={cn(
                 'flex items-center gap-3 px-4 py-1',
                 index < (subItems ?? []).length - 1 && 'border-b border-neutral-800/60'
@@ -51,6 +52,7 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
               <button
                 type="button"
                 aria-pressed={added}
+                data-visual="services-row-action"
                 disabled={pending}
                 onClick={() => {
                   setError('');

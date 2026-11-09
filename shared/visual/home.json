@@ -1,0 +1,87 @@
+{
+  "surface": "home",
+  "route": "/",
+  "notes": "The door's own boxes (ADR-0146), declared before the native sheet ports them (phase 5 of #1194). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the same add/remove sheet the strip's end control and the empty state open. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label - the app test that draws it is named by the gate entry when the sheet is ported, and until then this file is a contract with no recording, which `check:visual` reports as declared and not yet captured rather than pretending the page and an app agree. Widths of the sheet's title are left out because its width is the run of text; colours are the raster's job. The empty state is the third state of the same surface and is recorded when the strip is.",
+  "states": [
+    {
+      "name": "strip",
+      "origin": "strip",
+      "capture": "strip",
+      "elements": [
+        {
+          "name": "strip",
+          "web": { "selector": "[data-visual='home-app-strip']" },
+          "app": { "tag": "home-app-strip" },
+          "properties": ["top", "width", "height", "columnGap"]
+        },
+        {
+          "name": "new-app",
+          "web": { "selector": "[data-visual='home-new-app']" },
+          "app": { "tag": "home-new-app" },
+          "properties": ["top", "width", "height", "radius", "fontSize", "paddingLeft"]
+        }
+      ]
+    },
+    {
+      "name": "picker",
+      "origin": "sheet",
+      "capture": "sheet",
+      "elements": [
+        {
+          "name": "sheet",
+          "web": { "selector": "[data-visual='services-sheet']" },
+          "app": { "tag": "services-sheet" },
+          "properties": ["top", "width", "height", "radius", "paddingTop"]
+        },
+        {
+          "name": "title",
+          "web": { "selector": "[data-visual='services-sheet-title']" },
+          "app": { "tag": "services-sheet-title" },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "body",
+          "web": { "selector": "[data-visual='services-sheet-body']" },
+          "app": { "tag": "services-sheet-body" },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "row",
+          "web": { "selector": "[data-visual='services-row']" },
+          "app": { "tag": "services-row" },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "row-action",
+          "web": { "selector": "[data-visual='services-row-action']" },
+          "app": { "tag": "services-row-action" },
+          "properties": ["width", "height", "radius", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "origin": "title",
+      "elements": [
+        {
+          "name": "title",
+          "web": { "selector": "[data-visual='home-empty'] h1" },
+          "app": { "tag": "home-empty-title" },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "body",
+          "web": { "selector": "[data-visual='home-empty'] p" },
+          "app": { "tag": "home-empty-body" },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "add",
+          "web": { "selector": "[data-visual='home-empty-add']" },
+          "app": { "tag": "home-empty-add" },
+          "properties": ["width", "height", "radius", "fontSize"]
+        }
+      ]
+    }
+  ]
+}
