@@ -13,6 +13,7 @@ import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
+import { Navbar } from '../frontend/ui/Navbar';
 import { QuranPlayerProvider } from '@/frontend/state/quran/player-context';
 import { GlobalPlayer } from '@/frontend/ui/quran/global-player';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
@@ -182,6 +183,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}
                         <NavHistoryTracker />
+                        {/* The top nav is shell chrome, not a page's: one mount
+                            here puts it on every page that wears the app chrome
+                            (ADR-0149), and `/` reserves the same band it always
+                            did. */}
+                        <Navbar reserveSpace />
                         <SecondaryHeader />
                         {children}
                         <BottomTabBar />

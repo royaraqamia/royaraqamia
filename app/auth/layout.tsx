@@ -1,6 +1,5 @@
 import './app.css';
 import type { Metadata } from 'next';
-import { Navbar } from '@/frontend/ui/Navbar';
 
 export const metadata: Metadata = {
   title: {
@@ -13,7 +12,6 @@ export const metadata: Metadata = {
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col relative overflow-hidden">
-      <Navbar />
       <main
         id="main-content"
         className="flex-1 flex items-center justify-center py-24 px-4 relative z-10"

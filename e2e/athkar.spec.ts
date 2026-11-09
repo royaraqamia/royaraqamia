@@ -2,11 +2,10 @@ import { test, expect, type Page } from '@playwright/test';
 
 /**
  * `/athkar` is a prerendered reading surface: the two collections are in the
- * document, and the only state is the day's count on the device. So the things
- * worth proving in a browser are that a visitor can add Athkar to the homepage
- * from the picker and open it there, and that a count survives the reload the
- * real reader actually does — jsdom has no `localStorage` across a document, and
- * the unit tests can only prove the functions, not the page.
+ * document, and the only state is the day's count on the device. The sitting
+ * itself is the URL (ADR-0147): `/athkar` is the morning and `/athkar/evening`
+ * the evening, so the browser tests prove the picker still opens it, a count
+ * survives a reload, and a shared evening link lands on the evening list.
  */
 
 async function openFromMenu(page: Page) {
@@ -51,11 +50,31 @@ test('a count survives a reload', async ({ page }) => {
   await expect(restored).toContainText('1 من 3');
 });
 
-test('the evening tab swaps the collection', async ({ page }) => {
+test('the evening tab is its own URL and survives a reload', async ({ page }) => {
   await page.goto('/athkar');
 
   await page.getByRole('tab', { name: 'أذكار المساء' }).click();
 
+  await expect(page).toHaveURL(/\/athkar\/evening$/);
   await expect(page.locator('[data-athkar-id="amsayna-wa-amsa-al-mulk"]')).toBeVisible();
+  await expect(page.locator('[data-athkar-id="asbahna-wa-asbaha-al-mulk"]')).toHaveCount(0);
+
+  await page.reload();
+
+  // The sitting is the URL (ADR-0147), so a refresh lands where the reader was.
+  await expect(page.getByRole('tab', { name: 'أذكار المساء' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  await expect(page.locator('[data-athkar-id="amsayna-wa-amsa-al-mulk"]')).toBeVisible();
+});
+
+test('a shared evening link opens the evening sitting', async ({ page }) => {
+  await page.goto('/athkar/evening');
+
+  await expect(page.getByRole('tab', { name: 'أذكار المساء' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
   await expect(page.locator('[data-athkar-id="asbahna-wa-asbaha-al-mulk"]')).toHaveCount(0);
 });

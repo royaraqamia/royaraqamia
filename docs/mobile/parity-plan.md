@@ -29,7 +29,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
-- [ ] **athkar** `/athkar` — todo
+- [ ] **athkar** `/athkar` `/athkar/evening` — todo
 
 ## Sign-in
 

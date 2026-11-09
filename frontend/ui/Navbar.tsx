@@ -5,26 +5,35 @@ import { usePathname } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { TopNav } from './navbar/TopNav';
 import { SERVICES_LINK } from './navbar/services-link';
-import { isPrimaryRoute } from './navbar/route-kind';
+import { chromeFor } from './navbar/route-kind';
 
 /**
- * The app's top nav, for the three primary routes only.
+ * The app's top nav, for the pages that keep it: the homepage, the account and
+ * community doors, the eleven app roots (ADR-0146, ADR-0149), and the public
+ * entries a stranger can land on — where the nav is the way into the site but
+ * the member's tab bar is not.
  *
  * The check lives here rather than in each layout because the primary layouts
  * also wrap their own sub-routes: `app/community/layout.tsx` renders this on
  * both `/community` (primary, keeps the nav) and `/community/[slug]`
  * (secondary, gets the floating back control instead).
  *
+ * The top nav belongs to the shell, not to a page (ADR-0149): it is mounted
+ * once by the root layout, so an app root opened from the strip, from a shared
+ * link or by a refresh finds the same bar without every route having to add it.
+ *
  * `reserveSpace` answers a shell whose content should start *below* the fixed
- * bar (`/community`, `/account`). It rides along with the route check on
- * purpose: the space and the bar it clears appear and disappear together, so a
- * secondary child of the same layout gets neither. Left off where content is
- * meant to sit under the bar, like the home hero.
+ * bar. It rides along with the route check on purpose: the space and the bar it
+ * clears appear and disappear together, so a secondary child of the same layout
+ * gets neither. Left off where content is meant to sit under the bar, like the
+ * home hero.
  */
 export function Navbar({ reserveSpace = false }: { reserveSpace?: boolean } = {}) {
   const pathname = usePathname();
 
-  if (!isPrimaryRoute(pathname)) return null;
+  // The top nav is the way in on both the app chrome and a public entry; only a
+  // drill-down hands the corner to the floating back control (ADR-0149).
+  if (chromeFor(pathname) === 'back') return null;
 
   return <PrimaryNavbar reserveSpace={reserveSpace} />;
 }
@@ -118,11 +127,7 @@ function PrimaryNavbar({ reserveSpace }: { reserveSpace: boolean }) {
           with it — otherwise a page's first row lands under the bar instead of
           below it. */}
       {reserveSpace && (
-        <div
-          data-navbar-spacer
-          aria-hidden="true"
-          className="h-[calc(4rem+var(--roy-safe-top))] lg:h-[calc(5rem+var(--roy-safe-top))]"
-        />
+        <div data-navbar-spacer aria-hidden="true" className="h-[var(--roy-navbar-space)]" />
       )}
 
       <nav

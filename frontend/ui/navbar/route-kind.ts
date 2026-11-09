@@ -1,17 +1,40 @@
+import { HOME_SERVICE_ROUTES } from '@/shared/contracts/home-services-catalog';
+
 /**
- * Which page is allowed to wear the app chrome.
+ * Which chrome a page wears.
  *
- * Three routes are *primary* — exactly the three bottom-tab destinations. They
- * are the only ones that keep the top nav and the bottom tab bar. Every other
- * route is a *secondary* page: it gets the floating back control instead, the way
- * a native app drops its tab bar the moment you step into a detail screen.
+ * The homepage is the app door (ADR-0146), so its tabs are the member's apps:
+ * the eleven roots open inside the same shell, exactly like the three bottom-tab
+ * destinations. A drill-down is still a page of its own and drops to the
+ * floating back control, and a public entry a stranger can land on (a printed
+ * certificate, an unlock link) gets the top nav without the member's tab bar
+ * (ADR-0149).
  *
  * `frontend/ui/__tests__/route-kind.test.ts` re-derives the layout-only list
  * below from `app/` and fails when the two drift.
  */
 
-/** The bottom-tab destinations, and nothing else. */
+/** The three bottom-tab destinations. */
 export const PRIMARY_ROUTES: readonly string[] = ['/', '/community', '/account'];
+
+/** The member's app roots, from the one catalog the strip and picker read. */
+export const APP_ROUTES: readonly string[] = HOME_SERVICE_ROUTES;
+
+/**
+ * Views inside a root that are a mode of it, not a drill-down: a sitting of the
+ * same reader, reached from a tab that never leaves the app.
+ */
+export const APP_MODE_ROUTES: readonly string[] = ['/athkar/evening'];
+
+/**
+ * Public entry points a stranger lands on: the top nav gives them a way into
+ * the site, and the member's tab bar would be noise. The pattern's `*` matches
+ * exactly one segment.
+ */
+export const TOP_NAV_ONLY_PATHS: readonly (readonly string[])[] = [
+  ['verify', '*'],
+  ['linksnap', 'unlock', '*'],
+];
 
 /**
  * Paths that exist only to hold children: a directory with no `page.tsx` of its
@@ -36,6 +59,9 @@ export const LAYOUT_ONLY_PATHS: readonly (readonly string[])[] = [
   ['u'],
 ];
 
+/** The three chromes a page can wear. */
+export type ChromeKind = 'app' | 'top' | 'back';
+
 /** Trim a trailing slash so `/account/` and `/account` are one route. */
 function normalize(pathname: string | null | undefined): string {
   const clean = (pathname ?? '/').split('?')[0]?.split('#')[0] ?? '/';
@@ -47,22 +73,56 @@ function segmentsOf(pathname: string): string[] {
   return pathname.split('/').filter(Boolean);
 }
 
+/**
+ * True for the homepage and the eleven app roots — the destinations the bottom
+ * bar's Home tab stands for.
+ */
+export function isAppRoot(pathname: string | null | undefined): boolean {
+  if (pathname == null) return false;
+  const path = normalize(pathname);
+
+  return path === '/' || APP_ROUTES.includes(path) || APP_MODE_ROUTES.includes(path);
+}
+
+/** True while the page wears the app chrome: top nav and bottom tab bar. */
 export function isPrimaryRoute(pathname: string | null | undefined): boolean {
   // An unresolved pathname is treated as secondary: the back header is the safe
   // default, and its fallback (`parentRouteOf`) answers `/` for exactly this case.
   if (pathname == null) return false;
 
-  return PRIMARY_ROUTES.includes(normalize(pathname));
+  const path = normalize(pathname);
+
+  return (
+    PRIMARY_ROUTES.includes(path) || APP_ROUTES.includes(path) || APP_MODE_ROUTES.includes(path)
+  );
+}
+
+function matchesPattern(pattern: readonly string[], pathname: string): boolean {
+  const segments = segmentsOf(pathname);
+
+  return (
+    pattern.length === segments.length &&
+    pattern.every((part, index) => part === '*' || part === segments[index])
+  );
 }
 
 function isLayoutOnly(pathname: string): boolean {
-  const segments = segmentsOf(pathname);
+  return LAYOUT_ONLY_PATHS.some((pattern) => matchesPattern(pattern, pathname));
+}
 
-  return LAYOUT_ONLY_PATHS.some(
-    (pattern) =>
-      pattern.length === segments.length &&
-      pattern.every((part, index) => part === '*' || part === segments[index])
-  );
+/**
+ * The chrome a path wears. `top` is the public entry: the top nav without the
+ * member's tab bar and without a floating back control.
+ */
+export function chromeFor(pathname: string | null | undefined): ChromeKind {
+  if (pathname == null) return 'back';
+
+  const path = normalize(pathname);
+
+  if (isPrimaryRoute(path)) return 'app';
+  if (TOP_NAV_ONLY_PATHS.some((pattern) => matchesPattern(pattern, path))) return 'top';
+
+  return 'back';
 }
 
 /**

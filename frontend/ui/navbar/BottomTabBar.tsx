@@ -6,7 +6,7 @@ import { House, Users, UserRound, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { BOTTOM_TAB_BAR_COPY } from './bottom-tab-bar-copy';
-import { isPrimaryRoute } from './route-kind';
+import { isAppRoot, isPrimaryRoute } from './route-kind';
 
 interface BottomTab {
   href: string;
@@ -22,7 +22,9 @@ const TABS: BottomTab[] = [
     href: '/',
     label: BOTTOM_TAB_BAR_COPY.homeLabel,
     icon: House,
-    isActive: (pathname) => pathname === '/',
+    // Home stands for the door and its apps (ADR-0146): inside `/quran` the
+    // member is still on a tab the homepage opened, so Home stays lit.
+    isActive: (pathname) => isAppRoot(pathname),
     visual: 'chrome-tab-home',
   },
   {
@@ -42,10 +44,11 @@ const TABS: BottomTab[] = [
 ];
 
 /**
- * App-style bottom tab bar for the three primary routes, shown at every width.
- * It pairs with the fixed top navbar: phone and tablet get it flush to the
- * viewport edge, `lg` and up get the same bar floating clear of the page as a
- * fully rounded pill.
+ * App-style bottom tab bar for the homepage, the account and community doors,
+ * and the eleven app roots, shown at every width (ADR-0146, ADR-0149). It pairs
+ * with the fixed top navbar: phone and tablet get it flush to the viewport
+ * edge, `lg` and up get the same bar floating clear of the page as a fully
+ * rounded pill.
  *
  * Secondary pages render nothing: a real app drops its tab bar the moment you
  * step into a detail screen, and the `SecondaryHeader` floating back control

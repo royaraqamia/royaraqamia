@@ -26,5 +26,5 @@ export const metadata: Metadata = {
 export default async function AthkarRoute() {
   const [morning, evening] = await Promise.all([loadAthkar('morning'), loadAthkar('evening')]);
 
-  return <AthkarPage collections={{ morning, evening }} />;
+  return <AthkarPage collections={{ morning, evening }} period="morning" />;
 }

@@ -12,6 +12,7 @@ import {
 } from 'react';
 
 import type { QuranSurahTafsir, SurahTafsirRef } from '@/shared/contracts/quran-tafsir';
+import { replaceSearch } from '@/frontend/shared/replace-search';
 
 /**
  * The Tafsir, read beside an Ayah (ADR-0057, P3).
@@ -25,6 +26,11 @@ import type { QuranSurahTafsir, SurahTafsirRef } from '@/shared/contracts/quran-
  * into a read that never asked for it. The URL is `immutable` under a
  * `?v=<hash8>` (the vendor script's own sha256), so a re-vendor is a new key in
  * every cache rather than a stale body.
+ *
+ * The open panel is `?tafsir=N` (ADR-0147): it is a view that deserves a link —
+ * a shared Ayah opens with its study beside it — while the fetch and its error
+ * state stay where the file lives. The hash (`#ayah-N`) is kept when the query
+ * changes, so linking an Ayah and opening its tafsir are one address.
  *
  * Without JavaScript the button is not rendered at all: the reader gets the text
  * it has always had, rather than a control that cannot answer.
@@ -86,11 +92,33 @@ export function QuranTafsirProvider({
 
   const toggle = useCallback(
     (ayah: number) => {
-      setOpenAyah((current) => (current === ayah ? null : ayah));
-      if (bodies === null) void load();
+      const next = openAyah === ayah ? null : ayah;
+      setOpenAyah(next);
+      if (next !== null && bodies === null) void load();
+
+      const params = new URLSearchParams(window.location.search);
+      if (next === null) params.delete('tafsir');
+      else params.set('tafsir', String(next));
+      replaceSearch(params.toString());
     },
-    [bodies, load]
+    [openAyah, bodies, load]
   );
+
+  // A shared or refreshed link opens the study panel it names. Read from the
+  // address bar rather than `useSearchParams`, so the sura page stays a static
+  // document for every reader (ADR-0031, ADR-0147).
+  useEffect(() => {
+    if (!tafsir) return;
+
+    const value = new URLSearchParams(window.location.search).get('tafsir');
+    if (value === null) return;
+
+    const ayah = Number(value);
+    if (!Number.isInteger(ayah) || ayah < 1) return;
+
+    setOpenAyah(ayah);
+    void load();
+  }, [tafsir, load]);
 
   const retry = useCallback(() => {
     void load();

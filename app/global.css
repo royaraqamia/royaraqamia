@@ -1604,6 +1604,21 @@ select,
   /* Where a corner float rests, and how far the player raises it. Declared here
      so the tab bar below can move the rest without touching the floats. */
   --roy-corner-rest: calc(20px + var(--roy-safe-bottom));
+
+  /* The band the fixed top nav takes out of the page: its own spacer and every
+     app-chrome shell's minimum height read this one token, so the two cannot
+     disagree (ADR-0149). `--roy-page-height` is what is left for the page, which
+     keeps a shell that fills the viewport from overflowing it by exactly the
+     nav's height. */
+  --roy-navbar-space: calc(4rem + var(--roy-safe-top));
+  --roy-page-height: calc(100dvh - var(--roy-navbar-space));
+}
+
+/* The bar grows a row at `lg`; the page-height token follows it. */
+@media (min-width: 1024px) {
+  :root {
+    --roy-navbar-space: calc(5rem + var(--roy-safe-top));
+  }
 }
 
 .safe-area-inset {
