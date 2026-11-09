@@ -25,7 +25,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-[var(--roy-page-height)] bg-background text-foreground flex flex-col">
       <main id="main-content" className="flex-1 pt-6">
-        <div className="container mx-auto max-w-3xl px-4 pb-16">{children}</div>
+        <div className="mx-auto w-full max-w-3xl px-4 pb-16">{children}</div>
       </main>
       <AccountSiteFooter />
     </div>
