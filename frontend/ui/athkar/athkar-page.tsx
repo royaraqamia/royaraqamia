@@ -5,6 +5,12 @@ import { AthkarReader } from './athkar-reader';
 interface AthkarPageProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
   period: AthkarPeriod;
+  /**
+   * The homepage host owns the selection, so a sitting is state there rather
+   * than a route push (ADR-0151). The route omits it and keeps the addressable
+   * `/athkar` and `/athkar/evening` pages.
+   */
+  onSelectPeriod?: (period: AthkarPeriod) => void;
 }
 
 /**
@@ -16,7 +22,7 @@ interface AthkarPageProps {
  * description, the Hijri date and the daily counter's note all went, so the
  * first thing under the title is the tab that picks the sitting.
  */
-export function AthkarPage({ collections, period }: AthkarPageProps) {
+export function AthkarPage({ collections, period, onSelectPeriod }: AthkarPageProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 pt-10 pb-28 sm:pt-14 sm:pb-32">
       <header className="flex flex-col items-center gap-3 text-center">
@@ -25,7 +31,7 @@ export function AthkarPage({ collections, period }: AthkarPageProps) {
         </SectionTitle>
       </header>
 
-      <AthkarReader collections={collections} period={period} />
+      <AthkarReader collections={collections} period={period} onSelectPeriod={onSelectPeriod} />
     </div>
   );
 }

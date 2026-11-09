@@ -1,5 +1,10 @@
 # The homepage is the app door, and its tabs are the member's apps
 
+> **Superseded in part by [ADR-0151](0151-a-tab-is-a-state-not-a-route.md).** A tab
+> is state on the door, not a link to the app's route: the selected app renders
+> under the strip and the address stays `/`. The eleven routes still exist for a
+> direct visit and a shared link.
+
 The homepage was a marketing page: a hero, metric cards, a horizontal row of
 services and testimonials, all scrolled past by a member who came back to open
 the Quran. The product already has eleven working tools — Quran, Athkar, News,

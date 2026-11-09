@@ -27,10 +27,14 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  // A retired row keeps its copy and glyph in the shared source but is not an
+  // app a member can add (ADR-0152).
+  const rows = (subItems ?? []).filter((item) => !item.retired);
+
   return (
     <div className="flex flex-col">
       <ul role="list" className="flex flex-col">
-        {(subItems ?? []).map((item, index) => {
+        {rows.map((item, index) => {
           const added = order.includes(item.href as HomeServiceKey);
           const Icon = item.icon;
           const pending = busy === item.href;
@@ -41,7 +45,7 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
               data-visual="services-row"
               className={cn(
                 'flex items-center gap-3 px-4 py-1',
-                index < (subItems ?? []).length - 1 && 'border-b border-neutral-800/60'
+                index < rows.length - 1 && 'border-b border-neutral-800/60'
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2.5 py-3 text-start text-sm font-medium text-neutral-200">

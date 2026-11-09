@@ -2,7 +2,7 @@
   "surface": "rates",
   "component": "rates-page",
   "web": {
-    "file": "app/rates/rates-page-copy.ts",
+    "file": "frontend/ui/rates/rates-page-copy.ts",
     "export": "RATES_PAGE_COPY"
   },
   "native": {

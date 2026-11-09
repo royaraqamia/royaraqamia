@@ -8,7 +8,6 @@
  */
 export const HOME_SERVICE_ROUTES = [
   '/news',
-  '/verify',
   '/rates',
   '/scan',
   '/quran',
@@ -17,7 +16,6 @@ export const HOME_SERVICE_ROUTES = [
   '/habitflow',
   '/spendtrack',
   '/notes',
-  '/mcp/guide',
 ] as const;
 
 export type HomeServiceKey = (typeof HOME_SERVICE_ROUTES)[number];

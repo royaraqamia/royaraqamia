@@ -1,9 +1,7 @@
 import './app.css';
 import type { Metadata } from 'next';
 import { loadRatesBoard } from '@/backend/loaders/rates';
-import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { RATES_PAGE_COPY } from './rates-page-copy';
+import { RatesSurface } from '@/frontend/ui/rates/rates-surface';
 
 export const revalidate = 3600;
 
@@ -31,90 +29,13 @@ export const metadata: Metadata = {
   },
 };
 
-function toDate(value: string): { date: Date; isDateOnly: boolean } | null {
-  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  const date = new Date(isDateOnly ? `${value}T00:00:00Z` : value);
-  if (Number.isNaN(date.getTime())) return null;
-  return { date, isDateOnly };
-}
-
-function formatDate(value: string): string {
-  const parsed = toDate(value);
-  if (!parsed) return value;
-  return new Intl.DateTimeFormat('ar-SY-u-nu-latn', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    ...(parsed.isDateOnly ? { timeZone: 'UTC' } : {}),
-  }).format(parsed.date);
-}
-
-function formatHijriDate(value: string): string | null {
-  const parsed = toDate(value);
-  if (!parsed) return null;
-  try {
-    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      ...(parsed.isDateOnly ? { timeZone: 'UTC' } : {}),
-    }).format(parsed.date);
-  } catch {
-    return null;
-  }
-}
-
 export default async function RatesPage() {
   const board = await loadRatesBoard();
-  const hijriDate = board ? formatHijriDate(board.providerQuoteDate) : null;
 
   return (
     <div className="relative min-h-[var(--roy-page-height)] bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
       <main id="main-content" dir="rtl" className="flex-1 pt-6 pb-28 md:pb-32">
-        <div className="cv-auto mx-auto max-w-3xl px-4">
-          <header className="mb-10 text-center">
-            <div data-visual="title">
-              <SectionTitle as="h1">
-                <SectionTitleHighlight>{RATES_PAGE_COPY.pageTitle}</SectionTitleHighlight>
-              </SectionTitle>
-            </div>
-
-            {board ? (
-              <div
-                data-visual="board"
-                className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground"
-              >
-                <span>
-                  {RATES_PAGE_COPY.updatedLabel}{' '}
-                  {hijriDate ? (
-                    <>
-                      <strong className="font-bold text-foreground">{hijriDate}</strong>
-                      <span className="mx-1.5" aria-hidden="true">
-                        —
-                      </span>
-                    </>
-                  ) : null}
-                  <strong className="font-bold text-foreground">
-                    {formatDate(board.providerQuoteDate)} م
-                  </strong>
-                </span>
-                {board.isStale ? (
-                  <span className="rounded-full border border-warning/30 bg-warning/10 px-3 py-1 font-bold text-warning">
-                    {RATES_PAGE_COPY.staleBadge}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </header>
-
-          {board ? (
-            <RatesExplorer board={board} />
-          ) : (
-            <div className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center text-muted-foreground">
-              {RATES_PAGE_COPY.failureBody}
-            </div>
-          )}
-        </div>
+        <RatesSurface board={board} />
       </main>
     </div>
   );

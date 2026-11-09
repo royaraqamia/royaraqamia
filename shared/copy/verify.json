@@ -2,7 +2,7 @@
   "surface": "verify",
   "component": "verify-page",
   "web": {
-    "file": "app/verify/verify-copy.ts",
+    "file": "frontend/ui/verify/verify-copy.ts",
     "export": "VERIFY_COPY"
   },
   "native": {

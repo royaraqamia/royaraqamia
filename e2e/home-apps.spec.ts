@@ -18,7 +18,7 @@ const ACCOUNT = Boolean(process.env.E2E_TEST_EMAIL && process.env.E2E_TEST_PASSW
 async function emptyState(page: Page) {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('ابدأ بتطبيقك الأوَّل');
-  await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toHaveCount(0);
 }
 
 test('a visitor adds an app and keeps it across a reload', async ({ page }) => {
@@ -37,11 +37,11 @@ test('a visitor adds an app and keeps it across a reload', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
-  await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toBeVisible();
 });
 
 test('removing the only app returns the empty state', async ({ page }) => {
@@ -51,7 +51,7 @@ test('removing the only app returns the empty state', async ({ page }) => {
   );
   await page.reload();
 
-  await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toBeVisible();
 
   await page.getByRole('button', { name: 'تطبيق جديد' }).click();
   const dialog = page.getByRole('dialog');
@@ -66,15 +66,19 @@ test('removing the only app returns the empty state', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('ابدأ بتطبيقك الأوَّل');
 });
 
-test('an app keeps its own route when opened from the strip', async ({ page }) => {
+test('a tab opens its app under the strip and stays on the door', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() =>
     window.localStorage.setItem('royaraqamia:home-services:v1', JSON.stringify(['/athkar']))
   );
   await page.reload();
 
-  await page.getByRole('link', { name: 'أذكار الصَّباح والمساء' }).click();
-  await expect(page).toHaveURL(/\/athkar\/?$/);
+  await page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' }).click();
+  // The tab is a selection, not a navigation (ADR-0151): the door stays the
+  // address, the strip stays mounted and the app's own surface renders under it.
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('tab', { selected: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 /**
@@ -127,21 +131,21 @@ test('a guest’s apps join the account’s on sign-in, once', async ({ page, ba
       { key: GUEST_KEY, routes: ['/athkar'] }
     );
     await page.reload();
-    await expect(page.getByRole('link', { name: 'أذكار الصَّباح والمساء' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' })).toBeVisible();
 
     await signIn(context, baseURL!);
     await page.reload();
 
     // Both, account order first: quran was already there, athkar joined it.
-    await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'أذكار الصَّباح والمساء' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' })).toBeVisible();
     expect(await read()).toEqual(['/quran', '/athkar']);
 
     // The merge happened once: the device copy is gone and a reload is stable.
     expect(await page.evaluate((key) => window.localStorage.getItem(key), GUEST_KEY)).toBeNull();
     await page.reload();
-    await expect(page.getByRole('link', { name: 'القرآن الكريم' })).toHaveCount(1);
-    await expect(page.getByRole('link', { name: 'أذكار الصَّباح والمساء' })).toHaveCount(1);
+    await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toHaveCount(1);
+    await expect(page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' })).toHaveCount(1);
   } finally {
     // The shared account is not this spec's to keep.
     await write(original);

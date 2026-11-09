@@ -237,10 +237,6 @@
           "copy": "news"
         },
         {
-          "name": "Verify",
-          "copy": "verify"
-        },
-        {
           "name": "Rates",
           "copy": "rates"
         },
@@ -271,6 +267,10 @@
         {
           "name": "Notes",
           "copy": "notes"
+        },
+        {
+          "name": "Verify",
+          "copy": "verify"
         },
         {
           "name": "McpGuide",
@@ -660,8 +660,8 @@
       "issue": "#658",
       "web": {
         "route": "app/verify/page.tsx",
-        "component": "app/verify/page.tsx",
-        "copyModule": "app/verify/verify-copy.ts",
+        "component": "frontend/ui/verify/verify-surface.tsx",
+        "copyModule": "frontend/ui/verify/verify-copy.ts",
         "copyExport": "VERIFY_COPY"
       },
       "native": {
@@ -732,8 +732,8 @@
       "issue": "#658",
       "web": {
         "route": "app/rates/page.tsx",
-        "component": "app/rates/page.tsx",
-        "copyModule": "app/rates/rates-page-copy.ts",
+        "component": "frontend/ui/rates/rates-surface.tsx",
+        "copyModule": "frontend/ui/rates/rates-page-copy.ts",
         "copyExport": "RATES_PAGE_COPY"
       },
       "native": {
@@ -1132,8 +1132,8 @@
       "issue": "#654",
       "web": {
         "route": "app/linksnap/(app)/page.tsx",
-        "component": "app/linksnap/(app)/page.tsx",
-        "copyModule": "app/linksnap/(app)/linksnap-page-copy.ts",
+        "component": "frontend/ui/linksnap/linksnap-surface.tsx",
+        "copyModule": "frontend/ui/linksnap/linksnap-page-copy.ts",
         "copyExport": "LINKSNAP_PAGE_COPY"
       },
       "native": {
@@ -2032,8 +2032,8 @@
       "issue": "#926",
       "web": {
         "route": "app/news/page.tsx",
-        "component": "app/news/page.tsx",
-        "copyModule": "app/news/news-page-copy.ts",
+        "component": "frontend/ui/news/news-surface.tsx",
+        "copyModule": "frontend/ui/news/news-page-copy.ts",
         "copyExport": "NEWS_PAGE_COPY"
       },
       "native": {

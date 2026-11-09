@@ -2,7 +2,7 @@
   "surface": "linksnap",
   "component": "linksnap-page",
   "web": {
-    "file": "app/linksnap/(app)/linksnap-page-copy.ts",
+    "file": "frontend/ui/linksnap/linksnap-page-copy.ts",
     "export": "LINKSNAP_PAGE_COPY"
   },
   "native": {

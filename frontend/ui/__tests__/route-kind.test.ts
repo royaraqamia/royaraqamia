@@ -113,11 +113,19 @@ describe('route kinds', () => {
   });
 
   it('keeps the Home tab lit on the homepage and the app roots only', () => {
-    for (const pathname of ['/', '/quran', '/athkar/evening', '/mcp/guide']) {
+    for (const pathname of ['/', '/quran', '/athkar/evening']) {
       expect(isAppRoot(pathname)).toBe(true);
     }
 
     for (const pathname of ['/community', '/account', '/quran/2', '/privacy']) {
+      expect(isAppRoot(pathname)).toBe(false);
+    }
+  });
+
+  it('keeps the two pages that left the picker on the app chrome', () => {
+    for (const pathname of ['/verify', '/mcp/guide#install']) {
+      expect(isPrimaryRoute(pathname)).toBe(true);
+      expect(chromeFor(pathname)).toBe('app');
       expect(isAppRoot(pathname)).toBe(false);
     }
   });

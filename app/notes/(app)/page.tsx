@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { NotesPageClient } from '@/frontend/ui/notes/notes-page-client';
+import { NotesSurface } from '@/frontend/ui/notes/notes-surface';
 
 export const metadata: Metadata = {
   title: 'الملاحظات',
@@ -14,10 +14,7 @@ export const metadata: Metadata = {
  * paints it, so the document is identical for a guest and an account and the
  * worker can precache it (ADR-0092).
  */
+
 export default function NotesPage() {
-  return (
-    <div className="space-y-6 pb-8">
-      <NotesPageClient />
-    </div>
-  );
+  return <NotesSurface />;
 }

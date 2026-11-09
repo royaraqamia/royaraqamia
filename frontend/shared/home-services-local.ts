@@ -57,3 +57,35 @@ export function clearGuestHomeServices(): void {
     // A preference that cannot be cleared is not worth failing a sign-in for.
   }
 }
+
+/**
+ * The app the door is showing (`/` hosts every tab, ADR-0151).
+ *
+ * It is a device preference like the strip: the selection is a view, not
+ * account data, and it is only read to keep a reload on the tab the member was
+ * last in. A value the catalog no longer has falls back to the first app.
+ */
+const TAB_KEY = 'royaraqamia:home-tab:v1';
+
+export function readHomeTab(): HomeServiceKey | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(TAB_KEY);
+    return typeof raw === 'string' && (HOME_SERVICE_ROUTES as readonly string[]).includes(raw)
+      ? (raw as HomeServiceKey)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeHomeTab(key: HomeServiceKey): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(TAB_KEY, key);
+  } catch {
+    // The door still opens the tab this visit; only the reload preference is lost.
+  }
+}

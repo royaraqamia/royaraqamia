@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { HabitflowPageClient } from '@/frontend/ui/habitflow/components/habitflow-page-client';
+import { HabitflowSurface } from '@/frontend/ui/habitflow/habitflow-surface';
 
 export const metadata: Metadata = {
   title: 'تتبُّع العادات',
@@ -34,17 +32,7 @@ export const metadata: Metadata = {
  * shell paints the Local Store, so an offline reload renders habits instead of
  * `/offline`.
  */
+
 export default function HomePage() {
-  return (
-    <>
-      <header className="mb-6 text-center sm:mb-10">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>تتبُّع العادات</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
-      <Suspense fallback={null}>
-        <HabitflowPageClient />
-      </Suspense>
-    </>
-  );
+  return <HabitflowSurface />;
 }

@@ -16,12 +16,13 @@ import type { NavLink } from './NavDropdown';
 import { SERVICES_COPY } from './services-copy';
 
 /**
- * The `تطبيقاتنا` sheet and the homepage strip: its trigger and its eleven apps,
- * in the order the site ships (ADR-0146).
+ * The `تطبيقاتنا` sheet and the homepage strip: its trigger and its nine live
+ * apps, in the order the site ships (ADR-0146). `/verify` and `/mcp/guide` are
+ * retired from the picker (ADR-0152): they keep their row here so the copy and
+ * the glyph stay one shared source, and the sheet, the strip and the catalog
+ * filter `retired` out. Their routes and screens stay live.
  *
- * The four lead forms left this list (ADR-0148): the sheet is a picker, and a
- * row that only navigates to a booking form is not an app. Their routes stay
- * live and indexed; only their navigation entry is gone.
+ * The four lead forms left this list earlier (ADR-0148).
  *
  * The words are [SERVICES_COPY] — one generated source, both clients, the app
  * drawing the same rows in `android/.../shell/ShellServices.kt` (#647) — and the
@@ -47,6 +48,7 @@ export const SERVICES_LINK: NavLink = {
       label: SERVICES_COPY.verify,
       isRoute: true,
       icon: ScanLine,
+      retired: true,
     },
     {
       href: '/rates',
@@ -100,6 +102,7 @@ export const SERVICES_LINK: NavLink = {
       href: '/mcp/guide',
       label: SERVICES_COPY.mcpGuide,
       isRoute: true,
+      retired: true,
     },
   ],
 };

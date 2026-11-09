@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { SpendtrackPageClient } from '@/frontend/ui/spendtrack/spendtrack-page-client';
+import { SpendtrackSurface } from '@/frontend/ui/spendtrack/spendtrack-surface';
 
 export const metadata: Metadata = {
   title: 'تتبُّع المصاريف',
@@ -17,18 +15,7 @@ export const metadata: Metadata = {
  * paints the Local Store into it. The store is the only render source; the pull
  * is the only source of server data.
  */
-export default function DashboardPage() {
-  return (
-    <div className="space-y-6 pb-8">
-      <header className="mb-10 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>تتبُّع المصاريف</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
 
-      <Suspense fallback={null}>
-        <SpendtrackPageClient />
-      </Suspense>
-    </div>
-  );
+export default function DashboardPage() {
+  return <SpendtrackSurface />;
 }

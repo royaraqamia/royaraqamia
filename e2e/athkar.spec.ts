@@ -22,8 +22,10 @@ async function openFromMenu(page: Page) {
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
-  await page.getByRole('link', { name: 'أذكار الصَّباح والمساء' }).click();
-  await expect(page).toHaveURL(/\/athkar\/?$/);
+  await page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' }).click();
+  // A tab is state on the door (ADR-0151): the address stays `/` and the
+  // reader renders under the strip, so opening an app is not a navigation.
+  await expect(page).toHaveURL(/\/$/);
 }
 
 test('the picker adds athkar to the homepage and opens it', async ({ page }) => {
