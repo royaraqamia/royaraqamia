@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AdminReportsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="container mx-auto max-w-4xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
       <AdminPageHeader title="إبلاغات المحادثات" />
       {children}
     </div>

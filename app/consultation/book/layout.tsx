@@ -11,7 +11,7 @@ export default function ConsultationBookLayout({ children }: { children: React.R
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <main id="main-content" className="flex-1 pt-6">
-        <div className="container mx-auto max-w-3xl px-4 pb-16">{children}</div>
+        <div className="mx-auto w-full max-w-3xl px-4 pb-16">{children}</div>
       </main>
     </div>
   );

@@ -18,7 +18,7 @@ export function CTA() {
         <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] bg-size-[24px_24px] opacity-20 mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl z-10">
+      <div className="relative mx-auto w-full px-4 sm:px-6 lg:px-8 max-w-7xl z-10">
         <ScrollAnimation animation="slide-up" duration={0.8}>
           <div className="relative max-w-4xl mx-auto">
             {/* Glassmorphic Glow Card Container */}
