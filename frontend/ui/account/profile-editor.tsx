@@ -14,6 +14,7 @@ import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { useSession } from '@/frontend/state/session-provider';
 import { removeAvatar, updateName, uploadAvatar } from '@/frontend/api/me';
+import { PROFILE_CARD_COPY } from './profile-card-copy';
 import {
   AVATAR_ALLOWED_MIME_TYPES,
   AVATAR_MAX_BYTES,
@@ -37,6 +38,10 @@ const dialogClassName =
  * avatar (upload / replace / remove) in another, both triggered from the row.
  * The profile row is the source of truth; after every successful write we ask
  * the session to re-read it so the header and community surfaces pick it up too.
+ *
+ * The words come from `shared/copy/account-profile.json` through
+ * [PROFILE_CARD_COPY] (#946), so the app's card is the same card rather than a
+ * second set of Arabic that renders alike and compares unequal (ADR-0098).
  */
 export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorProps) {
   const { refreshProfile } = useSession();
@@ -74,7 +79,14 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
     event?.preventDefault();
     const parsed = ProfileNameSchema.safeParse(nameValue);
     if (!parsed.success) {
-      setNameError(parsed.error.issues[0]?.message ?? 'اسم غير صالح');
+      const issue = parsed.error.issues[0];
+      setNameError(
+        issue?.code === 'too_small'
+          ? PROFILE_CARD_COPY.nameRequired
+          : issue?.code === 'too_big'
+            ? PROFILE_CARD_COPY.nameTooLong
+            : PROFILE_CARD_COPY.invalidName
+      );
       return;
     }
 
@@ -83,14 +95,14 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
     try {
       const result = await updateName(parsed.data);
       if (!result.success) {
-        setNameError(result.error ?? 'تعذَّر تحديث الاسم');
+        setNameError(result.error ?? PROFILE_CARD_COPY.nameFailed);
         return;
       }
       await refreshProfile();
       setNameDialogOpen(false);
-      toast.success('تمَّ تحديث الاسم');
+      toast.success(PROFILE_CARD_COPY.nameSaved);
     } catch (error) {
-      setNameError(error instanceof Error ? error.message : 'تعذَّر تحديث الاسم');
+      setNameError(error instanceof Error ? error.message : PROFILE_CARD_COPY.nameFailed);
     } finally {
       setSavingName(false);
     }
@@ -102,11 +114,11 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
     if (!file) return;
 
     if (!(AVATAR_ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
-      toast.error('يجب أن يكون الملف صورة صالحة');
+      toast.error(PROFILE_CARD_COPY.invalidImage);
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      toast.error('يجب أن تكون الصورة أقل من 5 ميغابايت');
+      toast.error(PROFILE_CARD_COPY.imageTooLarge);
       return;
     }
 
@@ -114,14 +126,14 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
     try {
       const result = await uploadAvatar(file);
       if (!result.success) {
-        toast.error(result.error ?? 'تعذَّر رفع الصُّورة');
+        toast.error(result.error ?? PROFILE_CARD_COPY.avatarFailed);
         return;
       }
       await refreshProfile();
       setAvatarDialogOpen(false);
-      toast.success('تمَّ تحديث الصُّورة');
+      toast.success(PROFILE_CARD_COPY.avatarSaved);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذَّر رفع الصُّورة');
+      toast.error(error instanceof Error ? error.message : PROFILE_CARD_COPY.avatarFailed);
     } finally {
       setUploadingAvatar(false);
     }
@@ -132,14 +144,14 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
     try {
       const result = await removeAvatar();
       if (!result.success) {
-        toast.error(result.error ?? 'تعذَّر حذف الصُّورة');
+        toast.error(result.error ?? PROFILE_CARD_COPY.avatarRemoveFailed);
         return;
       }
       await refreshProfile();
       setAvatarDialogOpen(false);
-      toast.success('تمَّ حذف الصُّورة');
+      toast.success(PROFILE_CARD_COPY.avatarRemoved);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذَّر حذف الصُّورة');
+      toast.error(error instanceof Error ? error.message : PROFILE_CARD_COPY.avatarRemoveFailed);
     } finally {
       setRemovingAvatar(false);
       setConfirmDeleteOpen(false);
@@ -147,11 +159,15 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
   };
 
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
+    <section
+      data-visual="account-profile-card"
+      className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5"
+    >
       <button
         type="button"
+        data-visual="account-profile-avatar"
         onClick={() => setAvatarDialogOpen(true)}
-        aria-label={showAvatar ? 'تعديل أو حذف صُورة الحساب' : 'إضافة صُورة الحساب'}
+        aria-label={showAvatar ? PROFILE_CARD_COPY.editAvatar : PROFILE_CARD_COPY.addAvatar}
         className="group relative h-14 w-14 shrink-0 rounded-full transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10 text-lg font-bold text-primary">
@@ -180,20 +196,26 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
 
       <div className="min-w-0 flex-1 text-start">
         <div className="flex items-center gap-1.5">
-          <p className="truncate text-base sm:text-lg font-bold text-foreground">
-            {userName || userEmail || 'المستخدِم'}
+          <p
+            data-visual="account-profile-name"
+            className="truncate text-base sm:text-lg font-bold text-foreground"
+          >
+            {userName || userEmail || PROFILE_CARD_COPY.defaultName}
           </p>
           <button
             type="button"
             onClick={openNameDialog}
-            aria-label="تعديل الاسم"
+            aria-label={PROFILE_CARD_COPY.editName}
             className={cn(iconButtonClasses, 'h-7 w-7 rounded-lg')}
           >
             <Pencil className="size-3.5" aria-hidden="true" />
           </button>
         </div>
-        <p className="truncate text-xs sm:text-sm text-muted-foreground">
-          {userEmail || 'حساب نشط'}
+        <p
+          data-visual="account-profile-email"
+          className="truncate text-xs sm:text-sm text-muted-foreground"
+        >
+          {userEmail || PROFILE_CARD_COPY.activeAccount}
         </p>
       </div>
 
@@ -216,7 +238,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
           aria-describedby={undefined}
           className={cn(dialogClassName, 'gap-0')}
         >
-          <DialogTitle className="sr-only">تعديل الاسم</DialogTitle>
+          <DialogTitle className="sr-only">{PROFILE_CARD_COPY.editName}</DialogTitle>
 
           <form onSubmit={saveName} className="space-y-4">
             <div className="space-y-2.5">
@@ -224,7 +246,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                 htmlFor="profile-name"
                 className="block text-[13px] font-medium text-foreground/80"
               >
-                الاسم
+                {PROFILE_CARD_COPY.nameLabel}
               </label>
               <Input
                 id="profile-name"
@@ -237,7 +259,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                 maxLength={80}
                 autoComplete="name"
                 error={Boolean(nameError)}
-                aria-label="الاسم"
+                aria-label={PROFILE_CARD_COPY.nameLabel}
               />
             </div>
             {nameError && (
@@ -250,10 +272,10 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                 {savingName ? (
                   <>
                     <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
-                    <span>جاري الحفظ...</span>
+                    <span aria-live="polite">{PROFILE_CARD_COPY.saving}</span>
                   </>
                 ) : (
-                  'حفظ'
+                  PROFILE_CARD_COPY.save
                 )}
               </HeroCtaButton>
             </DialogActions>
@@ -267,7 +289,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
           aria-describedby={undefined}
           className={cn(dialogClassName, 'gap-0')}
         >
-          <DialogTitle className="sr-only">صُورة الحساب</DialogTitle>
+          <DialogTitle className="sr-only">{PROFILE_CARD_COPY.avatarTitle}</DialogTitle>
 
           <div className="flex flex-col items-center gap-3 py-2">
             <span className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10 text-3xl font-bold text-primary">
@@ -289,7 +311,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                 </span>
               )}
             </span>
-            <p className="text-xs text-muted-foreground">الحد الأقصى لحجم الصُّورة 5 ميغابايت</p>
+            <p className="text-xs text-muted-foreground">{PROFILE_CARD_COPY.imageLimit}</p>
           </div>
 
           <DialogActions
@@ -306,12 +328,12 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                   {removingAvatar ? (
                     <>
                       <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
-                      <span>جاري الحذف...</span>
+                      <span aria-live="polite">{PROFILE_CARD_COPY.removing}</span>
                     </>
                   ) : (
                     <>
                       <Trash2 className="size-4" aria-hidden="true" />
-                      <span>حذف الصُّورة</span>
+                      <span>{PROFILE_CARD_COPY.removeAvatar}</span>
                     </>
                   )}
                 </Button>
@@ -327,12 +349,12 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
               {uploadingAvatar ? (
                 <>
                   <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
-                  <span>جاري الرَّفع...</span>
+                  <span aria-live="polite">{PROFILE_CARD_COPY.uploading}</span>
                 </>
               ) : showAvatar ? (
-                'تغيير الصُّورة'
+                PROFILE_CARD_COPY.changeAvatar
               ) : (
-                'رفع صُورة'
+                PROFILE_CARD_COPY.uploadAvatar
               )}
             </HeroCtaButton>
           </DialogActions>
@@ -341,10 +363,10 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
 
       <ConfirmDialog
         open={confirmDeleteOpen}
-        title="حذف الصُّورة"
-        message="هل أنت متأكِّد أنَّك تريد حذف صُورتك الشَّخصيَّة؟"
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
+        title={PROFILE_CARD_COPY.removeAvatar}
+        message={PROFILE_CARD_COPY.removeMessage}
+        confirmLabel={PROFILE_CARD_COPY.confirmDelete}
+        cancelLabel={PROFILE_CARD_COPY.cancel}
         variant="danger"
         isConfirming={removingAvatar}
         onConfirm={handleRemoveAvatar}

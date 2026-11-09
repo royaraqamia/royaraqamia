@@ -1767,6 +1767,42 @@
       ]
     },
     {
+      "id": "account-profile",
+      "surface": "account",
+      "issue": "#946",
+      "web": {
+        "route": "app/account/page.tsx",
+        "component": "frontend/ui/account/profile-editor.tsx",
+        "copyModule": "frontend/ui/account/profile-card-copy.ts",
+        "copyExport": "PROFILE_CARD_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountProfileCard.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountProfileUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountProfileCopy.kt",
+        "copyObject": "AccountProfileCopy"
+      },
+      "copySource": "shared/copy/account-profile.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "editName"
+        },
+        {
+          "name": "EditingName",
+          "copy": "save"
+        },
+        {
+          "name": "EditingAvatar",
+          "copy": "changeAvatar"
+        },
+        {
+          "name": "ConfirmingRemoval",
+          "copy": "confirmDelete"
+        }
+      ]
+    },
+    {
       "id": "account-faq",
       "surface": "account-faq",
       "issue": "#949",
@@ -2106,7 +2142,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountAvatar.kt",
-      "reason": "The account profile card that pairs it with `frontend/ui/account/profile-editor.tsx` is #946; this slice (#945) carries only the transport it reads through, so the avatar has no copy source or state of its own yet. It draws the site's circle and initial, which is why the pair is owed, and the exemption is removed when the card lands."
+      "reason": "The shared avatar the account profile card composes (#945). It draws the site's circle and initial and has no copy source or state of its own, so the card's row in this file owns the pair; the two files are one drawing (#946, ADR-0103)."
     }
   ]
 }

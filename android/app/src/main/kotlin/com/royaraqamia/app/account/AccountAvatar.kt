@@ -96,7 +96,13 @@ fun AccountAvatar(
             initial != null ->
                 Text(
                     text = initial,
-                    style = LocalRoyTypeScale.current.h2.copy(fontWeight = FontWeight.Bold),
+                    style =
+                        // The page sets the initial with the circle it sits in:
+                        // `text-lg` in the card's 56px circle and `text-3xl` in
+                        // the 112px dialog. The two nearest steps are h5 and h2.
+                        (if (size >= 100.dp) LocalRoyTypeScale.current.h2
+                        else LocalRoyTypeScale.current.h5)
+                            .copy(fontWeight = FontWeight.Bold),
                     color = RoyColors.primary,
                 )
 
@@ -105,7 +111,7 @@ fun AccountAvatar(
                     imageVector = LucideVectors.User,
                     contentDescription = null,
                     tint = RoyColors.mutedForeground,
-                    modifier = Modifier.size(size * 0.5f),
+                    modifier = Modifier.size(size * 0.4f),
                 )
         }
     }

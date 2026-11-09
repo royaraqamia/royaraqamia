@@ -34,7 +34,15 @@ export async function getMe(): Promise<HttpResult> {
 
   return jsonResult(
     200,
-    { isAdmin: isAdmin(user?.email ?? '', env.adminEmails), name, avatarUrl, username },
+    {
+      isAdmin: isAdmin(user?.email ?? '', env.adminEmails),
+      name,
+      // The card shows the account's own address, as the page's session does;
+      // it never leaves the caller's own read (#946).
+      email: user?.email ?? null,
+      avatarUrl,
+      username,
+    },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }

@@ -1,0 +1,54 @@
+{
+  "surface": "account",
+  "route": "/account",
+  "notes": "The account page's profile card (#946): the avatar, the name and the email that stand in for the member on the page the card is drawn on. `origin` is the card, because the page's frame and the app's frame are different heights and the design is the gaps inside the card, not where it lands on the 852px screen. `capture` is the card, because it is the region both clients draw identically. Widths of the name and email are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves. The card needs a session, so a recording has to sign in as the fixture account. The surface is declared here and not yet under `docs/mobile/visual-gate.json`, because the allowance card (#947) is still the page's and the surface stays off until the page is whole (#948, ADR-0117).",
+  "states": [
+    {
+      "name": "profile-card",
+      "origin": "card",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='account-profile-card']"
+          },
+          "app": {
+            "tag": "account-profile-card"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "avatar",
+          "web": {
+            "selector": "[data-visual='account-profile-avatar']"
+          },
+          "app": {
+            "tag": "account-profile-avatar"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "name",
+          "web": {
+            "selector": "[data-visual='account-profile-name']"
+          },
+          "app": {
+            "tag": "account-profile-name"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "email",
+          "web": {
+            "selector": "[data-visual='account-profile-email']"
+          },
+          "app": {
+            "tag": "account-profile-email"
+          },
+          "properties": ["height", "fontSize"]
+        }
+      ]
+    }
+  ]
+}

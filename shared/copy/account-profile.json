@@ -1,0 +1,48 @@
+{
+  "surface": "account-profile",
+  "component": "account-profile-card",
+  "web": {
+    "file": "frontend/ui/account/profile-card-copy.ts",
+    "export": "PROFILE_CARD_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountProfileCopy.kt",
+    "object": "AccountProfileCopy"
+  },
+  "notes": {
+    "source": "The account profile card and its two dialogs, in both clients (#946). The site's `ProfileEditor` is the reference: the name edit, the avatar replace and remove, their questions and their sentences are written there first, and the app reads the same source rather than retyping them (ADR-0098).",
+    "placeholders": "No string here carries a placeholder; the card's name and email are data, not copy.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "editAvatar": "تعديل أو حذف صُورة الحساب",
+    "addAvatar": "إضافة صُورة الحساب",
+    "defaultName": "المستخدِم",
+    "editName": "تعديل الاسم",
+    "activeAccount": "حساب نشط",
+    "nameLabel": "الاسم",
+    "nameRequired": "الاسم مطلوب",
+    "nameTooLong": "الاسم طويل جدًا",
+    "invalidName": "اسم غير صالح",
+    "nameFailed": "تعذَّر تحديث الاسم",
+    "nameSaved": "تمَّ تحديث الاسم",
+    "invalidImage": "يجب أن يكون الملف صورة صالحة",
+    "imageTooLarge": "يجب أن تكون الصورة أقل من 5 ميغابايت",
+    "avatarFailed": "تعذَّر رفع الصُّورة",
+    "avatarSaved": "تمَّ تحديث الصُّورة",
+    "avatarRemoveFailed": "تعذَّر حذف الصُّورة",
+    "avatarRemoved": "تمَّ حذف الصُّورة",
+    "saving": "جاري الحفظ...",
+    "save": "حفظ",
+    "avatarTitle": "صُورة الحساب",
+    "imageLimit": "الحد الأقصى لحجم الصُّورة 5 ميغابايت",
+    "removing": "جاري الحذف...",
+    "removeAvatar": "حذف الصُّورة",
+    "uploading": "جاري الرَّفع...",
+    "changeAvatar": "تغيير الصُّورة",
+    "uploadAvatar": "رفع صُورة",
+    "removeMessage": "هل أنت متأكِّد أنَّك تريد حذف صُورتك الشَّخصيَّة؟",
+    "confirmDelete": "حذف",
+    "cancel": "إلغاء"
+  }
+}

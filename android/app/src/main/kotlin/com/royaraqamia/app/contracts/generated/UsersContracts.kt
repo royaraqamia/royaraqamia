@@ -7,6 +7,15 @@ package com.royaraqamia.app.contracts.generated
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class MeResponse(
+    val isAdmin: Boolean,
+    val name: String?,
+    val email: String?,
+    val avatarUrl: String?,
+    val username: String?,
+)
+
+@Serializable
 data class UpdateName(
     val name: String,
 )

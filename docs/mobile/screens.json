@@ -63,7 +63,7 @@
       "surface": "account",
       "enabled": false,
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountScreen.kt",
-      "reason": "The rows and sign-out are drawn (#948); the profile card (#946) and the allowance card (#947) are still the page's, so the surface stays off until it is the whole page."
+      "reason": "The rows and sign-out are drawn (#948) and the profile card with its two dialogs is drawn (#946); the allowance card (#947) is still the page's, so the surface stays off until it is the whole page."
     },
     {
       "surface": "account-links",
