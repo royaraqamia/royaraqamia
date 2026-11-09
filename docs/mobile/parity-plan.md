@@ -81,7 +81,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 66 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 67 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -145,6 +145,7 @@ A component is finished when the surface that draws it is native: 66 ported comp
 - [ ] `account-news-request` on **account-news** · #950
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
+- [x] `quran-player` on **quran-surah** · #956
 - [ ] `news-digest` on **news** · #926
 - [ ] `news-archive` on **news** · #926
 - [ ] `news-story` on **news** · #926

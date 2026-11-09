@@ -7,15 +7,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.QuranPlayerController
 import com.royaraqamia.app.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -80,6 +84,20 @@ fun QuranSurahRoute(
     var loaded by remember(number, targetAyah) { mutableStateOf<LoadedSurah?>(null) }
     var failed by remember(number, targetAyah) { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val player = remember(number) { QuranPlayerController(context) }
+    val snapshot by player.state.collectAsState()
+
+    LaunchedEffect(player, loaded) {
+        val value = loaded ?: return@LaunchedEffect
+        player.connect()
+        player.refreshSaved(number, value.summary.ayahCount)
+    }
+
+    DisposableEffect(player) {
+        onDispose { player.release() }
+    }
+
     LaunchedEffect(number, targetAyah) {
         runCatching {
                 withContext(Dispatchers.IO) {
@@ -110,6 +128,10 @@ fun QuranSurahRoute(
                 position = value.position,
                 onSavePosition = onSavePosition,
                 modifier = modifier,
+                face = QuranPlayerFace.of(number, snapshot),
+                onPlay = { player.play(number) },
+                onToggle = { player.toggle() },
+                onStop = { player.stop() },
             )
         failed -> LoadFailure(modifier)
         else -> Loading(modifier)

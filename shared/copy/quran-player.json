@@ -1,0 +1,28 @@
+{
+  "surface": "quran",
+  "component": "quran-player",
+  "web": {
+    "file": "frontend/ui/quran/quran-player-copy.ts",
+    "export": "QURAN_PLAYER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranPlayerCopy.kt",
+    "object": "QuranPlayerCopy"
+  },
+  "strings": {
+    "sectionLabel": "تلاوة السُّورة",
+    "listen": "استمع للسُّورة",
+    "pause": "إيقاف مؤقّت",
+    "resume": "متابعة",
+    "loading": "جاري التَّحميل…",
+    "retry": "إعادة المحاولة",
+    "stop": "إيقاف التِّلاوة",
+    "ayahLabel": "الآية",
+    "ofLabel": "من",
+    "keepWorking": "جاري الحفظ…",
+    "savedComplete": "محفوظة على هذا الجُهاز، تعمل دون اتِّصال",
+    "savedPartial": "بعض آياتها محفوظة فقط",
+    "offline": "هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها.",
+    "error": "تعذَّر تشغيل التِّلاوة. تحقَّق من الاتِّصال ثمَّ أعد المحاولة."
+  }
+}
