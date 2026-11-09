@@ -25,6 +25,7 @@ import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 import { AppPerfObserver } from '@/frontend/ui/AppPerfObserver';
+import { ScrollbarReveal } from '@/frontend/ui/ScrollbarReveal';
 import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
 
 const designTokensCss = (() => {
@@ -179,6 +180,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <PWAProvider>
                         <RouteChangeFocus />
                         <AppPerfObserver />
+                        <ScrollbarReveal />
                         {/* App chrome is route-aware: primary routes keep the top
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}

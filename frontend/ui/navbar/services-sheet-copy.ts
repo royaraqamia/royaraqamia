@@ -8,7 +8,6 @@
  */
 export const SERVICES_SHEET_COPY = {
   title: 'التطبيقات',
-  body: 'أضِف ما تريد أن تجده في صفحتك، وأزِل ما لا تحتاجه.',
   add: 'إضافة',
   remove: 'إزالة',
   failed: 'تعذَّر تحديث تطبيقاتك.',

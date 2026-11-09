@@ -40,12 +40,6 @@
           "properties": ["top", "height", "fontSize", "fontWeight"]
         },
         {
-          "name": "body",
-          "web": { "selector": "[data-visual='services-sheet-body']" },
-          "app": { "tag": "services-sheet-body" },
-          "properties": ["top", "height", "fontSize"]
-        },
-        {
           "name": "row",
           "web": { "selector": "[data-visual='services-row']" },
           "app": { "tag": "services-row" },
