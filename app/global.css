@@ -1216,6 +1216,11 @@ select,
   );
   filter: blur(5px);
   opacity: 0.55;
+  pointer-events: none;
+  /* Its own layer: the orbit is a transform, so the blurred gradient is
+     composited instead of repainted on the page's layer every frame. */
+  will-change: transform;
+  transform: translateZ(0);
   animation: assistant-orbit 9s linear infinite;
 }
 

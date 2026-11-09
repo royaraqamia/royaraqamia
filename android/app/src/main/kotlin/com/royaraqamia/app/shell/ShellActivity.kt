@@ -26,6 +26,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.assistant.AssistantSheet
+import com.royaraqamia.app.assistant.AssistantSnapshot
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
 import com.royaraqamia.app.accountnews.NewsScreen
@@ -150,6 +151,16 @@ class ShellActivity : ComponentActivity() {
      * member on the screen they opened it from.
      */
     private var assistantOpen by mutableStateOf(false)
+
+    /**
+     * What نور's sheet last painted (ADR-0150).
+     *
+     * Closing the sheet throws its composition away, so the conversation, the
+     * quota and the face it ended on live here instead: the next open paints
+     * them immediately and revalidates behind the paint. A sign-out clears it,
+     * because the next member must not see the previous one's thread.
+     */
+    private var assistantSnapshot by mutableStateOf<AssistantSnapshot?>(null)
 
     /**
      * The update channel (#652): the check, the download, the install, and the
@@ -588,6 +599,8 @@ class ShellActivity : ComponentActivity() {
                     AssistantSheet(
                         repository = graph.chats,
                         signedIn = signedIn,
+                        snapshot = assistantSnapshot,
+                        onSnapshot = { assistantSnapshot = it },
                         onDismiss = { assistantOpen = false },
                         onSignIn = {
                             assistantOpen = false
@@ -738,6 +751,9 @@ class ShellActivity : ComponentActivity() {
     private fun showSignIn() {
         signedIn = false
         unreadCount = null
+        // The next session must not paint this member's conversation first.
+        assistantOpen = false
+        assistantSnapshot = null
         openRoute("/auth/login")
     }
 
@@ -756,6 +772,8 @@ class ShellActivity : ComponentActivity() {
             signedIn = false
             unreadCount = null
             hiddenRoutes = emptySet()
+            assistantOpen = false
+            assistantSnapshot = null
             stack.reset(Routes.HOME)
             current = stack.route
             handOver()
