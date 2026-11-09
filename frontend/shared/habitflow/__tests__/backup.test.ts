@@ -43,4 +43,51 @@ describe('habit backup builders', () => {
     expect(csv).toContain('"قراءة, يومية"');
     expect(csv).toContain('"ملاحظة ""خاصة"""');
   });
+
+  it('defuses a formula-leading name and note', () => {
+    const csv = buildBackupCsv(
+      [
+        {
+          id: 'h-1',
+          name: '=HYPERLINK("https://evil.example","x")',
+          frequency: 'daily',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          archived: false,
+        },
+      ],
+      [
+        {
+          id: 'l-1',
+          habitId: 'h-1',
+          date: '2026-08-02',
+          completed: true,
+          completedAt: '2026-08-02T09:00:00.000Z',
+          note: '=1+1',
+        },
+      ]
+    );
+
+    expect(csv).toContain(`"'=HYPERLINK(""https://evil.example"",""x"")"`);
+    expect(csv).toContain(`,'=1+1,`);
+  });
+
+  it('defuses every lead a spreadsheet evaluates as a formula', () => {
+    for (const lead of ['=', '+', '-', '@']) {
+      const csv = buildBackupCsv(
+        [
+          {
+            id: 'h-1',
+            name: `${lead}SUM(A1)`,
+            frequency: 'daily',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            archived: false,
+          },
+        ],
+        []
+      );
+
+      expect(csv).toContain(`'${lead}SUM(A1)`);
+      expect(csv).not.toContain(`,${lead}SUM(A1),`);
+    }
+  });
 });

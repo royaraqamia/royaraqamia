@@ -142,6 +142,37 @@ describe('HabitBackupService.exportCsv', () => {
       `${habitFixture.id},${habitFixture.name},daily,,,,false,${habitFixture.createdAt}`
     );
   });
+
+  it('defuses a formula-leading name and note', async () => {
+    const repository = makeRepository();
+    (repository.getHabits as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { ...habitFixture, name: '=HYPERLINK("https://evil.example","x")' },
+    ]);
+    (repository.getLogs as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { ...logFixture, kind: 'complete', note: '=1+1' },
+    ]);
+
+    const service = new HabitBackupService(repository);
+    const csv = await service.exportCsv();
+
+    expect(csv).toContain(`"'=HYPERLINK(""https://evil.example"",""x"")"`);
+    expect(csv).toContain(`,'=1+1,`);
+  });
+
+  it('defuses every lead a spreadsheet evaluates as a formula', async () => {
+    for (const lead of ['=', '+', '-', '@']) {
+      const repository = makeRepository();
+      (repository.getHabits as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { ...habitFixture, name: `${lead}SUM(A1)` },
+      ]);
+
+      const service = new HabitBackupService(repository);
+      const csv = await service.exportCsv();
+
+      expect(csv).toContain(`'${lead}SUM(A1)`);
+      expect(csv).not.toContain(`,${lead}SUM(A1),`);
+    }
+  });
 });
 
 describe('HabitBackupService.restoreBackup', () => {
