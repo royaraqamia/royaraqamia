@@ -47,8 +47,10 @@ export function ServicesSheet({
           (document.getElementById(triggerId) as HTMLElement | null)?.focus();
         }}
       >
-        <SheetHeader className="px-4 pt-4 pb-2 text-start">
-          <SheetTitle data-visual="services-sheet-title">{SERVICES_SHEET_COPY.title}</SheetTitle>
+        <SheetHeader className="p-0">
+          {/* The heading is the sheet's accessible name only: the picker needs no
+              visible title above its rows (ADR-0153). */}
+          <SheetTitle className="sr-only">{SERVICES_SHEET_COPY.title}</SheetTitle>
         </SheetHeader>
         <div className="overflow-y-auto p-1.5">
           <ServicesMenuItems subItems={link.subItems} />

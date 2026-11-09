@@ -121,22 +121,6 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
         )
         add(
             AccountLink(
-                id = "news",
-                icon = LucideVectors.Newspaper,
-                label = AccountRowsCopy.NEWS,
-                route = "/account/news",
-            )
-        )
-        add(
-            AccountLink(
-                id = "links",
-                icon = LucideVectors.Link2,
-                label = AccountRowsCopy.LINKS,
-                route = "/account/links",
-            )
-        )
-        add(
-            AccountLink(
                 id = "connected-apps",
                 icon = LucideVectors.Plug,
                 label = AccountRowsCopy.CONNECTED_APPS,

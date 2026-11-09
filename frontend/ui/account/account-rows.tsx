@@ -6,10 +6,8 @@ import {
   ClipboardList,
   FileText,
   CircleQuestionMark,
-  Link2,
   LogOut,
   MessageCircle,
-  Newspaper,
   Plug,
   ShieldCheck,
   ShieldOff,
@@ -43,6 +41,9 @@ interface AccountRowsProps {
  * (ADR-0098). A member gets a link and a sign-out button; a guest gets the rows
  * as buttons that open the sign-in prompt, and no sign-out.
  *
+ * The news and links rows are not here any more (ADR-0153): each app opens its
+ * own account screen from its own page's FAB, and the row duplicated that door.
+ *
  * The shell-only rows (`InstallSection`, `ShellChangelogRow`) arrive as children
  * so they keep the page's order: after the account actions and before the FAQ.
  */
@@ -69,20 +70,6 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
           href="/account/posts"
           icon={FileText}
           label={ACCOUNT_ROWS_COPY.posts}
-          onRequireAuth={onRequireAuth}
-        />
-
-        <AccountRow
-          href="/account/news"
-          icon={Newspaper}
-          label={ACCOUNT_ROWS_COPY.news}
-          onRequireAuth={onRequireAuth}
-        />
-
-        <AccountRow
-          href="/account/links"
-          icon={Link2}
-          label={ACCOUNT_ROWS_COPY.links}
           onRequireAuth={onRequireAuth}
         />
 

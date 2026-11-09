@@ -100,11 +100,17 @@ describe('AccountView', () => {
     for (const label of [
       'الطَّلبات',
       'المنشورات',
-      'الرَّوابط المختصَرة',
       'التَّطبيقات المتَّصلة بالـ MCP',
       'الأعضاء المحظورون',
     ]) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
+    }
+
+    // The news and links rows left the page for their app's own FAB (ADR-0153);
+    // their routes stay live, only the entry is gone.
+    for (const label of ['مصادر الأخبار', 'الرَّوابط المختصَرة']) {
+      expect(screen.queryByRole('button', { name: new RegExp(label) })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }
 

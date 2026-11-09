@@ -229,13 +229,6 @@ fun ServicesSheet(
                             )
                     )
                 }
-                Text(
-                    text = ServicesCopy.TRIGGER,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier.padding(horizontal = spacing.containerPadding, vertical = 12.dp),
-                )
                 ServicesEntry.rows.forEach { entry ->
                     Row(
                         modifier =
