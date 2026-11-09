@@ -12,17 +12,16 @@ import {
 } from 'react';
 import dynamic from 'next/dynamic';
 
-import { scrollToSectionWithRetry } from '@/frontend/shared/scroll';
 import { tolerateChunkFailure } from '../shared/lazy-chunk';
 
-import { useVisibleServices } from './use-visible-services';
+import { SERVICES_LINK } from './services-link';
 
 const loadServicesSheet = () => import('./ServicesSheet');
 
 /**
- * The services sheet, off the initial graph — the home page keeps the bytes of
- * the sheet primitive for the interaction that opens it, not for the first
- * frame that only paints the button.
+ * The app sheet, off the initial graph — the home page keeps the bytes of the
+ * sheet primitive for the interaction that opens it, not for the first frame
+ * that only paints the button.
  */
 const LazyServicesSheet = dynamic(
   tolerateChunkFailure('services sheet', () =>
@@ -48,14 +47,12 @@ interface ServicesMenuProps {
 }
 
 /**
- * The services menu as a standalone trigger. Opens the same bottom `Sheet` as
- * the navbar menu, at every width — phone, tablet and desktop see one
- * presentation. Used by the hero CTA on the home page.
+ * The app sheet as a standalone trigger. Opens the same bottom `Sheet` as the
+ * navbar menu, at every width — phone, tablet and desktop see one presentation.
+ * Used by the homepage empty state and the strip's end control (ADR-0146).
  *
  * The trigger stays a plain element (the caller's own button): importing the
- * primitive's trigger would pull the dialog runtime into the hero's first frame.
- * It receives the trigger's contract instead — `data-state`, `aria-expanded`,
- * `aria-controls` — so its open-state styles behave as they did.
+ * primitive's trigger would pull the dialog runtime into the first frame.
  */
 export function ServicesMenu({ trigger }: ServicesMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,9 +60,6 @@ export function ServicesMenu({ trigger }: ServicesMenuProps) {
   const hasPrefetched = useRef(false);
   const triggerId = useId();
   const contentId = `${triggerId}-sheet`;
-  // The hero's CTA opens the same rows the navbar does, minus the hidden ones
-  // (ADR-0112). Hooks run before the empty return below.
-  const { link, isEmpty } = useVisibleServices();
 
   const prefetchSheet = useCallback(() => {
     if (hasPrefetched.current) return;
@@ -78,14 +72,9 @@ export function ServicesMenu({ trigger }: ServicesMenuProps) {
     setIsOpen(true);
   }, []);
 
-  const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
-    e.preventDefault();
-    scrollToSectionWithRetry(hash.replace(/^\//, '').replace('#', ''));
-  };
-
-  // Every row is hidden: there is nothing to open, so the CTA goes with them.
-  if (isEmpty) return null;
-
+  // The catalog is never empty, but a caller that passes nothing should still
+  // get a button that opens a sheet two clients already draw.
+  const link = SERVICES_LINK;
   const triggerElement = isValidElement(trigger) ? (trigger as ReactElement<TriggerProps>) : null;
 
   return (
@@ -107,7 +96,6 @@ export function ServicesMenu({ trigger }: ServicesMenuProps) {
           open={isOpen}
           onOpenChange={setIsOpen}
           link={link}
-          handleHashClick={handleHashClick}
           triggerId={triggerId}
           contentId={contentId}
         />

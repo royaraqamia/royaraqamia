@@ -50,7 +50,6 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
 - [ ] **account-blocked** `/account/blocked` — todo · #977
 - [x] **account-faq** `/account/faq` — native
-- [ ] **account-services** `/account/services` — todo · #978
 - [ ] **account-news** `/account/news` — todo · #950
 - [ ] **notifications** `/notifications` — todo
 - [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
@@ -81,7 +80,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 68 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 66 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -90,7 +89,6 @@ A component is finished when the surface that draws it is native: 68 ported comp
 - [x] `account-connected-apps` on **account-connected-apps** · #657
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
-- [ ] `shell-services-order` on **home** · #806
 - [ ] `notification-bell` on **home** · #659
 - [ ] `spendtrack-total` on **spendtrack** · #653
 - [ ] `spendtrack-expenses` on **spendtrack** · #653
@@ -137,7 +135,6 @@ A component is finished when the surface that draws it is native: 68 ported comp
 - [ ] `chat-compose-attachments` on **chats** · #933
 - [ ] `chat-attachments` on **chats** · #933
 - [ ] `account-blocked` on **account-blocked** · #977
-- [ ] `account-services` on **account-services** · #978
 - [ ] `account-rows` on **account** · #948
 - [ ] `account-profile` on **account** · #946
 - [x] `account-faq` on **account-faq** · #949
@@ -154,4 +151,4 @@ A component is finished when the surface that draws it is native: 68 ported comp
 
 ## Where this stands
 
-13 native · 22 to do · 2 blocked of 37 surfaces.
+13 native · 21 to do · 2 blocked of 36 surfaces.

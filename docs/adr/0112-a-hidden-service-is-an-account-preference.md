@@ -1,5 +1,9 @@
 # A hidden service is an account preference the menu reads
 
+> **Superseded by [ADR-0148](0148-hidden-services-is-retired.md).** The homepage
+> now owns the list, and the same sheet adds and removes apps, so a separate
+> hidden set has no surface left to mean anything.
+
 `خدماتنا` ships sixteen rows. A member who books one consultation a year and
 never opens the scanner scrolls past fourteen rows every time the menu opens, and
 the home page's row repeats them. The product had no way to say «these are not

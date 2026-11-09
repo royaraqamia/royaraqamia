@@ -114,15 +114,6 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the feed is a per-identity client read, so there is nothing to serve offline; the slot belongs to `/verify`',
   },
-  // The hidden-services page is the same shape one step smaller: its document is
-  // a title and sixteen empty switches until the account's set arrives, so a
-  // precached copy buys an offline visitor nothing the ancestor shell does not
-  // already give them, and it costs `/verify` its slot. Cached at runtime instead.
-  {
-    route: '/account/services',
-    reason:
-      'the switches and the set are a client read, so a precached shell would paint sixteen unknown switches; the slot belongs to `/verify`',
-  },
   // The new-conversation screen, which `/chats/[id]` leads to and which is
   // dynamic for the same reason: who the `?to=` handle is, and the thread this
   // pair already has, are read on the client with the session's own client. A
@@ -133,10 +124,10 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the member and the existing thread are a per-identity client read, so a precached shell would paint an empty frame; the thread it resolves to is dynamic too',
   },
-  // The blocked list is the hidden-services page one step smaller: a title and
-  // nothing until the account's own list arrives, so a precached copy buys an
-  // offline visitor nothing the ancestor shell does not already give them, and
-  // it costs `/verify` its slot. Cached at runtime instead.
+  // The blocked list is a title and nothing until the account's own list
+  // arrives, so a precached copy buys an offline visitor nothing the ancestor
+  // shell does not already give them, and it costs `/verify` its slot. Cached at
+  // runtime instead.
   {
     route: '/account/blocked',
     reason:

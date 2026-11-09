@@ -10,36 +10,29 @@ import { test, expect } from '@playwright/test';
  * `frontend/ui/primitives/overlay-back.ts` does. The gesture Chrome fires at
  * these widths is the same traversal, so the same spec covers both.
  *
- * The home testimonial is the public dialogue: no session, no fixture.
+ * The `تطبيقاتنا` sheet is the public dialogue: no session, no fixture.
  */
 test('back closes the dialogue and leaves the page where it was', async ({ page }) => {
   await page.goto('/');
 
-  const card = page.locator('#testimonials [aria-haspopup="dialog"]').first();
-  await card.scrollIntoViewIfNeeded();
-  await card.click();
+  await page.getByRole('button', { name: 'تطبيقاتنا', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('heading').first()).toBeAttached();
 
   const url = page.url();
-  const scrollY = await page.evaluate(() => window.scrollY);
 
   await page.goBack();
 
   await expect(dialog).toBeHidden();
   expect(page.url()).toBe(url);
-  // The page underneath was never navigated, so it did not re-render to the top.
-  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
 });
 
 test('the entry does not outlive the dialogue', async ({ page }) => {
   await page.goto('/');
 
-  const card = page.locator('#testimonials [aria-haspopup="dialog"]').first();
-  await card.scrollIntoViewIfNeeded();
-  await card.click();
+  await page.getByRole('button', { name: 'تطبيقاتنا', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   // Closed the way a tap closes it. The guard entry it pushed must go with it,

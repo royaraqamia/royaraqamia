@@ -18,24 +18,22 @@ const NotificationBell = dynamic(
 );
 
 interface TopNavProps {
-  /** The `خدماتنا` menu, centred in the bar. */
+  /** The `تطبيقاتنا` menu, centred in the bar. */
   servicesLink: NavLink;
   isServicesActive: boolean;
-  handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
   logo?: string;
   isHomePage: boolean;
 }
 
 /**
  * The shell's single top bar, rendered at every width: the logo image at the
- * inline-start, `خدماتنا` centred, and the notification bell at the inline-end.
+ * inline-start, `تطبيقاتنا` centred, and the notification bell at the inline-end.
  * Account is not an avatar menu up here — the floating `BottomTabBar` owns that
  * entry point — so phone, tablet and desktop see the same three controls.
  */
 export function TopNav({
   servicesLink,
   isServicesActive,
-  handleHashClick,
   logo: logoProp,
   isHomePage,
 }: TopNavProps) {
@@ -69,14 +67,12 @@ export function TopNav({
         </Link>
       </div>
 
-      {/* خدماتنا — centred in the bar and identical from phone to desktop. A
-          member who hid every row gets no trigger: a menu that opens nothing is
-          worse than no menu (ADR-0112). */}
+      {/* تطبيقاتنا — centred in the bar and identical from phone to desktop.
+          The trigger opens the add/remove sheet (ADR-0146). */}
       {(servicesLink.subItems ?? []).length > 0 && (
         <NavDropdown
           link={servicesLink}
           isActive={isServicesActive}
-          handleHashClick={handleHashClick}
           visual="chrome-services"
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         />

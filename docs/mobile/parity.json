@@ -233,28 +233,12 @@
           "copy": "trigger"
         },
         {
-          "name": "RequestProject",
-          "copy": "requestProject"
-        },
-        {
-          "name": "Hire",
-          "copy": "hire"
-        },
-        {
           "name": "News",
           "copy": "news"
         },
         {
-          "name": "Training",
-          "copy": "training"
-        },
-        {
           "name": "Verify",
           "copy": "verify"
-        },
-        {
-          "name": "Consultation",
-          "copy": "consultation"
         },
         {
           "name": "Rates",
@@ -291,30 +275,6 @@
         {
           "name": "McpGuide",
           "copy": "mcpGuide"
-        }
-      ]
-    },
-    {
-      "id": "shell-services-order",
-      "surface": "home",
-      "issue": "#806",
-      "web": {
-        "route": "app/page.tsx",
-        "component": "frontend/ui/navbar/use-services-order.ts",
-        "copyModule": "frontend/ui/navbar/services-order-copy.ts",
-        "copyExport": "SERVICES_ORDER_COPY"
-      },
-      "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellServices.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesOrderState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesOrderCopy.kt",
-        "copyObject": "ServicesOrderCopy"
-      },
-      "copySource": "shared/copy/shell-services-order.json",
-      "states": [
-        {
-          "name": "Moved",
-          "copy": "moved"
         }
       ]
     },
@@ -1699,42 +1659,6 @@
         {
           "name": "Ready",
           "copy": "unblock"
-        }
-      ]
-    },
-    {
-      "id": "account-services",
-      "surface": "account-services",
-      "issue": "#978",
-      "web": {
-        "route": "app/account/services/page.tsx",
-        "component": "frontend/ui/account/hidden-services-view.tsx",
-        "copyModule": "frontend/ui/account/hidden-services-copy.ts",
-        "copyExport": "HIDDEN_SERVICES_COPY"
-      },
-      "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesScreen.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountServicesCopy.kt",
-        "copyObject": "AccountServicesCopy"
-      },
-      "copySource": "shared/copy/account-services.json",
-      "states": [
-        {
-          "name": "Loading",
-          "copy": "loadingLabel"
-        },
-        {
-          "name": "SignedOut",
-          "copy": "signIn"
-        },
-        {
-          "name": "Failed",
-          "copy": "offline"
-        },
-        {
-          "name": "Ready",
-          "copy": "shown"
         }
       ]
     },

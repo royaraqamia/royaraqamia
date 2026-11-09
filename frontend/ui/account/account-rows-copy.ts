@@ -16,7 +16,6 @@ export const ACCOUNT_ROWS_COPY = {
   news: 'مصادر الأخبار',
   links: 'الرَّوابط المختصَرة',
   connectedApps: 'التَّطبيقات المتَّصلة بالـ MCP',
-  services: 'الخدمات الظَّاهرة',
   blocked: 'الأعضاء المحظورون',
   pricing: 'خطط التَّسعير',
   admin: 'الإدارة',

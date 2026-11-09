@@ -84,15 +84,6 @@ export const CONTRACTS = [
       'HabitLogWriteSchema',
     ],
   },
-  // The shell filters its `خدماتنا` sheet by what the member hid (#796, ADR-0112).
-  // Only the read crosses to Kotlin: the write belongs to the settings page,
-  // which the app opens as the document, so an unused write type would be a
-  // surface the app never speaks.
-  {
-    module: 'shared/contracts/hidden-services',
-    file: 'HiddenServicesContracts.kt',
-    schemas: ['HiddenServicesResultSchema'],
-  },
   // SpendTrack (#653): the snapshot the app's store merges, and the bodies its
   // Outbox replays. The read is `/spendtrack/api/sync` — the same route the web's
   // pull reads, tombstones included (ADR-0029) — and the writes are the endpoints

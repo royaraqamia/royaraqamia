@@ -5,36 +5,33 @@ import { NavDropdown } from '../navbar/NavDropdown';
 import { ServicesMenu } from '../navbar/ServicesMenu';
 import { SERVICES_LINK } from '../navbar/services-link';
 
-// The rows navigate with the app router, which has no context in jsdom.
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
 
-describe('ServicesMenu (hero CTA)', () => {
-  it('opens the services bottom sheet', async () => {
-    render(<ServicesMenu trigger={<button type="button">تصفَّح خدماتنا</button>} />);
+describe('ServicesMenu (homepage add control)', () => {
+  it('opens the app picker', async () => {
+    render(<ServicesMenu trigger={<button type="button">أضِف تطبيقًا</button>} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'تصفَّح خدماتنا' }));
+    fireEvent.click(screen.getByRole('button', { name: 'أضِف تطبيقًا' }));
 
     // The sheet is a lazy chunk now, so the first open resolves an import too.
     expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText('طلب بناء مشروع')).toBeInTheDocument();
-    // The bottom sheet no longer renders a header or its own close control.
+    expect(screen.getByText('أخبار اليوم')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'إضافة' }).length).toBeGreaterThan(0);
     expect(screen.queryByText('إغلاق')).not.toBeInTheDocument();
   });
 });
 
-describe('NavDropdown (navbar services menu)', () => {
-  it('opens the services bottom sheet at every width', async () => {
-    render(<NavDropdown link={SERVICES_LINK} isActive={false} handleHashClick={vi.fn()} />);
+describe('NavDropdown (navbar app picker)', () => {
+  it('opens the app picker at every width', async () => {
+    render(<NavDropdown link={SERVICES_LINK} isActive={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: SERVICES_LINK.label }));
 
     // The sheet is a lazy chunk now, so the first open resolves an import too.
     expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText('طلب بناء مشروع')).toBeInTheDocument();
+    expect(screen.getByText('أخبار اليوم')).toBeInTheDocument();
   });
 });

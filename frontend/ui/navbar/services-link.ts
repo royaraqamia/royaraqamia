@@ -1,14 +1,9 @@
 import {
   BookOpen,
-  CalendarCheck,
-  CalendarClock,
   Coins,
-  GraduationCap,
   Link2,
   Newspaper,
-  Package,
   Plug,
-  Rocket,
   ScanBarcode,
   ScanLine,
   SquareCheck,
@@ -21,37 +16,26 @@ import type { NavLink } from './NavDropdown';
 import { SERVICES_COPY } from './services-copy';
 
 /**
- * The `خدماتنا` menu: its trigger and its sixteen rows, in the order the site ships.
+ * The `تطبيقاتنا` sheet and the homepage strip: its trigger and its eleven apps,
+ * in the order the site ships (ADR-0146).
+ *
+ * The four lead forms left this list (ADR-0148): the sheet is a picker, and a
+ * row that only navigates to a booking form is not an app. Their routes stay
+ * live and indexed; only their navigation entry is gone.
  *
  * The words are [SERVICES_COPY] — one generated source, both clients, the app
  * drawing the same rows in `android/.../shell/ShellServices.kt` (#647) — and the
  * glyphs are the site's own `lucide-react` imports, converted for the app.
- *
- * This used to be a mapping over `APP_PRODUCTS`; the table lives here now because
- * the menu is the only thing that ever read it, and a second copy of a label is
- * the drift the generated source exists to prevent (ADR-0098).
  */
 export const SERVICES_LINK: NavLink = {
-  href: '#services',
+  href: '#apps',
   label: SERVICES_COPY.trigger,
-  icon: Package,
+  icon: Plug,
   isRoute: false,
   visible: true,
   hasDropdown: true,
-  dropdownKey: 'projects',
+  dropdownKey: 'apps',
   subItems: [
-    {
-      href: '/request-project',
-      label: SERVICES_COPY.requestProject,
-      isRoute: true,
-      icon: Rocket,
-    },
-    {
-      href: '/hire',
-      label: SERVICES_COPY.hire,
-      isRoute: true,
-      icon: CalendarClock,
-    },
     {
       href: '/news',
       label: SERVICES_COPY.news,
@@ -59,22 +43,10 @@ export const SERVICES_LINK: NavLink = {
       icon: Newspaper,
     },
     {
-      href: '/training/apply',
-      label: SERVICES_COPY.training,
-      isRoute: true,
-      icon: GraduationCap,
-    },
-    {
       href: '/verify',
       label: SERVICES_COPY.verify,
       isRoute: true,
       icon: ScanLine,
-    },
-    {
-      href: '/consultation/book',
-      label: SERVICES_COPY.consultation,
-      isRoute: true,
-      icon: CalendarCheck,
     },
     {
       href: '/rates',
@@ -128,7 +100,6 @@ export const SERVICES_LINK: NavLink = {
       href: '/mcp/guide',
       label: SERVICES_COPY.mcpGuide,
       isRoute: true,
-      icon: Plug,
     },
   ],
 };

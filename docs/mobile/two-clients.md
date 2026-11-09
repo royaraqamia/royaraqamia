@@ -141,10 +141,10 @@ narrower route to read.
   What the gate still cannot see is motion: a transition, a scroll behaviour or a
   gesture that differs between the two clients is invisible to a still frame, and
   the contract names boxes, not timelines.
-- **Where the app's chrome is the site's chrome.** The two gaps this list used to carry are closed:
-  the services menu keeps the device's own order on both sides (#806 — the same rules in
-  `frontend/ui/navbar/services-order.ts`, the same key `rr:services-order:v1`, the same sentence when
-  a row moves), and the top bar draws the site's notification bell with a real unread count (#659 —
+- **Where the app's chrome is the site's chrome.** The gaps this list used to carry are closed:
+  the services sheet lists the same eleven apps as the site, in the site's order (the drag and its
+  device key were retired with the homepage strip, ADR-0146), and the top bar draws the site's
+  notification bell with a real unread count (#659 —
   `/api/notifications/unread-count`, the generated `UnreadNotificationCount` contract, and the same
   words in `shared/copy/notification-bell.json`). A bell that cannot say how many are unread would be
   a control that lies, so it is drawn only once there is a count to draw.

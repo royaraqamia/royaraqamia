@@ -20,7 +20,6 @@ import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
-import com.royaraqamia.app.preferences.HiddenServicesRepository
 import com.royaraqamia.app.profile.ProfileRepository
 import com.royaraqamia.app.quran.AssetQuranRepository
 import com.royaraqamia.app.quran.PreferencesQuranPositionStore
@@ -29,8 +28,6 @@ import com.royaraqamia.app.rates.RatesRepository
 import com.royaraqamia.app.realtime.RealtimeClient
 import com.royaraqamia.app.realtime.RealtimeSession
 import com.royaraqamia.app.realtime.RealtimeToken
-import com.royaraqamia.app.shell.PreferencesServicesOrderStore
-import com.royaraqamia.app.shell.ServicesOrderStore
 import com.royaraqamia.app.session.EncryptedTokenStore
 import com.royaraqamia.app.session.KeystoreTokenCipher
 import com.royaraqamia.app.session.Session
@@ -92,7 +89,6 @@ class AppGraph private constructor(
     val news: NewsRepository,
     /** The `/news` digest and the last one this device saw (#926). */
     val newsDigest: NewsDigestRepository,
-    val hiddenServices: HiddenServicesRepository,
     /** The bell's number (#659), from the route the site's bell reads. */
     val notifications: NotificationsRepository,
     /** The certificate check (#658): the one route a visitor can call with no session. */
@@ -115,8 +111,6 @@ class AppGraph private constructor(
     val realtime: RealtimeClient,
     /** The open thread's hint channels, on that one client. */
     val chatHints: ChatHintSource,
-    /** The services sheet's order, on this device (#806). */
-    val servicesOrder: ServicesOrderStore,
     val habitflow: HabitflowRepository,
     /** SpendTrack's store and queue (#653). */
     val spendtrack: SpendtrackRepository,
@@ -339,7 +333,6 @@ class AppGraph private constructor(
                 accountProfile = AccountProfileRepository(client, TransportAvatarLoader()),
                 news = NewsRepository(client),
                 newsDigest = NewsDigestRepository(client, publicSnapshots),
-                hiddenServices = HiddenServicesRepository(client),
                 notifications = NotificationsRepository(client),
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
@@ -363,7 +356,6 @@ class AppGraph private constructor(
                         context = context,
                         positions = PreferencesQuranPositionStore(context),
                     ),
-                servicesOrder = PreferencesServicesOrderStore(context),
                 habitflow =
                     HabitflowRepository(
                         databases = databases,

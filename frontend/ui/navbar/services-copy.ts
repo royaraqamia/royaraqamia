@@ -10,22 +10,18 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const SERVICES_COPY = {
-  trigger: 'خدماتنا',
-  requestProject: 'طلب بناء مشروع',
-  hire: 'طلب التَّعاقُد الشَّهري',
+  trigger: 'تطبيقاتنا',
   news: 'أخبار اليوم',
-  training: 'التَّسجيل في التَّدريب',
   verify: 'التَّحقُّق من الشَّهادة',
-  consultation: 'حجز استشارة',
   rates: 'أسعار الصَّرف',
   scan: 'ماسح QR و Barcode',
   quran: 'القرآن الكريم',
   athkar: 'أذكار الصَّباح والمساء',
-  notes: 'الملاحظات',
-  mcpGuide: 'ربط الـ MCP',
   linkSnap: 'اختصار الرَّوابط',
   habitFlow: 'تتبُّع العادات',
   spendTrack: 'تتبُّع المصاريف',
+  notes: 'الملاحظات',
+  mcpGuide: 'ربط الـ MCP',
 } as const;
 
 export type ServicesCopyStrings = typeof SERVICES_COPY;

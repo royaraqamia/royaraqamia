@@ -2,21 +2,32 @@ import { test, expect, type Page } from '@playwright/test';
 
 /**
  * `/athkar` is a prerendered reading surface: the two collections are in the
- * document, and the only state is the day's count on the device. So the two
- * things worth proving in a browser are that the page is reachable from the
- * `خدماتنا` menu every visitor uses, and that a count survives the reload the
+ * document, and the only state is the day's count on the device. So the things
+ * worth proving in a browser are that a visitor can add Athkar to the homepage
+ * from the picker and open it there, and that a count survives the reload the
  * real reader actually does — jsdom has no `localStorage` across a document, and
  * the unit tests can only prove the functions, not the page.
  */
 
 async function openFromMenu(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: 'خدماتنا', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'أذكار الصَّباح والمساء' }).click();
+  await page.getByRole('button', { name: 'تطبيقاتنا', exact: true }).click();
+
+  const dialog = page.getByRole('dialog');
+  await dialog
+    .getByRole('listitem')
+    .filter({ hasText: 'أذكار الصَّباح والمساء' })
+    .getByRole('button', { name: 'إضافة' })
+    .click();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  await page.getByRole('link', { name: 'أذكار الصَّباح والمساء' }).click();
   await expect(page).toHaveURL(/\/athkar\/?$/);
 }
 
-test('the services menu opens the athkar page', async ({ page }) => {
+test('the picker adds athkar to the homepage and opens it', async ({ page }) => {
   await openFromMenu(page);
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText('أذكار');

@@ -1,5 +1,9 @@
 # The services menu keeps the order its visitor gives it
 
+> **Superseded by [ADR-0146](0146-the-homepage-is-the-app-door.md).** The
+> homepage strip is the visitor's order now; the sheet adds and removes apps, and
+> the drag went with the order key on both clients.
+
 The `خدماتنا` sheet is a list of fourteen routes that every visitor sees in the same order. That order
 is the business's, not the visitor's: whoever books a consultation twice a week scrolls past eleven
 rows to reach it, and whoever checks certificates does the same. Rows can now be dragged into the

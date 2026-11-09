@@ -58,10 +58,6 @@ fun ShellFrame(
     onSelect: (ShellTab) -> Unit,
     onOpenRoute: (String) -> Unit,
     modifier: Modifier = Modifier,
-    /** The routes this member hid; the sheet draws the rest (ADR-0112). */
-    hiddenRoutes: Set<String> = emptySet(),
-    /** Where the sheet keeps this device's order (#806). */
-    servicesOrder: ServicesOrderStore? = null,
     /** The bell's unread count, or null while there is no session to ask (#659). */
     unreadCount: Int? = null,
     /** Whether the assistant's door is drawn over the content (ADR-0143). */
@@ -77,7 +73,7 @@ fun ShellFrame(
         Column(Modifier.fillMaxSize()) {
             ShellTopBar(
                 onOpenServices = { servicesOpen = true },
-                showServices = ServicesEntry.visibleRows(hiddenRoutes).isNotEmpty(),
+                showServices = ServicesEntry.rows.isNotEmpty(),
                 unreadCount = unreadCount,
                 onOpenNotifications = { onOpenRoute(Routes.NOTIFICATIONS_ROUTE) },
             )
@@ -99,8 +95,6 @@ fun ShellFrame(
         }
         ServicesSheet(
             open = servicesOpen,
-            hiddenRoutes = hiddenRoutes,
-            order = servicesOrder,
             onDismiss = { servicesOpen = false },
             onSelect = { route ->
                 servicesOpen = false
