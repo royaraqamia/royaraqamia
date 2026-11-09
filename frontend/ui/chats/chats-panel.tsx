@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, MessagesSquare, Plus, Users, X } from 'lucide-react';
+import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
@@ -65,7 +65,7 @@ export function ChatsPanel() {
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
   const { threads, isLoading, painted, error, refresh, respond } = useChatThreads(true, identity);
-  const [panel, setPanel] = useState<'direct' | 'group' | null>(null);
+  const [panel, setPanel] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
     thread: ChatConversationSummary;
@@ -76,7 +76,8 @@ export function ChatsPanel() {
   const [assistantLocked, setAssistantLocked] = useState(false);
 
   const pending = threads.filter(
-    (thread) => thread.myStatus === 'requested' || thread.myStatus === 'invited'
+    (thread) =>
+      thread.kind !== 'group' && (thread.myStatus === 'requested' || thread.myStatus === 'invited')
   );
   /**
    * The assistant is the list's first row, always: it is what the product is
@@ -87,9 +88,12 @@ export function ChatsPanel() {
   const assistant = threads.find((thread) => thread.kind === 'agent') ?? null;
   const open = threads.filter(
     (thread) =>
-      thread.kind !== 'agent' && (thread.myStatus === 'active' || thread.myStatus === 'declined')
+      thread.kind !== 'group' &&
+      thread.kind !== 'agent' &&
+      (thread.myStatus === 'active' || thread.myStatus === 'declined')
   );
   const hasAssistant = assistant !== null;
+  const visibleCount = threads.filter((thread) => thread.kind !== 'group').length;
 
   // The lock is the server's answer, not a guess: one read says what today's
   // allowance is, and a failed read leaves the row offered (the thread's own
@@ -138,14 +142,8 @@ export function ChatsPanel() {
    * so browsing the directory never sends a request on the member's behalf.
    */
   function openWith(peer: ChatPeer) {
-    setPanel(null);
+    setPanel(false);
     router.push(`/chats/new?to=${encodeURIComponent(peer.username)}`);
-  }
-
-  /** A group is created on the click, then entered like any other thread. */
-  function openCreated(conversationId: string) {
-    setPanel(null);
-    router.push(`/chats/${conversationId}`);
   }
 
   // The failure face is for a tab with nothing to show (#1033): a list the
@@ -175,9 +173,9 @@ export function ChatsPanel() {
   return (
     <div className="space-y-4">
       <p className="text-xs font-medium text-muted-foreground/80">
-        {threads.length === 0
+        {visibleCount === 0
           ? CHATS_LIST_COPY.noThreads
-          : CHATS_LIST_COPY.threadCount.replace('{count}', String(threads.length))}
+          : CHATS_LIST_COPY.threadCount.replace('{count}', String(visibleCount))}
       </p>
 
       {failure && (
@@ -189,15 +187,7 @@ export function ChatsPanel() {
         </p>
       )}
 
-      {panel && (
-        <NewConversationPanel
-          mode={panel}
-          onMode={setPanel}
-          onPick={openWith}
-          onCreated={openCreated}
-          onClose={() => setPanel(null)}
-        />
-      )}
+      {panel && <NewConversationPanel onPick={openWith} onClose={() => setPanel(false)} />}
 
       {!hasAssistant &&
         (assistantLocked ? (
@@ -262,11 +252,7 @@ export function ChatsPanel() {
               className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3"
             >
               <ThreadIdentity thread={thread} />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {thread.myStatus === 'invited'
-                  ? CHATS_LIST_COPY.requestGroup
-                  : CHATS_LIST_COPY.requestDirect}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{CHATS_LIST_COPY.requestDirect}</p>
               <div className="mt-3 flex items-center gap-2">
                 <button
                   type="button"
@@ -300,12 +286,8 @@ export function ChatsPanel() {
           }
           message={
             answering.choice === 'accept'
-              ? answering.thread.kind === 'group'
-                ? CHATS_LIST_COPY.acceptGroupMessage.replace('{title}', answering.thread.title)
-                : CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', answering.thread.title)
-              : answering.thread.kind === 'group'
-                ? CHATS_LIST_COPY.declineGroupMessage
-                : CHATS_LIST_COPY.declineDirectMessage
+              ? CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', answering.thread.title)
+              : CHATS_LIST_COPY.declineDirectMessage
           }
           confirmLabel={
             answering.choice === 'accept' ? CHATS_LIST_COPY.accept : CHATS_LIST_COPY.decline
@@ -322,7 +304,7 @@ export function ChatsPanel() {
       <FabButton
         label={CHATS_LIST_COPY.newChat}
         aria-expanded={panel !== null}
-        onClick={() => setPanel((current) => (current ? null : 'direct'))}
+        onClick={() => setPanel((current) => !current)}
       >
         <Plus className="size-6" />
       </FabButton>
@@ -373,13 +355,6 @@ function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
     <div className="flex min-w-0 flex-1 items-start gap-3">
       {thread.kind === 'agent' ? (
         <AssistantMark className="size-9" />
-      ) : thread.kind === 'group' ? (
-        <span
-          aria-hidden
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80"
-        >
-          <Users size={16} />
-        </span>
       ) : (
         <MemberAvatar
           name={label}

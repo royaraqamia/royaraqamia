@@ -11,9 +11,6 @@ import {
   Pencil,
   Send,
   Trash,
-  UserPlus,
-  Users,
-  X,
 } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
@@ -25,7 +22,7 @@ import {
 import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
-import { blockChatUser, leaveChat, reportChat } from '@/frontend/api/chats';
+import { blockChatUser, reportChat } from '@/frontend/api/chats';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -42,7 +39,6 @@ import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
-import { MemberPicker } from './member-picker';
 import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
 import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
@@ -58,10 +54,8 @@ import {
   canEditChatMessage,
   chatAttachmentIsAudio,
   chatAttachmentIsInlineImage,
-  CHAT_GROUP_MEMBERS_MAX,
   type ChatAttachment,
   type ChatMessage,
-  type ChatPeer,
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
@@ -102,11 +96,9 @@ function counterpartOf(thread: ChatThread) {
   );
 }
 
-/** What a waiting answer says: a direct request, or a group invitation. */
+/** What a waiting answer says: the request that started this thread. */
 function inviteNote(thread: ChatThread): string {
-  return thread.kind === 'group'
-    ? CHAT_THREAD_COPY.inviteGroup.replace('{title}', thread.title)
-    : CHAT_THREAD_COPY.inviteDirect.replace('{title}', thread.title);
+  return CHAT_THREAD_COPY.inviteDirect.replace('{title}', thread.title);
 }
 
 /**
@@ -134,14 +126,12 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     withdraw,
     request,
     unblock,
-    invite,
     resolveAction,
     refresh,
   } = useChatThread(conversationId);
   const { user } = useSession();
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -198,7 +188,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     );
   }
 
-  if (!thread) {
+  if (!thread || thread.kind === 'group') {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
         <p className="text-sm font-bold text-foreground">{CHAT_THREAD_COPY.notFound}</p>
@@ -294,18 +284,12 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const dialogs: Record<Confirm['kind'], { title: string; message: string; label: string }> = {
     accept: {
       title: CHATS_LIST_COPY.confirmAcceptTitle,
-      message:
-        thread.kind === 'group'
-          ? CHATS_LIST_COPY.acceptGroupMessage.replace('{title}', thread.title)
-          : CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', thread.title),
+      message: CHATS_LIST_COPY.acceptDirectMessage.replace('{title}', thread.title),
       label: CHATS_LIST_COPY.accept,
     },
     decline: {
       title: CHATS_LIST_COPY.confirmDeclineTitle,
-      message:
-        thread.kind === 'group'
-          ? CHATS_LIST_COPY.declineGroupMessage
-          : CHATS_LIST_COPY.declineDirectMessage,
+      message: CHATS_LIST_COPY.declineDirectMessage,
       label: CHATS_LIST_COPY.decline,
     },
     withdraw: {
@@ -317,11 +301,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
       title: CHAT_THREAD_COPY.blockTitle.replace('{title}', thread.title),
       message: CHAT_THREAD_COPY.blockMessage,
       label: CHAT_THREAD_COPY.block,
-    },
-    leave: {
-      title: CHAT_THREAD_COPY.leaveTitle,
-      message: CHAT_THREAD_COPY.leaveMessage,
-      label: CHAT_THREAD_COPY.leaveLabel,
     },
     deleteMessage: {
       title: CHAT_THREAD_COPY.deleteMessageTitle,
@@ -337,22 +316,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         counterpart={counterpart}
         onReport={() => setReporting(true)}
         onBlock={() => setConfirm({ kind: 'block' })}
-        onLeave={() => setConfirm({ kind: 'leave' })}
       />
-
-      {thread.kind === 'group' && (
-        <GroupRoster
-          thread={thread}
-          inviting={inviting}
-          onStartInviting={() => setInviting(true)}
-          onStopInviting={() => setInviting(false)}
-          onInvite={async (memberIds) => {
-            const refused = await invite(memberIds);
-            setNotice(refused);
-            if (!refused) setInviting(false);
-          }}
-        />
-      )}
 
       {(notice || error) && (
         <p
@@ -518,7 +482,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           isConfirming={busy}
           variant={
             confirm.kind === 'block' ||
-            confirm.kind === 'leave' ||
             confirm.kind === 'decline' ||
             confirm.kind === 'withdraw' ||
             confirm.kind === 'deleteMessage'
@@ -546,18 +509,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
                   return error instanceof Error && error.message
                     ? error.message
                     : CHAT_THREAD_COPY.blockFailed;
-                }
-              }, true);
-            } else if (confirm.kind === 'leave') {
-              void run(async () => {
-                try {
-                  const result = await leaveChat(conversationId);
-                  if (result.success) window.location.assign('/notifications?tab=chats');
-                  return result.error ?? null;
-                } catch (error) {
-                  return error instanceof Error && error.message
-                    ? error.message
-                    : CHAT_THREAD_COPY.leaveFailed;
                 }
               }, true);
             }
@@ -601,7 +552,6 @@ type Confirm =
   | { kind: 'decline' }
   | { kind: 'withdraw' }
   | { kind: 'block' }
-  | { kind: 'leave' }
   | { kind: 'deleteMessage'; messageId: string };
 
 function ThreadHeader({
@@ -609,13 +559,11 @@ function ThreadHeader({
   counterpart,
   onReport,
   onBlock,
-  onLeave,
 }: {
   thread: ChatThread;
   counterpart: ReturnType<typeof counterpartOf>;
   onReport: () => void;
   onBlock: () => void;
-  onLeave: () => void;
 }) {
   const goBack = useBackAction('/notifications?tab=chats');
 
@@ -636,14 +584,6 @@ function ThreadHeader({
     <>
       {thread.kind === 'agent' ? (
         <AssistantMark className="size-9" />
-      ) : thread.kind === 'group' ? (
-        // A group is a room, not one member's face: the roster below names who.
-        <span
-          aria-hidden
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80"
-        >
-          <Users size={16} />
-        </span>
       ) : (
         counterpart && (
           <MemberAvatar
@@ -659,14 +599,9 @@ function ThreadHeader({
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
         {/* The assistant's thread has one participant, so a member count would
             read "1 members"; the assistant is not one (#817). */}
-        {thread.kind !== 'agent' && (
+        {thread.kind !== 'agent' && counterpart && (
           <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
-            {thread.kind === 'direct' && counterpart
-              ? `@${counterpart.username}`
-              : CHAT_THREAD_COPY.membersCount.replace(
-                  '{count}',
-                  String(threadMembers(thread).length)
-                )}
+            @{counterpart.username}
           </p>
         )}
       </div>
@@ -679,9 +614,7 @@ function ThreadHeader({
    * block and no membership to leave, so its header carries no ⋮ at all.
    */
   const menuItems =
-    (thread.kind !== 'agent' ? 1 : 0) +
-    (thread.kind === 'direct' && counterpart ? 1 : 0) +
-    (thread.kind === 'group' ? 1 : 0);
+    (thread.kind !== 'agent' ? 1 : 0) + (thread.kind === 'direct' && counterpart ? 1 : 0);
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
@@ -738,196 +671,10 @@ function ThreadHeader({
                 {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
               </DropdownMenuItem>
             )}
-            {/* A direct thread is the pair: it exits by decline, withdraw or block (#842). */}
-            {thread.kind === 'group' && (
-              <DropdownMenuItem onSelect={onLeave} className="text-xs font-medium text-destructive">
-                {CHAT_THREAD_COPY.leave}
-              </DropdownMenuItem>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
     </div>
-  );
-}
-
-/** The members who hold a seat: active, or invited and not yet answered. */
-function threadMembers(thread: ChatThread): ChatThread['participants'] {
-  return thread.participants.filter(
-    (participant) => participant.status === 'active' || participant.status === 'invited'
-  );
-}
-
-/**
- * A group's roster, drawn from the thread the screen already loaded — the same
- * rows the receipts will read, never a second query.
- *
- * The invite panel is the tab's own member search with several answers; only an
- * active member may invite, which is the rule the insert policy asks as well, so
- * a non-member's click is refused by the database rather than by this screen.
- */
-function GroupRoster({
-  thread,
-  inviting,
-  onStartInviting,
-  onStopInviting,
-  onInvite,
-}: {
-  thread: ChatThread;
-  inviting: boolean;
-  onStartInviting: () => void;
-  onStopInviting: () => void;
-  onInvite: (memberIds: string[]) => Promise<void>;
-}) {
-  const [selected, setSelected] = useState<ChatPeer[]>([]);
-  const [busy, setBusy] = useState(false);
-  const members = threadMembers(thread);
-  const canInvite = thread.me?.status === 'active';
-
-  function toggle(peer: ChatPeer) {
-    setSelected((current) =>
-      current.some((member) => member.id === peer.id)
-        ? current.filter((member) => member.id !== peer.id)
-        : [...current, peer]
-    );
-  }
-
-  async function submit() {
-    if (busy || selected.length === 0) return;
-    setBusy(true);
-    try {
-      await onInvite(selected.map((member) => member.id));
-      setSelected([]);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section
-      aria-label={CHAT_THREAD_COPY.rosterLabel}
-      className="shrink-0 border-b border-border/40 px-3 py-2"
-    >
-      <ul className="flex items-center gap-1.5 overflow-x-auto">
-        {members.map((participant) => {
-          const name =
-            participant.peer?.name ?? participant.peer?.username ?? CHAT_THREAD_COPY.memberFallback;
-          // A group member opens their profile, the way tapping a member opens
-          // one in WhatsApp — and only where the site has a page for them.
-          const href = participant.peer?.verified
-            ? `/u/${encodeURIComponent(participant.peer.username)}`
-            : null;
-          const label = (
-            <>
-              <MemberAvatar
-                name={name}
-                avatarUrl={participant.peer?.avatarUrl ?? null}
-                size="xs"
-                ring={false}
-              />
-              <span className="max-w-28 truncate text-[11px] font-medium text-foreground/80">
-                {name}
-              </span>
-            </>
-          );
-
-          return (
-            <li
-              key={participant.userId}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/50 py-1 pe-2 ps-1"
-            >
-              {href ? (
-                <Link
-                  href={href}
-                  className="flex min-w-0 items-center gap-1.5 rounded-full hover:opacity-90"
-                >
-                  {label}
-                </Link>
-              ) : (
-                <span className="flex min-w-0 items-center gap-1.5">{label}</span>
-              )}
-              {participant.role === 'owner' && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  {CHAT_THREAD_COPY.owner}
-                </span>
-              )}
-              {participant.status === 'invited' && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  {CHAT_THREAD_COPY.invited}
-                </span>
-              )}
-            </li>
-          );
-        })}
-
-        {canInvite && (
-          <li className="shrink-0">
-            <button
-              type="button"
-              onClick={onStartInviting}
-              aria-label={CHAT_THREAD_COPY.addMembers}
-              aria-expanded={inviting}
-              className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-bold text-primary transition-safe hover:bg-primary/10"
-            >
-              <UserPlus size={13} />
-              {CHAT_THREAD_COPY.add}
-            </button>
-          </li>
-        )}
-      </ul>
-
-      {inviting && (
-        <div className="mt-2 rounded-xl border border-border/60 bg-background/60 p-2">
-          <MemberPicker
-            multiple
-            selected={selected}
-            onToggle={toggle}
-            onClose={onStopInviting}
-            excludeIds={thread.participants.map((participant) => participant.userId)}
-          />
-
-          {selected.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={CHAT_THREAD_COPY.invitees}>
-              {selected.map((member) => (
-                <li
-                  key={member.id}
-                  className="flex max-w-56 items-center gap-1 rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-foreground/80"
-                >
-                  <span className="truncate">{member.name ?? member.username}</span>
-                  <button
-                    type="button"
-                    onClick={() => toggle(member)}
-                    aria-label={CHAT_THREAD_COPY.removeInvitee.replace(
-                      '{name}',
-                      member.name ?? member.username
-                    )}
-                    className="shrink-0 rounded p-0.5 hover:text-destructive"
-                  >
-                    <X size={11} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-[11px] text-muted-foreground/70">
-              {CHAT_THREAD_COPY.rosterCount
-                .replace('{count}', String(members.length))
-                .replace('{max}', String(CHAT_GROUP_MEMBERS_MAX))}
-            </p>
-            <button
-              type="button"
-              onClick={() => void submit()}
-              disabled={busy || selected.length === 0}
-              className="rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-50"
-            >
-              {busy ? CHAT_THREAD_COPY.inviting : CHAT_THREAD_COPY.invite}
-            </button>
-          </div>
-        </div>
-      )}
-    </section>
   );
 }
 
@@ -1312,14 +1059,7 @@ function MessageRow({
           </span>
         )}
         {message.editedAt && !deleted && <span>· {CHAT_THREAD_COPY.edited}</span>}
-        {receipt && (
-          <span>
-            ·{' '}
-            {receipt.kind === 'group'
-              ? CHAT_THREAD_COPY.readByCount.replace('{count}', String(receipt.count))
-              : CHAT_THREAD_COPY.readReceipt}
-          </span>
-        )}
+        {receipt && <span>· {CHAT_THREAD_COPY.readReceipt}</span>}
         {mine && !deleted && !action && settled && (
           <>
             {editable && (

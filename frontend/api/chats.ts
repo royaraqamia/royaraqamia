@@ -103,18 +103,6 @@ export async function startDirectChat(userId: string): Promise<ChatStartResponse
   });
 }
 
-/** A named group; the members become invites the other side answers. */
-export async function createChatGroup(
-  title: string,
-  memberIds: string[]
-): Promise<ChatStartResponse> {
-  return request<ChatStartResponse>('/api/chats/groups', {
-    method: 'POST',
-    body: JSON.stringify({ title, memberIds }),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
 /** Invite more members into a group the caller is active in. */
 export async function inviteChatMembers(
   id: string,

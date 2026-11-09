@@ -11,7 +11,7 @@
   },
   "notes": {
     "source": "The notification centre's Chats tab, in both clients (#819): the count line, the assistant's row and its locked state, the requests waiting on a member, the list itself, and the panel a new conversation starts from. The site renders them in `frontend/ui/chats/chats-panel.tsx`, which is the app's reference, and the thread draws the same accept/decline dialog sentences and the same relative-time words from here rather than a second copy of them - one sentence, one file.",
-    "placeholders": "`threadCount` carries `{count}` and `removeInvitee` carries `{name}`; `groupLimit` carries the members ceiling the contract names, so neither client spells a number differently.",
+    "placeholders": "`threadCount` carries `{count}`.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `chats-panel.tsx` does not render, or a state the app's `ChatsUiState` declares that the row does not list."
   },
   "strings": {
@@ -25,14 +25,11 @@
     "assistantFailed": "تعذّر فتح المساعد",
     "requestsLabel": "طلبات المحادثة",
     "requestDirect": "يريد بدء محادثة معك",
-    "requestGroup": "دعاك إلى محادثة جماعية",
     "accept": "قبول",
     "decline": "رفض",
     "confirmAcceptTitle": "قبول المحادثة",
     "confirmDeclineTitle": "رفض المحادثة",
-    "acceptGroupMessage": "ستنضمّ إلى «{title}» وترى رسائلها بعد القبول.",
     "acceptDirectMessage": "ستتمكّن أنت و{title} من إرسال الرسائل بعد القبول.",
-    "declineGroupMessage": "سيُرفض الانضمام، ولن تظهر لك رسائل هذه المجموعة.",
     "declineDirectMessage": "سيُغلق الطلب، ولن تصلك رسائل من هذا العضو في هذه المحادثة.",
     "cancel": "إلغاء",
     "emptyTitle": "لا توجد محادثات بعد",

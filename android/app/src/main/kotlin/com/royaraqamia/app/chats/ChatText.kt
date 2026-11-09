@@ -72,18 +72,12 @@ object ChatText {
                 it.status == ChatThreadResponseThreadParticipantsItemStatus.INVITED
         }
 
-    /** The name a roster chip draws when the member has none. */
-    fun nameOf(participant: ChatThreadResponseThreadParticipantsItem): String =
-        participant.peer?.name?.takeIf { it.isNotBlank() }
-            ?: participant.peer?.username
-            ?: ChatThreadCopy.MEMBER_FALLBACK
-
     /**
      * What the member's own line says about who has read it (#816).
      *
      * `chat_participants.last_read_at` is the only record — unread is a watermark,
      * not a receipt — so a direct thread says «قُرئت» once the peer's watermark is
-     * past the line, and a group says «قرأها N» for the active members whose is.
+     * past the line. A group thread has no UI, so it carries no receipt.
      * The server's roster is what the screen already loaded: no query, no row.
      */
     fun receiptOf(
@@ -105,8 +99,7 @@ object ChatText {
 
         if (readers.isEmpty()) return null
         return when (thread.kind) {
-            ChatThreadResponseThreadKind.GROUP ->
-                count(ChatThreadCopy.READ_BY_COUNT, readers.size.toLong())
+            ChatThreadResponseThreadKind.GROUP -> null
             ChatThreadResponseThreadKind.DIRECT -> ChatThreadCopy.READ_RECEIPT
             ChatThreadResponseThreadKind.AGENT -> null
         }

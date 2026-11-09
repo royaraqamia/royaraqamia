@@ -16,7 +16,6 @@ const MENU_ENTRIES: [name: string, href: string][] = [
   ['التَّحقُّق من الشَّهادة', '/verify'],
   ['حجز استشارة', '/consultation/book'],
   ['أسعار الصَّرف', '/rates'],
-  ['مُنزِّل الوسائط', '/downloader'],
   ['ماسح QR و Barcode', '/scan'],
   ['القرآن الكريم', '/quran'],
   ['أذكار الصَّباح والمساء', '/athkar'],

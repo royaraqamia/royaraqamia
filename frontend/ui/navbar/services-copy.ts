@@ -18,7 +18,6 @@ export const SERVICES_COPY = {
   verify: 'التَّحقُّق من الشَّهادة',
   consultation: 'حجز استشارة',
   rates: 'أسعار الصَّرف',
-  downloader: 'مُنزِّل الوسائط',
   scan: 'ماسح QR و Barcode',
   quran: 'القرآن الكريم',
   athkar: 'أذكار الصَّباح والمساء',

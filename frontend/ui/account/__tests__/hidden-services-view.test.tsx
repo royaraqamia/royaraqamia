@@ -43,7 +43,7 @@ describe('HiddenServicesView', () => {
   it('shows a switch per service, on when the service is visible', () => {
     render(<HiddenServicesView />);
 
-    expect(screen.getAllByRole('switch')).toHaveLength(16);
+    expect(screen.getAllByRole('switch')).toHaveLength(15);
     expect(screen.getByRole('switch', { name: 'إخفاء القرآن الكريم' })).toHaveAttribute(
       'aria-checked',
       'true'

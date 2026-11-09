@@ -46,10 +46,6 @@ const SERVICE_COPY: Record<string, { description: string; colorKey: ColorKey }> 
     description: 'أسعار صرف العملات والذَّهب والفِضَّة لحظة بلحظة.',
     colorKey: 'amber',
   },
-  '/downloader': {
-    description: 'حمِّل الصَّوت أو الفيديو من رابط على منصَّات التَّواصل.',
-    colorKey: 'pink',
-  },
   '/scan': {
     description: 'اقرأ رموز QR والباركود بكاميرا هاتفك دون إرسال صور.',
     colorKey: 'teal',

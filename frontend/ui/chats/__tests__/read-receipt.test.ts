@@ -100,50 +100,22 @@ describe('readReceiptOf', () => {
     expect(readReceiptOf(thread, message, true)).toBeNull();
   });
 
-  it('counts a group’s active members past the line, never the reader', () => {
-    const thread = makeThread('group', [
-      participant(ME, AFTER),
-      participant(PEER, AFTER),
-      participant('peer-3', LINE),
-      participant('peer-4', BEFORE),
-      // An invited member has not read anything: they are not in the thread yet.
-      participant('peer-5', AFTER, 'invited'),
-    ]);
-
-    expect(readReceiptOf(thread, makeMessage(LINE), true)).toEqual({ kind: 'group', count: 2 });
-  });
-
-  it('says nothing in a group no one has reached yet', () => {
-    const thread = makeThread('group', [
-      participant(ME, null),
-      participant(PEER, BEFORE),
-      participant('peer-3', null),
-    ]);
+  it('puts no receipt on a group thread, which the UI does not open', () => {
+    const thread = makeThread('group', [participant(ME, null), participant(PEER, AFTER)]);
 
     expect(readReceiptOf(thread, makeMessage(LINE), true)).toBeNull();
   });
 });
 
-/** The who-is-writing sentence: a direct thread names the act, a group names the member. */
+/** The who-is-writing sentence: a direct thread names the act. */
 describe('typingLabel', () => {
-  const group = makeThread('group', [
-    participant(ME, null),
-    participant(PEER, null),
-    participant('peer-3', null),
-  ]);
+  const direct = makeThread('direct', [participant(ME, null), participant(PEER, null)]);
 
   it('says nothing when nobody is writing', () => {
-    expect(typingLabel(group, [])).toBeNull();
+    expect(typingLabel(direct, [])).toBeNull();
   });
 
   it('names the act in a direct thread, which the header already names', () => {
-    const direct = makeThread('direct', [participant(ME, null), participant(PEER, null)]);
-
     expect(typingLabel(direct, [PEER])).toBe('يكتب الآن...');
-  });
-
-  it('names the member in a group, and the rest of them when several are writing', () => {
-    expect(typingLabel(group, [PEER])).toBe('peer-2 يكتب...');
-    expect(typingLabel(group, [PEER, 'peer-3'])).toBe('peer-2 وآخرون يكتبون...');
   });
 });

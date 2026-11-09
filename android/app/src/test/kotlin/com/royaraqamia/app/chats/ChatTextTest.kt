@@ -153,28 +153,17 @@ class ChatTextTest {
     }
 
     @Test
-    fun `a group receipt counts the active members past the line`() {
+    fun `a group thread carries no receipt, because its UI is hidden`() {
         val thread =
             thread(
                 ChatThreadResponseThreadKind.GROUP,
                 listOf(
                     participant("me", "2026-11-01T10:00:01Z"),
                     participant("peer", "2026-11-01T10:00:01Z"),
-                    participant("peer-2", line),
-                    participant("peer-3", "2026-11-01T09:00:00Z"),
-                    // An invited member has not read anything: not in the thread yet.
-                    participant(
-                        "peer-4",
-                        "2026-11-01T10:00:01Z",
-                        ChatThreadResponseThreadParticipantsItemStatus.INVITED,
-                    ),
                 ),
             )
 
-        assertEquals(
-            ChatThreadCopy.READ_BY_COUNT.replace("{count}", "2"),
-            ChatText.receiptOf(thread, line, mine = true, deleted = false),
-        )
+        assertNull(ChatText.receiptOf(thread, line, mine = true, deleted = false))
     }
 
     @Test

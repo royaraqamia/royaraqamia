@@ -20,7 +20,6 @@ object ServicesCopy {
     const val VERIFY = "التَّحقُّق من الشَّهادة"
     const val CONSULTATION = "حجز استشارة"
     const val RATES = "أسعار الصَّرف"
-    const val DOWNLOADER = "مُنزِّل الوسائط"
     const val SCAN = "ماسح QR و Barcode"
     const val QURAN = "القرآن الكريم"
     const val ATHKAR = "أذكار الصَّباح والمساء"

@@ -208,14 +208,12 @@ fun ChatsScreen(
 /** What the dialog is asking about. */
 private data class Answering(val thread: ChatThreadsResponseThreadsItem, val accept: Boolean)
 
-/** The sentence a confirm dialog shows: a direct request and an invitation differ. */
+/** The sentence a confirm dialog shows for the request. */
 private fun answerSentence(thread: ChatThreadsResponseThreadsItem, accept: Boolean): String {
-    val group = thread.kind == ChatThreadsResponseThreadsItemKind.GROUP
-    return when {
-        accept && group -> ChatsListCopy.ACCEPT_GROUP_MESSAGE.replace("{title}", thread.title)
-        accept -> ChatsListCopy.ACCEPT_DIRECT_MESSAGE.replace("{title}", thread.title)
-        group -> ChatsListCopy.DECLINE_GROUP_MESSAGE
-        else -> ChatsListCopy.DECLINE_DIRECT_MESSAGE
+    return if (accept) {
+        ChatsListCopy.ACCEPT_DIRECT_MESSAGE.replace("{title}", thread.title)
+    } else {
+        ChatsListCopy.DECLINE_DIRECT_MESSAGE
     }
 }
 
@@ -244,8 +242,9 @@ private fun ChatsList(
 
     val pending =
         threads.filter {
-            it.myStatus == ChatThreadsResponseThreadsItemMyStatus.REQUESTED ||
-                it.myStatus == ChatThreadsResponseThreadsItemMyStatus.INVITED
+            it.kind != ChatThreadsResponseThreadsItemKind.GROUP &&
+                (it.myStatus == ChatThreadsResponseThreadsItemMyStatus.REQUESTED ||
+                    it.myStatus == ChatThreadsResponseThreadsItemMyStatus.INVITED)
         }
     /**
      * The assistant is the list's first row, always (chats-panel.tsx and
@@ -256,10 +255,12 @@ private fun ChatsList(
     val open =
         threads.filter {
             it.kind != ChatThreadsResponseThreadsItemKind.AGENT &&
+                it.kind != ChatThreadsResponseThreadsItemKind.GROUP &&
                 (it.myStatus == ChatThreadsResponseThreadsItemMyStatus.ACTIVE ||
                     it.myStatus == ChatThreadsResponseThreadsItemMyStatus.DECLINED)
         }
     val hasAssistant = assistant != null
+    val visibleCount = threads.count { it.kind != ChatThreadsResponseThreadsItemKind.GROUP }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -278,10 +279,10 @@ private fun ChatsList(
             item {
                 Text(
                     text =
-                        if (threads.isEmpty()) {
+                        if (visibleCount == 0) {
                             ChatsListCopy.NO_THREADS
                         } else {
-                            ChatsListCopy.THREAD_COUNT.replace("{count}", threads.size.toString())
+                            ChatsListCopy.THREAD_COUNT.replace("{count}", visibleCount.toString())
                         },
                     style = type.xs.copy(fontWeight = FontWeight.Medium),
                     color = RoyColors.mutedForeground,
@@ -470,12 +471,7 @@ private fun RequestRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text =
-                        if (thread.myStatus == ChatThreadsResponseThreadsItemMyStatus.INVITED) {
-                            ChatsListCopy.REQUEST_GROUP
-                        } else {
-                            ChatsListCopy.REQUEST_DIRECT
-                        },
+                    text = ChatsListCopy.REQUEST_DIRECT,
                     style = type.xs,
                     color = RoyColors.mutedForeground,
                 )

@@ -3,7 +3,6 @@ import {
   CalendarCheck,
   CalendarClock,
   Coins,
-  Download,
   GraduationCap,
   Link2,
   Newspaper,
@@ -82,12 +81,6 @@ export const SERVICES_LINK: NavLink = {
       label: SERVICES_COPY.rates,
       isRoute: true,
       icon: Coins,
-    },
-    {
-      href: '/downloader',
-      label: SERVICES_COPY.downloader,
-      isRoute: true,
-      icon: Download,
     },
     {
       href: '/scan',

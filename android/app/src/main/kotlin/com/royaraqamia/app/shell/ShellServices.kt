@@ -113,10 +113,6 @@ sealed interface ServicesEntry {
         override val route: String = "/rates"
     }
 
-    data object Downloader : ServicesEntry {
-        override val route: String = "/downloader"
-    }
-
     data object Scan : ServicesEntry {
         override val route: String = "/scan"
     }
@@ -160,7 +156,6 @@ sealed interface ServicesEntry {
                 Verify,
                 Consultation,
                 Rates,
-                Downloader,
                 Scan,
                 Quran,
                 Athkar,
@@ -444,7 +439,6 @@ internal fun labelOf(entry: ServicesEntry): String =
         ServicesEntry.Verify -> ServicesCopy.VERIFY
         ServicesEntry.Consultation -> ServicesCopy.CONSULTATION
         ServicesEntry.Rates -> ServicesCopy.RATES
-        ServicesEntry.Downloader -> ServicesCopy.DOWNLOADER
         ServicesEntry.Scan -> ServicesCopy.SCAN
         ServicesEntry.Quran -> ServicesCopy.QURAN
         ServicesEntry.Athkar -> ServicesCopy.ATHKAR
@@ -466,7 +460,6 @@ internal fun iconOf(entry: ServicesEntry): ImageVector =
         ServicesEntry.Verify -> LucideVectors.ScanLine
         ServicesEntry.Consultation -> LucideVectors.CalendarCheck
         ServicesEntry.Rates -> LucideVectors.Coins
-        ServicesEntry.Downloader -> LucideVectors.Download
         ServicesEntry.Scan -> LucideVectors.ScanBarcode
         ServicesEntry.Quran -> LucideVectors.BookOpen
         ServicesEntry.Athkar -> LucideVectors.SunMoon

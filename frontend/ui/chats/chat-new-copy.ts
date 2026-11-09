@@ -10,25 +10,11 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const CHAT_NEW_COPY = {
-  conversationType: 'نوع المحادثة',
-  typeDirect: 'محادثة',
-  typeGroup: 'مجموعة',
   searchPlaceholder: 'ابحث باسم العضو أو معرِّفه',
   searchLabel: 'البحث عن عضو',
   closeSearch: 'إغلاق البحث',
   searching: 'جاري البحث...',
   noResults: 'لا نتائج',
-  inGroup: 'في المجموعة',
-  groupName: 'اسم المجموعة',
-  groupNameRequired: 'اسم المجموعة مطلوب',
-  groupMembersRequired: 'أضف عضواً واحداً على الأقل',
-  tooManyMembers: 'عدد الأعضاء يتجاوز الحد',
-  groupCreateFailed: 'تعذّر إنشاء المجموعة',
-  invitees: 'المدعوون',
-  removeInvitee: 'إزالة {name}',
-  groupCreating: 'جاري الإنشاء...',
-  groupCreate: 'إنشاء المجموعة',
-  groupLimit: 'حتى {count} عضواً غيرك',
 } as const;
 
 export type ChatNewCopyStrings = typeof CHAT_NEW_COPY;
