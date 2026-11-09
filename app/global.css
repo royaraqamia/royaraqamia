@@ -1677,6 +1677,9 @@ select,
      at 0, which is what keeps every float at rest (ADR-0087). */
   --roy-player-bar-lift: 0px;
   --roy-player-float-lift: 0px;
+  /* Where the reader's float rests, measured like the lift. The assistant
+     shares this line instead of clearing the float's top (ADR-0087). */
+  --roy-player-float-bottom: 0px;
   --roy-player-lift: max(var(--roy-player-bar-lift), var(--roy-player-float-lift));
   /* Where a corner float rests, and how far the player raises it. Declared here
      so the tab bar below can move the rest without touching the floats. */
@@ -1755,6 +1758,15 @@ body {
      the float keeps that line. A page with nothing playing computes 0 and
      nothing moves. */
   --roy-float-rise: max(0px, var(--roy-player-lift) - var(--roy-corner-rest));
+
+  /* The assistant is the one corner float that shares a corner with the
+     reader's float (opposite it), so it lands on the float's line rather than
+     one clearance above its top. A full-width mini bar still lifts both. */
+  --roy-assistant-bottom: max(
+    var(--roy-corner-rest),
+    var(--roy-player-bar-lift),
+    var(--roy-player-float-bottom)
+  );
 }
 
 /* ========================================
@@ -1774,8 +1786,9 @@ body:has([data-bottom-tabbar]) {
 }
 
 /* Floating pill (`lg` + up): the bar floats clear of the viewport edge, so
-   the reserved space grows by that lift. The corner utilities stay put — the
-   pill is centred and never reaches them.
+   the reserved space grows by that lift. Its centre becomes the corner line:
+   the corner FABs rise to it, so the three read as one row instead of the
+   pill hovering above them.
 
    The pill's own offset is declared here rather than as a `lg:bottom-*`
    utility: every surface's stylesheet re-emits Tailwind's utilities, and a
@@ -1789,6 +1802,9 @@ body:has([data-bottom-tabbar]) {
 
   body:has([data-bottom-tabbar]) {
     padding-bottom: calc(3.5rem + 2.5rem + var(--roy-safe-bottom));
+    /* The pill's 58px box sits at 40px, so its centre is 69px up; a 56px
+       corner FAB rests at 41px to put its centre on the same line. */
+    --roy-corner-rest: calc(2.5rem + 1px + var(--roy-safe-bottom));
   }
 }
 
